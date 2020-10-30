@@ -103,8 +103,8 @@ atl_wrapper::atl_wrapper(std::shared_ptr<ikvs_wrapper> k) {
     init_transport();
 }
 
-atl_wrapper::atl_wrapper(size_t total_rank_count,
-                         const std::vector<size_t> &ranks,
+atl_wrapper::atl_wrapper(int total_rank_count,
+                         const std::vector<int> &ranks,
                          std::shared_ptr<ikvs_wrapper> k) {
     auto transport_type = ccl::global_data::env().atl_transport;
 

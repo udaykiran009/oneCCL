@@ -70,7 +70,7 @@
     virtual ccl::event bcast(void* buf, \
                                size_t count, \
                                ccl::datatype dtype, \
-                               size_t root, \
+                               int root, \
                                const ccl::stream::impl_value_t& stream, \
                                const ccl::broadcast_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps = {}) = 0; \
@@ -80,7 +80,7 @@
                                 size_t count, \
                                 ccl::datatype dtype, \
                                 ccl::reduction reduction, \
-                                size_t root, \
+                                int root, \
                                 const ccl::stream::impl_value_t& stream, \
                                 const ccl::reduce_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps = {}) = 0; \
@@ -169,7 +169,7 @@
 \
     virtual ccl::event bcast(type* buf, \
                                size_t count, \
-                               size_t root, \
+                               int root, \
                                const ccl::stream::impl_value_t& stream, \
                                const ccl::broadcast_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps = {}) = 0; \
@@ -178,7 +178,7 @@
                                 type* recv_buf, \
                                 size_t count, \
                                 ccl::reduction reduction, \
-                                size_t root, \
+                                int root, \
                                 const ccl::stream::impl_value_t& stream, \
                                 const ccl::reduce_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps = {}) = 0; \
@@ -267,7 +267,7 @@
 \
     virtual ccl::event bcast(type& buf, \
                                size_t count, \
-                               size_t root, \
+                               int root, \
                                const ccl::stream::impl_value_t& stream, \
                                const ccl::broadcast_attr& attr, \
                                const ccl::vector_class<ccl::event>& deps = {}) = 0; \
@@ -276,7 +276,7 @@
                                 type& recv_buf, \
                                 size_t count, \
                                 ccl::reduction reduction, \
-                                size_t root, \
+                                int root, \
                                 const ccl::stream::impl_value_t& stream, \
                                 const ccl::reduce_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps = {}) = 0; \
@@ -390,7 +390,7 @@
     ccl::event bcast(void* buf, \
                        size_t count, \
                        ccl::datatype dtype, \
-                       size_t root, \
+                       int root, \
                        const ccl::stream::impl_value_t& stream, \
                        const ccl::broadcast_attr& attr, \
                        const ccl::vector_class<ccl::event>& deps = {}) override { \
@@ -402,7 +402,7 @@
                         size_t count, \
                         ccl::datatype dtype, \
                         ccl::reduction reduction, \
-                        size_t root, \
+                        int root, \
                         const ccl::stream::impl_value_t& stream, \
                         const ccl::reduce_attr& attr, \
                         const ccl::vector_class<ccl::event>& deps = {}) override { \
@@ -530,7 +530,7 @@
 \
     ccl::event bcast(type* buf, \
                        size_t count, \
-                       size_t root, \
+                       int root, \
                        const ccl::stream::impl_value_t& stream, \
                        const ccl::broadcast_attr& attr, \
                        const ccl::vector_class<ccl::event>& deps) override { \
@@ -541,7 +541,7 @@
                         type* recv_buf, \
                         size_t count, \
                         ccl::reduction reduction, \
-                        size_t root, \
+                        int root, \
                         const ccl::stream::impl_value_t& stream, \
                         const ccl::reduce_attr& attr, \
                         const ccl::vector_class<ccl::event>& deps) override { \
@@ -664,7 +664,7 @@
 \
     ccl::event bcast(type& buf, \
                        size_t count, \
-                       size_t root, \
+                       int root, \
                        const ccl::stream::impl_value_t& stream, \
                        const ccl::broadcast_attr& attr, \
                        const ccl::vector_class<ccl::event>& deps = {}) override { \
@@ -675,7 +675,7 @@
                         type& recv_buf, \
                         size_t count, \
                         ccl::reduction reduction, \
-                        size_t root, \
+                        int root, \
                         const ccl::stream::impl_value_t& stream, \
                         const ccl::reduce_attr& attr, \
                         const ccl::vector_class<ccl::event>& deps = {}) override { \
@@ -862,14 +862,14 @@
     ccl::event broadcast_impl(void* buf, \
                                 size_t count, \
                                 ccl::datatype dtype, \
-                                size_t root, \
+                                int root, \
                                 const ccl::stream::impl_value_t& stream, \
                                 const ccl::broadcast_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
     template <class buffer_type> \
     ccl::event broadcast_impl(buffer_type* buf, \
                                 size_t count, \
-                                size_t root, \
+                                int root, \
                                 const ccl::stream::impl_value_t& stream, \
                                 const ccl::broadcast_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
@@ -879,7 +879,7 @@
                              size_t count, \
                              ccl::datatype dtype, \
                              ccl::reduction reduction, \
-                             size_t root, \
+                             int root, \
                              const ccl::stream::impl_value_t& stream, \
                              const ccl::reduce_attr& attr, \
                              const ccl::vector_class<ccl::event>& deps); \
@@ -888,7 +888,7 @@
                              buffer_type* recv_buf, \
                              size_t count, \
                              ccl::reduction reduction, \
-                             size_t root, \
+                             int root, \
                              const ccl::stream::impl_value_t& stream, \
                              const ccl::reduce_attr& attr, \
                              const ccl::vector_class<ccl::event>& deps); \
@@ -1003,7 +1003,7 @@
     template <class buffer_type> \
     ccl::event broadcast_impl(buffer_type& buf, \
                                 size_t count, \
-                                size_t root, \
+                                int root, \
                                 const ccl::stream::impl_value_t& stream, \
                                 const ccl::broadcast_attr& attr, \
                                 const ccl::vector_class<ccl::event>& deps); \
@@ -1012,7 +1012,7 @@
                              buffer_type& recv_buf, \
                              size_t count, \
                              ccl::reduction reduction, \
-                             size_t root, \
+                             int root, \
                              const ccl::stream::impl_value_t& stream, \
                              const ccl::reduce_attr& attr, \
                              const ccl::vector_class<ccl::event>& deps); \
@@ -1096,7 +1096,7 @@
 \
     template ccl::event comm_class::broadcast_impl(type& buf, \
                                                      size_t count, \
-                                                     size_t root, \
+                                                     int root, \
                                                      const ccl::stream::impl_value_t& stream, \
                                                      const ccl::broadcast_attr& attr, \
                                                      const ccl::vector_class<ccl::event>& deps); \
@@ -1105,7 +1105,7 @@
                                                   type& recv_buf, \
                                                   size_t count, \
                                                   ccl::reduction reduction, \
-                                                  size_t root, \
+                                                  int root, \
                                                   const ccl::stream::impl_value_t& stream, \
                                                   const ccl::reduce_attr& attr, \
                                                   const ccl::vector_class<ccl::event>& deps);
@@ -1169,7 +1169,7 @@
 \
     template ccl::event comm_class::broadcast_impl(type* buf, \
                                                      size_t count, \
-                                                     size_t root, \
+                                                     int root, \
                                                      const ccl::stream::impl_value_t& stream, \
                                                      const ccl::broadcast_attr& attr, \
                                                      const ccl::vector_class<ccl::event>& deps); \
@@ -1178,7 +1178,7 @@
                                                   type* recv_buf, \
                                                   size_t count, \
                                                   ccl::reduction reduction, \
-                                                  size_t root, \
+                                                  int root, \
                                                   const ccl::stream::impl_value_t& stream, \
                                                   const ccl::reduce_attr& attr, \
                                                   const ccl::vector_class<ccl::event>& deps); \

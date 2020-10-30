@@ -14,7 +14,7 @@ ccl::status ccl_coll_build_direct_bcast(ccl_sched* sched,
                                          ccl_buffer buf,
                                          size_t count,
                                          const ccl_datatype& dtype,
-                                         size_t root,
+                                         int root,
                                          ccl_comm* comm) {
     LOG_DEBUG("build direct bcast");
 
@@ -26,15 +26,15 @@ ccl::status ccl_coll_build_naive_bcast(ccl_sched* sched,
                                         ccl_buffer buf,
                                         size_t count,
                                         const ccl_datatype& dtype,
-                                        size_t root,
+                                        int root,
                                         ccl_comm* comm) {
     LOG_DEBUG("build naive bcast");
 
     ccl::status status = ccl::status::success;
 
-    size_t rank = comm->rank();
-    size_t comm_size = comm->size();
-    size_t idx;
+    int rank = comm->rank();
+    int comm_size = comm->size();
+    int idx;
 
     if (comm_size == 1)
         goto fn_exit;
@@ -56,7 +56,7 @@ fn_exit:
 
 ccl::status ccl_coll_build_scatter_for_bcast(ccl_sched* sched,
                                               ccl_buffer tmp_buf,
-                                              size_t root,
+                                              int root,
                                               size_t nbytes,
                                               ccl_comm* comm) {
     LOG_DEBUG("build scatter_for_bcast");
@@ -150,7 +150,7 @@ ccl::status ccl_coll_build_scatter_ring_allgather_bcast(ccl_sched* sched,
                                                          ccl_buffer buf,
                                                          size_t count,
                                                          const ccl_datatype& dtype,
-                                                         size_t root,
+                                                         int root,
                                                          ccl_comm* comm) {
     LOG_DEBUG("build scatter_ring_allgather bcast");
 

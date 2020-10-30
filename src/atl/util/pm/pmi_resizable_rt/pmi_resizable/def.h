@@ -80,7 +80,8 @@
 #define GREP_TEMPLATE               "| grep \"%s\""
 #define GREP_COUNT_TEMPLATE         "| grep -c \"%s\""
 #define CONCAT_TWO_COMMAND_TEMPLATE "%s %s"
-#define SIZE_T_TEMPLATE             "%zu"
+#define RANK_TEMPLATE             "%d"
+#define SIZE_T_TEMPLATE           "%zu"
 
 #define KVS_NAME    "CCL_POD_ADDR"
 #define KVS_BARRIER "CCL_BARRIER"

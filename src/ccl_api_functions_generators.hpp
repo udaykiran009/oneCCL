@@ -129,7 +129,7 @@ namespace v1 {
 \
     template event CCL_API broadcast(BufferType* buf, \
                                        size_t count, \
-                                       size_t root, \
+                                       int root, \
                                        const communicator& comm, \
                                        const stream& op_stream, \
                                        const broadcast_attr& attr, \
@@ -137,7 +137,7 @@ namespace v1 {
 \
     template event CCL_API broadcast(BufferType* buf, \
                                        size_t count, \
-                                       size_t root, \
+                                       int root, \
                                        const communicator& comm, \
                                        const broadcast_attr& attr, \
                                        const vector_class<event>& deps); \
@@ -146,7 +146,7 @@ namespace v1 {
                                     BufferType* recv_buf, \
                                     size_t count, \
                                     reduction reduction, \
-                                    size_t root, \
+                                    int root, \
                                     const communicator& comm, \
                                     const stream& op_stream, \
                                     const reduce_attr& attr, \
@@ -156,7 +156,7 @@ namespace v1 {
                                     BufferType* recv_buf, \
                                     size_t count, \
                                     reduction reduction, \
-                                    size_t root, \
+                                    int root, \
                                     const communicator& comm, \
                                     const reduce_attr& attr, \
                                     const vector_class<event>& deps); \
@@ -303,7 +303,7 @@ namespace v1 {
 \
     template event CCL_API broadcast(BufferObjectType& buf, \
                                        size_t count, \
-                                       size_t root, \
+                                       int root, \
                                        const communicator& comm, \
                                        const stream& op_stream, \
                                        const broadcast_attr& attr, \
@@ -311,7 +311,7 @@ namespace v1 {
 \
     template event CCL_API broadcast(BufferObjectType& buf, \
                                        size_t count, \
-                                       size_t root, \
+                                       int root, \
                                        const communicator& comm, \
                                        const broadcast_attr& attr, \
                                        const vector_class<event>& deps); \
@@ -320,7 +320,7 @@ namespace v1 {
                                     BufferObjectType& recv_buf, \
                                     size_t count, \
                                     reduction reduction, \
-                                    size_t root, \
+                                    int root, \
                                     const communicator& comm, \
                                     const stream& op_stream, \
                                     const reduce_attr& attr, \
@@ -330,7 +330,7 @@ namespace v1 {
                                     BufferObjectType& recv_buf, \
                                     size_t count, \
                                     reduction reduction, \
-                                    size_t root, \
+                                    int root, \
                                     const communicator& comm, \
                                     const reduce_attr& attr, \
                                     const vector_class<event>& deps); \

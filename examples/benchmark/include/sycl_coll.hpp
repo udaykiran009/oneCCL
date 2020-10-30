@@ -16,7 +16,7 @@ using namespace sycl;
 using namespace sycl::access;
 
 std::vector<cl::sycl::queue> get_sycl_queues(sycl_dev_type_t dev_type,
-                                             const std::vector<size_t>& ranks) {
+                                             const std::vector<int>& ranks) {
 
     auto queues = create_sycl_queues(sycl_dev_names[dev_type], ranks);
 

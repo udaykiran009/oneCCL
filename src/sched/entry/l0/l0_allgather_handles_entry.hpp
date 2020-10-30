@@ -59,7 +59,7 @@ public:
     }
 
     void start() override {
-        size_t comm_size = ccl_communicator->size();
+        int comm_size = ccl_communicator->size();
         LOG_INFO(class_name(), " entry req ", &req, ", rank: ", comm_addr.to_string());
 
         // serialize data for native allgather algo

@@ -13,8 +13,8 @@ group_context& group_context::instance() {
 }
 
 group_context::comm_group_t group_context::group_by_kvs(
-    const std::vector<size_t>& local_thread_device_group_ranks,
-    size_t cluster_device_group_size,
+    const std::vector<int>& local_thread_device_group_ranks,
+    int cluster_device_group_size,
     std::shared_ptr<kvs_interface> kvs) {
 
     LOG_INFO("Thread acquire by barrier");

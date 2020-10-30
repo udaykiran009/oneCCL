@@ -51,7 +51,7 @@ ccl::status ccl_coll_build_bcast(ccl_sched* sched,
                                   ccl_buffer buf,
                                   size_t count,
                                   const ccl_datatype& dtype,
-                                  size_t root,
+                                  int root,
                                   ccl_comm* comm);
 
 ccl::status ccl_coll_build_reduce(ccl_sched* sched,
@@ -60,7 +60,7 @@ ccl::status ccl_coll_build_reduce(ccl_sched* sched,
                                    size_t count,
                                    const ccl_datatype& dtype,
                                    ccl::reduction reduction,
-                                   size_t root,
+                                   int root,
                                    ccl_comm* comm);
 
 ccl::status ccl_coll_build_reduce_scatter(ccl_sched* sched,
@@ -135,7 +135,7 @@ void ccl_barrier_impl(ccl_comm* comm, const ccl_stream* stream);
 ccl_request* ccl_broadcast_impl(void* buf,
                                 size_t count,
                                 ccl::datatype dtype,
-                                size_t root,
+                                int root,
                                 const ccl_coll_attr& attr,
                                 ccl_comm* comm,
                                 const ccl_stream* stream);
@@ -145,7 +145,7 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
                              size_t count,
                              ccl::datatype dtype,
                              ccl::reduction reduction,
-                             size_t root,
+                             int root,
                              const ccl_coll_attr& attr,
                              ccl_comm* comm,
                              const ccl_stream* stream);

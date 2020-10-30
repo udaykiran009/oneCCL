@@ -19,7 +19,7 @@ void run_collective(const char* cmd_name,
         std::fill(recv_buf.begin(), recv_buf.end(), 0);
         size_t elem_idx = 0;
 
-        for (size_t rank_idx = 0; rank_idx < comm.size(); rank_idx++) {
+        for (int rank_idx = 0; rank_idx < comm.size(); rank_idx++) {
             for (size_t idx = 0; idx < send_counts[rank_idx]; idx++) {
                 send_buf[elem_idx] = comm.rank();
                 elem_idx++;
@@ -39,7 +39,7 @@ void run_collective(const char* cmd_name,
     ccl::barrier(comm);
 
     size_t elem_idx = 0;
-    for (size_t rank_idx = 0; rank_idx < comm.size(); rank_idx++) {
+    for (int rank_idx = 0; rank_idx < comm.size(); rank_idx++) {
         int expected = rank_idx;
         for (size_t idx = 0; idx < recv_counts[rank_idx]; idx++) {
             if (recv_buf[elem_idx] != expected) {
@@ -97,7 +97,7 @@ int main() {
     std::vector<size_t> send_counts(comm.size());
     std::vector<size_t> recv_counts(comm.size());
 
-    for (size_t idx = 0; idx < comm.size(); idx++) {
+    for (int idx = 0; idx < comm.size(); idx++) {
         int is_even_peer = (idx % 2 == 0) ? 1 : 0;
         send_counts[idx] = send_count;
         recv_counts[idx] = (is_even_peer) ? EVEN_RANK_SEND_COUNT : ODD_RANK_SEND_COUNT;

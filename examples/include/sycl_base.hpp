@@ -215,7 +215,7 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
 }
 
 std::vector<sycl::queue> create_sycl_queues(const std::string& device_type,
-                                            const std::vector<size_t>& ranks) {
+                                            const std::vector<int>& ranks) {
 
     std::vector<sycl::device> devices;
 
@@ -328,7 +328,7 @@ inline bool create_sycl_queue(int argc,
                               queue& q) {
     if (argc >= 2) {
         try {
-            std::vector<size_t> ranks = { (size_t)rank };
+            std::vector<int> ranks = { rank };
             q = create_sycl_queues(argv[1], ranks)[0];
             return true;
         }

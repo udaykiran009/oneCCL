@@ -11,7 +11,7 @@ void rank_list_sort(rank_list_t* list) {
         right = left->next;
         while (right != NULL) {
             if (left->rank > right->rank) {
-                size_t tmp_i = left->rank;
+                int tmp_i = left->rank;
                 left->rank = right->rank;
                 right->rank = tmp_i;
             }
@@ -33,7 +33,7 @@ void rank_list_clean(rank_list_t** list) {
     *list = NULL;
 }
 
-size_t rank_list_contains(rank_list_t* list, size_t rank) {
+size_t rank_list_contains(rank_list_t* list, int rank) {
     rank_list_t* cur_list = list;
 
     while (cur_list != NULL) {
@@ -66,7 +66,7 @@ void rank_list_keep_first_n(rank_list_t** origin_list, size_t n) {
         (*origin_list) = NULL;
 }
 
-void rank_list_add(rank_list_t** origin_list, size_t rank) {
+void rank_list_add(rank_list_t** origin_list, int rank) {
     if ((*origin_list) == NULL) {
         (*origin_list) = (rank_list_t*)malloc(sizeof(rank_list_t));
         (*origin_list)->next = NULL;

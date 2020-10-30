@@ -44,10 +44,10 @@ ccl::status ccl_coll_build_ring_reduce_scatter_block(ccl_sched* sched,
               inplace ? "in-place" : "out-of-place");
 
     ccl::status status = ccl::status::success;
-    size_t comm_size, rank, idx;
+    int comm_size, rank, idx;
     size_t dtype_size = dtype.size();
 
-    size_t src, dst;
+    int src, dst;
 
     comm_size = comm->size();
     rank = comm->rank();
@@ -168,20 +168,20 @@ ccl::status ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
                      recv_buf);
 
     ccl::status status = ccl::status::success;
-    size_t comm_size, rank;
+    int comm_size, rank;
     size_t dtype_size = dtype.size();
 
     comm_size = comm->size();
     rank = comm->rank();
 
-    size_t src = (comm_size + rank - 1) % comm_size;
-    size_t dst = (comm_size + rank + 1) % comm_size;
+    int src = (comm_size + rank - 1) % comm_size;
+    int dst = (comm_size + rank + 1) % comm_size;
 
     size_t count = send_count;
     size_t bytes = count * dtype_size;
 
     size_t chunk_count = (bytes >= ccl::global_data::env().rs_min_chunk_size &&
-                          count >= ccl::global_data::env().rs_chunk_count && count >= comm_size)
+                          count >= ccl::global_data::env().rs_chunk_count && (int)count >= comm_size)
                              ? ccl::global_data::env().rs_chunk_count
                              : 1;
 
@@ -223,10 +223,10 @@ ccl::status ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
     /* the final reduction result on last iteration in corresponsing block */
 
     /* block = group of ~ equal-sized chunks */
-    size_t block_idx = (rank + comm_size - 1) % comm_size;
+    int block_idx = (rank + comm_size - 1) % comm_size;
     size_t main_block_size = count / comm_size;
     size_t last_block_size = main_block_size + count % comm_size;
-    size_t send_block_idx, recv_block_idx;
+    int send_block_idx, recv_block_idx;
     size_t send_block_size, recv_block_size;
     size_t send_block_offset, recv_block_offset;
 
@@ -242,7 +242,7 @@ ccl::status ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
 
     ccl_recv_reduce_result_buf_type recv_reduce_result_type;
 
-    for (size_t idx = 0; idx < (comm_size - 1); idx++) {
+    for (int idx = 0; idx < (comm_size - 1); idx++) {
         send_block_idx = block_idx;
         recv_block_idx = (comm_size + block_idx - 1) % comm_size;
 

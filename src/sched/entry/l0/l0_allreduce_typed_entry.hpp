@@ -91,7 +91,7 @@ public:
         op_typed_entry = op;
         cnt_entry = cnt;
 
-        size_t next_rank = (comm_addr.rank + 1) % comm_addr.size;
+        int next_rank = (comm_addr.rank + 1) % comm_addr.size;
         kernel_router = base::template create_kernel_router_for_rank<
             l0_allreduce_typed_entry<native_type, gpu_comm_impl, topology>>(
             *this, next_rank, available_devices);

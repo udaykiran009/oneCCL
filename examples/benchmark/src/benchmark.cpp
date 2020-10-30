@@ -98,7 +98,7 @@ void do_regular(ccl::communicator& service_comm,
                               "do multi-buffers benchmark\n"
                               "#------------------------------------------------------------\n"
                               "# Benchmarking: %s\n"
-                              "# processes: %zu\n"
+                              "# processes: %d\n"
                               "#------------------------------------------------------------\n"
                               "%10s %13s %18s %11s",
                               scolls.str().c_str(),
@@ -175,7 +175,7 @@ void do_regular(ccl::communicator& service_comm,
                               "do single-buffer benchmark\n"
                               "#--------------------------------------\n"
                               "# Benchmarking: %s\n"
-                              "# processes: %zu\n"
+                              "# processes: %d\n"
                               "#--------------------------------------\n"
                               "%10s %12s %11s",
                               scolls.str().c_str(),
@@ -270,7 +270,7 @@ void do_unordered(ccl::communicator& service_comm,
             PRINT_BY_ROOT(
                 service_comm, "\ndtype: %s\nreduction: %s\n", dtype_name.c_str(), reduction.c_str());
 
-            size_t rank = service_comm.rank();
+            int rank = service_comm.rank();
 
             reqs.reserve(colls.size() * options.buf_count * (log2(options.max_elem_count) + 1));
 

@@ -117,7 +117,7 @@ struct sparse_allreduce_strategy_impl {
     using IndicesDistributor = IndicesDistributorType<remove_all_t<IType>>;
 
     size_t v2i_ratio;
-    size_t comm_size;
+    int comm_size;
     const size_t minimal_indices_count = 1;
 
     void init_distributor(const std::pair<size_t, size_t>& elem_range) {
@@ -125,7 +125,7 @@ struct sparse_allreduce_strategy_impl {
         indices_distributor_impl.reset(new IndicesDistributor(elem_range.first, indices_count));
     }
 
-    sparse_allreduce_strategy_impl(size_t v2i_ratio, size_t comm_size)
+    sparse_allreduce_strategy_impl(size_t v2i_ratio, int comm_size)
             : v2i_ratio(v2i_ratio),
               comm_size(comm_size) {}
 

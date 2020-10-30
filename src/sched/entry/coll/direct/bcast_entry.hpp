@@ -13,7 +13,7 @@ public:
                 ccl_buffer buf,
                 size_t cnt,
                 const ccl_datatype& dtype,
-                size_t root,
+                int root,
                 ccl_comm* comm)
             : base_coll_entry(sched),
               buf(buf),
@@ -77,7 +77,7 @@ protected:
 private:
     ccl_buffer buf;
     size_t cnt;
-    size_t root;
+    int root;
     ccl_datatype dtype;
     ccl_comm* comm;
     atl_req_t req{};

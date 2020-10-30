@@ -2,7 +2,7 @@
 
 struct allgatherv_strategy_impl {
 
-    size_t comm_size = 0;
+    int comm_size = 0;
     std::vector<size_t> recv_counts;
 
     allgatherv_strategy_impl(size_t size) : comm_size(size) {
@@ -30,7 +30,7 @@ struct allgatherv_strategy_impl {
                         const bench_exec_attr& bench_attr,
                         req_list_t& reqs,
                         Args&&... args) {
-        for (size_t idx = 0; idx < comm_size; idx++) {
+        for (int idx = 0; idx < comm_size; idx++) {
             recv_counts[idx] = count;
         }
         reqs.push_back(

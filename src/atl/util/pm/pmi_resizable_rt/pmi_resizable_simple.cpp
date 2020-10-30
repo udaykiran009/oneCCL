@@ -5,7 +5,7 @@
 #include "pmi_resizable_simple.h"
 #include "util/pm/codec/pm_rt_codec.h"
 
-#define RESIZABLE_PMI_RT_KEY_FORMAT "%s-%zu"
+#define RESIZABLE_PMI_RT_KEY_FORMAT "%s-%d"
 #define RANKS_PER_THREAD            "RANKS_PER_THREAD"
 #define PROCESS_THREAD_NAME         "PROCESS_THREAD_NAME"
 
@@ -14,8 +14,8 @@
 #define GLOBAL_RANK_TO_NAME         "GLOBAL_RANK_TO_NAME"
 #define LOCAL_KVS_ID                "LOCAL_KVS_ID"
 
-pmi_resizable_simple::pmi_resizable_simple(size_t size,
-                                           const std::vector<size_t>& ranks,
+pmi_resizable_simple::pmi_resizable_simple(int size,
+                                           const std::vector<int>& ranks,
                                            std::shared_ptr<ikvs_wrapper> k,
                                            const char* main_addr)
         : total_rank_count(size),
@@ -155,7 +155,7 @@ size_t pmi_resizable_simple::get_barrier_full_idx() {
     return min_barrier_idx;
 }
 atl_status_t pmi_resizable_simple::pmrt_kvs_put(char* kvs_key,
-                                                size_t proc_idx,
+                                                int proc_idx,
                                                 const void* kvs_val,
                                                 size_t kvs_val_len) {
     int ret;
@@ -177,7 +177,7 @@ atl_status_t pmi_resizable_simple::pmrt_kvs_put(char* kvs_key,
 }
 
 atl_status_t pmi_resizable_simple::pmrt_kvs_get(char* kvs_key,
-                                                size_t proc_idx,
+                                                int proc_idx,
                                                 void* kvs_val,
                                                 size_t kvs_val_len) {
     int ret;
@@ -196,11 +196,11 @@ atl_status_t pmi_resizable_simple::pmrt_kvs_get(char* kvs_key,
     return ATL_STATUS_SUCCESS;
 }
 
-size_t pmi_resizable_simple::get_size() {
+int pmi_resizable_simple::get_size() {
     return threads_per_proc.size();
 }
 
-size_t pmi_resizable_simple::get_rank() {
+int pmi_resizable_simple::get_rank() {
     return assigned_proc_idx;
 }
 
@@ -262,8 +262,8 @@ void pmi_resizable_simple::register_first_rank_idx_and_rank_count() {
 }
 
 void pmi_resizable_simple::assign_thread_idx_and_fill_ranks_per_thread_map() {
-    size_t rank_count = 0;
-    size_t ranks_per_thread;
+    int rank_count = 0;
+    int ranks_per_thread;
     while (rank_count < total_rank_count) {
         if (rank_count == ranks[0]) {
             assigned_thread_idx = ranks_per_thread_map.size();
@@ -293,9 +293,9 @@ void pmi_resizable_simple::register_my_proc_name() {
 }
 
 void pmi_resizable_simple::get_my_proc_idx_and_proc_count() {
-    std::map<std::string, size_t> proc_name_to_rank;
-    std::map<std::string, size_t>::iterator it;
-    size_t rank;
+    std::map<std::string, int> proc_name_to_rank;
+    std::map<std::string, int>::iterator it;
+    int rank;
     for (size_t i = 0; i < ranks_per_thread_map.size(); i++) {
         kvs_get_value(PROCESS_THREAD_NAME, std::to_string(i).c_str(), val_storage);
 

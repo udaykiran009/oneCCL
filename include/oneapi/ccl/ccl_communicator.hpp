@@ -22,8 +22,6 @@ class device;
 class kvs_interface;
 struct impl_dispatch;
 
-using rank_t = size_t;
-
 /**
  * A communicator that permits communication operations
  * Has no defined public constructor.
@@ -68,13 +66,13 @@ public:
      * Retrieves the rank in a communicator
      * @return rank corresponding to communicator object
      */
-    size_t rank() const;
+    int rank() const;
 
     /**
      * Retrieves the number of rank in a communicator
      * @return number of the ranks
      */
-    size_t size() const;
+    int size() const;
 
     /**
      * Retrieves underlying device, which was used as communicator construction argument
@@ -107,31 +105,31 @@ private:
     // factory methods
     template <class DeviceType, class ContextType>
     static vector_class<communicator> create_communicators(
-        size_t comm_size,
+        int comm_size,
         const vector_class<DeviceType>& local_devices,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs);
 
     template <class DeviceType, class ContextType>
     static vector_class<communicator> create_communicators(
-        size_t comm_size,
-        const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
+        int comm_size,
+        const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs);
 
     template <class DeviceType, class ContextType>
     static vector_class<communicator> create_communicators(
-        size_t comm_size,
-        const map_class<rank_t, DeviceType>& local_rank_device_map,
+        int comm_size,
+        const map_class<int, DeviceType>& local_rank_device_map,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs);
 
     static communicator create_communicator(const comm_attr& attr);
-    static communicator create_communicator(size_t size,
+    static communicator create_communicator(int size,
                                             shared_ptr_class<kvs_interface> kvs,
                                             const comm_attr& attr);
-    static communicator create_communicator(size_t size,
-                                            size_t rank,
+    static communicator create_communicator(int size,
+                                            int rank,
                                             shared_ptr_class<kvs_interface> kvs,
                                             const comm_attr& attr);
 };
@@ -139,6 +137,5 @@ private:
 } // namespace v1
 
 using v1::communicator;
-using v1::rank_t;
 
 } // namespace ccl

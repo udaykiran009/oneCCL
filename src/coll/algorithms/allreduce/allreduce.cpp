@@ -373,8 +373,8 @@ ccl::status ccl_coll_build_starlike_allreduce(ccl_sched* sched,
     LOG_DEBUG("build starlike allreduce");
 
     ccl::status status = ccl::status::success;
-    size_t comm_size = comm->size();
-    size_t this_rank = comm->rank();
+    int comm_size = comm->size();
+    int this_rank = comm->rank();
     size_t* buffer_counts =
         static_cast<size_t*>(CCL_MALLOC(comm_size * sizeof(size_t), "buffer_count"));
     size_t* buffer_offsets =
@@ -392,7 +392,7 @@ ccl::status ccl_coll_build_starlike_allreduce(ccl_sched* sched,
 
     // calculate counts and offsets for each rank
     size_t common_buffer_count = count / comm_size;
-    for (size_t rank_idx = 0; rank_idx < comm_size; ++rank_idx) {
+    for (int rank_idx = 0; rank_idx < comm_size; ++rank_idx) {
         buffer_counts[rank_idx] = common_buffer_count;
         buffer_offsets[rank_idx] = rank_idx * buffer_counts[rank_idx] * dtype_size;
     }
@@ -406,7 +406,7 @@ ccl::status ccl_coll_build_starlike_allreduce(ccl_sched* sched,
         tmp_buf = sched->alloc_buffer(this_rank_buf_size * (comm_size - 1));
 
     size_t tmp_buf_recv_idx = 0;
-    for (size_t rank_idx = 0; rank_idx < comm_size; ++rank_idx) {
+    for (int rank_idx = 0; rank_idx < comm_size; ++rank_idx) {
         if (rank_idx != this_rank) {
             // send buffer to others
             entry_factory::make_chunked_send_entry(sched,
@@ -467,7 +467,7 @@ ccl::status ccl_coll_build_ring_allreduce(ccl_sched* sched,
 
     sched->add_barrier();
 
-    size_t comm_size = comm->size();
+    int comm_size = comm->size();
     size_t main_block_count = count / comm_size;
     size_t last_block_count = main_block_count + count % comm_size;
     std::vector<size_t> recv_counts(comm_size, main_block_count);

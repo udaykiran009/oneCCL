@@ -33,7 +33,7 @@ struct cpu_sparse_allreduce_coll
             : coll_base(init_attr, transport_data::get_comm_size()) {
         int result = 0;
 
-        size_t comm_size = transport_data::get_comm_size();
+        int comm_size = transport_data::get_comm_size();
 
         size_t max_elem_count = base_coll::get_max_elem_count();
         size_t single_buf_max_elem_count = base_coll::get_single_buf_max_elem_count();

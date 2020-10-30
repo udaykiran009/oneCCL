@@ -42,8 +42,8 @@ namespace v1 {
 
 template <class DeviceType, class ContextType>
 CCL_API vector_class<communicator> communicator::create_communicators(
-    const size_t cluster_devices_size,
-    const vector_class<DeviceType>& local_devices,
+    const int size,
+    const vector_class<DeviceType>& devices,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
     vector_class<communicator> ret;
@@ -51,36 +51,36 @@ CCL_API vector_class<communicator> communicator::create_communicators(
     return ret;
 }
 
-using rank_t = size_t;
+using rank_t = int;
 
 template <class DeviceType, class ContextType>
 CCL_API vector_class<communicator> communicator::create_communicators(
-    const size_t cluster_devices_size, /*global devices count*/
-    const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
+    const int size,
+    const vector_class<pair_class<int, DeviceType>>& devices,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
 
-    return comm_impl_dispatch_selector<CL_BACKEND_TYPE>::create_communicators_selector(cluster_devices_size, local_rank_device_map, context, kvs);
+    return comm_impl_dispatch_selector<CL_BACKEND_TYPE>::create_communicators_selector(size, devices, context, kvs);
 #if 0
-    vector_class<rank_t> local_thread_ranks;
-    local_thread_ranks.reserve(local_rank_device_map.size());
+    vector_class<int> local_thread_ranks;
+    local_thread_ranks.reserve(devices.size());
     std::transform(
-        local_rank_device_map.begin(),
-        local_rank_device_map.end(),
+        devices.begin(),
+        devices.end(),
         std::back_inserter(local_thread_ranks),
-        [](const typename vector_class<pair_class<rank_t, DeviceType>>::value_type& val) {
+        [](const typename vector_class<pair_class<int, DeviceType>>::value_type& val) {
             return val.first;
         });
     group_context::comm_group_t thread_group =
-        group_context::instance().group_by_kvs(local_thread_ranks, cluster_devices_size, kvs);
+        group_context::instance().group_by_kvs(local_thread_ranks, size, kvs);
 
     vector_class<DeviceType> local_thread_devices;
-    local_thread_devices.reserve(local_rank_device_map.size());
+    local_thread_devices.reserve(devices.size());
     std::transform(
-        local_rank_device_map.begin(),
-        local_rank_device_map.end(),
+        devices.begin(),
+        devices.end(),
         std::back_inserter(local_thread_devices),
-        [](const typename vector_class<pair_class<rank_t, DeviceType>>::value_type& val) {
+        [](const typename vector_class<pair_class<int, DeviceType>>::value_type& val) {
             return val.second;
         });
 
@@ -91,31 +91,31 @@ CCL_API vector_class<communicator> communicator::create_communicators(
 
 template <class DeviceType, class ContextType>
 CCL_API vector_class<communicator> communicator::create_communicators(
-    const size_t cluster_devices_size, /*global devices count*/
-    const map_class<rank_t, DeviceType>& local_rank_device_map,
+    const int size,
+    const map_class<int, DeviceType>& devices,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs)
 
 {
-    return comm_impl_dispatch_selector<CL_BACKEND_TYPE>::create_communicators_selector(cluster_devices_size, local_rank_device_map, context, kvs);
+    return comm_impl_dispatch_selector<CL_BACKEND_TYPE>::create_communicators_selector(size, devices, context, kvs);
 #if 0
-    vector_class<rank_t> local_thread_ranks;
-    local_thread_ranks.reserve(local_rank_device_map.size());
-    std::transform(local_rank_device_map.begin(),
-                   local_rank_device_map.end(),
+    vector_class<int> local_thread_ranks;
+    local_thread_ranks.reserve(devices.size());
+    std::transform(devices.begin(),
+                   devices.end(),
                    std::back_inserter(local_thread_ranks),
-                   [](const typename map_class<rank_t, DeviceType>::value_type& val) {
+                   [](const typename map_class<int, DeviceType>::value_type& val) {
                        return val.first;
                    });
     group_context::comm_group_t thread_group =
-        group_context::instance().group_by_kvs(local_thread_ranks, cluster_devices_size, kvs);
+        group_context::instance().group_by_kvs(local_thread_ranks, size, kvs);
 
     vector_class<DeviceType> local_thread_devices;
-    local_thread_devices.reserve(local_rank_device_map.size());
-    std::transform(local_rank_device_map.begin(),
-                   local_rank_device_map.end(),
+    local_thread_devices.reserve(devices.size());
+    std::transform(devices.begin(),
+                   devices.end(),
                    std::back_inserter(local_thread_devices),
-                   [](const typename map_class<rank_t, DeviceType>::value_type& val) {
+                   [](const typename map_class<int, DeviceType>::value_type& val) {
                        return val.second;
                    });
 
@@ -152,7 +152,7 @@ communicator communicator::create_communicator(const comm_attr& attr) {
  * @param kvs key-value store for ranks wire-up
  * @return host communicator
  */
-communicator communicator::create_communicator(const size_t size,
+communicator communicator::create_communicator(const int size,
                                                shared_ptr_class<kvs_interface> kvs,
                                                const comm_attr& attr) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -172,8 +172,8 @@ communicator communicator::create_communicator(const size_t size,
  * @param kvs key-value store for ranks wire-up
  * @return host communicator
  */
-communicator communicator::create_communicator(const size_t size,
-                                               const size_t rank,
+communicator communicator::create_communicator(const int size,
+                                               const int rank,
                                                shared_ptr_class<kvs_interface> kvs,
                                                const comm_attr& attr) {
     
@@ -193,7 +193,7 @@ communicator communicator::create_communicator(const size_t size,
 #define API_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
     template ccl::vector_class<ccl::communicator> CCL_API \
     ccl::communicator::create_communicators( \
-        const size_t comm_size, \
+        const int comm_size, \
         const ccl::vector_class<DeviceType>& local_devices, \
         ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs);
@@ -201,15 +201,15 @@ communicator communicator::create_communicator(const size_t size,
 #define API_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
     template ccl::vector_class<ccl::communicator> CCL_API \
     ccl::communicator::create_communicators( \
-        const size_t comm_size, \
-        const ccl::vector_class<ccl::pair_class<ccl::rank_t, DeviceType>>& local_rank_device_map, \
+        const int comm_size, \
+        const ccl::vector_class<ccl::pair_class<int, DeviceType>>& local_rank_device_map, \
         ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs);
 
 #define API_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
     template ccl::vector_class<ccl::communicator> CCL_API \
     ccl::communicator::create_communicators( \
-        const size_t comm_size, \
-        const ccl::map_class<ccl::rank_t, DeviceType>& local_rank_device_map, \
+        const int comm_size, \
+        const ccl::map_class<int, DeviceType>& local_rank_device_map, \
         ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs);

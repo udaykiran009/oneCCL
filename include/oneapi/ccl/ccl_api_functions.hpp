@@ -170,6 +170,68 @@ comm_attr create_comm_attr(attr_value_pair_t&&... avps) {
 
 } // namespace v1
 
+namespace v1 {
+
+/**
+ * Creates a new communicator with user supplied size, rank and kvs.
+ * @param size user-supplied total number of ranks
+ * @param rank user-supplied rank
+ * @param kvs key-value store for ranks wire-up
+ * @return communicator
+ */
+communicator create_communicator(int size,
+                                 int rank,
+                                 shared_ptr_class<kvs_interface> kvs,
+                                 const comm_attr& attr = default_comm_attr);
+
+/**
+ * Creates a new communicators with user supplied size, ranks, local device-rank mapping and kvs.
+ * @param size user-supplied total number of ranks
+ * @param devices user-supplied mapping of local ranks on devices
+ * @param context context containing the devices
+ * @param kvs key-value store for ranks wire-up
+ * @return vector of communicators
+ */
+template <class DeviceType, class ContextType>
+vector_class<communicator> create_communicators(
+    int size,
+    const vector_class<pair_class<int, DeviceType>>& devices,
+    ContextType& context,
+    shared_ptr_class<kvs_interface> kvs,
+    const comm_attr& attr = default_comm_attr) {
+    return detail::environment::instance().create_communicators(
+        size, devices, context, kvs, attr);
+}
+
+template <class DeviceType, class ContextType>
+vector_class<communicator> create_communicators(
+    size_t size,
+    const map_class<int, DeviceType>& devices,
+    ContextType& context,
+    shared_ptr_class<kvs_interface> kvs,
+    const comm_attr& attr = default_comm_attr) {
+    return detail::environment::instance().create_communicators(
+        size, devices, context, kvs, attr);
+}
+
+template <class DeviceType, class ContextType>
+communicator create_communicator(
+    int size,
+    int rank,
+    DeviceType& device,
+    ContextType& context,
+    shared_ptr_class<kvs_interface> kvs,
+    const comm_attr& attr = default_comm_attr) {
+
+    auto comms = detail::environment::instance().create_communicators(
+        size, ccl::vector_class<ccl::pair_class<int, ccl::device>>{{rank,device}}, context, kvs, attr);
+
+    if (comms.size() != 1)
+      throw ccl::exception("unexpected comm vector size");
+
+    return std::move(comms[0]);
+}
+
 namespace preview {
 
 /**
@@ -195,21 +257,7 @@ communicator create_communicator(const comm_attr& attr = default_comm_attr);
  * @param kvs key-value store for ranks wire-up
  * @return communicator
  */
-communicator create_communicator(size_t size, shared_ptr_class<kvs_interface> kvs, const comm_attr& attr = default_comm_attr);
-
-} // namespace preview
-
-namespace v1 {
-
-/**
- * Creates a new communicator with user supplied size, rank and kvs.
- * @param size user-supplied total number of ranks
- * @param rank user-supplied rank
- * @param kvs key-value store for ranks wire-up
- * @return communicator
- */
-communicator create_communicator(size_t size,
-                                 size_t rank,
+communicator create_communicator(int size,
                                  shared_ptr_class<kvs_interface> kvs,
                                  const comm_attr& attr = default_comm_attr);
 
@@ -217,69 +265,23 @@ communicator create_communicator(size_t size,
  * Creates a new communicators with user supplied size, local devices and kvs.
  * Ranks will be assigned automatically.
  * @param size user-supplied total number of ranks
- * @param local_devices user-supplied device objects for local ranks
+ * @param devices user-supplied device objects for local ranks
  * @param context context containing the devices
  * @param kvs key-value store for ranks wire-up
  * @return vector of communicators
  */
 template <class DeviceType, class ContextType>
 vector_class<communicator> create_communicators(
-    size_t size,
-    const vector_class<DeviceType>& local_devices,
+    int size,
+    const vector_class<DeviceType>& devices,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs,
     const comm_attr& attr = default_comm_attr) {
     return detail::environment::instance().create_communicators(
-        size, local_devices, context, kvs, attr);
+        size, devices, context, kvs, attr);
 }
 
-/**
- * Creates a new communicators with user supplied size, ranks, local device-rank mapping and kvs.
- * @param size user-supplied total number of ranks
- * @param local_rank_device_map user-supplied mapping of local ranks on devices
- * @param context context containing the devices
- * @param kvs key-value store for ranks wire-up
- * @return vector of communicators
- */
-template <class DeviceType, class ContextType>
-vector_class<communicator> create_communicators(
-    size_t size,
-    const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
-    ContextType& context,
-    shared_ptr_class<kvs_interface> kvs,
-    const comm_attr& attr = default_comm_attr) {
-    return detail::environment::instance().create_communicators(
-        size, local_rank_device_map, context, kvs, attr);
-}
-
-template <class DeviceType, class ContextType>
-vector_class<communicator> create_communicators(
-    size_t size,
-    const map_class<rank_t, DeviceType>& local_rank_device_map,
-    ContextType& context,
-    shared_ptr_class<kvs_interface> kvs,
-    const comm_attr& attr = default_comm_attr) {
-    return detail::environment::instance().create_communicators(
-        size, local_rank_device_map, context, kvs, attr);
-}
-
-template <class DeviceType, class ContextType>
-communicator create_communicator(
-    size_t size,
-    rank_t rank,
-    DeviceType& device,
-    ContextType& context,
-    shared_ptr_class<kvs_interface> kvs,
-    const comm_attr& attr = default_comm_attr) {
-
-    auto comms = detail::environment::instance().create_communicators(
-        size, ccl::vector_class<ccl::pair_class<ccl::rank_t, ccl::device>>{{rank,device}}, context, kvs, attr);
-
-    if (comms.size() != 1)
-      throw ccl::exception("unexpected comm vector size");
-
-    return std::move(comms[0]);
-}
+} // namespace preview
 
 
 /******************** OPERATION ********************/
@@ -859,7 +861,7 @@ event barrier(const communicator& comm,
 event broadcast(void* buf,
                   size_t count,
                   datatype dtype,
-                  size_t root,
+                  int root,
                   const communicator& comm,
                   const stream& stream,
                   const broadcast_attr& attr = default_broadcast_attr,
@@ -868,7 +870,7 @@ event broadcast(void* buf,
 event broadcast(void* buf,
                   size_t count,
                   datatype dtype,
-                  size_t root,
+                  int root,
                   const communicator& comm,
                   const broadcast_attr& attr = default_broadcast_attr,
                   const vector_class<event>& deps = {});
@@ -878,7 +880,7 @@ template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
 event broadcast(BufferType* buf,
                   size_t count,
-                  size_t root,
+                  int root,
                   const communicator& comm,
                   const stream& stream,
                   const broadcast_attr& attr = default_broadcast_attr,
@@ -889,7 +891,7 @@ template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
 event broadcast(BufferType* buf,
                   size_t count,
-                  size_t root,
+                  int root,
                   const communicator& comm,
                   const broadcast_attr& attr = default_broadcast_attr,
                   const vector_class<event>& deps = {});
@@ -899,7 +901,7 @@ template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
 event broadcast(BufferObjectType& buf,
                   size_t count,
-                  size_t root,
+                  int root,
                   const communicator& comm,
                   const stream& stream,
                   const broadcast_attr& attr = default_broadcast_attr,
@@ -910,7 +912,7 @@ template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
 event broadcast(BufferObjectType& buf,
                   size_t count,
-                  size_t root,
+                  int root,
                   const communicator& comm,
                   const broadcast_attr& attr = default_broadcast_attr,
                   const vector_class<event>& deps = {});
@@ -939,7 +941,7 @@ event reduce(const void* send_buf,
                size_t count,
                datatype dtype,
                reduction rtype,
-               size_t root,
+               int root,
                const communicator& comm,
                const stream& stream,
                const reduce_attr& attr = default_reduce_attr,
@@ -950,7 +952,7 @@ event reduce(const void* send_buf,
                size_t count,
                datatype dtype,
                reduction rtype,
-               size_t root,
+               int root,
                const communicator& comm,
                const reduce_attr& attr = default_reduce_attr,
                const vector_class<event>& deps = {});
@@ -962,7 +964,7 @@ event reduce(const BufferType* send_buf,
                BufferType* recv_buf,
                size_t count,
                reduction rtype,
-               size_t root,
+               int root,
                const communicator& comm,
                const stream& stream,
                const reduce_attr& attr = default_reduce_attr,
@@ -975,7 +977,7 @@ event reduce(const BufferType* send_buf,
                BufferType* recv_buf,
                size_t count,
                reduction rtype,
-               size_t root,
+               int root,
                const communicator& comm,
                const reduce_attr& attr = default_reduce_attr,
                const vector_class<event>& deps = {});
@@ -987,7 +989,7 @@ event reduce(const BufferObjectType& send_buf,
                BufferObjectType& recv_buf,
                size_t count,
                reduction rtype,
-               size_t root,
+               int root,
                const communicator& comm,
                const stream& stream,
                const reduce_attr& attr = default_reduce_attr,
@@ -1000,7 +1002,7 @@ event reduce(const BufferObjectType& send_buf,
                BufferObjectType& recv_buf,
                size_t count,
                reduction rtype,
-               size_t root,
+               int root,
                const communicator& comm,
                const reduce_attr& attr = default_reduce_attr,
                const vector_class<event>& deps = {});

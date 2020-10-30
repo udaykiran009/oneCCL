@@ -25,14 +25,14 @@ ccl::status ccl_coll_build_naive_allgatherv(ccl_sched* sched,
                                              ccl_comm* comm) {
     LOG_DEBUG("build naive allgatherv");
 
-    size_t comm_size = comm->size();
-    size_t this_rank = comm->rank();
+    int comm_size = comm->size();
+    int this_rank = comm->rank();
     size_t dtype_size = dtype.size();
     size_t* offsets = static_cast<size_t*>(CCL_MALLOC(comm_size * sizeof(size_t), "offsets"));
     ccl::status status = ccl::status::success;
 
     offsets[0] = 0;
-    for (size_t rank_idx = 1; rank_idx < comm_size; ++rank_idx) {
+    for (int rank_idx = 1; rank_idx < comm_size; ++rank_idx) {
         offsets[rank_idx] = offsets[rank_idx - 1] + recv_counts[rank_idx - 1] * dtype_size;
     }
 
@@ -42,7 +42,7 @@ ccl::status ccl_coll_build_naive_allgatherv(ccl_sched* sched,
             sched, send_buf, recv_buf + offsets[this_rank], send_count, dtype);
     }
 
-    for (size_t rank_idx = 0; rank_idx < comm_size; ++rank_idx) {
+    for (int rank_idx = 0; rank_idx < comm_size; ++rank_idx) {
         if (rank_idx != this_rank) {
             // send own buffer to other ranks
             entry_factory::make_chunked_send_entry(
@@ -67,17 +67,16 @@ ccl::status ccl_coll_build_ring_allgatherv(ccl_sched* sched,
     LOG_DEBUG("build ring allgatherv, send_count ", send_count);
 
     ccl::status status = ccl::status::success;
-    size_t comm_size, rank;
+    int comm_size, rank;
     size_t dtype_size = dtype.size();
-    size_t idx = 0;
-    size_t src, dst;
+    int src, dst;
 
     comm_size = comm->size();
     rank = comm->rank();
 
     size_t* offsets = static_cast<size_t*>(CCL_MALLOC(comm_size * sizeof(size_t), "offsets"));
     offsets[0] = 0;
-    for (size_t rank_idx = 1; rank_idx < comm_size; ++rank_idx) {
+    for (int rank_idx = 1; rank_idx < comm_size; ++rank_idx) {
         offsets[rank_idx] = offsets[rank_idx - 1] + recv_counts[rank_idx - 1] * dtype_size;
     }
 
@@ -97,7 +96,7 @@ ccl::status ccl_coll_build_ring_allgatherv(ccl_sched* sched,
     size_t send_block_count, recv_block_count;
     size_t send_block_offset, recv_block_offset;
 
-    for (idx = 0; idx < (comm_size - 1); idx++) {
+    for (int idx = 0; idx < (comm_size - 1); idx++) {
         send_block_idx = block_idx;
         recv_block_idx = (comm_size + block_idx - 1) % comm_size;
         send_block_count = recv_counts[send_block_idx];

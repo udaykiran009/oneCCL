@@ -19,8 +19,8 @@ public:
     ~atl_wrapper();
     atl_wrapper();
     atl_wrapper(std::shared_ptr<ikvs_wrapper> k);
-    atl_wrapper(size_t total_rank_count,
-                const std::vector<size_t>& ranks,
+    atl_wrapper(int total_rank_count,
+                const std::vector<int>& ranks,
                 std::shared_ptr<ikvs_wrapper> k);
 
     //    atl_status_t
@@ -83,7 +83,7 @@ public:
     atl_status_t atl_ep_send(size_t ep_idx,
                              const void* buf,
                              size_t len,
-                             size_t dst_proc_idx,
+                             int dst_proc_idx,
                              uint64_t tag,
                              atl_req_t* req) {
         return transport->atl_ep_send(eps[ep_idx], buf, len, dst_proc_idx, tag, req);
@@ -92,14 +92,14 @@ public:
     atl_status_t atl_ep_recv(size_t ep_idx,
                              void* buf,
                              size_t len,
-                             size_t src_proc_idx,
+                             int src_proc_idx,
                              uint64_t tag,
                              atl_req_t* req) {
         return transport->atl_ep_recv(eps[ep_idx], buf, len, src_proc_idx, tag, req);
     }
 
     atl_status_t atl_ep_probe(size_t ep_idx,
-                              size_t src_proc_idx,
+                              int src_proc_idx,
                               uint64_t tag,
                               int* found,
                               size_t* recv_len) {
@@ -151,7 +151,7 @@ public:
         return transport->atl_ep_barrier(eps[ep_idx], req);
     }
 
-    atl_status_t atl_ep_bcast(size_t ep_idx, void* buf, size_t len, size_t root, atl_req_t* req) {
+    atl_status_t atl_ep_bcast(size_t ep_idx, void* buf, size_t len, int root, atl_req_t* req) {
         return transport->atl_ep_bcast(eps[ep_idx], buf, len, root, req);
     }
 
@@ -159,7 +159,7 @@ public:
                                const void* send_buf,
                                void* recv_buf,
                                size_t len,
-                               size_t root,
+                               int root,
                                atl_datatype_t dtype,
                                atl_reduction_t op,
                                atl_req_t* req) {
@@ -182,7 +182,7 @@ public:
                              atl_mr_t* mr,
                              uint64_t addr,
                              uintptr_t remote_key,
-                             size_t dst_proc_idx,
+                             int dst_proc_idx,
                              atl_req_t* req) {
         return transport->atl_ep_read(
             eps[ep_idx], buf, len, mr, addr, remote_key, dst_proc_idx, req);
@@ -194,7 +194,7 @@ public:
                               atl_mr_t* mr,
                               uint64_t addr,
                               uintptr_t remote_key,
-                              size_t dst_proc_idx,
+                              int dst_proc_idx,
                               atl_req_t* req) {
         return transport->atl_ep_write(
             eps[ep_idx], buf, len, mr, addr, remote_key, dst_proc_idx, req);
@@ -228,11 +228,11 @@ public:
         return ranks_per_process;
     }
 
-    size_t get_rank() {
+    int get_rank() {
         return rank;
     }
 
-    size_t get_size() {
+    int get_size() {
         return size;
     }
 
@@ -252,14 +252,15 @@ public:
 
 private:
 
-    std::shared_ptr<iatl> transport;
-    std::unique_ptr<ipmi> pmi;
-    
+    int rank;
+    int size;
 
-    atl_ep_t** eps = nullptr;
     size_t threads_per_process;
     size_t ranks_per_process;
-    size_t rank;
-    size_t size;
+
+    std::shared_ptr<iatl> transport;
+    std::unique_ptr<ipmi> pmi;
+    atl_ep_t** eps = nullptr;
+    
     void init_transport();
 };

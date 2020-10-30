@@ -93,10 +93,10 @@ public:
         // same as parent_communicator->template
         //                    get_comm_data<base::get_topology(),
         //                    base::get_topology_class()>().size;
-        size_t local_topology_size = comm_addr.size;
+        int local_topology_size = comm_addr.size;
         std::vector<size_t> recv_offsets_v(local_topology_size, 0);
 
-        for (size_t idx = 0; idx < local_topology_size; idx++) {
+        for (int idx = 0; idx < local_topology_size; idx++) {
             if (idx > 0)
                 recv_offsets_v[idx] += recv_offsets_v[idx - 1] + recv_counts[idx - 1];
         }
@@ -104,7 +104,7 @@ public:
         recv_counts_buf.enqueue_write_sync(recv_counts, local_topology_size);
         recv_offsets_buf.enqueue_write_sync(recv_offsets_v);
 
-        size_t next_rank = (comm_addr.rank + 1) % comm_addr.size;
+        int next_rank = (comm_addr.rank + 1) % comm_addr.size;
         kernel_router = base::template create_kernel_router_for_rank<
             l0_allgatherv_typed_entry<native_type, gpu_comm_impl, topology>>(
             *this, next_rank, available_devices);

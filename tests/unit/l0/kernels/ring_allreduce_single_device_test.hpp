@@ -34,7 +34,7 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
 
     handles_storage<native_type> memory_storage(mem_group_count * num_thread);
     handles_storage<int> flags_storage(flag_group_count * num_thread);
-    std::map<size_t, std::vector<size_t>> comm_param_storage;
+    std::map<int, std::vector<int>> comm_param_storage;
 
     std::shared_ptr<ccl_context> ctx;
 
@@ -59,12 +59,12 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
     auto dev_it = driver.devices.begin();
     ccl_device& device = *dev_it->second;
 
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         thread_indices.push_back(thread_idx);
         try {
             //initialize communication params
-            size_t rank_idx = thread_idx;
-            size_t rank_size = num_thread;
+            int rank_idx = thread_idx;
+            int rank_size = num_thread;
             size_t elem_count = buffer_size;
             this->output << "Device id" << ccl::to_string(device.get_device_path()) <<    \
                             ", rank id" << rank_idx << std::endl;
@@ -123,7 +123,7 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
         }
     }
 
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         memory_storage.rotate_shared_data(thread_idx, num_thread, mem_group_count);
         flags_storage.rotate_shared_data(thread_idx, num_thread, flag_group_count);
     }
@@ -171,7 +171,7 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
     ccl_device::device_module& module = *(this->device_modules.find(&device)->second);
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         //thread_group.emplace
         ze_kernel_handle_t handle = nullptr;
         try {

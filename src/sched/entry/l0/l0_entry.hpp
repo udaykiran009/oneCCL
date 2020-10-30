@@ -308,7 +308,7 @@ protected:
     template <class executor>
     static std::unique_ptr<base_connector_interface<kernel_main_typed>>
     create_kernel_router_for_rank(executor &exec,
-                                  size_t next_rank,
+                                  int next_rank,
                                   specific_indexed_device_storage &group_devices) {
         std::unique_ptr<base_connector_interface<kernel_main_typed>> kernel_router;
         while (!kernel_router) {

@@ -60,18 +60,18 @@ void check_comm_split_by_color(ccl::communicator& comm) {
         return;
     }
 
-    for (size_t split_by = 2; split_by <= comm.size(); split_by *= 2) {
+    for (int split_by = 2; split_by <= comm.size(); split_by *= 2) {
         int color = comm.rank() % split_by;
         auto attr =
             ccl::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(color));
         auto new_comm = comm.split(attr);
 
-        size_t comm_size = comm.size();
-        size_t new_comm_size = new_comm.size();
-        size_t comm_rank = comm.rank();
-        size_t new_comm_rank = new_comm.rank();
+        int comm_size = comm.size();
+        int new_comm_size = new_comm.size();
+        int comm_rank = comm.rank();
+        int new_comm_rank = new_comm.rank();
 
-        size_t expected_new_comm_size = comm_size / split_by;
+        int expected_new_comm_size = comm_size / split_by;
 
         if (new_comm_size != expected_new_comm_size) {
             printf("FAILED (split)\n");
@@ -82,8 +82,8 @@ void check_comm_split_by_color(ccl::communicator& comm) {
         }
 
         PRINT_BY_ROOT(comm,
-                      "base comm: rank = %zu, size = %zu; "
-                      "new comm: rank = %zu, size = %zu",
+                      "base comm: rank = %d, size = %d; "
+                      "new comm: rank = %d, size = %d",
                       comm_rank,
                       comm_size,
                       new_comm_rank,
@@ -102,7 +102,7 @@ void check_comm_split_identical(ccl::communicator& comm) {
         return;
     }
 
-    for (size_t split_by = 2; split_by <= comm.size(); split_by *= 2) {
+    for (int split_by = 2; split_by <= comm.size(); split_by *= 2) {
         int color = comm.rank() % split_by;
         auto attr =
             ccl::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(color));
@@ -126,8 +126,8 @@ void check_comm_split_identical(ccl::communicator& comm) {
         }
 
         PRINT_BY_ROOT(comm,
-                      "comm #1: rank = %zu, size = %zu; "
-                      "comm #2: rank = %zu, size = %zu",
+                      "comm #1: rank = %d, size = %d; "
+                      "comm #2: rank = %d, size = %d",
                       new_comm1.rank(),
                       new_comm1.size(),
                       new_comm2.rank(),
@@ -156,8 +156,8 @@ void check_comm_split_identical_color(ccl::communicator& comm) {
     }
 
     PRINT_BY_ROOT(comm,
-                    "base comm: rank = %zu, size = %zu; "
-                    "new comm: rank = %zu, size = %zu",
+                    "base comm: rank = %d, size = %d; "
+                    "new comm: rank = %d, size = %d",
                     comm.rank(),
                     new_comm.size(),
                     comm.rank(),

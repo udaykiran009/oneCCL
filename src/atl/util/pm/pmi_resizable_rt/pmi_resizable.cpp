@@ -5,7 +5,7 @@
 #include "util/pm/codec/pm_rt_codec.h"
 #include "pmi_resizable.h"
 
-#define RESIZABLE_PMI_RT_KEY_FORMAT "%s-%zu"
+#define RESIZABLE_PMI_RT_KEY_FORMAT "%s-%d"
 
 int pmi_resizable::is_pm_resize_enabled() {
     return true;
@@ -140,7 +140,7 @@ void pmi_resizable::pmrt_barrier() {
 }
 
 atl_status_t pmi_resizable::pmrt_kvs_put(char *kvs_key,
-                                         size_t proc_idx,
+                                         int proc_idx,
                                          const void *kvs_val,
                                          size_t kvs_val_len) {
     int ret;
@@ -171,7 +171,7 @@ atl_status_t pmi_resizable::pmrt_kvs_put(char *kvs_key,
 }
 
 atl_status_t pmi_resizable::pmrt_kvs_get(char *kvs_key,
-                                         size_t proc_idx,
+                                         int proc_idx,
                                          void *kvs_val,
                                          size_t kvs_val_len) {
     int ret;

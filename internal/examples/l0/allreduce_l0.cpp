@@ -26,7 +26,7 @@ template <class processing_type>
 void user_thread_idx(size_t thread_idx,
                      std::vector<std::pair<size_t, ccl::device_index_type>> ranked_device_indices,
                      std::shared_ptr<::native::ccl_context> ctx,
-                     size_t total_devices_in_cluster,
+                     int total_devices_in_cluster,
                      std::shared_ptr<ccl::kvs_interface> kvs) {
     using namespace ::native;
     /* TODO: Check its functionality */
@@ -54,7 +54,7 @@ void user_thread_idx(size_t thread_idx,
     for (auto& comm : comms) {
         // get native l0* /
         ccl::communicator::device_type dev = comm.get_device().get_native();
-        size_t rank = comm.rank();
+        int rank = comm.rank();
 
         // wrapped L0-native API for devices: create native buffers
         auto mem_send = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
@@ -85,7 +85,7 @@ void user_thread_idx(size_t thread_idx,
     //allreduce
     std::vector<ccl::event> reqs;
     for (auto& comm : comms) {
-        size_t rank = comm.rank();
+        int rank = comm.rank();
         /*
         if (!comm.is_ready())
         {
@@ -114,7 +114,7 @@ void user_thread_idx(size_t thread_idx,
     {
         std::unique_lock<std::mutex> lock(printout_mutex);
         for (auto& dev_it : memory_storage) {
-            size_t rank = dev_it.first;
+            int rank = dev_it.first;
             const auto& handles = dev_it.second;
             std::cout << "rank : " << rank << std::endl;
             for (const auto& mem : handles) {

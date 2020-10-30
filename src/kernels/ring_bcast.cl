@@ -83,8 +83,8 @@
 // VecSize is the vector size of the type. E.g. if float4 is used, VecSize is 4. Note: if just float is used,
 // the value must be one as it's used for division inside the kernel.
 #define DEFINE_KERNEL(Name, T, VecSize)                                                                         \
-__kernel void bcast_execution_## Name(size_t my_rank,                                                           \
-                                    size_t comm_size, /* 1 */                                                   \
+__kernel void bcast_execution_## Name(int my_rank,                                                           \
+                                    int comm_size, /* 1 */                                                   \
                                     size_t elems_count, /* 2 */                                                 \
                                                                                                                 \
                                     /* const __global T* input_buffer,*/ /* 3 */                                \
@@ -99,7 +99,7 @@ __kernel void bcast_execution_## Name(size_t my_rank,                           
                                     __global T* right_buffer, /* 8 */                                           \
                                     __global volatile int* i_send_to_right_flag, /* 9 */                        \
                                     __global volatile int* right_ready_to_recv_flag, /* 10 */                   \
-                                    size_t root /* 11 */                                                        \
+                                    int root /* 11 */                                                        \
 ) {                                                                                                             \
     elems_count = elems_count / VecSize; /*bcast by vector T*/                                                  \
     size_t work_group_size = get_global_size(0);                                                                \
@@ -179,8 +179,8 @@ DEFINE_KERNEL(bfloat16, ushort, 1)
 
 // numa
 #define DEFINE_KERNEL_NUMA(Name, T, VecSize)                                                                    \
-__kernel void bcast_execution_numa_## Name(size_t my_rank,                                                      \
-                                    size_t comm_size, /* 1 */                                                   \
+__kernel void bcast_execution_numa_## Name(int my_rank,                                                      \
+                                    int comm_size, /* 1 */                                                   \
                                     size_t elems_count, /* 2 */                                                 \
                                                                                                                 \
                                     /* const __global T* input_buffer,*/ /* 3 */                                \
@@ -195,7 +195,7 @@ __kernel void bcast_execution_numa_## Name(size_t my_rank,                      
                                     __global T* right_buffer, /* 8 */                                           \
                                     __global volatile int* i_send_to_right_flag, /* 9 */                        \
                                     __global volatile int* right_ready_to_recv_flag, /* 10 */                   \
-                                    size_t root /* 11 */                                                        \
+                                    int root /* 11 */                                                        \
 ) {                                                                                                             \
     return; \
 }

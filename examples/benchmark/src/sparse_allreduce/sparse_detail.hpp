@@ -119,8 +119,8 @@ void check_sparse_result(const std::tuple<size_t, size_t>& expected_recv_counts,
                          const ValueType* recv_vbuf,
                          size_t recv_icount,
                          size_t recv_vcount,
-                         size_t comm_size,
-                         size_t comm_rank) {
+                         int comm_size,
+                         int comm_rank) {
     size_t indices_count, vdim_count;
     std::tie(indices_count, vdim_count) = expected_recv_counts;
     vdim_count = vdim_count / indices_count;
@@ -137,7 +137,7 @@ void check_sparse_result(const std::tuple<size_t, size_t>& expected_recv_counts,
                    base_send_data.begin(),
                    std::bind(std::minus<ValueType>(), std::placeholders::_1, comm_rank));
 
-    for (size_t rank_index = 0; rank_index < comm_size; rank_index++) {
+    for (int rank_index = 0; rank_index < comm_size; rank_index++) {
         std::copy(send_ibuf, send_ibuf + indices_count, std::back_inserter(aggregated_indices));
 
         std::transform(base_send_data.begin(),
@@ -245,8 +245,8 @@ void check_sparse_result(const std::tuple<size_t, size_t>& expected_recv_counts,
                          const ccl::bfloat16* recv_vbuf,
                          size_t recv_icount,
                          size_t recv_vcount,
-                         size_t comm_size,
-                         size_t comm_rank) {
+                         int comm_size,
+                         int comm_rank) {
     size_t indices_count, vdim_count;
     std::tie(indices_count, vdim_count) = expected_recv_counts;
     vdim_count = vdim_count / indices_count;
@@ -257,7 +257,7 @@ void check_sparse_result(const std::tuple<size_t, size_t>& expected_recv_counts,
     std::vector<float> aggregated_values;
     aggregated_values.reserve(indices_count * vdim_count * comm_size);
 
-    for (size_t rank_index = 0; rank_index < comm_size; rank_index++) {
+    for (int rank_index = 0; rank_index < comm_size; rank_index++) {
         std::copy(send_ibuf, send_ibuf + indices_count, std::back_inserter(aggregated_indices));
 
         for (size_t i_idx = 0; i_idx < indices_count; i_idx++) {

@@ -83,8 +83,8 @@
 // Op - A operation parameter(e.g. add(x, y))
 // OpName - Operator name which goes to the kernel name, e.g. OpName = add, Op = __add_int(actual function)
 #define DEFINE_KERNEL(Name, T, VecSize, Op, OpName)                                                     \
-__kernel void reduce_execution_##Name##_##OpName(size_t my_rank, /*0*/                                  \
-                                     size_t comm_size, /*1*/                                            \
+__kernel void reduce_execution_##Name##_##OpName(int my_rank, /*0*/                                  \
+                                     int comm_size, /*1*/                                            \
                                      size_t elems_count, /*2*/                                          \
                                      const __global T* input_buffer, /*3*/                              \
                                      __global T* output_buffer, /*4*/                                   \
@@ -98,7 +98,7 @@ __kernel void reduce_execution_##Name##_##OpName(size_t my_rank, /*0*/          
                                      __global T* right_temp_buffer, /*9*/                               \
                                      __global volatile int* i_send_to_right_flag, /*10*/                \
                                      __global volatile int* right_ready_to_recv_flag, /*11*/            \
-                                     size_t root /*12*/                                                 \
+                                     int root /*12*/                                                 \
 ) {                                                                                                     \
     /* The RING based algorithm,                                                                        \
      where the root rank is the end point.                                                              \
@@ -258,8 +258,8 @@ DEFINE_KERNELS_WITH_OP(max)
 // numa
 // TODO: vecsize
 #define DEFINE_KERNEL_NUMA(Name, T,  Op, OpName)                                                                    \
-__kernel void reduce_execution_numa_##Name##_##OpName(size_t my_rank,                                                    \
-                                                 size_t comm_size, /*1*/                                            \
+__kernel void reduce_execution_numa_##Name##_##OpName(int my_rank,                                                    \
+                                                 int comm_size, /*1*/                                            \
                                                  size_t elems_count, /*2*/                                          \
                                                  const __global T* input_buffer, /*3*/                              \
                                                  __global T* output_buffer, /*4*/                                   \
@@ -273,7 +273,7 @@ __kernel void reduce_execution_numa_##Name##_##OpName(size_t my_rank,           
                                                  __global T* right_temp_buffer, /*9*/                               \
                                                  __global volatile int* i_send_to_right_flag, /*10*/                \
                                                  __global volatile int* right_ready_to_recv_flag, /*11*/            \
-                                                 size_t root /*12*/) {                                              \
+                                                 int root /*12*/) {                                              \
     return;                                                                                                         \
 }
 

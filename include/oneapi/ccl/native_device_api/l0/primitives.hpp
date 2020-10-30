@@ -69,6 +69,7 @@ struct memory/*<elem_t, resource_owner, cl_context>*/ : private cl_base<elem_t*,
     template <int N>
     void enqueue_write_sync(const std::array<elem_t, N>& src);
     void enqueue_write_sync(const elem_t* src, size_t n);
+    void enqueue_write_sync(const elem_t* src, int n);
 
     // async
     queue_fence<resource_owner, cl_context> enqueue_write_async(const std::vector<elem_t>& src,

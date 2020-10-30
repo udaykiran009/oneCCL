@@ -33,11 +33,11 @@ ccl_allreduce_2d_builder::ccl_allreduce_2d_builder(size_t base_size, bool switch
 
     if (comm->rank() == 0) {
         std::string first_dim_ranks, second_dim_ranks;
-        for (size_t idx = 0; idx < first_dim_comm->size(); idx++) {
+        for (int idx = 0; idx < first_dim_comm->size(); idx++) {
             first_dim_ranks +=
                 ((idx) ? " " : "") + std::to_string(first_dim_comm->get_global_rank(idx));
         }
-        for (size_t idx = 0; idx < second_dim_comm->size(); idx++) {
+        for (int idx = 0; idx < second_dim_comm->size(); idx++) {
             second_dim_ranks +=
                 ((idx) ? " " : "") + std::to_string(second_dim_comm->get_global_rank(idx));
         }

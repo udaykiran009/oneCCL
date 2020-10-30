@@ -583,7 +583,7 @@ static atl_status_t atl_mpi_mr_dereg(atl_ctx_t* ctx, atl_mr_t* mr) {
 static atl_status_t atl_mpi_ep_send(atl_ep_t* ep,
                                     const void* buf,
                                     size_t len,
-                                    size_t dest_proc_idx,
+                                    int dst_proc_idx,
                                     uint64_t tag,
                                     atl_req_t* req) {
     atl_mpi_ep_t* mpi_ep = container_of(ep, atl_mpi_ep_t, ep);
@@ -591,7 +591,7 @@ static atl_status_t atl_mpi_ep_send(atl_ep_t* ep,
     mpi_req->comp_state = ATL_MPI_COMP_POSTED;
 
     int ret = MPI_Isend(
-        buf, len, MPI_CHAR, dest_proc_idx, (int)tag, mpi_ep->mpi_comm, &mpi_req->native_req);
+        buf, len, MPI_CHAR, dst_proc_idx, (int)tag, mpi_ep->mpi_comm, &mpi_req->native_req);
 
 #if 0
 //#ifdef ENABLE_DEBUG
@@ -626,7 +626,7 @@ static atl_status_t atl_mpi_ep_send(atl_ep_t* ep,
 static atl_status_t atl_mpi_ep_recv(atl_ep_t* ep,
                                     void* buf,
                                     size_t len,
-                                    size_t src_proc_idx,
+                                    int src_proc_idx,
                                     uint64_t tag,
                                     atl_req_t* req) {
     atl_mpi_ep_t* mpi_ep = container_of(ep, atl_mpi_ep_t, ep);
@@ -667,7 +667,7 @@ static atl_status_t atl_mpi_ep_recv(atl_ep_t* ep,
 }
 
 static atl_status_t atl_mpi_ep_probe(atl_ep_t* ep,
-                                     size_t src_proc_idx,
+                                     int src_proc_idx,
                                      uint64_t tag,
                                      int* found,
                                      size_t* recv_len) {
@@ -908,7 +908,7 @@ static atl_status_t atl_mpi_ep_barrier(atl_ep_t* ep, atl_req_t* req) {
 static atl_status_t atl_mpi_ep_bcast(atl_ep_t* ep,
                                      void* buf,
                                      size_t len,
-                                     size_t root,
+                                     int root,
                                      atl_req_t* req) {
     int ret = MPI_SUCCESS;
 
@@ -934,7 +934,7 @@ static atl_status_t atl_mpi_ep_reduce(atl_ep_t* ep,
                                       const void* send_buf,
                                       void* recv_buf,
                                       size_t count,
-                                      size_t root,
+                                      int root,
                                       atl_datatype_t dtype,
                                       atl_reduction_t op,
                                       atl_req_t* req) {
@@ -943,7 +943,7 @@ static atl_status_t atl_mpi_ep_reduce(atl_ep_t* ep,
     atl_mpi_ep_t* mpi_ep = container_of(ep, atl_mpi_ep_t, ep);
     atl_mpi_req_t* mpi_req = ((atl_mpi_req_t*)req->internal);
 
-    size_t my_proc_idx = ep->ctx->coord.global_idx;
+    int my_proc_idx = ep->ctx->coord.global_idx;
     MPI_Datatype mpi_dtype = atl2mpi_dtype(dtype);
     MPI_Op mpi_op = atl2mpi_op(op, mpi_dtype);
 
@@ -1026,7 +1026,7 @@ static atl_status_t atl_mpi_ep_read(atl_ep_t* ep,
                                     atl_mr_t* mr,
                                     uint64_t addr,
                                     uintptr_t r_key,
-                                    size_t dest_proc_idx,
+                                    int dst_proc_idx,
                                     atl_req_t* req) {
     return ATL_STATUS_UNSUPPORTED;
 }
@@ -1037,7 +1037,7 @@ static atl_status_t atl_mpi_ep_write(atl_ep_t* ep,
                                      atl_mr_t* mr,
                                      uint64_t addr,
                                      uintptr_t r_key,
-                                     size_t dest_proc_idx,
+                                     int dst_proc_idx,
                                      atl_req_t* req) {
     return ATL_STATUS_UNSUPPORTED;
 }

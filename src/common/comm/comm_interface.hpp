@@ -130,8 +130,8 @@ namespace ccl {
 struct communicator_interface : public communicator_interface_dispatcher {
     virtual ~communicator_interface() = default;
 
-    virtual size_t rank() const = 0;
-    virtual size_t size() const = 0;
+    virtual int rank() const = 0;
+    virtual int size() const = 0;
 
     virtual bool is_host() const noexcept = 0;
     virtual bool is_cpu() const noexcept = 0;

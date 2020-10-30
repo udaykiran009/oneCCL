@@ -22,7 +22,7 @@ struct cpu_alltoall_coll : cpu_base_coll<Dtype, alltoall_strategy_impl> {
                          size_t rank_idx) override {
 
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
-            for (size_t idx = 0; idx < comm.size(); idx++) {
+            for (int idx = 0; idx < comm.size(); idx++) {
                 for (size_t e_idx = 0; e_idx < elem_count; e_idx++) {
                     ((Dtype*)send_bufs[b_idx][rank_idx])[idx * elem_count + e_idx] = comm.rank();
                     ((Dtype*)recv_bufs[b_idx][rank_idx])[idx * elem_count + e_idx] = 0;
@@ -39,7 +39,7 @@ struct cpu_alltoall_coll : cpu_base_coll<Dtype, alltoall_strategy_impl> {
         Dtype sbuf_expected = comm.rank();
         Dtype rbuf_expected;
         Dtype value;
-        size_t comm_size = comm.size();
+        int comm_size = comm.size();
 
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
             for (size_t e_idx = 0; e_idx < elem_count * comm_size; e_idx++) {

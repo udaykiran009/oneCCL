@@ -16,7 +16,7 @@ TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_de
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
-    std::map<size_t, std::vector<size_t>> comm_param_storage;
+    std::map<int, std::vector<int>> comm_param_storage;
 
     std::shared_ptr<ccl_context> ctx;
 
@@ -37,13 +37,13 @@ TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_de
     std::iota(send_values.begin(), send_values.end(), 1);
     std::vector<native_type> recv_values(buffer_size, 0);
 
-    size_t rank_device_idx = 0;
+    int rank_device_idx = 0;
     for (auto dev_it = subdevices.begin(); dev_it != subdevices.end(); ++dev_it) {
         std::shared_ptr<ccl_subdevice> sub_device = dev_it->second;
 
         //initialize communication params
-        size_t rank_idx = rank_device_idx;
-        size_t rank_size = subdevices.size();
+        int rank_idx = rank_device_idx;
+        int rank_size = subdevices.size();
         size_t elem_count = buffer_size;
         this->output << "Create device memory & flags handles for device by index: "    \
                      << std::to_string(sub_device->get_device_id()) <<                  \
@@ -94,7 +94,7 @@ TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_de
     }
 
     // TODO check may be not needed anymore
-    for (size_t rank_idx = 0; rank_idx < subdevices.size(); rank_idx++) {
+    for (int rank_idx = 0; rank_idx < subdevices.size(); rank_idx++) {
         memory_storage.rotate_shared_data(rank_idx, subdevices.size(), mem_group_count);
         flags_storage.rotate_shared_data(rank_idx, subdevices.size(), flag_group_count);
     }

@@ -57,17 +57,17 @@ enum main_kernel_args { rank_index = 0, size_index = 1, args_start_index };
 
 //main kernel - used for GPU program execution
 template <class Impl, class... arguments>
-struct execution_kernel : public kernel_data_storage<arg<main_kernel_args::rank_index, size_t>,
-                                                     arg<main_kernel_args::size_index, size_t>,
+struct execution_kernel : public kernel_data_storage<arg<main_kernel_args::rank_index, int>,
+                                                     arg<main_kernel_args::size_index, int>,
                                                      arguments...> {
-    using base = kernel_data_storage<arg<main_kernel_args::rank_index, size_t>,
-                                     arg<main_kernel_args::size_index, size_t>,
+    using base = kernel_data_storage<arg<main_kernel_args::rank_index, int>,
+                                     arg<main_kernel_args::size_index, int>,
                                      arguments...>;
     using base::args;
     using base::handle;
 
-    using rank_type = size_t;
-    using size_type = size_t;
+    using rank_type = int;
+    using size_type = int;
 
     static constexpr const char* name() {
         return Impl::specific_name();
@@ -166,11 +166,11 @@ struct execution_kernel : public kernel_data_storage<arg<main_kernel_args::rank_
 
 // ipc_kernel - used for GPU data synchronization only
 template <class Impl, class... arguments>
-struct ipc_kernel : public kernel_data_storage<arg<main_kernel_args::rank_index, size_t>,
-                                               arg<main_kernel_args::size_index, size_t>,
+struct ipc_kernel : public kernel_data_storage<arg<main_kernel_args::rank_index, int>,
+                                               arg<main_kernel_args::size_index, int>,
                                                arguments...> {
-    using base = kernel_data_storage<arg<main_kernel_args::rank_index, size_t>,
-                                     arg<main_kernel_args::size_index, size_t>,
+    using base = kernel_data_storage<arg<main_kernel_args::rank_index, int>,
+                                     arg<main_kernel_args::size_index, int>,
                                      arguments...>;
     using base::args;
     using base::handle;

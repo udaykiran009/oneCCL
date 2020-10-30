@@ -142,7 +142,7 @@
         var2 = tmp; \
     } while (0);
 
-size_t get_left_rank(size_t rank, size_t comm_size) {
+int get_left_rank(int rank, int comm_size) {
     return rank == 0 ? comm_size - 1 : rank - 1;
 }
 
@@ -166,8 +166,8 @@ size_t get_left_rank(size_t rank, size_t comm_size) {
 // Op - A operation parameter(e.g. add(x, y))
 // OpName - Operator name which goes to the kernel name, e.g. OpName = add, Op = __add_int(actual function)
 #define DEFINE_KERNEL(Name, T, VecSize, Op, OpName)                                                         \
-__kernel void allreduce_execution_##Name##_##OpName(size_t my_rank,                                         \
-                                        size_t comm_size,                                                   \
+__kernel void allreduce_execution_##Name##_##OpName(int my_rank,                                         \
+                                        int comm_size,                                                   \
                                         size_t elems_count,                                                 \
                                         const __global T* input_buffer,                                     \
                                         __global T* output_buffer,                                          \
@@ -191,10 +191,10 @@ __kernel void allreduce_execution_##Name##_##OpName(size_t my_rank,             
     elems_count = elems_count / VecSize; /*reduce by vectro T */                                            \
     size_t segment_size = elems_count / comm_size;                                                          \
     size_t work_group_size = get_global_size(0);                                                            \
-    size_t my_rank_buffer_start_idx = my_rank * segment_size;                                               \
+    int my_rank_buffer_start_idx = my_rank * segment_size;                                               \
     int thread_id = get_global_id(0);                                                                       \
                                                                                                             \
-    size_t work_rank = my_rank;                                                                             \
+    int work_rank = my_rank;                                                                             \
     int ready_to_recv_sync_count = 1;                                                                       \
     int can_send_sync_count = 1;                                                                            \
                                                                                                             \
@@ -230,7 +230,7 @@ __kernel void allreduce_execution_##Name##_##OpName(size_t my_rank,             
     /*2nd phase - reduce scatter                                                                            \
       get data written by left rank to our temp buffer, reduce with our part and send to right rank*/       \
                                                                                                             \
-    for (size_t iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx) {                                       \
+    for (int iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx) {                                       \
         work_rank = get_left_rank(work_rank, comm_size);                                                    \
         size_t segment_offset = work_rank * segment_size;                                                   \
                                                                                                             \
@@ -305,7 +305,7 @@ __kernel void allreduce_execution_##Name##_##OpName(size_t my_rank,             
     /*3rd phase - allgather                                                                                 \
       copy ready data from temp buffer by [segment_offset] offset, reduce                                   \
       and send data by [work_rank] offset */                                                                \
-    for (size_t iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx) {                                       \
+    for (int iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx) {                                       \
         segment_offset = work_rank * segment_size;                                                          \
         /*copy reduced value to initial buffer*/                                                            \
                                                                                                             \
@@ -318,7 +318,7 @@ __kernel void allreduce_execution_##Name##_##OpName(size_t my_rank,             
             output_buffer[segment_offset + thread_id + i] =                                                 \
                 tmp_buffer[thread_id + i + tmp_buffer_offset];                                              \
                                                                                                             \
-            DEBUG_BLOCK(printf("kernel %zu.%d, phase 3.%zu -- send %f to idx %zu, rank %zu\n",              \
+            DEBUG_BLOCK(printf("kernel %zu.%d, phase 3.%d -- send %f to idx %zu, rank %d\n",              \
                             my_rank,                                                                        \
                             thread_id,                                                                      \
                             iter_idx,                                                                       \
@@ -464,8 +464,8 @@ DEFINE_KERNELS_WITH_BF16OP(max)
 // numa
 // TODO: vecsize
 #define DEFINE_KERNEL_NUMA(Name, T,  Op, OpName)                                                         \
-__kernel void allreduce_execution_numa_##Name##_##OpName(size_t my_rank,                                         \
-                                        size_t comm_size,                                                   \
+__kernel void allreduce_execution_numa_##Name##_##OpName(int my_rank,                                         \
+                                        int comm_size,                                                   \
                                         size_t elems_count,                                                 \
                                         const __global T* input_buffer,                                     \
                                         __global T* output_buffer,                                          \

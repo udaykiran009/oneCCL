@@ -154,8 +154,8 @@ stream CCL_API create_stream()
 }
 
 #ifdef CCL_ENABLE_SYCL
-communicator create_single_device_communicator(const size_t comm_size,
-                                                      const size_t rank,
+communicator create_single_device_communicator(const int comm_size,
+                                                      const int rank,
                                                       const cl::sycl::device& device,
                                                       const cl::sycl::context& context,
                                                       shared_ptr_class<kvs_interface> kvs) {
@@ -165,13 +165,13 @@ communicator create_single_device_communicator(const size_t comm_size,
 #endif // CCL_ENABLE_SYCL
 
 // communicator create_single_device_communicator(const size_t world_size,
-//                                     const size_t rank,
+//                                     const int rank,
 //                                     cl::sycl::queue queue,
 //                                     shared_ptr_class<kvs_interface> kvs) const;
 
 // template<class DeviceSelectorType>
 // communicator create_single_device_communicator(const size_t world_size,
-//                                     const size_t rank,
+//                                     const int rank,
 //                                     const DeviceSelectorType& selector,
 //                                     shared_ptr_class<kvs_interface> kvs) const
 // {
@@ -200,7 +200,7 @@ communicator CCL_API create_communicator(const comm_attr& attr) {
     return ccl::detail::environment::instance().create_communicator(attr);
 }
 
-communicator CCL_API create_communicator(const size_t size, shared_ptr_class<kvs_interface> kvs, const comm_attr& attr) {
+communicator CCL_API create_communicator(const int size, shared_ptr_class<kvs_interface> kvs, const comm_attr& attr) {
     return ccl::detail::environment::instance().create_communicator(size, kvs, attr);
 }
 
@@ -208,8 +208,8 @@ communicator CCL_API create_communicator(const size_t size, shared_ptr_class<kvs
 
 namespace v1 {
 
-communicator CCL_API create_communicator(const size_t size,
-                                         const size_t rank,
+communicator CCL_API create_communicator(const int size,
+                                         const int rank,
                                          shared_ptr_class<kvs_interface> kvs,
                                          const comm_attr& attr) {
     return detail::environment::instance().create_communicator(size, rank, kvs, attr);
@@ -769,7 +769,7 @@ CCL_API event barrier(const communicator& comm,
 CCL_API event broadcast(void* buf,
                           size_t count,
                           datatype dtype,
-                          size_t root,
+                          int root,
                           const communicator& comm,
                           const stream& op_stream,
                           const broadcast_attr& attr,
@@ -781,7 +781,7 @@ CCL_API event broadcast(void* buf,
 CCL_API event broadcast(void* buf,
                           size_t count,
                           datatype dtype,
-                          size_t root,
+                          int root,
                           const communicator& comm,
                           const broadcast_attr& attr,
                           const vector_class<event>& deps) {
@@ -792,7 +792,7 @@ CCL_API event broadcast(void* buf,
 template <class BufferType, typename T>
 event broadcast(BufferType* buf,
                   size_t count,
-                  size_t root,
+                  int root,
                   const communicator& comm,
                   const stream& op_stream,
                   const broadcast_attr& attr,
@@ -806,7 +806,7 @@ event broadcast(BufferType* buf,
 template <class BufferType, typename T>
 event broadcast(BufferType* buf,
                   size_t count,
-                  size_t root,
+                  int root,
                   const communicator& comm,
                   const broadcast_attr& attr,
                   const vector_class<event>& deps)
@@ -819,7 +819,7 @@ event broadcast(BufferType* buf,
 template <class BufferObjectType, typename T>
 event broadcast(BufferObjectType& buf,
                   size_t count,
-                  size_t root,
+                  int root,
                   const communicator& comm,
                   const stream& op_stream,
                   const broadcast_attr& attr,
@@ -831,7 +831,7 @@ event broadcast(BufferObjectType& buf,
 template <class BufferObjectType, typename T>
 event broadcast(BufferObjectType& buf,
                   size_t count,
-                  size_t root,
+                  int root,
                   const communicator& comm,
                   const broadcast_attr& attr,
                   const vector_class<event>& deps) {
@@ -845,7 +845,7 @@ CCL_API event reduce(const void* send_buf,
                        size_t count,
                        datatype dtype,
                        reduction reduction,
-                       size_t root,
+                       int root,
                        const communicator& comm,
                        const stream& op_stream,
                        const reduce_attr& attr,
@@ -860,7 +860,7 @@ CCL_API event reduce(const void* send_buf,
                        size_t count,
                        datatype dtype,
                        reduction reduction,
-                       size_t root,
+                       int root,
                        const communicator& comm,
                        const reduce_attr& attr,
                        const vector_class<event>& deps) {
@@ -874,7 +874,7 @@ event reduce(const BufferType* send_buf,
                BufferType* recv_buf,
                size_t count,
                reduction reduction,
-               size_t root,
+               int root,
                const communicator& comm,
                const stream& op_stream,
                const reduce_attr& attr,
@@ -889,7 +889,7 @@ event reduce(const BufferType* send_buf,
                BufferType* recv_buf,
                size_t count,
                reduction reduction,
-               size_t root,
+               int root,
                const communicator& comm,
                const reduce_attr& attr,
                const vector_class<event>& deps) {
@@ -903,7 +903,7 @@ event reduce(const BufferObjectType& send_buf,
                BufferObjectType& recv_buf,
                size_t count,
                reduction reduction,
-               size_t root,
+               int root,
                const communicator& comm,
                const stream& op_stream,
                const reduce_attr& attr,
@@ -918,7 +918,7 @@ event reduce(const BufferObjectType& send_buf,
                BufferObjectType& recv_buf,
                size_t count,
                reduction reduction,
-               size_t root,
+               int root,
                const communicator& comm,
                const reduce_attr& attr,
                const vector_class<event>& deps) {

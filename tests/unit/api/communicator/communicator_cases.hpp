@@ -52,15 +52,15 @@
 namespace device_communicator_suite {
 
 TEST(device_communicator_api, device_comm_from_device_index) {
-    size_t total_devices_size = 4;
+    int total_devices_size = 4;
     ccl::vector_class<ccl::device_index_type> devices{ total_devices_size,
                                                        ccl::from_string("[0:6459]") };
     auto ctx = native::get_platform().get_driver(0)->create_context();
     std::shared_ptr<stub_kvs> stub_storage;
 
-    ccl::vector_class<ccl::pair_class<size_t, ccl::device_index_type>> local_rank_device_map;
+    ccl::vector_class<ccl::pair_class<int, ccl::device_index_type>> local_rank_device_map;
     local_rank_device_map.reserve(total_devices_size);
-    size_t curr_rank = 0;
+    int curr_rank = 0;
     std::transform(devices.begin(),
                    devices.end(),
                    std::back_inserter(local_rank_device_map),

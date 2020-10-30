@@ -141,7 +141,7 @@
         var2 = tmp; \
     } while (0);
 
-size_t get_left_rank(size_t rank, size_t comm_size) {
+int get_left_rank(int rank, int comm_size) {
     return rank == 0 ? comm_size - 1 : rank - 1;
 }
 
@@ -165,8 +165,8 @@ size_t get_left_rank(size_t rank, size_t comm_size) {
 // Op - A operation parameter(e.g. add(x, y))
 // OpName - Operator name which goes to the kernel name, e.g. OpName = add, Op = __add_int(actual function)
 #define DEFINE_KERNEL(Name, T, VecSize, Op, OpName)                                                 \
-__kernel void reduce_scatter_execution_##Name##_##OpName(size_t my_rank,                            \
-                                             size_t comm_size,                                      \
+__kernel void reduce_scatter_execution_##Name##_##OpName(int my_rank,                            \
+                                             int comm_size,                                      \
                                              size_t elems_count, /* recv_count */                   \
                                              const __global T* input_buffer,                        \
                                              __global T* output_buffer,                             \
@@ -195,7 +195,7 @@ __kernel void reduce_scatter_execution_##Name##_##OpName(size_t my_rank,        
     size_t segment_offset = my_rank * segment_size;                                                 \
     int thread_id = get_global_id(0);                                                               \
                                                                                                     \
-    size_t work_rank = my_rank;                                                                     \
+    int work_rank = my_rank;                                                                     \
     int ready_to_recv_sync_count = 1;                                                               \
     int can_send_sync_count = 1;                                                                    \
                                                                                                     \

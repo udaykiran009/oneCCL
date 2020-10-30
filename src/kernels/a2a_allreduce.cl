@@ -68,8 +68,8 @@
         _desired += comm_size; \
     }
 
-__kernel void allreduce_execution_float32(size_t rank_id,
-                                        size_t comm_size,
+__kernel void allreduce_execution_float32(int rank_id,
+                                        int comm_size,
                                         size_t elems_count,
                                         const __global float* input_buffer,
                                         __global float* output_buffer,

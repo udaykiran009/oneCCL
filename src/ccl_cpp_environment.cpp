@@ -110,8 +110,8 @@ stream CCL_API environment::create_stream(typename unified_device_type::ccl_nati
 
 #ifdef CCL_ENABLE_SYCL
 communicator environment::create_single_device_communicator(
-    const size_t comm_size,
-    const size_t rank,
+    const int comm_size,
+    const int rank,
     const cl::sycl::device& device,
     const cl::sycl::context& context,
     ccl::shared_ptr_class<kvs_interface> kvs) const {
@@ -144,7 +144,7 @@ communicator environment::create_communicator(const size_t size,
 }
 
 communicator environment::create_communicator(const size_t size,
-                                                   const size_t rank,
+                                                   const int rank,
                                                    ccl::shared_ptr_class<kvs_interface> kvs,
                                                    const comm_attr& attr) const {
     return communicator::create_communicator(size, rank, kvs, attr);

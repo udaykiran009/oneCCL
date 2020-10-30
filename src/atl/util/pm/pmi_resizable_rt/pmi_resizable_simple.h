@@ -26,8 +26,8 @@
 class pmi_resizable_simple final : public ipmi {
 public:
     pmi_resizable_simple() = delete;
-    pmi_resizable_simple(size_t total_rank_count,
-                         const std::vector<size_t>& ranks,
+    pmi_resizable_simple(int total_rank_count,
+                         const std::vector<int>& ranks,
                          std::shared_ptr<ikvs_wrapper> k,
                          const char* main_addr = nullptr);
 
@@ -46,18 +46,18 @@ public:
     void pmrt_barrier() override;
 
     atl_status_t pmrt_kvs_put(char* kvs_key,
-                              size_t proc_idx,
+                              int proc_idx,
                               const void* kvs_val,
                               size_t kvs_val_len) override;
 
     atl_status_t pmrt_kvs_get(char* kvs_key,
-                              size_t proc_idx,
+                              int proc_idx,
                               void* kvs_val,
                               size_t kvs_val_len) override;
 
-    size_t get_size() override;
+    int get_size() override;
 
-    size_t get_rank() override;
+    int get_rank() override;
 
     size_t get_local_thread_idx() override;
 
@@ -102,12 +102,13 @@ private:
     void make_map_requested2global();
     void pmrt_barrier_full();
 
-    size_t total_rank_count;
-    size_t assigned_proc_idx;
+    int total_rank_count;
+    int assigned_proc_idx;
+
     size_t assigned_thread_idx;
     size_t local_thread_idx;
     std::string my_proccess_name;
-    std::vector<size_t> ranks;
+    std::vector<int> ranks;
     std::vector<size_t> ranks_per_thread_map;
     std::map<size_t, std::list<size_t>> threads_per_proc;
     std::shared_ptr<ikvs_wrapper> k;
@@ -116,7 +117,7 @@ private:
     char* val_storage = nullptr;
     size_t barrier_num = 0;
     size_t barrier_num_full = 0;
-    std::vector<size_t> requested2global;
+    std::vector<int> requested2global;
     size_t local_id;
     size_t connection_timeout = 120; /* in seconds */
 };

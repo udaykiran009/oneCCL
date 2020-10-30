@@ -122,9 +122,9 @@ ccl::status ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
                      recv_buf);
 
     ccl::status status = ccl::status::success;
-    size_t comm_size, rank;
+    int comm_size, rank;
     size_t dtype_size = dtype.size();
-    size_t idx = 0;
+    int idx = 0;
     ccl_buffer tmp_buf;
     comm_size = comm->size();
     rank = comm->rank();
@@ -305,7 +305,7 @@ ccl::status ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
             sched, rma_ring_allreduce_reset_dst_ready_flag, ar_handler);
     }
 
-    size_t block_idx = rank;
+    int block_idx = rank;
     size_t main_block_count = count / comm_size;
     size_t buf_offset;
 

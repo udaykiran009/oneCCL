@@ -57,7 +57,7 @@ ccl::status ccl_coll_calculate_alltoallv_counts(const ccl_coll_param& coll_param
     ccl_comm* comm = coll_param.comm;
     const ccl_datatype& dtype = coll_param.dtype;
 
-    size_t comm_size = comm->size();
+    int comm_size = comm->size();
     size_t dtype_size = dtype.size();
 
     if (coll_type == ccl_coll_alltoall) {
@@ -76,7 +76,7 @@ ccl::status ccl_coll_calculate_alltoallv_counts(const ccl_coll_param& coll_param
     send_offsets.resize(comm_size, 0);
     recv_offsets.resize(comm_size, 0);
 
-    for (size_t idx = 1; idx < comm_size; idx++) {
+    for (int idx = 1; idx < comm_size; idx++) {
         send_offsets[idx] = send_offsets[idx - 1] + send_counts[idx - 1] * dtype_size;
         recv_offsets[idx] = recv_offsets[idx - 1] + recv_counts[idx - 1] * dtype_size;
     }
@@ -107,8 +107,8 @@ ccl::status ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
     ccl_comm* comm = coll_param.comm;
     const ccl_datatype& dtype = coll_param.dtype;
 
-    size_t comm_rank = comm->rank();
-    size_t comm_size = comm->size();
+    int comm_rank = comm->rank();
+    int comm_size = comm->size();
     size_t sched_count = scheds.size();
     size_t dtype_size = dtype.size();
 
@@ -144,7 +144,7 @@ ccl::status ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
                                               dtype);
     }
 
-    for (size_t idx = 0; idx < comm_size; idx++) {
+    for (int idx = 0; idx < comm_size; idx++) {
         if (idx == comm_rank)
             continue;
 
@@ -199,8 +199,8 @@ ccl::status ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
     ccl_comm* comm = coll_param.comm;
     const ccl_datatype& dtype = coll_param.dtype;
 
-    size_t comm_rank = comm->rank();
-    size_t comm_size = comm->size();
+    int comm_rank = comm->rank();
+    int comm_size = comm->size();
     size_t sched_count = scheds.size();
     size_t dtype_size = dtype.size();
 
@@ -240,8 +240,8 @@ ccl::status ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
                                               dtype);
     }
 
-    for (size_t idx = 0; idx < comm_size; idx++) {
-        size_t src = (comm_rank + idx) % comm_size;
+    for (int idx = 0; idx < comm_size; idx++) {
+        int src = (comm_rank + idx) % comm_size;
 
         if (src == comm_rank)
             continue;
@@ -266,8 +266,8 @@ ccl::status ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
         ccl_coll_add_scatter_alltoallv_barriers(scheds, sched_idx);
     }
 
-    for (size_t idx = 0; idx < comm_size; idx++) {
-        size_t dst = (comm_rank - idx + comm_size) % comm_size;
+    for (int idx = 0; idx < comm_size; idx++) {
+        int dst = (comm_rank - idx + comm_size) % comm_size;
 
         if (dst == comm_rank)
             continue;
@@ -294,7 +294,7 @@ ccl::status ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
 
     main_sched->sync_partial_scheds();
 
-    for (size_t idx = 0; idx < comm_size; idx++) {
+    for (int idx = 0; idx < comm_size; idx++) {
         if (idx == comm_rank)
             continue;
 
@@ -321,8 +321,8 @@ ccl::status ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sche
     ccl_comm* comm = coll_param.comm;
     const ccl_datatype& dtype = coll_param.dtype;
 
-    size_t comm_rank = comm->rank();
-    size_t comm_size = comm->size();
+    int comm_rank = comm->rank();
+    int comm_size = comm->size();
     size_t sched_count = scheds.size();
     size_t dtype_size = dtype.size();
 
@@ -379,8 +379,8 @@ ccl::status ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sche
                                               dtype);
     }
 
-    for (size_t idx = 0; idx < comm_size; idx++) {
-        size_t src = (comm_rank + idx) % comm_size;
+    for (int idx = 0; idx < comm_size; idx++) {
+        int src = (comm_rank + idx) % comm_size;
 
         if (src == comm_rank)
             continue;
@@ -408,8 +408,8 @@ ccl::status ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sche
         ccl_coll_add_scatter_alltoallv_barriers(recv_scheds, sched_idx);
     }
 
-    for (size_t idx = 0; idx < comm_size; idx++) {
-        size_t dst = (comm_rank - idx + comm_size) % comm_size;
+    for (int idx = 0; idx < comm_size; idx++) {
+        int dst = (comm_rank - idx + comm_size) % comm_size;
 
         if (dst == comm_rank)
             continue;
@@ -436,7 +436,7 @@ ccl::status ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sche
 
     main_sched->sync_partial_scheds();
 
-    for (size_t idx = 0; idx < comm_size; idx++) {
+    for (int idx = 0; idx < comm_size; idx++) {
         if (idx == comm_rank)
             continue;
 

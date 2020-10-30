@@ -21,18 +21,18 @@ public:
     void pmrt_barrier() override;
 
     atl_status_t pmrt_kvs_put(char *kvs_key,
-                              size_t proc_idx,
+                              int proc_idx,
                               const void *kvs_val,
                               size_t kvs_val_len) override;
 
     atl_status_t pmrt_kvs_get(char *kvs_key,
-                              size_t proc_idx,
+                              int proc_idx,
                               void *kvs_val,
                               size_t kvs_val_len) override;
 
-    size_t get_rank() override;
+    int get_rank() override;
 
-    size_t get_size() override;
+    int get_size() override;
 
     size_t get_local_thread_idx() override;
 
@@ -49,8 +49,8 @@ public:
     }
 
 private:
-    size_t rank;
-    size_t size;
+    int rank;
+    int size;
     pm_rt_desc_t *pmrt_desc = nullptr;
     bool is_finalized{ false };
 };

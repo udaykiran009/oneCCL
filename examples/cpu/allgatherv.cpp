@@ -124,7 +124,7 @@ int main() {
         std::vector<float*> recv_bufs(comm.size(), nullptr);
         std::vector<size_t> recv_counts(comm.size(), msg_count);
 
-        for (size_t idx = 0; idx < comm.size(); idx++)
+        for (int idx = 0; idx < comm.size(); idx++)
             recv_bufs[idx] = new float[msg_count];
 
         attr.set<ccl::operation_attr_id::to_cache>(false);

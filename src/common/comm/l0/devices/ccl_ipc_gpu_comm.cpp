@@ -9,8 +9,8 @@
 namespace native {
 
 ccl_ipc_gpu_comm::ccl_ipc_gpu_comm(ccl_device& assigned_device,
-                                   size_t idx,
-                                   size_t size,
+                                   int idx,
+                                   int size,
                                    ccl::group_split_type topology_type,
                                    ccl::device_topology_type class_id)
         : base(assigned_device, idx) {

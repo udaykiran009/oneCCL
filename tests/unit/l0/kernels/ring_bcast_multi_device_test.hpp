@@ -14,7 +14,7 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
-    std::map<size_t, std::vector<size_t>> comm_param_storage;
+    std::map<int, std::vector<int>> comm_param_storage;
 
     std::shared_ptr<ccl_context> ctx;
 
@@ -37,13 +37,13 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
     std::iota(send_values.begin(), send_values.end(), 1);
     std::vector<native_type> recv_values(buffer_size, 0);
 
-    size_t rank_device_idx = 0;
+    int rank_device_idx = 0;
     for (auto dev_it = driver->devices.begin(); dev_it != driver->devices.end(); ++dev_it) {
         auto& device = *dev_it->second;
 
         //initialize communication params
-        size_t rank_idx = rank_device_idx;
-        size_t rank_size = driver->devices.size();
+        int rank_idx = rank_device_idx;
+        int rank_size = driver->devices.size();
         size_t elem_count = buffer_size;
 
         this->output << "Create device memory & flags handles for device by index: "        \
@@ -100,7 +100,7 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
         rank_device_idx++;
     }
 
-    for (size_t rank_idx = 0; rank_idx < driver->devices.size(); rank_idx++) {
+    for (int rank_idx = 0; rank_idx < driver->devices.size(); rank_idx++) {
         memory_storage.rotate_shared_data(rank_idx, driver->devices.size(), mem_group_count);
         flags_storage.rotate_shared_data(rank_idx, driver->devices.size(), flag_group_count);
     }

@@ -20,7 +20,7 @@ host_communicator::host_communicator()
 {
 }
 
-host_communicator::host_communicator(size_t size, shared_ptr_class<kvs_interface> kvs)
+host_communicator::host_communicator(int size, shared_ptr_class<kvs_interface> kvs)
         : comm_attr(ccl::ccl_empty_attr{}),
           comm_rank(0),
           comm_size(size) {
@@ -29,7 +29,7 @@ host_communicator::host_communicator(size_t size, shared_ptr_class<kvs_interface
     }
 }
 
-host_communicator::host_communicator(size_t size, size_t rank, shared_ptr_class<kvs_interface> kvs)
+host_communicator::host_communicator(int size, int rank, shared_ptr_class<kvs_interface> kvs)
         : comm_attr(ccl::ccl_empty_attr{}),
           comm_rank(rank),
           comm_size(size) {
@@ -47,11 +47,11 @@ host_communicator::host_communicator(std::shared_ptr<ccl_comm> impl)
           comm_rank(impl->rank()),
           comm_size(impl->size()) {}
 
-size_t host_communicator::rank() const {
+int host_communicator::rank() const {
     return comm_rank;
 }
 
-size_t host_communicator::size() const {
+int host_communicator::size() const {
     return comm_size;
 }
 
@@ -183,7 +183,7 @@ ccl::event host_communicator::broadcast_impl(
     void* buf,
     size_t count,
     ccl::datatype dtype,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {return {};
@@ -196,7 +196,7 @@ ccl::event host_communicator::reduce_impl(
     size_t count,
     ccl::datatype dtype,
     ccl::reduction reduction,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {return {};
@@ -405,7 +405,7 @@ template <class buffer_type>
 ccl::event host_communicator::broadcast_impl(
     buffer_type* buf,
     size_t count,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
@@ -416,7 +416,7 @@ template <class buffer_type>
 ccl::event host_communicator::broadcast_impl(
     buffer_type& buf,
     size_t count,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
@@ -430,7 +430,7 @@ ccl::event host_communicator::reduce_impl(
     buffer_type* recv_buf,
     size_t count,
     ccl::reduction reduction,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
@@ -443,7 +443,7 @@ ccl::event host_communicator::reduce_impl(
     buffer_type& recv_buf,
     size_t count,
     ccl::reduction reduction,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {

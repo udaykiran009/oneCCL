@@ -21,7 +21,7 @@ struct sycl_allreduce_coll : sycl_base_coll<Dtype, allreduce_strategy_impl> {
                          ccl::stream& stream,
                          size_t rank_idx) override {
 
-        size_t local_rank = comm.rank();
+        int local_rank = comm.rank();
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
 
             sycl::event e;

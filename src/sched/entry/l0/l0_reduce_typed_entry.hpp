@@ -56,7 +56,7 @@ public:
                           ccl_buffer recv_buf,
                           size_t cnt,
                           ccl::reduction op,
-                          size_t root,
+                          int root,
                           std::shared_ptr<ccl_stream> device_stream = std::shared_ptr<ccl_stream>())
             : base(sched,
                    comm,
@@ -85,7 +85,7 @@ public:
         root_typed_entry = root;
         cnt_entry = cnt;
 
-        size_t next_rank = (comm_addr.rank + 1) % comm_addr.size;
+        int next_rank = (comm_addr.rank + 1) % comm_addr.size;
         kernel_router = base::template create_kernel_router_for_rank<
             l0_reduce_typed_entry<native_type, gpu_comm_impl, topology>>(
             *this, next_rank, available_devices);
@@ -341,7 +341,7 @@ private:
     ccl_device::device_memory<local_barrier_flag_gpu_type> local_barrier_flag;
     ccl::reduction op_typed_entry;
     ccl_buffer recv_buf_typed_entry;
-    size_t root_typed_entry;
+    int root_typed_entry;
     size_t cnt_entry;
     std::shared_ptr<ccl_context> ctx;
 

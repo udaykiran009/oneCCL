@@ -141,7 +141,7 @@
         var2 = tmp; \
     } while (0);
 
-size_t get_left_rank(size_t rank, size_t comm_size) {
+int get_left_rank(int rank, int comm_size) {
     return rank == 0 ? comm_size - 1 : rank - 1;
 }
 
@@ -162,8 +162,8 @@ size_t get_left_rank(size_t rank, size_t comm_size) {
 // VecSize is the vector size of the type. E.g. if float4 is used, VecSize is 4. Note: if just float is used,
 // the value must be one as it's used for division inside the kernel.
 #define DEFINE_KERNEL(Name, T, VecSize)                                                                 \
-__kernel void allgatherv_execution_## Name(size_t my_rank,                                              \
-                                         size_t comm_size,                                              \
+__kernel void allgatherv_execution_## Name(int my_rank,                                              \
+                                         int comm_size,                                              \
                                          size_t elem_count,                                             \
                                                                                                         \
                                          __global size_t* recv_elem_counts,                             \
@@ -185,7 +185,7 @@ __kernel void allgatherv_execution_## Name(size_t my_rank,                      
         4) TBA: chunking                                                                                \
         5) TBA: multiple WGs; */                                                                        \
                                                                                                         \
-    size_t work_rank = my_rank;                                                                         \
+    int work_rank = my_rank;                                                                         \
     size_t segment_size = recv_elem_counts[work_rank] / VecSize; /*reduce by vectro T */                \
     size_t segment_offset = recv_elem_offsets[work_rank] / VecSize;                                     \
                                                                                                         \
@@ -218,7 +218,7 @@ __kernel void allgatherv_execution_## Name(size_t my_rank,                      
                                                                                                         \
     DEBUG_BLOCK(printf("kernel %zu.%d send complete\n", my_rank, thread_id));                           \
                                                                                                         \
-    for (size_t iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx) {                                   \
+    for (int iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx) {                                   \
         work_rank = get_left_rank(work_rank, comm_size);                                                \
                                                                                                         \
         segment_size = recv_elem_counts[work_rank] / VecSize;                                           \
@@ -273,8 +273,8 @@ DEFINE_KERNEL(bfloat16, ushort, 1)
 
 // numa
 #define DEFINE_KERNEL_NUMA(Name, T, VecSize)                                                                 \
-__kernel void allgatherv_execution_numa_## Name(size_t my_rank,                                              \
-                                         size_t comm_size,                                              \
+__kernel void allgatherv_execution_numa_## Name(int my_rank,                                              \
+                                         int comm_size,                                              \
                                          size_t elem_count,                                             \
                                                                                                         \
                                          __global size_t* recv_elem_counts,                             \

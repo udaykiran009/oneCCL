@@ -26,7 +26,7 @@ struct cpu_allgatherv_coll : cpu_base_coll<Dtype, allgatherv_strategy_impl> {
                 ((Dtype*)send_bufs[b_idx][rank_idx])[e_idx] = comm.rank();
             }
 
-            for (size_t idx = 0; idx < comm.size(); idx++) {
+            for (int idx = 0; idx < comm.size(); idx++) {
                 for (size_t e_idx = 0; e_idx < elem_count; e_idx++) {
                     ((Dtype*)recv_bufs[b_idx][rank_idx])[idx * elem_count + e_idx] = 0;
                 }
@@ -54,7 +54,7 @@ struct cpu_allgatherv_coll : cpu_base_coll<Dtype, allgatherv_strategy_impl> {
                 }
             }
 
-            for (size_t idx = 0; idx < comm.size(); idx++) {
+            for (int idx = 0; idx < comm.size(); idx++) {
                 Dtype rbuf_expected = idx;
                 for (size_t e_idx = 0; e_idx < elem_count; e_idx++) {
                     value = ((Dtype*)recv_bufs[b_idx][rank_idx])[idx * elem_count + e_idx];

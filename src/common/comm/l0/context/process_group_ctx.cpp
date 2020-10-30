@@ -385,7 +385,7 @@ const ccl::process_device_indices_type& process_group_context::get_node_afinity_
 }
 
 void process_group_context::set_node_afinity_indices(const ccl::host_id& host,
-                                                     size_t rank_id,
+                                                     int rank_id,
                                                      const ccl::device_indices_type& indices) {
     /*
     ccl::device_mask_t rank_mask = ccl_device_driver::get_device_mask(indices);

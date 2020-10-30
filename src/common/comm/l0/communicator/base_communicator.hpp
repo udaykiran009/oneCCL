@@ -26,11 +26,11 @@ struct base_communicator : public ccl::communicator_interface {
 
     virtual ~base_communicator() = default;
 
-    size_t rank() const override {
+    int rank() const override {
         return comm_rank;
     }
 
-    size_t size() const override {
+    int size() const override {
         return comm_size;
     }
 
@@ -75,8 +75,8 @@ struct base_communicator : public ccl::communicator_interface {
     const ccl::comm_split_attr comm_attr;
 
     //TODO add context_comm_addr to aggregate device_id,thread_id, process_id & ranks
-    size_t comm_rank;
-    size_t comm_size;
+    int comm_rank;
+    int comm_size;
 
     mutable ccl_spinlock ready_mutex;
 

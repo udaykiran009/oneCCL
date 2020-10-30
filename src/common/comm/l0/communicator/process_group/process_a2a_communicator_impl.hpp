@@ -82,7 +82,7 @@ ccl::event process_a2a_communicator::allreduce_impl(
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
 
-    size_t comm_rank = rank();
+    int comm_rank = rank();
     LOG_DEBUG("communicator for device idx: ", get_device_path(), ", rank idx: ", comm_rank);
 
     //TODO make const!
@@ -314,7 +314,7 @@ template <class buffer_type>
 ccl::event process_a2a_communicator::broadcast_impl(
     buffer_type* buf,
     size_t count,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
@@ -326,7 +326,7 @@ template <class buffer_type>
 ccl::event process_a2a_communicator::broadcast_impl(
     buffer_type& buf,
     size_t count,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
@@ -341,7 +341,7 @@ ccl::event process_a2a_communicator::reduce_impl(
     buffer_type* recv_buf,
     size_t count,
     ccl::reduction reduction,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
@@ -355,7 +355,7 @@ ccl::event process_a2a_communicator::reduce_impl(
     buffer_type& recv_buf,
     size_t count,
     ccl::reduction reduction,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {

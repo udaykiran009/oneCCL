@@ -213,8 +213,8 @@ public:
 
 #ifdef CCL_ENABLE_SYCL
     communicator create_single_device_communicator(
-        size_t comm_size,
-        size_t rank,
+        int comm_size,
+        int rank,
         const cl::sycl::device& device,
         const cl::sycl::context& context,
         shared_ptr_class<kvs_interface> kvs) const;
@@ -239,13 +239,13 @@ public:
     communicator create_communicator(const comm_attr& attr) const;
     communicator create_communicator(size_t size, shared_ptr_class<kvs_interface> kvs, const comm_attr& attr) const;
     communicator create_communicator(size_t size,
-                                     size_t rank,
+                                     int rank,
                                      shared_ptr_class<kvs_interface> kvs,
                                      const comm_attr& attr) const;
 
     template <class DeviceType, class ContextType>
     vector_class<communicator> create_communicators(
-        size_t comm_size,
+        int comm_size,
         const vector_class<DeviceType>& local_devices,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs,
@@ -253,16 +253,16 @@ public:
 
     template <class DeviceType, class ContextType>
     vector_class<communicator> create_communicators(
-        size_t comm_size,
-        const vector_class<pair_class<rank_t, DeviceType>>& local_rank_device_map,
+        int comm_size,
+        const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs,
         const comm_attr& attr) const;
 
     template <class DeviceType, class ContextType>
     vector_class<communicator> create_communicators(
-        size_t comm_size,
-        const map_class<rank_t, DeviceType>& local_rank_device_map,
+        int comm_size,
+        const map_class<int, DeviceType>& local_rank_device_map,
         ContextType& context,
         shared_ptr_class<kvs_interface> kvs,
         const comm_attr& attr) const;

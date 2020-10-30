@@ -72,7 +72,7 @@ struct communicator_interface_dispatcher {
 
     // create communicator for host
     static communicator_interface_ptr create_communicator_impl(const size_t size,
-                                                               const size_t rank,
+                                                               const int rank,
                                                                shared_ptr_class<kvs_interface> kvs);
 
 private:

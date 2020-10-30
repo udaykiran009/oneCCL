@@ -277,7 +277,7 @@ ccl::event single_device_communicator::broadcast_impl(
     void* buf,
     size_t count,
     ccl::datatype dtype,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
@@ -315,7 +315,7 @@ ccl::event single_device_communicator::reduce_impl(
     size_t count,
     ccl::datatype dtype,
     ccl::reduction reduction,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {

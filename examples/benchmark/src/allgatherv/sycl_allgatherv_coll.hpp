@@ -26,8 +26,8 @@ struct sycl_allgatherv_coll : sycl_base_coll<Dtype, allgatherv_strategy_impl> {
         if (base_coll::get_sycl_mem_type() != SYCL_MEM_BUF)
             return;
 
-        size_t local_rank = comm.rank();
-        size_t local_size = comm.size();
+        int local_rank = comm.rank();
+        int local_size = comm.size();
 
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
             stream.get_native().submit([&](handler& h) {
@@ -60,7 +60,7 @@ struct sycl_allgatherv_coll : sycl_base_coll<Dtype, allgatherv_strategy_impl> {
             unexpected_val_acc[0] = 0;
         }
 
-        size_t local_size = comm.size();
+        int local_size = comm.size();
         Dtype sbuf_expected = comm.rank();
 
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
@@ -105,7 +105,7 @@ struct sycl_allgatherv_coll : sycl_base_coll<Dtype, allgatherv_strategy_impl> {
                 }
             }
 
-            for (size_t idx = 0; idx < comm.size(); idx++) {
+            for (int idx = 0; idx < comm.size(); idx++) {
                 Dtype rbuf_expected = idx;
                 for (size_t e_idx = 0; e_idx < elem_count; e_idx++) {
                     value = recv_buf_acc[idx * elem_count + e_idx];

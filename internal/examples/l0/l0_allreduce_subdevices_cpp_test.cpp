@@ -168,7 +168,7 @@ void user_thread_idx(size_t thread_idx, ccl::device_indices_type thread_device_i
     {
         // get native l0* /
         ccl::communicator::device_native_reference_t dev = comm->get_device();
-        size_t rank = comm->rank();
+        int rank = comm->rank();
 
         if (!dev->is_subdevice())
         {
@@ -216,7 +216,7 @@ auto mem_send = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type
     ccl::attr attr{};
     for(auto &comm : comms)
     {
-        size_t rank = comm->rank();
+        int rank = comm->rank();
 
         if (!comm->is_ready())
         {
@@ -246,7 +246,7 @@ auto mem_send = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type
         std::unique_lock<std::mutex> lock(printout_mutex);
         for(auto &dev_it : memory_storage)
         {
-            size_t rank = dev_it.first;
+            int rank = dev_it.first;
             const auto& handles = dev_it.second;
             std::cout << "rank : "  << rank << std::endl;
             for(const auto& mem : handles)

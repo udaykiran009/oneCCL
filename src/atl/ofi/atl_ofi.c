@@ -181,7 +181,7 @@ typedef struct {
     /* table[0..proc_count][0..ep_count] */
     fi_addr_t* addr_table;
     size_t addr_len;
-    size_t first_proc_idx;
+    int first_proc_idx;
 
 } atl_ofi_prov_t;
 
@@ -222,7 +222,7 @@ static void atl_ofi_print_coord(atl_proc_coord_t* coord) {
 }
 
 static inline atl_ofi_prov_t* atl_ofi_get_prov(atl_ep_t* ep,
-                                               size_t peer_proc_idx,
+                                               int peer_proc_idx,
                                                size_t msg_size) {
     size_t prov_idx;
     atl_ofi_ctx_t* ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
@@ -236,8 +236,8 @@ static inline atl_ofi_prov_t* atl_ofi_get_prov(atl_ep_t* ep,
                        ofi_ctx->prov_count);
 
         atl_proc_coord_t* coord = &(ep->ctx->coord);
-        size_t my_node_idx = coord->global_idx / coord->local_count;
-        size_t peer_node_idx = peer_proc_idx / coord->local_count;
+        int my_node_idx = coord->global_idx / coord->local_count;
+        int peer_node_idx = peer_proc_idx / coord->local_count;
 
         if ((my_node_idx == peer_node_idx) &&
             (msg_size <= ofi_ctx->provs[ofi_ctx->shm_prov_idx].max_msg_size))
@@ -258,7 +258,7 @@ static inline atl_ofi_prov_t* atl_ofi_get_prov(atl_ep_t* ep,
 
 static inline fi_addr_t atl_ofi_get_addr(atl_ctx_t* ctx,
                                          atl_ofi_prov_t* prov,
-                                         size_t proc_idx,
+                                         int proc_idx,
                                          size_t ep_idx) {
     return *(prov->addr_table + ((ctx->ep_count * (proc_idx - prov->first_proc_idx)) + ep_idx));
 }
@@ -269,12 +269,12 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
     atl_proc_coord_t* coord = &(ofi_ctx->ctx.coord);
 
     atl_status_t ret = ATL_STATUS_SUCCESS;
-    size_t i;
-    size_t local_idx = 0, local_count = 0;
+    int i;
+    int local_idx = 0, local_count = 0;
     char* all_hostnames = NULL;
     char my_hostname[ATL_OFI_MAX_HOSTNAME_LEN] = { 0 };
     size_t my_hostname_len = 0;
-    size_t my_global_proc_idx = coord->global_idx;
+    int my_global_proc_idx = coord->global_idx;
 
     gethostname(my_hostname, ATL_OFI_MAX_HOSTNAME_LEN - 1);
     my_hostname_len = strlen(my_hostname);
@@ -291,7 +291,7 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
 
     snprintf(my_hostname + my_hostname_len,
              ATL_OFI_MAX_HOSTNAME_LEN - my_hostname_len,
-             "-%zu",
+             "-%d",
              my_global_proc_idx);
 
     ret = pmi->pmrt_kvs_put((char*)ATL_OFI_HOSTNAME_PM_KEY,
@@ -328,9 +328,9 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
                      all_hostnames + i * ATL_OFI_MAX_HOSTNAME_LEN,
                      my_hostname_len + 1 /* including "-" at the end */)) {
             local_count++;
-            size_t peer_global_proc_idx;
+            int peer_global_proc_idx;
             sscanf(all_hostnames + i * ATL_OFI_MAX_HOSTNAME_LEN + my_hostname_len + 1,
-                   "%zu",
+                   "%d",
                    &peer_global_proc_idx);
             if (my_global_proc_idx > peer_global_proc_idx)
                 local_idx++;
@@ -358,7 +358,8 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
     atl_ofi_prov_t* prov = &(ofi_ctx->provs[prov_idx]);
 
     atl_status_t ret;
-    size_t i, j;
+    int i;
+    size_t j;
     int insert_count;
 
     size_t addr_idx = 0;
@@ -367,20 +368,20 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
 
     size_t named_ep_count = (prov->sep ? 1 : ctx->ep_count);
 
-    size_t local_count = ctx->coord.local_count;
-    size_t node_idx = ctx->coord.global_idx / local_count;
-    size_t shm_start_idx = node_idx * local_count;
-    size_t shm_end_idx = (node_idx + 1) * local_count;
+    int local_count = ctx->coord.local_count;
+    int node_idx = ctx->coord.global_idx / local_count;
+    int shm_start_idx = node_idx * local_count;
+    int shm_end_idx = (node_idx + 1) * local_count;
 
-    ATL_OFI_DEBUG_PRINT("shm_start_idx %zu, shm_end_idx %zu", shm_start_idx, shm_end_idx);
+    ATL_OFI_DEBUG_PRINT("shm_start_idx %d, shm_end_idx %d", shm_start_idx, shm_end_idx);
 
-    size_t proc_count = prov->is_shm ? ctx->coord.local_count : ctx->coord.global_count;
+    int proc_count = prov->is_shm ? ctx->coord.local_count : ctx->coord.global_count;
 
     if (proc_count == 0)
         return ATL_STATUS_SUCCESS;
 
     ATL_OFI_DEBUG_PRINT(
-        "name %s, is_shm %d, addr_len %zu, local_count %zu, global_count %zu, proc_count %zu",
+        "name %s, is_shm %d, addr_len %zu, local_count %d, global_count %d, proc_count %d",
         prov->info->fabric_attr->prov_name,
         prov->is_shm,
         prov->addr_len,
@@ -392,7 +393,7 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
     epnames_table_len = prov->addr_len * named_ep_count * proc_count;
 
     if (epnames_table_len == 0) {
-        ATL_OFI_PRINT("epnames_table_len == 0, addr_len %zu, named_ep_count %zu, proc_count %zu",
+        ATL_OFI_PRINT("epnames_table_len == 0, addr_len %zu, named_ep_count %zu, proc_count %d",
                       prov->addr_len,
                       named_ep_count,
                       proc_count);
@@ -423,7 +424,7 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
                 prov->addr_len);
 
             if (ret) {
-                ATL_OFI_PRINT("kvs_get error: ret %d, proc_idx %zu, ep_idx %zu, addr_idx %zu",
+                ATL_OFI_PRINT("kvs_get error: ret %d, proc_idx %d, ep_idx %zu, addr_idx %zu",
                               ret,
                               i,
                               j,
@@ -436,7 +437,7 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
     }
 
     ATL_OFI_DEBUG_PRINT(
-        "kvs_get: ep_count %zu, proc_count %zu, got %zu", named_ep_count, proc_count, addr_idx);
+        "kvs_get: ep_count %zu, proc_count %d, got %zu", named_ep_count, proc_count, addr_idx);
 
     if (addr_idx != named_ep_count * proc_count) {
         ATL_OFI_PRINT("unexpected kvs_get results: expected %zu, got %zu",
@@ -459,7 +460,7 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
     insert_count = fi_av_insert(
         prov->av, epnames_table, named_ep_count * proc_count, prov->addr_table, 0, NULL);
 
-    ATL_OFI_DEBUG_PRINT("av_insert: ep_count %zu, proc_count %zu, inserted %d",
+    ATL_OFI_DEBUG_PRINT("av_insert: ep_count %zu, proc_count %d, inserted %d",
                         named_ep_count,
                         proc_count,
                         insert_count);
@@ -1004,7 +1005,7 @@ static atl_status_t atl_ofi_ep_wait(atl_ep_t* ep, atl_req_t* req);
 static atl_status_t atl_ofi_ep_send(atl_ep_t* ep,
                                     const void* buf,
                                     size_t len,
-                                    size_t dst_proc_idx,
+                                    int dst_proc_idx,
                                     uint64_t tag,
                                     atl_req_t* req) {
     ssize_t ret;
@@ -1039,7 +1040,7 @@ static atl_status_t atl_ofi_ep_send(atl_ep_t* ep,
 static atl_status_t atl_ofi_ep_recv(atl_ep_t* ep,
                                     void* buf,
                                     size_t len,
-                                    size_t src_proc_idx,
+                                    int src_proc_idx,
                                     uint64_t tag,
                                     atl_req_t* req) {
     ssize_t ret;
@@ -1073,7 +1074,7 @@ static atl_status_t atl_ofi_ep_recv(atl_ep_t* ep,
 }
 
 static atl_status_t atl_ofi_ep_probe(atl_ep_t* ep,
-                                     size_t src_proc_idx,
+                                     int src_proc_idx,
                                      uint64_t tag,
                                      int* found,
                                      size_t* recv_len) {
@@ -1227,7 +1228,7 @@ static atl_status_t atl_ofi_ep_barrier(atl_ep_t* ep, atl_req_t* req) {
 static atl_status_t atl_ofi_ep_bcast(atl_ep_t* ep,
                                      void* buf,
                                      size_t len,
-                                     size_t root,
+                                     int root,
                                      atl_req_t* req) {
     return ATL_STATUS_UNSUPPORTED;
 }
@@ -1236,7 +1237,7 @@ static atl_status_t atl_ofi_ep_reduce(atl_ep_t* ep,
                                       const void* send_buf,
                                       void* recv_buf,
                                       size_t count,
-                                      size_t root,
+                                      int root,
                                       atl_datatype_t dtype,
                                       atl_reduction_t op,
                                       atl_req_t* req) {
@@ -1259,7 +1260,7 @@ static atl_status_t atl_ofi_ep_read(atl_ep_t* ep,
                                     atl_mr_t* mr,
                                     uint64_t addr,
                                     uintptr_t remote_key,
-                                    size_t dst_proc_idx,
+                                    int dst_proc_idx,
                                     atl_req_t* req) {
     ssize_t ret;
 
@@ -1297,7 +1298,7 @@ static atl_status_t atl_ofi_ep_write(atl_ep_t* ep,
                                      atl_mr_t* mr,
                                      uint64_t addr,
                                      uintptr_t remote_key,
-                                     size_t dst_proc_idx,
+                                     int dst_proc_idx,
                                      atl_req_t* req) {
     ssize_t ret;
 
@@ -1555,7 +1556,7 @@ static atl_status_t atl_ofi_init(int* argc,
     if (prov_env && !strcmp(prov_env, ATL_OFI_SHM_PROV_NAME)) {
         ATL_OFI_ASSERT(
             coord->global_count == coord->local_count,
-            "shm provider is requested as primary provider but global_count (%zu) != local_count (%zu)",
+            "shm provider is requested as primary provider but global_count (%d) != local_count (%d)",
             coord->global_count,
             coord->local_count);
 

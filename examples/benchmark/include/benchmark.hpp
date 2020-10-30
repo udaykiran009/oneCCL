@@ -229,7 +229,7 @@ void print_timings(ccl::communicator& comm,
     size_t iter_count =
         get_iter_count(elem_count * ccl::get_datatype_size(dtype), options.iters);
 
-    size_t idx;
+    int idx;
     for (idx = 0; idx < comm.size(); idx++)
         recv_counts[idx] = ncolls;
 
@@ -238,7 +238,7 @@ void print_timings(ccl::communicator& comm,
     if (comm.rank() == 0) {
 
         std::vector<double> timers(comm.size(), 0);
-        for (size_t r = 0; r < comm.size(); ++r) {
+        for (int r = 0; r < comm.size(); ++r) {
             for (size_t c = 0; c < ncolls; ++c) {
                 timers[r] += all_timers[r * ncolls + c];
             }
@@ -286,7 +286,7 @@ void print_timings(ccl::communicator& comm,
 
                 std::vector<double> avg_timer(ncolls, 0);
 
-                for (size_t r = 0; r < comm.size(); ++r) {
+                for (int r = 0; r < comm.size(); ++r) {
                     for (size_t c = 0; c < ncolls; ++c) {
                         avg_timer[c] += all_timers[r * ncolls + c];
                     }
@@ -296,13 +296,13 @@ void print_timings(ccl::communicator& comm,
                     avg_timer[c] /= (iter_count * comm.size());
                 }
 
-                int idx = 0;
+                int i = 0;
                 for (auto cop = options.coll_names.begin(); cop != options.coll_names.end();
-                     ++cop, ++idx) {
+                     ++cop, ++i) {
                     csvf << comm.size() << "," << (*cop) << "," << reduction_names[op] << ","
                          << dtype_names[dtype] << ","
                          << ccl::get_datatype_size(dtype) << ","
-                         << elem_count << "," << buf_count << "," << avg_timer[idx] << std::endl;
+                         << elem_count << "," << buf_count << "," << avg_timer[i] << std::endl;
                 }
                 csvf.close();
             }
@@ -458,7 +458,7 @@ void print_user_options(const user_options_t& options,
 
     PRINT_BY_ROOT(comm,
                   "options:"
-                  "\n  processes:      %zu"
+                  "\n  processes:      %d"
                   "\n  backend:        %s"
                   "\n  loop:           %s"
                   "\n  iters:          %zu"

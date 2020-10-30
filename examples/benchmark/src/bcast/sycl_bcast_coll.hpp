@@ -22,7 +22,7 @@ struct sycl_bcast_coll : sycl_base_coll<Dtype, bcast_strategy_impl> {
         if (base_coll::get_sycl_mem_type() != SYCL_MEM_BUF)
             return;
 
-        size_t local_rank = comm.rank();
+        int local_rank = comm.rank();
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
             stream.get_native().submit([&](handler& h) {
                 auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx][rank_idx]));

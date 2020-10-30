@@ -115,7 +115,7 @@
         sa_handler->size_per_rank = \
             static_cast<size_t*>(sched->alloc_buffer(sizeof(size_t) * comm_size).get_ptr()); \
 \
-        for (size_t i = 0; i < comm_size; i++) \
+        for (int i = 0; i < comm_size; i++) \
             sa_handler->size_per_rank[i] = sizeof(size_t); \
 \
         sa_handler->send_ibuf = send_ind_buf.get_ptr(); \
@@ -473,7 +473,7 @@ ccl::status sparse_set_max_buf_size_ring(const void* ctx) {
     ccl_sparse_allreduce_handler* sa_handler = (ccl_sparse_allreduce_handler*)ctx;
     size_t max_nnz = sa_handler->recv_counts[0];
 
-    for (size_t i = 1; i < sa_handler->comm_size; i++) {
+    for (int i = 1; i < sa_handler->comm_size; i++) {
         if (max_nnz < sa_handler->recv_counts[i]) {
             max_nnz = sa_handler->recv_counts[i];
         }
@@ -523,8 +523,8 @@ ccl::status ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
                                                   ccl_comm* comm) {
     ccl::status status = ccl::status::success;
 
-    size_t comm_size = comm->size();
-    size_t rank = comm->rank();
+    int comm_size = comm->size();
+    int rank = comm->rank();
 
     /* get data type sizes */
     size_t vtype_size = sizeof(v_type);
@@ -544,10 +544,10 @@ ccl::status ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
 
     /* send from left to right (ring)*/
     /* receive from the left neighbour */
-    size_t recv_from = (rank - 1 + comm_size) % comm_size;
+    int recv_from = (rank - 1 + comm_size) % comm_size;
 
     /* send to the right neighbour */
-    size_t send_to = (rank + 1) % comm_size;
+    int send_to = (rank + 1) % comm_size;
 
     sa_handler->recv_from = recv_from;
     sa_handler->iter = 0;
@@ -565,7 +565,7 @@ ccl::status ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
         entry_factory::make_entry<function_entry>(sched, sparse_set_max_buf_size_ring, sa_handler);
         sched->add_barrier();
 
-        for (size_t i = 0; i < comm_size - 1; i++) {
+        for (int i = 0; i < comm_size - 1; i++) {
             /* send local data to the right neighbour */
             send_entry* se = entry_factory::make_entry<send_entry>(
                 sched, ccl_buffer(), 0, ccl_datatype_int8, send_to, comm);
@@ -680,7 +680,7 @@ ccl::status sparse_get_allreduce_count_mask(const void* ctx, void* field_ptr) {
 ccl::status sparse_nnz_per_rank_mask(const void* ctx) {
     ccl_sparse_allreduce_handler* sa_handler = (ccl_sparse_allreduce_handler*)ctx;
     sa_handler->recv_buf_count = 0;
-    for (size_t i = 0; i < sa_handler->comm_size; i++) {
+    for (int i = 0; i < sa_handler->comm_size; i++) {
         sa_handler->recv_buf_count += sa_handler->recv_counts[i];
     }
 
@@ -743,7 +743,7 @@ ccl::status ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
                                                   ccl_comm* comm) {
     ccl::status status = ccl::status::success;
 
-    size_t comm_size = comm->size();
+    int comm_size = comm->size();
 
     /* get data type sizes */
     size_t itype_size = sizeof(i_type);
@@ -818,7 +818,7 @@ ccl::status sparse_alloc_result_buf_allgatherv(const void* ctx) {
     ccl_sparse_allreduce_handler* sa_handler = (ccl_sparse_allreduce_handler*)ctx;
 
     sa_handler->recv_buf_count = 0;
-    for (size_t i = 0; i < sa_handler->comm_size; i++) {
+    for (int i = 0; i < sa_handler->comm_size; i++) {
         sa_handler->recv_buf_count += sa_handler->recv_counts[i];
     }
 
@@ -864,7 +864,7 @@ template <size_t stride_per_comm>
 ccl::status sparse_set_v_counts_allgatherv(const void* ctx) {
     ccl_sparse_allreduce_handler* sa_handler = (ccl_sparse_allreduce_handler*)ctx;
     size_t stride = stride_per_comm * sa_handler->comm_size;
-    for (size_t i = 0; i < sa_handler->comm_size; i++) {
+    for (int i = 0; i < sa_handler->comm_size; i++) {
         sa_handler->recv_counts[i + stride] = sa_handler->recv_counts[i] * sa_handler->val_dim_cnt;
     }
 
@@ -1053,7 +1053,7 @@ ccl::status ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched* sched,
                                                           ccl_comm* comm) {
     ccl::status status = ccl::status::success;
 
-    size_t comm_size = comm->size();
+    int comm_size = comm->size();
 
     /* get data type sizes */
     size_t vtype_size = sizeof(v_type);

@@ -20,7 +20,7 @@ template <class processing_type>
 void user_thread_idx(size_t thread_idx,
                      const std::vector<std::pair<size_t, cl::sycl::device>>& devices,
                      cl::sycl::context ctx,
-                     size_t total_devices_in_cluster,
+                     int total_devices_in_cluster,
                      std::shared_ptr<ccl::kvs_interface> kvs_instance,
                      usm::alloc usm_alloc_type) {
     using namespace ::native;
@@ -45,7 +45,7 @@ void user_thread_idx(size_t thread_idx,
 
     /* alloc memory specific to devices */
     for (auto& comm : comms) {
-        size_t rank = comm.rank();
+        int rank = comm.rank();
         /* create device */
         auto sycl_device = comm.get_device().get_native();
 
@@ -80,7 +80,7 @@ void user_thread_idx(size_t thread_idx,
     /* allreduce */
     std::vector<ccl::event> reqs;
     for (auto& comm : comms) {
-        size_t rank = comm.rank();
+        int rank = comm.rank();
 
         /* create operation attributes */
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
@@ -105,7 +105,7 @@ void user_thread_idx(size_t thread_idx,
     /* open recv_buf and check its correctness on the device side */
     buffer<processing_type> check_buf(COUNT);
     for (auto& comm : comms) {
-        size_t rank = comm.rank();
+        int rank = comm.rank();
 
         /* create operation attributes */
         auto stream = streams.find(rank)->second;

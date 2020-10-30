@@ -95,7 +95,7 @@ struct ccl_coll_param {
     const size_t* recv_counts;
     ccl_datatype dtype;
     ccl::reduction reduction;
-    size_t root;
+    int root;
     const ccl_stream* stream;
     ccl_comm* comm;
     ccl_coll_sparse_param sparse_param;

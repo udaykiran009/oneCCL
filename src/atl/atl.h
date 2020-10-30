@@ -55,7 +55,7 @@ static inline atl_status_t atl_mr_dereg(atl_ctx_t* ctx, atl_mr_t* mr) {
 static inline atl_status_t atl_ep_send(atl_ep_t* ep,
                                        const void* buf,
                                        size_t len,
-                                       size_t dst_proc_idx,
+                                       int dst_proc_idx,
                                        uint64_t tag,
                                        atl_req_t* req) {
     return ep->p2p_ops->send(ep, buf, len, dst_proc_idx, tag, req);
@@ -64,14 +64,14 @@ static inline atl_status_t atl_ep_send(atl_ep_t* ep,
 static inline atl_status_t atl_ep_recv(atl_ep_t* ep,
                                        void* buf,
                                        size_t len,
-                                       size_t src_proc_idx,
+                                       int src_proc_idx,
                                        uint64_t tag,
                                        atl_req_t* req) {
     return ep->p2p_ops->recv(ep, buf, len, src_proc_idx, tag, req);
 }
 
 static inline atl_status_t atl_ep_probe(atl_ep_t* ep,
-                                        size_t src_proc_idx,
+                                        int src_proc_idx,
                                         uint64_t tag,
                                         int* found,
                                         size_t* recv_len) {
@@ -125,7 +125,7 @@ static inline atl_status_t atl_ep_barrier(atl_ep_t* ep, atl_req_t* req) {
 static inline atl_status_t atl_ep_bcast(atl_ep_t* ep,
                                         void* buf,
                                         size_t len,
-                                        size_t root,
+                                        int root,
                                         atl_req_t* req) {
     return ep->coll_ops->bcast(ep, buf, len, root, req);
 }
@@ -134,7 +134,7 @@ static inline atl_status_t atl_ep_reduce(atl_ep_t* ep,
                                          const void* send_buf,
                                          void* recv_buf,
                                          size_t len,
-                                         size_t root,
+                                         int root,
                                          atl_datatype_t dtype,
                                          atl_reduction_t op,
                                          atl_req_t* req) {
@@ -147,7 +147,7 @@ static inline atl_status_t atl_ep_read(atl_ep_t* ep,
                                        atl_mr_t* mr,
                                        uint64_t addr,
                                        uintptr_t remote_key,
-                                       size_t dst_proc_idx,
+                                       int dst_proc_idx,
                                        atl_req_t* req) {
     return ep->rma_ops->read(ep, buf, len, mr, addr, remote_key, dst_proc_idx, req);
 }
@@ -158,7 +158,7 @@ static inline atl_status_t atl_ep_write(atl_ep_t* ep,
                                         atl_mr_t* mr,
                                         uint64_t addr,
                                         uintptr_t remote_key,
-                                        size_t dst_proc_idx,
+                                        int dst_proc_idx,
                                         atl_req_t* req) {
     return ep->rma_ops->write(ep, buf, len, mr, addr, remote_key, dst_proc_idx, req);
 }
@@ -211,19 +211,19 @@ public:
     virtual atl_status_t atl_ep_send(atl_ep_t* ep,
                                      const void* buf,
                                      size_t len,
-                                     size_t dst_proc_idx,
+                                     int dst_proc_idx,
                                      uint64_t tag,
                                      atl_req_t* req) = 0;
 
     virtual atl_status_t atl_ep_recv(atl_ep_t* ep,
                                      void* buf,
                                      size_t len,
-                                     size_t src_proc_idx,
+                                     int src_proc_idx,
                                      uint64_t tag,
                                      atl_req_t* req) = 0;
 
     virtual atl_status_t atl_ep_probe(atl_ep_t* ep,
-                                      size_t src_proc_idx,
+                                      int src_proc_idx,
                                       uint64_t tag,
                                       int* found,
                                       size_t* recv_len) = 0;
@@ -264,14 +264,14 @@ public:
     virtual atl_status_t atl_ep_bcast(atl_ep_t* ep,
                                       void* buf,
                                       size_t len,
-                                      size_t root,
+                                      int root,
                                       atl_req_t* req) = 0;
 
     virtual atl_status_t atl_ep_reduce(atl_ep_t* ep,
                                        const void* send_buf,
                                        void* recv_buf,
                                        size_t len,
-                                       size_t root,
+                                       int root,
                                        atl_datatype_t dtype,
                                        atl_reduction_t op,
                                        atl_req_t* req) = 0;
@@ -290,7 +290,7 @@ public:
                                      atl_mr_t* mr,
                                      uint64_t addr,
                                      uintptr_t remote_key,
-                                     size_t dst_proc_idx,
+                                     int dst_proc_idx,
                                      atl_req_t* req) = 0;
 
     virtual atl_status_t atl_ep_write(atl_ep_t* ep,
@@ -299,7 +299,7 @@ public:
                                       atl_mr_t* mr,
                                       uint64_t addr,
                                       uintptr_t remote_key,
-                                      size_t dst_proc_idx,
+                                      int dst_proc_idx,
                                       atl_req_t* req) = 0;
 
     virtual atl_status_t atl_ep_wait(atl_ep_t* ep, atl_req_t* req) = 0;

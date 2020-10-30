@@ -74,7 +74,7 @@ struct process_group_context
     const ccl::process_device_indices_type& get_node_afinity_indices(const ccl::host_id& host) const;
 
     void set_node_afinity_indices(const ccl::host_id& host,
-                                  size_t rank_id,
+                                  int rank_id,
                                   const ccl::device_indices_type& indices);
 
     const ccl::host_id get_host_id() const;

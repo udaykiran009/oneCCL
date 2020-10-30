@@ -60,11 +60,11 @@ CCL_API communicator& communicator::operator=(communicator&& src) {
 
 CCL_API communicator::~communicator() {}
 
-CCL_API size_t communicator::rank() const {
+CCL_API int communicator::rank() const {
     return get_impl()->rank();
 }
 
-CCL_API size_t communicator::size() const {
+CCL_API int communicator::size() const {
     return get_impl()->size();
 }
 

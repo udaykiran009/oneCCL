@@ -5,7 +5,7 @@ void make_chunked_send_entry(ccl_sched* sched,
                              const ccl_buffer buf,
                              size_t cnt,
                              const ccl_datatype& dtype,
-                             size_t dst,
+                             int dst,
                              ccl_comm* comm) {
     CCL_CHUNKED_ENTRY_FUNCTION(
         "send",
@@ -19,7 +19,7 @@ void make_chunked_recv_entry(ccl_sched* sched,
                              const ccl_buffer buf,
                              size_t cnt,
                              const ccl_datatype& dtype,
-                             size_t src,
+                             int src,
                              ccl_comm* comm) {
     CCL_CHUNKED_ENTRY_FUNCTION(
         "recv",
@@ -35,7 +35,7 @@ void make_chunked_recv_reduce_entry(ccl_sched* sched,
                                     size_t* out_cnt,
                                     const ccl_datatype& dtype,
                                     ccl::reduction reduction_op,
-                                    size_t src,
+                                    int src,
                                     ccl_buffer comm_buf,
                                     ccl_comm* comm,
                                     ccl_recv_reduce_result_buf_type result_buf_type) {
@@ -60,7 +60,7 @@ void make_chunked_send_entry(std::vector<ccl_sched*>& scheds,
                              const ccl_buffer buf,
                              size_t cnt,
                              const ccl_datatype& dtype,
-                             size_t dst,
+                             int dst,
                              ccl_comm* comm) {
     CCL_CHUNKED_ENTRY_FUNCTION(
         "send",
@@ -75,7 +75,7 @@ void make_chunked_recv_entry(std::vector<ccl_sched*>& scheds,
                              const ccl_buffer buf,
                              size_t cnt,
                              const ccl_datatype& dtype,
-                             size_t src,
+                             int src,
                              ccl_comm* comm) {
     CCL_CHUNKED_ENTRY_FUNCTION(
         "recv",

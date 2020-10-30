@@ -30,8 +30,8 @@ class host_communicator : public ccl::communicator_interface {
 public:
     using traits = ccl::host_communicator_traits;
 
-    size_t rank() const override;
-    size_t size() const override;
+    int rank() const override;
+    int size() const override;
 
     // traits
     bool is_host() const noexcept override {
@@ -105,8 +105,8 @@ public:
     COMM_IMPL_SPARSE_CLASS_DECLARATION
 
     host_communicator();
-    host_communicator(size_t size, shared_ptr_class<kvs_interface> kvs);
-    host_communicator(size_t size, size_t rank, shared_ptr_class<kvs_interface> kvs);
+    host_communicator(int size, shared_ptr_class<kvs_interface> kvs);
+    host_communicator(int size, int rank, shared_ptr_class<kvs_interface> kvs);
     host_communicator(std::shared_ptr<atl_wrapper> atl);
     host_communicator(std::shared_ptr<ccl_comm> impl);
     host_communicator(host_communicator& src) = delete;
@@ -123,8 +123,8 @@ private:
     friend struct group_context;
     std::shared_ptr<ccl_comm> comm_impl;
     ccl::comm_split_attr comm_attr;
-    size_t comm_rank;
-    size_t comm_size;
+    int comm_rank;
+    int comm_size;
     ccl::group_unique_key owner_id;
     // ccl::unified_device_type device;
     // ccl::unified_context_type context;

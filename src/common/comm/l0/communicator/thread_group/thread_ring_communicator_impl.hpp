@@ -70,7 +70,7 @@ thread_device_group_ring_communicator::allgatherv_impl(const buffer_type* send_b
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
 
-    size_t comm_rank = rank();
+    int comm_rank = rank();
     size_t ring_index = 0;
     LOG_DEBUG("communicator for device idx: ",
               get_device_path(),
@@ -167,7 +167,7 @@ thread_device_group_ring_communicator::allreduce_impl(const buffer_type* send_bu
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
 
-    size_t comm_rank = rank();
+    int comm_rank = rank();
     size_t ring_index = 0;
     LOG_DEBUG("communicator for device idx: ",
               get_device_path(),
@@ -366,7 +366,7 @@ thread_device_group_ring_communicator::alltoallv_impl(const buffer_type* send_bu
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
 
-    size_t comm_rank = rank();
+    int comm_rank = rank();
     size_t ring_index = 0;
     LOG_DEBUG("communicator for device idx: ",
               get_device_path(),
@@ -447,7 +447,7 @@ template <class buffer_type>
 ccl::event
 thread_device_group_ring_communicator::broadcast_impl(buffer_type* buf,
                                                       size_t count,
-                                                      size_t root,
+                                                      int root,
                                                       const ccl::stream::impl_value_t& stream,
                                                       const ccl::broadcast_attr& attr,
                                                       const ccl::vector_class<ccl::event>& deps) {
@@ -462,7 +462,7 @@ thread_device_group_ring_communicator::broadcast_impl(buffer_type* buf,
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
 
-    size_t comm_rank = rank();
+    int comm_rank = rank();
     size_t ring_index = 0;
     LOG_DEBUG("communicator for device idx: ",
               get_device_path(),
@@ -534,7 +534,7 @@ template <class buffer_type>
 ccl::event
 thread_device_group_ring_communicator::broadcast_impl(buffer_type& buf,
                                                       size_t count,
-                                                      size_t root,
+                                                      int root,
                                                       const ccl::stream::impl_value_t& stream,
                                                       const ccl::broadcast_attr& attr,
                                                       const ccl::vector_class<ccl::event>& deps) {
@@ -549,7 +549,7 @@ thread_device_group_ring_communicator::reduce_impl(const buffer_type* send_buf,
                                                    buffer_type* recv_buf,
                                                    size_t count,
                                                    ccl::reduction reduction,
-                                                   size_t root,
+                                                   int root,
                                                    const ccl::stream::impl_value_t& stream,
                                                    const ccl::reduce_attr& attr,
                                                    const ccl::vector_class<ccl::event>& deps) {
@@ -564,7 +564,7 @@ thread_device_group_ring_communicator::reduce_impl(const buffer_type* send_buf,
             " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
     }
 
-    size_t comm_rank = rank();
+    int comm_rank = rank();
     size_t ring_index = 0;
     LOG_DEBUG("communicator for device idx: ",
               get_device_path(),
@@ -648,7 +648,7 @@ thread_device_group_ring_communicator::reduce_impl(const buffer_type& send_buf,
                                                    buffer_type& recv_buf,
                                                    size_t count,
                                                    ccl::reduction reduction,
-                                                   size_t root,
+                                                   int root,
                                                    const ccl::stream::impl_value_t& stream,
                                                    const ccl::reduce_attr& attr,
                                                    const ccl::vector_class<ccl::event>& deps) {

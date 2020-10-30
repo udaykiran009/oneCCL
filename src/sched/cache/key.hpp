@@ -51,7 +51,7 @@ public:
         size_t count2 = 0;
         size_t count3 = 0; /* used in sparse collective to store recv index count */
         size_t count4 = 0; /* used in sparse collective to store recv value count */
-        size_t root = 0;
+        int root = 0;
         const ccl_comm* comm = nullptr;
         ccl::prologue_fn prologue_fn = nullptr;
         ccl::epilogue_fn epilogue_fn = nullptr;

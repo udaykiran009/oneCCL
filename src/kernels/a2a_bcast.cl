@@ -77,12 +77,17 @@
 #endif
 
 #define DEFINE_KERNEL(Name, T)                                                                                      \
-    __kernel void bcast_execution_##Name(size_t rank_id,                                                            \
-                                      size_t comm_size,                                                             \
+    __kernel void bcast_execution_##Name(int rank_id,                                                            \
+                                      int comm_size,                                                             \
                                       size_t elems_count,                                                           \
                                       const __global T *input_buffer,                                               \
+<<<<<<< HEAD
                                       __global a2a_gpu_comm_data_##Name *comm_matrix,                               \
                                       size_t root) {                                                                \
+=======
+                                      __global a2a_gpu_comm_data_##T *comm_matrix,                                  \
+                                      int root) {                                                                \
+>>>>>>> c434eda9... Change rank datatype to int
         size_t wg_id = get_group_id(0);                                                                             \
         size_t wg_size = get_local_size(0);                                                                         \
         size_t wg_count = get_num_groups(0);                                                                        \

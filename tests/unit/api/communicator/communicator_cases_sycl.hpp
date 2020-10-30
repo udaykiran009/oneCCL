@@ -69,9 +69,9 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread) {
     size_t in_total_devices_size = 4;
     ccl::vector_class<cl::sycl::device> ranked_devices{ in_total_devices_size, cl::sycl::device{} };
 
-    ccl::vector_class<ccl::pair_class<size_t, cl::sycl::device>> in_local_rank_device_map;
+    ccl::vector_class<ccl::pair_class<int, cl::sycl::device>> in_local_rank_device_map;
     in_local_rank_device_map.reserve(in_total_devices_size);
-    size_t curr_rank = 0;
+    int curr_rank = 0;
     std::transform(ranked_devices.begin(),
                    ranked_devices.end(),
                    std::back_inserter(in_local_rank_device_map),
@@ -85,7 +85,7 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread) {
     // create `out_comms` from in parameters
     ccl::vector_class<ccl::v1::communicator> out_comms =
         ccl::v1::communicator::create_communicators(
-            in_total_devices_size, in_local_rank_device_map, in_ctx, in_kvs);
+            (int)in_total_devices_size, in_local_rank_device_map, in_ctx, in_kvs);
 
     // check correctness
     curr_rank = in_local_rank_device_map.begin()->first;
@@ -182,10 +182,10 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_single_thread) {
     }
 }
 
-using rank_device_container_t = ccl::vector_class<ccl::pair_class<size_t, cl::sycl::device>>;
+using rank_device_container_t = ccl::vector_class<ccl::pair_class<int, cl::sycl::device>>;
 using thread_rank_device_container_t = ccl::map_class<size_t, rank_device_container_t>;
 
-void user_thread_function(size_t total_devices_count,
+void user_thread_function(int total_devices_count,
                           const rank_device_container_t& in_local_rank_device_map,
                           cl::sycl::context& in_ctx,
                           std::shared_ptr<stub_kvs> in_kvs,
@@ -294,7 +294,7 @@ TEST(device_communicator_api, device_comm_from_sycl_devices_multiple_threads) {
     ASSERT_EQ(created_communicators_count.load(), in_total_devices_size);
 }
 
-void user_thread_function_splitted_comm(size_t total_devices_count,
+void user_thread_function_splitted_comm(int total_devices_count,
                                         const rank_device_container_t& in_local_rank_device_map,
                                         cl::sycl::context& in_ctx,
                                         std::shared_ptr<stub_kvs> in_kvs,

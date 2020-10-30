@@ -133,11 +133,11 @@
     } while (0);
 */
 
-size_t get_left_rank(size_t rank, size_t comm_size) {
+int get_left_rank(int rank, int comm_size) {
     return rank == 0 ? comm_size - 1 : rank - 1;
 }
 
-size_t get_right_rank(size_t rank, size_t comm_size) {
+int get_right_rank(int rank, int comm_size) {
     return rank == (comm_size - 1) ? 0 : rank + 1;
 }
 
@@ -165,8 +165,8 @@ size_t get_right_rank(size_t rank, size_t comm_size) {
 // VecSize is the vector size of the type. E.g. if float4 is used, VecSize is 4. Note: if just float is used,
 // the value must be one as it's used for division inside the kernel.
 #define DEFINE_KERNEL(Name, T, VecSize)                                                                     \
-__kernel void alltoallv_execution_##Name(size_t my_rank, /*0*/                                              \
-                                        size_t comm_size, /*1*/                                             \
+__kernel void alltoallv_execution_##Name(int my_rank, /*0*/                                              \
+                                        int comm_size, /*1*/                                             \
                                                                                                             \
                                         __global size_t* send_elem_counts, /*2*/                            \
                                         __global size_t* send_elem_offsets, /*3*/                           \
@@ -187,7 +187,7 @@ __kernel void alltoallv_execution_##Name(size_t my_rank, /*0*/                  
 ) {                                                                                                         \
     size_t work_group_size = get_global_size(0);                                                            \
     int thread_id = get_global_id(0);                                                                       \
-    size_t work_rank = my_rank;                                                                             \
+    int work_rank = my_rank;                                                                             \
                                                                                                             \
     int ready_to_recv_sync_count = 1;                                                                       \
     int can_send_sync_count = 1;                                                                            \
@@ -205,7 +205,7 @@ __kernel void alltoallv_execution_##Name(size_t my_rank, /*0*/                  
     size_t input_buffer_offset = send_elem_offsets[work_rank] / VecSize;                                    \
                                                                                                             \
     /*TODO: consider a new solving of calculating segment_offset*/                                          \
-    /*for (size_t i = 0; i < work_rank; i++) {                                                              \
+    /*for (int i = 0; i < work_rank; i++) {                                                              \
         segment_offset = send_elem_counts[i] / VecSize;                                                     \
     }*/                                                                                                     \
                                                                                                             \
@@ -218,7 +218,7 @@ __kernel void alltoallv_execution_##Name(size_t my_rank, /*0*/                  
     WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count);                                     \
     barrier(CLK_LOCAL_MEM_FENCE);                                                                           \
                                                                                                             \
-    for (size_t idx = 0; idx < comm_size - 1; idx++) {                                                      \
+    for (int idx = 0; idx < comm_size - 1; idx++) {                                                      \
         work_rank = get_right_rank(work_rank, comm_size);                                                   \
         segment_size = send_elem_counts[work_rank] / VecSize;                                               \
         segment_offset = send_elem_offsets[work_rank] / VecSize;                                            \
@@ -303,8 +303,8 @@ DEFINE_KERNEL(bfloat16, ushort, 1)
 // numa
 // TODO: vecsize
 #define DEFINE_KERNEL_NUMA(Name, T)                                                                         \
-__kernel void alltoallv_execution_numa_##Name(size_t my_rank, /*0*/                                         \
-                                        size_t comm_size, /*1*/                                             \
+__kernel void alltoallv_execution_numa_##Name(int my_rank, /*0*/                                         \
+                                        int comm_size, /*1*/                                             \
                                                                                                             \
                                         __global size_t* send_elem_counts, /*2*/                            \
                                         __global size_t* send_elem_offsets, /*3*/                           \

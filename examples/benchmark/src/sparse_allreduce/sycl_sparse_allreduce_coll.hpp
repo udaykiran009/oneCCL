@@ -42,7 +42,7 @@ struct sycl_sparse_allreduce_coll : base_sparse_allreduce_coll<cl::sycl::buffer<
         // size_t max_elem_count = base_coll::get_max_elem_count();
         // size_t single_buf_max_elem_count = base_coll::get_single_buf_max_elem_count();
 
-        // size_t comm_size = transport_data::get_comm_size();
+        // int comm_size = transport_data::get_comm_size();
 
         // for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
         //     send_ibufs[idx] = new sycl_indices_t(max_elem_count * sbuf_size_modifier);

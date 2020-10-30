@@ -27,7 +27,7 @@ typedef enum {
     KVS_RA_RUN = 1,
     KVS_RA_FINALIZE = 2,
 } kvs_resize_action_t;
-typedef kvs_resize_action_t (*pmir_resize_fn_t)(size_t comm_size);
+typedef kvs_resize_action_t (*pmir_resize_fn_t)(int comm_size);
 
 class helper;
 class pmi_resizable final : public ipmi {
@@ -54,20 +54,20 @@ public:
     void pmrt_barrier() override;
 
     atl_status_t pmrt_kvs_put(char* kvs_key,
-                              size_t proc_idx,
+                              int proc_idx,
                               const void* kvs_val,
                               size_t kvs_val_len) override;
 
     atl_status_t pmrt_kvs_get(char* kvs_key,
-                              size_t proc_idx,
+                              int proc_idx,
                               void* kvs_val,
                               size_t kvs_val_len) override;
 
     void Hard_finilize(int sig);
 
-    size_t get_rank() override;
+    int get_rank() override;
 
-    size_t get_size() override;
+    int get_size() override;
 
     size_t get_local_thread_idx() override;
 
@@ -94,9 +94,9 @@ private:
 
     int PMIR_Finalize(void);
 
-    int PMIR_Get_size(size_t* size);
+    int PMIR_Get_size(int* size);
 
-    int PMIR_Get_rank(size_t* rank);
+    int PMIR_Get_rank(int* rank);
 
     int PMIR_KVS_Get_my_name(char* kvs_name, size_t length);
 
@@ -120,10 +120,11 @@ private:
 
     int PMIR_Wait_notification(void);
     /* <- Was in API*/
-    kvs_resize_action_t default_checker(size_t comm_size);
-    kvs_resize_action_t call_resize_fn(size_t comm_size);
-    size_t rank;
-    size_t size;
+    kvs_resize_action_t default_checker(int comm_size);
+    kvs_resize_action_t call_resize_fn(int comm_size);
+
+    int rank;
+    int size;
 
     pmir_resize_fn_t resize_function = nullptr;
     std::shared_ptr<helper> h;

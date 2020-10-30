@@ -84,7 +84,7 @@ ccl::event device_group_ring_communicator::allreduce_impl(
 
     size_t ring_index = 0;
 
-    size_t comm_rank = rank();
+    int comm_rank = rank();
     LOG_DEBUG("communicator for device idx: ",
               get_device_path(),
               ", rank idx: , ring_index: ",
@@ -272,7 +272,7 @@ template <class buffer_type>
 ccl::event device_group_ring_communicator::broadcast_impl(
     buffer_type* buf,
     size_t count,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
@@ -284,7 +284,7 @@ template <class buffer_type>
 ccl::event device_group_ring_communicator::broadcast_impl(
     buffer_type& buf,
     size_t count,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
@@ -299,7 +299,7 @@ ccl::event device_group_ring_communicator::reduce_impl(
     buffer_type* recv_buf,
     size_t count,
     ccl::reduction reduction,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
@@ -313,7 +313,7 @@ ccl::event device_group_ring_communicator::reduce_impl(
     buffer_type& recv_buf,
     size_t count,
     ccl::reduction reduction,
-    size_t root,
+    int root,
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {

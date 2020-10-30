@@ -36,7 +36,7 @@ public:
 
     ccl_ipc_gpu_comm(ccl_device& assigned_device,
                      comm_rank_t idx,
-                     size_t size,
+                     int size,
                      ccl::group_split_type group_id,
                      ccl::device_topology_type class_id);
     ~ccl_ipc_gpu_comm() = default;

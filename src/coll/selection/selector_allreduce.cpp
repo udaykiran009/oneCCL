@@ -44,7 +44,7 @@ bool ccl_algorithm_selector_helper<ccl_coll_allreduce_algo>::can_use(
     const ccl_selection_table_t<ccl_coll_allreduce_algo>& table) {
     bool can_use = true;
 
-    if (algo == ccl_coll_allreduce_rabenseifner && param.count < param.comm->pof2())
+    if (algo == ccl_coll_allreduce_rabenseifner && (int)param.count < param.comm->pof2())
         can_use = false;
     else if (algo == ccl_coll_allreduce_ring_rma &&
              !atl_wrapper::attr.enable_rma)

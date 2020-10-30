@@ -13,14 +13,14 @@ ccl::status ccl_coll_build_naive_bcast(ccl_sched* sched,
                                         ccl_buffer buf,
                                         size_t count,
                                         const ccl_datatype& dtype,
-                                        size_t root,
+                                        int root,
                                         ccl_comm* comm);
 
 ccl::status ccl_coll_build_scatter_ring_allgather_bcast(ccl_sched* sched,
                                                          ccl_buffer buf,
                                                          size_t count,
                                                          const ccl_datatype& dtype,
-                                                         size_t root,
+                                                         int root,
                                                          ccl_comm* comm);
 
 ccl::status ccl_coll_build_dissemination_barrier(ccl_sched* sched, ccl_comm* comm);
@@ -31,7 +31,7 @@ ccl::status ccl_coll_build_rabenseifner_reduce(ccl_sched* sched,
                                                 size_t count,
                                                 const ccl_datatype& dtype,
                                                 ccl::reduction reduction,
-                                                size_t root,
+                                                int root,
                                                 ccl_comm* comm);
 
 ccl::status ccl_coll_build_rabenseifner_allreduce(ccl_sched* sched,
@@ -48,7 +48,7 @@ ccl::status ccl_coll_build_binomial_reduce(ccl_sched* sched,
                                             size_t count,
                                             const ccl_datatype& dtype,
                                             ccl::reduction reduction,
-                                            size_t root,
+                                            int root,
                                             ccl_comm* comm);
 
 ccl::status ccl_coll_build_ring_allreduce(ccl_sched* sched,
@@ -193,7 +193,7 @@ ccl::status ccl_coll_build_direct_reduce(ccl_sched* sched,
                                           size_t count,
                                           const ccl_datatype& dtype,
                                           ccl::reduction reduction,
-                                          size_t root,
+                                          int root,
                                           ccl_comm* comm);
 
 ccl::status ccl_coll_build_direct_allgatherv(ccl_sched* sched,
@@ -231,7 +231,7 @@ ccl::status ccl_coll_build_direct_bcast(ccl_sched* sched,
                                          ccl_buffer buf,
                                          size_t count,
                                          const ccl_datatype& dtype,
-                                         size_t root,
+                                         int root,
                                          ccl_comm* comm);
 
 ccl::status ccl_coll_build_direct_reduce_scatter(ccl_sched* sched,

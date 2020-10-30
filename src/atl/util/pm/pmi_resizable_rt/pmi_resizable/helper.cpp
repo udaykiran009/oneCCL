@@ -1,27 +1,27 @@
 #include "helper.h"
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.h"
 
-size_t my_rank, count_pods;
+int my_rank, count_pods;
 size_t barrier_num = 0;
 size_t up_idx;
 size_t applied = 0;
 
 rank_list_t* killed_ranks = NULL;
-size_t killed_ranks_count = 0;
+int killed_ranks_count = 0;
 
 rank_list_t* new_ranks = NULL;
-size_t new_ranks_count = 0;
+int new_ranks_count = 0;
 
-size_t helper::replace_str(char* str, size_t old_rank, size_t new_rank) {
+size_t helper::replace_str(char* str, int old_rank, int new_rank) {
     char old_str[INT_STR_SIZE];
     char new_str[INT_STR_SIZE];
     char* point_to_replace;
-    size_t old_str_size;
-    size_t new_str_size;
+    int old_str_size;
+    int new_str_size;
 
-    SET_STR(old_str, INT_STR_SIZE, SIZE_T_TEMPLATE, old_rank);
+    SET_STR(old_str, INT_STR_SIZE, RANK_TEMPLATE, old_rank);
 
-    SET_STR(new_str, INT_STR_SIZE, SIZE_T_TEMPLATE, new_rank);
+    SET_STR(new_str, INT_STR_SIZE, RANK_TEMPLATE, new_rank);
 
     point_to_replace = strstr(str, old_str);
     if (point_to_replace == NULL)
@@ -37,7 +37,7 @@ size_t helper::replace_str(char* str, size_t old_rank, size_t new_rank) {
     return 0;
 }
 
-void helper::update_ranks(size_t* old_count, rank_list_t** origin_list, const char* kvs_name) {
+void helper::update_ranks(int* old_count, rank_list_t** origin_list, const char* kvs_name) {
     char** rank_nums = NULL;
     size_t rank_count = get_keys_values_by_name(kvs_name, NULL, &rank_nums);
     size_t i;
@@ -64,7 +64,7 @@ void helper::update_ranks(size_t* old_count, rank_list_t** origin_list, const ch
     *old_count += cur_count;
 }
 
-void helper::keep_first_n_up(size_t prev_new_ranks_count, size_t prev_killed_ranks_count) {
+void helper::keep_first_n_up(int prev_new_ranks_count, int prev_killed_ranks_count) {
     rank_list_keep_first_n(&killed_ranks, prev_killed_ranks_count);
     rank_list_keep_first_n(&new_ranks, prev_new_ranks_count);
 }
@@ -75,8 +75,8 @@ void helper::get_update_ranks(void) {
 }
 
 void helper::get_shift(shift_list_t** list) {
-    size_t shift_pods_count = 0;
-    size_t max_rank_survivor_pod = count_pods;
+    int shift_pods_count = 0;
+    int max_rank_survivor_pod = count_pods;
     rank_list_t* cur_new = new_ranks;
     rank_list_t* cur_killed = killed_ranks;
 
@@ -169,8 +169,8 @@ void helper::accept_new_ranks(shift_list_t* cur_list) {
 
     while (cur_list != NULL) {
         if (cur_list->shift.type == CH_T_UPDATE || cur_list->shift.type == CH_T_NEW) {
-            SET_STR(old_rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, cur_list->shift.old_rank);
-            SET_STR(new_rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, cur_list->shift.new_rank);
+            SET_STR(old_rank_str, INT_STR_SIZE, RANK_TEMPLATE, cur_list->shift.old_rank);
+            SET_STR(new_rank_str, INT_STR_SIZE, RANK_TEMPLATE, cur_list->shift.new_rank);
 
             count_values = get_keys_values_by_name(KVS_APPROVED_NEW_POD, &kvs_keys, &kvs_values);
 
@@ -200,7 +200,7 @@ void helper::accept_new_ranks(shift_list_t* cur_list) {
         free(kvs_values);
 }
 
-void helper::update_kvs_info(size_t new_rank) {
+void helper::update_kvs_info(int new_rank) {
     char kvs_name[MAX_KVS_NAME_LENGTH];
     char kvs_key[MAX_KVS_KEY_LENGTH];
     char kvs_val[MAX_KVS_VAL_LENGTH];
@@ -220,13 +220,13 @@ void helper::update_kvs_info(size_t new_rank) {
     }
 }
 
-void helper::move_to_new_rank(size_t new_rank) {
+void helper::move_to_new_rank(int new_rank) {
     char rank_str[INT_STR_SIZE];
 
     update_kvs_info(new_rank);
     my_rank = new_rank;
 
-    SET_STR(rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, my_rank);
+    SET_STR(rank_str, INT_STR_SIZE, RANK_TEMPLATE, my_rank);
 
     //    request_set_val(KVS_POD_REQUEST, my_hostname, rank_str);
 
@@ -238,10 +238,10 @@ void helper::update_my_info(shift_list_t* list) {
 
     while (list != NULL) {
         if (list->shift.old_rank == my_rank) {
-            size_t old_rank = my_rank;
+            int old_rank = my_rank;
             move_to_new_rank(list->shift.new_rank);
 
-            SET_STR(rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, old_rank);
+            SET_STR(rank_str, INT_STR_SIZE, RANK_TEMPLATE, old_rank);
 
             remove_name_key(KVS_POD_NUM, rank_str);
 
@@ -281,7 +281,7 @@ void helper::post_my_info(void) {
 
     applied = 1;
 
-    SET_STR(my_rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, my_rank);
+    SET_STR(my_rank_str, INT_STR_SIZE, RANK_TEMPLATE, my_rank);
 
     set_value(KVS_POD_NUM, my_rank_str, my_hostname);
 
@@ -300,7 +300,7 @@ void helper::post_my_info(void) {
         barrier_num = 0;
 }
 
-size_t helper::update(shift_list_t** list, rank_list_t** dead_up_idx, size_t root_rank) {
+size_t helper::update(shift_list_t** list, rank_list_t** dead_up_idx, int root_rank) {
     if (applied == 1) {
         if ((*list) != NULL) {
             if (my_rank == root_rank) {
@@ -394,7 +394,7 @@ void helper::reg_rank(void) {
     my_rank = 0;
     set_value(KVS_POD_REQUEST, my_hostname, INITIAL_RANK_NUM);
 
-    SET_STR(rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, my_rank);
+    SET_STR(rank_str, INT_STR_SIZE, RANK_TEMPLATE, my_rank);
 
     while (1) {
         wait_shift = 0;
@@ -429,7 +429,7 @@ void helper::reg_rank(void) {
 
         if (!wait_shift) {
             my_rank++;
-            SET_STR(rank_str, INT_STR_SIZE, SIZE_T_TEMPLATE, my_rank);
+            SET_STR(rank_str, INT_STR_SIZE, RANK_TEMPLATE, my_rank);
             set_value(KVS_POD_REQUEST, my_hostname, rank_str);
         }
     }
@@ -472,13 +472,13 @@ void helper::up_kvs_new_and_dead(void) {
     up_kvs(KVS_APPROVED_DEAD_POD, KVS_DEAD_POD);
 }
 
-void helper::get_new_root(size_t* old_root) {
+void helper::get_new_root(int* old_root) {
     size_t i;
     char** rank_nums = NULL;
     size_t rank_count = get_keys_values_by_name(KVS_DEAD_POD, NULL, &rank_nums);
 
     for (i = 0; i < rank_count; i++) {
-        if (*old_root == (size_t)strtol(rank_nums[i], NULL, 10))
+        if (*old_root == (int)strtol(rank_nums[i], NULL, 10))
             (*old_root)++;
         free(rank_nums[i]);
     }

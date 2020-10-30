@@ -74,19 +74,19 @@ std::vector<ccl::stream>& transport_data::get_streams() {
 
 void transport_data::init_comms(user_options_t& options) {
 
-    size_t ranks_per_proc = options.ranks_per_proc;
+    int ranks_per_proc = options.ranks_per_proc;
 
-    std::vector<size_t> local_ranks;
-    for (size_t idx = 0; idx < ranks_per_proc; idx++) {
+    std::vector<int> local_ranks;
+    for (int idx = 0; idx < ranks_per_proc; idx++) {
         local_ranks.push_back(rank * ranks_per_proc + idx);
     }
 
     ccl::context context = ccl::create_context();
     std::vector<ccl::device> devices;
-    std::map<size_t, ccl::device> r2d_map;
+    std::map<int, ccl::device> r2d_map;
 
     if (options.backend == BACKEND_HOST) {
-        for (size_t idx = 0; idx < ranks_per_proc; idx++) {
+        for (int idx = 0; idx < ranks_per_proc; idx++) {
             streams.push_back(ccl::create_stream());
             devices.push_back(ccl::create_device());
         }
@@ -100,7 +100,7 @@ void transport_data::init_comms(user_options_t& options) {
         auto sycl_context = sycl_queues[0].get_context();
         context = ccl::create_context(sycl_context);
 
-        for (size_t idx = 0; idx < ranks_per_proc; idx++) {
+        for (int idx = 0; idx < ranks_per_proc; idx++) {
             streams.push_back(ccl::create_stream(sycl_queues[idx]));
             devices.push_back(ccl::create_device(sycl_queues[idx].get_device()));
             ASSERT(sycl_context == sycl_queues[idx].get_context(),
@@ -112,14 +112,14 @@ void transport_data::init_comms(user_options_t& options) {
         ASSERT(0, "unknown backend %d", (int)options.backend);
     }
 
-    for (size_t idx = 0; idx < ranks_per_proc; idx++) {
+    for (int idx = 0; idx < ranks_per_proc; idx++) {
         r2d_map.emplace(local_ranks[idx], devices[idx]);
     }
 
     comms = ccl::create_communicators(size * ranks_per_proc, r2d_map, context, kvs);
 
-    ASSERT(comms.size() == ranks_per_proc,
-        "unexpected comms size %zu, expected %zu", comms.size(), ranks_per_proc);
+    ASSERT((int)comms.size() == ranks_per_proc,
+        "unexpected comms size %zu, expected %d", comms.size(), ranks_per_proc);
 }
 
 std::vector<ccl::communicator>& transport_data::get_comms() {

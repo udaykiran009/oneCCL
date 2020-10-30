@@ -16,16 +16,16 @@
 #include "kvs_keeper.h"
 #include "kvs/ikvs_wrapper.h"
 
-extern size_t my_rank, count_pods;
+extern int my_rank, count_pods;
 extern size_t barrier_num;
 extern size_t up_idx;
 extern size_t applied;
 
 extern rank_list_t* killed_ranks;
-extern size_t killed_ranks_count;
+extern int killed_ranks_count;
 
 extern rank_list_t* new_ranks;
-extern size_t new_ranks_count;
+extern int new_ranks_count;
 
 class helper {
 public:
@@ -39,7 +39,7 @@ public:
 
     void wait_accept(void);
 
-    size_t update(shift_list_t** list, rank_list_t** dead_up_idx, size_t root_rank);
+    size_t update(shift_list_t** list, rank_list_t** dead_up_idx, int root_rank);
 
     void up_pods_count(void);
 
@@ -51,9 +51,9 @@ public:
 
     void up_kvs_new_and_dead(void);
 
-    void keep_first_n_up(size_t prev_new_ranks_count, size_t prev_killed_ranks_count);
+    void keep_first_n_up(int prev_new_ranks_count, int prev_killed_ranks_count);
 
-    void get_new_root(size_t* old_root);
+    void get_new_root(int* old_root);
 
     /*Work with KVS, new*/
     size_t set_value(const char* kvs_name, const char* kvs_key, const char* kvs_val);
@@ -75,17 +75,17 @@ public:
     /*Work with KVS, new*/
 
 private:
-    size_t replace_str(char* str, size_t old_rank, size_t new_rank);
+    size_t replace_str(char* str, int old_rank, int new_rank);
 
-    void update_ranks(size_t* old_count, rank_list_t** origin_list, const char* kvs_name);
+    void update_ranks(int* old_count, rank_list_t** origin_list, const char* kvs_name);
 
     void clean_dead_pods_info(rank_list_t* dead_up_idx);
 
     void accept_new_ranks(shift_list_t* cur_list);
 
-    void update_kvs_info(size_t new_rank);
+    void update_kvs_info(int new_rank);
 
-    void move_to_new_rank(size_t new_rank);
+    void move_to_new_rank(int new_rank);
 
     void update_my_info(shift_list_t* list);
 
