@@ -23,8 +23,10 @@ if(NOT TARGET ze_loader)
             ENV ZE_ROOT
             ${l0_root_hints}
       PATH_SUFFIXES
+            include
+            include/level_zero
             local/include
-            local/include/level_zero/
+            local/include/level_zero
       NO_DEFAULT_PATH
     )
 
@@ -35,8 +37,9 @@ if(NOT TARGET ze_loader)
             ${l0_root_hints}
       PATH_SUFFIXES
             lib
+            lib/x86_64-linux-gnu
+            lib/level_zero
             local/lib
-            lib/level_zero/
             local/lib/level_zero
       NO_DEFAULT_PATH
     )
