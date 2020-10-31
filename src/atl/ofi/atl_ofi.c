@@ -214,7 +214,7 @@ typedef struct {
 } atl_ofi_req_t;
 
 static void atl_ofi_print_coord(atl_proc_coord_t* coord) {
-    ATL_OFI_DEBUG_PRINT("coord: global [idx %zu, cnt %zu], local [idx %zu, cnt %zu]",
+    ATL_OFI_DEBUG_PRINT("coord: global [idx %d, cnt %d], local [idx %d, cnt %d]",
                         coord->global_idx,
                         coord->global_count,
                         coord->local_idx,

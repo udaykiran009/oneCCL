@@ -205,7 +205,7 @@ vector_class<communicator> create_communicators(
 
 template <class DeviceType, class ContextType>
 vector_class<communicator> create_communicators(
-    size_t size,
+    int size,
     const map_class<int, DeviceType>& devices,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs,
