@@ -8,28 +8,9 @@ struct cpu_alltoall_coll : cpu_base_coll<Dtype, alltoall_strategy_impl> {
     using coll_base = cpu_base_coll<Dtype, alltoall_strategy_impl>;
     using coll_base::send_bufs;
     using coll_base::recv_bufs;
-    using coll_base::single_send_buf;
-    using coll_base::single_recv_buf;
 
     cpu_alltoall_coll(bench_init_attr init_attr)
-            : coll_base(init_attr,
-                        transport_data::get_comm_size(),
-                        transport_data::get_comm_size()) {}
-
-    virtual void prepare_internal(size_t elem_count,
-                         ccl::communicator& comm,
-                         ccl::stream& stream,
-                         size_t rank_idx) override {
-
-        for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
-            for (int idx = 0; idx < comm.size(); idx++) {
-                for (size_t e_idx = 0; e_idx < elem_count; e_idx++) {
-                    ((Dtype*)send_bufs[b_idx][rank_idx])[idx * elem_count + e_idx] = comm.rank();
-                    ((Dtype*)recv_bufs[b_idx][rank_idx])[idx * elem_count + e_idx] = 0;
-                }
-            }
-        }
-    }
+            : coll_base(init_attr) {}
 
     virtual void finalize_internal(size_t elem_count,
                           ccl::communicator& comm,

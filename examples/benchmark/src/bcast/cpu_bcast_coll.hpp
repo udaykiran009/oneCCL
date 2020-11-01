@@ -7,7 +7,6 @@ template <class Dtype>
 struct cpu_bcast_coll : cpu_base_coll<Dtype, bcast_strategy_impl> {
     using coll_base = cpu_base_coll<Dtype, bcast_strategy_impl>;
     using coll_base::recv_bufs;
-    using coll_base::single_recv_buf;
 
     cpu_bcast_coll(bench_init_attr init_attr)
             : coll_base(init_attr) {}

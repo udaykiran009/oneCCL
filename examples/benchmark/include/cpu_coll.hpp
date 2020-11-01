@@ -9,12 +9,14 @@ struct cpu_base_coll : base_coll, protected strategy {
 
     template <class... Args>
     cpu_base_coll(bench_init_attr init_attr,
-                  size_t sbuf_multiplier,
-                  size_t rbuf_multiplier,
                   Args&&... args)
             : base_coll(init_attr),
-              coll_strategy(std::forward<Args>(args)...) {
+              coll_strategy() {
+
         int result = 0;
+
+        size_t send_multiplier = coll_strategy::get_send_multiplier();
+        size_t recv_multiplier = coll_strategy::get_recv_multiplier();
 
         for (size_t rank_idx = 0; rank_idx < base_coll::get_ranks_per_proc(); rank_idx++) {
 
@@ -22,23 +24,15 @@ struct cpu_base_coll : base_coll, protected strategy {
                 result =
                     posix_memalign((void**)&(send_bufs[idx][rank_idx]),
                                    ALIGNMENT,
-                                   base_coll::get_max_elem_count() * sizeof(Dtype) * sbuf_multiplier);
+                                   base_coll::get_max_elem_count() * sizeof(Dtype) * send_multiplier);
                 result =
                     posix_memalign((void**)&(recv_bufs[idx][rank_idx]),
                                    ALIGNMENT,
-                                   base_coll::get_max_elem_count() * sizeof(Dtype) * rbuf_multiplier);
+                                   base_coll::get_max_elem_count() * sizeof(Dtype) * recv_multiplier);
             }
-
-            result = posix_memalign(
-                (void**)&(single_send_buf[rank_idx]),
-                ALIGNMENT,
-                base_coll::get_single_buf_max_elem_count() * sizeof(Dtype) * sbuf_multiplier);
-            result = posix_memalign(
-                (void**)&(single_recv_buf[rank_idx]),
-                ALIGNMENT,
-                base_coll::get_single_buf_max_elem_count() * sizeof(Dtype) * rbuf_multiplier);
-            (void)result;
         }
+
+        ASSERT(result == 0, "failed to allocate buffers");
     }
 
     cpu_base_coll(bench_init_attr init_attr) : cpu_base_coll(init_attr, 1, 1) {}
@@ -51,8 +45,6 @@ struct cpu_base_coll : base_coll, protected strategy {
                 free(send_bufs[idx][rank_idx]);
                 free(recv_bufs[idx][rank_idx]);
             }
-            free(single_send_buf[rank_idx]);
-            free(single_recv_buf[rank_idx]);
         }
     }
 
@@ -80,22 +72,31 @@ struct cpu_base_coll : base_coll, protected strategy {
         }
     }
 
-    virtual void start_single(size_t count,
-                              const bench_exec_attr& attr,
-                              req_list_t& reqs) override {
+    virtual void prepare_internal(size_t elem_count,
+                                  ccl::communicator& comm,
+                                  ccl::stream& stream,
+                                  size_t rank_idx) override
+    {
+        int local_rank = comm.rank();
 
-        auto& transport = transport_data::instance();
-        auto& comms = transport.get_comms();
-        size_t ranks_per_proc = base_coll::get_ranks_per_proc();
+        size_t send_count = coll_strategy::get_send_multiplier() * elem_count;
+        size_t recv_count = coll_strategy::get_recv_multiplier() * elem_count;
 
-        for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
-            coll_strategy::start_internal(comms[rank_idx],
-                                          count,
-                                          static_cast<Dtype*>(single_send_buf[rank_idx]),
-                                          static_cast<Dtype*>(single_recv_buf[rank_idx]),
-                                          attr,
-                                          reqs,
-                                          coll_strategy::get_op_attr(attr));
+        size_t send_bytes = send_count * base_coll::get_dtype_size();
+        size_t recv_bytes = recv_count * base_coll::get_dtype_size();
+
+        std::vector<Dtype> fill_vector(send_count);
+        std::fill(fill_vector.begin(), fill_vector.end(), local_rank);
+
+        for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
+
+            memcpy(send_bufs[b_idx][rank_idx],
+                   fill_vector.data(),
+                   send_bytes);
+
+            memset(recv_bufs[b_idx][rank_idx],
+                   0,
+                   recv_bytes);
         }
     }
 

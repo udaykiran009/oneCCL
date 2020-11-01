@@ -1,13 +1,13 @@
 #pragma once
 
 struct alltoallv_strategy_impl {
-    int comm_size = 0;
+
     std::vector<size_t> send_counts;
     std::vector<size_t> recv_counts;
 
-    alltoallv_strategy_impl(size_t size) : comm_size(size) {
-        send_counts.resize(comm_size);
-        recv_counts.resize(comm_size);
+    alltoallv_strategy_impl() {
+        send_counts.resize(transport_data::get_comm_size());
+        recv_counts.resize(transport_data::get_comm_size());
     }
 
     alltoallv_strategy_impl(const alltoallv_strategy_impl&) = delete;
@@ -17,6 +17,14 @@ struct alltoallv_strategy_impl {
 
     static constexpr const char* class_name() {
         return "alltoallv";
+    }
+
+    size_t get_send_multiplier() {
+        return transport_data::get_comm_size();
+    }
+
+    size_t get_recv_multiplier() {
+        return transport_data::get_comm_size();
     }
 
     static const ccl::alltoallv_attr& get_op_attr(const bench_exec_attr& bench_attr) {
@@ -31,7 +39,8 @@ struct alltoallv_strategy_impl {
                         const bench_exec_attr& bench_attr,
                         req_list_t& reqs,
                         Args&&... args) {
-        for (int idx = 0; idx < comm_size; idx++) {
+
+        for (int idx = 0; idx < comm.size(); idx++) {
             send_counts[idx] = count;
             recv_counts[idx] = count;
         }

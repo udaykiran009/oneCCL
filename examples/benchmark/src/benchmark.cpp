@@ -48,42 +48,8 @@ void do_regular(ccl::communicator& service_comm,
 
             reqs.reserve(colls.size() * options.buf_count);
 
-            /* warm up */
-            PRINT_BY_ROOT(service_comm, "do warm up");
-
             bench_attr.reduction = reduction_op;
             bench_attr.set<ccl::operation_attr_id::to_cache>(true);
-
-            ccl::barrier(service_comm);
-
-            for (size_t count = options.min_elem_count; count <= options.max_elem_count;
-                 count *= 2) {
-
-                for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
-
-                    auto& coll = colls[coll_idx];
-
-                    size_t iter_count =
-                        get_iter_count(count * ccl::get_datatype_size(coll->get_dtype()), options.warmup_iters);
-
-                    for (size_t iter_idx = 0; iter_idx < iter_count; iter_idx++) {
-
-                        for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
-                            match_id_stream << "coll_" << coll->name()
-                                            << "_" << coll_idx << "_count_" << count 
-                                            << "_buf_" << buf_idx;
-                            bench_attr.set<ccl::operation_attr_id::match_id>(ccl::string_class(match_id_stream.str()));
-                            match_id_stream.str("");
-                            coll->start(count, buf_idx, bench_attr, reqs);
-                        }
-
-                        for (auto& req : reqs) {
-                            req.wait();
-                        }
-                        reqs.clear();
-                    }
-                }
-            }
 
             std::ostringstream scolls;
             std::copy(options.coll_names.begin(),
@@ -93,145 +59,99 @@ void do_regular(ccl::communicator& service_comm,
             ccl::barrier(service_comm);
 
             /* benchmark with multiple equal sized buffer per collective */
-            if (options.buf_type == BUF_MULTI) {
+            PRINT_BY_ROOT(service_comm,
+                          "#------------------------------------------------------------\n"
+                          "# Benchmarking: %s\n"
+                          "# processes: %d\n"
+                          "#------------------------------------------------------------\n",
+                          scolls.str().c_str(),
+                          service_comm.size());
+
+            if (options.buf_count == 1) {
                 PRINT_BY_ROOT(service_comm,
-                              "do multi-buffers benchmark\n"
-                              "#------------------------------------------------------------\n"
-                              "# Benchmarking: %s\n"
-                              "# processes: %d\n"
-                              "#------------------------------------------------------------\n"
+                              "%10s %12s %11s",
+                              "#bytes",
+                              "avg[usec]",
+                              "stddev[%]");
+            }
+            else {
+                PRINT_BY_ROOT(service_comm,
                               "%10s %13s %18s %11s",
-                              scolls.str().c_str(),
-                              service_comm.size(),
                               "#bytes",
                               "avg[usec]",
                               "avg_per_buf[usec]",
                               "stddev[%]");
-                bench_attr.set<ccl::operation_attr_id::to_cache>(true);
-                for (size_t count = options.min_elem_count; count <= options.max_elem_count;
-                     count *= 2) {
-                    try {
-                        // we store times for each collective separately,
-                        // but aggregate over buffers and iterations
-                        std::vector<double> coll_timers(colls.size(), 0);
-                        for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
-
-                            auto& coll = colls[coll_idx];
-
-                            ccl::barrier(service_comm);
-
-                            double t1 = 0, t2 = 0, t = 0;
-
-                            size_t iter_count =
-                                get_iter_count(count * ccl::get_datatype_size(coll->get_dtype()), options.iters);
-
-                            for (size_t iter_idx = 0; iter_idx < iter_count; iter_idx++) {
-
-                                // collective is configured to handle only
-                                // options.buf_count many buffers/executions 'at once'.
-                                // -> check cannot combine executions over iterations
-                                // -> wait and check and must be in this loop nest
-                                if (options.check_values) {
-                                    coll->prepare(count);
-                                }
-
-                                ccl::barrier(service_comm);
-
-                                t1 = when();
-
-                                for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
-                                    match_id_stream << "coll_" << coll->name()
-                                                    << "_" << coll_idx << "_count_" << count 
-                                                    << "_buf_" << buf_idx;
-                                    bench_attr.set<ccl::operation_attr_id::match_id>(ccl::string_class(match_id_stream.str()));
-                                    match_id_stream.str("");
-                                    coll->start(count, buf_idx, bench_attr, reqs);
-                                }
-
-                                for (auto& req : reqs) {
-                                    req.wait();
-                                }
-                                reqs.clear();
-
-                                t2 = when();
-                                t += (t2 - t1);
-
-                                if (options.check_values) {
-                                    coll->finalize(count);
-                                }
-                            }
-                            coll_timers[coll_idx] += t;
-                        }
-                        print_timings(service_comm, coll_timers, options, count, dtype, reduction_op);
-                    }
-                    catch (const std::exception& ex) {
-                        ASSERT(0, "error on count %zu, reason: %s", count, ex.what());
-                    }
-                }
             }
-            else {
-                /* benchmark with single buffer per collective */
-                PRINT_BY_ROOT(service_comm,
-                              "do single-buffer benchmark\n"
-                              "#--------------------------------------\n"
-                              "# Benchmarking: %s\n"
-                              "# processes: %d\n"
-                              "#--------------------------------------\n"
-                              "%10s %12s %11s",
-                              scolls.str().c_str(),
-                              service_comm.size(),
-                              "#bytes",
-                              "avg[usec]",
-                              "stddev[%]");
-                size_t min_elem_count = options.min_elem_count * options.buf_count;
-                size_t max_elem_count = options.max_elem_count * options.buf_count;
 
-                bench_attr.set<ccl::operation_attr_id::to_cache>(true);
-                for (size_t count = min_elem_count; count <= max_elem_count; count *= 2) {
-                    try {
-                        // we store times for each collective separately,
-                        // but aggregate over iterations
-                        std::vector<double> coll_timers(colls.size(), 0);
+            for (size_t count = options.min_elem_count; count <= options.max_elem_count;
+                 count *= 2) {
 
-                        double t1 = 0, t2 = 0;
+                size_t iter_count =
+                    get_iter_count(count * ccl::get_datatype_size(dtype), options.iters);
 
-                        for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
+                size_t warmup_iter_count =
+                    get_iter_count(count * ccl::get_datatype_size(dtype), options.warmup_iters);
+            
+                try {
+                    // we store times for each collective separately,
+                    // but aggregate over buffers and iterations
+                    std::vector<double> coll_timers(colls.size(), 0);
+                    for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
 
-                            auto& coll = colls[coll_idx];
+                        auto& coll = colls[coll_idx];
 
-                            size_t iter_count =
-                                get_iter_count(count * ccl::get_datatype_size(coll->get_dtype()), options.iters);
+                        ccl::barrier(service_comm);
+
+                        double t1 = 0, t2 = 0, t = 0;
+
+                        for (size_t iter_idx = 0; iter_idx < (iter_count + warmup_iter_count); iter_idx++) {
+
+                            // collective is configured to handle only
+                            // options.buf_count many buffers/executions 'at once'.
+                            // -> check cannot combine executions over iterations
+                            // -> wait and check and must be in this loop nest
+                            if (options.check_values) {
+                                coll->prepare(count);
+                            }
 
                             ccl::barrier(service_comm);
 
                             t1 = when();
 
-                            for (size_t iter_idx = 0; iter_idx < iter_count; iter_idx++) {
+                            for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
                                 match_id_stream << "coll_" << coll->name()
-                                                << "_" << coll_idx << "_single_count_" << count;
+                                                << "_" << coll_idx << "_count_" << count 
+                                                << "_buf_" << buf_idx;
                                 bench_attr.set<ccl::operation_attr_id::match_id>(ccl::string_class(match_id_stream.str()));
                                 match_id_stream.str("");
-
-                                coll->start_single(count, bench_attr, reqs);
-
-                                for (auto& req : reqs) {
-                                    req.wait();
-                                }
-                                reqs.clear();
+                                coll->start(count, buf_idx, bench_attr, reqs);
                             }
+
+                            for (auto& req : reqs) {
+                                req.wait();
+                            }
+                            reqs.clear();
 
                             t2 = when();
 
-                            coll_timers[coll_idx] += (t2 - t1);
-                        }
+                            if (iter_idx >= warmup_iter_count) {
+                                t += (t2 - t1);
+                            }
 
-                        print_timings(service_comm, coll_timers, options, count, dtype, reduction_op);
+                            if (options.check_values) {
+                                coll->finalize(count);
+                            }
+                        }
+                        coll_timers[coll_idx] += t;
                     }
-                    catch (...) {
-                        ASSERT(0, "error on count %zu", count);
-                    }
+
+                    print_timings(service_comm, coll_timers,
+                                  options, count, iter_count,
+                                  dtype, reduction_op);
                 }
-                PRINT_BY_ROOT(service_comm, "PASSED\n");
+                catch (const std::exception& ex) {
+                    ASSERT(0, "error on count %zu, reason: %s", count, ex.what());
+                }
             }
         }
     }

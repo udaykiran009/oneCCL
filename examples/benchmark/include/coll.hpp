@@ -91,9 +91,6 @@ struct base_coll {
             send_bufs[idx].resize(init_attr.ranks_per_proc);
             recv_bufs[idx].resize(init_attr.ranks_per_proc);
         }
-
-        single_send_buf.resize(init_attr.ranks_per_proc);
-        single_recv_buf.resize(init_attr.ranks_per_proc);
     }
 
     base_coll() = delete;
@@ -143,12 +140,14 @@ struct base_coll {
 
     virtual ccl::datatype get_dtype() const = 0;
 
+    size_t get_dtype_size() const {
+        return ccl::get_datatype_size(get_dtype());
+    }
+
     virtual void start(size_t count,
                        size_t buf_idx,
                        const bench_exec_attr& attr,
                        req_list_t& reqs) = 0;
-
-    virtual void start_single(size_t count, const bench_exec_attr& attr, req_list_t& reqs) = 0;
 
     /* to get buf_count from initialized private member */
     size_t get_buf_count() const noexcept {
@@ -157,10 +156,6 @@ struct base_coll {
 
     size_t get_max_elem_count() const noexcept {
         return init_attr.max_elem_count;
-    }
-
-    size_t get_single_buf_max_elem_count() const noexcept {
-        return init_attr.buf_count * init_attr.max_elem_count;
     }
 
     sycl_mem_type_t get_sycl_mem_type() const noexcept {
@@ -178,9 +173,6 @@ struct base_coll {
     // first dim - per buf_count, second dim - per local rank
     std::vector<std::vector<void*>> send_bufs;
     std::vector<std::vector<void*>> recv_bufs;
-
-    std::vector<void*> single_send_buf;
-    std::vector<void*> single_recv_buf;
 
 private:
 

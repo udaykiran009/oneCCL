@@ -28,7 +28,6 @@ constexpr std::initializer_list<ccl::datatype> all_dtypes = {
 
 typedef enum { BACKEND_HOST, BACKEND_SYCL } backend_type_t;
 typedef enum { LOOP_REGULAR, LOOP_UNORDERED } loop_type_t;
-typedef enum { BUF_SINGLE, BUF_MULTI } buf_type_t;
 
 typedef enum { SYCL_DEV_HOST, SYCL_DEV_CPU, SYCL_DEV_GPU } sycl_dev_type_t;
 typedef enum { SYCL_MEM_USM, SYCL_MEM_BUF } sycl_mem_type_t;
@@ -41,9 +40,6 @@ std::map<backend_type_t, std::string> backend_names = {
 
 std::map<loop_type_t, std::string> loop_names = { std::make_pair(LOOP_REGULAR, "regular"),
                                                   std::make_pair(LOOP_UNORDERED, "unordered") };
-
-std::map<buf_type_t, std::string> buf_names = { std::make_pair(BUF_MULTI, "multi"),
-                                                std::make_pair(BUF_SINGLE, "single") };
 
 std::map<sycl_dev_type_t, std::string> sycl_dev_names = {
     std::make_pair(SYCL_DEV_HOST, "host"),
@@ -97,7 +93,6 @@ typedef struct user_options_t {
     size_t min_elem_count;
     size_t max_elem_count;
     int check_values;
-    buf_type_t buf_type;
     size_t v2i_ratio;
     sycl_dev_type_t sycl_dev_type;
     sycl_mem_type_t sycl_mem_type;
@@ -117,7 +112,6 @@ typedef struct user_options_t {
         min_elem_count = DEFAULT_MIN_ELEM_COUNT;
         max_elem_count = DEFAULT_MAX_ELEM_COUNT;
         check_values = DEFAULT_CHECK_VALUES;
-        buf_type = DEFAULT_BUF_TYPE;
         v2i_ratio = DEFAULT_V2I_RATIO;
         sycl_dev_type = DEFAULT_SYCL_DEV_TYPE;
         sycl_mem_type = DEFAULT_SYCL_MEM_TYPE;

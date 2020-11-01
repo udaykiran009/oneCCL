@@ -40,7 +40,6 @@ void print_help_usage(const char* app) {
         "\t[-f,--min_elem_count <minimum number of elements for single collective>]: %d\n"
         "\t[-t,--max_elem_count <maximum number of elements for single collective>]: %d\n"
         "\t[-c,--check <check result correctness>]: %d\n"
-        "\t[-n,--buf_type <buffer type>]: %s\n"
         "\t[-a,--sycl_dev_type <sycl device type>]: %s\n"
         "\t[-m,--sycl_mem_type <sycl memory type>]: %s\n"
         "\t[-u,--sycl_usm_type <sycl usm type>]: %s\n"
@@ -61,7 +60,6 @@ void print_help_usage(const char* app) {
         DEFAULT_MIN_ELEM_COUNT,
         DEFAULT_MAX_ELEM_COUNT,
         DEFAULT_CHECK_VALUES,
-        buf_names[DEFAULT_BUF_TYPE].c_str(),
         sycl_dev_names[DEFAULT_SYCL_DEV_TYPE].c_str(),
         sycl_mem_names[DEFAULT_SYCL_MEM_TYPE].c_str(),
         sycl_usm_names[DEFAULT_SYCL_USM_TYPE].c_str(),
@@ -143,18 +141,6 @@ int set_loop(const std::string& option_value, loop_type_t& loop) {
     return 0;
 }
 
-int set_buf_type(const std::string& option_value, buf_type_t& buf) {
-    std::string option_name = "buf_type";
-    std::set<std::string> supported_option_values{ buf_names[BUF_SINGLE], buf_names[BUF_MULTI] };
-
-    if (check_supported_options(option_name, option_value, supported_option_values))
-        return -1;
-
-    buf = (option_value == buf_names[BUF_SINGLE]) ? BUF_SINGLE : BUF_MULTI;
-
-    return 0;
-}
-
 int set_sycl_dev_type(const std::string& option_value, sycl_dev_type_t& dev) {
     std::string option_name = "sycl_dev_type";
     std::set<std::string> supported_option_values{ sycl_dev_names[SYCL_DEV_HOST],
@@ -218,16 +204,14 @@ void print_timings(ccl::communicator& comm,
                    const std::vector<double>& local_timers,
                    const user_options_t& options,
                    const size_t elem_count,
+                   const size_t iter_count,
                    ccl::datatype dtype,
                    ccl::reduction op) {
 
-    const size_t buf_count = options.buf_type == BUF_SINGLE ? 1 : options.buf_count;
+    const size_t buf_count = options.buf_count;
     const size_t ncolls = options.coll_names.size();
     std::vector<double> all_timers(ncolls * comm.size());
     std::vector<size_t> recv_counts(comm.size());
-
-    size_t iter_count =
-        get_iter_count(elem_count * ccl::get_datatype_size(dtype), options.iters);
 
     int idx;
     for (idx = 0; idx < comm.size(); idx++)
@@ -260,7 +244,7 @@ void print_timings(ccl::communicator& comm,
         }
 
         stddev_timer = sqrt(sum / comm.size()) / avg_timer * 100;
-        if (options.buf_type == BUF_SINGLE) {
+        if (buf_count == 1) {
             printf("%10zu %12.2lf %11.1lf\n",
                    elem_count * ccl::get_datatype_size(dtype) * buf_count,
                    avg_timer,
@@ -318,7 +302,7 @@ int parse_user_options(int& argc,
     int ch;
     int errors = 0;
 
-    const char* const short_options = "b:e:i:w:p:f:t:c:v:n:o:a:m:u:k:l:d:r:h";
+    const char* const short_options = "b:e:i:w:p:f:t:c:v:o:a:m:u:k:l:d:r:h";
 
     struct option getopt_options[] = {
         { "backend", required_argument, 0, 'b' },
@@ -330,7 +314,6 @@ int parse_user_options(int& argc,
         { "max_elem_count", required_argument, 0, 't' },
         { "check", required_argument, 0, 'c' },
         { "v2i_ratio", required_argument, 0, 'v' },
-        { "buf_type", required_argument, 0, 'n' },
         { "sycl_dev_type", required_argument, 0, 'a' },
         { "sycl_mem_type", required_argument, 0, 'm' },
         { "sycl_usm_type", required_argument, 0, 'u' },
@@ -364,12 +347,6 @@ int parse_user_options(int& argc,
             case 't': options.max_elem_count = atoll(optarg); break;
             case 'c': options.check_values = atoi(optarg); break;
             case 'v': options.v2i_ratio = atoll(optarg); break;
-            case 'n':
-                if (set_buf_type(optarg, options.buf_type)) {
-                    PRINT("failed to parse 'buf_type' option");
-                    errors++;
-                }
-                break;
             case 'a':
                 if (set_sycl_dev_type(optarg, options.sycl_dev_type)) {
                     PRINT("failed to parse 'sycl_dev_type' option");
@@ -450,7 +427,6 @@ void print_user_options(const user_options_t& options,
 
     std::string backend_str = find_str_val(backend_names, options.backend);
     std::string loop_str = find_str_val(loop_names, options.loop);
-    std::string buf_type_str = find_str_val(buf_names, options.buf_type);
 
     std::string sycl_dev_type_str = find_str_val(sycl_dev_names, options.sycl_dev_type);
     std::string sycl_mem_type_str = find_str_val(sycl_mem_names, options.sycl_mem_type);
@@ -468,7 +444,6 @@ void print_user_options(const user_options_t& options,
                   "\n  max_elem_count: %zu"
                   "\n  check:          %d"
                   "\n  v2i_ratio:      %zu"
-                  "\n  buf_type:       %s"
                   "\n  sycl_dev_type:  %s"
                   "\n  sycl_mem_type:  %s"
                   "\n  sycl_usm_type:  %s"
@@ -485,7 +460,6 @@ void print_user_options(const user_options_t& options,
                   options.max_elem_count,
                   options.check_values,
                   options.v2i_ratio,
-                  buf_type_str.c_str(),
                   sycl_dev_type_str.c_str(),
                   sycl_mem_type_str.c_str(),
                   sycl_usm_type_str.c_str(),

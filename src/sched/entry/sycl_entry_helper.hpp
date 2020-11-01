@@ -32,6 +32,11 @@ struct sycl_copier {
       q(q),
       in_buf_offset(in_buf_offset) {}
 
+    bool is_completed() {
+        return (e.get_info<sycl::info::event::command_execution_status>()
+          == sycl::info::event_command_status::complete) ? true : false;
+    }
+
     template <size_t index, class specific_sycl_buffer>
     void invoke() {
 
@@ -49,14 +54,10 @@ struct sycl_copier {
             void* in_buf_ptr = in_buf.get_ptr(bytes);
             void* out_buf_ptr = out_buf.get_ptr(bytes);
 
-            specific_sycl_buffer host_buf(
-              static_cast<typename specific_sycl_buffer::value_type*>((direction == sycl_copy_direction::h2d) ? in_buf_ptr : out_buf_ptr),
-              count,
-              cl::sycl::property::buffer::use_host_ptr{});
-
             void* void_device_ptr = (direction == sycl_copy_direction::h2d) ? out_buf_ptr : in_buf_ptr;
 
-            typename specific_sycl_buffer::value_type* device_ptr = static_cast<typename specific_sycl_buffer::value_type*>(void_device_ptr);
+            typename specific_sycl_buffer::value_type* device_ptr =
+                static_cast<typename specific_sycl_buffer::value_type*>(void_device_ptr);
 
             auto device_ptr_type = cl::sycl::get_pointer_type(device_ptr, q.get_context());
 
@@ -94,41 +95,32 @@ struct sycl_copier {
                       ", device_ptr usm_type: ",
                       native::detail::usm_to_string(device_ptr_type));
 
-            cl::sycl::event copy_event;
             size_t offset = in_buf_offset;
 
             if (device_buf_ptr) {
-                copy_event = q.submit([&](cl::sycl::handler& h) {
 
+                specific_sycl_buffer host_buf(
+                    static_cast<typename specific_sycl_buffer::value_type*>(
+                      (direction == sycl_copy_direction::h2d) ? in_buf_ptr : out_buf_ptr),
+                    count,
+                    cl::sycl::property::buffer::use_host_ptr{});
+
+                e = q.submit([&](cl::sycl::handler& h) {
                     auto& src_buf = (direction == sycl_copy_direction::h2d) ? host_buf : *device_buf_ptr;
                     auto& dst_buf = (direction == sycl_copy_direction::h2d) ? *device_buf_ptr : host_buf;
-
-                    auto src_buf_acc = src_buf.template get_access<cl::sycl::access::mode::read>(h);
+                    auto src_buf_acc = src_buf.template get_access<cl::sycl::access::mode::read>(h, count, offset);
                     auto dst_buf_acc = dst_buf.template get_access<cl::sycl::access::mode::write>(h);
-
-                    h.parallel_for(cl::sycl::range<1>{ count }, [=](cl::sycl::item<1> id) {
-                            dst_buf_acc[id] = src_buf_acc[id + offset];
-                        });
+                    h.copy(src_buf_acc, dst_buf_acc);
                 });
             }
             else {
-                copy_event = q.submit([&](cl::sycl::handler& h) {
+                e = q.memcpy(out_buf_ptr,
+                             static_cast<typename specific_sycl_buffer::value_type*>(in_buf_ptr) + offset,
+                             count * dtype.size());
 
-                    if (direction == sycl_copy_direction::h2d) {
-                        auto host_buf_acc = host_buf.template get_access<cl::sycl::access::mode::read>(h);
-                        h.parallel_for(cl::sycl::range<1>{ count }, [=](cl::sycl::item<1> id) {
-                            device_ptr[id] = host_buf_acc[id + offset];
-                        });
-                    }
-                    else {
-                        auto host_buf_acc = host_buf.template get_access<cl::sycl::access::mode::write>(h);
-                        h.parallel_for(cl::sycl::range<1>{ count }, [=](cl::sycl::item<1> id) {
-                            host_buf_acc[id] = device_ptr[id + offset];
-                        });
-                    }
-                });
+                /* TODO: remove explicit wait */
+                e.wait();
             }
-            copy_event.wait();
         }
         else {
             LOG_TRACE("visitor skipped index: ",
@@ -146,6 +138,7 @@ struct sycl_copier {
     const ccl_datatype& dtype;
     cl::sycl::queue q;
     size_t in_buf_offset;
+    sycl::event e;
 };
 
 #endif /* CCL_ENABLE_SYCL */

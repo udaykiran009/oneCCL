@@ -46,6 +46,7 @@ public:
     void set(const string_class& key, const vector_class<char>& data) const {
         CCL_THROW_IF_NOT(!data.empty(), "data should have at least one element");
         CCL_THROW_IF_NOT(data.back() == '\0', "data should have terminating symbol");
+        CCL_THROW_IF_NOT(data.data(), "data pointer should be non-null");
         inter_kvs->kvs_set_value(prefix.c_str(), key.c_str(), data.data());
     }
 

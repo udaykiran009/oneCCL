@@ -118,13 +118,16 @@ run_benchmark()
 
     options="--min_elem_count 1 --max_elem_count 32"
 
+    usm_list="device"
+
     if [ "${backend}" != "" ];
     then
         options="${options} --backend ${backend}"
 
         if [ "${backend}" == "sycl" ];
         then
-            options="${options} --iters 4 --buf_count 2"
+            options="${options} --iters 4 --buf_count 2 -m usm"
+            usm_list="${usm_list} shared"
         else
             options="${options} --iters 16 --buf_count 8"
         fi
@@ -146,25 +149,28 @@ run_benchmark()
         options="${options} --reduction ${reduction}"
     fi
 
-    for buf_type in "single" "multi"
+    for usm in $usm_list;
     do
-        local test_log="${base_test_log}_${buf_type}.log"
-        final_option="${options} --buf_type ${buf_type}"
+        echo "usm: " $usm
+
+        local test_log="${base_test_log}_${usm}.log"
+        final_options="${options} -u ${usm}"
+
         if [ `echo $ccl_extra_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
         then
-            eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_option}` 2>&1 | tee ${test_log}
+            eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_options}` 2>&1 | tee ${test_log}
             check_test ${test_log} ${example}
         else
             log_2_test_log="${test_log}.2_ranks"
             echo "output for run with CCL_LOG_LEVEL=2 and 2 ranks has been redirected to log file ${log_2_test_log}"
-            eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_option}` > ${log_2_test_log} 2>&1
+            eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_options}` > ${log_2_test_log} 2>&1
             check_test ${log_2_test_log} ${example}
 
             if [ "${transport}" == "ofi" ];
             then
                 log_2_test_log="${test_log}.1_rank"
                 echo "output for run with CCL_LOG_LEVEL=2 and 1 rank has been redirected to log file ${log_2_test_log}"
-                eval `echo $ccl_extra_env mpiexec.hydra -n 1 -ppn $ppn -l ./$example ${final_option}` > ${log_2_test_log} 2>&1
+                eval `echo $ccl_extra_env mpiexec.hydra -n 1 -ppn $ppn -l ./$example ${final_options}` > ${log_2_test_log} 2>&1
                 check_test ${log_2_test_log} ${example}
             fi
         fi

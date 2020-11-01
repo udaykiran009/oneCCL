@@ -23,15 +23,6 @@ struct base_sparse_allreduce_coll
     size_t* recv_vcount = nullptr;
     std::vector<std::vector<sparse_allreduce_fn_ctx_t>> fn_ctxs;
 
-    std::vector<ITypeNonMod*> single_send_ibuf;
-    std::vector<VTypeNonMod*> single_send_vbuf;
-    std::vector<ITypeNonMod*> single_recv_ibuf;
-    std::vector<VTypeNonMod*> single_recv_vbuf;
-
-    size_t single_recv_icount{};
-    size_t single_recv_vcount{};
-    std::vector<sparse_allreduce_fn_ctx_t> single_fn_ctx;
-
     base_sparse_allreduce_coll(bench_init_attr init_attr, size_t size)
             : base_coll(init_attr),
               coll_strategy(init_attr.v2i_ratio, size) {
@@ -59,12 +50,6 @@ struct base_sparse_allreduce_coll
             recv_ibufs[idx].resize(init_attr.ranks_per_proc);
             recv_vbufs[idx].resize(init_attr.ranks_per_proc);
         }
-
-        single_send_ibuf.resize(init_attr.ranks_per_proc);
-        single_send_vbuf.resize(init_attr.ranks_per_proc);
-        single_recv_ibuf.resize(init_attr.ranks_per_proc);
-        single_recv_vbuf.resize(init_attr.ranks_per_proc);
-        single_fn_ctx.resize(init_attr.ranks_per_proc);
     }
 
     virtual ~base_sparse_allreduce_coll() {

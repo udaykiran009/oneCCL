@@ -8,6 +8,14 @@ struct reduce_scatter_strategy_impl {
         return "reduce_scatter";
     }
 
+    size_t get_send_multiplier() {
+        return 1;
+    }
+
+    size_t get_recv_multiplier() {
+        return 1;
+    }
+
     static const ccl::reduce_scatter_attr& get_op_attr(const bench_exec_attr& bench_attr) {
         return bench_attr.get_attr<ccl::reduce_scatter_attr>();
     }

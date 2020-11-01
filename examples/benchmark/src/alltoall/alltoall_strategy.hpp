@@ -5,6 +5,14 @@ struct alltoall_strategy_impl {
         return "alltoall";
     }
 
+    size_t get_send_multiplier() {
+        return transport_data::get_comm_size();
+    }
+
+    size_t get_recv_multiplier() {
+        return transport_data::get_comm_size();
+    }
+
     static const ccl::alltoall_attr& get_op_attr(const bench_exec_attr& bench_attr) {
         return bench_attr.get_attr<ccl::alltoall_attr>();
     }

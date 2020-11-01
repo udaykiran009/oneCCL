@@ -5,6 +5,14 @@ struct allreduce_strategy_impl {
         return "allreduce";
     }
 
+    size_t get_send_multiplier() {
+        return 1;
+    }
+
+    size_t get_recv_multiplier() {
+        return 1;
+    }
+
     static const ccl::allreduce_attr& get_op_attr(const bench_exec_attr& bench_attr) {
         return bench_attr.get_attr<ccl::allreduce_attr>();
     }
