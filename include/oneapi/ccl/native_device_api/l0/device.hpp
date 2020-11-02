@@ -123,7 +123,7 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
 
     device_queue create_cmd_queue(std::shared_ptr<ccl_context> ctx,
         const ze_command_queue_desc_t& properties = get_default_queue_desc());
-    ze_fence_handle_t create_or_get_fence(const device_queue& queue, std::shared_ptr<ccl_context> ctx);
+    device_queue_fence& get_fence(const device_queue& queue, std::shared_ptr<ccl_context> ctx);
     device_queue& get_cmd_queue(const ze_command_queue_desc_t& properties, std::shared_ptr<ccl_context> ctx);
     device_cmd_list create_cmd_list(std::shared_ptr<ccl_context> ctx,
         const ze_command_list_desc_t& properties = get_default_list_desc());

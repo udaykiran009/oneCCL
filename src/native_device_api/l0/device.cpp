@@ -349,8 +349,8 @@ CCL_API ccl_device::device_queue ccl_device::create_cmd_queue(std::shared_ptr<cc
     return device_queue(hCommandQueue, get_ptr(), ctx);
 }
 
-CCL_API ze_fence_handle_t ccl_device::create_or_get_fence(const device_queue& queue,
-                                                          std::shared_ptr<ccl_context> ctx) {
+CCL_API ccl_device::device_queue_fence& ccl_device::get_fence(const device_queue& queue,
+                                                              std::shared_ptr<ccl_context> ctx) {
     //TODO not optimal
     std::unique_lock<std::mutex> lock(queue_mutex);
     auto fence_it = queue_fences.find(queue.handle);
@@ -370,7 +370,7 @@ CCL_API ze_fence_handle_t ccl_device::create_or_get_fence(const device_queue& qu
         device_queue_fence f(h, get_ptr(), ctx);
         fence_it = queue_fences.emplace(queue.handle, std::move(f)).first;
     }
-    return fence_it->second.handle;
+    return fence_it->second;
 }
 
 CCL_API void* ccl_device::device_alloc_memory(size_t bytes_count,

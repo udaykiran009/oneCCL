@@ -123,7 +123,7 @@ public:
             //TODO make check, that device_stream belong to the device
             auto queue_prop = ccl_device::get_default_queue_desc();
             auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
-            fence = device.create_or_get_fence(cmd_queue, ctx);
+            fence = device.get_fence(cmd_queue, ctx).get();
 
             ENTRY_LOG_DEBUG("start base entry initialization, ctx: ", ctx.get(),
                             ", queue: ", cmd_queue.get(), ", fence: ", fence);
