@@ -19,9 +19,6 @@ enum class operation_attr_id : int {
     synchronous,
     match_id,
 
-    prologue_fn,
-    epilogue_fn,
-
     last_value
 };
 

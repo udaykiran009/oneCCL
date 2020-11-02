@@ -42,8 +42,8 @@
 #include "unordered_coll/unordered_coll.hpp"
 
 #define COPY_COMMON_OP_ATTRS(from, to) \
-    to->prologue_fn = from.get<ccl::operation_attr_id::prologue_fn>().get(); \
-    to->epilogue_fn = from.get<ccl::operation_attr_id::epilogue_fn>().get(); \
+    to->prologue_fn = nullptr; /*from.get<ccl::operation_attr_id::prologue_fn>().get();*/ \
+    to->epilogue_fn = nullptr; /*from.get<ccl::operation_attr_id::epilogue_fn>().get();*/ \
     to->priority = from.get<ccl::operation_attr_id::priority>(); \
     to->synchronous = from.get<ccl::operation_attr_id::synchronous>(); \
     to->to_cache = from.get<ccl::operation_attr_id::to_cache>(); \

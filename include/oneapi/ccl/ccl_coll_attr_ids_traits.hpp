@@ -28,18 +28,6 @@ struct ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::version> {
 };
 
 template <>
-struct ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::prologue_fn> {
-    using type = ccl::prologue_fn;
-    using return_type = function_holder<type>;
-};
-
-template <>
-struct ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::epilogue_fn> {
-    using type = ccl::epilogue_fn;
-    using return_type = function_holder<type>;
-};
-
-template <>
 struct ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::priority> {
     using type = size_t;
     using return_type = type;

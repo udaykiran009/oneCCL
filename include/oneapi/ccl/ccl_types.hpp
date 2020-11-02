@@ -83,24 +83,6 @@ enum class sparse_coalesce_mode : int {
     last_value
 };
 
-/* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype, context */
-typedef void (*prologue_fn)(const void*,
-                            size_t,
-                            ccl::datatype,
-                            void**,
-                            size_t*,
-                            ccl::datatype*,
-                            const ccl::fn_context*);
-
-/* in_buf, in_count, in_dtype, out_buf, out_count, out_dtype, context */
-typedef void (*epilogue_fn)(const void*,
-                            size_t,
-                            ccl::datatype,
-                            void*,
-                            size_t*,
-                            ccl::datatype,
-                            const ccl::fn_context*);
-
 /* in_buf, in_count, inout_buf, out_count, dtype, context */
 typedef void (
     *reduction_fn)(const void*, size_t, void*, size_t*, ccl::datatype, const ccl::fn_context*);

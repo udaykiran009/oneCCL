@@ -18,29 +18,29 @@ struct ccl_operation_attr_impl_t {
     typename version_traits_t::return_type set_attribute_value(typename version_traits_t::type val,
                                                                const version_traits_t& t);
 
-    /**
-     * `prologue_fn` operations
-     */
-    using prologue_fn_traits_t =
-        detail::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::prologue_fn>;
-    const typename prologue_fn_traits_t::return_type& get_attribute_value(
-        const prologue_fn_traits_t& id) const;
+    // /**
+    //  * `prologue_fn` operations
+    //  */
+    // using prologue_fn_traits_t =
+    //     detail::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::prologue_fn>;
+    // const typename prologue_fn_traits_t::return_type& get_attribute_value(
+    //     const prologue_fn_traits_t& id) const;
 
-    typename prologue_fn_traits_t::return_type set_attribute_value(
-        typename prologue_fn_traits_t::type val,
-        const prologue_fn_traits_t& t);
+    // typename prologue_fn_traits_t::return_type set_attribute_value(
+    //     typename prologue_fn_traits_t::type val,
+    //     const prologue_fn_traits_t& t);
 
-    /**
-     * `epilogue_fn` operations
-     */
-    using epilogue_fn_traits_t =
-        detail::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::epilogue_fn>;
-    const typename epilogue_fn_traits_t::return_type& get_attribute_value(
-        const epilogue_fn_traits_t& id) const;
+    // /**
+    //  * `epilogue_fn` operations
+    //  */
+    // using epilogue_fn_traits_t =
+    //     detail::ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::epilogue_fn>;
+    // const typename epilogue_fn_traits_t::return_type& get_attribute_value(
+    //     const epilogue_fn_traits_t& id) const;
 
-    typename epilogue_fn_traits_t::return_type set_attribute_value(
-        typename epilogue_fn_traits_t::type val,
-        const epilogue_fn_traits_t& t);
+    // typename epilogue_fn_traits_t::return_type set_attribute_value(
+    //     typename epilogue_fn_traits_t::type val,
+    //     const epilogue_fn_traits_t& t);
 
     /**
      * `priority` operations
@@ -90,8 +90,8 @@ struct ccl_operation_attr_impl_t {
         typename match_id_traits_t::type val,
         const match_id_traits_t& t);
 
-    typename ccl_operation_attr_impl_t::prologue_fn_traits_t::return_type prologue_fn{};
-    typename ccl_operation_attr_impl_t::epilogue_fn_traits_t::return_type epilogue_fn{};
+    // typename ccl_operation_attr_impl_t::prologue_fn_traits_t::return_type prologue_fn{};
+    // typename ccl_operation_attr_impl_t::epilogue_fn_traits_t::return_type epilogue_fn{};
 
     /* Priority for collective operation */
     size_t priority = 0;
