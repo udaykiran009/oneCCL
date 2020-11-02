@@ -19,7 +19,8 @@ public:
     }
 
     string() {
-        storage = new char{ '\0' };
+        storage = new char[1];
+        *storage = '\0';
         len = 0;
     }
 
