@@ -13,6 +13,12 @@ TEST_F(ring_allreduce_multi_device_fixture, ring_allreduce_multi_device_mt) {
     const size_t num_thread = 2;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
+   ze_device_mem_alloc_desc_t mem_descr {
+            .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
+            .pNext = NULL,
+            .flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED,
+            .ordinal = 0,
+    };
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
@@ -60,7 +66,7 @@ TEST_F(ring_allreduce_multi_device_fixture, ring_allreduce_multi_device_mt) {
         this->output << "Alloc memory handles: " << std::endl;
         auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
         auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
-        auto temp_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
+        auto temp_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx, mem_descr);
         mem_send.enqueue_write_sync(send_values);
         mem_recv.enqueue_write_sync(recv_values);
         temp_recv.enqueue_write_sync(recv_values);
@@ -76,8 +82,8 @@ TEST_F(ring_allreduce_multi_device_fixture, ring_allreduce_multi_device_mt) {
                                             std::move(temp_recv));
 
         // flags
-        auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
-        auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+        auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx, mem_descr);
+        auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int), ctx, mem_descr);
         auto barrier_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
         left_wrote_2_me_flag.enqueue_write_sync({ (int)0 });
         read_for_receive_flag.enqueue_write_sync({ (int)0 });

@@ -2,6 +2,8 @@
 #include "oneapi/ccl/ccl_types.hpp"
 #include "common/datatype/datatype.hpp"
 #include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/native_device_api/l0/primitives.hpp"
+#include "common/comm/l0/modules/kernel_functions.hpp"
 
 #include "oneapi/ccl.hpp"
 
@@ -74,6 +76,9 @@ public:
     using kernel_main_typed =
         typename gpu_comm::template gpu_kernel_t<type_op, group_id, class_id, native_type>;
     // using kernel_ipc_typed = ring_allreduce_ipc<native_type>;
+
+    template <class elem_t>
+    using device_memory = memory<elem_t, ccl_device, ccl_context>;
 
     friend class ccl_gpu_comm;
     friend class ccl_virtual_gpu_comm;
@@ -290,6 +295,42 @@ protected:
 protected:
     ccl_driver_context_ptr get_ctx() const {
         return ctx;
+    }
+
+    template<template <size_t pos, class Policy> class KernelArg, size_t POS, class POL>
+    device_memory<typename std::remove_pointer<typename KernelArg<POS, POL>::arg_type>::type>
+                                                        alloc_memory_wrap (
+                                                                            const KernelArg<POS, POL> &arg,
+                                                                            std::shared_ptr<gpu_comm> parent_communicator,
+                                                                            size_t cnt,
+                                                                            std::shared_ptr<ccl_context> ctx
+                                                                           ) {
+        using alloc_type = typename std::remove_pointer<typename KernelArg<POS, POL>::arg_type>::type;
+        auto memory = parent_communicator->get_device().template alloc_memory<alloc_type>(cnt, sizeof(alloc_type), ctx);
+        LOG_DEBUG ("Allocation memory by default: ", POS, ", ctx: ", (void*)ctx.get(), ", memory: " , (void*)memory.get());
+        return memory;
+    }
+
+    template<template <size_t pos, class> class KernelArg, size_t POS, class Type, bool B>
+    device_memory<typename std::remove_pointer<typename KernelArg<POS, arg_access_policy_atomic_uncached<POS, Type, B>>::arg_type>::type>
+                                                        alloc_memory_wrap(
+                                                                            const KernelArg<POS, arg_access_policy_atomic_uncached<POS,Type,B>> &arg,
+                                                                            std::shared_ptr<gpu_comm> parent_communicator,
+                                                                            size_t cnt,
+                                                                            std::shared_ptr<ccl_context> ctx
+                                                                          ) {
+        using alloc_type = typename std::remove_pointer<typename
+                                    KernelArg<POS, arg_access_policy_atomic_uncached<POS, Type, B>>::arg_type>::type;
+        ze_device_mem_alloc_desc_t mem_descr {
+            .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
+            .pNext = NULL,
+            .flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED,
+            .ordinal = 0,
+        };
+        auto memory = parent_communicator->get_device().template alloc_memory<alloc_type>(cnt, sizeof(alloc_type), ctx, mem_descr);
+        LOG_DEBUG ("Allocation memory with bias uncached flag: ", POS,
+                   ", ctx: ", (void*)ctx.get(), ", memory: " , (void*)memory.get()," mem_descr: ", native::to_string(mem_descr));
+        return memory;
     }
 
     std::shared_ptr<gpu_comm> parent_communicator;

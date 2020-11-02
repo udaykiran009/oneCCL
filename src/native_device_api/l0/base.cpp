@@ -42,6 +42,20 @@ std::string CCL_API to_string(ze_device_type_t type) {
     return "";
 }
 
+std::string CCL_API to_string(ze_memory_type_t type) {
+    switch (type) {
+        case ZE_MEMORY_TYPE_UNKNOWN: return "ZE_MEMORY_TYPE_UNKNOWN";
+        case ZE_MEMORY_TYPE_HOST: return "ZE_MEMORY_TYPE_HOST";
+        case ZE_MEMORY_TYPE_DEVICE: return "ZE_MEMORY_TYPE_DEVICE";
+        case ZE_MEMORY_TYPE_SHARED: return "ZE_MEMORY_TYPE_SHARED";
+        default:
+            throw std::runtime_error(std::string("Unknown ze_memory_type_t value: ") +
+                                     std::to_string(static_cast<int>(type)));
+            break;
+    }
+    return "";
+}
+
 std::string to_string(ze_memory_access_cap_flags_t cap) {
     std::string ret;
     if (cap & ZE_MEMORY_ACCESS_CAP_FLAG_RW) {
@@ -57,20 +71,6 @@ std::string to_string(ze_memory_access_cap_flags_t cap) {
         ret += ret.empty() ? "ZE_MEMORY_ACCESS_CAP_FLAG_CONCURRENT_ATOMIC" : "|ZE_MEMORY_ACCESS_CAP_FLAG_CONCURRENT_ATOMIC";
     }
     return ret;
-}
-
-std::string CCL_API to_string(ze_memory_type_t type) {
-    switch (type) {
-        case ZE_MEMORY_TYPE_UNKNOWN: return "ZE_MEMORY_TYPE_UNKNOWN";
-        case ZE_MEMORY_TYPE_HOST: return "ZE_MEMORY_TYPE_HOST";
-        case ZE_MEMORY_TYPE_DEVICE: return "ZE_MEMORY_TYPE_DEVICE";
-        case ZE_MEMORY_TYPE_SHARED: return "ZE_MEMORY_TYPE_SHARED";
-        default:
-            throw std::runtime_error(std::string("Unknown ze_memory_type_t value: ") +
-                                     std::to_string(static_cast<int>(type)));
-            break;
-    }
-    return "";
 }
 
 std::string CCL_API to_string(const ze_device_properties_t& device_properties,
@@ -147,6 +147,31 @@ std::string CCL_API to_string(const ze_memory_allocation_properties_t& prop) {
     std::stringstream ss;
     ss << "type: " << to_string(prop.type) << ", id: " << prop.id
        << ", page size: " << prop.pageSize;
+    return ss.str();
+}
+
+std::string CCL_API to_string(const ze_device_mem_alloc_desc_t& mem_descr) {
+    std::stringstream ss;
+    std::string flag;
+
+    if (mem_descr.flags & ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_CACHED) {
+        flag = "ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_CACHED";
+    }
+    if (mem_descr.flags & ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED) {
+        flag =  flag + " | " + "ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED";
+    }
+    if (mem_descr.flags & ZE_DEVICE_MEM_ALLOC_FLAG_FORCE_UINT32) {
+        flag =  flag + " | " + "ZE_DEVICE_MEM_ALLOC_FLAG_FORCE_UINT32";
+    }
+    else {
+        throw std::runtime_error(std::string("Unknown ze_device_mem_alloc_desc_t flag: ") +
+                         std::to_string(static_cast<int>(mem_descr.flags)));
+    }
+
+    ss << "stype: "<< mem_descr.stype
+       << ", pNext: " << (void*)mem_descr.pNext
+       << ", flags: " << flag
+       << ", ordinal: "<< mem_descr.ordinal;
     return ss.str();
 }
 

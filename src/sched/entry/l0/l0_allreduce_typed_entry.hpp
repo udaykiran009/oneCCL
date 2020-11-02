@@ -37,6 +37,7 @@ public:
     using base::launch_args;
     using base::kernel_router;
     using base::get_ctx;
+    using base::alloc_memory_wrap;
     using kernel_main_typed = ring_allreduce_kernel<native_type>;
     using kernel_ipc_typed = ring_allreduce_ipc<native_type>;
 
@@ -72,17 +73,20 @@ public:
                    ccl::native_type_info<native_type>::dtype,
                    device_stream),
 
-              temp_buffer(parent_communicator->get_device().template alloc_memory<native_type>(
-                                    cnt,
-                                    sizeof(native_type), get_ctx())),
-              income_data_flag(parent_communicator->get_device()
-                                   .template alloc_memory<income_data_flag_gpu_type>(
-                                       1,
-                                       sizeof(income_data_flag_gpu_type), get_ctx())),
-              ready_to_recv_flag(parent_communicator->get_device()
-                                     .template alloc_memory<ready_to_recv_flag_gpu_type>(
-                                         1,
-                                         sizeof(ready_to_recv_flag_gpu_type), get_ctx())),
+              temp_buffer(this->template alloc_memory_wrap(typename kernel_main_typed::tmp_recv_buf_arg {},
+                                                                                             parent_communicator,
+                                                                                             cnt,
+                                                                                             get_ctx())),
+              income_data_flag(this->template alloc_memory_wrap(typename
+                                                                kernel_main_typed::income_data_flag_arg {},
+                                                                                              parent_communicator,
+                                                                                              1,
+                                                                                              get_ctx())),
+               ready_to_recv_flag(this->template alloc_memory_wrap(typename
+                                                                   kernel_main_typed::ready_to_recv_flag_arg {},
+                                                                                              parent_communicator,
+                                                                                              1,
+                                                                                              get_ctx())),
               local_barrier_flag(parent_communicator->get_device()
                                      .template alloc_memory<local_barrier_flag_gpu_type>(
                                          1,

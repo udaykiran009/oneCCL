@@ -19,6 +19,7 @@ std::string to_string(const ze_device_compute_properties_t& compute_properties,
                       const std::string& prefix = std::string("\n"));
 std::string to_string(const ze_memory_allocation_properties_t& prop);
 std::string to_string(const ze_device_p2p_properties_t& properties);
+std::string to_string(const ze_device_mem_alloc_desc_t& mem_descr);
 std::string to_string(const ze_ipc_mem_handle_t& handle);
 
 /**
