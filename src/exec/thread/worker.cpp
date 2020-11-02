@@ -247,7 +247,10 @@ static inline bool ccl_worker_check_conditions(ccl_worker* worker,
 
 static void* ccl_worker_func(void* args) {
     auto worker = static_cast<ccl_worker*>(args);
-    LOG_INFO("worker_idx ", worker->get_idx());
+
+    auto worker_idx = worker->get_idx();
+
+    LOG_INFO("worker_idx ", worker_idx);
 
     size_t iter_count = 0;
     size_t processed_count = 0;
@@ -256,6 +259,7 @@ static void* ccl_worker_func(void* args) {
     ccl::status ret;
 
     ccl::global_data::get().is_worker_thread = true;
+
     worker->started = true;
 
     do {
@@ -266,13 +270,13 @@ static void* ccl_worker_func(void* args) {
                 break;
         }
         catch (ccl::exception& ccl_e) {
-            CCL_FATAL("worker ", worker->get_idx(), " caught internal exception: ", ccl_e.what());
+            CCL_FATAL("worker ", worker_idx, " caught internal exception: ", ccl_e.what());
         }
         catch (std::exception& e) {
-            CCL_FATAL("worker ", worker->get_idx(), " caught exception: ", e.what());
+            CCL_FATAL("worker ", worker_idx, " caught exception: ", e.what());
         }
         catch (...) {
-            CCL_FATAL("worker ", worker->get_idx(), " caught general exception");
+            CCL_FATAL("worker ", worker_idx, " caught general exception");
         }
 
         iter_count++;

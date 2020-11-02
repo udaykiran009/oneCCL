@@ -95,6 +95,20 @@ stream_provider_dispatcher::stream_native_t stream_provider_dispatcher::get_nati
     return native_stream;
 }
 
+#ifdef CCL_ENABLE_SYCL
+stream_provider_dispatcher::stream_native_t stream_provider_dispatcher::get_native_stream(size_t idx) const {
+    if (creation_is_postponed) {
+        throw ccl::exception("native stream is not set");
+    }
+
+    if (idx >= native_streams.size()) {
+        throw ccl::exception("unexpected stream idx");
+    }
+
+    return native_streams[idx];
+}
+#endif /* CCL_ENABLE_SYCL */
+
 const stream_provider_dispatcher::stream_native_device_t&
 stream_provider_dispatcher::get_native_device() const {
     if (!native_device.first) {

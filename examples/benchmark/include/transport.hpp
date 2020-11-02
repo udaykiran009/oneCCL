@@ -20,7 +20,9 @@ public:
     ccl::communicator& get_service_comm();
     void init_comms(user_options_t& options);
     std::vector<ccl::communicator>& get_comms();
+
     std::vector<ccl::stream>& get_streams();
+    std::vector<ccl::stream>& get_bench_streams();
 
 private:
 
@@ -35,7 +37,13 @@ private:
     ccl::shared_ptr_class<ccl::kvs> kvs;
     std::vector<ccl::communicator> service_comms;
     std::vector<ccl::communicator> comms;
+
+    /*
+       FIXME: explicitly separate CCL and bench streams
+              while runtime doesn't provide MT on the same queue
+    */
     std::vector<ccl::stream> streams;
+    std::vector<ccl::stream> bench_streams;
 
     void init_by_mpi();
     void deinit_by_mpi();

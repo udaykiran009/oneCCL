@@ -103,7 +103,7 @@ struct base_coll {
     virtual void prepare(size_t elem_count) {
         auto& transport = transport_data::instance();
         auto& comms = transport.get_comms();
-        auto streams = transport.get_streams();
+        auto streams = transport.get_bench_streams();
         size_t ranks_per_proc = base_coll::get_ranks_per_proc();
 
         for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
@@ -117,7 +117,7 @@ struct base_coll {
     virtual void finalize(size_t elem_count) {
         auto& transport = transport_data::instance();
         auto& comms = transport.get_comms();
-        auto streams = transport.get_streams();
+        auto streams = transport.get_bench_streams();
         size_t ranks_per_proc = base_coll::get_ranks_per_proc();
 
         for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {

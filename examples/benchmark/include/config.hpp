@@ -3,6 +3,10 @@
 #define ALIGNMENT      (4096)
 #define DTYPE          float
 
+#define ALL_COLLS_LIST      "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce,reduce_scatter"
+#define ALL_DTYPES_LIST     "int8,int32,int64,uint64,float32,float64"
+#define ALL_REDUCTIONS_LIST "sum,prod,min,max"
+
 #define DEFAULT_BACKEND         BACKEND_HOST
 #define DEFAULT_LOOP            LOOP_REGULAR
 #define DEFAULT_ITERS           (16)
@@ -17,14 +21,7 @@
 #define DEFAULT_SYCL_USM_TYPE   SYCL_USM_DEVICE
 #define DEFAULT_RANKS_PER_PROC  (1)
 
-#define DEFAULT_COLL_LIST \
-    "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce," \
-    "reduce_scatter," \
-    "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce," \
-    "reduce_scatter"
+#define DEFAULT_COLL_LIST       ALL_COLLS_LIST
 #define DEFAULT_DTYPES_LIST     "float32"
 #define DEFAULT_REDUCTIONS_LIST "sum"
 #define DEFAULT_CSV_FILEPATH    ""
-
-#define ALL_DTYPES_LIST     "int8,int32,int64,uint64,float32,float64"
-#define ALL_REDUCTIONS_LIST "sum,prod,min,max"

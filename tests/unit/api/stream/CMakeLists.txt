@@ -25,6 +25,15 @@ file(GLOB sources "*.c" "*.cpp")
 
 set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_utils.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/global.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/env.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/cache.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/datatype.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/native_runtime_utils.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/atl_wrapper.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ccl_unordered_coll_manager.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/utils/version.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ccl_allreduce_2d_builder.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/log/log.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/stream/stream.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_stream.cpp"

@@ -33,12 +33,13 @@ public:
                          out_buf,
                          count,
                          dtype,
-                         stream->get_native_stream(),
                          offset))
     {}
 
     void start() override {
         LOG_DEBUG(class_name(), ": in_buf ", in_buf, ", out_buf ", out_buf, ", count ", count);
+
+        copier.set_queue(stream->get_native_stream(sched->queue->get_idx()));
         ccl_tuple_for_each_indexed<ccl_sycle_buffer_one_dim_types>(copier);
         status = ccl_sched_entry_status_started;
     }

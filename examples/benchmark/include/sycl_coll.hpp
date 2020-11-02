@@ -40,7 +40,7 @@ struct sycl_base_coll : base_coll, private strategy {
               coll_strategy() {
 
         auto& transport = transport_data::instance();
-        auto streams = transport.get_streams();
+        auto streams = transport.get_bench_streams();
 
         size_t send_multiplier = coll_strategy::get_send_multiplier();
         size_t recv_multiplier = coll_strategy::get_recv_multiplier();

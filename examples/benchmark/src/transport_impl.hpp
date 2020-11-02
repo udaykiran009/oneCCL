@@ -72,6 +72,10 @@ std::vector<ccl::stream>& transport_data::get_streams() {
     return streams;
 }
 
+std::vector<ccl::stream>& transport_data::get_bench_streams() {
+    return bench_streams;
+}
+
 void transport_data::init_comms(user_options_t& options) {
 
     int ranks_per_proc = options.ranks_per_proc;
@@ -88,6 +92,7 @@ void transport_data::init_comms(user_options_t& options) {
     if (options.backend == BACKEND_HOST) {
         for (int idx = 0; idx < ranks_per_proc; idx++) {
             streams.push_back(ccl::create_stream());
+            bench_streams.push_back(ccl::create_stream());
             devices.push_back(ccl::create_device());
         }
     }
@@ -102,6 +107,8 @@ void transport_data::init_comms(user_options_t& options) {
 
         for (int idx = 0; idx < ranks_per_proc; idx++) {
             streams.push_back(ccl::create_stream(sycl_queues[idx]));
+            auto q = sycl::queue(sycl_queues[idx].get_context(), sycl_queues[idx].get_device());
+            bench_streams.push_back(ccl::create_stream(q));
             devices.push_back(ccl::create_device(sycl_queues[idx].get_device()));
             ASSERT(sycl_context == sycl_queues[idx].get_context(),
                 "all sycl queues should be from the same sycl context");

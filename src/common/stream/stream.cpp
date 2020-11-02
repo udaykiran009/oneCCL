@@ -1,3 +1,4 @@
+#include "common/global/global.hpp"
 #include "common/log/log.hpp"
 #include "common/stream/stream.hpp"
 #include "common/stream/stream_provider_dispatcher_impl.hpp"
@@ -10,6 +11,13 @@ ccl_stream::ccl_stream(stream_type type,
             : type(type),
               version(version) {
     native_stream = stream;
+
+#ifdef CCL_ENABLE_SYCL
+    native_streams.resize(ccl::global_data::env().worker_count);
+    for (size_t idx = 0; idx < native_streams.size(); idx++) {
+        native_streams[idx] = stream_native_t(stream.get_context(), stream.get_device());
+    }
+#endif /* CCL_ENABLE_SYCL */
 }
 
 ccl_stream::ccl_stream(stream_type type,
@@ -32,7 +40,7 @@ ccl_stream::ccl_stream(stream_type type, const ccl::library_version& version)
 
 void ccl_stream::build_from_params() {
     if (!creation_is_postponed) {
-        throw ccl::exception(std::string(__FUNCTION__) + " - incorrect usage, strem is not sheduled for postponed creation");
+        throw ccl::exception(std::string(__FUNCTION__) + " - incorrect usage, stream is not sheduled for postponed creation");
     }
 
     type = stream_type::host;

@@ -29,6 +29,11 @@ public:
     using stream_native_context_t = typename ccl::unified_context_type::ccl_native_t;
 
     stream_native_t get_native_stream() const;
+
+#ifdef CCL_ENABLE_SYCL
+    stream_native_t get_native_stream(size_t idx) const;
+#endif /* CCL_ENABLE_SYCL */
+
     const stream_native_device_t& get_native_device() const;
     stream_native_device_t& get_native_device();
 
@@ -51,5 +56,11 @@ protected:
     optional<stream_native_context_t> native_context;
 
     bool creation_is_postponed{ false };
+
     stream_native_t native_stream;
+
+#ifdef CCL_ENABLE_SYCL
+    /* FIXME: tmp w/a for MT support in queue */
+    std::vector<stream_native_t> native_streams;
+#endif /* CCL_ENABLE_SYCL */
 };

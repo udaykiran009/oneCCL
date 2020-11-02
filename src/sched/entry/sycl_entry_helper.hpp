@@ -23,18 +23,20 @@ struct sycl_copier {
       ccl_buffer out_buf,
       size_t count,
       const ccl_datatype& dtype,
-      cl::sycl::queue q,
       size_t in_buf_offset)
     : in_buf(in_buf),
       out_buf(out_buf),
       count(count),
       dtype(dtype),
-      q(q),
       in_buf_offset(in_buf_offset) {}
 
     bool is_completed() {
         return (e.get_info<sycl::info::event::command_execution_status>()
           == sycl::info::event_command_status::complete) ? true : false;
+    }
+
+    void set_queue(sycl::queue external_q) {
+      q = external_q;
     }
 
     template <size_t index, class specific_sycl_buffer>
