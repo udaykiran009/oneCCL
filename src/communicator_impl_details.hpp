@@ -2,6 +2,8 @@
 #include "common/comm/comm_interface.hpp"
 #include "common/comm/single_device_communicator/single_device_communicator.hpp"
 
+#include "common/env/env.hpp"
+
 namespace ccl {
 
 /**
@@ -36,6 +38,12 @@ struct comm_impl_base_dispatch
             throw ccl::invalid_argument("API", "create_communicators", "`local_rank_device_map` size: " +
                                     std::to_string(table_size) + " must not exceed total size: " +
                                     std::to_string(cluster_devices_size));
+        }
+
+        /* Indicate that multiple devices are not supported, don't throw anything if kernel_path env variable
+         * is set to enable our testing with partial functionality. */
+        if (table_size > 1 && ccl::global_data::env().kernel_path.empty()) {
+            throw ccl::unimplemented("API", "create_communicators", "for multiple devices");
         }
     }
 

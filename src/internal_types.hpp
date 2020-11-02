@@ -9,7 +9,6 @@ enum status : int {
     success = 0,
     out_of_resource,
     invalid_arguments,
-    unimplemented,
     runtime_error,
     blocked_due_to_resize,
 

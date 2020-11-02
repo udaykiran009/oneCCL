@@ -53,12 +53,6 @@ CCL_API vector_class<communicator> communicator::create_communicators(
 
 using rank_t = int;
 
-#define CHECK_DEVICE_MAP(map) \
-    do { \
-        if (map.size() > 1) { \
-            throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - multiple devices not yet supported"); \
-        } \
-    } while (0)
 
 template <class DeviceType, class ContextType>
 CCL_API vector_class<communicator> communicator::create_communicators(
@@ -66,7 +60,6 @@ CCL_API vector_class<communicator> communicator::create_communicators(
     const vector_class<pair_class<int, DeviceType>>& devices,
     ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
-    CHECK_DEVICE_MAP(devices);
     return comm_impl_dispatch_selector<CL_BACKEND_TYPE>::create_communicators_selector(size, devices, context, kvs);
 #if 0
     vector_class<int> local_thread_ranks;
@@ -104,7 +97,6 @@ CCL_API vector_class<communicator> communicator::create_communicators(
     shared_ptr_class<kvs_interface> kvs)
 
 {
-    CHECK_DEVICE_MAP(devices);
     return comm_impl_dispatch_selector<CL_BACKEND_TYPE>::create_communicators_selector(size, devices, context, kvs);
 #if 0
     vector_class<int> local_thread_ranks;
@@ -184,7 +176,7 @@ communicator communicator::create_communicator(const int size,
                                                const int rank,
                                                shared_ptr_class<kvs_interface> kvs,
                                                const comm_attr& attr) {
-    
+
     LOG_DEBUG("Create host communicator: size ", size, ", rank ", rank);
 
     communicator_interface_ptr impl =
