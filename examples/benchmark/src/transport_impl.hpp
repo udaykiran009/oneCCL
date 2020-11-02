@@ -98,7 +98,7 @@ void transport_data::init_comms(user_options_t& options) {
     }
 #ifdef CCL_ENABLE_SYCL
     else if (options.backend == BACKEND_SYCL) {
-        auto sycl_queues = get_sycl_queues(options.sycl_dev_type, local_ranks);
+        auto sycl_queues = create_sycl_queues(sycl_dev_names[options.sycl_dev_type], local_ranks);
         ASSERT(!sycl_queues.empty(), "queues should contain at least one queue");
         ASSERT(ranks_per_proc == sycl_queues.size(), "ranks and queues sizes should match");
 
@@ -110,8 +110,9 @@ void transport_data::init_comms(user_options_t& options) {
             auto q = sycl::queue(sycl_queues[idx].get_context(), sycl_queues[idx].get_device());
             bench_streams.push_back(ccl::create_stream(q));
             devices.push_back(ccl::create_device(sycl_queues[idx].get_device()));
-            ASSERT(sycl_context == sycl_queues[idx].get_context(),
-                "all sycl queues should be from the same sycl context");
+            // TODO: multidevice unsupported yet
+            // ASSERT(sycl_context == sycl_queues[idx].get_context(),
+            //    "all sycl queues should be from the same sycl context");
         }
     }
 #endif /* CCL_ENABLE_SYCL */

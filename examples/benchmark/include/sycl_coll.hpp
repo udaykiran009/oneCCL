@@ -15,19 +15,6 @@
 using namespace sycl;
 using namespace sycl::access;
 
-std::vector<cl::sycl::queue> get_sycl_queues(sycl_dev_type_t dev_type,
-                                             const std::vector<int>& ranks) {
-
-    auto queues = create_sycl_queues(sycl_dev_names[dev_type], ranks);
-
-    auto first_ctx = queues[0].get_context();
-    for (size_t idx = 0; idx < queues.size(); idx++) {
-        ASSERT(first_ctx == queues[idx].get_context(), "context should be the same %zu", idx);
-    }
-
-    return queues;
-}
-
 /* sycl-specific base implementation */
 template <class Dtype, class strategy>
 struct sycl_base_coll : base_coll, private strategy {
