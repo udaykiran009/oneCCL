@@ -44,7 +44,7 @@ template <class DeviceType, class ContextType>
 CCL_API vector_class<communicator> communicator::create_communicators(
     const int size,
     const vector_class<DeviceType>& devices,
-    ContextType& context,
+    const ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
     vector_class<communicator> ret;
     throw std::runtime_error(std::string(__FUNCTION__) + " - not implemented");
@@ -58,7 +58,7 @@ template <class DeviceType, class ContextType>
 CCL_API vector_class<communicator> communicator::create_communicators(
     const int size,
     const vector_class<pair_class<int, DeviceType>>& devices,
-    ContextType& context,
+    const ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
     return comm_impl_dispatch_selector<CL_BACKEND_TYPE>::create_communicators_selector(size, devices, context, kvs);
 #if 0
@@ -93,7 +93,7 @@ template <class DeviceType, class ContextType>
 CCL_API vector_class<communicator> communicator::create_communicators(
     const int size,
     const map_class<int, DeviceType>& devices,
-    ContextType& context,
+    const ContextType& context,
     shared_ptr_class<kvs_interface> kvs)
 
 {
@@ -195,7 +195,7 @@ communicator communicator::create_communicator(const int size,
     ccl::communicator::create_communicators( \
         const int comm_size, \
         const ccl::vector_class<DeviceType>& local_devices, \
-        ContextType& context, \
+        const ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs);
 
 #define API_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
@@ -203,7 +203,7 @@ communicator communicator::create_communicator(const int size,
     ccl::communicator::create_communicators( \
         const int comm_size, \
         const ccl::vector_class<ccl::pair_class<int, DeviceType>>& local_rank_device_map, \
-        ContextType& context, \
+        const ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs);
 
 #define API_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
@@ -211,5 +211,5 @@ communicator communicator::create_communicator(const int size,
     ccl::communicator::create_communicators( \
         const int comm_size, \
         const ccl::map_class<int, DeviceType>& local_rank_device_map, \
-        ContextType& context, \
+        const ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs);

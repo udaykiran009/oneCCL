@@ -247,7 +247,7 @@ public:
     vector_class<communicator> create_communicators(
         int comm_size,
         const vector_class<DeviceType>& local_devices,
-        ContextType& context,
+        const ContextType& context,
         shared_ptr_class<kvs_interface> kvs,
         const comm_attr& attr) const;
 
@@ -255,7 +255,7 @@ public:
     vector_class<communicator> create_communicators(
         int comm_size,
         const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
-        ContextType& context,
+        const ContextType& context,
         shared_ptr_class<kvs_interface> kvs,
         const comm_attr& attr) const;
 
@@ -263,7 +263,7 @@ public:
     vector_class<communicator> create_communicators(
         int comm_size,
         const map_class<int, DeviceType>& local_rank_device_map,
-        ContextType& context,
+        const ContextType& context,
         shared_ptr_class<kvs_interface> kvs,
         const comm_attr& attr) const;
 

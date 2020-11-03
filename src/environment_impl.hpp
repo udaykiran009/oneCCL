@@ -76,7 +76,7 @@ template <class DeviceType, class ContextType>
 vector_class<communicator> CCL_API
 environment::create_communicators(const int comm_size,
                                          const vector_class<DeviceType>& local_devices,
-                                         ContextType& context,
+                                         const ContextType& context,
                                          shared_ptr_class<kvs_interface> kvs,
                                          const comm_attr& attr) const {
     return communicator::create_communicators(
@@ -87,7 +87,7 @@ template <class DeviceType, class ContextType>
 vector_class<communicator> CCL_API environment::create_communicators(
     const int comm_size,
     const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
-    ContextType& context,
+    const ContextType& context,
     shared_ptr_class<kvs_interface> kvs,
     const comm_attr& attr) const {
 
@@ -109,7 +109,7 @@ template <class DeviceType, class ContextType>
 vector_class<communicator> CCL_API
 environment::create_communicators(const int comm_size,
                                          const map_class<int, DeviceType>& local_rank_device_map,
-                                         ContextType& context,
+                                         const ContextType& context,
                                          shared_ptr_class<kvs_interface> kvs,
                                          const comm_attr& attr) const {
     return communicator::create_communicators(
@@ -138,7 +138,7 @@ environment::create_communicators(const int comm_size,
     ccl::detail::environment::create_communicators<DeviceType, ContextType>( \
         const int comm_size, \
         const ccl::vector_class<DeviceType>& local_devices, \
-        ContextType& context, \
+        const ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs, \
         const comm_attr& attr) const; \
 \
@@ -146,7 +146,7 @@ environment::create_communicators(const int comm_size,
     ccl::detail::environment::create_communicators<DeviceType, ContextType>( \
         const int comm_size, \
         const ccl::vector_class<ccl::pair_class<int, DeviceType>>& local_devices, \
-        ContextType& context, \
+        const ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs, \
         const comm_attr& attr) const; \
 \
@@ -154,7 +154,7 @@ environment::create_communicators(const int comm_size,
     ccl::detail::environment::create_communicators<DeviceType, ContextType>( \
         const int comm_size, \
         const ccl::map_class<int, DeviceType>& local_devices, \
-        ContextType& context, \
+        const ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs, \
         const comm_attr& attr) const;
 

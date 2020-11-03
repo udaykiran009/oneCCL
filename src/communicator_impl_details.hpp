@@ -13,13 +13,13 @@ namespace ccl {
 template <class Context>
 struct context_extractor
 {
-    static Context& extract(Context &ctx) {return ctx; }
+    static const Context& extract(const Context &ctx) { return ctx; }
 };
 
 template<>
 struct context_extractor<ccl::context>
 {
-    static typename unified_context_type::ccl_native_t& extract(ccl::context &ctx) {return ctx.get_native(); }
+    static const typename unified_context_type::ccl_native_t& extract(const ccl::context &ctx) { return ctx.get_native(); }
 };
 
 template<class impl>
@@ -51,7 +51,7 @@ struct comm_impl_base_dispatch
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs) {
 
         map_class<int, DeviceType> converted_map;
@@ -89,7 +89,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::empty_backend> :
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs)
     {
         return base_t::template create_communicators_selector<DeviceType>(cluster_devices_size, local_rank_device_map, context_extractor<ContextType>::extract(context), kvs);
@@ -99,7 +99,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::empty_backend> :
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const map_class<int, DeviceType>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs) {
 
         base_t::validate_contract(cluster_devices_size, local_rank_device_map.size());
@@ -132,7 +132,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs)
     {
         return base_t::template create_communicators_selector<DeviceType>(cluster_devices_size, local_rank_device_map, context_extractor<ContextType>::extract(context), kvs);
@@ -142,7 +142,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const map_class<int, ccl::device_index_type>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs) {
 
         base_t::validate_contract(cluster_devices_size, local_rank_device_map.size());
@@ -161,7 +161,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const map_class<int,ccl::device>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs) {
 
         map_class<int, cl::sycl::device> converted_device_map;
@@ -178,7 +178,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl> :
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const map_class<int, cl::sycl::device>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs) {
 
         base_t::validate_contract(cluster_devices_size, local_rank_device_map.size());
@@ -309,7 +309,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::l0> :
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs)
     {
         return base_t::template create_communicators_selector<DeviceType>(cluster_devices_size, local_rank_device_map, context_extractor<ContextType>::extract(context), kvs);
@@ -319,7 +319,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::l0> :
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const map_class<int, ccl::device>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs) {
 
         map_class<int, ccl::device_index_type> converted_device_map;
@@ -336,7 +336,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::l0> :
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const map_class<int, typename unified_device_type::ccl_native_t>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs) {
 
         map_class<int, ccl::device_index_type> converted_device_map;
@@ -353,7 +353,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::l0> :
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const map_class<int, ccl::device_index_type>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs) {
 
         base_t::validate_contract(cluster_devices_size, local_rank_device_map.size());
@@ -397,7 +397,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0> :
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs)
     {
         return base_t::template create_communicators_selector<DeviceType>(cluster_devices_size, local_rank_device_map, context_extractor<ContextType>::extract(context), kvs);
@@ -407,7 +407,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0> :
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const map_class<int, ccl::device>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs) {
 
         map_class<int, cl::sycl::device> converted_device_map;
@@ -425,7 +425,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0> :
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const map_class<int, cl::sycl::device>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs) {
 
         base_t::validate_contract(cluster_devices_size, local_rank_device_map.size());
@@ -459,7 +459,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0> :
     static vector_class<communicator> create_communicators_selector(
                 const size_t cluster_devices_size, /*global devices count*/
                 const map_class<int, ccl::device_index_type>& local_rank_device_map,
-                ContextType& context,
+                const ContextType& context,
                 shared_ptr_class<kvs_interface> kvs) {
 
         base_t::validate_contract(cluster_devices_size, local_rank_device_map.size());

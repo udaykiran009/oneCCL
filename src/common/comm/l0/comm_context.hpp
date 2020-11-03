@@ -46,7 +46,7 @@ public:
                                                        ccl::device_index_type>::value,
                                       int>::type = 0>
     ccl::communicator_interface_ptr create_communicator_from_group(const DeviceType& device,
-                                        ContextType& context,
+                                        const ContextType& context,
                                         const comm_split_attr& attr = ccl_empty_attr());
 
     /**
@@ -58,7 +58,7 @@ public:
                                                    ccl::device_index_type>::value,
                                       int>::type = 0>
     ccl::communicator_interface_ptr create_communicator_from_group(const DeviceType& device_id,
-                                        ContextType& context,
+                                        const ContextType& context,
                                         const comm_split_attr& attr = ccl_empty_attr());
 
     /**
@@ -68,7 +68,7 @@ public:
     template <class InputIt, class ContextType>
     std::vector<communicator> create_communicators_group(InputIt first,
                                                          InputIt last,
-                                                         ContextType& context,
+                                                         const ContextType& context,
                                                          comm_split_attr attr = ccl_empty_attr());
 
     /**
@@ -77,7 +77,7 @@ public:
      */
     template <template <class...> class Container, class Type, class ContextType>
     std::vector<communicator> create_communicators_group(const Container<Type>& device_ids,
-                                                         ContextType& context,
+                                                         const ContextType& context,
                                                          comm_split_attr attr = ccl_empty_attr());
 
     /**

@@ -107,21 +107,21 @@ private:
     static vector_class<communicator> create_communicators(
         int comm_size,
         const vector_class<DeviceType>& local_devices,
-        ContextType& context,
+        const ContextType& context,
         shared_ptr_class<kvs_interface> kvs);
 
     template <class DeviceType, class ContextType>
     static vector_class<communicator> create_communicators(
         int comm_size,
         const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
-        ContextType& context,
+        const ContextType& context,
         shared_ptr_class<kvs_interface> kvs);
 
     template <class DeviceType, class ContextType>
     static vector_class<communicator> create_communicators(
         int comm_size,
         const map_class<int, DeviceType>& local_rank_device_map,
-        ContextType& context,
+        const ContextType& context,
         shared_ptr_class<kvs_interface> kvs);
 
     static communicator create_communicator(const comm_attr& attr);

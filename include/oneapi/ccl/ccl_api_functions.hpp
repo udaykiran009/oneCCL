@@ -196,7 +196,7 @@ template <class DeviceType, class ContextType>
 vector_class<communicator> create_communicators(
     int size,
     const vector_class<pair_class<int, DeviceType>>& devices,
-    ContextType& context,
+    const ContextType& context,
     shared_ptr_class<kvs_interface> kvs,
     const comm_attr& attr = default_comm_attr) {
     return detail::environment::instance().create_communicators(
@@ -207,7 +207,7 @@ template <class DeviceType, class ContextType>
 vector_class<communicator> create_communicators(
     int size,
     const map_class<int, DeviceType>& devices,
-    ContextType& context,
+    const ContextType& context,
     shared_ptr_class<kvs_interface> kvs,
     const comm_attr& attr = default_comm_attr) {
     return detail::environment::instance().create_communicators(
@@ -219,7 +219,7 @@ communicator create_communicator(
     int size,
     int rank,
     DeviceType& device,
-    ContextType& context,
+    const ContextType& context,
     shared_ptr_class<kvs_interface> kvs,
     const comm_attr& attr = default_comm_attr) {
 
@@ -274,7 +274,7 @@ template <class DeviceType, class ContextType>
 vector_class<communicator> create_communicators(
     int size,
     const vector_class<DeviceType>& devices,
-    ContextType& context,
+    const ContextType& context,
     shared_ptr_class<kvs_interface> kvs,
     const comm_attr& attr = default_comm_attr) {
     return detail::environment::instance().create_communicators(
