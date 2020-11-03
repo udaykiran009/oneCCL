@@ -6,28 +6,29 @@ endif()
 
 include(${UPSTREAM_SOURCE_DIR}/cmake/helpers.cmake)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+
 if (COMPUTE_RUNTIME)
     activate_compute_runtime("${UPSTREAM_SOURCE_DIR}/cmake" ${COMPUTE_RUNTIME})
-
+    if (NOT COMPUTE_RUNTIME_TARGET_NAME)
+        message(FATAL_ERROR "Failed to find requested compute runtime ${COMPUTE_RUNTIME}")
+    endif()
     if (${CCL_ENABLE_SYCL_V} STREQUAL 1)
         option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
         message(STATUS "Enable CCL SYCL runtime")
     endif()
-
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_RUNTIME_FLAGS}")
     add_definitions(${DEFINITIONS})
-endif()
-
- if (COMPUTE_RUNTIME)
-     if ((${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "ze_loader")
-              OR (${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL"))
-        option(MULTI_GPU_SUPPORT "Enable multi GPU support" ON)
+    if ((${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL") AND
+        ${CCL_ENABLE_SYCL_L0} STREQUAL 1)
         set(MULTI_GPU_SUPPORT ON)
-        activate_compute_runtime("${UPSTREAM_SOURCE_DIR}/cmake" L0)
-        message ("Enable multi GPU support: ${MULTI_GPU_SUPPORT}")
-        message ("COMPUTE_RUNTIME_TARGET_NAME: ${COMPUTE_RUNTIME_TARGET_NAME}")
+    elseif(${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "ze_loader")
+        set(MULTI_GPU_SUPPORT ON)
     endif()
-endif(COMPUTE_RUNTIME)
+    if (MULTI_GPU_SUPPORT)
+        message(STATUS "COMPUTE_RUNTIME_TARGET_NAME: ${COMPUTE_RUNTIME_TARGET_NAME}")
+        message(STATUS "Enable multi GPU support using L0")
+    endif()
+endif()
 
 if (MULTI_GPU_SUPPORT)
     list( APPEND native_api_dependencies_sources

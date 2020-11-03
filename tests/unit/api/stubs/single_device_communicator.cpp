@@ -36,7 +36,10 @@ void single_device_communicator::set_context(const ccl::context& in_context)
     context = in_context.get_native();
 }
 
+#ifdef MULTI_GPU_SUPPORT
 void single_device_communicator::visit(ccl::gpu_comm_attr& comm_attr) {}
+#endif
+
 ///////////////
 
 #define TEMPLATE_DECL_ARG class comm_impl, class communicator_traits
