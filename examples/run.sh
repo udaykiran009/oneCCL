@@ -126,24 +126,36 @@ run_benchmark()
 
         if [ "${backend}" == "sycl" ];
         then
-            options="${options} --iters 4 --buf_count 2 -m usm"
+            worker_count=${CCL_WORKER_COUNT:-1}
+            buf_count=2
+            if [ "$worker_count" -gt "1" ];
+            then
+                # FIXME: enable back buf_count > 1 after multi-threaded USM fix in L0
+                # https://jira.devtools.intel.com/browse/CMPLRLLVM-22660
+                buf_count=1
+            fi
+            options="${options} --iters 8 --buf_count ${buf_count} -m usm"
             usm_list="${usm_list} shared"
         else
             options="${options} --iters 16 --buf_count 8"
         fi
     fi
+
     if [ "${loop}" != "" ];
     then
         options="${options} --loop ${loop}"
     fi
+
     if [ "${coll}" != "" ];
     then
         options="${options} --coll ${coll}"
     fi
+
     if [ "${dtype}" != "" ];
     then
         options="${options} --dtype ${dtype}"
     fi
+
     if [ "${reduction}" != "" ];
     then
         options="${options} --reduction ${reduction}"
@@ -300,9 +312,21 @@ run()
                             ccl_extra_env="CCL_LOG_LEVEL=2 ${ccl_transport_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular
 
-                            ccl_extra_env="${ccl_transport_env}"
                             # run a benchmark with the specific datatypes and reductions
+                            if [ "$backend" == "sycl" ];
+                            then
+                                ccl_extra_env="SYCL_BE=PI_LEVEL_ZERO ${ccl_transport_env}"
+                            else
+                                ccl_extra_env="${ccl_transport_env}"
+                            fi
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce ${dtype_list} ${reduction_list}
+
+                            if [ "$backend" == "sycl" ];
+                            then
+                                # make additional run with non-defaul OCL runtime
+                                ccl_extra_env="SYCL_BE=PI_OPENCL ${ccl_transport_env}"
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce ${dtype_list} ${reduction_list}
+                            fi
                         fi
                     done
                 elif [ "$dir_name" == "sycl" ];
@@ -334,7 +358,7 @@ run()
 
                             if [ "$selector" == "gpu" ];
                             then
-                                ccl_extra_env="SYCL_DEVICE_ALLOWLIST=\"\" SYCL_BE=PI_LEVEL_ZERO ${ccl_transport_env}"
+                                ccl_extra_env="SYCL_BE=PI_LEVEL_ZERO ${ccl_transport_env}"
                                 run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} "${selector} ${usm}"
                             fi
                             ccl_extra_env="SYCL_BE=PI_OPENCL ${ccl_transport_env}"
