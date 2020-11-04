@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "shift_list.h"
+#include "shift_list.hpp"
 
 void shift_list_clean(shift_list_t** list) {
     shift_list_t* cur_list = (*list);

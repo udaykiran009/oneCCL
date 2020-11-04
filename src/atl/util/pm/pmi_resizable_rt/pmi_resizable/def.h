@@ -1,12 +1,10 @@
 #pragma once
 
-#include <string.h>
-
 //TODO: change exit to something more useful
 #define SET_STR(dst, size, ...) \
     do { \
         if (snprintf(dst, size, __VA_ARGS__) > size) { \
-            printf("Line so big (must be low %d)\n", size); \
+            printf("line too long (must be shorter %d)\n", size); \
             printf(__VA_ARGS__); \
             exit(1); \
         } \
@@ -119,7 +117,5 @@
 #define INITIAL_UPDATE_IDX "0"
 #define INITIAL_RANK_NUM   "0"
 #define MAX_CLEAN_CHECKS   3
-
-#define STR_COPY(dst, src, len) { memcpy((dst), (src), (len-1)); dst[len - 1] = '\0'; }
 
 extern char my_hostname[MAX_KVS_VAL_LENGTH];

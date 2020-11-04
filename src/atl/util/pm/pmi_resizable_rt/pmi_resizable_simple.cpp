@@ -1,7 +1,7 @@
 #include <unistd.h>
 
 #include "util/pm/pmi_resizable_rt/pmi_resizable/def.h"
-#include "util/pm/pmi_resizable_rt/pmi_resizable/kvs_keeper.h"
+#include "util/pm/pmi_resizable_rt/pmi_resizable/kvs_keeper.hpp"
 #include "pmi_resizable_simple.h"
 #include "util/pm/codec/pm_rt_codec.h"
 

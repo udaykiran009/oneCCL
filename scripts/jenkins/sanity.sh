@@ -212,6 +212,7 @@ set_environment()
         worker_count="2"
     fi
     export CCL_WORKER_COUNT=$worker_count
+
     if [ -z "$runtime" ]
     then
         runtime="ofi"

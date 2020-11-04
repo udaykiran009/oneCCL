@@ -10,10 +10,11 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "util/pm/pmi_resizable_rt/pmi_resizable/helper.hpp"
 #include "util/pm/pmi_resizable_rt/pmi_resizable/def.h"
 #include "internal_kvs.h"
-#include "util/pm/pmi_resizable_rt/pmi_resizable/kvs_keeper.h"
-#include "util/pm/pmi_resizable_rt/pmi_resizable/request_wrappers_k8s.h"
+#include "util/pm/pmi_resizable_rt/pmi_resizable/kvs_keeper.hpp"
+#include "util/pm/pmi_resizable_rt/pmi_resizable/request_wrappers_k8s.hpp"
 
 #define CCL_KVS_IP_PORT_ENV         "CCL_KVS_IP_PORT"
 #define CCL_KVS_IP_EXCHANGE_ENV     "CCL_KVS_IP_EXCHANGE"
@@ -73,9 +74,9 @@ size_t internal_kvs::kvs_set_value(const char* kvs_name, const char* kvs_key, co
     kvs_request_t request;
     memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_PUT;
-    STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
-    STR_COPY(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
-    STR_COPY(request.val, kvs_val, MAX_KVS_VAL_LENGTH);
+    kvs_str_copy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
+    kvs_str_copy(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
+    kvs_str_copy(request.val, kvs_val, MAX_KVS_VAL_LENGTH);
 
     DO_RW_OP(write, client_op_sock, &request, sizeof(kvs_request_t), client_memory_mutex,
         "client: put_key_value");
@@ -87,8 +88,8 @@ size_t internal_kvs::kvs_remove_name_key(const char* kvs_name, const char* kvs_k
     kvs_request_t request;
     memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_REMOVE;
-    STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
-    STR_COPY(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
+    kvs_str_copy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
+    kvs_str_copy(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
 
     DO_RW_OP(write, client_op_sock, &request, sizeof(kvs_request_t), client_memory_mutex,
         "client: remove_key");
@@ -103,8 +104,8 @@ size_t internal_kvs::kvs_get_value_by_name_key(const char* kvs_name,
     memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_GET_VAL;
     size_t is_exist = 0;
-    STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
-    STR_COPY(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
+    kvs_str_copy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
+    kvs_str_copy(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
     memset(kvs_val, 0, MAX_KVS_VAL_LENGTH);
 
     DO_RW_OP(write, client_op_sock, &request, sizeof(request), client_memory_mutex,
@@ -116,7 +117,7 @@ size_t internal_kvs::kvs_get_value_by_name_key(const char* kvs_name,
     if (is_exist) {
         DO_RW_OP(read, client_op_sock, &request, sizeof(request), client_memory_mutex,
             "client: get_value read data");
-        STR_COPY(kvs_val, request.val, MAX_KVS_VAL_LENGTH);
+        kvs_str_copy(kvs_val, request.val, MAX_KVS_VAL_LENGTH);
     }
 
     return strlen(kvs_val);
@@ -127,7 +128,7 @@ size_t internal_kvs::kvs_get_count_names(const char* kvs_name) {
     kvs_request_t request;
     memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_GET_COUNT;
-    STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
+    kvs_str_copy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
 
     DO_RW_OP(write, client_op_sock, &request, sizeof(kvs_request_t), client_memory_mutex,
         "client: get_count");
@@ -148,7 +149,7 @@ size_t internal_kvs::kvs_get_keys_values_by_name(const char* kvs_name,
 
     memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_GET_KEYS_VALUES;
-    STR_COPY(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
+    kvs_str_copy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
 
     DO_RW_OP(write, client_op_sock, &request, sizeof(kvs_request_t), client_memory_mutex,
         "client: get_keys_values");
@@ -170,7 +171,7 @@ size_t internal_kvs::kvs_get_keys_values_by_name(const char* kvs_name,
         *kvs_keys = (char**)calloc(count, sizeof(char*));
         for (i = 0; i < count; i++) {
             (*kvs_keys)[i] = (char*)calloc(MAX_KVS_KEY_LENGTH, sizeof(char));
-            STR_COPY((*kvs_keys)[i], answers[i].key, MAX_KVS_KEY_LENGTH);
+            kvs_str_copy((*kvs_keys)[i], answers[i].key, MAX_KVS_KEY_LENGTH);
         }
     }
     if (kvs_values != NULL) {
@@ -180,7 +181,7 @@ size_t internal_kvs::kvs_get_keys_values_by_name(const char* kvs_name,
         *kvs_values = (char**)calloc(count, sizeof(char*));
         for (i = 0; i < count; i++) {
             (*kvs_values)[i] = (char*)calloc(MAX_KVS_VAL_LENGTH, sizeof(char));
-            STR_COPY((*kvs_values)[i], answers[i].val, MAX_KVS_VAL_LENGTH);
+            kvs_str_copy((*kvs_values)[i], answers[i].val, MAX_KVS_VAL_LENGTH);
         }
     }
 
@@ -362,9 +363,9 @@ void* kvs_server_init(void* args) {
 
                         answers = (kvs_request_t*)calloc(count, sizeof(kvs_request_t));
                         for (j = 0; j < count; j++) {
-                            STR_COPY(answers[j].name, request.name, MAX_KVS_NAME_LENGTH);
-                            STR_COPY(answers[j].key, kvs_keys[j], MAX_KVS_KEY_LENGTH);
-                            STR_COPY(answers[j].val, kvs_values[j], MAX_KVS_VAL_LENGTH);
+                            kvs_str_copy(answers[j].name, request.name, MAX_KVS_NAME_LENGTH);
+                            kvs_str_copy(answers[j].key, kvs_keys[j], MAX_KVS_KEY_LENGTH);
+                            kvs_str_copy(answers[j].val, kvs_values[j], MAX_KVS_VAL_LENGTH);
                         }
 
                         DO_RW_OP(
@@ -464,7 +465,7 @@ size_t init_main_server_by_env(void) {
     }
 
     memset(main_host_ip, 0, CCL_IP_LEN);
-    STR_COPY(main_host_ip, tmp_host_ip, CCL_IP_LEN);
+    kvs_str_copy(main_host_ip, tmp_host_ip, CCL_IP_LEN);
     if ((port = strstr(main_host_ip, "_")) == NULL) {
         printf("set %s in format <ip>_<port>\n", CCL_KVS_IP_PORT_ENV);
         return 1;
@@ -502,7 +503,7 @@ size_t init_main_server_by_string(const char* main_addr) {
     }
 
     memset(main_host_ip, 0, CCL_IP_LEN);
-    STR_COPY(main_host_ip, main_addr, CCL_IP_LEN);
+    kvs_str_copy(main_host_ip, main_addr, CCL_IP_LEN);
 
     if ((port = strstr(main_host_ip, "_")) == NULL) {
         printf("init_main_server_by_string: set %s in format <ip>_<port>\n", CCL_KVS_IP_PORT_ENV);

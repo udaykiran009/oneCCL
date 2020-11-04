@@ -10,10 +10,11 @@
 #include <iostream>
 #include <memory>
 #include <utility>
+
 #include "def.h"
-#include "rank_list.h"
-#include "shift_list.h"
-#include "kvs_keeper.h"
+#include "rank_list.hpp"
+#include "shift_list.hpp"
+#include "kvs_keeper.hpp"
 #include "kvs/ikvs_wrapper.h"
 
 extern int my_rank, count_pods;
@@ -26,6 +27,8 @@ extern int killed_ranks_count;
 
 extern rank_list_t* new_ranks;
 extern int new_ranks_count;
+
+void kvs_str_copy(char* dst, const char* src, size_t bytes);
 
 class helper {
 public:

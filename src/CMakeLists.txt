@@ -95,12 +95,12 @@ set(CCL_SRC
     atl/util/pm/pmi_resizable_rt/pmi_resizable.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable_simple.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/helper.cpp
-    atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs_keeper.c
+    atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs_keeper.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/pmi_listener.cpp
-    atl/util/pm/pmi_resizable_rt/pmi_resizable/rank_list.c
-    atl/util/pm/pmi_resizable_rt/pmi_resizable/request_wrappers_k8s.c
+    atl/util/pm/pmi_resizable_rt/pmi_resizable/rank_list.cpp
+    atl/util/pm/pmi_resizable_rt/pmi_resizable/request_wrappers_k8s.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/resizable_pmi.cpp
-    atl/util/pm/pmi_resizable_rt/pmi_resizable/shift_list.c
+    atl/util/pm/pmi_resizable_rt/pmi_resizable/shift_list.cpp
         atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/users_kvs.cpp
     atl/util/pm/pmi_rt/pmi_simple.cpp
@@ -161,6 +161,7 @@ set(CCL_SRC
     fusion/fusion.cpp
     parallelizer/parallelizer.cpp
     unordered_coll/unordered_coll.cpp
+
     common/comm/atl_tag.cpp
     common/comm/comm.cpp
     common/comm/comm_interface.cpp
@@ -181,6 +182,7 @@ set(CCL_SRC
     common/utils/spinlock.cpp
     common/utils/version.cpp
     common/utils/yield.cpp
+
     ${EXTENSIONS_SRC})
 
 list(APPEND CCL_INC_DIRS

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "rank_list.h"
+#include "rank_list.hpp"
 
 void rank_list_sort(rank_list_t* list) {
     rank_list_t* left = list;

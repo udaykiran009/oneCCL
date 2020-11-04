@@ -4,8 +4,9 @@
 #include <ctype.h>
 #include <unistd.h>
 
-#include "request_wrappers_k8s.h"
 #include "def.h"
+#include "util/pm/pmi_resizable_rt/pmi_resizable/helper.hpp"
+#include "request_wrappers_k8s.hpp"
 
 #define JOB_NAME "CCL_JOB_NAME"
 
@@ -99,7 +100,7 @@ void json_get_val(FILE* fp, const char** keys, size_t keys_count, char* val) {
         res[strlen(res) - 1] = '\0';
         last_char = res[strlen(res) - 1];
     }
-    STR_COPY(val, res, MAX_KVS_VAL_LENGTH);
+    kvs_str_copy(val, res, MAX_KVS_VAL_LENGTH);
     while (fgets(cur_kvs_str, MAX_KVS_STR_LENGTH, fp)) {
     }
 }
@@ -340,13 +341,13 @@ size_t request_k8s_kvs_finalize(size_t is_master) {
 
 size_t get_by_template(char*** kvs_entry,
                        const char* request,
-                       const char* template,
+                       const char* template_str,
                        int count,
                        int max_count) {
     FILE* fp;
     char get_val[REQUEST_POSTFIX_SIZE];
     char run_str[RUN_REQUEST_SIZE];
-    size_t i;
+    int i;
 
     if (*kvs_entry != NULL)
         free(*kvs_entry);
@@ -357,7 +358,7 @@ size_t get_by_template(char*** kvs_entry,
 
     i = 0;
 
-    SET_STR(get_val, REQUEST_POSTFIX_SIZE, CONCAT_TWO_COMMAND_TEMPLATE, request, template);
+    SET_STR(get_val, REQUEST_POSTFIX_SIZE, CONCAT_TWO_COMMAND_TEMPLATE, request, template_str);
     SET_STR(run_str, RUN_REQUEST_SIZE, run_get_template, get_val);
     if ((fp = popen(run_str, READ_ONLY)) == NULL) {
         printf("Can't get by template\n");

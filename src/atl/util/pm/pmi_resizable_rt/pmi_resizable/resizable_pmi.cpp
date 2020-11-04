@@ -309,7 +309,7 @@ int pmi_resizable::PMIR_Get_rank(int* rank) {
 }
 
 int pmi_resizable::PMIR_KVS_Get_my_name(char* kvs_name, size_t length) {
-    STR_COPY(kvs_name, KVS_NAME, length);
+    kvs_str_copy(kvs_name, KVS_NAME, length);
     return 0;
 }
 

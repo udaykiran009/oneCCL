@@ -1,4 +1,6 @@
-#include "helper.h"
+#include <string.h>
+
+#include "util/pm/pmi_resizable_rt/pmi_resizable/helper.hpp"
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.h"
 
 int my_rank, count_pods;
@@ -12,7 +14,15 @@ int killed_ranks_count = 0;
 rank_list_t* new_ranks = NULL;
 int new_ranks_count = 0;
 
+void kvs_str_copy(char* dst, const char* src, size_t bytes) {
+    strncpy(dst, src, bytes - 1);
+    dst[bytes - 1] = '\0';
+}
+
 size_t helper::replace_str(char* str, int old_rank, int new_rank) {
+
+    throw std::runtime_error("unexpected path");
+
     char old_str[INT_STR_SIZE];
     char new_str[INT_STR_SIZE];
     char* point_to_replace;
@@ -20,20 +30,20 @@ size_t helper::replace_str(char* str, int old_rank, int new_rank) {
     int new_str_size;
 
     SET_STR(old_str, INT_STR_SIZE, RANK_TEMPLATE, old_rank);
-
     SET_STR(new_str, INT_STR_SIZE, RANK_TEMPLATE, new_rank);
 
     point_to_replace = strstr(str, old_str);
     if (point_to_replace == NULL)
         return 1;
+
     old_str_size = strlen(old_str);
     new_str_size = strlen(new_str);
 
     if (old_str_size != new_str_size) {
-        size_t rest_len = strlen(point_to_replace);
+        size_t rest_len = strlen(point_to_replace) - old_str_size;
         memmove(point_to_replace + new_str_size, point_to_replace + old_str_size, rest_len);
     }
-    STR_COPY(point_to_replace, new_str, new_str_size);
+    memcpy(point_to_replace, new_str, new_str_size);
     return 0;
 }
 
