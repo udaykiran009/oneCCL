@@ -44,7 +44,7 @@ void print_help_usage(const char* app) {
         "\t[-m,--sycl_mem_type <sycl memory type>]: %s\n"
         "\t[-u,--sycl_usm_type <sycl usm type>]: %s\n"
         "\t[-k,--ranks_per_proc <rank count per process>]: %d\n"
-        "\t[-l,--coll <collectives list>]: %s\n"
+        "\t[-l,--coll <collectives list/all>]: %s\n"
         "\t[-d,--dtype <datatypes list/all>]: %s\n"
         "\t[-r,--reduction <reductions list/all>]: %s\n"
         "\t[-o,--csv_filepath <file to store CSV-formatted data into>]: %s\n"
@@ -366,7 +366,13 @@ int parse_user_options(int& argc,
                 }
                 break;
             case 'k': options.ranks_per_proc = atoll(optarg); break;
-            case 'l': options.coll_names = tokenize(optarg, ','); break;
+            case 'l':
+                if (strcmp("all", optarg) == 0) {
+                    options.coll_names = tokenize(ALL_COLLS_LIST, ',');
+                }
+                else
+                    options.coll_names = tokenize(optarg, ',');
+                break;
             case 'd':
                 if (strcmp("all", optarg) == 0) {
                     options.dtypes = tokenize(ALL_DTYPES_LIST, ',');
@@ -397,6 +403,9 @@ int parse_user_options(int& argc,
 
     if (errors > 0) {
         PRINT("found %d errors while parsing user options", errors);
+        for (int idx = 0; idx < argc; idx++) {
+            PRINT("arg %d: %s", idx, argv[idx]);
+        }
         return -1;
     }
 

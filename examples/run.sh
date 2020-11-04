@@ -36,9 +36,9 @@ function check_test()
     test_passed=`grep -E -c -i 'PASSED' ${test_log}`
     if [[ "${test_file}" != *"communicator"* ]] && [[ "${test_file}" != *"datatype"* ]];
     then
-        test_failed=`grep -E -c -i 'error|Aborted|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
+        test_failed=`grep -E -c -i 'error|invalid|Aborted|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
     else
-        test_failed=`grep -E -c -i 'Aborted|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
+        test_failed=`grep -E -c -i 'Aborted|invalid|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
     fi
     test_skipped=`grep -E -c -i 'unavailable|skipped|skip' ${test_log}`
     if ([ ${test_passed} -eq 0 ] || [ ${test_skipped} -eq 0 ]) && [ ${test_failed} -ne 0 ]
@@ -102,23 +102,24 @@ run_benchmark()
     echo "example: "$example
     local backend=$5
     echo "backend: "$backend
-    local loop=$6
+    local runtime=$6
+    echo "runtime: "$runtime
+    local loop=$7
     echo "loop: "$loop
-    local coll=$7
+    local coll=$8
     echo "coll: " $coll
-    local dtype=$8
+    local dtype=$9
     echo "dtype: " $dtype
-    local reduction=$9
+    local reduction=${10}
     echo "reduction: " $reduction
     echo "================ENVIRONMENT=================="
 
     log_idx=${log_idx}+1
     base_test_log="$EXAMPLE_WORK_DIR/$dir_name/run"
-    base_test_log="${base_test_log}_${transport}_${example}_b_${backend}_e_${loop}_l_${coll}_d_${dtype}_${log_idx}"
+    base_test_log="${base_test_log}_${transport}_${example}_b_${backend}_r_${runtime}_e_${loop}_l_${coll}_d_${dtype}_${log_idx}"
 
     options="--min_elem_count 1 --max_elem_count 32"
-
-    usm_list="device"
+    usm_list="none"
 
     if [ "${backend}" != "" ];
     then
@@ -126,16 +127,15 @@ run_benchmark()
 
         if [ "${backend}" == "sycl" ];
         then
-            worker_count=${CCL_WORKER_COUNT:-1}
             buf_count=2
-            if [ "$worker_count" -gt "1" ];
+            if [ "${runtime}" == "level_zero" ];
             then
-                # FIXME: enable back buf_count > 1 after multi-threaded USM fix in L0
+                # FIXME: enable back buf_count > 1 after USM fix in L0
                 # https://jira.devtools.intel.com/browse/CMPLRLLVM-22660
                 buf_count=1
             fi
-            options="${options} --iters 8 --buf_count ${buf_count} -m usm"
-            usm_list="${usm_list} shared"
+            options="${options} --iters 8 --buf_count ${buf_count} --sycl_mem_type usm"
+            usm_list="device shared"
         else
             options="${options} --iters 16 --buf_count 8"
         fi
@@ -166,7 +166,13 @@ run_benchmark()
         echo "usm: " $usm
 
         local test_log="${base_test_log}_${usm}.log"
-        final_options="${options} -u ${usm}"
+
+        if [ "${backend}" == "sycl" ];
+        then
+            final_options="${options} --sycl_usm_type ${usm}"
+        else
+            final_options="${options}"
+        fi
 
         if [ `echo $ccl_extra_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
         then
@@ -252,15 +258,15 @@ run()
     if [[ ${MODE} = "cpu" ]]
     then
         dir_list="cpu common benchmark"
-        backend_list="host"
-        selectors_list="cpu host default"
+        bench_backend_list="host"
+        example_selector_list="cpu host default"
     else
         dir_list="cpu common sycl benchmark"
-        backend_list="host sycl"
-        selectors_list="cpu host gpu default"
+        bench_backend_list="host sycl"
+        example_selector_list="cpu host gpu default"
     fi
 
-    echo "dir_list =" $dir_list "; selectors_list =" $selectors_list
+    echo "dir_list =" $dir_list "; example_selector_list =" $example_selector_list
     for dir_name in $dir_list
     do
         cd $dir_name
@@ -282,56 +288,60 @@ run()
                     grep -v 'sparse_allreduce'`
             fi
 
-            coll_list="" # empty coll_list means default benchmarking collectives set
             for example in $examples_to_run
             do
                 if [ "$dir_name" == "benchmark" ];
                 then
-                    for backend in $backend_list
+
+                    coll_list="all"
+
+                    for backend in $bench_backend_list
                     do
-                        ccl_extra_env="${ccl_transport_env}"
-                        run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular ${coll_list}
-                        # run extended version of benchmark
-                        if [[ "${example}" == *"benchmark"* ]]
+                        if [ "$backend" == "sycl" ];
                         then
+                            runtime_list="opencl level_zero"
+                        else
+                            runtime_list="none"
+                        fi
+
+                        for runtime in $runtime_list
+                        do
+                            ccl_runtime_env="${ccl_transport_env}"
+
+                            if [ "$runtime" == "opencl" ];
+                            then
+                                ccl_runtime_env="SYCL_BE=PI_OPENCL ${ccl_runtime_env}"
+                            elif [ "$runtime" == "level_zero" ];
+                            then
+                                ccl_runtime_env="SYCL_BE=PI_LEVEL_ZERO ${ccl_runtime_env}"
+                            fi
+
+                            ccl_extra_env="${ccl_runtime_env}"
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${coll_list}
+
                             for loop in "regular" "unordered"
                             do
                                 if [ "$transport" == "mpi" ] && [ "$loop" == "unordered" ];
                                 then
                                     continue
                                 fi
-                                ccl_extra_env="CCL_PRIORITY=lifo ${ccl_transport_env}"
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${loop} ${coll_list}
-                                ccl_extra_env="CCL_WORKER_OFFLOAD=0 ${ccl_transport_env}"
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${loop} ${coll_list}
+                                ccl_extra_env="CCL_PRIORITY=lifo ${ccl_runtime_env}"
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${loop} ${coll_list}
+                                ccl_extra_env="CCL_WORKER_OFFLOAD=0 ${ccl_runtime_env}"
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${loop} ${coll_list}
                             done
 
-                            ccl_extra_env="CCL_FUSION=1 ${ccl_transport_env}"
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce
+                            ccl_extra_env="CCL_FUSION=1 ${ccl_runtime_env}"
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular allreduce
 
-                            ccl_extra_env="CCL_LOG_LEVEL=2 ${ccl_transport_env}"
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular
-
-                            # run a benchmark with the specific datatypes and reductions
-                            if [ "$backend" == "sycl" ];
-                            then
-                                ccl_extra_env="SYCL_BE=PI_LEVEL_ZERO ${ccl_transport_env}"
-                            else
-                                ccl_extra_env="${ccl_transport_env}"
-                            fi
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce ${dtype_list} ${reduction_list}
-
-                            if [ "$backend" == "sycl" ];
-                            then
-                                # make additional run with non-defaul OCL runtime
-                                ccl_extra_env="SYCL_BE=PI_OPENCL ${ccl_transport_env}"
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} regular allreduce ${dtype_list} ${reduction_list}
-                            fi
-                        fi
+                            ccl_extra_env="CCL_LOG_LEVEL=2 ${ccl_runtime_env}"
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${coll_list}
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular allreduce ${dtype_list} ${reduction_list}
+                        done
                     done
                 elif [ "$dir_name" == "sycl" ];
                 then
-                    for selector in $selectors_list
+                    for selector in $example_selector_list
                     do
                         if [[ "${example}" == *"_usm_"* ]]
                         then

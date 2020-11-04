@@ -43,15 +43,15 @@ group_context::comm_group_t group_context::group_by_comm(std::shared_ptr<atl_wra
 
     LOG_INFO("\n",
          "\nATL info:",
-         "\n  threads per process:                    ",
+         "\n  threads per process: ",
          atl->get_threads_per_process(),
-         "\n  ranks per process:           ",
+         "\n  ranks per process:   ",
          atl->get_ranks_per_process(),
-         "\n  atl size:                         ",
+         "\n  atl size:            ",
          atl->get_size(),
-         "\n  rank:                             ",
+         "\n  rank:                ",
          atl->get_rank(),
-        "\n  unique id of atl comm:             ",
+        "\n  unique id of atl:     ",
          atl->get_id(),
          "\n")
 
@@ -74,7 +74,7 @@ group_context::comm_group_t group_context::group_by_comm(std::shared_ptr<atl_wra
                      static_cast<void*>(group.get()),
                      " has been created for unique_id: ",
                      unique_id,
-                     ", expected threads per process: ",
+                     ", threads per process: ",
                      threads_per_process,
                      ", ranks per process: ",
                      ranks_per_process);

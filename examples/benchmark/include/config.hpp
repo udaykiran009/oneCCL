@@ -21,7 +21,7 @@
 #define DEFAULT_SYCL_USM_TYPE   SYCL_USM_DEVICE
 #define DEFAULT_RANKS_PER_PROC  (1)
 
-#define DEFAULT_COLL_LIST       ALL_COLLS_LIST
+#define DEFAULT_COLL_LIST       "allreduce"
 #define DEFAULT_DTYPES_LIST     "float32"
 #define DEFAULT_REDUCTIONS_LIST "sum"
 #define DEFAULT_CSV_FILEPATH    ""

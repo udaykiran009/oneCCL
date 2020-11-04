@@ -58,13 +58,23 @@ struct sycl_copier {
 
             void* void_device_ptr = (direction == sycl_copy_direction::h2d) ? out_buf_ptr : in_buf_ptr;
 
+            /*
+              don't print this pointer through CCL logger
+              as in case of char/int8_t it will be interpreted as string
+              and logger will try access device memory
+              use void_device_ptr instead
+            */
             typename specific_sycl_buffer::value_type* device_ptr =
                 static_cast<typename specific_sycl_buffer::value_type*>(void_device_ptr);
 
             auto device_ptr_type = cl::sycl::get_pointer_type(device_ptr, q.get_context());
 
-            CCL_THROW_IF_NOT(device_ptr_type == cl::sycl::usm::alloc::device || device_ptr_type == cl::sycl::usm::alloc::unknown,
-              "unexpected USM type ", native::detail::usm_to_string(device_ptr_type), " for device_ptr ", device_ptr);
+            CCL_THROW_IF_NOT(
+              (device_ptr_type == cl::sycl::usm::alloc::device ||
+               device_ptr_type == cl::sycl::usm::alloc::unknown),
+              "unexpected USM type ",
+              native::detail::usm_to_string(device_ptr_type),
+              " for device_ptr ", device_ptr);
 
             specific_sycl_buffer* device_buf_ptr = nullptr;
 
@@ -91,7 +101,7 @@ struct sycl_copier {
                       ", out_buf_ptr: ",
                       out_buf_ptr,
                       ", device_ptr: ",
-                      device_ptr,
+                      void_device_ptr,
                       ", is_device_usm: ",
                       (device_buf_ptr) ? "no" : "yes",
                       ", device_ptr usm_type: ",

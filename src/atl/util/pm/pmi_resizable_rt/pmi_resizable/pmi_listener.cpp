@@ -40,7 +40,7 @@ int pmi_listener::collect_sock_addr(std::shared_ptr<helper> h) {
     char my_ip[MAX_KVS_VAL_LENGTH];
     char* point_to_space;
 
-    if ((fp = popen(CHECKER_IP, READ_ONLY)) == NULL) {
+    if ((fp = popen(GET_IP_CMD, READ_ONLY)) == NULL) {
         printf("Can't get host IP\n");
         exit(1);
     }
@@ -149,7 +149,7 @@ int pmi_listener::run_listener(std::shared_ptr<helper> h) {
         struct timeval timeout;
         timeout.tv_sec = LISTENER_TIMEOUT;
 
-        if ((fp = popen(CHECKER_IP, READ_ONLY)) == NULL) {
+        if ((fp = popen(GET_IP_CMD, READ_ONLY)) == NULL) {
             printf("Can't get host IP\n");
             exit(1);
         }
