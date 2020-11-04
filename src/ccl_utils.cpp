@@ -1,8 +1,8 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "ccl.hpp"
-#include "ccl_type_traits.hpp"
+#include "ccl_types.hpp"
+//#include "ccl_type_traits.hpp"
 
 std::ostream& operator<<(std::ostream& out, const ccl::device_index_type& index) {
     out << ccl::to_string(index);

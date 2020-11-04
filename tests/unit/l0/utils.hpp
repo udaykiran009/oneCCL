@@ -22,7 +22,8 @@
 #define private public
 #define protected public
 #define MULTI_GPU_SUPPORT
-#include "native_device_api/export_api.hpp"
+//#include "oneapi/ccl/native_device_api/export_api.hpp"
+#include "oneapi/ccl/native_device_api/l0/declarations.hpp"
 #undef protected
 #undef private
 
@@ -31,7 +32,7 @@
     do { \
         if (!(cond)) { \
             std::cerr << __VA_ARGS__ << std::endl; \
-            set_error(__PRETTY_FUNCTION__); \
+            this->set_error(__PRETTY_FUNCTION__); \
             dump(); \
             abort(); \
         } \
@@ -40,7 +41,7 @@
 #define UT_ASSERT(cond, ...) \
     do { \
         if (!(cond)) { \
-            set_error(__PRETTY_FUNCTION__); \
+            this->set_error(__PRETTY_FUNCTION__); \
         } \
         { ASSERT_TRUE((cond)) << __VA_ARGS__ << std::endl; } \
     } while (0);
@@ -60,7 +61,7 @@ public:
         return m_msg.c_str();
     }
 };
-
+std::shared_ptr<native::ccl_context> ctx;
 template <typename T>
 inline void str_to_array(const char* input, std::vector<T>& output, char delimiter) {
     if (!input) {
@@ -206,7 +207,7 @@ struct handles_storage {
 
         out << "Thread: " << it->first << std::endl;
         for (const auto& mem : handles) {
-            out << mem << ", ";
+            out << (void*)mem << ", ";
         }
         out << std::endl;
 
@@ -254,7 +255,7 @@ struct handles_storage {
                 continue;
             }
             auto* mem = *it;
-            out << mem << std::endl;
+            out << (void*)mem << std::endl;
 
             if (!handles_only) {
                 const T* data = mem;
@@ -320,12 +321,13 @@ struct handles_storage {
                   const size_t& thread_idx,
                   CheckFunctor lambda,
                   Args&&... params) {
+        using std::to_string;
+
         auto check_lambda = std::bind(lambda, std::forward<Args>(params)..., std::placeholders::_1);
         auto it = std::find_if_not(vec.begin(), vec.end(), check_lambda);
         if (it != vec.end())
-            throw check_on_exception(std::to_string(std::distance(vec.begin(), it)),
-                                     std::to_string(*it),
-                                     std::to_string(thread_idx));
+            throw check_on_exception(
+                to_string(std::distance(vec.begin(), it)), to_string(*it), to_string(thread_idx));
     }
 
     template <class CheckFunctor, class... Args>
@@ -374,14 +376,14 @@ struct ipc_server_handles_storage {
 
         ipc_handles_container& ipc_cont = per_thread_storage[thread_idx];
 
-        std::transform(
-            memory_handles.begin(),
-            memory_handles.end(),
-            std::back_inserter(ipc_cont),
-            [](native::ccl_device::device_memory<T>* memory_handle) {
-                auto device_ptr = memory_handle->get_owner().lock();
-                return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle);
-            });
+        std::transform(memory_handles.begin(),
+                       memory_handles.end(),
+                       std::back_inserter(ipc_cont),
+                       [](native::ccl_device::device_memory<T>* memory_handle) {
+                           auto device_ptr = memory_handle->get_owner().lock();
+                           return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle,
+                                                                              ctx);
+                       });
     }
 
     std::vector<uint8_t> serialize_storage(size_t thread_idx) {
@@ -450,8 +452,8 @@ struct ipc_client_handles_storage {
                     throw std::runtime_error("Cannot find ipc device in global driver");
                 }
 
-                per_thread_storage[thread_id].emplace_back(
-                    owner_device->restore_shared_ipc_memory(std::move(recv_ipc_handle)));
+                per_thread_storage[thread_id].emplace_back(owner_device->restore_shared_ipc_memory(
+                    std::move(recv_ipc_handle), std::move(ctx)));
                 restored_handles++;
             }
             catch (const std::exception& ex) {

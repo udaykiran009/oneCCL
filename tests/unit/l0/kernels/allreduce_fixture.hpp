@@ -2,6 +2,7 @@
 
 #include "../base_fixture.hpp"
 
+template <class T>
 class ring_allreduce_single_device_fixture : public common_fixture {
 protected:
     ring_allreduce_single_device_fixture()

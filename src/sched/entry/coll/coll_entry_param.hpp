@@ -12,8 +12,8 @@ struct ccl_coll_entry_param {
     const size_t* send_counts;
     const size_t* recv_counts;
     ccl_datatype dtype;
-    ccl_reduction_t reduction;
-    size_t root;
+    ccl::reduction reduction;
+    int root;
     ccl_comm* comm;
 
     ccl_coll_param to_coll_param() const {

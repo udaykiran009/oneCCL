@@ -2,14 +2,14 @@
 
 #include <initializer_list>
 #include <iterator>
-#include "ccl_types.hpp"
-#include "ccl.hpp"
+#include "oneapi/ccl/ccl_types.hpp"
 #include "common/datatype/datatype.hpp"
 #include "comp/comp.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"
 #include "sched/entry/coll/direct/base_coll_entry.hpp"
 
 #include "common/comm/l0/context/device_storage.hpp"
+#include "common/comm/host_communicator/host_communicator.hpp"
 namespace native {
 
 template <class from_entry>
@@ -33,7 +33,7 @@ public:
         return dependent_entry::type();
     }
 
-    static constexpr ccl::device_group_split_type dependent_topology() {
+    static constexpr ccl::group_split_type dependent_topology() {
         return dependent_entry::get_topology();
     }
 
@@ -45,8 +45,9 @@ public:
 
     l0_allgather_handles_entry(ccl_sched* sched,
                                std::shared_ptr<gpu_comm> comm,
-                               std::shared_ptr<ccl::communicator> ccl_comm,
+                               std::shared_ptr<ccl::host_communicator> ccl_comm,
                                device_storage& global_device_storage,
+                               ccl_driver_context_ptr in_ctx,
                                std::vector<ccl_device::device_ipc_memory_handle>&& send_data)
             : base_coll_entry(sched),
               comm_addr(
@@ -58,7 +59,7 @@ public:
     }
 
     void start() override {
-        size_t comm_size = ccl_communicator->size();
+        int comm_size = ccl_communicator->size();
         LOG_INFO(class_name(), " entry req ", &req, ", rank: ", comm_addr.to_string());
 
         // serialize data for native allgather algo
@@ -100,17 +101,21 @@ public:
                  ", waiting recv_bytes: ",
                  plain_recv_data.size());
 
-        request = ccl_communicator->allgatherv((char*)plain_send_data.data(),
-                                               send_bytes,
-                                               (char*)plain_recv_data.data(),
-                                               recv_bytes.data());
+        ccl::stream::impl_value_t empty{};
+        event = ccl_communicator->allgatherv_impl((int8_t*)plain_send_data.data(),
+                                                  send_bytes,
+                                                  (int8_t*)plain_recv_data.data(),
+                                                  recv_bytes,
+                                                  empty,
+                                                  ccl::default_allgatherv_attr,
+                                                  {});
         status = ccl_sched_entry_status_started;
 
         //TODO prepare foreign_device_ipc_mem_storage handles array
     }
 
     void update() override {
-        if (request->test()) {
+        if (event.test()) {
             LOG_DEBUG(class_name(),
                       " entry req ",
                       &req,
@@ -182,8 +187,11 @@ public:
                               native::to_string(recv_ip_handle->get()));
 
                     // create IPC memory object & remember in shared storage
+
+                    // TODO: resolve issue to provide ctx correctly
+                    std::shared_ptr<ccl_context> ctx;
                     foreign_device_ipc_mem_storage[ipc_mem_owner].push_back(
-                        ipc_mem_owner->get_device().get_ipc_memory(std::move(recv_ip_handle)));
+                        ipc_mem_owner->get_device().get_ipc_memory(std::move(recv_ip_handle), ctx));
 
                     num_handles++;
                 }
@@ -262,7 +270,7 @@ protected:
 
 private:
     topology_addr<dependent_topology(), dependent_topology_class()> comm_addr;
-    std::shared_ptr<ccl::communicator> ccl_communicator;
+    std::shared_ptr<ccl::host_communicator> ccl_communicator;
     device_storage& node_device_storage;
 
     std::vector<ccl_device::device_ipc_memory_handle> send_handles;
@@ -279,7 +287,7 @@ private:
     size_t cnt;
     ccl_datatype dtype;
 
-    ccl::communicator::coll_request_t request;
+    ccl::event event;
     atl_req_t req{};
 };
 } // namespace native

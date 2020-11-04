@@ -10,14 +10,14 @@ TEST_F(router_fixture, thread_group_topology_test) {
     size_t process_index = 0;
     std::vector<size_t> thread_ids{ 0, 1 };
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::process;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     init_routing_data(process_index);
     {
         //emulate last thread barrier creation
         //prepare context
-        tg_comm->per_thread_indices = ccl::process_device_indices_t{
+        tg_comm->per_thread_indices = ccl::process_device_indices_type{
             { 0,
               { ccl::device_index_type(0, 0, ccl::unused_index_value),
                 ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -27,17 +27,17 @@ TEST_F(router_fixture, thread_group_topology_test) {
                 ccl::device_index_type(0, 1, ccl::unused_index_value),
                 ccl::device_index_type(0, 2, ccl::unused_index_value) } }
         };
-        native::details::p2p_rating_function rating_function = all_p2p_accessible;
+        native::detail::p2p_rating_function rating_function = all_p2p_accessible;
         for (size_t thread_id : thread_ids) {
             create_devices_by_affinity(thread_id,
                                        tg_comm->per_thread_indices.find(thread_id)->second);
 
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
             std::stringstream ss;
-            native::details::adjacency_matrix matrix =
+            native::detail::adjacency_matrix matrix =
                 device_group_ring_topology::build_p2p_capability_matrix(
                     ss, group_indices_affinity, rating_function);
             device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
@@ -46,7 +46,7 @@ TEST_F(router_fixture, thread_group_topology_test) {
 
         thread_group_ring_topology top(*tg_comm, *pg_comm->gpu_device_storage);
         std::stringstream ss;
-        native::details::adjacency_matrix matrix =
+        native::detail::adjacency_matrix matrix =
             thread_group_ring_topology::build_p2p_capability_matrix(
                 ss, tg_comm->per_thread_indices, rating_function);
         output << ss.str() << "\nResult matrix:\n" << matrix << std::endl;
@@ -56,7 +56,7 @@ TEST_F(router_fixture, thread_group_topology_test) {
         std::string descr;
 
         //test device id ring creation
-        std::vector<native::details::plain_graph> expected_ring_ids;
+        std::vector<native::detail::plain_graph> expected_ring_ids;
         //thread 0
         expected_ring_ids.push_back({ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                       ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -114,14 +114,14 @@ TEST_F(router_fixture, thread_group_topology_test) {
     }
 }
 
-TEST_F(router_fixture, same_device_topology_test) {
+TEST_F(router_fixture, thread_group_same_device_topology_test) {
     using namespace utils;
     using namespace native;
 
     size_t process_index = 0;
     std::vector<size_t> thread_ids{ 0, 1 };
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::process;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     //same device test
@@ -129,7 +129,7 @@ TEST_F(router_fixture, same_device_topology_test) {
     {
         //emulate last thread barrier creation
         //prepare context
-        tg_comm->per_thread_indices = ccl::process_device_indices_t{
+        tg_comm->per_thread_indices = ccl::process_device_indices_type{
             { 0,
               { ccl::device_index_type(0, 0, ccl::unused_index_value),
                 ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -140,17 +140,17 @@ TEST_F(router_fixture, same_device_topology_test) {
                 ccl::device_index_type(0, 0, ccl::unused_index_value) } }
         };
 
-        native::details::p2p_rating_function rating_function = all_p2p_accessible;
+        native::detail::p2p_rating_function rating_function = all_p2p_accessible;
         for (size_t thread_id : thread_ids) {
             create_devices_by_affinity(thread_id,
                                        tg_comm->per_thread_indices.find(thread_id)->second);
 
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
             std::stringstream ss;
-            native::details::adjacency_matrix matrix =
+            native::detail::adjacency_matrix matrix =
                 device_group_ring_topology::build_p2p_capability_matrix(
                     ss, group_indices_affinity, rating_function);
             device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
@@ -158,7 +158,7 @@ TEST_F(router_fixture, same_device_topology_test) {
 
         thread_group_ring_topology top(*tg_comm, *pg_comm->gpu_device_storage);
         std::stringstream ss;
-        native::details::adjacency_matrix matrix =
+        native::detail::adjacency_matrix matrix =
             thread_group_ring_topology::build_p2p_capability_matrix(
                 ss, tg_comm->per_thread_indices, rating_function);
         output << ss.str() << "\nResult matrix:\n" << matrix << std::endl;
@@ -168,7 +168,7 @@ TEST_F(router_fixture, same_device_topology_test) {
         std::string descr;
 
         //test device id ring creation
-        std::vector<native::details::plain_graph> expected_ring_ids;
+        std::vector<native::detail::plain_graph> expected_ring_ids;
         //thread 0
         expected_ring_ids.push_back({ ccl::device_index_type(0, 0, ccl::unused_index_value),
                                       ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -225,20 +225,19 @@ TEST_F(router_fixture, same_device_topology_test) {
 TEST_F(router_fixture, thread_group_topology_scaleup_test) {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     size_t process_index = 0;
     std::vector<size_t> thread_ids{ 0, 1 };
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::process;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     init_routing_data(process_index);
     {
-        output << "TEST: two inaccessible devices for two threads" << std::endl;
         //emulate last thread barrier creation
         //prepare context
-        tg_comm->per_thread_indices = ccl::process_device_indices_t{
+        tg_comm->per_thread_indices = ccl::process_device_indices_type{
             { 0,
               {
                   ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -258,18 +257,18 @@ TEST_F(router_fixture, thread_group_topology_scaleup_test) {
                 { ccl::device_index_type(0, 1, ccl::unused_index_value), 1 } } }
         };
 
-        native::details::p2p_rating_function rating_function = std::bind(
+        native::detail::p2p_rating_function rating_function = std::bind(
             test_custom_p2p_ping, std::placeholders::_1, std::placeholders::_2, expected_matrix);
         for (size_t thread_id : thread_ids) {
             create_devices_by_affinity(thread_id,
                                        tg_comm->per_thread_indices.find(thread_id)->second);
 
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
             std::stringstream ss;
-            native::details::adjacency_matrix matrix =
+            native::detail::adjacency_matrix matrix =
                 device_group_ring_topology::build_p2p_capability_matrix(
                     ss, group_indices_affinity, rating_function);
             device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
@@ -277,7 +276,7 @@ TEST_F(router_fixture, thread_group_topology_scaleup_test) {
 
         std::stringstream ss;
         thread_group_ring_topology top(*tg_comm, *pg_comm->gpu_device_storage);
-        native::details::adjacency_matrix matrix =
+        native::detail::adjacency_matrix matrix =
             thread_group_ring_topology::build_p2p_capability_matrix(
                 ss, tg_comm->per_thread_indices, rating_function);
         //check matrix
@@ -335,22 +334,22 @@ TEST_F(router_fixture, thread_group_topology_scaleup_test) {
     }
 }
 
-TEST_F(router_fixture, two_inaccessible_groups_topology_scaleup_test) {
+TEST_F(router_fixture, thread_group_two_inaccessible_groups_topology_scaleup_test) {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     size_t process_index = 0;
     std::vector<size_t> thread_ids{ 0, 1 };
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::process;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     init_routing_data(process_index);
     {
         //emulate last thread barrier creation
         //prepare context
-        tg_comm->per_thread_indices = ccl::process_device_indices_t{
+        tg_comm->per_thread_indices = ccl::process_device_indices_type{
             { 0,
               { ccl::device_index_type(0, 0, ccl::unused_index_value),
                 ccl::device_index_type(0, 1, ccl::unused_index_value) } },
@@ -382,18 +381,18 @@ TEST_F(router_fixture, two_inaccessible_groups_topology_scaleup_test) {
                 { ccl::device_index_type(0, 3, ccl::unused_index_value), 1 } } },
         };
 
-        native::details::p2p_rating_function rating_function = std::bind(
+        native::detail::p2p_rating_function rating_function = std::bind(
             test_custom_p2p_ping, std::placeholders::_1, std::placeholders::_2, expected_matrix);
         for (size_t thread_id : thread_ids) {
             create_devices_by_affinity(thread_id,
                                        tg_comm->per_thread_indices.find(thread_id)->second);
 
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
             std::stringstream ss;
-            native::details::adjacency_matrix matrix =
+            native::detail::adjacency_matrix matrix =
                 device_group_ring_topology::build_p2p_capability_matrix(
                     ss, group_indices_affinity, rating_function);
             device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
@@ -401,7 +400,7 @@ TEST_F(router_fixture, two_inaccessible_groups_topology_scaleup_test) {
 
         std::stringstream ss;
         thread_group_ring_topology top(*tg_comm, *pg_comm->gpu_device_storage);
-        native::details::adjacency_matrix matrix =
+        native::detail::adjacency_matrix matrix =
             thread_group_ring_topology::build_p2p_capability_matrix(
                 ss, tg_comm->per_thread_indices, rating_function);
         //check matrix
@@ -460,23 +459,22 @@ TEST_F(router_fixture, two_inaccessible_groups_topology_scaleup_test) {
     }
 }
 
-TEST_F(router_fixture, local_group_inaccessible_devices_topology_scaleup_test) {
+TEST_F(router_fixture, thread_group_local_group_inaccessible_devices_topology_scaleup_test) {
     using namespace utils;
     using namespace native;
-    using namespace native::details;
+    using namespace native::detail;
 
     size_t process_index = 0;
     std::vector<size_t> thread_ids{ 0, 1 };
 
-    constexpr ccl::device_group_split_type topology = ccl::device_group_split_type::process;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::process;
     constexpr ccl::device_topology_type class_id = ccl::device_topology_type::ring;
 
     init_routing_data(process_index);
     {
-        output << "TEST: local group inaccessible devices to merge for two threads" << std::endl;
         //emulate last thread barrier creation
         //prepare context
-        tg_comm->per_thread_indices = ccl::process_device_indices_t{
+        tg_comm->per_thread_indices = ccl::process_device_indices_type{
             { 0,
               {
                   ccl::device_index_type(0, 0, ccl::unused_index_value),
@@ -506,18 +504,18 @@ TEST_F(router_fixture, local_group_inaccessible_devices_topology_scaleup_test) {
                 { ccl::device_index_type(0, 2, ccl::unused_index_value), 1 } } },
         };
 
-        native::details::p2p_rating_function rating_function = std::bind(
+        native::detail::p2p_rating_function rating_function = std::bind(
             test_custom_p2p_ping, std::placeholders::_1, std::placeholders::_2, expected_matrix);
         for (size_t thread_id : thread_ids) {
             create_devices_by_affinity(thread_id,
                                        tg_comm->per_thread_indices.find(thread_id)->second);
 
-            const ccl::device_indices_t& group_indices_affinity = get_device_affinity(thread_id);
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
             device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
             device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
 
             //std::stringstream ss;
-            native::details::adjacency_matrix matrix =
+            native::detail::adjacency_matrix matrix =
                 device_group_ring_topology::build_p2p_capability_matrix(
                     std::cout, group_indices_affinity, rating_function);
             device_top.build(std::cout, dev_group_ctx.context_addr, group_indices_affinity, matrix);
@@ -525,7 +523,7 @@ TEST_F(router_fixture, local_group_inaccessible_devices_topology_scaleup_test) {
 
         //std::stringstream ss;
         thread_group_ring_topology top(*tg_comm, *pg_comm->gpu_device_storage);
-        native::details::adjacency_matrix matrix =
+        native::detail::adjacency_matrix matrix =
             thread_group_ring_topology::build_p2p_capability_matrix(
                 output, tg_comm->per_thread_indices, rating_function);
         //check matrix

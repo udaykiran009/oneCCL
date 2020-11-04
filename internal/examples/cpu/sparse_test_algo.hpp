@@ -1,0 +1,532 @@
+#ifndef SPARSE_TEST_ALGO_HPP
+#define SPARSE_TEST_ALGO_HPP
+
+#include <iterator>
+#include <random>
+#include <unordered_map>
+#include <utility>
+
+#include "base.hpp"
+#include "base_utils.hpp"
+#include "bf16.hpp"
+#include "oneapi/ccl.hpp"
+
+#define COUNT_I   1024
+#define VDIM_SIZE 64
+#define RANGE     255
+
+typedef enum {
+    sparse_test_callback_completion,
+    sparse_test_callback_alloc
+} sparse_test_callback_mode_t;
+
+#define PRINT_ERROR(comm, itype_name, vtype_name) \
+    ({ \
+        std::string str = "\n\nexpected ["; \
+        for (auto x : it->second) \
+            str += std::to_string(x) + ","; \
+        str[str.length() - 1] = ']'; \
+\
+        str += "\n\ngot ["; \
+        for (auto x : v) \
+            str += std::to_string(x) + ","; \
+        str[str.length() - 1] = ']'; \
+\
+        printf("\nrank [%zu]: recv_idx %zu, " \
+               "i_type %s, v_type %s, %s\n", \
+               comm.rank(), \
+               (size_t)rcv_idx[idx], \
+               itype_name, \
+               vtype_name, \
+               str.c_str()); \
+        ASSERT(0, "unexpected value"); \
+    })
+
+#define PRINT_FLAGGED_ERROR(comm, itype_name, vtype_name) \
+    ({ \
+        str = "expected " + std::to_string(evb[idx * VDIM_SIZE + j]) + ", but received " + \
+              std::to_string(rcv_val[idx * VDIM_SIZE + j]) + " on position " + std::to_string(j) + \
+              "(for i_type " + itype_name + ", v_type " + vtype_name + ")"; \
+        printf("rank [%zu]: idx %zu, %s\n", comm.rank(), (size_t)rcv_idx[idx], str.c_str()); \
+        ASSERT(0, "unexpected value"); \
+    })
+
+#define CHECK(comm, itype_name, vtype_name, is_bf16) \
+    ({ \
+        i_t* rcv_idx = (i_t*)recv_ibuf; \
+        std::vector<v_t> rcv_val((v_t*)recv_vbuf, (v_t*)recv_vbuf + recv_vcount); \
+\
+        for (size_t idx = 0; idx < recv_icount; idx++) { \
+            auto it = expected.find(rcv_idx[idx]); \
+            if (it == expected.end()) { \
+                printf("rank [%zu]: idx %zu is not expected to be found\n", \
+                       comm.rank(), \
+                       (size_t)rcv_idx[idx]); \
+                ASSERT(0, "unexpected value"); \
+            } \
+            else { \
+                std::vector<v_t> v(rcv_val.begin() + VDIM_SIZE * idx, \
+                                   rcv_val.begin() + VDIM_SIZE * (idx + 1)); \
+                if (is_bf16) { \
+                    for (size_t i = 0; i < v.size(); i++) { \
+                        double max_error = g * it->second[i]; \
+                        if (fabs(max_error) < fabs(it->second[i] - v[i])) { \
+                            PRINT_ERROR(comm, itype_name, vtype_name); \
+                            break; \
+                        } \
+                    } \
+                } \
+                else { \
+                    if (v != it->second) { \
+                        PRINT_ERROR(comm, itype_name, vtype_name); \
+                    } \
+                } \
+            } \
+        } \
+    })
+
+#define CHECK_WO_COALESCE(comm, itype_name, vtype_name, is_bf16) \
+    ({ \
+        i_t* rcv_idx = (i_t*)recv_ibuf; \
+        std::vector<v_t> rcv_val((v_t*)recv_vbuf, (v_t*)recv_vbuf + recv_vcount); \
+\
+        if (recv_icount != expected_count) { \
+            printf("rank [%zu]: expected count (%zu) and received           \
+                count (%zu) differ\n", \
+                   comm.rank(), \
+                   expected_count, \
+                   recv_icount); \
+            ASSERT(0, "unexpected value"); \
+        } \
+        else { \
+            i_t* eib = (i_t*)expected_buf; \
+            v_t* evb = (v_t*)((i_t*)expected_buf + expected_count); \
+            std::string str; \
+            for (size_t idx = 0; idx < recv_icount; idx++) { \
+                if (rcv_idx[idx] != eib[idx]) { \
+                    printf("rank [%zu]: idx %zu is not expected to be       \
+                        found on position %zu\n", \
+                           comm.rank(), \
+                           (size_t)rcv_idx[idx], \
+                           (size_t)idx); \
+                    ASSERT(0, "unexpected value"); \
+                } \
+                else { \
+                    if (is_bf16) { \
+                        for (size_t j = 0; j < VDIM_SIZE; j++) { \
+                            double max_error = g * evb[idx * VDIM_SIZE + j]; \
+                            if (fabs(max_error) < \
+                                fabs(evb[idx * VDIM_SIZE + j] - rcv_val[idx * VDIM_SIZE + j])) { \
+                                PRINT_FLAGGED_ERROR(comm, itype_name, vtype_name); \
+                                break; \
+                            } \
+                        } \
+                    } \
+                    else { \
+                        for (size_t j = 0; j < VDIM_SIZE; j++) { \
+                            if (rcv_val[idx * VDIM_SIZE + j] != evb[idx * VDIM_SIZE + j]) { \
+                                PRINT_FLAGGED_ERROR(comm, itype_name, vtype_name); \
+                            } \
+                        } \
+                    } \
+                } \
+            } \
+        } \
+    })
+
+#define RUN_COLLECTIVE(start_cmd, comm, itype_name, vtype_name) \
+    do { \
+        t = 0; \
+        for (size_t iter_idx = 0; iter_idx < 1; iter_idx++) { \
+            t1 = when(); \
+            start_cmd.wait(); \
+            t2 = when(); \
+            t += (t2 - t1); \
+            ccl::barrier(comm); \
+        } \
+        printf("[%zu] idx_type: %s, val_type: %s, avg time: %8.2lf us\n", \
+               comm.rank(), \
+               itype_name, \
+               vtype_name, \
+               t / 1); \
+        fflush(stdout); \
+    } while (0)
+
+template <ccl::datatype i_type, ccl::datatype v_type>
+void gather_expected_data(const std::vector<typename ccl::type_info<i_type>::native_type>& ibuffer,
+                          const std::vector<typename ccl::type_info<v_type>::native_type>& vbuffer,
+                          void** result,
+                          size_t* result_count,
+                          ccl::communicator& comm) {
+    ASSERT(result, "void** result buffer mustn't be nullptr");
+    ASSERT(result_count, "size_t* result_count mustn't be nullptr");
+
+    if (!result || !result_count) {
+        throw std::runtime_error(
+            "gather_expected_data: result and result_count parameters mustn't be nullptr");
+    }
+    else {
+        using i_t = typename ccl::type_info<i_type>::native_type;
+        using v_t = typename ccl::type_info<v_type>::native_type;
+
+        void* recv_buf;
+        size_t sum_nnz;
+        size_t count = ibuffer.size();
+
+        if (comm.size() > 1) {
+            /* gather the number of non-zero (NNZ) values from all the ranks */
+            std::vector<size_t> recv_counts(comm.size(), sizeof(size_t));
+            size_t nnz = count;
+            std::vector<size_t> recv_nnz(comm.size());
+
+            ccl::allgatherv(&nnz, sizeof(size_t), recv_nnz.data(), recv_counts, comm).wait();
+
+            /* gather indices and values */
+            std::copy(recv_nnz.begin(), recv_nnz.end(), recv_counts.begin());
+            sum_nnz = 0;
+            for (unsigned int i = 0; i < comm.size(); i++) {
+                sum_nnz += recv_nnz[i];
+                recv_counts[i] *= VDIM_SIZE;
+            }
+
+            recv_buf = malloc(sum_nnz * (sizeof(i_t) + VDIM_SIZE * sizeof(v_t)));
+
+            ccl::allgatherv(ibuffer.data(), ibuffer.size(), (i_t*)recv_buf, recv_nnz, comm).wait();
+
+            ccl::allgatherv(
+                vbuffer.data(), vbuffer.size(), (v_t*)((i_t*)recv_buf + sum_nnz), recv_counts, comm)
+                .wait();
+        }
+        else {
+            recv_buf = malloc(count * (sizeof(i_t) + VDIM_SIZE * sizeof(v_t)));
+            std::copy(ibuffer.begin(), ibuffer.end(), (i_t*)recv_buf);
+            std::copy(vbuffer.begin(), vbuffer.end(), (v_t*)((i_t*)recv_buf + count));
+            sum_nnz = count;
+        }
+
+        *result = recv_buf;
+        *result_count = sum_nnz;
+    }
+}
+
+template <ccl::datatype i_type, ccl::datatype v_type>
+std::map<typename ccl::type_info<i_type>::native_type,
+         std::vector<typename ccl::type_info<v_type>::native_type>>
+coalesce_expected_data(void* recv_buf, size_t nnz) {
+    using i_t = typename ccl::type_info<i_type>::native_type;
+    using v_t = typename ccl::type_info<v_type>::native_type;
+
+    /* calculate expected values */
+    std::map<i_t, std::vector<v_t>> exp_vals;
+    i_t* idx_buf = (i_t*)recv_buf;
+    v_t* val_buf = (v_t*)((i_t*)recv_buf + nnz);
+    std::vector<v_t> tmp(VDIM_SIZE);
+    for (unsigned int idx = 0; idx < nnz; idx++) {
+        auto it = exp_vals.find(idx_buf[idx]);
+        if (it == exp_vals.end()) {
+            std::copy(val_buf + idx * VDIM_SIZE, val_buf + (idx + 1) * VDIM_SIZE, tmp.begin());
+            exp_vals.emplace(idx_buf[idx], tmp);
+        }
+        else {
+            for (unsigned int jdx = 0; jdx < VDIM_SIZE; jdx++) {
+                it->second[jdx] += val_buf[idx * VDIM_SIZE + jdx];
+            }
+        }
+    }
+
+    return exp_vals;
+}
+
+/* =================== */
+/* these fields will be updated/allocated inside completion callback */
+size_t recv_icount;
+size_t recv_vcount;
+void* recv_ibuf;
+void* recv_vbuf;
+#ifdef CCL_BF16_COMPILER
+void* recv_vbuf_bf16;
+#endif
+/* =================== */
+
+void completion_fn(const void* i_buf,
+                   size_t i_cnt,
+                   ccl::datatype itype,
+                   const void* v_buf,
+                   size_t v_cnt,
+                   ccl::datatype vtype,
+                   const void* fn_ctx) {
+    recv_icount = i_cnt;
+    recv_vcount = v_cnt;
+
+    size_t itype_size = ccl::get_datatype_size(itype);
+    size_t vtype_size = ccl::get_datatype_size(vtype);
+
+    recv_ibuf = malloc(itype_size * recv_icount);
+    recv_vbuf = malloc(vtype_size * recv_vcount);
+
+    memcpy(recv_ibuf, i_buf, itype_size * recv_icount);
+    memcpy(recv_vbuf, v_buf, vtype_size * recv_vcount);
+}
+
+void alloc_fn(size_t i_cnt,
+              ccl::datatype itype,
+              size_t v_cnt,
+              ccl::datatype vtype,
+              const void* fn_ctx,
+              void** out_i_buf,
+              void** out_v_buf) {
+    ASSERT(out_i_buf && out_v_buf, "out_i_buf or out_v_buf");
+
+    recv_icount = i_cnt;
+    recv_vcount = v_cnt;
+
+    size_t itype_size = ccl::get_datatype_size(itype);
+    size_t vtype_size = ccl::get_datatype_size(vtype);
+
+    recv_ibuf = malloc(itype_size * recv_icount);
+    recv_vbuf = malloc(vtype_size * recv_vcount);
+
+    *out_i_buf = recv_ibuf;
+    *out_v_buf = recv_vbuf;
+}
+
+#ifdef CCL_BF16_COMPILER
+void completion_bf16_fn(const void* i_buf,
+                        size_t i_cnt,
+                        ccl::datatype itype,
+                        const void* v_buf,
+                        size_t v_cnt,
+                        ccl::datatype vtype,
+                        const void* fn_ctx) {
+    recv_icount = i_cnt;
+    recv_vcount = v_cnt;
+
+    size_t itype_size = ccl::get_datatype_size(itype);
+    size_t vtype_size = ccl::get_datatype_size(vtype);
+
+    recv_ibuf = malloc(itype_size * recv_icount);
+    recv_vbuf = malloc(sizeof(float) * recv_vcount);
+    recv_vbuf_bf16 = malloc(vtype_size * recv_vcount);
+
+    memcpy(recv_ibuf, i_buf, itype_size * recv_icount);
+    memcpy(recv_vbuf_bf16, v_buf, vtype_size * recv_vcount);
+}
+
+void alloc_bf16_fn(size_t i_cnt,
+                   ccl::datatype itype,
+                   size_t v_cnt,
+                   ccl::datatype vtype,
+                   const void* fn_ctx,
+                   void** out_i_buf,
+                   void** out_v_buf) {
+    ASSERT(out_i_buf && out_v_buf, "out_i_buf or out_v_buf");
+
+    recv_icount = i_cnt;
+    recv_vcount = v_cnt;
+
+    size_t itype_size = ccl::get_datatype_size(itype);
+    size_t vtype_size = ccl::get_datatype_size(vtype);
+
+    recv_ibuf = malloc(itype_size * recv_icount);
+    recv_vbuf = malloc(sizeof(float) * recv_vcount);
+    recv_vbuf_bf16 = malloc(vtype_size * recv_vcount);
+
+    *out_i_buf = recv_ibuf;
+    *out_v_buf = recv_vbuf_bf16;
+}
+
+template <ccl::datatype i_type,
+          ccl::datatype v_type,
+          typename std::enable_if<v_type == ccl::datatype::bfloat16, int>::type = 0>
+void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
+                     sparse_test_callback_mode_t callback_mode,
+                     ccl::communicator* comm) {
+    if (is_bf16_enabled() == 0) {
+        printf("WARNING: BF16 is not enabled, skip test\n");
+        return;
+    }
+    else {
+        using i_t = typename ccl::type_info<i_type>::native_type;
+        using v_t = float;
+
+        size_t count = COUNT_I - comm->rank();
+        std::vector<i_t> send_ibuf(count);
+        std::vector<v_t> send_vbuf(count * VDIM_SIZE);
+
+        /* generate pseudo-random indices and calculate values */
+        std::random_device seed;
+        std::mt19937 gen(seed());
+        std::uniform_int_distribution<> dist(0, RANGE);
+        for (size_t i = 0; i < count; i++) {
+            send_ibuf[i] = dist(gen);
+            for (unsigned int j = 0; j < VDIM_SIZE; j++) {
+                send_vbuf[i * VDIM_SIZE + j] = (comm->rank() + j) / 100;
+            }
+        }
+
+        void* expected_buf = nullptr;
+        size_t expected_count = 0;
+        gather_expected_data<i_type, ccl::datatype::float32>(
+            send_ibuf, send_vbuf, &expected_buf, &expected_count, (*comm));
+        ASSERT(expected_buf, "expected_buf is null");
+        ASSERT(expected_count, "expected_count is zero");
+
+        std::map<i_t, std::vector<v_t>> expected{};
+        if (coalesce_mode != ccl::sparse_coalesce_mode::disable) {
+            expected = coalesce_expected_data<i_type, ccl::datatype::float32>(expected_buf,
+                                                                              expected_count);
+        }
+
+        auto attr = ccl::create_operation_attr<ccl::sparse_allreduce_attr>();
+
+        if (callback_mode == sparse_test_callback_completion)
+            attr.set<ccl::sparse_allreduce_attr_id::completion_fn>(
+                (ccl::sparse_allreduce_completion_fn)completion_bf16_fn);
+        else
+            attr.set<ccl::sparse_allreduce_attr_id::alloc_fn>(
+                (ccl::sparse_allreduce_alloc_fn)alloc_bf16_fn);
+
+        attr.set<ccl::sparse_allreduce_attr_id::coalesce_mode>(coalesce_mode);
+
+        void* send_vbuf_bf16 =
+            malloc(ccl::get_datatype_size(ccl::datatype::bfloat16) * send_vbuf.size());
+
+        convert_fp32_to_bf16_arrays(send_vbuf.data(), send_vbuf_bf16, send_vbuf.size());
+
+        recv_icount = 0;
+        recv_vcount = 0;
+        recv_ibuf = nullptr;
+        recv_vbuf = nullptr;
+        recv_vbuf_bf16 = nullptr;
+
+        RUN_COLLECTIVE(ccl::preview::sparse_allreduce((void*)send_ibuf.data(),
+                                                      send_ibuf.size(),
+                                                      (void*)send_vbuf_bf16,
+                                                      send_vbuf.size(),
+                                                      nullptr,
+                                                      0,
+                                                      nullptr,
+                                                      0,
+                                                      i_type,
+                                                      v_type,
+                                                      ccl::reduction::sum,
+                                                      (*comm),
+                                                      attr),
+                       (*comm),
+                       ccl::type_info<i_type>::name(),
+                       ccl::type_info<v_type>::name());
+
+        ASSERT(recv_icount, "recv_icount is zero");
+        ASSERT(recv_vcount, "recv_vcount is zero");
+        ASSERT(recv_ibuf, "recv_ibuf is null");
+        ASSERT(recv_vbuf, "recv_vbuf is null");
+        ASSERT(recv_vbuf_bf16, "recv_vbuf_bf16 is null");
+
+        convert_bf16_to_fp32_arrays(recv_vbuf_bf16, (float*)recv_vbuf, (int)recv_vcount);
+
+        /* https://www.mcs.anl.gov/papers/P4093-0713_1.pdf */
+        double log_base2 = log(comm->size()) / log(2);
+        double g = (log_base2 * BF16_PRECISION) / (1 - (log_base2 * BF16_PRECISION));
+
+        if (coalesce_mode == ccl::sparse_coalesce_mode::disable) {
+            CHECK_WO_COALESCE(
+                (*comm), ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), true);
+        }
+        else {
+            CHECK((*comm), ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), true);
+        }
+
+        free(expected_buf);
+        free(send_vbuf_bf16);
+        free(recv_ibuf);
+        free(recv_vbuf);
+        free(recv_vbuf_bf16);
+    }
+}
+#endif /* CCL_BF16_COMPILER */
+
+template <ccl::datatype i_type,
+          ccl::datatype v_type,
+          typename std::enable_if<v_type != ccl::datatype::bfloat16, int>::type = 0>
+void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
+                     sparse_test_callback_mode_t callback_mode,
+                     ccl::communicator* comm) {
+    using i_t = typename ccl::type_info<i_type>::native_type;
+    using v_t = typename ccl::type_info<v_type>::native_type;
+    size_t count = COUNT_I - comm->rank();
+    std::vector<i_t> send_ibuf(count);
+    std::vector<v_t> send_vbuf(count * VDIM_SIZE);
+
+    /* generate pseudo-random indices and calculate values */
+    std::random_device seed;
+    std::mt19937 gen(seed());
+    std::uniform_int_distribution<> dist(0, RANGE);
+    for (size_t i = 0; i < count; i++) {
+        send_ibuf[i] = dist(gen);
+        for (unsigned int j = 0; j < VDIM_SIZE; j++) {
+            send_vbuf[i * VDIM_SIZE + j] = (comm->rank() + j);
+        }
+    }
+
+    void* expected_buf = nullptr;
+    size_t expected_count = 0;
+    gather_expected_data<i_type, v_type>(
+        send_ibuf, send_vbuf, &expected_buf, &expected_count, (*comm));
+    ASSERT(expected_buf, "expected_buf is nullptr");
+    ASSERT(expected_count, "expected_count is zero");
+
+    std::map<i_t, std::vector<v_t>> expected{};
+    if (coalesce_mode != ccl::sparse_coalesce_mode::disable) {
+        expected = coalesce_expected_data<i_type, v_type>(expected_buf, expected_count);
+    }
+
+    auto attr = ccl::create_operation_attr<ccl::sparse_allreduce_attr>();
+
+    if (callback_mode == sparse_test_callback_completion)
+        attr.set<ccl::sparse_allreduce_attr_id::completion_fn>(
+            (ccl::sparse_allreduce_completion_fn)completion_fn);
+    else
+        attr.set<ccl::sparse_allreduce_attr_id::alloc_fn>((ccl::sparse_allreduce_alloc_fn)alloc_fn);
+
+    attr.set<ccl::sparse_allreduce_attr_id::coalesce_mode>(coalesce_mode);
+
+    recv_icount = 0;
+    recv_vcount = 0;
+    recv_ibuf = nullptr;
+    recv_vbuf = nullptr;
+
+    RUN_COLLECTIVE(ccl::preview::sparse_allreduce(send_ibuf.data(),
+                                                  send_ibuf.size(),
+                                                  send_vbuf.data(),
+                                                  send_vbuf.size(),
+                                                  (i_t*)nullptr,
+                                                  0,
+                                                  (v_t*)nullptr,
+                                                  0,
+                                                  ccl::reduction::sum,
+                                                  (*comm),
+                                                  attr),
+                   (*comm),
+                   ccl::type_info<i_type>::name(),
+                   ccl::type_info<v_type>::name());
+
+    ASSERT(recv_icount, "recv_icount is zero");
+    ASSERT(recv_vcount, "recv_vcount is zero");
+    ASSERT(recv_ibuf, "recv_ibuf is null");
+    ASSERT(recv_vbuf, "recv_vbuf is null");
+
+    double g;
+
+    if (coalesce_mode == ccl::sparse_coalesce_mode::disable) {
+        CHECK_WO_COALESCE(
+            (*comm), ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), false);
+    }
+    else {
+        CHECK((*comm), ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), false);
+    }
+
+    free(expected_buf);
+    free(recv_ibuf);
+    free(recv_vbuf);
+}
+#endif /* SPARSE_TEST_ALGO_HPP */

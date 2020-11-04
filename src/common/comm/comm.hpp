@@ -1,57 +1,94 @@
 #pragma once
 
-#include "ccl.hpp"
+#include <atomic>
+#include <unordered_map>
+
+#include "atl/atl_wrapper.h"
+#include "coll/algorithms/allreduce/allreduce_2d.hpp"
 #include "common/comm/comm_id_storage.hpp"
 #include "common/comm/atl_tag.hpp"
 #include "common/log/log.hpp"
 #include "common/utils/tree.hpp"
 #include "common/utils/utils.hpp"
-
-#include <atomic>
-#include <unordered_map>
+#include "unordered_coll/unordered_coll.hpp"
 
 // index = local_rank, value = global_rank
-using ccl_rank2rank_map = std::vector<size_t>;
+using ccl_rank2rank_map = std::vector<int>;
+
+namespace ccl {
+namespace v1 {
+class kvs_interface;
+}
+} // namespace ccl
 
 class alignas(CACHELINE_SIZE) ccl_comm {
 public:
+    //TODO
+    static void ccl_comm_reset_thread_barrier();
     ccl_comm() = delete;
     ccl_comm(const ccl_comm& other) = delete;
     ccl_comm& operator=(const ccl_comm& other) = delete;
 
-    ccl_comm(size_t rank, size_t size, ccl_comm_id_storage::comm_id&& id);
-    ccl_comm(size_t rank,
-             size_t size,
+    ccl_comm(int rank,
+             int size,
              ccl_comm_id_storage::comm_id&& id,
-             ccl_rank2rank_map&& ranks);
+             std::shared_ptr<atl_wrapper> atl,
+             bool share_resources = false);
+    ccl_comm(int rank,
+             int size,
+             ccl_comm_id_storage::comm_id&& id,
+             ccl_rank2rank_map&& ranks,
+             std::shared_ptr<atl_wrapper> atl,
+             bool share_resources = false);
+
+    //TODO non-implemented
+    //1) cluster_devices_count (devices 1000) -> (processes 10)
+    //2) blocking until all thread -> calls ccl_comm
+    //3) return 'thread_count'
+
+    // ccl_comm( {0,1,2,3...}, 1000, kvs )
+    // from 20 processes from ranks 0,1,2,3. Each rank contains 10 threads
+    // communicator: size in {20} and ranks in {0..19}
+    // communicator: return threads count in process {10}
+    // communicator: return devices counts per thread in process
+    ccl_comm(const std::vector<int>& local_ranks,
+             int comm_size,
+             std::shared_ptr<ccl::kvs_interface> kvs_instance,
+             ccl_comm_id_storage::comm_id&& id,
+             bool share_resources = false);
 
     ~ccl_comm() = default;
-
-    static ccl_comm* create_with_color(int color,
-                                       ccl_comm_id_storage* comm_ids,
-                                       const ccl_comm* global_comm);
 
     /* version with user-provided colors, allows to skip allgatherv */
     static ccl_comm* create_with_colors(const std::vector<int>& colors,
                                         ccl_comm_id_storage* comm_ids,
-                                        const ccl_comm* global_comm);
+                                        const ccl_comm* parent_comm,
+                                        bool share_resources = false);
 
     std::shared_ptr<ccl_comm> clone_with_new_id(ccl_comm_id_storage::comm_id&& id);
 
-    size_t rank() const noexcept {
+    int rank() const noexcept {
         return m_rank;
     }
 
-    size_t size() const noexcept {
+    int size() const noexcept {
         return m_size;
     }
 
-    size_t pof2() const noexcept {
+    int pof2() const noexcept {
         return m_pof2;
     }
 
     ccl_comm_id_t id() const noexcept {
         return m_id.value();
+    }
+
+    size_t thread_count() const noexcept {
+        return thread_number;
+    }
+
+    size_t ranks_per_process() const noexcept {
+        return on_process_ranks_number;
     }
 
     ccl_sched_id_t get_sched_id(bool use_internal_space) {
@@ -78,7 +115,7 @@ public:
         return id;
     }
 
-    void reset(size_t rank, size_t size) {
+    void reset(int rank, int size) {
         m_rank = rank;
         m_size = size;
         m_pof2 = ccl_pof2(m_size);
@@ -92,7 +129,7 @@ public:
      * @param rank a rank which is part of the current communicator
      * @return number of @c rank in the global communicator
      */
-    size_t get_global_rank(size_t rank) const;
+    int get_global_rank(int rank) const;
 
     const ccl_double_tree& dtree() const {
         return m_dtree;
@@ -107,14 +144,23 @@ public:
      */
     static constexpr ccl_sched_id_t max_sched_count = std::numeric_limits<ccl_sched_id_t>::max();
 
+    std::shared_ptr<atl_wrapper> atl;
+    std::unique_ptr<ccl_unordered_coll_manager> unordered_coll_manager;
+    std::unique_ptr<ccl_allreduce_2d_builder> allreduce_2d_builder;
+
 private:
-    size_t m_rank;
-    size_t m_size;
-    size_t m_pof2;
+    void allocate_resources();
+
+    int m_rank;
+    int m_size;
+    int m_pof2;
 
     ccl_comm_id_storage::comm_id m_id;
     ccl_sched_id_t m_next_sched_id_internal;
     ccl_sched_id_t m_next_sched_id_external;
     ccl_rank2rank_map m_local2global_map{};
     ccl_double_tree m_dtree;
+
+    size_t thread_number;
+    size_t on_process_ranks_number;
 };

@@ -3,31 +3,56 @@
 #include <sstream>
 
 #define HOST_CTX
-
-#include "bcast_fixture.hpp"
+#include "kernels/a2a_helpers.h"
 
 /**
  * Add custom types support into native::memory example
  */
 /* 1) Describe new type traits */
-// namespace ccl {
-// template <>
-// struct native_type_info<a2a_gpu_comm_data_float> {
-//     static constexpr bool is_supported = true;
-//     static constexpr bool is_class = true;
-// };
-// } // namespace ccl
+#include "native_type_traits.hpp"
+
 /* 2) Include explicit definition for native::memory */
-#include "native_device_api/l0/primitives_impl.hpp"
+#include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 
 /* 3) just use it! */
+#include "bcast_fixture.hpp"
 
 namespace a2a_single_device_case {
 
-using native_type = float;
+namespace a2a_bcast_case {
 
-TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
+template <class T>
+struct a2a_param_traits;
+
+#define DEFINE_KERNEL_TYPE_A2A(NAME, T) \
+    template <> \
+    struct a2a_param_traits<T> { \
+        static constexpr const char* kernel_name = "bcast_execution_" #NAME; \
+        using comm_data_type = a2a_gpu_comm_data_##NAME; \
+    };
+
+DEFINE_KERNEL_TYPE_A2A(int8, int8_t)
+DEFINE_KERNEL_TYPE_A2A(uint8, uint8_t)
+DEFINE_KERNEL_TYPE_A2A(int16, int16_t)
+DEFINE_KERNEL_TYPE_A2A(uint16, uint16_t)
+DEFINE_KERNEL_TYPE_A2A(int32, int32_t)
+DEFINE_KERNEL_TYPE_A2A(uint32, uint32_t)
+DEFINE_KERNEL_TYPE_A2A(int64, int64_t)
+DEFINE_KERNEL_TYPE_A2A(uint64, uint64_t)
+/*DEFINE_KERNEL_TYPE_A2A(float16, ushort)*/
+DEFINE_KERNEL_TYPE_A2A(float32, float)
+DEFINE_KERNEL_TYPE_A2A(float64, double)
+// DEFINE_KERNEL_TYPE_A2A(bfloat16, ushort)
+
+} // namespace a2a_bcast_case
+
+TYPED_TEST_CASE(a2a_bcast_single_device_fixture, TestTypes);
+
+TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     using namespace native;
+    // Type of our test
+    using native_type = TypeParam;
+    std::shared_ptr<ccl_context> ctx;
 
     // test case data
     const size_t buffer_size = 512;
@@ -36,20 +61,20 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     constexpr size_t a2a_mem_group_count = 1;
     constexpr size_t flag_group_count = 3;
 
-    create_module_descr("kernels/a2a_bcast.spv", true);
+    this->create_module_descr("kernels/a2a_bcast.spv", true);
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
-    std::map<size_t, std::vector<size_t>> comm_param_storage;
+    std::map<int, std::vector<int>> comm_param_storage;
 
     // check global driver
-    auto drv_it = local_platform->drivers.find(0);
-    UT_ASSERT(drv_it != local_platform->drivers.end(), "Driver by idx 0 must exist!");
+    auto drv_it = this->local_platform->drivers.find(0);
+    UT_ASSERT(drv_it != this->local_platform->drivers.end(), "Driver by idx 0 must exist!");
     ccl_device_driver& driver = *drv_it->second;
 
     // check devices per process
-    UT_ASSERT(driver.devices.size() == local_affinity.size(),
-              "Count: %" << driver.devices.size() << ", bits: " << local_affinity.size()
+    UT_ASSERT(driver.devices.size() == this->local_affinity.size(),
+              "Count: %" << driver.devices.size() << ", bits: " << this->local_affinity.size()
                          << "Device count is not equal to affinity mask!");
 
     std::vector<size_t> thread_indices;
@@ -64,12 +89,12 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     ccl_device& device = *dev_it->second;
     size_t root = 2;
 
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         thread_indices.push_back(thread_idx);
         try {
             //initialize communication params
-            size_t rank_idx = thread_idx;
-            size_t rank_size = num_thread;
+            int rank_idx = thread_idx;
+            int rank_size = num_thread;
             size_t elem_count = buffer_size;
 
             comm_param_storage[thread_idx].push_back(rank_idx);
@@ -79,8 +104,8 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
 
             //allocate flags & memory
             // memory
-            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
+            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
+            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
             //auto temp_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
 
             if (thread_idx == root) {
@@ -101,9 +126,9 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
                 thread_idx, num_thread, std::move(mem_send), std::move(mem_recv));
 
             // flags
-            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto barrier_flag = device.alloc_memory<int>(1, sizeof(int));
+            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto barrier_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
             left_wrote_2_me_flag.enqueue_write_sync({ (int)0 });
             read_for_receive_flag.enqueue_write_sync({ (int)0 });
             barrier_flag.enqueue_write_sync({ (int)0 });
@@ -125,7 +150,7 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
         }
     }
 
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         memory_storage.rotate_shared_data(thread_idx, num_thread, mem_group_count);
         flags_storage.rotate_shared_data(thread_idx, num_thread, flag_group_count);
     }
@@ -136,7 +161,8 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     typename handles_storage<int>::thread_handles_container rank_flags =
         flags_storage.collect_handles_by_index({ 0, 1 });
 
-    std::vector<a2a_gpu_comm_data_float> a2a_comm(num_thread);
+    std::vector<typename a2a_bcast_case::a2a_param_traits<native_type>::comm_data_type> a2a_comm(
+        num_thread);
 
     //Register memory handles to A2A
     for (size_t thread_id = 0; thread_id < rank_mem.size(); thread_id++) {
@@ -150,17 +176,24 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
 
     //prepare gpu object
     auto a2a_comm_handle =
-        device.alloc_memory<a2a_gpu_comm_data_float>(num_thread, sizeof(a2a_gpu_comm_data_float));
+        device.alloc_memory<typename a2a_bcast_case::a2a_param_traits<native_type>::comm_data_type>(
+            num_thread,
+            sizeof(typename a2a_bcast_case::a2a_param_traits<native_type>::comm_data_type),
+            ctx);
     a2a_comm_handle.enqueue_write_sync(a2a_comm);
 
     //prepare kernels in multithreading environment
-    ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
-    desc.pKernelName = "bcast_execution_float";
+    ze_kernel_desc_t desc = {
+        .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
+        .pNext = nullptr,
+        .flags = 0,
+    };
+    desc.pKernelName = a2a_bcast_case::a2a_param_traits<native_type>::kernel_name;
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
-    ccl_device::device_module& module = *(device_modules.find(&device)->second);
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    ccl_device::device_module& module = *(this->device_modules.find(&device)->second);
+    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         //thread_group.emplace
         ze_kernel_handle_t handle = nullptr;
         try {
@@ -171,18 +204,19 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
             }
 
             thread_kernels.emplace(thread_idx, std::move(handle));
-            thread_queue.emplace(thread_idx, device.create_cmd_queue());
-            thread_cmd_list.emplace(thread_idx, device.create_cmd_list());
+            thread_queue.emplace(thread_idx, device.create_cmd_queue(ctx));
+            thread_cmd_list.emplace(thread_idx, device.create_cmd_list(ctx));
         }
         catch (const std::exception& ex) {
             throw std::runtime_error(std::string("Error: ") + ex.what());
         }
     }
 
+    auto& out = this->output;
     //printout
-    output << "L0 memory handles: " << std::endl;
-    memory_storage.dump(output, true);
-    memory_storage.dump_by_index(output, 0 /*secv_mem*/);
+    // out << "L0 memory handles: " << std::endl;
+    // memory_storage.dump(out, true);
+    // memory_storage.dump_by_index(out, 0 /*secv_mem*/);
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround
@@ -248,7 +282,7 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
                     if (i >= a2a_mem_group_count) {
                         break; //only own is needed
                     }
-                    out << "index: " << mem_offset[i] << ": " << mem << std::endl;
+                    out << "index: " << mem_offset[i] << ": " << (void*)mem << std::endl;
                     result = zeKernelSetArgumentValue(kernel, mem_offset[i], sizeof(mem), &mem);
                     if (result != ZE_RESULT_SUCCESS) {
                         throw std::runtime_error(
@@ -336,8 +370,8 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     size_t index = 0;
     for (auto& t : thread_group) {
         t.join();
-        output << "Kernels argument binding log for Thread: " << index << std::endl;
-        output << thread_out_put[index]->str() << std::endl;
+        out << "Kernels argument binding log for Thread: " << index << std::endl;
+        out << thread_out_put[index]->str() << std::endl;
         index++;
     }
 
@@ -345,35 +379,34 @@ TEST_F(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     try {
         for (auto& idx_kernel : thread_kernels) {
             size_t thread_idx = idx_kernel.first;
-            auto lambda = [&corr_val](const size_t root,
+            auto lambda = [&corr_val](const int root,
                                       size_t thread_idx,
                                       size_t buffer_size,
                                       native_type value) -> bool {
-                if (thread_idx != root) {
-                    corr_val++;
-                    if (corr_val > buffer_size)
-                        corr_val = 1;
-                    if (value != corr_val)
-                        return false;
+                corr_val++;
+                if (corr_val > buffer_size)
+                    corr_val = 1;
+                if (value != static_cast<native_type>(corr_val)) {
+                    return false;
                 }
                 return true;
             };
 
-            memory_storage.check_results(
-                thread_idx, output, 1, lambda, root, thread_idx, buffer_size);
+            memory_storage.check_results(thread_idx, out, 1, lambda, root, thread_idx, buffer_size);
         }
     }
     catch (check_on_exception& ex) {
-        output << "Check results: \n";
+        out << "Check results: \n";
         //printout
-        output << "Send memory:" << std::endl;
-        memory_storage.dump_by_index(output, 0 /*send_mem*/);
-        output << "\nRecv memory:" << std::endl;
-        memory_storage.dump_by_index(output, 1 /*recv_mem*/);
+        out << "Send memory:" << std::endl;
+        memory_storage.dump_by_index(out, 0 /*send_mem*/);
+        out << "\nRecv memory:" << std::endl;
+        memory_storage.dump_by_index(out, 1 /*recv_mem*/);
 
         std::stringstream ss;
         ss << ex.what() << ", But expected: " << corr_val << std::endl;
         UT_ASSERT(false, ss.str());
     }
 }
+
 } // namespace a2a_single_device_case

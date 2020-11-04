@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "common/comm/l0/topology/topology_construction_utils.hpp"
-#include "ccl_config.h"
+#include "oneapi/ccl/ccl_config.h"
 
 #include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"
@@ -22,10 +22,10 @@
 
 namespace native {
 
-namespace details {
+namespace detail {
 /*REFACTORING*/
 template <class device_t,
-          ccl::device_group_split_type group_id,
+          ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class context>
 device_t_ptr<ccl_numa_proxy<device_t>> add_numa_proxy_device(
@@ -91,7 +91,7 @@ inline colored_plain_graph_list create_colored(const plain_graph_list& list, col
 using id_thread_table = std::multimap<ccl::device_index_type, size_t /*thread id*/>;
 
 //TODO use inheritance or policy for indexers!!!
-template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
 struct graph_ring_indexer {
     graph_ring_indexer(std::vector<marked_idx>& id_ring_vector,
                        id_thread_table& thread_id_storage,
@@ -123,7 +123,7 @@ struct graph_ring_indexer {
                 throw std::logic_error(std::string("Unknown device in id ring vector: ") +
                                        ccl::to_string(id));
             }
-            size_t rank = std::distance(id_array.begin(), it);
+            int rank = std::distance(id_array.begin(), it);
 
             size_t already_assigned_ids_count = assigned_ids.count(id);
             //rank += already_assigned_ids_count; TODO
@@ -148,7 +148,7 @@ protected:
     size_t ring_id_offset;
 };
 
-template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
 struct colored_graph_ring_indexer {
     static constexpr color_t marked_color = std::numeric_limits<color_t>::max();
 
@@ -196,7 +196,7 @@ struct colored_graph_ring_indexer {
             }
 
             //rank in local graph_ring
-            size_t rank = std::distance(id_array.begin(), it);
+            int rank = std::distance(id_array.begin(), it);
             size_t size = id_array.size();
 
             //apply offsets
@@ -227,12 +227,12 @@ protected:
 };
 
 static constexpr color_t marked_color = std::numeric_limits<color_t>::max();
-inline void separate_ipc_devices(const ccl::process_device_indices_t& ipc_indices,
+inline void separate_ipc_devices(const ccl::process_device_indices_type& ipc_indices,
                                  size_t process_idx,
                                  size_t process_num,
                                  const colored_plain_graph& id_array,
-                                 ccl::process_device_indices_t& ipc_src_indices,
-                                 ccl::process_device_indices_t& ipc_dst_indices,
+                                 ccl::process_device_indices_type& ipc_src_indices,
+                                 ccl::process_device_indices_type& ipc_dst_indices,
                                  color_t exclude_color = marked_color) {
     // find right ipcs
     do {
@@ -323,7 +323,7 @@ inline void separate_ipc_devices(const ccl::process_device_indices_t& ipc_indice
     } while (false);
 }
 
-template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
 struct smart_ring_indexer {
     static constexpr color_t marked_color = std::numeric_limits<color_t>::max();
 
@@ -333,8 +333,8 @@ struct smart_ring_indexer {
                        size_t process_device_rank_offset,
                        device_storage& device_factory,
                        specific_indexed_device_storage& device_topology,
-                       const ccl::process_device_indices_t& ipc_device,
-                       const ccl::process_device_indices_t& scaleout_device_indices)
+                       const ccl::process_device_indices_type& ipc_device,
+                       const ccl::process_device_indices_type& scaleout_device_indices)
             : id_array(id_ring_vector),
               process_idx(process_id),
               process_num(process_count),
@@ -373,7 +373,7 @@ struct smart_ring_indexer {
             }
 
             //rank in local graph_ring
-            size_t rank = std::distance(id_array.begin(), it);
+            int rank = std::distance(id_array.begin(), it);
             size_t size = id_array.size();
 
             //Check on IPC source candidate at first
@@ -440,7 +440,7 @@ struct smart_ring_indexer {
             }
 
             //rank in local graph_ring
-            size_t rank = std::distance(id_array.begin(), it);
+            int rank = std::distance(id_array.begin(), it);
             size_t size = id_array.size();
 
             //apply offsets
@@ -460,30 +460,30 @@ protected:
     size_t device_index_offset;
     device_storage& factory;
     specific_indexed_device_storage& topology;
-    ccl::process_device_indices_t ipc_src_indices;
-    ccl::process_device_indices_t ipc_dst_indices;
-    const ccl::process_device_indices_t& scaleout_indices;
+    ccl::process_device_indices_type ipc_src_indices;
+    ccl::process_device_indices_type ipc_dst_indices;
+    const ccl::process_device_indices_type& scaleout_indices;
     size_t marked_indices_count;
 
 private:
     template <class device_t>
-    bool try_as_ipc_source(std::shared_ptr<device_t> gpu_device, size_t rank, size_t size) {
+    bool try_as_ipc_source(std::shared_ptr<device_t> gpu_device, int rank, size_t size) {
         //concurrent device is not IPC source
         return false;
     }
 
-    bool try_as_ipc_source(std::shared_ptr<ccl_gpu_comm> gpu_device, size_t rank, size_t size) {
+    bool try_as_ipc_source(std::shared_ptr<ccl_gpu_comm> gpu_device, int rank, size_t size) {
         return try_as_ipc_source_impl(gpu_device, rank, size);
     }
 
     bool try_as_ipc_source(std::shared_ptr<ccl_virtual_gpu_comm> gpu_device,
-                           size_t rank,
+                           int rank,
                            size_t size) {
         return try_as_ipc_source_impl(gpu_device, rank, size);
     }
 
     template <class device_t>
-    bool try_as_ipc_source_impl(std::shared_ptr<device_t> gpu_device, size_t rank, size_t size) {
+    bool try_as_ipc_source_impl(std::shared_ptr<device_t> gpu_device, int rank, size_t size) {
         //Check on IPC source candidate at first
         const ccl::device_index_type& id = gpu_device->get_device().get_device_path();
         auto process_set = ipc_src_indices.find(process_idx);
@@ -505,7 +505,7 @@ private:
     }
 };
 
-template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
 struct graph_ring_indexer_ext : public graph_ring_indexer<group_id, class_id> {
     using base = graph_ring_indexer<group_id, class_id>;
     using base::topology;
@@ -548,7 +548,7 @@ struct graph_ring_indexer_ext : public graph_ring_indexer<group_id, class_id> {
                 throw std::logic_error(std::string("Unknown device in id ring vector: ") +
                                        ccl::to_string(id));
             }
-            size_t rank = std::distance(id_array.begin(), it);
+            int rank = std::distance(id_array.begin(), it);
             rank += rank_offset;
 
             size_t already_assigned_ids_count = assigned_ids.count(id);
@@ -581,7 +581,7 @@ private:
     size_t marked_indices_count;
 };
 
-template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
 struct graph_ring_indexer_unique_index : public graph_ring_indexer<group_id, class_id> {
     using base = graph_ring_indexer<group_id, class_id>;
     using base::topology;
@@ -625,7 +625,7 @@ struct graph_ring_indexer_unique_index : public graph_ring_indexer<group_id, cla
                 continue;
             }
 
-            size_t rank = std::distance(id_array.begin(), it);
+            int rank = std::distance(id_array.begin(), it);
             size_t already_assigned_ids_count = assigned_ids.count(id);
             //rank += already_assigned_ids_count; TODO
             (void)already_assigned_ids_count;
@@ -656,7 +656,7 @@ private:
     size_t marked_indices_count;
 };
 
-template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
 struct graph_ring_indexer_unique_index_ext : public graph_ring_indexer<group_id, class_id> {
     using base = graph_ring_indexer<group_id, class_id>;
     using base::topology;
@@ -700,7 +700,7 @@ struct graph_ring_indexer_unique_index_ext : public graph_ring_indexer<group_id,
                 continue;
             }
 
-            size_t rank = std::distance(id_array.begin(), it);
+            int rank = std::distance(id_array.begin(), it);
             rank += rank_offset;
 
             size_t already_assigned_ids_count = assigned_ids.count(id);
@@ -733,7 +733,7 @@ private:
     size_t marked_indices_count;
 };
 
-template <class device_t, ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <class device_t, ccl::group_split_type group_id, ccl::device_topology_type class_id>
 std::tuple<size_t, device_t_ptr<device_t>> get_device_with_min_rank(
     const specific_indexed_device_storage& indexed_devices,
     const plain_graph& id_ring) {
@@ -755,7 +755,7 @@ std::tuple<size_t, device_t_ptr<device_t>> get_device_with_min_rank(
     return std::tuple<size_t, device_t_ptr<device_t>>{ idx, dev };
 }
 
-template <class device_t, ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <class device_t, ccl::group_split_type group_id, ccl::device_topology_type class_id>
 std::tuple<size_t, device_t_ptr<device_t>> get_device_with_min_rank(
     const specific_indexed_device_storage& indexed_devices,
     const colored_plain_graph& id_ring) {
@@ -781,7 +781,7 @@ std::tuple<size_t, device_t_ptr<device_t>> get_device_with_min_rank(
     return std::tuple<size_t, device_t_ptr<device_t>>{ idx, dev };
 }
 
-template <class device_t, ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <class device_t, ccl::group_split_type group_id, ccl::device_topology_type class_id>
 std::tuple<size_t, device_t_ptr<device_t>> get_device_with_max_rank(
     const specific_indexed_device_storage& indexed_devices,
     const plain_graph& id_ring) {
@@ -803,7 +803,7 @@ std::tuple<size_t, device_t_ptr<device_t>> get_device_with_max_rank(
     return std::tuple<size_t, device_t_ptr<device_t>>{ idx, dev };
 }
 
-template <class device_t, ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <class device_t, ccl::group_split_type group_id, ccl::device_topology_type class_id>
 std::tuple<size_t, device_t_ptr<device_t>> get_device_with_max_rank(
     const specific_indexed_device_storage& indexed_devices,
     const colored_plain_graph& id_ring) {
@@ -829,7 +829,7 @@ std::tuple<size_t, device_t_ptr<device_t>> get_device_with_max_rank(
     return std::tuple<size_t, device_t_ptr<device_t>>{ idx, dev };
 }
 
-template <class device_t, ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template <class device_t, ccl::group_split_type group_id, ccl::device_topology_type class_id>
 device_t_ptr<ccl_thread_comm<device_t>> add_concurrent_locker_device(
     size_t next_rank,
     size_t index_offset,
@@ -849,7 +849,7 @@ device_t_ptr<ccl_thread_comm<device_t>> add_concurrent_locker_device(
     return new_concurrent_comm;
 }
 
-template <class device_t, ccl::device_group_split_type topology>
+template <class device_t, ccl::group_split_type topology>
 device_t_ptr<ccl_ipc_source_gpu_comm<device_t>> add_ipc_source_locker_device(
     size_t next_rank,
     size_t index_offset,
@@ -883,7 +883,7 @@ device_t_ptr<ccl_ipc_source_gpu_comm<device_t>> add_ipc_source_locker_device(
 }
 
 template <class device_t,
-          ccl::device_group_split_type group_id,
+          ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class context,
           class = typename std::enable_if<
@@ -924,7 +924,7 @@ device_t_ptr<ccl_gpu_scaleup_proxy<device_t>> add_scaleup_device(
 }
 
 template <class device_t,
-          ccl::device_group_split_type group_id,
+          ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class context,
           typename std::enable_if<
@@ -968,7 +968,7 @@ device_t_ptr<ccl_gpu_scaleup_proxy<device_t>> add_scaleup_device(
     return ret;
 }
 
-template <ccl::device_group_split_type group_id,
+template <ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class context,
           class... device_candidate_t>
@@ -989,7 +989,7 @@ size_t inject_scaleup_device(specific_indexed_device_storage& storage,
 }
 
 template <class device_t,
-          ccl::device_group_split_type group_id,
+          ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class context,
           class = typename std::enable_if<
@@ -1029,7 +1029,7 @@ device_t_ptr<ccl_scaleout_proxy<device_t>> add_scaleout_device(
 }
 
 template <class device_t,
-          ccl::device_group_split_type group_id,
+          ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class context,
           typename std::enable_if<
@@ -1074,7 +1074,7 @@ device_t_ptr<ccl_scaleout_proxy<device_t>> add_scaleout_device(
     return ret;
 }
 
-template <ccl::device_group_split_type group_id,
+template <ccl::group_split_type group_id,
           ccl::device_topology_type class_id,
           class context,
           class... device_candidate_t>
@@ -1097,7 +1097,7 @@ size_t inject_scaleout_device(specific_indexed_device_storage& storage,
 using ipc_devices_pool = std::map<size_t /*rank*/, device_t_ptr<ccl_ipc_gpu_comm>>;
 
 #if 0
-template<ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+template<ccl::group_split_type group_id, ccl::device_topology_type class_id>
 inline ipc_devices_pool create_ipc_gpu_comms(id_thread_table assigned_ids_copy,
                                              const plain_graph& id_ring,
                                              device_storage& device_factory,
@@ -1120,7 +1120,7 @@ inline ipc_devices_pool create_ipc_gpu_comms(id_thread_table assigned_ids_copy,
         }
 
         //find unassigned_device
-        size_t rank = std::distance(id_ring.begin(), graph_it);
+        int rank = std::distance(id_ring.begin(), graph_it);
         size_t size = size_override_value;
 
         //recalculate rank to apply offset for other processes count
@@ -1140,9 +1140,9 @@ inline ipc_devices_pool create_ipc_gpu_comms(id_thread_table assigned_ids_copy,
 
 using cluster_ipc_devices_pool = std::map<size_t/*process_id*/, ipc_devices_pool>;
 
-template<ccl::device_group_split_type topology>
+template<ccl::group_split_type topology>
 inline cluster_ipc_devices_pool create_filtered_ipc_gpu_comms(const colored_plain_graph& id_ring,
-                                                     const ccl::process_device_indices_t& ipc_indices,
+                                                     const ccl::process_device_indices_type& ipc_indices,
                                                      size_t process_idx,
                                                      size_t process_size,
                                                      device_storage& device_factory)
@@ -1174,7 +1174,7 @@ inline cluster_ipc_devices_pool create_filtered_ipc_gpu_comms(const colored_plai
             }
 
             //device is IPC
-            size_t rank = std::distance(id_ring.begin(), graph_it);
+            int rank = std::distance(id_ring.begin(), graph_it);
             size_t size = id_ring.size();
 
             ccl_device_driver::device_ptr ipc_device = get_runtime_device(graph_it->index);
@@ -1192,10 +1192,10 @@ inline cluster_ipc_devices_pool create_filtered_ipc_gpu_comms(const colored_plai
 
 
 
-template<ccl::device_group_split_type topology>
+template<ccl::group_split_type topology>
 inline cluster_ipc_devices_pool create_filtered_ipc_destination_gpu_comms(
                                             const colored_plain_graph& id_ring,
-                                            const ccl::process_device_indices_t& ipc_indices,
+                                            const ccl::process_device_indices_type& ipc_indices,
                                             size_t process_idx,
                                             size_t process_size,
                                             device_storage& device_factory,
@@ -1224,7 +1224,7 @@ inline cluster_ipc_devices_pool create_filtered_ipc_destination_gpu_comms(
             }
 
             //device is IPC
-            size_t rank = std::distance(id_ring.begin(), graph_it);
+            int rank = std::distance(id_ring.begin(), graph_it);
             size_t size = id_ring.size();
 
             ccl_device_driver::device_ptr ipc_device = get_runtime_device(graph_it->index);
@@ -1241,7 +1241,7 @@ inline cluster_ipc_devices_pool create_filtered_ipc_destination_gpu_comms(
     return ret;
 }
 
-template<ccl::device_group_split_type topology>
+template<ccl::group_split_type topology>
 inline cluster_ipc_devices_pool create_ipc_gpu_comms(const colored_plain_graph& id_ring,
                                                      size_t process_idx,
                                                      device_storage& device_factory,
@@ -1254,7 +1254,7 @@ inline cluster_ipc_devices_pool create_ipc_gpu_comms(const colored_plain_graph& 
         if (graph_it->color != colored_graph_ring_indexer<topology>::marked_color and
             graph_it->color != process_idx)
         {
-            size_t rank = std::distance(id_ring.begin(), graph_it);
+            int rank = std::distance(id_ring.begin(), graph_it);
             size_t size = size_override_value;
 
             //recalculate rank to apply offset for other processes count
@@ -1273,7 +1273,7 @@ inline cluster_ipc_devices_pool create_ipc_gpu_comms(const colored_plain_graph& 
 }
 
 
-template<ccl::device_group_split_type topology>
+template<ccl::group_split_type topology>
 inline cluster_ipc_devices_pool create_ipc_gpu_comms(const colored_plain_graph_list& list,
                                                      size_t process_idx,
                                                      device_storage& device_factory,
@@ -1307,5 +1307,5 @@ inline std::vector<size_t> get_ipc_proceses(const cluster_ipc_devices_pool& ipc_
     return ipc_processes_id;
 }
 #endif
-} // namespace details
+} // namespace detail
 } // namespace native

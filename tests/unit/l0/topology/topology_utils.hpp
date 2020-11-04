@@ -9,20 +9,20 @@
 namespace utils {
 
 std::pair<bool, std::string> check_adj_matrix(
-    const native::details::adjacency_matrix& matrix,
-    const ccl::device_indices_t& idx,
-    native::details::cross_device_rating expected_self,
-    native::details::cross_device_rating expected_other = 0) {
+    const native::detail::adjacency_matrix& matrix,
+    const ccl::device_indices_type& idx,
+    native::detail::cross_device_rating expected_self,
+    native::detail::cross_device_rating expected_other = 0) {
     //check matrix
     std::pair<bool, std::string> ret{ true, "" };
     for (const auto& lhs_pair : matrix) {
         const ccl::device_index_type& i = lhs_pair.first;
-        const native::details::adjacency_list& rhs_list = lhs_pair.second;
+        const native::detail::adjacency_list& rhs_list = lhs_pair.second;
         for (const auto& rhs_pair : rhs_list) {
             const ccl::device_index_type& j = rhs_pair.first;
-            native::details::cross_device_rating rating = rhs_pair.second;
+            native::detail::cross_device_rating rating = rhs_pair.second;
             if (idx.find(i) != idx.end() && idx.find(j) != idx.end()) {
-                native::details::cross_device_rating compared_value = expected_other;
+                native::detail::cross_device_rating compared_value = expected_other;
                 if (i == j) {
                     compared_value = expected_self;
                 }
@@ -64,7 +64,7 @@ void set_control_indices(std::vector<expected_indices_tuple>& sequence,
     sequence[thread_id][device_t::type_idx()] = data;
 }
 
-template <class device_t, ccl::device_group_split_type topology, ccl::device_topology_type class_id>
+template <class device_t, ccl::group_split_type topology, ccl::device_topology_type class_id>
 std::pair<bool, std::string> check_device(
     const native::specific_indexed_device_storage& device_group,
     const expected_indices_tuple& exp_idx) {
@@ -118,7 +118,7 @@ std::pair<bool, std::string> check_device(
     return res;
 }
 
-template <ccl::device_group_split_type topology,
+template <ccl::group_split_type topology,
           ccl::device_topology_type class_id = ccl::device_topology_type::ring>
 std::pair<bool, std::string> check_topology(
     const std::unique_ptr<native::specific_indexed_device_storage>& device_group,
@@ -209,7 +209,7 @@ std::pair<bool, std::string> check_topology(
     return { ret, descr };
 }
 
-template <ccl::device_group_split_type topology,
+template <ccl::group_split_type topology,
           ccl::device_topology_type class_id,
           class ctx,
           class tuple>
@@ -239,7 +239,7 @@ std::pair<bool, std::string> check_ring_multiple_topologies(
         if (!top_type) {
             res = false;
             descr += std::string("Thread: ") + std::to_string(thread_id) +
-                     " - there is no topology: " + std::to_string(topology);
+                     " - there is no topology: " + std::to_string((int)topology);
             break;
         }
 
@@ -247,7 +247,7 @@ std::pair<bool, std::string> check_ring_multiple_topologies(
         if (!devices_ptr) {
             res = false;
             descr += std::string("Thread: ") + std::to_string(thread_id) +
-                     " - there are no devices for topology: " + std::to_string(topology);
+                     " - there are no devices for topology: " + std::to_string((int)topology);
             break;
         }
 
@@ -256,7 +256,7 @@ std::pair<bool, std::string> check_ring_multiple_topologies(
         if (!tmp) {
             res = false;
 
-            native::details::printer<topology, class_id> p;
+            native::detail::printer<topology, class_id> p;
             ccl_tuple_for_each(*top_type->devices, p);
             descr += std::string("Thread: ") + std::to_string(thread_id) + "\n" + p.to_string() +
                      "\nFailed with: " + str_tmp + "\n";
@@ -265,15 +265,15 @@ std::pair<bool, std::string> check_ring_multiple_topologies(
     return { res, descr };
 }
 
-std::pair<bool, std::string> check_id_ring(native::details::adjacency_matrix matrix,
-                                           const ccl::device_indices_t& idx,
-                                           const native::details::plain_graph& expected) {
+std::pair<bool, std::string> check_id_ring(native::detail::adjacency_matrix matrix,
+                                           const ccl::device_indices_type& idx,
+                                           const native::detail::plain_graph& expected) {
     bool ret = true;
     std::string err;
 
-    native::details::plain_graph id_ring;
+    native::detail::plain_graph id_ring;
     try {
-        id_ring = native::details::graph_resolver(matrix, idx);
+        id_ring = native::detail::graph_resolver(matrix, idx);
 
         if (id_ring != expected) {
             throw std::runtime_error("Id Ring has unexpected structure");
@@ -298,8 +298,8 @@ std::pair<bool, std::string> check_id_ring(native::details::adjacency_matrix mat
 }
 
 std::pair<bool, std::string> check_multiple_graph_ring(
-    const native::details::plain_graph_list& graphs_to_test,
-    const native::details::plain_graph_list& expected) {
+    const native::detail::plain_graph_list& graphs_to_test,
+    const native::detail::plain_graph_list& expected) {
     bool ret = true;
     std::string err;
 
@@ -364,10 +364,10 @@ std::pair<bool, std::string> check_multiple_graph_ring(
     return { ret, err };
 }
 
-native::details::cross_device_rating test_custom_p2p_ping(
+native::detail::cross_device_rating test_custom_p2p_ping(
     const native::ccl_device& lhs,
     const native::ccl_device& rhs,
-    const native::details::adjacency_matrix& desired_matrix) {
+    const native::detail::adjacency_matrix& desired_matrix) {
     const auto& lhs_path = lhs.get_device_path();
     auto lhs_it = desired_matrix.find(lhs_path);
     if (lhs_it == desired_matrix.end()) {
@@ -386,19 +386,19 @@ native::details::cross_device_rating test_custom_p2p_ping(
     return rhs_it->second;
 }
 
-native::details::cross_device_rating all_p2p_accessible(const native::ccl_device&,
-                                                        const native::ccl_device&) {
+native::detail::cross_device_rating all_p2p_accessible(const native::ccl_device&,
+                                                       const native::ccl_device&) {
     return 1;
 }
 
-native::details::cross_device_rating nobody_p2p_accessible(const native::ccl_device&,
-                                                           const native::ccl_device&) {
+native::detail::cross_device_rating nobody_p2p_accessible(const native::ccl_device&,
+                                                          const native::ccl_device&) {
     return 0;
 }
 
 void dump_global_colored_graph(std::ostream& out,
-                               const native::details::global_colored_plain_graphs& graphs) {
-    using namespace native::details;
+                               const native::detail::global_colored_plain_graphs& graphs) {
+    using namespace native::detail;
     for (const auto& process_data : graphs) {
         const colored_plain_graph_list& graphs = process_data.second;
 

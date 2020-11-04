@@ -1,88 +1,143 @@
 #pragma once
+#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/ccl_event.hpp"
+
+#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_comm_split_attr.hpp"
+
+#include "oneapi/ccl/ccl_stream_attr_ids.hpp"
+#include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
+#include "oneapi/ccl/ccl_stream.hpp"
+
 #include "common/comm/compiler_comm_interface_dispatcher.hpp"
-#include "types_generator_defines.hpp"
+#include "common/comm/l0/comm_context_id.hpp"
 
 namespace native {
 struct ccl_device;
 }
 
 namespace ccl {
+namespace v1 {
+class allgatherv_attr;
+class allreduce_attr;
+class alltoall_attr;
+class alltoallv_attr;
+class barrier_attr;
+class broadcast_attr;
+class reduce_attr;
+class reduce_scatter_attr;
+class sparse_allreduce_attr;
+} // namespace v1
+
 struct gpu_comm_attr;
+} // namespace ccl
+
+#include "types_generator_defines.hpp"
+
+#define COMM_INTERFACE_COLL_METHODS(TYPE) \
+\
+    COMM_INTERFACE_COLL_##TYPE##__VOID; \
+    COMM_INTERFACE_COLL_##TYPE(int8_t); \
+    COMM_INTERFACE_COLL_##TYPE(uint8_t); \
+    COMM_INTERFACE_COLL_##TYPE(int16_t); \
+    COMM_INTERFACE_COLL_##TYPE(uint16_t); \
+    COMM_INTERFACE_COLL_##TYPE(int32_t); \
+    COMM_INTERFACE_COLL_##TYPE(uint32_t); \
+    COMM_INTERFACE_COLL_##TYPE(int64_t); \
+    COMM_INTERFACE_COLL_##TYPE(uint64_t); \
+    COMM_INTERFACE_COLL_##TYPE(float); \
+    COMM_INTERFACE_COLL_##TYPE(double); \
+\
+    COMM_INTERFACE_SPARSE_##TYPE##__VOID; \
+    COMM_INTERFACE_SPARSE_##TYPE(int32_t, ccl::bfloat16); \
+    COMM_INTERFACE_SPARSE_##TYPE(int32_t, float); \
+    COMM_INTERFACE_SPARSE_##TYPE(int64_t, ccl::bfloat16); \
+    COMM_INTERFACE_SPARSE_##TYPE(int64_t, float);
+
+#define SYCL_COMM_INTERFACE_COLL_METHODS(TYPE) \
+    COMM_INTERFACE_COLL_CLASS_##TYPE(cl::sycl::buffer<int8_t COMMA 1>); \
+    COMM_INTERFACE_COLL_CLASS_##TYPE(cl::sycl::buffer<uint8_t COMMA 1>); \
+    COMM_INTERFACE_COLL_CLASS_##TYPE(cl::sycl::buffer<int16_t COMMA 1>); \
+    COMM_INTERFACE_COLL_CLASS_##TYPE(cl::sycl::buffer<uint16_t COMMA 1>); \
+    COMM_INTERFACE_COLL_CLASS_##TYPE(cl::sycl::buffer<int32_t COMMA 1>); \
+    COMM_INTERFACE_COLL_CLASS_##TYPE(cl::sycl::buffer<uint32_t COMMA 1>); \
+    COMM_INTERFACE_COLL_CLASS_##TYPE(cl::sycl::buffer<int64_t COMMA 1>); \
+    COMM_INTERFACE_COLL_CLASS_##TYPE(cl::sycl::buffer<uint64_t COMMA 1>); \
+    COMM_INTERFACE_COLL_CLASS_##TYPE(cl::sycl::buffer<float COMMA 1>); \
+    COMM_INTERFACE_COLL_CLASS_##TYPE(cl::sycl::buffer<double COMMA 1>); \
+\
+    COMM_INTERFACE_SPARSE_CLASS_##TYPE(cl::sycl::buffer<int32_t COMMA 1>, \
+                                       cl::sycl::buffer<float COMMA 1>); \
+    COMM_INTERFACE_SPARSE_CLASS_##TYPE(cl::sycl::buffer<int32_t COMMA 1>, \
+                                       cl::sycl::buffer<ccl::bfloat16 COMMA 1>); \
+\
+    COMM_INTERFACE_SPARSE_CLASS_##TYPE(cl::sycl::buffer<int64_t COMMA 1>, \
+                                       cl::sycl::buffer<float COMMA 1>); \
+    COMM_INTERFACE_SPARSE_CLASS_##TYPE(cl::sycl::buffer<int64_t COMMA 1>, \
+                                       cl::sycl::buffer<ccl::bfloat16 COMMA 1>);
+
+#define COMM_INTERFACE_COLL_INSTANTIATION(COMM) \
+    COMM_INTERFACE_COLL_INSTANTIATIONS(COMM, int8_t); \
+    COMM_INTERFACE_COLL_INSTANTIATIONS(COMM, uint8_t); \
+    COMM_INTERFACE_COLL_INSTANTIATIONS(COMM, int16_t); \
+    COMM_INTERFACE_COLL_INSTANTIATIONS(COMM, uint16_t); \
+    COMM_INTERFACE_COLL_INSTANTIATIONS(COMM, int32_t); \
+    COMM_INTERFACE_COLL_INSTANTIATIONS(COMM, uint32_t); \
+    COMM_INTERFACE_COLL_INSTANTIATIONS(COMM, int64_t); \
+    COMM_INTERFACE_COLL_INSTANTIATIONS(COMM, uint64_t); \
+    COMM_INTERFACE_COLL_INSTANTIATIONS(COMM, float); \
+    COMM_INTERFACE_COLL_INSTANTIATIONS(COMM, double); \
+    COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(COMM, int32_t, float); \
+    COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(COMM, int32_t, ccl::bfloat16); \
+    COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(COMM, int64_t, float); \
+    COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(COMM, int64_t, ccl::bfloat16);
+
+#define SYCL_COMM_INTERFACE_COLL_INSTANTIATION(COMM) \
+    COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(COMM, cl::sycl::buffer<int8_t COMMA 1>); \
+    COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(COMM, cl::sycl::buffer<int32_t COMMA 1>); \
+    COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(COMM, cl::sycl::buffer<int64_t COMMA 1>); \
+    COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(COMM, cl::sycl::buffer<uint64_t COMMA 1>); \
+    COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(COMM, cl::sycl::buffer<float COMMA 1>); \
+    COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(COMM, cl::sycl::buffer<double COMMA 1>); \
+\
+    COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION( \
+        COMM, cl::sycl::buffer<int32_t COMMA 1>, cl::sycl::buffer<float COMMA 1>); \
+    COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION( \
+        COMM, cl::sycl::buffer<int32_t COMMA 1>, cl::sycl::buffer<ccl::bfloat16 COMMA 1>); \
+    COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION( \
+        COMM, cl::sycl::buffer<int64_t COMMA 1>, cl::sycl::buffer<float COMMA 1>); \
+    COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION( \
+        COMM, cl::sycl::buffer<int64_t COMMA 1>, cl::sycl::buffer<ccl::bfloat16 COMMA 1>);
+
+namespace ccl {
 struct communicator_interface : public communicator_interface_dispatcher {
     virtual ~communicator_interface() = default;
 
-    virtual size_t rank() const = 0;
-    virtual size_t size() const = 0;
+    virtual int rank() const = 0;
+    virtual int size() const = 0;
 
     virtual bool is_host() const noexcept = 0;
     virtual bool is_cpu() const noexcept = 0;
     virtual bool is_gpu() const noexcept = 0;
     virtual bool is_accelerator() const noexcept = 0;
 
-    virtual comm_attr_t get_host_attr() const = 0;
-
     virtual bool is_ready() const = 0;
 
+    virtual const group_unique_key& get_comm_group_id() const = 0;
+
+    virtual ccl::communicator_interface_ptr split(const ccl::comm_split_attr& attr) = 0;
+
     // collectives operation declarations
-    virtual void barrier(ccl::stream::impl_t& stream) = 0;
+    virtual ccl::event barrier(const stream::impl_value_t& op_stream,
+                               const barrier_attr& attr,
+                               const vector_class<event>& deps = {}) = 0;
 
-    COMM_INTERFACE_COLL_DECLARATION__VOID;
-    COMM_INTERFACE_COLL_DECLARATION(char);
-    COMM_INTERFACE_COLL_DECLARATION(int);
-    COMM_INTERFACE_COLL_DECLARATION(int64_t);
-    COMM_INTERFACE_COLL_DECLARATION(uint64_t);
-    COMM_INTERFACE_COLL_DECLARATION(float);
-    COMM_INTERFACE_COLL_DECLARATION(double);
-
+    COMM_INTERFACE_COLL_METHODS(DECLARATION);
 #ifdef CCL_ENABLE_SYCL
-    COMM_INTERFACE_COLL_CLASS_DECLARATION(cl::sycl::buffer<char COMMA 1>);
-    COMM_INTERFACE_COLL_CLASS_DECLARATION(cl::sycl::buffer<int COMMA 1>);
-    COMM_INTERFACE_COLL_CLASS_DECLARATION(cl::sycl::buffer<int64_t COMMA 1>);
-    COMM_INTERFACE_COLL_CLASS_DECLARATION(cl::sycl::buffer<uint64_t COMMA 1>);
-    COMM_INTERFACE_COLL_CLASS_DECLARATION(cl::sycl::buffer<float COMMA 1>);
-    COMM_INTERFACE_COLL_CLASS_DECLARATION(cl::sycl::buffer<double COMMA 1>);
-#endif //CCL_ENABLE_SYCL
-
-    COMM_INTERFACE_SPARSE_DECLARATION__VOID
-    COMM_INTERFACE_SPARSE_DECLARATION(char, char);
-    COMM_INTERFACE_SPARSE_DECLARATION(char, int);
-    COMM_INTERFACE_SPARSE_DECLARATION(char, ccl::bfp16);
-    COMM_INTERFACE_SPARSE_DECLARATION(char, float);
-    COMM_INTERFACE_SPARSE_DECLARATION(char, double);
-    COMM_INTERFACE_SPARSE_DECLARATION(char, int64_t);
-    COMM_INTERFACE_SPARSE_DECLARATION(char, uint64_t);
-    COMM_INTERFACE_SPARSE_DECLARATION(int, char);
-    COMM_INTERFACE_SPARSE_DECLARATION(int, int);
-    COMM_INTERFACE_SPARSE_DECLARATION(int, ccl::bfp16);
-    COMM_INTERFACE_SPARSE_DECLARATION(int, float);
-    COMM_INTERFACE_SPARSE_DECLARATION(int, double);
-    COMM_INTERFACE_SPARSE_DECLARATION(int, int64_t);
-    COMM_INTERFACE_SPARSE_DECLARATION(int, uint64_t);
-    COMM_INTERFACE_SPARSE_DECLARATION(int64_t, char);
-    COMM_INTERFACE_SPARSE_DECLARATION(int64_t, int);
-    COMM_INTERFACE_SPARSE_DECLARATION(int64_t, ccl::bfp16);
-    COMM_INTERFACE_SPARSE_DECLARATION(int64_t, float);
-    COMM_INTERFACE_SPARSE_DECLARATION(int64_t, double);
-    COMM_INTERFACE_SPARSE_DECLARATION(int64_t, int64_t);
-    COMM_INTERFACE_SPARSE_DECLARATION(int64_t, uint64_t);
-    COMM_INTERFACE_SPARSE_DECLARATION(uint64_t, char);
-    COMM_INTERFACE_SPARSE_DECLARATION(uint64_t, int);
-    COMM_INTERFACE_SPARSE_DECLARATION(uint64_t, ccl::bfp16);
-    COMM_INTERFACE_SPARSE_DECLARATION(uint64_t, float);
-    COMM_INTERFACE_SPARSE_DECLARATION(uint64_t, double);
-    COMM_INTERFACE_SPARSE_DECLARATION(uint64_t, int64_t);
-    COMM_INTERFACE_SPARSE_DECLARATION(uint64_t, uint64_t);
-
-#ifdef CCL_ENABLE_SYCL
-    COMM_INTERFACE_SPARSE_CLASS_DECLARATION(cl::sycl::buffer<int COMMA 1>,
-                                            cl::sycl::buffer<float COMMA 1>);
-    COMM_INTERFACE_SPARSE_CLASS_DECLARATION(cl::sycl::buffer<int COMMA 1>,
-                                            cl::sycl::buffer<ccl::bfp16 COMMA 1>);
-
-    COMM_INTERFACE_SPARSE_CLASS_DECLARATION(cl::sycl::buffer<int64_t COMMA 1>,
-                                            cl::sycl::buffer<float COMMA 1>);
-    COMM_INTERFACE_SPARSE_CLASS_DECLARATION(cl::sycl::buffer<int64_t COMMA 1>,
-                                            cl::sycl::buffer<ccl::bfp16 COMMA 1>);
-#endif //CCL_ENABLE_SYCL
+    SYCL_COMM_INTERFACE_COLL_METHODS(DECLARATION);
+#endif /* CCL_ENABLE_SYCL */
 };
 } // namespace ccl

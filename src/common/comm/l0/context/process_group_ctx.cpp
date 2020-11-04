@@ -7,7 +7,7 @@
 #include <limits.h>
 #include <gnu/libc-version.h>
 
-#include "ccl.hpp"
+#include "oneapi/ccl.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"
 
 #include "common/comm/l0/context/thread_group_ctx.hpp"
@@ -19,12 +19,13 @@
 #include "common/comm/l0/scheduler/thread_group_scheduler.hpp"
 #include "common/comm/l0/scheduler/allied_process_group_scheduler.hpp"
 
+#include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/comm/l0/context/scaling_ctx/numa_ctx_impl.hpp"
 #include "common/comm/l0/context/scaling_ctx/scale_up_ctx_impl.hpp"
 #include "common/comm/l0/context/scaling_ctx/scale_out_ctx_impl.hpp"
 namespace native {
 
-process_group_context::process_group_context(std::shared_ptr<ccl::communicator> comm)
+process_group_context::process_group_context(std::shared_ptr<ccl::host_communicator> comm)
         : ccl_communicator(comm),
           thread_group_ctx(new thread_group_context),
           gpu_device_storage(new device_storage) {
@@ -48,7 +49,7 @@ process_group_context::process_group_context(std::shared_ptr<ccl::communicator> 
 
 process_group_context::~process_group_context() {}
 
-bool process_group_context::delegate_sync(const ccl::device_indices_t& thread_device_indices,
+bool process_group_context::delegate_sync(const ccl::device_indices_type& thread_device_indices,
                                           ccl::context_comm_addr& comm_addr) {
     // set thread id sequencially
     //comm_addr.thread_idx = process_device_topology.size();
@@ -72,7 +73,7 @@ bool process_group_context::sync_barrier(const ccl::device_mask_t& thread_device
     return sync_barrier(ccl_device_driver::get_device_indices(thread_device_mask), comm_addr);
 }
 
-bool process_group_context::sync_barrier(const ccl::device_indices_t& thread_device_indices,
+bool process_group_context::sync_barrier(const ccl::device_indices_type& thread_device_indices,
                                          ccl::context_comm_addr& comm_addr) {
     // sync all threads at first - blocking operation
     if (!delegate_sync(thread_device_indices, comm_addr)) {
@@ -80,7 +81,7 @@ bool process_group_context::sync_barrier(const ccl::device_indices_t& thread_dev
     }
 
     //barrie mutex is locked by MASTER thread
-    const ccl::process_device_indices_t& thread_indices =
+    const ccl::process_device_indices_type& thread_indices =
         thread_group_ctx->get_thread_group_device_indices();
 
     LOG_INFO("Process (",
@@ -89,12 +90,12 @@ bool process_group_context::sync_barrier(const ccl::device_indices_t& thread_dev
              process_count,
              ") reached process group communicator barrier");
 
-    ccl::device_indices_t process_aggregated_device_indices =
+    ccl::device_indices_type process_aggregated_device_indices =
         std::accumulate(thread_indices.begin(),
                         thread_indices.end(),
-                        ccl::device_indices_t(),
-                        [](ccl::device_indices_t& partial_indices,
-                           const typename ccl::process_device_indices_t::value_type& val) {
+                        ccl::device_indices_type(),
+                        [](ccl::device_indices_type& partial_indices,
+                           const typename ccl::process_device_indices_type::value_type& val) {
                             partial_indices.insert(val.second.begin(), val.second.end());
                             return partial_indices;
                         });
@@ -108,9 +109,9 @@ bool process_group_context::sync_barrier(const ccl::device_indices_t& thread_dev
         process_idx, process_count, *this, *gpu_device_storage);
 
     {
-        const ccl::process_device_indices_t& node_mask = get_node_afinity_indices(get_host_id());
+        const ccl::process_device_indices_type& node_mask = get_node_afinity_indices(get_host_id());
         std::stringstream ss;
-        details::adjacency_matrix p2p_dependency_graph =
+        detail::adjacency_matrix p2p_dependency_graph =
             ally_process_topology.build_p2p_capability_matrix(ss, node_mask);
         ss << "\nMatrix\n" << p2p_dependency_graph << std::endl;
         if (!ally_process_topology.build_all(ss,
@@ -161,12 +162,12 @@ std::shared_ptr<process_group_context::ring_topology>& process_group_context::ge
 }
 */
 
-std::shared_ptr<ccl::communicator> process_group_context::get_communicator() {
+std::shared_ptr<ccl::host_communicator> process_group_context::get_communicator() {
     return ccl_communicator;
 }
 
 bool process_group_context::build_cluster_affinity_table(
-    const ccl::device_indices_t& process_aggregated_device_indices) {
+    const ccl::device_indices_type& process_aggregated_device_indices) {
     LOG_INFO("Node: ", my_host_name, " start build affinity table for process idx: ", process_idx);
 
     //create cluster mask affinity
@@ -180,11 +181,17 @@ bool process_group_context::build_cluster_affinity_table(
     std::vector<size_t> recv_process_indices_counts(ccl_communicator->size(), 1);
 
     constexpr size_t hostname_indices_requests_count = 2;
-    std::vector<ccl::communicator::coll_request_t> requests;
+    std::vector<ccl::event> requests;
     requests.reserve(hostname_indices_requests_count);
     {
-        requests.push_back(ccl_communicator->allgatherv(
-            &send_hostname_size, 1, receive_hostname_sizes.data(), recv_counts.data()));
+        ccl::stream::impl_value_t empty_stream{};
+        requests.push_back(ccl_communicator->allgatherv_impl(&send_hostname_size,
+                                                             1,
+                                                             receive_hostname_sizes.data(),
+                                                             recv_counts,
+                                                             empty_stream,
+                                                             ccl::default_allgatherv_attr,
+                                                             {}));
         LOG_TRACE("Request hostname sizes, process (",
                   ccl_communicator->rank(),
                   "/",
@@ -194,10 +201,13 @@ bool process_group_context::build_cluster_affinity_table(
                   ", size: ",
                   send_hostname_size);
 
-        requests.push_back(ccl_communicator->allgatherv(&send_process_indices_count,
-                                                        1,
-                                                        receive_process_indices_sizes.data(),
-                                                        recv_process_indices_counts.data()));
+        requests.push_back(ccl_communicator->allgatherv_impl(&send_process_indices_count,
+                                                             1,
+                                                             receive_process_indices_sizes.data(),
+                                                             recv_process_indices_counts,
+                                                             empty_stream,
+                                                             ccl::default_allgatherv_attr,
+                                                             {}));
         LOG_TRACE("Request device indices sizes, process (",
                   ccl_communicator->rank(),
                   "/",
@@ -208,7 +218,7 @@ bool process_group_context::build_cluster_affinity_table(
 
     //wait for completion
     for (auto& req : requests) {
-        req->wait();
+        req.wait();
     }
 
     size_t total_hostname_size =
@@ -220,24 +230,28 @@ bool process_group_context::build_cluster_affinity_table(
     LOG_DEBUG("Memory required for device indices size: ", total_device_indices_count, " count");
 
     //Serialize own devices path data
-    auto serialized_indices = details::serialize::device_path_serializer::serialize_indices(
+    auto serialized_indices = detail::serialize::device_path_serializer::serialize_indices(
         process_aggregated_device_indices);
     // TODO assert(serialized_indices.size() == receive_process_indices_sizes[process_idx] && "Indices unexpected count");
 
     decltype(serialized_indices) affinity_indices;
     std::vector<char> hostnames;
     auto indices_count_to_bytes_converter = [](size_t elements) -> size_t {
-        return elements * details::serialize::device_path_serializable::device_index_size();
+        return elements * detail::serialize::device_path_serializable::device_index_size();
     };
 
     try {
         requests.clear();
         hostnames.resize(total_hostname_size);
 
-        requests.push_back(ccl_communicator->allgatherv(my_host_name.data(),
-                                                        send_hostname_size,
-                                                        hostnames.data(),
-                                                        receive_hostname_sizes.data()));
+        ccl::stream::impl_value_t empty_stream{};
+        requests.push_back(ccl_communicator->allgatherv_impl((int8_t*)my_host_name.data(),
+                                                             send_hostname_size,
+                                                             (int8_t*)hostnames.data(),
+                                                             receive_hostname_sizes,
+                                                             empty_stream,
+                                                             ccl::default_allgatherv_attr,
+                                                             {}));
         LOG_TRACE("Submit request for hostnames. Process (",
                   ccl_communicator->rank(),
                   "/",
@@ -254,11 +268,14 @@ bool process_group_context::build_cluster_affinity_table(
                        receive_process_indices_sizes.end(),
                        receive_process_indices_sizes.begin(),
                        indices_count_to_bytes_converter);
-        requests.push_back(
-            ccl_communicator->allgatherv(reinterpret_cast<const char*>(serialized_indices.data()),
-                                         serialized_indices.size(),
-                                         reinterpret_cast<char*>(affinity_indices.data()),
-                                         receive_process_indices_sizes.data()));
+        requests.push_back(ccl_communicator->allgatherv_impl(
+            reinterpret_cast<const int8_t*>(serialized_indices.data()),
+            serialized_indices.size(),
+            reinterpret_cast<int8_t*>(affinity_indices.data()),
+            receive_process_indices_sizes,
+            empty_stream,
+            ccl::default_allgatherv_attr,
+            {}));
         LOG_TRACE("Submit request for affinity masks. Process (",
                   ccl_communicator->rank(),
                   "/",
@@ -276,7 +293,7 @@ bool process_group_context::build_cluster_affinity_table(
 
     //wait for completion
     for (auto& req : requests) {
-        req->wait();
+        req.wait();
     }
 
     //parse hostnames
@@ -311,7 +328,7 @@ bool process_group_context::build_cluster_affinity_table(
         }
 
         //get affinity
-        ccl::device_indices_t rank_indices = details::serialize::device_path_deserializer::
+        ccl::device_indices_type rank_indices = detail::serialize::device_path_deserializer::
             deserialize_indices<std::multiset, ccl::device_index_type>(
                 affinity_mask_from_iterator,
                 affinity_mask_from_iterator + receive_process_indices_sizes[rank_index]);
@@ -349,7 +366,7 @@ const ccl::host_id process_group_context::get_host_id() const {
 const ccl::cluster_aggregated_device_mask_t& process_group_context::get_afinity_mask() const {
     return global_mask;
 }
-const ccl::cluster_device_indices_t& process_group_context::get_affinity_indices() const {
+const ccl::cluster_device_indices_type& process_group_context::get_affinity_indices() const {
     return cluster_gpu_indices;
 }
 
@@ -364,20 +381,20 @@ const ccl::process_aggregated_device_mask_t& process_group_context::get_node_afi
     return it->second;
 }
 
-const ccl::process_device_indices_t& process_group_context::get_node_afinity_indices(
+const ccl::process_device_indices_type& process_group_context::get_node_afinity_indices(
     const ccl::host_id& host) const {
     auto it = cluster_gpu_indices.find(host);
     if (it == cluster_gpu_indices.end()) {
         LOG_ERROR("Cannot get affinity indices for node: ", host);
-        static const ccl::process_device_indices_t empty;
+        static const ccl::process_device_indices_type empty;
         return empty;
     }
     return it->second;
 }
 
 void process_group_context::set_node_afinity_indices(const ccl::host_id& host,
-                                                     size_t rank_id,
-                                                     const ccl::device_indices_t& indices) {
+                                                     int rank_id,
+                                                     const ccl::device_indices_type& indices) {
     /*
     ccl::device_mask_t rank_mask = ccl_device_driver::get_device_mask(indices);
     auto& per_host_mask = global_mask[host];
@@ -451,7 +468,7 @@ std::tuple<bool, std::string> process_group_context::check_device_mask_validity_
 */
 
 void process_group_context::dump_cluster_affinity_indices(
-    const ccl::cluster_device_indices_t& indices,
+    const ccl::cluster_device_indices_type& indices,
     std::ostream& out) {
     out << "Cluster nodes: " << indices.size() << "\n";
     for (const auto& node_indices : indices) {
@@ -472,7 +489,7 @@ void process_group_context::dump_node_aggregated_mask(
 }
 void process_group_context::dump_node_aggregated_indices(
     const std::string& node_name,
-    const ccl::process_device_indices_t& indices,
+    const ccl::process_device_indices_type& indices,
     std::ostream& out) {
     if (!node_name.empty()) {
         out << "Node: " << node_name << ", processes: " << indices.size() << "\n";
@@ -494,7 +511,7 @@ void process_group_context::dump_process_mask(size_t process_id,
 }
 
 void process_group_context::dump_process_indices(size_t process_id,
-                                                 const ccl::device_indices_t& indices,
+                                                 const ccl::device_indices_type& indices,
                                                  std::ostream& out) {
     out << "Process idx: " << process_id << ", affinity: ";
     for (const auto& path : indices) {
@@ -532,9 +549,9 @@ void process_group_context::dump_process_topologies(std::ostream& out) const {
     }
 }
 
-std::vector<ccl::device_indices_t> process_group_context::get_ipc_device_indices() const {
+std::vector<ccl::device_indices_type> process_group_context::get_ipc_device_indices() const {
     std::stringstream ss;
-    ccl::process_device_indices_t node_mask_to_reorder = get_node_afinity_indices(get_host_id());
+    ccl::process_device_indices_type node_mask_to_reorder = get_node_afinity_indices(get_host_id());
     if (node_mask_to_reorder.empty()) {
         ss << "process_group_context::get_ipc_device_indices failed: empty process affinities for hostname: "
            << get_host_id() << ", cluster topology:\n";
@@ -544,7 +561,7 @@ std::vector<ccl::device_indices_t> process_group_context::get_ipc_device_indices
         throw std::runtime_error(err);
     }
 
-    std::vector<ccl::device_indices_t> ipc_device_indices;
+    std::vector<ccl::device_indices_type> ipc_device_indices;
     try {
         ipc_device_indices =
             process_group_context::get_ipc_device_indices_for_id(process_idx, node_mask_to_reorder);
@@ -559,9 +576,9 @@ std::vector<ccl::device_indices_t> process_group_context::get_ipc_device_indices
     return ipc_device_indices;
 }
 
-std::vector<ccl::device_indices_t> process_group_context::get_ipc_device_indices_for_id(
+std::vector<ccl::device_indices_type> process_group_context::get_ipc_device_indices_for_id(
     size_t process_idx,
-    ccl::process_device_indices_t node_indices) {
+    ccl::process_device_indices_type node_indices) {
     std::stringstream ss;
     auto my_process_it = node_indices.find(process_idx);
     if (my_process_it == node_indices.end()) {
@@ -574,7 +591,7 @@ std::vector<ccl::device_indices_t> process_group_context::get_ipc_device_indices
 
     node_indices.erase(my_process_it); //self indices erase, other are ipc
 
-    std::vector<ccl::device_indices_t> ipc_device_indices;
+    std::vector<ccl::device_indices_type> ipc_device_indices;
     for (const auto& mask : node_indices) {
         ipc_device_indices.push_back(mask.second);
     }
@@ -582,9 +599,9 @@ std::vector<ccl::device_indices_t> process_group_context::get_ipc_device_indices
 }
 
 void process_group_context::collect_cluster_colored_plain_graphs(
-    const details::colored_plain_graph_list& send_graph,
-    details::global_sorted_colored_plain_graphs& received_graphs) {
-    using namespace details::serialize;
+    const detail::colored_plain_graph_list& send_graph,
+    detail::global_sorted_colored_plain_graphs& received_graphs) {
+    using namespace detail::serialize;
 
     LOG_DEBUG("Collect cluster colored plain graphs, my process index: ",
               process_idx,
@@ -605,9 +622,16 @@ void process_group_context::collect_cluster_colored_plain_graphs(
                   process_idx,
                   ", serialized size: ",
                   send_count);
+        ccl::stream::impl_value_t empty_stream{};
         ccl_communicator
-            ->allgatherv(&send_count, 1, recv_counts_process_graph_sizes.data(), recv_counts.data())
-            ->wait();
+            ->allgatherv_impl(&send_count,
+                              1,
+                              recv_counts_process_graph_sizes.data(),
+                              recv_counts,
+                              empty_stream,
+                              ccl::default_allgatherv_attr,
+                              {})
+            .wait();
     }
 
     size_t global_graph_data_size = std::accumulate(
@@ -620,12 +644,16 @@ void process_group_context::collect_cluster_colored_plain_graphs(
             "Send graph list by process index: ", process_idx, ", serialized size: ", send_count);
 
         recv_cluster_graphs.resize(global_graph_data_size);
+        ccl::stream::impl_value_t empty_stream{};
         ccl_communicator
-            ->allgatherv(reinterpret_cast<char*>(my_serialized_graph.data()),
-                         send_count,
-                         reinterpret_cast<char*>(recv_cluster_graphs.data()),
-                         recv_counts_process_graph_sizes.data())
-            ->wait();
+            ->allgatherv_impl(reinterpret_cast<int8_t*>(my_serialized_graph.data()),
+                              send_count,
+                              reinterpret_cast<int8_t*>(recv_cluster_graphs.data()),
+                              recv_counts_process_graph_sizes,
+                              empty_stream,
+                              ccl::default_allgatherv_attr,
+                              {})
+            .wait();
     }
     catch (const std::bad_alloc& ex) {
         CCL_THROW_WITH_ERROR("Memory required for global_graph_data_size size: ",
@@ -644,7 +672,7 @@ void process_group_context::collect_cluster_colored_plain_graphs(
     LOG_DEBUG("Deserialize recv_cluster_graphs");
     try {
         for (process_num = 0; process_num < ccl_communicator->size(); process_num++) {
-            details::colored_plain_graph_list graph =
+            detail::colored_plain_graph_list graph =
                 device_path_deserializer::deserialize_colored_graph_list_indices(
                     recv_cluster_graphs, deserialized_bytes, offset_bytes);
             LOG_DEBUG("Process index: ",

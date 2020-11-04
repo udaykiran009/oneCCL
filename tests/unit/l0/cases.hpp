@@ -1,8 +1,9 @@
-
+#if 0
 
 TEST_F(ipc_fixture, DISABLED_ipc_memory_test) {
     using namespace native;
-
+    //TODO
+    std::shared_ptr<ccl_context> ctx;
     // check global driver
     auto drv_it = global_platform->drivers.find(0);
     UT_ASSERT(drv_it != global_platform->drivers.end(), "Global driver by idx 0 must exist!");
@@ -30,8 +31,8 @@ TEST_F(ipc_fixture, DISABLED_ipc_memory_test) {
     for (auto& dev_it : driver.devices) {
         ccl_device& dev = *dev_it.second;
         try {
-            auto mem_send = dev.alloc_memory<int>(1024, sizeof(int));
-            auto mem_recv = dev.alloc_memory<int>(1024, sizeof(int));
+            auto mem_send = dev.alloc_memory<int>(1024, sizeof(int), ctx);
+            auto mem_recv = dev.alloc_memory<int>(1024, sizeof(int), ctx);
 
             mem_send.enqueue_write_sync(send_values);
             mem_recv.enqueue_write_sync(recv_values);
@@ -64,7 +65,7 @@ TEST_F(ipc_fixture, DISABLED_ipc_memory_test) {
             std::transform(memory_handles.begin(),
                            memory_handles.end(),
                            std::back_inserter(out_ipc_handles),
-                           [device_ptr](ccl_device::device_memory<int>& memory_handle) {
+                           [device_ptr](ccl_device::device_memory<int>& memory_handle, ctx) {
                                return device_ptr->create_ipc_memory_handle(memory_handle.handle);
                            });
         }
@@ -243,3 +244,4 @@ TEST_F(ipc_fixture, DISABLED_ipc_memory_test) {
         quick_exit(0);
     }
 }
+#endif

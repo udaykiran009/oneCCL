@@ -11,13 +11,11 @@ public:
     using base::comm_rank_t;
     using impl_t = ccl_gpu_comm;
 
-    template <ccl_coll_type algo_type,
-              ccl::device_group_split_type group,
-              ccl::device_topology_type mode>
+    template <ccl_coll_type algo_type, ccl::group_split_type group, ccl::device_topology_type mode>
     using gpu_module_t = device_coll_module<algo_type, group, mode>;
 
     template <ccl_coll_type algo_type,
-              ccl::device_group_split_type group,
+              ccl::group_split_type group,
               ccl::device_topology_type mode,
               class native_data_type>
     using gpu_kernel_t =
@@ -33,7 +31,7 @@ public:
     ~ccl_gpu_comm() = default;
 
     template <ccl_coll_type module_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id>
     gpu_module_t<module_type, group_id, class_id>& get_gpu_module() {
         auto& ptr =
@@ -44,7 +42,7 @@ public:
     }
 
     template <ccl_coll_type module_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id>
     std::shared_ptr<gpu_module_t<module_type, group_id, class_id>> get_gpu_module_ptr() {
         return base::template get_gpu_module_unsafe<module_type, group_id, class_id, gpu_module_t>(
@@ -54,19 +52,16 @@ public:
     std::string to_string_impl() const;
 
     template <ccl_coll_type module_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id,
               class native_data_type>
     gpu_kernel_t<module_type, group_id, class_id, native_data_type>& get_gpu_kernel() {
         auto& ptr = get_gpu_module<module_type, group_id, class_id>();
-        if (not std::is_same<native_data_type, float>::value) {
-            throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + "Only float is supported");
-        }
         return ptr.template get_main_function<native_data_type>();
     }
 
     template <class native_data_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id,
               class gpu_entry>
     gpu_kernel_t<gpu_entry::type(), group_id, class_id, native_data_type>& register_entry(
@@ -81,7 +76,7 @@ public:
     }
 
     template <ccl_coll_type module_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id>
     std::string create_module_impl(const ze_module_desc_t& module_data) {
         bool ret;
@@ -112,9 +107,11 @@ public:
                 err_str = str.str();
             }
             LOG_ERROR(err_str);
-            throw ccl::ccl_error(err_str);
+            throw ccl::exception(err_str);
         }
-        std::get<class_id>(std::get<group_id>(std::get<module_type>(registered_modules)))
+        std::get<utils::enum_to_underlying(class_id)>(
+            std::get<utils::enum_to_underlying(group_id)>(
+                std::get<module_type>(registered_modules)))
             .reset(new gpu_module_t<module_type, group_id, class_id>(handle));
         return descr;
     }

@@ -102,7 +102,7 @@ default structure and identifies the file types stored in each sub-directory:
 				|   |           `-- sycl_sparse_allreduce_coll.hpp                                                     
 				|   |-- CMakeLists.txt                                                                                 
 				|   |-- common                                                                                         
-				|   |   |-- api_info.cpp                                                                               
+				|   |   |-- version.cpp                                                                                
 				|   |   `-- CMakeLists.txt                                                                             
 				|   |-- cpu                                                                                            
 				|   |   |-- allgatherv.cpp                                                                             
@@ -117,43 +117,43 @@ default structure and identifies the file types stored in each sub-directory:
 				|   |   |-- CMakeLists.txt                                                                             
 				|   |   |-- communicator.cpp                                                                           
 				|   |   |-- cpu_allgatherv_test.c                                                                      
-				|   |   |-- cpu_allreduce_bfp16.c                                                                      
-				|   |   |-- cpu_allreduce_cpp_test.cpp                                                                 
+				|   |   |-- cpu_allreduce_bf16.c                                                                      
+				|   |   |-- cpu_allreduce_test.cpp                                                                 
 				|   |   |-- cpu_allreduce_test.c                                                                       
 				|   |   |-- custom_allreduce.cpp                                                                       
 				|   |   |-- datatype.cpp                                                                               
+				|   |   |-- external_kvs.cpp                                                                               
 				|   |   |-- priority_allreduce.cpp                                                                     
 				|   |   |-- reduce.cpp                                                                                 
-				|   |   |-- reduce_cpp.cpp                                                                             
-				|   |   |-- sparse_allreduce.cpp                                                                       
-				|   |   |-- sparse_test_algo.hpp                                                                       
+				|   |   |-- reduce_cpp.cpp                                                                                  
 				|   |   `-- unordered_allreduce.cpp                                                                    
 				|   |-- include                                                                                        
 				|   |   |-- base.h                                                                                     
 				|   |   |-- base.hpp                                                                                   
 				|   |   |-- base_utils.hpp                                                                             
-				|   |   |-- bfp16.h                                                                                    
+				|   |   |-- bf16.h                                                                                    
 				|   |   `-- sycl_base.hpp                                                                              
 				|   `-- sycl                                                                                           
 				|       |-- CMakeLists.txt                                                                             
-				|       |-- sycl_allgatherv_cpp_test.cpp                                                               
-				|       |-- sycl_allgatherv_test.cpp                                                                   
-				|       |-- sycl_allreduce_cpp_test.cpp                                                                
-				|       |-- sycl_allreduce_test.cpp                                                                    
-				|       |-- sycl_alltoall_cpp_test.cpp                                                                 
-				|       |-- sycl_alltoall_test.cpp                                                                     
-				|       |-- sycl_alltoallv_cpp_test.cpp                                                                
-				|       |-- sycl_alltoallv_test.cpp                                                                    
-				|       |-- sycl_bcast_cpp_test.cpp                                                                    
-				|       |-- sycl_bcast_test.cpp                                                                        
-				|       |-- sycl_reduce_cpp_test.cpp                                                                   
-				|       `-- sycl_reduce_test.cpp                                                                       
+				|       |-- sycl_allgatherv_test.cpp                                                               
+				|       |-- sycl_allgatherv_usm_test.cpp                                                                   
+				|       |-- sycl_allreduce_test.cpp                                                                
+				|       |-- sycl_allreduce_usm_test.cpp                                                                
+				|       |-- sycl_allreduce_inplace_usm_test.cpp                                                                
+				|       |-- sycl_alltoall_test.cpp                                                                 
+				|       |-- sycl_alltoall_usm_test.cpp                                                                     
+				|       |-- sycl_alltoallv_test.cpp                                                                
+				|       |-- sycl_alltoallv_usm_test.cpp                                                                    
+				|       |-- sycl_broadcast_test.cpp                                                                    
+				|       |-- sycl_broadcast_usm_test.cpp                                                                        
+				|       |-- sycl_reduce_test.cpp                                                                   
 				|-- include                                                                                            
 				|   |-- cpu_gpu_dpcpp                                                                                  
 				|   |   |-- ccl_config.h                                                                               
 				|   |   |-- ccl_device_type_traits.hpp                                                                 
 				|   |   |-- ccl.h                                                                                      
 				|   |   |-- ccl.hpp                                                                                    
+				|   |   |-- ccl_lp_types.hpp                                                                              
 				|   |   |-- ccl_types.h                                                                                
 				|   |   |-- ccl_types.hpp                                                                              
 				|   |   `-- ccl_type_traits.hpp                                                                        
@@ -162,6 +162,7 @@ default structure and identifies the file types stored in each sub-directory:
 				|       |-- ccl_device_type_traits.hpp                                                                 
 				|       |-- ccl.h                                                                                      
 				|       |-- ccl.hpp                                                                                    
+				|       |-- ccl_lp_types.h                                                                                
 				|       |-- ccl_types.h                                                                                
 				|       |-- ccl_types.hpp                                                                              
 				|       `-- ccl_type_traits.hpp                                                                        

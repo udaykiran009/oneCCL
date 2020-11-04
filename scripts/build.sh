@@ -32,6 +32,7 @@ else
 fi
 
 BOM_DIR="${WORKSPACE}/boms"
+IMPI_DIR="${WORKSPACE}/mpi"
 BOM_LIST_NAME="bom_lists.txt"
 TMP_DIR="${WORKSPACE}/_tmp"
 PACKAGE_DIR="${WORKSPACE}/_package"
@@ -50,7 +51,7 @@ HOSTNAME=`hostname -s`
 
 CCL_COPYRIGHT_YEAR="2020"
 
-CCL_VERSION_FORMAT="2021.1-beta10"
+CCL_VERSION_FORMAT="2021.1.0"
 
 if [ -z "${CCL_PACKAGE_PREFIX}" ]
 then
@@ -73,22 +74,8 @@ then
 fi
 
 LIBCCL_SO_VERSION="1.0"
-LIBCCL_ATL_OFI_SO_VERSION="1.0"
-LIBCCL_ATL_MPI_SO_VERSION="1.0"
-LIBCCL_RESIZE_PMI_SO_VERSION="1.0"
-LIBCCL_PMI_SO_VERSION="1.0"
-
 LIBCCL_MAJOR_VERSION=`echo ${LIBCCL_SO_VERSION}|cut -d"." -f1`
-LIBCCL_ATL_OFI_MAJOR_VERSION=`echo ${LIBCCL_ATL_OFI_SO_VERSION}|cut -d"." -f1`
-LIBCCL_ATL_MPI_MAJOR_VERSION=`echo ${LIBCCL_ATL_MPI_SO_VERSION}|cut -d"." -f1`
-LIBCCL_RESIZE_PMI_MAJOR_VERSION=`echo ${LIBCCL_RESIZE_PMI_SO_VERSION}|cut -d"." -f1`
-LIBCCL_PMI_MAJOR_VERSION=`echo ${LIBCCL_PMI_SO_VERSION}|cut -d"." -f1`
-
 LIBCCL_SONAME="libccl.so.${LIBCCL_MAJOR_VERSION}"
-LIBCCL_ATL_OFI_SONAME="libccl_atl_ofi.so.${LIBCCL_ATL_OFI_SO_VERSION}"
-LIBCCL_ATL_MPI_SONAME="libccl_atl_mpi.so.${LIBCCL_ATL_MPI_SO_VERSION}"
-LIBCCL_RESIZE_PMI_SONAME="libpmi_resizable.so.${LIBCCL_RESIZE_PMI_SO_VERSION}"
-LIBCCL_PMI_SONAME="libpmi.so.${LIBCCL_PMI_SO_VERSION}"
 
 #==============================================================================
 #                                Defaults
@@ -111,11 +98,12 @@ set_default_values()
     else
         BUILD_TYPE="Release"
     fi
-    ENABLE_VERBOSE="no"
+    ENABLE_VERBOSE="yes"
     ENABLE_SILENT_INSTALLATION="no"
     ENABLE_BUILD_CPU="no"
     ENABLE_BUILD_GPU="no"
     ENABLE_INSTALL="no"
+    MAKE_JOB_COUNT=4
 }
 #==============================================================================
 #                                Functions
@@ -146,9 +134,9 @@ print_help()
     echo_log "   ------------------------------------------------------------"
     echo_log "    -eng-package|--eng-package"
     echo_log "        Prepare CCL eng-package (gzipped tar archive)"
-    echo_log "    -build_cpu|--build_cpu"
+    echo_log "    -build-cpu|--build-cpu"
     echo_log "        Prepare CCL build with icc/icpc"
-    echo_log "    -build_gpu|--build_gpu"
+    echo_log "    -build-gpu|--build-gpu"
     echo_log "        Prepare CCL build with clang/clang++ with SYCL"
     echo_log "    -pack|--pack"
     echo_log "        Prepare CCL package (gzipped tar archive)"
@@ -160,6 +148,9 @@ print_help()
     echo_log "        Install package"
     echo_log "    -verbose|--verbose"
     echo_log "        Enable verbose output"
+    echo_log "    -job-count <num>|--job-count <num>"
+    echo_log "        Specify number of parallel make threads"
+    echo_log "        The value 'max' will set the maximum available number of threads"
     echo_log "   ------------------------------------------------------------"
     echo_log "    -h|-H|-help|--help"
     echo_log "        Print help information"
@@ -189,7 +180,7 @@ check_clang_path()
 {
     if [ -z "${SYCL_BUNDLE_ROOT}" ]
     then
-        SYCL_BUNDLE_ROOT="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/compilers/clang/latest/linux"
+        SYCL_BUNDLE_ROOT="/p/pdsd/scratch/jenkins/artefacts/ccl-nightly/last/inteloneapi/compiler/latest/linux/"
         echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
     fi
     source ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
@@ -231,48 +222,44 @@ define_cpu_compiler()
     then
         check_clang_path
         C_COMPILER_CPU=${SYCL_BUNDLE_ROOT}/bin/clang
-        CXX_COMPILER_CPU=${SYCL_BUNDLE_ROOT}/bin/clang++
+        CXX_COMPILER_CPU=${SYCL_BUNDLE_ROOT}/bin/dpcpp
     fi
 }
 define_gpu_compiler()
 {
     check_clang_path
     C_COMPILER_GPU=${SYCL_BUNDLE_ROOT}/bin/clang
-    CXX_COMPILER_GPU=${SYCL_BUNDLE_ROOT}/bin/clang++
+    CXX_COMPILER_GPU=${SYCL_BUNDLE_ROOT}/bin/dpcpp
 }
 
 build_cpu()
 {
     define_cpu_compiler
+    export I_MPI_ROOT=$IMPI_DIR
     if [ -z ${BUILD_FOLDER} ]
     then
         BUILD_FOLDER="build"
     fi
     log mkdir ${WORKSPACE}/${BUILD_FOLDER} && cd ${WORKSPACE}/${BUILD_FOLDER} && echo ${PWD}
-    log cmake .. -DCMAKE_DISABLE_SYCL=1 -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+    log cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DCMAKE_C_COMPILER="${C_COMPILER_CPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_CPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
     -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}" \
-    -DLIB_ATL_OFI_SO_VERSION="${LIBCCL_ATL_OFI_SO_VERSION}" -DLIB_ATL_MPI_SO_VERSION="${LIBCCL_ATL_MPI_SO_VERSION}" \
-    -DLIB_ATL_OFI_MAJOR_VERSION="${LIBCCL_ATL_OFI_MAJOR_VERSION}" -DLIB_ATL_MPI_MAJOR_VERSION="${LIBCCL_ATL_MPI_MAJOR_VERSION}" \
-    -DLIB_PMI_SO_VERSION="${LIBCCL_PMI_SO_VERSION}" -DLIB_PMI_MAJOR_VERSION="${LIBCCL_PMI_MAJOR_VERSION}" \
-    -DLIB_RESIZE_PMI_SO_VERSION="${LIBCCL_RESIZE_PMI_SO_VERSION}" -DLIB_RESIZE_PMI_MAJOR_VERSION="${LIBCCL_RESIZE_PMI_MAJOR_VERSION}"
-    log make -j4 VERBOSE=1 install
+
+    log make -j$MAKE_JOB_COUNT VERBOSE=1 install
     CheckCommandExitCode $? "cpu build failed"
 }
 
 build_gpu()
 {
     define_gpu_compiler
+    export I_MPI_ROOT=$IMPI_DIR
     rm -rf ${WORKSPACE}/build_gpu
     log mkdir ${WORKSPACE}/build_gpu && cd ${WORKSPACE}/build_gpu && echo ${PWD}
-    log cmake .. -DCMAKE_DISABLE_SYCL=0 -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+    log cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DCMAKE_C_COMPILER="${C_COMPILER_GPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_GPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
     -DCOMPUTE_RUNTIME="dpcpp" -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}" \
-    -DLIB_ATL_OFI_SO_VERSION="${LIBCCL_ATL_OFI_SO_VERSION}" -DLIB_ATL_MPI_SO_VERSION="${LIBCCL_ATL_MPI_SO_VERSION}" \
-    -DLIB_ATL_OFI_MAJOR_VERSION="${LIBCCL_ATL_OFI_MAJOR_VERSION}" -DLIB_ATL_MPI_MAJOR_VERSION="${LIBCCL_ATL_MPI_MAJOR_VERSION}" \
-    -DLIB_PMI_SO_VERSION="${LIBCCL_PMI_SO_VERSION}" -DLIB_PMI_MAJOR_VERSION="${LIBCCL_PMI_MAJOR_VERSION}" \
-    -DLIB_RESIZE_PMI_SO_VERSION="${LIBCCL_RESIZE_PMI_SO_VERSION}" -DLIB_RESIZE_PMI_MAJOR_VERSION="${LIBCCL_RESIZE_PMI_MAJOR_VERSION}"
-    log make -j4 VERBOSE=1 install
+
+    log make -j$MAKE_JOB_COUNT VERBOSE=1 install
     CheckCommandExitCode $? "gpu build failed"
 }
 
@@ -291,56 +278,13 @@ post_build()
     ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
         svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
         svml_i_div4_core_y8la.o
-    gcc -shared -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -Xlinker -x -Xlinker -soname=${LIBCCL_SONAME} -o libccl.so.${LIBCCL_SO_VERSION} *.o
-    CheckCommandExitCode $? "post build failed"
-    rm -rf *.o
-    # libpmi.so libresizable_pmi.so
-    lib_list="libpmi libresizable_pmi"
-
-    cp ${WORKSPACE}/build/_install/lib/libpmi.a ./
-    ar x libpmi.a
-    ar x libirc.a
-    ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
-        svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
-        svml_i_div4_core_y8la.o
-    gcc -shared -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -Xlinker -x -Xlinker -soname=${LIBCCL_PMI_SONAME} -o libpmi.so.${LIBCCL_PMI_SO_VERSION} *.o 
-    CheckCommandExitCode $? "post build failed"
-    rm -rf *.o
-
-    cp ${WORKSPACE}/build/_install/lib/libresizable_pmi.a ./
-    ar x libresizable_pmi.a
-    ar x libirc.a
-    ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
-        svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
-        svml_i_div4_core_y8la.o
-    gcc -shared -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -Xlinker -x -Xlinker -soname=${LIBCCL_RESIZE_PMI_SONAME} -o libresizable_pmi.so.${LIBCCL_RESIZE_PMI_SO_VERSION} *.o 
-    CheckCommandExitCode $? "post build failed"
-    rm -rf *.o
-
-    # libccl_atl_mpi.so libccl_atl_ofi.so
-    cp ${WORKSPACE}/build/_install/lib/libccl_atl_mpi.a ./
-    ar x libccl_atl_mpi.a
-    ar x libirc.a
-    ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
-        svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
-        svml_i_div4_core_y8la.o
-    gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3 -shared -Wl,-soname=${LIBCCL_ATL_MPI_SONAME} -o libccl_atl_mpi.so.${LIBCCL_ATL_MPI_SO_VERSION} *.o -L${WORKSPACE}/build/_install/lib/ -lmpi
-    CheckCommandExitCode $? "post build failed"
-    rm -rf *.o
-    cp ${WORKSPACE}/build/_install/lib/libccl_atl_ofi.a ./
-    ar x libccl_atl_ofi.a
-    ar x libirc.a
-    ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
-        svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
-        svml_i_div4_core_y8la.o
-
-    if [ ! -z "${LIBFABRIC_INSTALL_DIR}" ]
+	if [ ! -z "${LIBFABRIC_INSTALL_DIR}" ]
     then
         LDFLAGS="-L${LIBFABRIC_INSTALL_DIR}/lib/"
-    fi
-    LDFLAGS="${LDFLAGS} -L${WORKSPACE}/build/_install/lib/ ${WORKSPACE}/build/_install/lib/libpmi.so.1 ${WORKSPACE}/build/_install/lib/libresizable_pmi.so.1 -lm -lfabric"
-
-    gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3 -shared -Wl,-soname=${LIBCCL_ATL_OFI_SONAME} -o libccl_atl_ofi.so.${LIBCCL_ATL_OFI_SO_VERSION} *.o ${LDFLAGS}
+	fi
+	LDFLAGS=" ${LD_FLAGS} -Wl,-rpath,../../../../mpi/latest/lib/release_mt/"
+	# fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3 -shared
+    gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack -std=gnu99 -Wall -Werror -D_GNU_SOURCE -fvisibility=internal -O3 -DNDEBUG -std=gnu99 -O3 -shared -Wl,-soname=${LIBCCL_SONAME} -o libccl.so.${LIBCCL_SO_VERSION} *.o ${LDFLAGS} -L${WORKSPACE}/build/_install/lib/ -lmpi -lm -lfabric
     CheckCommandExitCode $? "post build failed"
     rm -rf *.o
 
@@ -348,11 +292,11 @@ post_build()
     mkdir -p ${WORKSPACE}/build/_install/lib/cpu_icc
     mkdir -p ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
     mkdir -p ${WORKSPACE}/build/_install/include/cpu_icc
-    mv `find ${WORKSPACE}/build/_install/include/* -type f` ${WORKSPACE}/build/_install/include/cpu_icc
+    mv ${WORKSPACE}/build/_install/include/oneapi ${WORKSPACE}/build/_install/include/cpu_icc
     mv ${TMP_DIR}/lib/lib* ${WORKSPACE}/build/_install/lib/cpu_icc
     mv ${WORKSPACE}/build/_install/lib/prov ${WORKSPACE}/build/_install/lib/cpu_icc
     cp -r ${WORKSPACE}/build_gpu/_install/lib/* ${WORKSPACE}/build/_install/lib/cpu_gpu_dpcpp
-    cp -r ${WORKSPACE}/build_gpu/_install/include/* ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
+    cp -r ${WORKSPACE}/build_gpu/_install/include/oneapi ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
     cp -r ${WORKSPACE}/examples ${WORKSPACE}/build/_install
 }
 
@@ -590,7 +534,7 @@ prepare_staging()
 
                                         if [ ! -f ${DROP_SRC_FILE} ]
                                         then
-                                            echo " NOK" >> ${PACKAGE_LOG}
+                                            echo " NOK: ${DROP_SRC_FILE}"  >> ${PACKAGE_LOG}
                                             RES=1
                                             continue
                                         fi
@@ -742,7 +686,16 @@ parse_arguments()
             "-install"| "--install")
                 ENABLE_INSTALL="yes"
                 ;;
-            "-help")
+            "-job-count"| "--job-count")
+                if [[ $2 == "max" ]]; then
+                    MAKE_JOB_COUNT=$(nproc)
+                    shift
+                elif [[ $2 == ?(-)+([0-9]) ]]; then
+                    MAKE_JOB_COUNT=$2
+                    shift
+                fi
+                ;;
+            "-help"|"--help"|"-h"|"-H")
                 print_help
                 exit 0
                 ;;
@@ -765,6 +718,7 @@ parse_arguments()
     echo_log "ENABLE_DEBUG_BUILD        = ${ENABLE_DEBUG_BUILD}"
     echo_log "ENABLE_PRE_DROP           = ${ENABLE_PRE_DROP}"
     echo_log "ENABLE_INSTALL            = ${ENABLE_INSTALL}"
+    echo_log "MAKE_JOB_COUNT            = ${MAKE_JOB_COUNT}"
     echo_log "-----------------------------------------------------------"
 
     TIMESTAMP_START=`date +%s`

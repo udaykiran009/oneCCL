@@ -1,7 +1,7 @@
 #include "common/comm/l0/topology/topology_construction_utils.hpp"
 
 namespace native {
-std::ostream& operator<<(std::ostream& out, const details::adjacency_matrix& matrix) {
+std::ostream& operator<<(std::ostream& out, const detail::adjacency_matrix& matrix) {
     if (matrix.empty()) {
         return out;
     }
@@ -13,7 +13,7 @@ std::ostream& operator<<(std::ostream& out, const details::adjacency_matrix& mat
         out << left_index << "\t:\t{";
         for (const auto& device_cross_rating_value : device_adjacencies) {
             const ccl::device_index_type& right_index = device_cross_rating_value.first;
-            details::cross_device_rating rating = device_cross_rating_value.second;
+            detail::cross_device_rating rating = device_cross_rating_value.second;
             out << right_index << "/ " << rating << ", ";
         }
         out << "},\n";
@@ -22,7 +22,7 @@ std::ostream& operator<<(std::ostream& out, const details::adjacency_matrix& mat
     return out;
 }
 
-namespace details {
+namespace detail {
 std::ostream& operator<<(std::ostream& out, const adjacency_matrix& matrix) {
     if (matrix.empty()) {
         return out;
@@ -35,7 +35,7 @@ std::ostream& operator<<(std::ostream& out, const adjacency_matrix& matrix) {
         out << ccl::to_string(left_index) << "\t:\t{";
         for (const auto& device_cross_rating_value : device_adjacencies) {
             const ccl::device_index_type& right_index = device_cross_rating_value.first;
-            details::cross_device_rating rating = device_cross_rating_value.second;
+            detail::cross_device_rating rating = device_cross_rating_value.second;
             out << ccl::to_string(right_index) << "/ " << rating << ", ";
         }
         out << "},\n";
@@ -53,7 +53,17 @@ size_t property_p2p_rating_calculator(const native::ccl_device& lhs,
                                       const native::ccl_device& rhs,
                                       size_t weight) {
     ze_device_p2p_properties_t p2p = lhs.get_p2p_properties(rhs);
-    return p2p.accessSupported * weight;
+    if (p2p.flags & ZE_DEVICE_P2P_PROPERTY_FLAG_ACCESS)
+        return weight;
+    else {
+        ze_bool_t access;
+        ze_result_t ret = zeDeviceCanAccessPeer(lhs.handle, rhs.handle, &access);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw std::runtime_error(std::string("Cannot execute zeDeviceCanAccessPeer, error: ") +
+                                     native::to_string(ret));
+        }
+        return access ? weight : 0;
+    }
 }
 
 std::string to_string(const plain_graph& cont) {
@@ -277,7 +287,7 @@ adjacency_matrix create_adjacency_matrix_for_devices(
 }
 
 plain_graph graph_resolver(const adjacency_matrix& matrix,
-                           const ccl::device_indices_t& device_indexes) {
+                           const ccl::device_indices_type& device_indexes) {
     plain_graph ids_ring;
 
     std::multimap<ccl::device_index_type, bool> marked_indices;
@@ -319,7 +329,7 @@ plain_graph graph_resolver(const adjacency_matrix& matrix,
                                              ". Check adjacency_matrix construction");
                 }
 
-                details::cross_device_rating rating = rating_it->second;
+                detail::cross_device_rating rating = rating_it->second;
                 if (rating != 0) {
                     //find next
                     ids_ring.push_back(it->first);
@@ -365,7 +375,7 @@ plain_graph graph_resolver(const adjacency_matrix& matrix,
 }
 
 plain_graph graph_resolver(const adjacency_matrix& matrix,
-                           const ccl::process_device_indices_t& per_process_device_indexes) {
+                           const ccl::process_device_indices_type& per_process_device_indexes) {
     plain_graph ids_ring;
 
     for (const auto& thread_group_val : per_process_device_indexes) {
@@ -390,7 +400,7 @@ plain_graph graph_resolver(const adjacency_matrix& matrix,
 
 /* graph list creation utils */
 plain_graph_list graph_list_resolver(const adjacency_matrix& matrix,
-                                     const ccl::device_indices_t& device_indexes) {
+                                     const ccl::device_indices_type& device_indexes) {
     plain_graph_list isles;
 
     using marked_storage = std::multimap<ccl::device_index_type, bool>;
@@ -445,7 +455,7 @@ plain_graph_list graph_list_resolver(const adjacency_matrix& matrix,
                         ". Check adjacency_matrix construction");
                 }
 
-                details::cross_device_rating rating = rating_it->second;
+                detail::cross_device_rating rating = rating_it->second;
                 if (rating != 0) {
                     //find next
                     cur_graph.push_back(index);
@@ -537,7 +547,7 @@ struct index_extractor<typename colored_plain_graph::value_type> {
 
 template <template <class...> class container, class graph_list, class index_getter>
 graph_list merge_graphs_stable(const container<graph_list>& lists,
-                               details::p2p_rating_function ping,
+                               detail::p2p_rating_function ping,
                                index_getter get,
                                bool brake_on_incompatible,
                                bool to_right,
@@ -636,7 +646,7 @@ bool check_graph_a2a_capable(const plain_graph& graph,
             throw std::runtime_error(ss.str());
         }
 
-        const details::adjacency_list& control_list = m_it->second;
+        const detail::adjacency_list& control_list = m_it->second;
         for (const ccl::device_index_type& rhs_index : graph) {
             auto c_it = control_list.find(rhs_index);
             if (c_it != control_list.end() and c_it->second != 0) {
@@ -655,7 +665,7 @@ bool check_graph_a2a_capable(const plain_graph& graph,
 }
 
 plain_graph_list merge_graph_lists_stable(const std::list<plain_graph_list>& lists,
-                                          details::p2p_rating_function ping,
+                                          detail::p2p_rating_function ping,
                                           bool brake_on_incompatible) {
     size_t merged_process_count = 0;
     return merge_graphs_stable(lists,
@@ -667,7 +677,7 @@ plain_graph_list merge_graph_lists_stable(const std::list<plain_graph_list>& lis
 }
 
 colored_plain_graph_list merge_graph_lists_stable(const std::list<colored_plain_graph_list>& lists,
-                                                  details::p2p_rating_function ping,
+                                                  detail::p2p_rating_function ping,
                                                   bool brake_on_incompatible) {
     size_t merged_process_count = 0;
     return merge_graphs_stable(lists,
@@ -680,7 +690,7 @@ colored_plain_graph_list merge_graph_lists_stable(const std::list<colored_plain_
 
 colored_plain_graph_list merge_graph_lists_stable_for_process(
     const std::list<colored_plain_graph_list>& lists,
-    details::p2p_rating_function ping,
+    detail::p2p_rating_function ping,
     bool to_right,
     size_t& merged_process_count) {
     return merge_graphs_stable(lists,
@@ -693,8 +703,8 @@ colored_plain_graph_list merge_graph_lists_stable_for_process(
 
 plain_graph_list graph_list_resolver(
     const adjacency_matrix& matrix,
-    const ccl::process_device_indices_t& per_process_device_indexes,
-    details::p2p_rating_function ping) {
+    const ccl::process_device_indices_type& per_process_device_indexes,
+    detail::p2p_rating_function ping) {
     std::list<plain_graph_list> lists;
     for (const auto& thread_group_val : per_process_device_indexes) {
         lists.emplace_back(graph_list_resolver(matrix, thread_group_val.second));
@@ -769,5 +779,5 @@ void reset_color(colored_plain_graph_list& list, color_t new_color) {
         }
     }
 }
-} // namespace details
+} // namespace detail
 } // namespace native

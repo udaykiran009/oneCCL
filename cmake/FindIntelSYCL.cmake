@@ -26,13 +26,10 @@ endif()
 
 set(OPENCLROOT "${dpcpp_root_hints}/include/sycl/CL/")
 
-if(MULTI_GPU_SUPPORT)
-    find_package(L0 REQUIRED)
-    if(LevelZero_FOUND)
-        set(COMPUTE_RUNTIME_NAME ze_loader)
-    endif()
+find_package(L0)
+if(LevelZero_FOUND)
+    set(COMPUTE_RUNTIME_NAME ze_loader)
 endif()
-
 
 if (NOT COMPUTE_RUNTIME_NAME)
     message("Not OpenCL or L0")

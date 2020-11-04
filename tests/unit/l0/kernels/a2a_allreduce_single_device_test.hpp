@@ -9,15 +9,10 @@
  * Add custom types support into native::memory example
  */
 /* 1) Describe new type traits */
-namespace ccl {
-template <>
-struct native_type_info<a2a_gpu_comm_data_float> {
-    static constexpr bool is_supported = true;
-    static constexpr bool is_class = true;
-};
-} // namespace ccl
+#include "native_type_traits.hpp"
+
 /* 2) Include explicit definition for native::memory */
-#include "native_device_api/l0/primitives_impl.hpp"
+#include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 
 /* 3) just use it! */
 
@@ -29,6 +24,7 @@ using native_type = float;
 
 TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
     using namespace native;
+    std::shared_ptr<ccl_context> ctx;
 
     // test case data
     const size_t buffer_size = 512;
@@ -41,7 +37,7 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
-    std::map<size_t, std::vector<size_t>> comm_param_storage;
+    std::map<int, std::vector<int>> comm_param_storage;
 
     // check global driver
     auto drv_it = local_platform->drivers.find(0);
@@ -64,12 +60,12 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
     auto dev_it = driver.devices.begin();
     ccl_device& device = *dev_it->second;
 
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         thread_indices.push_back(thread_idx);
         try {
             //initialize communication params
-            size_t rank_idx = thread_idx;
-            size_t rank_size = num_thread;
+            int rank_idx = thread_idx;
+            int rank_size = num_thread;
             size_t elem_count = buffer_size;
 
             comm_param_storage[thread_idx].push_back(rank_idx);
@@ -78,10 +74,10 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
 
             //allocate flags & memory
             // memory
-            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            auto temp_recv =
-                device.alloc_memory<native_type>(buffer_size / num_thread, sizeof(native_type));
+            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
+            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
+            auto temp_recv = device.alloc_memory<native_type>(
+                buffer_size / num_thread, sizeof(native_type), ctx);
 
             mem_send.enqueue_write_sync(send_values);
             mem_recv.enqueue_write_sync(recv_values);
@@ -99,9 +95,9 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
                                                 std::move(temp_recv));
 
             // flags
-            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto barrier_flag = device.alloc_memory<int>(1, sizeof(int));
+            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto barrier_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
             left_wrote_2_me_flag.enqueue_write_sync({ (int)0 });
             read_for_receive_flag.enqueue_write_sync({ (int)0 });
             barrier_flag.enqueue_write_sync({ (int)0 });
@@ -123,7 +119,7 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
         }
     }
 
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         memory_storage.rotate_shared_data(thread_idx, num_thread, mem_group_count);
         flags_storage.rotate_shared_data(thread_idx, num_thread, flag_group_count);
     }
@@ -134,7 +130,7 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
     typename handles_storage<int>::thread_handles_container rank_flags =
         flags_storage.collect_handles_by_index({ 0, 1 });
 
-    std::vector<a2a_gpu_comm_data_float> a2a_comm(num_thread);
+    std::vector<a2a_gpu_comm_data_float32> a2a_comm(num_thread);
 
     //Register memory handles to A2A
     for (size_t thread_id = 0; thread_id < rank_mem.size(); thread_id++) {
@@ -147,18 +143,22 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
     }
 
     //prepare gpu object
-    auto a2a_comm_handle =
-        device.alloc_memory<a2a_gpu_comm_data_float>(num_thread, sizeof(a2a_gpu_comm_data_float));
+    auto a2a_comm_handle = device.alloc_memory<a2a_gpu_comm_data_float32>(
+        num_thread, sizeof(a2a_gpu_comm_data_float32), ctx);
     a2a_comm_handle.enqueue_write_sync(a2a_comm);
 
     //prepare kernels in multithreading environment
-    ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
+    ze_kernel_desc_t desc = {
+        .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
+        .pNext = nullptr,
+        .flags = 0,
+    };
     desc.pKernelName = "allreduce_execution_float";
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
     ccl_device::device_module& module = *(device_modules.find(&device)->second);
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         //thread_group.emplace
         ze_kernel_handle_t handle = nullptr;
         try {
@@ -169,8 +169,8 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
             }
 
             thread_kernels.emplace(thread_idx, std::move(handle));
-            thread_queue.emplace(thread_idx, device.create_cmd_queue());
-            thread_cmd_list.emplace(thread_idx, device.create_cmd_list());
+            thread_queue.emplace(thread_idx, device.create_cmd_queue(ctx));
+            thread_cmd_list.emplace(thread_idx, device.create_cmd_list(ctx));
         }
         catch (const std::exception& ex) {
             throw std::runtime_error(std::string("Error: ") + ex.what());

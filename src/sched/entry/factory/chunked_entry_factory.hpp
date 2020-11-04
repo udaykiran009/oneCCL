@@ -39,14 +39,14 @@ void make_chunked_send_entry(ccl_sched* sched,
                              const ccl_buffer buf,
                              size_t cnt,
                              const ccl_datatype& dtype,
-                             size_t dst,
+                             int dst,
                              ccl_comm* comm);
 
 void make_chunked_recv_entry(ccl_sched* sched,
                              const ccl_buffer buf,
                              size_t cnt,
                              const ccl_datatype& dtype,
-                             size_t src,
+                             int src,
                              ccl_comm* comm);
 
 void make_chunked_recv_reduce_entry(
@@ -55,8 +55,8 @@ void make_chunked_recv_reduce_entry(
     size_t cnt,
     size_t* out_cnt,
     const ccl_datatype& dtype,
-    ccl_reduction_t reduction_op,
-    size_t src,
+    ccl::reduction reduction_op,
+    int src,
     ccl_buffer comm_buf,
     ccl_comm* comm,
     ccl_recv_reduce_result_buf_type result_buf_type = ccl_recv_reduce_local_buf);
@@ -67,7 +67,7 @@ void make_chunked_send_entry(std::vector<ccl_sched*>& scheds,
                              const ccl_buffer buf,
                              size_t cnt,
                              const ccl_datatype& dtype,
-                             size_t dst,
+                             int dst,
                              ccl_comm* comm);
 
 void make_chunked_recv_entry(std::vector<ccl_sched*>& scheds,
@@ -75,7 +75,7 @@ void make_chunked_recv_entry(std::vector<ccl_sched*>& scheds,
                              const ccl_buffer buf,
                              size_t cnt,
                              const ccl_datatype& dtype,
-                             size_t src,
+                             int src,
                              ccl_comm* comm);
 
 void make_chunked_copy_entry(std::vector<ccl_sched*>& scheds,

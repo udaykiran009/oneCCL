@@ -195,13 +195,13 @@ set_environment()
         BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/bin/intel64/
         C_COMPILER=${BUILD_COMPILER}/icc
         CXX_COMPILER=${BUILD_COMPILER}/icpc
-    else        
+    else
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
-            echo "ERROR: please specify  SYCL_BUNDLE_ROOT, will be used \${SYCL_BUNDLE_ROOT}/setvars.sh"
-            exit 1
+            SYCL_BUNDLE_ROOT="/p/pdsd/scratch/jenkins/artefacts/ccl-nightly/last/inteloneapi/compiler/latest/linux/"
+            echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
         fi
-        source  ${SYCL_BUNDLE_ROOT}/setvars.sh
+        source ${SYCL_BUNDLE_ROOT}/../../../setvars.sh
         BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/compiler/latest/linux/bin
         C_COMPILER=${BUILD_COMPILER}/clang
         CXX_COMPILER=${BUILD_COMPILER}/clang++
@@ -212,6 +212,7 @@ set_environment()
         worker_count="2"
     fi
     export CCL_WORKER_COUNT=$worker_count
+
     if [ -z "$runtime" ]
     then
         runtime="ofi"
@@ -257,8 +258,8 @@ set_impi_environment()
     fi
     if [ -z "${IMPI_PATH}" ]
     then
-        echo "WARNING: I_MPI_ROOT isn't set, last oneAPI pack will be used."
-        export IMPI_PATH=/p/pdsd/scratch/Uploads/IMPI/linux/functional_testing/impi/oneAPI/latest/
+        echo "WARNING: IMPI_PATH isn't set, last oneAPI pack will be used."
+        export IMPI_PATH=/p/pdsd/scratch/Uploads/IMPI/linux/functional_testing/impi/2021.1-beta09/
     fi
     source ${IMPI_PATH}/env/vars.sh -i_mpi_library_kind=release_mt
 }
@@ -375,99 +376,124 @@ run_tests()
                 ;;
            mpi_adjust )
                 export CCL_ATL_TRANSPORT=mpi
-                for allgatherv in "direct" "naive" "flat" "ring"
-                    do
-                        CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
-                    done
-                for allreduce in "direct" "rabenseifner" "starlike" "ring" "double_tree" "recursive_doubling"
-                    do
-                        if [ "$allreduce" == "ring" ];
-                        then
-                            CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
-                        elif [ "$allreduce" == "starlike" ];
-                        then
-                            CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
-                        fi
-                        CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
-                    done
-                for alltoall in "direct" "naive" "scatter" "scatter_barrier"
-                    do
-                        if [ "$alltoall" == "scatter_barrier" ];
-                        then
-                            CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
-                                CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_"$alltoall"_chunked
-                        fi
-                        CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_$alltoall
-                    done
-                for alltoallv in "direct" "naive" "scatter" "scatter_barrier"
-                    do
-                        if [ "$alltoallv" == "scatter_barrier" ];
-                        then
-                            CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
-                                CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_"$alltoallv"_chunked
-                        fi
-                        CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_$alltoallv
-                    done
-                for bcast in "direct" "ring" "double_tree" "naive"
-                    do
-                        CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
-                    done
-                for reduce in "direct" "rabenseifner" "tree"
-                    do
-                        CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
-                    done
+                
+                for algo in "direct" "naive" "flat" "ring"
+                do
+                    CCL_ALLGATHERV=$algo ctest -VV -C mpi_allgatherv_$algo
+                done
+
+                for algo in "direct" "rabenseifner" "starlike" "ring" "double_tree" "recursive_doubling"
+                do
+                    if [ "$algo" == "ring" ];
+                    then
+                        CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
+                    elif [ "$algo" == "starlike" ];
+                    then
+                        CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
+                    fi
+                    CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_$algo
+                done
+
+                for algo in "direct" "naive" "scatter" "scatter_barrier"
+                do
+                    if [ "$algo" == "scatter_barrier" ];
+                    then
+                        CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                            CCL_ALLTOALL=$algo ctest -VV -C mpi_alltoall_"$algo"_chunked
+                    fi
+                    CCL_ALLTOALL=$algo ctest -VV -C mpi_alltoall_$algo
+                done
+
+                for algo in "direct" "naive" "scatter" "scatter_barrier"
+                do
+                    if [ "$algo" == "scatter_barrier" ];
+                    then
+                        CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                            CCL_ALLTOALLV=$algo ctest -VV -C mpi_alltoallv_"$algo"_chunked
+                    fi
+                    CCL_ALLTOALLV=$algo ctest -VV -C mpi_alltoallv_$algo
+                done
+
+                for algo in "direct" "ring" "double_tree" "naive"
+                do
+                    CCL_BCAST=$algo ctest -VV -C mpi_bcast_$algo
+                done
+
+                for algo in "direct" "rabenseifner" "tree"
+                do
+                    CCL_REDUCE=$algo ctest -VV -C mpi_reduce_$algo
+                done
+
+                for algo in "direct" "ring"
+                do
+                    CCL_REDUCE_SCATTER=$algo ctest -VV -C mpi_reduce_scatter_$algo
+                done
+
                ;;
            ofi_adjust )
+
                 export CCL_ATL_TRANSPORT=ofi
-                for allgatherv in "naive" "flat" "multi_bcast" "ring"
-                    do
-                        CCL_ALLGATHERV=$allgatherv ctest -VV -C mpi_allgatherv_$allgatherv
-                    done
-                for allreduce in "rabenseifner" "starlike" "ring" "ring_rma" "double_tree" "recursive_doubling" "2d"
-                    do
-                        if [ "$allreduce" == "ring_rma" ];
-                        then
-                            CCL_RMA=1 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
-                        else
-                            if [ "$allreduce" == "starlike" ];
-                            then
-                                CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
-                            elif [ "$allreduce" == "ring" ];
-                            then
-                                CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
-                            elif [ "$allreduce" == "2d" ];
-                            then
-                                CCL_AR2D_CHUNK_COUNT=2 CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_"$allreduce"_chunked
-                            fi
-                            CCL_ALLREDUCE=$allreduce ctest -VV -C mpi_allreduce_$allreduce
-                        fi
+
+                for algo in "naive" "flat" "multi_bcast" "ring"
+                do
+                    CCL_ALLGATHERV=$algo ctest -VV -C mpi_allgatherv_$algo
                 done
-                for alltoall in "naive" "scatter" "scatter_barrier"
-                    do
-                        if [ "$alltoall" == "scatter_barrier" ];
+
+                for algo in "rabenseifner" "starlike" "ring" "ring_rma" "double_tree" "recursive_doubling" "2d"
+                do
+                    if [ "$algo" == "ring_rma" ];
+                    then
+                        CCL_RMA=1 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_$algo
+                    else
+                        if [ "$algo" == "starlike" ];
                         then
-                            CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
-                                CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_"$alltoall"_chunked
-                        fi
-                        CCL_ALLTOALL=$alltoall ctest -VV -C mpi_alltoall_$alltoall
-                    done
-                for alltoallv in "naive" "scatter" "scatter_barrier"
-                    do
-                        if [ "$alltoallv" == "scatter_barrier" ];
+                            CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
+                        elif [ "$algo" == "ring" ];
                         then
-                            CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
-                                CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_"$alltoallv"_chunked
+                            CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
+                        elif [ "$algo" == "2d" ];
+                        then
+                            CCL_AR2D_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
                         fi
-                        CCL_ALLTOALLV=$alltoallv ctest -VV -C mpi_alltoallv_$alltoallv
-                    done
-                for bcast in "ring" "double_tree" "naive"
-                    do
-                        CCL_BCAST=$bcast ctest -VV -C mpi_bcast_$bcast
-                    done
-                for reduce in "rabenseifner" "tree" "double_tree"
-                    do
-                        CCL_REDUCE=$reduce ctest -VV -C mpi_reduce_$reduce
-                    done
+                        CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_$algo
+                    fi
+                done
+
+                for algo in "naive" "scatter" "scatter_barrier"
+                do
+                    if [ "$algo" == "scatter_barrier" ];
+                    then
+                        CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                            CCL_ALLTOALL=$algo ctest -VV -C mpi_alltoall_"$algo"_chunked
+                    fi
+                    CCL_ALLTOALL=$algo ctest -VV -C mpi_alltoall_$algo
+                done
+
+                for algo in "naive" "scatter" "scatter_barrier"
+                do
+                    if [ "$algo" == "scatter_barrier" ];
+                    then
+                        CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                            CCL_ALLTOALLV=$algo ctest -VV -C mpi_alltoallv_"$algo"_chunked
+                    fi
+                    CCL_ALLTOALLV=$algo ctest -VV -C mpi_alltoallv_$algo
+                done
+
+                for algo in "ring" "double_tree" "naive"
+                do
+                    CCL_BCAST=$algo ctest -VV -C mpi_bcast_$algo
+                done
+
+                for algo in "rabenseifner" "tree" "double_tree"
+                do
+                    CCL_REDUCE=$algo ctest -VV -C mpi_reduce_$algo
+                done
+
+                for algo in "ring"
+                do
+                    CCL_REDUCE_SCATTER=$algo ctest -VV -C mpi_reduce_scatter_$algo
+                done
+
                ;;
             priority_mode )
                 CCL_ATL_TRANSPORT=mpi CCL_PRIORITY=lifo ctest -VV -C Default
@@ -492,6 +518,41 @@ run_tests()
                 exit 1
                ;;
     esac
+}
+
+run_unit_tests(){
+    echo "RUNNING UNIT TESTS"
+    #ctest -VV -C kernel_ring_single_device_suite
+    echo -e "Running unit tests"
+    mkdir -p build
+    cd ./build
+    
+    . /p/pdsd/scratch/jenkins/artefacts//ccl-nightly/last/inteloneapi/setvars.sh
+    . /p/pdsd/scratch/Uploads/IMPI/linux/functional_testing/impi/2021.1-beta09/env/vars.sh -i_mpi_library_kind=release_mt
+   
+    echo -e "Compiling unit tests"
+    build_output=$(cmake -DMULTI_GPU_SUPPORT=1 -DCMAKE_C_COMPILER=clang \
+                   -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_RUNTIME=dpcpp ..  \
+                   && make -j8 && make install 2>&1)
+    if [[ $? != 0 ]]; then
+        # There was an error, display the error in $output
+        echo -e "Error:\n$build_output"
+        exit 1
+    else
+        echo -e "Compiling unit tests done"
+    fi
+
+    echo -e "Making link to ../src/kernels"
+    ln -s ../src/kernels kernels
+    echo -e "Made link"
+
+    echo -e "Running unit tests"
+    output=$(L0_CLUSTER_AFFINITY_MASK="[0:39882],[0:39882]|[0:39882],[0:39882]" \
+        ./tests/unit/l0/kernel_ring_single_device_suite | tee >&2 | grep 'FAILED')
+    if [ $? != 0 ]; then
+        exit 1
+    fi
+    echo -e "End running unit tests"
 }
 
 clean_nodes() {
@@ -526,10 +587,9 @@ EOF
 #==============================================================================
 #                              MAIN
 #==============================================================================
-
 set_default_values
-set_impi_environment
 set_environment
+set_impi_environment
 
 clean_nodes
 while [ $# -ne 0 ]
@@ -543,6 +603,15 @@ do
         run_modulefile_tests
         shift
         ;;
+    "-unit_tests" )
+        run_unit_tests
+        shift
+        ;;
+    "-functional_tests" )
+        make_tests
+        run_tests
+        shift
+        ;;
     *)
         echo "WARNING: example testing not started"
         exit 0
@@ -550,7 +619,5 @@ do
         ;;
     esac
 done
-make_tests
-run_tests
 clean_nodes
 

@@ -1,48 +1,25 @@
-#ifdef HOST_CTX
-#define __global
-using namespace ccl;
-#else
-typedef ushort bfp16;
-#endif
+#ifndef A2A_HELPERS_H
+#define A2A_HELPERS_H
 
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_char {
-    __global char* recv_buf;
-    __global int* ready_to_receive_flag;
-    __global int* data_sent_flag;
-} a2a_gpu_comm_data_char;
+#include "common_helpers.h"
 
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_int {
-    __global int* recv_buf;
-    __global int* ready_to_receive_flag;
-    __global int* data_sent_flag;
-} a2a_gpu_comm_data_int;
+#define DEFINE_A2A_COMM_DATA(NAME, T) \
+    typedef struct __attribute__((packed)) a2a_gpu_comm_data_##NAME { \
+        __global T* recv_buf; \
+        __global int* ready_to_receive_flag; \
+        __global int* data_sent_flag; \
+    } a2a_gpu_comm_data_##NAME;
 
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_float {
-    __global float* recv_buf;
-    __global int* ready_to_receive_flag;
-    __global int* data_sent_flag;
-} a2a_gpu_comm_data_float;
-
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_bfp16 {
-    __global bfp16* recv_buf;
-    __global int* ready_to_receive_flag;
-    __global int* data_sent_flag;
-} a2a_gpu_comm_data_bfp16;
-
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_double {
-    __global double* recv_buf;
-    __global int* ready_to_receive_flag;
-    __global int* data_sent_flag;
-} a2a_gpu_comm_data_double;
-
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_long {
-    __global long* recv_buf;
-    __global int* ready_to_receive_flag;
-    __global int* data_sent_flag;
-} a2a_gpu_comm_data_long;
-
-typedef struct __attribute__((packed)) a2a_gpu_comm_data_ulong {
-    __global ulong* recv_buf;
-    __global int* ready_to_receive_flag;
-    __global int* data_sent_flag;
-} a2a_gpu_comm_data_ulong;
+DEFINE_A2A_COMM_DATA(int8, int8_t)
+DEFINE_A2A_COMM_DATA(uint8, uint8_t)
+DEFINE_A2A_COMM_DATA(int16, int16_t)
+DEFINE_A2A_COMM_DATA(uint16, uint16_t)
+DEFINE_A2A_COMM_DATA(int32, int32_t)
+DEFINE_A2A_COMM_DATA(uint32, uint32_t)
+DEFINE_A2A_COMM_DATA(int64, int64_t)
+DEFINE_A2A_COMM_DATA(uint64, uint64_t)
+DEFINE_A2A_COMM_DATA(float16, float16)
+DEFINE_A2A_COMM_DATA(float32, float)
+DEFINE_A2A_COMM_DATA(float64, double)
+DEFINE_A2A_COMM_DATA(bfloat16, uint16_t)
+#endif /* A2A_HELPERS_H */

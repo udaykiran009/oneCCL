@@ -10,15 +10,15 @@ public:
     }
 
     probe_entry() = delete;
-    probe_entry(ccl_sched* sched, size_t src, size_t* recv_len, ccl_comm* comm)
+    probe_entry(ccl_sched* sched, int src, size_t* recv_len, ccl_comm* comm)
             : sched_entry(sched),
               src(src),
               recv_len(recv_len),
               comm(comm) {}
 
     void start() override {
-        size_t global_src = ccl::global_data::get().comm->get_global_rank(src);
-        atl_tag = ccl::global_data::get().atl_tag->create(
+        int global_src = comm->get_global_rank(src);
+        atl_tag = comm->atl->tag->create(
             sched->get_comm_id(), global_src, sched->sched_id, sched->get_op_id());
         LOG_DEBUG("PROBE entry src ", src, ", tag ", atl_tag);
         status = ccl_sched_entry_status_started;
@@ -28,10 +28,10 @@ public:
         int found = 0;
         size_t len = 0;
 
-        size_t global_src = comm->get_global_rank(src);
+        int global_src = comm->get_global_rank(src);
 
         atl_status_t atl_status =
-            atl_ep_probe(sched->bin->get_atl_ep(), global_src, atl_tag, &found, &len);
+            comm->atl->atl_ep_probe(sched->bin->get_atl_ep(), global_src, atl_tag, &found, &len);
 
         update_status(atl_status);
 
@@ -62,7 +62,7 @@ protected:
     }
 
 private:
-    size_t src;
+    int src;
     size_t* recv_len;
     ccl_comm* comm;
     uint64_t atl_tag = 0;

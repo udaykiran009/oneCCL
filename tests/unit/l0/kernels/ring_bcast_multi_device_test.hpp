@@ -6,6 +6,7 @@ namespace ring_multi_device_case {
 using native_type = float;
 
 TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
+    using namespace native;
     const size_t buffer_size = 512;
     const size_t num_thread = 2;
     constexpr size_t mem_group_count = 3;
@@ -13,9 +14,10 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
-    std::map<size_t, std::vector<size_t>> comm_param_storage;
+    std::map<int, std::vector<int>> comm_param_storage;
 
-    using namespace native;
+    std::shared_ptr<ccl_context> ctx;
+
     // check global driver
     auto drv_it = local_platform->drivers.find(0);
     UT_ASSERT(drv_it != local_platform->drivers.end(), "Driver by idx 0 must exist!");
@@ -35,14 +37,18 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
     std::iota(send_values.begin(), send_values.end(), 1);
     std::vector<native_type> recv_values(buffer_size, 0);
 
-    size_t rank_device_idx = 0;
+    int rank_device_idx = 0;
     for (auto dev_it = driver->devices.begin(); dev_it != driver->devices.end(); ++dev_it) {
         auto& device = *dev_it->second;
 
         //initialize communication params
-        size_t rank_idx = rank_device_idx;
-        size_t rank_size = driver->devices.size();
+        int rank_idx = rank_device_idx;
+        int rank_size = driver->devices.size();
         size_t elem_count = buffer_size;
+
+        this->output << "Create device memory & flags handles for device by index: "
+                     << std::to_string(device.get_device_id()) << ", as rank: (" << rank_device_idx
+                     << "/" << rank_size << ")" << std::endl;
 
         comm_param_storage[rank_device_idx].push_back(rank_idx);
         comm_param_storage[rank_device_idx].push_back(rank_size);
@@ -51,9 +57,10 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
 
         //allocate flags & memory
         // memory
-        auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-        auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-        auto temp_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
+        this->output << "Alloc memory handles: " << std::endl;
+        auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
+        auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
+        auto temp_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
         if (rank_device_idx == root) {
             mem_send.enqueue_write_sync(send_values);
         }
@@ -74,9 +81,9 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
                                             std::move(temp_recv));
 
         // flags
-        auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int));
-        auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int));
-        auto barrier_flag = device.alloc_memory<int>(1, sizeof(int));
+        auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+        auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+        auto barrier_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
         left_wrote_2_me_flag.enqueue_write_sync({ (int)0 });
         read_for_receive_flag.enqueue_write_sync({ (int)0 });
         barrier_flag.enqueue_write_sync({ (int)0 });
@@ -93,13 +100,17 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
         rank_device_idx++;
     }
 
-    for (size_t rank_idx = 0; rank_idx < driver->devices.size(); rank_idx++) {
+    for (int rank_idx = 0; rank_idx < driver->devices.size(); rank_idx++) {
         memory_storage.rotate_shared_data(rank_idx, driver->devices.size(), mem_group_count);
         flags_storage.rotate_shared_data(rank_idx, driver->devices.size(), flag_group_count);
     }
 
     //prepare kernels
-    ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
+    ze_kernel_desc_t desc = {
+        .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
+        .pNext = nullptr,
+        .flags = 0,
+    };
     desc.pKernelName = "bcast_execution_float";
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
@@ -110,6 +121,10 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
         ccl_device& device = *dev_it->second;
         ccl_device::device_module& module = *(device_modules.find(&device)->second);
 
+        this->output << "Preparing kernels params: name of kernel: " << desc.pKernelName << "\n"
+                     << "  device id: " << ccl::to_string(device.get_device_path()) << "\n"
+                     << "  Rank idx" << rank_device_idx << std::endl;
+
         ze_kernel_handle_t handle = nullptr;
         try {
             ze_result_t result = zeKernelCreate(module.handle, &desc, &handle);
@@ -118,9 +133,12 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
                                          ", error: " + native::to_string(result));
             }
 
+            this->output << "Create list & queue with default properties on device by id: "
+                         << ccl::to_string(device.get_device_path()) << std::endl;
+
             thread_kernels.emplace(rank_device_idx, std::move(handle));
-            thread_queue.emplace(rank_device_idx, device.create_cmd_queue());
-            thread_cmd_list.emplace(rank_device_idx, device.create_cmd_list());
+            thread_queue.emplace(rank_device_idx, device.create_cmd_queue(ctx));
+            thread_cmd_list.emplace(rank_device_idx, device.create_cmd_list(ctx));
 
             rank_device_idx++;
         }
@@ -142,6 +160,10 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
         auto& mem_handles = memory_storage.per_thread_storage.find(thread_idx)->second;
         auto& flag_handles = flags_storage.per_thread_storage.find(thread_idx)->second;
         auto& comm_handles = comm_param_storage.find(thread_idx)->second;
+
+        this->output << "Launch kernel params: \n"
+                     << " Device idx" << ccl::to_string(device.get_device_path()) << ",  Rank idx"
+                     << rank_device_idx << std::endl;
 
         ccl_device::device_queue& queue = thread_queue.find(thread_idx)->second;
         ccl_device::device_cmd_list& list = thread_cmd_list.find(thread_idx)->second;

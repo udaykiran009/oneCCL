@@ -2,15 +2,17 @@
 #include <cstring>
 #include <sstream>
 
-#include "native_device_api/l0/primitives_impl.hpp"
-#include "native_device_api/l0/device.hpp"
+#include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
+#include "oneapi/ccl/native_device_api/l0/device.hpp"
+#include "oneapi/ccl/native_device_api/l0/context.hpp"
 
 namespace native {
 namespace detail {
 CCL_API void copy_memory_to_device_sync_unsafe(void* dst,
                                                const void* src,
                                                size_t size,
-                                               std::weak_ptr<ccl_device> device_weak) {
+                                               std::weak_ptr<ccl_device> device_weak,
+                                               std::shared_ptr<ccl_context> ctx) {
     //TODO: NOT THREAD-SAFE!!!
     std::shared_ptr<ccl_device> device = device_weak.lock();
     if (!device) {
@@ -21,14 +23,15 @@ CCL_API void copy_memory_to_device_sync_unsafe(void* dst,
     ze_command_queue_desc_t queue_description = device->get_default_queue_desc();
     //queue_description.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;   TODO may be &= for flags???
 
-    auto queue = device->create_cmd_queue(queue_description);
+    auto queue = device->create_cmd_queue(ctx, queue_description);
 
     //create list
     ze_command_list_desc_t list_description = device->get_default_list_desc();
     //list_description.flags = ZE_COMMAND_LIST_FLAG_MAXIMIZE_THROUGHPUT;  TODO may be &= for flags???
-    auto cmd_list = device->create_cmd_list(list_description);
+    auto cmd_list = device->create_cmd_list(ctx, list_description);
 
-    ze_result_t ret = zeCommandListAppendMemoryCopy(cmd_list.get(), dst, src, size, nullptr);
+    ze_result_t ret =
+        zeCommandListAppendMemoryCopy(cmd_list.get(), dst, src, size, nullptr, 0, nullptr);
     if (ret != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("Cannot append memory copy to cmd list, error: ") +
                                  std::to_string(ret));

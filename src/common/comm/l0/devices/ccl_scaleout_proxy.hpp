@@ -26,7 +26,7 @@ public:
     using proxy_base = proxy_observer_specific<ccl_scaleout_proxy<device_t>>;
 
     template <ccl_coll_type algo_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id>
     using gpu_module_t =
         typename device_t::template gpu_module_t<algo_type,
@@ -34,7 +34,7 @@ public:
                                                  class_id>; //same as in-process GPU
 
     template <ccl_coll_type algo_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id,
               class native_data_type>
     using gpu_kernel_t =
@@ -59,7 +59,7 @@ public:
     }
 
     template <ccl_coll_type module_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id,
               class native_data_type>
     gpu_kernel_t<module_type, group_id, class_id, native_data_type>& get_gpu_kernel() {
@@ -69,17 +69,16 @@ public:
             .template get_gpu_kernel<module_type, group_id, class_id, native_data_type>();
     }
 
-    template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+    template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
     topology_addr<group_id, class_id> get_comm_data() const {
         return wrapped_gpu_comm.template get_comm_data<group_id, class_id>();
     }
 
-    template <
-        class native_data_type,
-        ccl::device_group_split_type group_id,
-        ccl::device_topology_type class_id,
-        class gpu_entry,
-        class = typename std::enable_if<group_id == ccl::device_group_split_type::cluster>::type>
+    template <class native_data_type,
+              ccl::group_split_type group_id,
+              ccl::device_topology_type class_id,
+              class gpu_entry,
+              class = typename std::enable_if<group_id == ccl::group_split_type::cluster>::type>
     gpu_kernel_t<gpu_entry::type(), group_id, class_id, native_data_type>& register_entry(
         gpu_entry& entry) {
         const topology_addr<group_id, class_id>& comm_addr = get_comm_data<group_id, class_id>();
@@ -116,7 +115,7 @@ public:
     using proxy_base = proxy_observer_specific<ccl_scaleout_proxy<ccl_numa_proxy<device_t>>>;
 
     template <ccl_coll_type algo_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id>
     using gpu_module_t =
         typename device_t::template gpu_module_t<algo_type,
@@ -124,7 +123,7 @@ public:
                                                  class_id>; //same as in-process GPU
 
     template <ccl_coll_type algo_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id,
               class native_data_type>
     using gpu_kernel_t =
@@ -152,7 +151,7 @@ public:
     }
 
     template <ccl_coll_type module_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id,
               class native_data_type>
     gpu_kernel_t<module_type, group_id, class_id, native_data_type>& get_gpu_kernel() {
@@ -162,17 +161,16 @@ public:
             .template get_gpu_kernel<module_type, group_id, class_id, native_data_type>();
     }
 
-    template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+    template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
     topology_addr<group_id, class_id> get_comm_data() const {
         return wrapped_gpu_comm.template get_comm_data<group_id, class_id>();
     }
 
-    template <
-        class native_data_type,
-        ccl::device_group_split_type group_id,
-        ccl::device_topology_type class_id,
-        class gpu_entry,
-        class = typename std::enable_if<group_id == ccl::device_group_split_type::cluster>::type>
+    template <class native_data_type,
+              ccl::group_split_type group_id,
+              ccl::device_topology_type class_id,
+              class gpu_entry,
+              class = typename std::enable_if<group_id == ccl::group_split_type::cluster>::type>
     gpu_kernel_t<gpu_entry::type(), group_id, class_id, native_data_type>& register_entry(
         gpu_entry& entry) {
         const topology_addr<group_id, class_id>& comm_addr = get_comm_data<group_id, class_id>();
@@ -207,7 +205,7 @@ public:
     using proxy_base = proxy_observer_specific<ccl_scaleout_proxy<ccl_gpu_scaleup_proxy<device_t>>>;
 
     template <ccl_coll_type algo_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id>
     using gpu_module_t =
         typename device_t::template gpu_module_t<algo_type,
@@ -215,7 +213,7 @@ public:
                                                  class_id>; //same as in-process GPU
 
     template <ccl_coll_type algo_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id,
               class native_data_type>
     using gpu_kernel_t =
@@ -243,7 +241,7 @@ public:
     }
 
     template <ccl_coll_type module_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id,
               class native_data_type>
     gpu_kernel_t<module_type, group_id, class_id, native_data_type>& get_gpu_kernel() {
@@ -253,17 +251,16 @@ public:
             .template get_gpu_kernel<module_type, group_id, class_id, native_data_type>();
     }
 
-    template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+    template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
     topology_addr<group_id, class_id> get_comm_data() const {
         return wrapped_gpu_comm.template get_comm_data<group_id, class_id>();
     }
 
-    template <
-        class native_data_type,
-        ccl::device_group_split_type group_id,
-        ccl::device_topology_type class_id,
-        class gpu_entry,
-        class = typename std::enable_if<group_id == ccl::device_group_split_type::cluster>::type>
+    template <class native_data_type,
+              ccl::group_split_type group_id,
+              ccl::device_topology_type class_id,
+              class gpu_entry,
+              class = typename std::enable_if<group_id == ccl::group_split_type::cluster>::type>
     gpu_kernel_t<gpu_entry::type(), group_id, class_id, native_data_type>& register_entry(
         gpu_entry& entry) {
         const topology_addr<group_id, class_id>& comm_addr = get_comm_data<group_id, class_id>();
@@ -301,14 +298,12 @@ public:
     using proxy_base = proxy_observer_specific<
         ccl_scaleout_proxy<ccl_gpu_scaleup_proxy<ccl_numa_proxy<device_t>>>>;
 
-    template <ccl_coll_type algo_type,
-              ccl::device_group_split_type group,
-              ccl::device_topology_type mode>
+    template <ccl_coll_type algo_type, ccl::group_split_type group, ccl::device_topology_type mode>
     using gpu_module_t =
         typename device_t::template gpu_module_t<algo_type, group, mode>; //same as in-process GPU
 
     template <ccl_coll_type algo_type,
-              ccl::device_group_split_type group,
+              ccl::group_split_type group,
               ccl::device_topology_type mode,
               class native_data_type>
     using gpu_kernel_t =
@@ -336,7 +331,7 @@ public:
     }
 
     template <ccl_coll_type module_type,
-              ccl::device_group_split_type group_id,
+              ccl::group_split_type group_id,
               ccl::device_topology_type class_id,
               class native_data_type>
     gpu_kernel_t<module_type, group_id, class_id, native_data_type>& get_gpu_kernel() {
@@ -346,17 +341,16 @@ public:
             .template get_gpu_kernel<module_type, group_id, class_id, native_data_type>();
     }
 
-    template <ccl::device_group_split_type group_id, ccl::device_topology_type class_id>
+    template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
     topology_addr<group_id, class_id> get_comm_data() const {
         return wrapped_gpu_comm.template get_comm_data<group_id, class_id>();
     }
 
-    template <
-        class native_data_type,
-        ccl::device_group_split_type group_id,
-        ccl::device_topology_type class_id,
-        class gpu_entry,
-        class = typename std::enable_if<group_id == ccl::device_group_split_type::cluster>::type>
+    template <class native_data_type,
+              ccl::group_split_type group_id,
+              ccl::device_topology_type class_id,
+              class gpu_entry,
+              class = typename std::enable_if<group_id == ccl::group_split_type::cluster>::type>
     gpu_kernel_t<gpu_entry::type(), group_id, class_id, native_data_type>& register_entry(
         gpu_entry& entry) {
         const topology_addr<group_id, class_id>& comm_addr = get_comm_data<group_id, class_id>();

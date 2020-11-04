@@ -8,8 +8,8 @@ then
 fi
 
 SRC_ROOT_DIR=`cd ${SCRIPT_DIR}/ && pwd -P`
-INTEL_DIR="${SRC_ROOT_DIR}/"
-DOC_DIR="${INTEL_DIR}/doc"
+INTEL_DIR="${SRC_ROOT_DIR}/.."
+DOC_DIR="${INTEL_DIR}/include"
 
 if [ "$1" = "win" ]; then
     # Windows
@@ -17,10 +17,10 @@ if [ "$1" = "win" ]; then
     :
 else
     # Linux
-    BOM_COMPONENT="<deliverydir>/l_doc"
-    DEST_BOM_FILE=${INTEL_DIR}/l_doc_auto.txt
-    SRC_PATH="<ccl_root>/doc"
-    INSTALL_PATH="<installdir><l_ccl_install_path><l_ccl_platform>/doc"
+    BOM_COMPONENT="<deliverydir>/l_include/cpu_gpu_dpcpp/"
+    DEST_BOM_FILE=${INTEL_DIR}/l_include_auto.txt
+    SRC_PATH="<installroot>/include/cpu_gpu_dpcpp/"
+    INSTALL_PATH="<installdir><l_ccl_install_path><l_ccl_platform>/include/cpu_gpu_dpcpp/"
     CONTENT=`find ${DOC_DIR} -type f | sort -u`""
 fi
 
@@ -29,7 +29,7 @@ echo "DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileIns
 for FILE in ${CONTENT}
 do
     FILE=`echo ${FILE} | sed -e "s|${DOC_DIR}/||"`
-    echo "${BOM_COMPONENT}/${FILE}	${INSTALL_PATH}/${FILE}		internal	Yury Kiryanov	Documentation	1	644	nonredistributable	root	${SRC_PATH}/${FILE}" >> ${DEST_BOM_FILE}
+    echo "${BOM_COMPONENT}/${FILE}	${INSTALL_PATH}/${FILE}		external	Ksenya Kochanova		1	644	redistributable	root	${SRC_PATH}/${FILE}" >> ${DEST_BOM_FILE}
 done
 
 echo "#Intel Confidential" >> ${DEST_BOM_FILE}

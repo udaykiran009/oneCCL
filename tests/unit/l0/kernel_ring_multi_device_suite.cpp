@@ -19,14 +19,17 @@ int main(int ac, char* av[]) {
         Test_ring_bcast_multi_device_mt t;
         t.start();
     }
-    {
-        Test_ipc_memory_test t;
-        t.start();
-    }
-    {
-        Test_multithreading_kernel_execution t;
-        t.start();
-    }
+    // TODO: uncoment these tests after enabling them.
+    // Don't forget to include them.
+    // Then, please, check export.sh -cm ./export_test
+    // {
+    //     Test_ipc_memory_test t;
+    //     t.start();
+    // }
+    // {
+    //     Test_multithreading_kernel_execution t;
+    //     t.start();
+    // }
     return 0;
 #endif
 }

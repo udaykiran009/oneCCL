@@ -1,4 +1,5 @@
 #pragma once
+
 #include <memory>
 #include <sstream>
 
@@ -19,6 +20,8 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
     constexpr size_t ipc_mem_group_count = 1;
     constexpr size_t ipc_flag_group_count = 2;
 
+    std::shared_ptr<ccl_context> ctx;
+
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
     ipc_server_handles_storage<native_type> ipc_server_memory(42 * num_thread);
@@ -27,7 +30,7 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
     ipc_client_handles_storage<native_type> ipc_client_memory;
     ipc_client_handles_storage<int> ipc_client_flags;
 
-    std::map<size_t, std::vector<size_t>> comm_param_storage;
+    std::map<int, std::vector<int>> comm_param_storage;
 
     // check global driver
     auto drv_it = local_platform->drivers.find(0);
@@ -50,12 +53,12 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
     auto dev_it = driver.devices.begin();
     ccl_device& device = *dev_it->second;
 
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         thread_indices.push_back(thread_idx);
         try {
             // initialize communication params
-            size_t rank_idx = thread_idx + is_child();
-            size_t rank_size = num_thread + 1; //forked
+            int rank_idx = thread_idx + is_child();
+            int rank_size = num_thread + 1; //forked
             size_t elem_count = buffer_size;
 
             comm_param_storage[thread_idx].push_back(rank_idx);
@@ -64,10 +67,10 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
 
             // allocate flags & memory
             // memory
-            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            auto temp_recv =
-                device.alloc_memory<native_type>(buffer_size / num_thread, sizeof(native_type));
+            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
+            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
+            auto temp_recv = device.alloc_memory<native_type>(
+                buffer_size / num_thread, sizeof(native_type), ctx);
             mem_send.enqueue_write_sync(send_values);
             mem_recv.enqueue_write_sync(recv_values);
             temp_recv.enqueue_write_sync(recv_values.begin(),
@@ -88,9 +91,9 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
                                                 std::move(temp_recv));
 
             // flags
-            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int));
-            auto barrier_flag = device.alloc_memory<int>(1, sizeof(int));
+            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto read_for_receive_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
+            auto barrier_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
             left_wrote_2_me_flag.enqueue_write_sync({ (int)0 });
             read_for_receive_flag.enqueue_write_sync({ (int)0 });
             barrier_flag.enqueue_write_sync({ (int)0 });
@@ -115,7 +118,7 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
         }
     }
 
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         memory_storage.rotate_shared_data(thread_idx, num_thread, mem_group_count);
         flags_storage.rotate_shared_data(thread_idx, num_thread, flag_group_count);
     }
@@ -177,13 +180,18 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
     }
 
     //prepare kernels in multithreading environment
-    ze_kernel_desc_t desc = { ZE_KERNEL_DESC_VERSION_CURRENT, ZE_KERNEL_FLAG_NONE };
-    desc.pKernelName = "allreduce_execution_float";
+    ze_kernel_desc_t desc = {
+        .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
+        .pNext = nullptr,
+        .flags = 0,
+        .pKernelName = "ipc_allreduce_execution_float",
+    };
+
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
     ccl_device::device_module& module = *(device_modules.find(&device)->second);
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         //thread_group.emplace
         ze_kernel_handle_t handle = nullptr;
         try {
@@ -194,8 +202,8 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
             }
 
             thread_kernels.emplace(thread_idx, std::move(handle));
-            thread_queue.emplace(thread_idx, device.create_cmd_queue());
-            thread_cmd_list.emplace(thread_idx, device.create_cmd_list());
+            thread_queue.emplace(thread_idx, device.create_cmd_queue(ctx));
+            thread_cmd_list.emplace(thread_idx, device.create_cmd_list(ctx));
         }
         catch (const std::exception& ex) {
             throw std::runtime_error(std::string("Error: ") + ex.what());

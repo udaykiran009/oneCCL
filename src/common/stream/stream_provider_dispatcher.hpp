@@ -7,63 +7,62 @@
 #include <CL/sycl.hpp>
 #endif
 
-class ccl_stream;
+#include "oneapi/ccl/ccl_type_traits.hpp"
 
+/**
+ * Supported stream types
+ */
+enum class stream_type : int {
+    host = 0,
+    cpu,
+    gpu,
+
+    last_value
+};
+
+class ccl_stream;
 class stream_provider_dispatcher {
 public:
-#ifdef MULTI_GPU_SUPPORT
-#ifdef CCL_ENABLE_SYCL
-    using stream_native_t = cl::sycl::queue;
-    using stream_native_handle_t = ze_command_queue_handle_t; //cl::sycl::queue::cl_command_queue;
-#else
-    using stream_native_t = ze_command_queue_handle_t;
-    using stream_native_handle_t = ze_command_queue_handle_t;
-#endif
-#else
-#ifdef CCL_ENABLE_SYCL
-    using stream_native_t = cl::sycl::queue;
-    using stream_native_handle_t = void*;
-#else
-    using stream_native_t = void*;
-    using stream_native_handle_t = stream_native_t;
-#endif
-#endif
-    static stream_native_handle_t get_native_stream_handle_impl(stream_native_t& handle);
+    using stream_native_handle_t = typename ccl::unified_stream_type::handle_t;
+    using stream_native_t = typename ccl::unified_stream_type::ccl_native_t;
+    using stream_native_device_t = typename ccl::unified_device_type::ccl_native_t;
+    ;
+    using stream_native_context_t = typename ccl::unified_context_type::ccl_native_t;
 
     stream_native_t get_native_stream() const;
-    stream_native_handle_t get_native_stream_handle() const;
+
+#ifdef CCL_ENABLE_SYCL
+    stream_native_t get_native_stream(size_t idx) const;
+#endif /* CCL_ENABLE_SYCL */
+
+    const stream_native_device_t& get_native_device() const;
+    stream_native_device_t& get_native_device();
+
     std::string to_string() const;
 
-    template <
-        class NativeStream,
-        typename std::enable_if<std::is_class<typename std::remove_cv<NativeStream>::type>::value,
-                                int>::type = 0>
-    static std::unique_ptr<ccl_stream> create(NativeStream& native_stream);
-
-    template <class NativeStream,
-              typename std::enable_if<
-                  not std::is_class<typename std::remove_cv<NativeStream>::type>::value,
-                  int>::type = 0>
-    static std::unique_ptr<ccl_stream> create(NativeStream& native_stream);
-
-    static std::unique_ptr<ccl_stream> create();
+    // available admissions to create stream
+    static std::unique_ptr<ccl_stream> create(stream_native_t& native_stream,
+                                              const ccl::library_version& version);
+    static std::unique_ptr<ccl_stream> create(stream_native_handle_t native_handle,
+                                              const ccl::library_version& version);
+    static std::unique_ptr<ccl_stream> create(stream_native_device_t device,
+                                              const ccl::library_version& version);
+    static std::unique_ptr<ccl_stream> create(stream_native_device_t device,
+                                              stream_native_context_t context,
+                                              const ccl::library_version& version);
+    template <class T>
+    using optional = std::pair<bool, T>;
 
 protected:
-    template <
-        class NativeStream,
-        typename std::enable_if<std::is_class<typename std::remove_cv<NativeStream>::type>::value,
-                                int>::type = 0>
-    stream_provider_dispatcher(NativeStream& stream);
-    template <class NativeStream,
-              typename std::enable_if<
-                  not std::is_class<typename std::remove_cv<NativeStream>::type>::value,
-                  int>::type = 0>
-    stream_provider_dispatcher(NativeStream stream);
+    optional<stream_native_device_t> native_device;
+    optional<stream_native_context_t> native_context;
 
-private:
+    bool creation_is_postponed{ false };
+
     stream_native_t native_stream;
-    bool native_stream_set; //TODO use std::variant in c++17
+
 #ifdef CCL_ENABLE_SYCL
-    stream_native_handle_t native_stream_handle;
-#endif
+    /* FIXME: tmp w/a for MT support in queue */
+    std::vector<stream_native_t> native_streams;
+#endif /* CCL_ENABLE_SYCL */
 };

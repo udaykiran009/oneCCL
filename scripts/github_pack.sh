@@ -14,17 +14,15 @@ excluded=".git
 ./doc/README.md
 ./doc/README.txt
 ./doc/cclEULA.txt
-./doc/archive
 ./doc/third_party_programs
 ./doc/copyright
-./doc/spec
 ./examples/run.sh
-./examples/Makefile
+./internal
 ./ofi/ofi_update.sh
 ./ccl_public
 ./ccl_oneapi
-./examples/level_zero
 ./src/kernels
+./src/kernels/rne.h
 ./tests/unit"
 
 count=0

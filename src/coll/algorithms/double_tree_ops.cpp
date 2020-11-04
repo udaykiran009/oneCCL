@@ -31,7 +31,7 @@ static void reduce_tree(const ccl_bin_tree& tree,
                         ccl_buffer buffer,
                         size_t count,
                         const ccl_datatype& dtype,
-                        ccl_reduction_t reduction,
+                        ccl::reduction reduction,
                         ccl_comm* comm) {
     if (tree.left() != -1) {
         LOG_DEBUG("recv_reduce left ", tree.left());
@@ -72,7 +72,7 @@ static void reduce_bcast_tree(const ccl_bin_tree& tree,
                               ccl_buffer buffer,
                               size_t count,
                               const ccl_datatype& dtype,
-                              ccl_reduction_t reduction,
+                              ccl::reduction reduction,
                               ccl_comm* comm) {
     if (tree.left() != -1) {
         LOG_DEBUG("recv_reduce left ", tree.left());
@@ -128,16 +128,16 @@ static void reduce_bcast_tree(const ccl_bin_tree& tree,
     }
 }
 
-ccl_status_t ccl_coll_build_double_tree_op(ccl_sched* sched,
-                                           ccl_coll_type coll_type,
-                                           ccl_buffer send_buf,
-                                           ccl_buffer recv_buf,
-                                           size_t count,
-                                           const ccl_datatype& dtype,
-                                           ccl_reduction_t op,
-                                           const ccl_double_tree& dtree,
-                                           ccl_comm* comm) {
-    ccl_status_t status = ccl_status_success;
+ccl::status ccl_coll_build_double_tree_op(ccl_sched* sched,
+                                          ccl_coll_type coll_type,
+                                          ccl_buffer send_buf,
+                                          ccl_buffer recv_buf,
+                                          size_t count,
+                                          const ccl_datatype& dtype,
+                                          ccl::reduction op,
+                                          const ccl_double_tree& dtree,
+                                          ccl_comm* comm) {
+    ccl::status status = ccl::status::success;
 
     LOG_DEBUG("build double tree ", ccl_coll_type_to_str(coll_type));
 
