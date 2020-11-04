@@ -12,8 +12,7 @@ DEFINE_KERNEL_TYPES_FOR_OP(reduce_scatter, max);
 
 namespace ring_single_device_case {
 
-namespace ring_reduce_scatter_case {
-}
+namespace ring_reduce_scatter_case {}
 
 TYPED_TEST_CASE(ring_reduce_scatter_single_device_fixture, TestTypesAndOps);
 
@@ -72,8 +71,10 @@ TYPED_TEST(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single
 
             //allocate flags & memory
             // memory
-            auto mem_send = device.alloc_memory<native_type>(send_buffer_size, sizeof(native_type), ctx);
-            auto mem_recv = device.alloc_memory<native_type>(recv_buffer_size, sizeof(native_type), ctx);
+            auto mem_send =
+                device.alloc_memory<native_type>(send_buffer_size, sizeof(native_type), ctx);
+            auto mem_recv =
+                device.alloc_memory<native_type>(recv_buffer_size, sizeof(native_type), ctx);
             auto temp_recv =
                 device.alloc_memory<native_type>(2 * recv_buffer_size, sizeof(native_type), ctx);
 

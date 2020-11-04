@@ -116,11 +116,12 @@ bool device_group_ring_topology::build_specific_topology(
     return true;
 }
 
-bool device_group_ring_topology::build_specific(std::ostream& out,
-                                                const ccl::context_comm_addr& comm_addr,
-                                                const ccl::device_indices_type& group_device_indices,
-                                                const detail::plain_graph& graph,
-                                                const detail::adjacency_matrix& matrix) {
+bool device_group_ring_topology::build_specific(
+    std::ostream& out,
+    const ccl::context_comm_addr& comm_addr,
+    const ccl::device_indices_type& group_device_indices,
+    const detail::plain_graph& graph,
+    const detail::adjacency_matrix& matrix) {
     bool result = build_specific_topology<ccl::device_topology_type::ring>(
         out, comm_addr, group_device_indices, graph);
     /*
@@ -193,9 +194,8 @@ bool device_group_ring_topology::build_scale_up_specific_topology(
         // all loca group devices in different graph would be linked by scale_up_proxy
         // each local group ( in graph) must have at least one scale_up_proxy device
         const ccl::device_index_type& last_in_graph_index = *graph.rbegin();
-        auto scale_virt =
-            detail::add_numa_proxy_device<ccl_virtual_gpu_comm, group_id(), class_id>(
-                *group_gpu_comms, last_in_graph_index, context, devices_factory);
+        auto scale_virt = detail::add_numa_proxy_device<ccl_virtual_gpu_comm, group_id(), class_id>(
+            *group_gpu_comms, last_in_graph_index, context, devices_factory);
         if (scale_virt) {
             out << "Added scaleup virtual device:\n"
                 << scale_virt->to_string() << "\nby idx: " << last_in_graph_index << std::endl;

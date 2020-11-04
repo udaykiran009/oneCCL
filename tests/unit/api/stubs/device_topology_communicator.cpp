@@ -7,20 +7,19 @@
 
 using namespace ccl;
 
-device_group_a2a_communicator::device_group_a2a_communicator(
-    ccl::unified_device_type&& device,
-    ccl::unified_context_type&& ctx,
-    size_t thread_idx,
-    size_t process_idx,
-    const ccl::comm_split_attr& attr)
-        : base_t(std::move(device), std::move(ctx), thread_idx, process_idx, /*comm_attr, */ attr) {}
+device_group_a2a_communicator::device_group_a2a_communicator(ccl::unified_device_type&& device,
+                                                             ccl::unified_context_type&& ctx,
+                                                             size_t thread_idx,
+                                                             size_t process_idx,
+                                                             const ccl::comm_split_attr& attr)
+        : base_t(std::move(device), std::move(ctx), thread_idx, process_idx, /*comm_attr, */ attr) {
+}
 
 void device_group_a2a_communicator::visit(ccl::gpu_comm_attr& comm_attr) {}
 
-ccl::event device_group_a2a_communicator::barrier(
-    const ccl::stream::impl_value_t& stream,
-    const ccl::barrier_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event device_group_a2a_communicator::barrier(const ccl::stream::impl_value_t& stream,
+                                                  const ccl::barrier_attr& attr,
+                                                  const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
 
@@ -65,24 +64,22 @@ ccl::event device_group_a2a_communicator::allreduce_impl(
 }
 
 /* alltoall */
-ccl::event device_group_a2a_communicator::alltoall_impl(
-    const void* send_buf,
-    void* recv_buf,
-    size_t count,
-    ccl::datatype dtype,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::alltoall_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event device_group_a2a_communicator::alltoall_impl(const void* send_buf,
+                                                        void* recv_buf,
+                                                        size_t count,
+                                                        ccl::datatype dtype,
+                                                        const ccl::stream::impl_value_t& stream,
+                                                        const ccl::alltoall_attr& attr,
+                                                        const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
-ccl::event device_group_a2a_communicator::alltoall_impl(
-    const ccl::vector_class<void*>& send_buf,
-    const ccl::vector_class<void*>& recv_buf,
-    size_t count,
-    ccl::datatype dtype,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::alltoall_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event device_group_a2a_communicator::alltoall_impl(const ccl::vector_class<void*>& send_buf,
+                                                        const ccl::vector_class<void*>& recv_buf,
+                                                        size_t count,
+                                                        ccl::datatype dtype,
+                                                        const ccl::stream::impl_value_t& stream,
+                                                        const ccl::alltoall_attr& attr,
+                                                        const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
 
@@ -126,17 +123,16 @@ ccl::event device_group_a2a_communicator::broadcast_impl(
 }
 
 /* reduce */
-ccl::event device_group_a2a_communicator::reduce_impl(
-    const void* send_buf,
-    void* recv_buf,
-    size_t count,
-    ccl::datatype dtype,
-    ccl::reduction reduction,
-    int root,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::reduce_attr& attr,
+ccl::event device_group_a2a_communicator::reduce_impl(const void* send_buf,
+                                                      void* recv_buf,
+                                                      size_t count,
+                                                      ccl::datatype dtype,
+                                                      ccl::reduction reduction,
+                                                      int root,
+                                                      const ccl::stream::impl_value_t& stream,
+                                                      const ccl::reduce_attr& attr,
 
-    const ccl::vector_class<ccl::event>& deps) {
+                                                      const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
 
@@ -248,13 +244,12 @@ ccl::event device_group_a2a_communicator::allreduce_impl(
 
 /* alltoall */
 template <class buffer_type>
-ccl::event device_group_a2a_communicator::alltoall_impl(
-    const buffer_type* send_buf,
-    buffer_type* recv_buf,
-    size_t count,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::alltoall_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event device_group_a2a_communicator::alltoall_impl(const buffer_type* send_buf,
+                                                        buffer_type* recv_buf,
+                                                        size_t count,
+                                                        const ccl::stream::impl_value_t& stream,
+                                                        const ccl::alltoall_attr& attr,
+                                                        const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
 template <class buffer_type>
@@ -270,13 +265,12 @@ ccl::event device_group_a2a_communicator::alltoall_impl(
 }
 
 template <class buffer_type>
-ccl::event device_group_a2a_communicator::alltoall_impl(
-    const buffer_type& send_buf,
-    buffer_type& recv_buf,
-    size_t count,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::alltoall_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event device_group_a2a_communicator::alltoall_impl(const buffer_type& send_buf,
+                                                        buffer_type& recv_buf,
+                                                        size_t count,
+                                                        const ccl::stream::impl_value_t& stream,
+                                                        const ccl::alltoall_attr& attr,
+                                                        const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
 template <class buffer_type>
@@ -365,28 +359,26 @@ ccl::event device_group_a2a_communicator::broadcast_impl(
 
 /* reduce */
 template <class buffer_type>
-ccl::event device_group_a2a_communicator::reduce_impl(
-    const buffer_type* send_buf,
-    buffer_type* recv_buf,
-    size_t count,
-    ccl::reduction reduction,
-    int root,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::reduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event device_group_a2a_communicator::reduce_impl(const buffer_type* send_buf,
+                                                      buffer_type* recv_buf,
+                                                      size_t count,
+                                                      ccl::reduction reduction,
+                                                      int root,
+                                                      const ccl::stream::impl_value_t& stream,
+                                                      const ccl::reduce_attr& attr,
+                                                      const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
 
 template <class buffer_type>
-ccl::event device_group_a2a_communicator::reduce_impl(
-    const buffer_type& send_buf,
-    buffer_type& recv_buf,
-    size_t count,
-    ccl::reduction reduction,
-    int root,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::reduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event device_group_a2a_communicator::reduce_impl(const buffer_type& send_buf,
+                                                      buffer_type& recv_buf,
+                                                      size_t count,
+                                                      ccl::reduction reduction,
+                                                      int root,
+                                                      const ccl::stream::impl_value_t& stream,
+                                                      const ccl::reduce_attr& attr,
+                                                      const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
 /* reduce_scatter */
@@ -454,20 +446,22 @@ SYCL_COMM_INTERFACE_COLL_INSTANTIATION(device_group_a2a_communicator);
 #endif /* CCL_ENABLE_SYCL */
 
 ////////////////////////////////////////////////////////////////
-device_group_ring_communicator::device_group_ring_communicator(
-    ccl::unified_device_type&& device,
-    ccl::unified_context_type&& context,
-    size_t thread_idx,
-    size_t process_idx,
-    const ccl::comm_split_attr& attr)
-        : base_t(std::move(device), std::move(context), thread_idx, process_idx, /*comm_attr, */ attr) {}
+device_group_ring_communicator::device_group_ring_communicator(ccl::unified_device_type&& device,
+                                                               ccl::unified_context_type&& context,
+                                                               size_t thread_idx,
+                                                               size_t process_idx,
+                                                               const ccl::comm_split_attr& attr)
+        : base_t(std::move(device),
+                 std::move(context),
+                 thread_idx,
+                 process_idx,
+                 /*comm_attr, */ attr) {}
 
 void device_group_ring_communicator::visit(ccl::gpu_comm_attr& comm_attr) {}
 
-ccl::event device_group_ring_communicator::barrier(
-    const ccl::stream::impl_value_t& stream,
-    const ccl::barrier_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event device_group_ring_communicator::barrier(const ccl::stream::impl_value_t& stream,
+                                                   const ccl::barrier_attr& attr,
+                                                   const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
 
@@ -574,17 +568,16 @@ ccl::event device_group_ring_communicator::broadcast_impl(
 }
 
 /* reduce */
-ccl::event device_group_ring_communicator::reduce_impl(
-    const void* send_buf,
-    void* recv_buf,
-    size_t count,
-    ccl::datatype dtype,
-    ccl::reduction reduction,
-    int root,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::reduce_attr& attr,
+ccl::event device_group_ring_communicator::reduce_impl(const void* send_buf,
+                                                       void* recv_buf,
+                                                       size_t count,
+                                                       ccl::datatype dtype,
+                                                       ccl::reduction reduction,
+                                                       int root,
+                                                       const ccl::stream::impl_value_t& stream,
+                                                       const ccl::reduce_attr& attr,
 
-    const ccl::vector_class<ccl::event>& deps) {
+                                                       const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
 
@@ -813,28 +806,26 @@ ccl::event device_group_ring_communicator::broadcast_impl(
 
 /* reduce */
 template <class buffer_type>
-ccl::event device_group_ring_communicator::reduce_impl(
-    const buffer_type* send_buf,
-    buffer_type* recv_buf,
-    size_t count,
-    ccl::reduction reduction,
-    int root,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::reduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event device_group_ring_communicator::reduce_impl(const buffer_type* send_buf,
+                                                       buffer_type* recv_buf,
+                                                       size_t count,
+                                                       ccl::reduction reduction,
+                                                       int root,
+                                                       const ccl::stream::impl_value_t& stream,
+                                                       const ccl::reduce_attr& attr,
+                                                       const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
 
 template <class buffer_type>
-ccl::event device_group_ring_communicator::reduce_impl(
-    const buffer_type& send_buf,
-    buffer_type& recv_buf,
-    size_t count,
-    ccl::reduction reduction,
-    int root,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::reduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event device_group_ring_communicator::reduce_impl(const buffer_type& send_buf,
+                                                       buffer_type& recv_buf,
+                                                       size_t count,
+                                                       ccl::reduction reduction,
+                                                       int root,
+                                                       const ccl::stream::impl_value_t& stream,
+                                                       const ccl::reduce_attr& attr,
+                                                       const ccl::vector_class<ccl::event>& deps) {
     return {};
 }
 /* reduce_scatter */

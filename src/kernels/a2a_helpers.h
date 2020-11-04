@@ -4,10 +4,10 @@
 #include "common_helpers.h"
 
 #define DEFINE_A2A_COMM_DATA(NAME, T) \
-    typedef struct __attribute__((packed)) a2a_gpu_comm_data_##NAME {      \
-        __global T* recv_buf;                                           \
-        __global int* ready_to_receive_flag;                            \
-        __global int* data_sent_flag;                                   \
+    typedef struct __attribute__((packed)) a2a_gpu_comm_data_##NAME { \
+        __global T* recv_buf; \
+        __global int* ready_to_receive_flag; \
+        __global int* data_sent_flag; \
     } a2a_gpu_comm_data_##NAME;
 
 DEFINE_A2A_COMM_DATA(int8, int8_t)

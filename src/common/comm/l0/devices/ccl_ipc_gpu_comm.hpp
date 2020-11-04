@@ -16,9 +16,7 @@ public:
     using base = ccl_gpu_base_comm<ccl_ipc_gpu_comm, gpu_types::IPC_DESTINATION_GPU>;
     using base::comm_rank_t;
     using impl_t = ccl_ipc_gpu_comm;
-    template <ccl_coll_type algo_type,
-              ccl::group_split_type group,
-              ccl::device_topology_type mode>
+    template <ccl_coll_type algo_type, ccl::group_split_type group, ccl::device_topology_type mode>
     using gpu_module_t = ipc_dst_device_coll_module<algo_type, group, mode>;
 
     template <ccl_coll_type algo_type,

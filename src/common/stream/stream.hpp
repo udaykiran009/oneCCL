@@ -11,10 +11,10 @@
 #include "internal_types.hpp"
 
 namespace ccl {
-    namespace detail {
-        class environment;
-    }
+namespace detail {
+class environment;
 }
+} // namespace ccl
 
 /*
 ccl::status CCL_API ccl_stream_create(stream_type type,
@@ -62,7 +62,7 @@ public:
 
     using native_handle_traits_t =
         ccl::detail::ccl_api_type_attr_traits<ccl::stream_attr_id,
-                                               ccl::stream_attr_id::native_handle>;
+                                              ccl::stream_attr_id::native_handle>;
     typename native_handle_traits_t::return_type& get_attribute_value(
         const native_handle_traits_t& id);
 
@@ -76,7 +76,7 @@ public:
 
     typename context_traits_t::return_type& set_attribute_value(typename context_traits_t::type val,
                                                                 const context_traits_t& t);
-/*
+    /*
     typename context_traits_t::return_type& set_attribute_value(
         typename context_traits_t::handle_t val,
         const context_traits_t& t);

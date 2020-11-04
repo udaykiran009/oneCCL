@@ -13,7 +13,6 @@
 
 class atl_wrapper {
 public:
-
     static void set_internal_env(const atl_attr_t& attr);
 
     ~atl_wrapper();
@@ -173,7 +172,8 @@ public:
                                        atl_datatype_t dtype,
                                        atl_reduction_t op,
                                        atl_req_t* req) {
-        return transport->atl_ep_reduce_scatter(eps[ep_idx], send_buf, recv_buf, recv_len, dtype, op, req);
+        return transport->atl_ep_reduce_scatter(
+            eps[ep_idx], send_buf, recv_buf, recv_len, dtype, op, req);
     }
 
     atl_status_t atl_ep_read(size_t ep_idx,
@@ -251,7 +251,6 @@ public:
     std::unique_ptr<ccl_atl_tag> tag;
 
 private:
-
     int rank;
     int size;
 
@@ -261,6 +260,6 @@ private:
     std::shared_ptr<iatl> transport;
     std::unique_ptr<ipmi> pmi;
     atl_ep_t** eps = nullptr;
-    
+
     void init_transport();
 };

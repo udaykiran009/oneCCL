@@ -172,7 +172,8 @@ std::shared_ptr<ccl::kvs> build_kvs(int mpi_rank) {
         kvs_instance = ccl::create_main_kvs();
         main_addr = kvs_instance->get_address();
         MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-    } else {
+    }
+    else {
         MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
         kvs_instance = ccl::create_kvs(main_addr);
     }
@@ -186,28 +187,25 @@ inline size_t take_mpi_rank_id_offest(const size_t mpi_rank_in_cluster,
         throw std::runtime_error(std::string(__FUNCTION__) +
                                  " - Only TWO processes support case !\n");
     }
-        return total_device_in_cluster;
+    return total_device_in_cluster;
 }
 
-ccl::process_device_indices_type extract_indices_for_threads(const size_t  mpi_rank_in_cluster,
-                                                          const int current_mpi_rank,
-                                                          std::vector<std::string> thread_gpu_affinity,
-                                                          size_t& total_device_in_cluster,
-                                                          std::vector<size_t>& total_devices_in_process,
-                                                          std::map<size_t,
-                                                                 std::vector<ccl::communicator::device_type>>&
-                                                                                        devices_for_current_mpi_rank) {
-
+ccl::process_device_indices_type extract_indices_for_threads(
+    const size_t mpi_rank_in_cluster,
+    const int current_mpi_rank,
+    std::vector<std::string> thread_gpu_affinity,
+    size_t& total_device_in_cluster,
+    std::vector<size_t>& total_devices_in_process,
+    std::map<size_t, std::vector<ccl::communicator::device_type>>& devices_for_current_mpi_rank) {
     ccl::process_device_indices_type thread_group_affinity;
 
     for (size_t thread_index = 0; thread_index < thread_gpu_affinity.size(); thread_index++) {
-                    ccl::device_indices_type device_group_affinity;
+        ccl::device_indices_type device_group_affinity;
         str_to_mset<ccl::device_index_type>(
             thread_gpu_affinity[thread_index].c_str(), device_group_affinity, ',');
 
         std::cout << " Extracted GPU indices for thread by id: " << thread_index
-                  << ", devices in threads count: " << device_group_affinity.size()
-                  << std::endl;
+                  << ", devices in threads count: " << device_group_affinity.size() << std::endl;
         total_device_in_cluster += device_group_affinity.size();
         total_devices_in_process[mpi_rank_in_cluster] += device_group_affinity.size();
         thread_group_affinity[thread_index] = device_group_affinity;
@@ -222,9 +220,8 @@ ccl::process_device_indices_type extract_indices_for_threads(const size_t  mpi_r
     return thread_group_affinity;
 }
 
-std::vector<ccl::communicator::device_type> set_union_devices_in_current_process(const std::map<size_t,
-                                                                      std::vector<ccl::communicator::device_type>>&
-                                                                                             devices_for_mpi_rank) {
+std::vector<ccl::communicator::device_type> set_union_devices_in_current_process(
+    const std::map<size_t, std::vector<ccl::communicator::device_type>>& devices_for_mpi_rank) {
     std::vector<ccl::communicator::device_type> devices_in_process;
     for (auto& thread_devices : devices_for_mpi_rank) {
         devices_in_process.insert(

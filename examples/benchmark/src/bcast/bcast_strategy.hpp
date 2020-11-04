@@ -26,6 +26,7 @@ struct bcast_strategy_impl {
                         req_list_t& reqs,
                         Args&&... args) {
         (void)send_buf;
-        reqs.push_back(ccl::broadcast(recv_buf, count, COLL_ROOT, comm, std::forward<Args>(args)...));
+        reqs.push_back(
+            ccl::broadcast(recv_buf, count, COLL_ROOT, comm, std::forward<Args>(args)...));
     }
 };

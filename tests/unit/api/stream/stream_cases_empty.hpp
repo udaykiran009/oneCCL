@@ -14,5 +14,4 @@
 
 #include "environment.hpp"
 
-namespace stream_suite {
-}
+namespace stream_suite {}

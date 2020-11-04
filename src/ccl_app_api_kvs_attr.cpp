@@ -16,8 +16,7 @@ namespace v1 {
 #define API_FORCE_INSTANTIATION(class_name, IN_attrId, IN_Value, OUT_Traits_Value) \
     template CCL_API IN_Value class_name::set<IN_attrId, IN_Value>(const IN_Value& v); \
 \
-    template CCL_API const typename OUT_Traits_Value<kvs_attr_id, \
-                                                              IN_attrId>::type& \
+    template CCL_API const typename OUT_Traits_Value<kvs_attr_id, IN_attrId>::type& \
     class_name::get<IN_attrId>() const; \
 \
     template CCL_API bool class_name::is_valid<IN_attrId>() const noexcept;
@@ -26,17 +25,15 @@ namespace v1 {
  * kvs_attr attributes definition
  */
 CCL_API kvs_attr::kvs_attr(ccl_empty_attr)
-    : base_t(impl_value_t(new impl_t(ccl_empty_attr::version))) {}
-CCL_API kvs_attr::kvs_attr(kvs_attr&& src)
-    : base_t(std::move(src)) {}
+        : base_t(impl_value_t(new impl_t(ccl_empty_attr::version))) {}
+CCL_API kvs_attr::kvs_attr(kvs_attr&& src) : base_t(std::move(src)) {}
 
-CCL_API kvs_attr::kvs_attr(const kvs_attr& src)
-    : base_t(src) {}
+CCL_API kvs_attr::kvs_attr(const kvs_attr& src) : base_t(src) {}
 
 CCL_API kvs_attr::kvs_attr(
-    const typename detail::ccl_api_type_attr_traits<kvs_attr_id,
-        kvs_attr_id::version>::return_type& version)
-    : base_t(impl_value_t(new impl_t(version))) {}
+    const typename detail::ccl_api_type_attr_traits<kvs_attr_id, kvs_attr_id::version>::return_type&
+        version)
+        : base_t(impl_value_t(new impl_t(version))) {}
 
 CCL_API kvs_attr::~kvs_attr() noexcept {}
 

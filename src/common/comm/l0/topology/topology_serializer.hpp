@@ -138,10 +138,9 @@ struct device_path_deserializer : device_path_serializable {
         return ret;
     }
 
-    static detail::plain_graph_list deserialize_graph_list_indices(
-        const raw_data_t& list,
-        size_t& deserialized_bytes_count,
-        size_t offset = 0);
+    static detail::plain_graph_list deserialize_graph_list_indices(const raw_data_t& list,
+                                                                   size_t& deserialized_bytes_count,
+                                                                   size_t offset = 0);
     static detail::global_sorted_plain_graphs deserialize_global_graph_list_indices(
         const raw_data_t& list);
 
@@ -149,15 +148,15 @@ struct device_path_deserializer : device_path_serializable {
         const raw_data_t& list,
         size_t& deserialized_bytes_count,
         size_t offset = 0);
-    static detail::global_sorted_colored_plain_graphs
-    deserialize_global_colored_graph_list_indices(const raw_data_t& list);
+    static detail::global_sorted_colored_plain_graphs deserialize_global_colored_graph_list_indices(
+        const raw_data_t& list);
 
     static ccl::device_index_type extract_index(raw_data_t::const_iterator it_begin,
                                                 raw_data_t::const_iterator it_end,
                                                 std::true_type raw_index);
     static detail::colored_idx extract_index(raw_data_t::const_iterator it_begin,
-                                              raw_data_t::const_iterator it_end,
-                                              std::false_type colored_index);
+                                             raw_data_t::const_iterator it_end,
+                                             std::false_type colored_index);
 
 private:
     template <class T>

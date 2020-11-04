@@ -1,7 +1,6 @@
 #pragma once
 
 struct alltoallv_strategy_impl {
-
     std::vector<size_t> send_counts;
     std::vector<size_t> recv_counts;
 
@@ -39,7 +38,6 @@ struct alltoallv_strategy_impl {
                         const bench_exec_attr& bench_attr,
                         req_list_t& reqs,
                         Args&&... args) {
-
         for (int idx = 0; idx < comm.size(); idx++) {
             send_counts[idx] = count;
             recv_counts[idx] = count;

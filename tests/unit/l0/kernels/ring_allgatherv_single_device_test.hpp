@@ -9,9 +9,7 @@ DEFINE_KERNEL_TYPES(allgatherv)
 
 namespace ring_single_device_case {
 
-namespace ring_allgatherv_case {
-
-}
+namespace ring_allgatherv_case {}
 
 TYPED_TEST_CASE(ring_allgatherv_single_device_fixture, TestTypes);
 
@@ -89,7 +87,8 @@ TYPED_TEST(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_
             // allocate flags & memory
             // memory
             auto mem_send = device.alloc_memory<native_type>(send_count, sizeof(native_type), ctx);
-            auto mem_recv = device.alloc_memory<native_type>(recv_buffer_size, sizeof(native_type), ctx);
+            auto mem_recv =
+                device.alloc_memory<native_type>(recv_buffer_size, sizeof(native_type), ctx);
 
             mem_send.enqueue_write_sync(
                 send_values.begin() + recv_offsets[thread_idx],
@@ -133,13 +132,13 @@ TYPED_TEST(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_
 
     std::vector<ze_command_queue_group_properties_t> properties(cmdqueueGroupCount);
     ze_command_queue_group_properties_t* cmdqueueGroupProperties = properties.data();
-    zeDeviceGetCommandQueueGroupProperties(device.get(), &cmdqueueGroupCount, cmdqueueGroupProperties);
-
+    zeDeviceGetCommandQueueGroupProperties(
+        device.get(), &cmdqueueGroupCount, cmdqueueGroupProperties);
 
     // Find a command queue type that support compute
     std::vector<uint32_t> ordinals;
-    for( uint32_t i = 0; i < cmdqueueGroupCount; ++i ) {
-        if( cmdqueueGroupProperties[ i ].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE ) {
+    for (uint32_t i = 0; i < cmdqueueGroupCount; ++i) {
+        if (cmdqueueGroupProperties[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
             ordinals.push_back(i);
         }
     }
@@ -285,7 +284,7 @@ TYPED_TEST(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_
                         continue; //skip this argument
                     }
 
-                    out << "index: " << mem_offset[i] << ": " << (void*) mem << std::endl;
+                    out << "index: " << mem_offset[i] << ": " << (void*)mem << std::endl;
                     result = zeKernelSetArgumentValue(kernel, mem_offset[i], sizeof(mem), &mem);
                     if (result != ZE_RESULT_SUCCESS) {
                         throw std::runtime_error(

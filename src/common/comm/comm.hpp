@@ -17,9 +17,9 @@ using ccl_rank2rank_map = std::vector<int>;
 
 namespace ccl {
 namespace v1 {
-    class kvs_interface;
+class kvs_interface;
 }
-}
+} // namespace ccl
 
 class alignas(CACHELINE_SIZE) ccl_comm {
 public:
@@ -149,7 +149,6 @@ public:
     std::unique_ptr<ccl_allreduce_2d_builder> allreduce_2d_builder;
 
 private:
-
     void allocate_resources();
 
     int m_rank;

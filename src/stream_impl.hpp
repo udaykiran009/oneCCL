@@ -88,13 +88,13 @@ stream::stream(const typename detail::ccl_api_type_attr_traits<stream_attr_id, s
 
 #define API_STREAM_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value) \
     template CCL_API typename ccl::detail::ccl_api_type_attr_traits<ccl::stream_attr_id, \
-                                                                     IN_attrId>::return_type \
+                                                                    IN_attrId>::return_type \
     ccl::stream::set<IN_attrId, IN_Value>(const IN_Value& v);
 
 #define API_STREAM_FORCE_INSTANTIATION_GET(IN_attrId) \
-    template CCL_API const typename \
-        ccl::detail::ccl_api_type_attr_traits<ccl::stream_attr_id, IN_attrId>::return_type& \
-        ccl::stream::get<IN_attrId>() const;
+    template CCL_API const typename ccl::detail::ccl_api_type_attr_traits<ccl::stream_attr_id, \
+                                                                          IN_attrId>::return_type& \
+    ccl::stream::get<IN_attrId>() const;
 
 #define API_STREAM_FORCE_INSTANTIATION(IN_attrId, IN_Value) \
     API_STREAM_FORCE_INSTANTIATION_SET(IN_attrId, IN_Value) \

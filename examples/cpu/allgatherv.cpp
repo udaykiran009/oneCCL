@@ -1,13 +1,11 @@
 #include "base.hpp"
 
-void run_collective(
-    const char* cmd_name,
-    std::vector<float>& send_buf,
-    std::vector<float>& recv_buf,
-    std::vector<size_t>& recv_counts,
-    const ccl::communicator& comm,
-    const ccl::allgatherv_attr& attr) {
-
+void run_collective(const char* cmd_name,
+                    std::vector<float>& send_buf,
+                    std::vector<float>& recv_buf,
+                    std::vector<size_t>& recv_counts,
+                    const ccl::communicator& comm,
+                    const ccl::allgatherv_attr& attr) {
     std::chrono::system_clock::duration exec_time{ 0 };
     float expected = send_buf.size();
     float received;
@@ -16,13 +14,8 @@ void run_collective(
 
     for (size_t idx = 0; idx < ITERS; ++idx) {
         auto start = std::chrono::system_clock::now();
-        ccl::allgatherv(
-            send_buf.data(),
-            send_buf.size(),
-            recv_buf.data(),
-            recv_counts,
-            comm,
-            attr).wait();
+        ccl::allgatherv(send_buf.data(), send_buf.size(), recv_buf.data(), recv_counts, comm, attr)
+            .wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
 
@@ -43,14 +36,12 @@ void run_collective(
               << ", us" << std::endl;
 }
 
-void run_collective_vector(
-    const char* cmd_name,
-    std::vector<float>& send_buf,
-    std::vector<float*>& recv_bufs,
-    std::vector<size_t>& recv_counts,
-    const ccl::communicator& comm,
-    const ccl::allgatherv_attr& attr) {
-
+void run_collective_vector(const char* cmd_name,
+                           std::vector<float>& send_buf,
+                           std::vector<float*>& recv_bufs,
+                           std::vector<size_t>& recv_counts,
+                           const ccl::communicator& comm,
+                           const ccl::allgatherv_attr& attr) {
     std::chrono::system_clock::duration exec_time{ 0 };
     float expected = send_buf.size();
     float received;
@@ -59,13 +50,8 @@ void run_collective_vector(
 
     for (size_t idx = 0; idx < ITERS; ++idx) {
         auto start = std::chrono::system_clock::now();
-        ccl::allgatherv(
-            send_buf.data(),
-            send_buf.size(),
-            recv_bufs,
-            recv_counts,
-            comm,
-            attr).wait();
+        ccl::allgatherv(send_buf.data(), send_buf.size(), recv_bufs, recv_counts, comm, attr)
+            .wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
 
@@ -89,7 +75,6 @@ void run_collective_vector(
 }
 
 int main() {
-
     ccl::init();
 
     int size, rank;
@@ -116,35 +101,29 @@ int main() {
     auto comm = ccl::create_communicator(size, rank, dev, ctx, kvs, comm_attr);
     auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
 
-    MSG_LOOP(
-        comm,
+    MSG_LOOP(comm,
 
-        std::vector<float> send_buf(msg_count, static_cast<float>(msg_count));
-        std::vector<float> recv_buf(comm.size() * msg_count, 0);
-        std::vector<float*> recv_bufs(comm.size(), nullptr);
-        std::vector<size_t> recv_counts(comm.size(), msg_count);
+             std::vector<float> send_buf(msg_count, static_cast<float>(msg_count));
+             std::vector<float> recv_buf(comm.size() * msg_count, 0);
+             std::vector<float*> recv_bufs(comm.size(), nullptr);
+             std::vector<size_t> recv_counts(comm.size(), msg_count);
 
-        for (int idx = 0; idx < comm.size(); idx++)
-            recv_bufs[idx] = new float[msg_count];
+             for (int idx = 0; idx < comm.size(); idx++) recv_bufs[idx] = new float[msg_count];
 
-        attr.set<ccl::operation_attr_id::to_cache>(false);
-        run_collective(
-            "warmup_allgatherv", send_buf, recv_buf, recv_counts, comm, attr);
-        run_collective_vector(
-            "warmup_allgatherv_vector", send_buf, recv_bufs, recv_counts, comm, attr);
+             attr.set<ccl::operation_attr_id::to_cache>(false);
+             run_collective("warmup_allgatherv", send_buf, recv_buf, recv_counts, comm, attr);
+             run_collective_vector(
+                 "warmup_allgatherv_vector", send_buf, recv_bufs, recv_counts, comm, attr);
 
-        attr.set<ccl::operation_attr_id::to_cache>(true);
-        run_collective(
-            "persistent_allgatherv", send_buf, recv_buf, recv_counts, comm, attr);
-        run_collective_vector(
-            "persistent_allgatherv_vector", send_buf, recv_bufs, recv_counts, comm, attr);
+             attr.set<ccl::operation_attr_id::to_cache>(true);
+             run_collective("persistent_allgatherv", send_buf, recv_buf, recv_counts, comm, attr);
+             run_collective_vector(
+                 "persistent_allgatherv_vector", send_buf, recv_bufs, recv_counts, comm, attr);
 
-        attr.set<ccl::operation_attr_id::to_cache>(false);
-        run_collective(
-            "regular_allgatherv", send_buf, recv_buf, recv_counts, comm, attr);
-        run_collective_vector(
-            "regular_allgatherv_vector", send_buf, recv_bufs, recv_counts, comm, attr);
-    );
+             attr.set<ccl::operation_attr_id::to_cache>(false);
+             run_collective("regular_allgatherv", send_buf, recv_buf, recv_counts, comm, attr);
+             run_collective_vector(
+                 "regular_allgatherv_vector", send_buf, recv_bufs, recv_counts, comm, attr););
 
     MPI_Finalize();
 

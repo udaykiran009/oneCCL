@@ -12,8 +12,7 @@ public:
 
     ccl_reduce_attr_impl_t(
         const typename detail::ccl_api_type_attr_traits<operation_attr_id,
-                                                            operation_attr_id::version>::type&
-            version);
+                                                        operation_attr_id::version>::type& version);
 
     using reduction_fn_traits_t =
         detail::ccl_api_type_attr_traits<reduce_attr_id, reduce_attr_id::reduction_fn>;

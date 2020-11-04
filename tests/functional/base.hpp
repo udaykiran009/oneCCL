@@ -132,8 +132,9 @@ public:
             case DT_INT64: return run<int64_t>(param);
             case DT_UINT64: return run<uint64_t>(param);
             case DT_FLOAT16: return TEST_SUCCESS;*/
-            case DT_FLOAT32: return run<float>(param);
-            /*case DT_FLOAT64: return run<double>(param);*/
+            case DT_FLOAT32:
+                return run<float>(param);
+                /*case DT_FLOAT64: return run<double>(param);*/
 #ifdef CCL_BF16_COMPILER
             case DT_BFLOAT16: return run<float>(param);
 #endif

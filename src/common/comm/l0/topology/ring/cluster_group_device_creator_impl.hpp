@@ -493,9 +493,9 @@ inline bool cluster_group_device_creator::build_impl(
                     indexed_devices_for_current_thread, id_ring);
             const auto& curr_scale_virt =
                 detail::get_device_with_min_rank<ccl_numa_proxy<ccl_virtual_gpu_comm>,
-                                                  group_id(),
-                                                  class_id>(indexed_devices_for_current_thread,
-                                                            id_ring);
+                                                 group_id(),
+                                                 class_id>(indexed_devices_for_current_thread,
+                                                           id_ring);
 
             size_t tg_max_rank = std::max({ std::get<0>(curr_real),
                                             std::get<0>(curr_virt),
@@ -539,12 +539,12 @@ inline bool cluster_group_device_creator::build_impl(
                         next_thread_ring_topology, id_ring);
                 const auto& scale_real =
                     detail::get_device_with_max_rank<ccl_numa_proxy<ccl_gpu_comm>,
-                                                      group_id(),
-                                                      class_id>(next_thread_ring_topology, id_ring);
+                                                     group_id(),
+                                                     class_id>(next_thread_ring_topology, id_ring);
                 const auto& scale_virt =
                     detail::get_device_with_max_rank<ccl_numa_proxy<ccl_virtual_gpu_comm>,
-                                                      group_id(),
-                                                      class_id>(next_thread_ring_topology, id_ring);
+                                                     group_id(),
+                                                     class_id>(next_thread_ring_topology, id_ring);
                 if (next_rank != std::min({ std::get<0>(real),
                                             std::get<0>(virt),
                                             std::get<0>(scale_real),
@@ -632,12 +632,12 @@ inline bool cluster_group_device_creator::build_impl(
 
                     size_t inserted_device_type_index =
                         detail::inject_scaleup_device<group_id(),
-                                                       class_id,
-                                                       process_group_context,
-                                                       ccl_gpu_comm,
-                                                       ccl_virtual_gpu_comm,
-                                                       ccl_numa_proxy<ccl_gpu_comm>,
-                                                       ccl_numa_proxy<ccl_virtual_gpu_comm>>(
+                                                      class_id,
+                                                      process_group_context,
+                                                      ccl_gpu_comm,
+                                                      ccl_virtual_gpu_comm,
+                                                      ccl_numa_proxy<ccl_gpu_comm>,
+                                                      ccl_numa_proxy<ccl_virtual_gpu_comm>>(
                             out_indexed_devices, idx.index, context, devices_factory);
                     if (inserted_device_type_index != std::numeric_limits<size_t>::max()) {
                         out << "Inject scaleUp device by order: " << inserted_device_type_index

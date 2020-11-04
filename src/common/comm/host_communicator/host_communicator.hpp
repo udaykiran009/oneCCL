@@ -75,12 +75,14 @@ public:
     }
 
     ccl::group_split_type get_topology_type() const override {
-        throw ccl::exception(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
+        throw ccl::exception(std::string(__FUNCTION__) + " is not applicable for " +
+                             traits::name());
         return ccl::group_split_type::undetermined;
     }
 
     ccl::device_topology_type get_topology_class() const override {
-        throw ccl::exception(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
+        throw ccl::exception(std::string(__FUNCTION__) + " is not applicable for " +
+                             traits::name());
         return ccl::device_topology_type::undetermined;
     }
 
@@ -88,11 +90,11 @@ public:
 
     // collectives operation declarations
     ccl::event barrier(const stream::impl_value_t& op_stream,
-                                const barrier_attr& attr,
-                                const vector_class<event>& deps = {}) override;
+                       const barrier_attr& attr,
+                       const vector_class<event>& deps = {}) override;
     ccl::event barrier_impl(const stream::impl_value_t& op_stream,
-                                const barrier_attr& attr,
-                                const vector_class<event>& deps = {});
+                            const barrier_attr& attr,
+                            const vector_class<event>& deps = {});
 
     COMM_INTERFACE_COLL_METHODS(DEFINITION);
 #ifdef CCL_ENABLE_SYCL

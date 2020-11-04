@@ -179,11 +179,7 @@ void gather_expected_data(const std::vector<typename ccl::type_info<i_type>::nat
             size_t nnz = count;
             std::vector<size_t> recv_nnz(comm.size());
 
-            ccl::allgatherv(&nnz,
-                            sizeof(size_t),
-                            recv_nnz.data(),
-                            recv_counts,
-                            comm).wait();
+            ccl::allgatherv(&nnz, sizeof(size_t), recv_nnz.data(), recv_counts, comm).wait();
 
             /* gather indices and values */
             std::copy(recv_nnz.begin(), recv_nnz.end(), recv_counts.begin());
@@ -195,17 +191,11 @@ void gather_expected_data(const std::vector<typename ccl::type_info<i_type>::nat
 
             recv_buf = malloc(sum_nnz * (sizeof(i_t) + VDIM_SIZE * sizeof(v_t)));
 
-            ccl::allgatherv(ibuffer.data(),
-                            ibuffer.size(),
-                            (i_t*)recv_buf,
-                            recv_nnz,
-                            comm).wait();
+            ccl::allgatherv(ibuffer.data(), ibuffer.size(), (i_t*)recv_buf, recv_nnz, comm).wait();
 
-            ccl::allgatherv(vbuffer.data(),
-                            vbuffer.size(),
-                            (v_t*)((i_t*)recv_buf + sum_nnz),
-                            recv_counts,
-                            comm).wait();
+            ccl::allgatherv(
+                vbuffer.data(), vbuffer.size(), (v_t*)((i_t*)recv_buf + sum_nnz), recv_counts, comm)
+                .wait();
         }
         else {
             recv_buf = malloc(count * (sizeof(i_t) + VDIM_SIZE * sizeof(v_t)));
@@ -284,7 +274,7 @@ void alloc_fn(size_t i_cnt,
               ccl::datatype vtype,
               const void* fn_ctx,
               void** out_i_buf,
-             void** out_v_buf) {
+              void** out_v_buf) {
     ASSERT(out_i_buf && out_v_buf, "out_i_buf or out_v_buf");
 
     recv_icount = i_cnt;
@@ -383,20 +373,23 @@ void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
 
         std::map<i_t, std::vector<v_t>> expected{};
         if (coalesce_mode != ccl::sparse_coalesce_mode::disable) {
-            expected =
-                coalesce_expected_data<i_type, ccl::datatype::float32>(expected_buf, expected_count);
+            expected = coalesce_expected_data<i_type, ccl::datatype::float32>(expected_buf,
+                                                                              expected_count);
         }
 
         auto attr = ccl::create_operation_attr<ccl::sparse_allreduce_attr>();
 
         if (callback_mode == sparse_test_callback_completion)
-            attr.set<ccl::sparse_allreduce_attr_id::completion_fn>((ccl::sparse_allreduce_completion_fn)completion_bf16_fn);
+            attr.set<ccl::sparse_allreduce_attr_id::completion_fn>(
+                (ccl::sparse_allreduce_completion_fn)completion_bf16_fn);
         else
-            attr.set<ccl::sparse_allreduce_attr_id::alloc_fn>((ccl::sparse_allreduce_alloc_fn)alloc_bf16_fn);
+            attr.set<ccl::sparse_allreduce_attr_id::alloc_fn>(
+                (ccl::sparse_allreduce_alloc_fn)alloc_bf16_fn);
 
         attr.set<ccl::sparse_allreduce_attr_id::coalesce_mode>(coalesce_mode);
 
-        void* send_vbuf_bf16 = malloc(ccl::get_datatype_size(ccl::datatype::bfloat16) * send_vbuf.size());
+        void* send_vbuf_bf16 =
+            malloc(ccl::get_datatype_size(ccl::datatype::bfloat16) * send_vbuf.size());
 
         convert_fp32_to_bf16_arrays(send_vbuf.data(), send_vbuf_bf16, send_vbuf.size());
 
@@ -406,24 +399,22 @@ void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
         recv_vbuf = nullptr;
         recv_vbuf_bf16 = nullptr;
 
-        RUN_COLLECTIVE(
-            ccl::preview::sparse_allreduce(
-                (void*)send_ibuf.data(),
-                send_ibuf.size(),
-                (void*)send_vbuf_bf16,
-                send_vbuf.size(),
-                nullptr,
-                0,
-                nullptr,
-                0,
-                i_type,
-                v_type,
-                ccl::reduction::sum,
-                (*comm),
-                attr),
-            (*comm),
-            ccl::type_info<i_type>::name(),
-            ccl::type_info<v_type>::name());
+        RUN_COLLECTIVE(ccl::preview::sparse_allreduce((void*)send_ibuf.data(),
+                                                      send_ibuf.size(),
+                                                      (void*)send_vbuf_bf16,
+                                                      send_vbuf.size(),
+                                                      nullptr,
+                                                      0,
+                                                      nullptr,
+                                                      0,
+                                                      i_type,
+                                                      v_type,
+                                                      ccl::reduction::sum,
+                                                      (*comm),
+                                                      attr),
+                       (*comm),
+                       ccl::type_info<i_type>::name(),
+                       ccl::type_info<v_type>::name());
 
         ASSERT(recv_icount, "recv_icount is zero");
         ASSERT(recv_vcount, "recv_vcount is zero");
@@ -438,7 +429,8 @@ void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
         double g = (log_base2 * BF16_PRECISION) / (1 - (log_base2 * BF16_PRECISION));
 
         if (coalesce_mode == ccl::sparse_coalesce_mode::disable) {
-            CHECK_WO_COALESCE((*comm), ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), true);
+            CHECK_WO_COALESCE(
+                (*comm), ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), true);
         }
         else {
             CHECK((*comm), ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), true);
@@ -478,7 +470,8 @@ void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
 
     void* expected_buf = nullptr;
     size_t expected_count = 0;
-    gather_expected_data<i_type, v_type>(send_ibuf, send_vbuf, &expected_buf, &expected_count, (*comm));
+    gather_expected_data<i_type, v_type>(
+        send_ibuf, send_vbuf, &expected_buf, &expected_count, (*comm));
     ASSERT(expected_buf, "expected_buf is nullptr");
     ASSERT(expected_count, "expected_count is zero");
 
@@ -490,7 +483,8 @@ void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
     auto attr = ccl::create_operation_attr<ccl::sparse_allreduce_attr>();
 
     if (callback_mode == sparse_test_callback_completion)
-        attr.set<ccl::sparse_allreduce_attr_id::completion_fn>((ccl::sparse_allreduce_completion_fn)completion_fn);
+        attr.set<ccl::sparse_allreduce_attr_id::completion_fn>(
+            (ccl::sparse_allreduce_completion_fn)completion_fn);
     else
         attr.set<ccl::sparse_allreduce_attr_id::alloc_fn>((ccl::sparse_allreduce_alloc_fn)alloc_fn);
 
@@ -501,22 +495,20 @@ void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
     recv_ibuf = nullptr;
     recv_vbuf = nullptr;
 
-    RUN_COLLECTIVE(
-        ccl::preview::sparse_allreduce(
-            send_ibuf.data(),
-            send_ibuf.size(),
-            send_vbuf.data(),
-            send_vbuf.size(),
-            (i_t*)nullptr,
-            0,
-            (v_t*)nullptr,
-            0,
-            ccl::reduction::sum,
-            (*comm),
-            attr),
-          (*comm),
-          ccl::type_info<i_type>::name(),
-          ccl::type_info<v_type>::name());
+    RUN_COLLECTIVE(ccl::preview::sparse_allreduce(send_ibuf.data(),
+                                                  send_ibuf.size(),
+                                                  send_vbuf.data(),
+                                                  send_vbuf.size(),
+                                                  (i_t*)nullptr,
+                                                  0,
+                                                  (v_t*)nullptr,
+                                                  0,
+                                                  ccl::reduction::sum,
+                                                  (*comm),
+                                                  attr),
+                   (*comm),
+                   ccl::type_info<i_type>::name(),
+                   ccl::type_info<v_type>::name());
 
     ASSERT(recv_icount, "recv_icount is zero");
     ASSERT(recv_vcount, "recv_vcount is zero");
@@ -526,7 +518,8 @@ void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
     double g;
 
     if (coalesce_mode == ccl::sparse_coalesce_mode::disable) {
-        CHECK_WO_COALESCE((*comm), ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), false);
+        CHECK_WO_COALESCE(
+            (*comm), ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), false);
     }
     else {
         CHECK((*comm), ccl::type_info<i_type>::name(), ccl::type_info<v_type>::name(), false);

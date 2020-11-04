@@ -10,17 +10,16 @@
 template <sycl_copy_direction direction>
 class sycl_copy_entry : public sched_entry {
 public:
-
     static constexpr const char* class_name() noexcept;
 
     sycl_copy_entry() = delete;
     sycl_copy_entry(ccl_sched* sched,
-                        ccl_buffer in_buf,
-                        ccl_buffer out_buf,
-                        size_t count,
-                        const ccl_datatype& dtype,
-                        const ccl_stream* stream,
-                        size_t offset = 0)
+                    ccl_buffer in_buf,
+                    ccl_buffer out_buf,
+                    size_t count,
+                    const ccl_datatype& dtype,
+                    const ccl_stream* stream,
+                    size_t offset = 0)
             : sched_entry(sched),
               in_buf(in_buf),
               out_buf(out_buf),
@@ -28,13 +27,7 @@ public:
               dtype(dtype),
               stream(stream),
               offset(offset),
-              copier(sycl_copier<direction>(
-                         in_buf,
-                         out_buf,
-                         count,
-                         dtype,
-                         offset))
-    {}
+              copier(sycl_copier<direction>(in_buf, out_buf, count, dtype, offset)) {}
 
     void start() override {
         LOG_DEBUG(class_name(), ": in_buf ", in_buf, ", out_buf ", out_buf, ", count ", count);
@@ -82,12 +75,12 @@ private:
     sycl_copier<direction> copier;
 };
 
-template<>
+template <>
 constexpr const char* sycl_copy_entry<sycl_copy_direction::d2h>::class_name() noexcept {
     return "SYCL_COPY_D2H";
 }
 
-template<>
+template <>
 constexpr const char* sycl_copy_entry<sycl_copy_direction::h2d>::class_name() noexcept {
     return "SYCL_COPY_H2D";
 }

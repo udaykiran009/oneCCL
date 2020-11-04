@@ -4,9 +4,8 @@
 #include "common/comm/l0/device_community_holder_utils.hpp"
 
 namespace native {
-#define TEMPLATE_DECL_ARG \
-    ccl::group_split_type group_id, ccl::device_topology_type... class_id
-#define TEMPLATE_DEF_ARG group_id, class_id...
+#define TEMPLATE_DECL_ARG ccl::group_split_type group_id, ccl::device_topology_type... class_id
+#define TEMPLATE_DEF_ARG  group_id, class_id...
 
 // community impl
 template <ccl::device_topology_type class_id>

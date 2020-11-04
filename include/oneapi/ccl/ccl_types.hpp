@@ -154,7 +154,7 @@ struct ccl_empty_attr {
     template <class attr>
     static attr create_empty();
 };
-}
+} // namespace v1
 
 using v1::ccl_empty_attr;
 

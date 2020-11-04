@@ -6,7 +6,7 @@
 
 namespace ccl {
 namespace detail {
-    class environment;
+class environment;
 }
 
 class init_attr_impl;
@@ -15,13 +15,10 @@ namespace v1 {
 
 struct ccl_empty_attr;
 
-class init_attr : public ccl_api_base_copyable<init_attr,
-                                               copy_on_write_access_policy,
-                                               init_attr_impl> {
+class init_attr
+        : public ccl_api_base_copyable<init_attr, copy_on_write_access_policy, init_attr_impl> {
 public:
-    using base_t = ccl_api_base_copyable<init_attr,
-                                         copy_on_write_access_policy,
-                                         init_attr_impl>;
+    using base_t = ccl_api_base_copyable<init_attr, copy_on_write_access_policy, init_attr_impl>;
 
     /**
      * Declare PIMPL type
@@ -52,16 +49,14 @@ public:
      * Get specific attribute value by @attrId
      */
     template <init_attr_id attrId>
-    const typename detail::ccl_api_type_attr_traits<init_attr_id,
-                                                    attrId>::return_type& get() const;
+    const typename detail::ccl_api_type_attr_traits<init_attr_id, attrId>::return_type& get() const;
 
 private:
     friend class ccl::detail::environment;
     friend struct ccl::ccl_empty_attr;
-    init_attr(
-        const typename detail::ccl_api_type_attr_traits<init_attr_id,
-                                                        init_attr_id::version>::return_type&
-            version);
+    init_attr(const typename detail::ccl_api_type_attr_traits<init_attr_id,
+                                                              init_attr_id::version>::return_type&
+                  version);
 };
 
 /**
@@ -69,13 +64,11 @@ private:
  */
 extern init_attr default_init_attr;
 
-
 /**
  * Fabric helpers
  */
 template <init_attr_id t, class value_type>
-constexpr auto attr_val(value_type v)
-    -> detail::attr_value_tripple<init_attr_id, t, value_type> {
+constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<init_attr_id, t, value_type> {
     return detail::attr_value_tripple<init_attr_id, t, value_type>(v);
 }
 

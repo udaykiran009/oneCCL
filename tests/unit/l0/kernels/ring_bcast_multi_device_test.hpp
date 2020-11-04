@@ -46,9 +46,9 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
         int rank_size = driver->devices.size();
         size_t elem_count = buffer_size;
 
-        this->output << "Create device memory & flags handles for device by index: "        \
-                     << std::to_string(device.get_device_id()) <<                           \
-                     ", as rank: (" << rank_device_idx << "/" << rank_size << ")" << std::endl;
+        this->output << "Create device memory & flags handles for device by index: "
+                     << std::to_string(device.get_device_id()) << ", as rank: (" << rank_device_idx
+                     << "/" << rank_size << ")" << std::endl;
 
         comm_param_storage[rank_device_idx].push_back(rank_idx);
         comm_param_storage[rank_device_idx].push_back(rank_size);
@@ -121,8 +121,8 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
         ccl_device& device = *dev_it->second;
         ccl_device::device_module& module = *(device_modules.find(&device)->second);
 
-        this->output << "Preparing kernels params: name of kernel: " << desc.pKernelName <<"\n"      \
-                     << "  device id: " << ccl::to_string(device.get_device_path()) << "\n"          \
+        this->output << "Preparing kernels params: name of kernel: " << desc.pKernelName << "\n"
+                     << "  device id: " << ccl::to_string(device.get_device_path()) << "\n"
                      << "  Rank idx" << rank_device_idx << std::endl;
 
         ze_kernel_handle_t handle = nullptr;
@@ -133,7 +133,7 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
                                          ", error: " + native::to_string(result));
             }
 
-            this->output << "Create list & queue with default properties on device by id: "         \
+            this->output << "Create list & queue with default properties on device by id: "
                          << ccl::to_string(device.get_device_path()) << std::endl;
 
             thread_kernels.emplace(rank_device_idx, std::move(handle));
@@ -161,9 +161,9 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
         auto& flag_handles = flags_storage.per_thread_storage.find(thread_idx)->second;
         auto& comm_handles = comm_param_storage.find(thread_idx)->second;
 
-        this->output <<"Launch kernel params: \n" <<                                             \
-                       " Device idx" << ccl::to_string(device.get_device_path()) <<              \
-                       ",  Rank idx" << rank_device_idx << std::endl;
+        this->output << "Launch kernel params: \n"
+                     << " Device idx" << ccl::to_string(device.get_device_path()) << ",  Rank idx"
+                     << rank_device_idx << std::endl;
 
         ccl_device::device_queue& queue = thread_queue.find(thread_idx)->second;
         ccl_device::device_cmd_list& list = thread_cmd_list.find(thread_idx)->second;

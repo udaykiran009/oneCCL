@@ -48,8 +48,7 @@ void user_thread_idx(size_t thread_idx,
 
     // Create device communicators
     std::vector<ccl::communicator> comms =
-        ccl::create_communicators(
-            total_devices_in_cluster, devices, ctx, kvs_instance);
+        ccl::create_communicators(total_devices_in_cluster, devices, ctx, kvs_instance);
 
     std::cout << "Create device communicators, expected count: " << devices.size() << std::endl;
 
@@ -81,10 +80,10 @@ void user_thread_idx(size_t thread_idx,
         streams.emplace(rank, ccl::create_stream(q));
 
         // allocate memory
-        processing_type* mem_send = static_cast<processing_type*>(
-            cl::sycl::aligned_alloc_shared(alignof(processing_type), COUNT * sizeof(processing_type), q));
-        processing_type* mem_recv = static_cast<processing_type*>(
-            cl::sycl::aligned_alloc_shared(alignof(processing_type), (local_topology_size * COUNT) * sizeof(processing_type), q));
+        processing_type* mem_send = static_cast<processing_type*>(cl::sycl::aligned_alloc_shared(
+            alignof(processing_type), COUNT * sizeof(processing_type), q));
+        processing_type* mem_recv = static_cast<processing_type*>(cl::sycl::aligned_alloc_shared(
+            alignof(processing_type), (local_topology_size * COUNT) * sizeof(processing_type), q));
         // set initial memory
         {
             static std::mutex memory_mutex;
@@ -115,12 +114,12 @@ void user_thread_idx(size_t thread_idx,
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
         auto& stream = streams.find(rank)->second;
 
-        reqs.push_back(ccl::allgatherv(mem_objects[0],    //send_buf
-                                       COUNT,  //send_count
-                                       mem_objects[1],    //recv_buf
-                                       recv_counts,             //recv_counts
-                                       comm,                    //communicator
-                                       stream));                //stream
+        reqs.push_back(ccl::allgatherv(mem_objects[0], //send_buf
+                                       COUNT, //send_count
+                                       mem_objects[1], //recv_buf
+                                       recv_counts, //recv_counts
+                                       comm, //communicator
+                                       stream)); //stream
     }
     // end allgatherv
 
@@ -139,8 +138,7 @@ void user_thread_idx(size_t thread_idx,
             std::cout << "rank : " << rank << std::endl;
             for (const auto& mem : handles) {
                 // std::vector<processing_type> tmp = mem.enqueue_read_sync();
-                std::copy(
-                    mem, mem + COUNT, std::ostream_iterator<processing_type>(std::cout, ","));
+                std::copy(mem, mem + COUNT, std::ostream_iterator<processing_type>(std::cout, ","));
                 std::cout << "\n\n" << std::endl;
             }
         }
@@ -149,10 +147,10 @@ void user_thread_idx(size_t thread_idx,
 #else //CCL_ENABLE_SYCL
 template <class processing_type>
 void user_thread_idx(size_t thread_idx,
-                    std::vector<std::pair<size_t, ccl::device_index_type>> ranked_device_indices,
-                    std::shared_ptr<::native::ccl_context> ctx,
-                    int total_devices_in_cluster,
-                    std::shared_ptr<ccl::kvs_interface> kvs) {
+                     std::vector<std::pair<size_t, ccl::device_index_type>> ranked_device_indices,
+                     std::shared_ptr<::native::ccl_context> ctx,
+                     int total_devices_in_cluster,
+                     std::shared_ptr<ccl::kvs_interface> kvs) {
     using namespace ::native;
 
     // test data
@@ -169,12 +167,10 @@ void user_thread_idx(size_t thread_idx,
     // API
     // Create device communicators
     std::vector<ccl::communicator> comms =
-        ccl::create_communicators(
-            total_devices_in_cluster, ranked_device_indices, ctx, kvs);
+        ccl::create_communicators(total_devices_in_cluster, ranked_device_indices, ctx, kvs);
 
     std::cout << "Create device communicators, expected count: " << ranked_device_indices.size()
-              << ", context: " << ctx.get()
-              << std::endl;
+              << ", context: " << ctx.get() << std::endl;
 
     size_t local_topology_size = comms[0].size();
     std::vector<size_t> recv_counts(local_topology_size);
@@ -188,9 +184,10 @@ void user_thread_idx(size_t thread_idx,
         ccl::communicator::device_type dev = comm.get_device().get_native();
         int rank = comm.rank();
 
-         // wrapped L0-native API for devices: create native buffers
+        // wrapped L0-native API for devices: create native buffers
         auto mem_send = dev->alloc_memory<processing_type>(COUNT, sizeof(processing_type), ctx);
-        auto mem_recv = dev->alloc_memory<processing_type>(COUNT * local_topology_size, sizeof(processing_type), ctx);
+        auto mem_recv = dev->alloc_memory<processing_type>(
+            COUNT * local_topology_size, sizeof(processing_type), ctx);
 
         // set initial memory
         {
@@ -228,12 +225,12 @@ void user_thread_idx(size_t thread_idx,
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
         auto& stream = streams.find(rank)->second;
 
-        reqs.push_back(ccl::allgatherv(mem_objects[0].get(),    //send_buf
-                                       mem_objects[0].count(),  //send_count
-                                       mem_objects[1].get(),    //recv_buf
-                                       recv_counts,             //recv_counts
-                                       comm,                    //communicator
-                                       stream));                //stream
+        reqs.push_back(ccl::allgatherv(mem_objects[0].get(), //send_buf
+                                       mem_objects[0].count(), //send_count
+                                       mem_objects[1].get(), //recv_buf
+                                       recv_counts, //recv_counts
+                                       comm, //communicator
+                                       stream)); //stream
     }
     // end allgatherv
 
@@ -406,15 +403,15 @@ int main(int argc, char** argv) {
     auto ctx = cl::sycl::context(*devices_in_process.begin()); //use single device
 #else
     const auto& drivers = native::get_platform().get_drivers();
-    if (drivers.empty())
-    {
+    if (drivers.empty()) {
         std::cerr << "No drivers in L0 native paltform. Exit" << std::endl;
         return -1;
     }
 
     // get GPU driver, it's only one driver at the moment
     auto gpu_driver = drivers.begin()->second;
-    decltype(gpu_driver->create_context()) ctx;/*default context*/ // = gpu_driver->create_context();
+    decltype(gpu_driver->create_context()) ctx;
+    /*default context*/ // = gpu_driver->create_context();
 #endif
     for (auto thread_affinity_it = thread_group_affinity.begin();
          thread_affinity_it != thread_group_affinity.end();

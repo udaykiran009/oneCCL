@@ -29,7 +29,7 @@ struct process_context : public native::process_group_context {
         if (!stub_received_graphs.empty()) {
             received_graphs = stub_received_graphs;
         }
-/*
+        /*
         native::process_group_context::collect_cluster_colored_plain_graphs(send_graph,
                                                                             received_graphs);
 */

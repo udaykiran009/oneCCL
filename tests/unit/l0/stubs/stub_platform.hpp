@@ -12,17 +12,20 @@
 
 namespace stub {
 struct test_device : public native::ccl_device {
-    test_device(native::ccl_device::owner_ptr_t&& parent, native::ccl_device::context_storage_type ctx)
+    test_device(native::ccl_device::owner_ptr_t&& parent,
+                native::ccl_device::context_storage_type ctx)
             : native::ccl_device(
                   reinterpret_cast<native::ccl_device::handle_t>(new native::ccl_device::handle_t),
                   std::move(parent),
                   ctx,
                   std::false_type{}) {}
 
-    static std::shared_ptr<test_device> create(const ccl::device_index_type& full_device_index,
-                                               native::ccl_device::owner_ptr_t&& driver,
-                                               native::ccl_device::context_storage_type ctx_holder) {
-        std::shared_ptr<test_device> dev = std::make_shared<test_device>(std::move(driver), ctx_holder);
+    static std::shared_ptr<test_device> create(
+        const ccl::device_index_type& full_device_index,
+        native::ccl_device::owner_ptr_t&& driver,
+        native::ccl_device::context_storage_type ctx_holder) {
+        std::shared_ptr<test_device> dev =
+            std::make_shared<test_device>(std::move(driver), ctx_holder);
 
         dev->device_properties.type = ZE_DEVICE_TYPE_GPU;
         dev->device_properties.deviceId =
@@ -35,10 +38,12 @@ struct test_device : public native::ccl_device {
         //create default queue
         auto queue_prop = native::ccl_device::get_default_queue_desc();
         queue_prop.ordinal = 0;
-        dev->cmd_queus.emplace(queue_prop, ccl_device::device_queue{ nullptr, dev->get_ptr(), def_ctx });
+        dev->cmd_queus.emplace(queue_prop,
+                               ccl_device::device_queue{ nullptr, dev->get_ptr(), def_ctx });
 
         //create module
-        auto module_ptr = std::make_shared<ccl_device::device_module>(nullptr, dev->get_ptr(), def_ctx);
+        auto module_ptr =
+            std::make_shared<ccl_device::device_module>(nullptr, dev->get_ptr(), def_ctx);
 
         using mod_integer_type = typename std::underlying_type<ccl_coll_type>::type;
         using top_integer_type = typename std::underlying_type<ccl::group_split_type>::type;
@@ -66,7 +71,8 @@ struct test_device : public native::ccl_device {
 
 struct test_subdevice : public native::ccl_subdevice {
     test_subdevice(native::ccl_subdevice::owner_ptr_t&& parent,
-                   typename native::ccl_subdevice::base::owner_ptr_t&& driver, native::ccl_subdevice::context_storage_type ctx)
+                   typename native::ccl_subdevice::base::owner_ptr_t&& driver,
+                   native::ccl_subdevice::context_storage_type ctx)
             : native::ccl_subdevice(reinterpret_cast<native::ccl_subdevice::handle_t>(
                                         new native::ccl_subdevice::handle_t),
                                     std::move(parent),
@@ -92,8 +98,8 @@ struct test_subdevice : public native::ccl_subdevice {
         //create default queue
         auto queue_prop = ccl_subdevice::get_default_queue_desc();
         queue_prop.ordinal = 0;
-        subdev->cmd_queus.emplace(queue_prop,
-                                  ccl_subdevice::device_queue{ nullptr, subdev->get_ptr(), def_ctx });
+        subdev->cmd_queus.emplace(
+            queue_prop, ccl_subdevice::device_queue{ nullptr, subdev->get_ptr(), def_ctx });
 
         //create module
         auto module_ptr =
@@ -159,7 +165,8 @@ inline void make_stub_devices(const ccl::device_indices_type& stub_indices) {
             auto dev_idx = index;
             std::get<device_index_enum::subdevice_index_id>(dev_idx) = unused_index_value;
             device_it =
-                devices.emplace(device_index, test_device::create(dev_idx, driver.get_ptr(), ctx)).first;
+                devices.emplace(device_index, test_device::create(dev_idx, driver.get_ptr(), ctx))
+                    .first;
         }
 
         ccl::index_type subdevice_index = std::get<device_index_enum::subdevice_index_id>(index);

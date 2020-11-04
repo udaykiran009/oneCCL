@@ -61,7 +61,8 @@ TEST(datatype_attr, move_datatype_attr) {
 }
 
 TEST(datatype_attr, datatype_attr_empty_size) {
-    auto attr = ccl::v1::create_datatype_attr(ccl::v1::attr_val<ccl::v1::datatype_attr_id::size>(123));
+    auto attr =
+        ccl::v1::create_datatype_attr(ccl::v1::attr_val<ccl::v1::datatype_attr_id::size>(123));
     ASSERT_TRUE(attr.get<ccl::v1::datatype_attr_id::version>().full != nullptr);
 
     ASSERT_EQ(attr.get<ccl::v1::datatype_attr_id::size>(), 123);

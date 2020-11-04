@@ -8,7 +8,6 @@
 #include "base.hpp"
 
 int main() {
-
     /**
      * The example only works with CCL_ATL_TRANSPORT=ofi
      */
@@ -66,36 +65,31 @@ int main() {
     }
 
     for (size_t iter = 0; iter < iter_count; ++iter) {
-
         std::cout << "starting iter " << iter << std::endl;
 
         size_t start_idx = distribution(rand_dev);
         size_t rank_idx = start_idx;
 
         for (auto idx = 0; idx < size; idx++) {
-
-            std::cout << "submit allreduce " << rank_idx
-                      << " for match_id " << match_ids[rank_idx] << std::endl;
+            std::cout << "submit allreduce " << rank_idx << " for match_id " << match_ids[rank_idx]
+                      << std::endl;
 
             attr.set<ccl::operation_attr_id::match_id>(match_ids[rank_idx]);
 
-            active_ops.emplace_back(
-                ccl::allreduce(send_bufs[rank_idx].data(),
-                               recv_bufs[rank_idx].data(),
-                               buf_size,
-                               ccl::reduction::sum,
-                               comm,
-                               attr),
-                rank_idx);
+            active_ops.emplace_back(ccl::allreduce(send_bufs[rank_idx].data(),
+                                                   recv_bufs[rank_idx].data(),
+                                                   buf_size,
+                                                   ccl::reduction::sum,
+                                                   comm,
+                                                   attr),
+                                    rank_idx);
 
             rank_idx = (rank_idx + 1) % size;
         }
 
         while (!active_ops.empty()) {
             for (auto it = active_ops.begin(); it != active_ops.end();) {
-
                 if (it->first.test()) {
-
                     float expected = (it->second + 1) * size;
                     printf(
                         "completed allreduce %zu for match_id %s. Actual %3.2f, expected %3.2f\n",

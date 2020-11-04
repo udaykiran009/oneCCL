@@ -4,19 +4,20 @@
 #define CL_BACKEND_TYPE ccl::cl_backend_type::dpcpp_sycl
 #include <CL/sycl.hpp>
 
-namespace ccl
-{
+namespace ccl {
 template <>
 struct backend_info<CL_BACKEND_TYPE> {
     CCL_API static constexpr ccl::cl_backend_type type() {
-        return CL_BACKEND_TYPE; }
+        return CL_BACKEND_TYPE;
+    }
     CCL_API static constexpr const char* name() {
-        return "CL_DPCPP_BACKEND"; }
+        return "CL_DPCPP_BACKEND";
+    }
 };
 
 template <>
 struct generic_device_type<CL_BACKEND_TYPE> {
-    using handle_t = cl_device_id;//cl::sycl::device;
+    using handle_t = cl_device_id; //cl::sycl::device;
     using impl_t = cl::sycl::device;
     using ccl_native_t = impl_t;
 
@@ -88,4 +89,4 @@ struct generic_event_type<CL_BACKEND_TYPE> {
 API_CLASS_TYPE_INFO(cl_command_queue);
 API_CLASS_TYPE_INFO(cl_context);
 API_CLASS_TYPE_INFO(cl_event)
-}
+} // namespace ccl

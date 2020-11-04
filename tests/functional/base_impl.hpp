@@ -7,14 +7,16 @@ template <typename T>
 template <class coll_attr_type>
 void typed_test_param<T>::prepare_coll_attr(coll_attr_type& coll_attr, size_t idx) {
     coll_attr.template set<ccl::operation_attr_id::priority>(generate_priority_value(idx));
-    coll_attr.template set<ccl::operation_attr_id::to_cache>(test_conf.cache_type == CT_CACHE_1 ? true : false);
+    coll_attr.template set<ccl::operation_attr_id::to_cache>(
+        test_conf.cache_type == CT_CACHE_1 ? true : false);
 
     char* test_unordered_coll = getenv("CCL_UNORDERED_COLL");
     if (test_unordered_coll && atoi(test_unordered_coll) == 1) {
         coll_attr.template set<ccl::operation_attr_id::synchronous>(false);
     }
     else {
-        coll_attr.template set<ccl::operation_attr_id::synchronous>(test_conf.sync_type == SNCT_SYNC_1 ? true : false);
+        coll_attr.template set<ccl::operation_attr_id::synchronous>(
+            test_conf.sync_type == SNCT_SYNC_1 ? true : false);
     }
 
     match_id = create_match_id(idx);

@@ -20,8 +20,9 @@ ccl::communicator_interface_ptr ccl::comm_group::create_communicator_from_group(
     const ContextType& context,
     const ccl::comm_split_attr& attr /* = comm_device_attr_t()*/) {
 #ifdef CCL_ENABLE_SYCL
-    static_assert(std::is_same<DeviceType, cl::sycl::device>::value,
-                  "ccl::comm_group::create_communicator_from_group() - supports SYCL devices at now");
+    static_assert(
+        std::is_same<DeviceType, cl::sycl::device>::value,
+        "ccl::comm_group::create_communicator_from_group() - supports SYCL devices at now");
 #endif
 
     ccl::communicator_interface_ptr impl;
@@ -35,10 +36,13 @@ ccl::communicator_interface_ptr ccl::comm_group::create_communicator_from_group(
         LOG_TRACE("Create single device communicator from SYCL device");
         //TODO
         ccl::comm_split_attr single_dev_attr = attr;
-        single_dev_attr.set<ccl::comm_split_attr_id::group>(
-            ccl::group_split_type::undetermined);
-        impl = ccl::communicator_interface::create_communicator_impl(
-            device, context, host_comm->rank(), host_comm->size(), single_dev_attr, host_comm->get_atl());
+        single_dev_attr.set<ccl::comm_split_attr_id::group>(ccl::group_split_type::undetermined);
+        impl = ccl::communicator_interface::create_communicator_impl(device,
+                                                                     context,
+                                                                     host_comm->rank(),
+                                                                     host_comm->size(),
+                                                                     single_dev_attr,
+                                                                     host_comm->get_atl());
     }
     else {
         // multiple device case
@@ -93,10 +97,14 @@ std::vector<ccl::communicator> ccl::comm_group::create_communicators_group(
 
     std::vector<ccl::communicator> comms;
     comms.reserve(indices_count);
-    std::transform(
-        first, last, std::back_inserter(comms), [this, attr, &context](const iterator_value_type& device_id) {
-            return ccl::communicator(create_communicator_from_group<iterator_value_type, ContextType>(device_id, context, attr));
-        });
+    std::transform(first,
+                   last,
+                   std::back_inserter(comms),
+                   [this, attr, &context](const iterator_value_type& device_id) {
+                       return ccl::communicator(
+                           create_communicator_from_group<iterator_value_type, ContextType>(
+                               device_id, context, attr));
+                   });
     return comms;
 }
 

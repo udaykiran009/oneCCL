@@ -6,7 +6,7 @@
 
 namespace ccl {
 namespace detail {
-    class environment;
+class environment;
 }
 
 class kvs_impl;
@@ -15,7 +15,6 @@ namespace v1 {
 
 class CCL_API kvs_interface {
 public:
-
     virtual ~kvs_interface() = default;
 
     virtual vector_class<char> get(const string_class& key) const = 0;

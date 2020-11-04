@@ -22,7 +22,7 @@
 
 namespace ccl {
 namespace detail {
-    class environment;
+class environment;
 }
 
 class host_communicator;
@@ -45,9 +45,10 @@ public:
               typename std::enable_if<not std::is_same<typename std::remove_cv<DeviceType>::type,
                                                        ccl::device_index_type>::value,
                                       int>::type = 0>
-    ccl::communicator_interface_ptr create_communicator_from_group(const DeviceType& device,
-                                        const ContextType& context,
-                                        const comm_split_attr& attr = ccl_empty_attr());
+    ccl::communicator_interface_ptr create_communicator_from_group(
+        const DeviceType& device,
+        const ContextType& context,
+        const comm_split_attr& attr = ccl_empty_attr());
 
     /**
      * Device Communicator creation API: single communicator creation, based on index @device_id
@@ -57,9 +58,10 @@ public:
               typename std::enable_if<std::is_same<typename std::remove_cv<DeviceType>::type,
                                                    ccl::device_index_type>::value,
                                       int>::type = 0>
-    ccl::communicator_interface_ptr create_communicator_from_group(const DeviceType& device_id,
-                                        const ContextType& context,
-                                        const comm_split_attr& attr = ccl_empty_attr());
+    ccl::communicator_interface_ptr create_communicator_from_group(
+        const DeviceType& device_id,
+        const ContextType& context,
+        const comm_split_attr& attr = ccl_empty_attr());
 
     /**
      * Device Communicator creation vectorized API:

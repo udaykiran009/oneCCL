@@ -55,8 +55,8 @@ public:
     void init_routing_data(size_t proc_idx) {
         process_idx = proc_idx;
 
-        pg_comm.reset(
-            new stub::process_context(std::shared_ptr<ccl::host_communicator>(new ccl::host_communicator)));  //TODO use rank & size
+        pg_comm.reset(new stub::process_context(std::shared_ptr<ccl::host_communicator>(
+            new ccl::host_communicator))); //TODO use rank & size
         tg_comm = pg_comm->thread_group_ctx.get();
     }
 
@@ -127,8 +127,7 @@ public:
     native::thread_group_context* tg_comm;
     std::unique_ptr<stub::process_context> pg_comm;
 
-    native::thread_group_context* get_thread_group_ctx()
-    {
+    native::thread_group_context* get_thread_group_ctx() {
         return tg_comm;
     }
 

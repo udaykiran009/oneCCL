@@ -30,13 +30,11 @@ CCL_API void stream::build_from_params() {
     get_impl()->build_from_params();
 }
 
-CCL_API stream::native_t& stream::get_native()
-{
+CCL_API stream::native_t& stream::get_native() {
     return const_cast<stream::native_t&>(static_cast<const stream*>(this)->get_native());
 }
 
-CCL_API const stream::native_t& stream::get_native() const
-{
+CCL_API const stream::native_t& stream::get_native() const {
     return get_impl()->get_attribute_value(
         detail::ccl_api_type_attr_traits<stream_attr_id, stream_attr_id::native_handle>{});
 }
@@ -46,7 +44,8 @@ CCL_API const stream::native_t& stream::get_native() const
 } // namespace ccl
 
 API_STREAM_CREATION_FORCE_INSTANTIATION(typename ccl::unified_stream_type::ccl_native_t)
-API_STREAM_CREATION_EXT_FORCE_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_context_type::ccl_native_t)
+API_STREAM_CREATION_EXT_FORCE_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t,
+                                            typename ccl::unified_context_type::ccl_native_t)
 #ifdef CCL_ENABLE_SYCL
 API_STREAM_CREATION_FORCE_INSTANTIATION(cl_command_queue)
 #else

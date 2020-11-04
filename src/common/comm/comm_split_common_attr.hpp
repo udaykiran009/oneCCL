@@ -35,7 +35,8 @@ public:
     const typename color_traits_t::type& get_attribute_value(
         const traits_t<split_attrs_t, split_attrs_t::color>& id) const {
         if (!is_valid<split_attrs_t::color>()) {
-            throw ccl::exception("Trying to get the value of the attribute 'color' which was not set");
+            throw ccl::exception(
+                "Trying to get the value of the attribute 'color' which was not set");
         }
         return color;
     }
@@ -55,7 +56,8 @@ public:
 
     const typename group_traits_t::type& get_attribute_value(group_traits_t id) const {
         if (!is_valid<split_attrs_t::group>()) {
-            throw ccl::exception("Trying to get the value of the attribute 'group' which was not set");
+            throw ccl::exception(
+                "Trying to get the value of the attribute 'group' which was not set");
         }
         return group;
     }

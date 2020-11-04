@@ -8,7 +8,8 @@
 
 namespace native {
 
-ccl_gpu_comm::ccl_gpu_comm(ccl_device& assigned_device, comm_rank_t idx) : base(assigned_device, idx) {
+ccl_gpu_comm::ccl_gpu_comm(ccl_device& assigned_device, comm_rank_t idx)
+        : base(assigned_device, idx) {
     auto queue_prop = ccl_device::get_default_queue_desc();
     queue_prop.ordinal = 0;
     std::shared_ptr<ccl_context> ctx;

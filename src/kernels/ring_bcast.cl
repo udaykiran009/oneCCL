@@ -82,81 +82,81 @@
 // T is the type parameter(e.g. float, int4, etc)
 // VecSize is the vector size of the type. E.g. if float4 is used, VecSize is 4. Note: if just float is used,
 // the value must be one as it's used for division inside the kernel.
-#define DEFINE_KERNEL(Name, T, VecSize)                                                                         \
-__kernel void bcast_execution_## Name(int my_rank,                                                           \
-                                    int comm_size, /* 1 */                                                   \
-                                    size_t elems_count, /* 2 */                                                 \
-                                                                                                                \
-                                    /* const __global T* input_buffer,*/ /* 3 */                                \
-                                    /* __global T* output_buffer,*/ /* 4 */                                     \
-                                    __global T* buffer, /* 3 */                                                 \
-                                                                                                                \
-                                    __global volatile int* left_wrote_to_me_flag, /* 5 */                       \
-                                    __global volatile int* i_ready_to_receive_flag, /* 6 */                     \
-                                                                                                                \
-                                    __global volatile int* local_barrier_flag, /* 7 */                          \
-                                                                                                                \
-                                    __global T* right_buffer, /* 8 */                                           \
-                                    __global volatile int* i_send_to_right_flag, /* 9 */                        \
-                                    __global volatile int* right_ready_to_recv_flag, /* 10 */                   \
-                                    int root /* 11 */                                                        \
-) {                                                                                                             \
-    elems_count = elems_count / VecSize; /*bcast by vector T*/                                                  \
-    size_t work_group_size = get_global_size(0);                                                                \
-    size_t last_rank = root ? root - 1 : comm_size - 1;                                                         \
-    size_t segment_count = elems_count / work_group_size;                                                       \
-    int work_item_id = get_global_id(0);                                                                        \
-                                                                                                                \
-    int ready_to_recv_sync_count = 1;                                                                           \
-    int can_send_sync_count = 1;                                                                                \
-                                                                                                                \
-    DEBUG_BLOCK(printf("kernel %zu.%d work_group_size: %d, elems_count: %zu, segment_count %zu\n",              \
-           my_rank,                                                                                             \
-           work_item_id,                                                                                        \
-           work_group_size,                                                                                     \
-           elems_count,                                                                                         \
-           segment_count));                                                                                     \
-                                                                                                                \
-    if (my_rank == root) {                                                                                      \
-        WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count);                                     \
-        barrier(CLK_LOCAL_MEM_FENCE);                                                                           \
-                                                                                                                \
-        for (size_t i = 0; i < segment_count; i++) {                                                            \
-            right_buffer[work_group_size * i + work_item_id] =                                                  \
-                buffer[work_group_size * i + work_item_id];                                                     \
-            /* input_buffer[work_group_size * i + work_item_id]; */                                             \
-        }                                                                                                       \
-        barrier(CLK_GLOBAL_MEM_FENCE);                                                                          \
-                                                                                                                \
-        I_SENT(i_send_to_right_flag);                                                                           \
-                                                                                                                \
-        /* for (size_t i = 0; i < segment_count; i++) {                                                         \
+#define DEFINE_KERNEL(Name, T, VecSize) \
+    __kernel void bcast_execution_##Name( \
+        int my_rank, \
+        int comm_size, /* 1 */ \
+        size_t elems_count, /* 2 */ \
+\
+        /* const __global T* input_buffer,*/ /* 3 */ /* __global T* output_buffer,*/ /* 4 */ \
+        __global T* buffer, /* 3 */ \
+\
+        __global volatile int* left_wrote_to_me_flag, /* 5 */ \
+        __global volatile int* i_ready_to_receive_flag, /* 6 */ \
+\
+        __global volatile int* local_barrier_flag, /* 7 */ \
+\
+        __global T* right_buffer, /* 8 */ \
+        __global volatile int* i_send_to_right_flag, /* 9 */ \
+        __global volatile int* right_ready_to_recv_flag, /* 10 */ \
+        int root /* 11 */ \
+    ) { \
+        elems_count = elems_count / VecSize; /*bcast by vector T*/ \
+        size_t work_group_size = get_global_size(0); \
+        size_t last_rank = root ? root - 1 : comm_size - 1; \
+        size_t segment_count = elems_count / work_group_size; \
+        int work_item_id = get_global_id(0); \
+\
+        int ready_to_recv_sync_count = 1; \
+        int can_send_sync_count = 1; \
+\
+        DEBUG_BLOCK( \
+            printf("kernel %zu.%d work_group_size: %d, elems_count: %zu, segment_count %zu\n", \
+                   my_rank, \
+                   work_item_id, \
+                   work_group_size, \
+                   elems_count, \
+                   segment_count)); \
+\
+        if (my_rank == root) { \
+            WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
+            barrier(CLK_LOCAL_MEM_FENCE); \
+\
+            for (size_t i = 0; i < segment_count; i++) { \
+                right_buffer[work_group_size * i + work_item_id] = \
+                    buffer[work_group_size * i + work_item_id]; \
+                /* input_buffer[work_group_size * i + work_item_id]; */ \
+            } \
+            barrier(CLK_GLOBAL_MEM_FENCE); \
+\
+            I_SENT(i_send_to_right_flag); \
+\
+            /* for (size_t i = 0; i < segment_count; i++) {                                                         \
               output_buffer[work_group_size * i + work_item_id] =                                               \
                  input_buffer[work_group_size * i + work_item_id];                                              \
          }                                                                                                      \
-         barrier(CLK_GLOBAL_MEM_FENCE); */                                                                      \
-    }                                                                                                           \
-    else {                                                                                                      \
-        PUT_READY_TO_RECEIVE(i_ready_to_receive_flag);                                                          \
-        WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count);                                       \
-        barrier(CLK_LOCAL_MEM_FENCE);                                                                           \
-                                                                                                                \
-        if (my_rank != last_rank) {                                                                             \
-            WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count);                                 \
-            barrier(CLK_LOCAL_MEM_FENCE);                                                                       \
-            for (size_t i = 0; i < segment_count; i++) {                                                        \
-                right_buffer[work_group_size * i + work_item_id] =                                              \
-                    buffer[work_group_size * i + work_item_id];                                                 \
-                /* output_buffer[work_group_size * i + work_item_id]; */                                        \
-            }                                                                                                   \
-            barrier(CLK_GLOBAL_MEM_FENCE);                                                                      \
-            I_SENT(i_send_to_right_flag);                                                                       \
-        }                                                                                                       \
-    }                                                                                                           \
-                                                                                                                \
-    DEBUG_BLOCK(printf("kernel %zu.%d completed\n", my_rank, work_item_id));                                    \
-}
-
+         barrier(CLK_GLOBAL_MEM_FENCE); */ \
+        } \
+        else { \
+            PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
+            WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
+            barrier(CLK_LOCAL_MEM_FENCE); \
+\
+            if (my_rank != last_rank) { \
+                WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
+                barrier(CLK_LOCAL_MEM_FENCE); \
+                for (size_t i = 0; i < segment_count; i++) { \
+                    right_buffer[work_group_size * i + work_item_id] = \
+                        buffer[work_group_size * i + work_item_id]; \
+                    /* output_buffer[work_group_size * i + work_item_id]; */ \
+                } \
+                barrier(CLK_GLOBAL_MEM_FENCE); \
+                I_SENT(i_send_to_right_flag); \
+            } \
+        } \
+\
+        DEBUG_BLOCK(printf("kernel %zu.%d completed\n", my_rank, work_item_id)); \
+    }
 
 DEFINE_KERNEL(int8, char4, 4)
 DEFINE_KERNEL(uint8, uchar4, 4)
@@ -178,27 +178,27 @@ DEFINE_KERNEL(float64, double4, 4)
 DEFINE_KERNEL(bfloat16, ushort, 1)
 
 // numa
-#define DEFINE_KERNEL_NUMA(Name, T, VecSize)                                                                    \
-__kernel void bcast_execution_numa_## Name(int my_rank,                                                      \
-                                    int comm_size, /* 1 */                                                   \
-                                    size_t elems_count, /* 2 */                                                 \
-                                                                                                                \
-                                    /* const __global T* input_buffer,*/ /* 3 */                                \
-                                    /* __global T* output_buffer,*/ /* 4 */                                     \
-                                    __global T* buffer, /* 3 */                                                 \
-                                                                                                                \
-                                    __global volatile int* left_wrote_to_me_flag, /* 5 */                       \
-                                    __global volatile int* i_ready_to_receive_flag, /* 6 */                     \
-                                                                                                                \
-                                    __global volatile int* local_barrier_flag, /* 7 */                          \
-                                                                                                                \
-                                    __global T* right_buffer, /* 8 */                                           \
-                                    __global volatile int* i_send_to_right_flag, /* 9 */                        \
-                                    __global volatile int* right_ready_to_recv_flag, /* 10 */                   \
-                                    int root /* 11 */                                                        \
-) {                                                                                                             \
-    return; \
-}
+#define DEFINE_KERNEL_NUMA(Name, T, VecSize) \
+    __kernel void bcast_execution_numa_##Name( \
+        int my_rank, \
+        int comm_size, /* 1 */ \
+        size_t elems_count, /* 2 */ \
+\
+        /* const __global T* input_buffer,*/ /* 3 */ /* __global T* output_buffer,*/ /* 4 */ \
+        __global T* buffer, /* 3 */ \
+\
+        __global volatile int* left_wrote_to_me_flag, /* 5 */ \
+        __global volatile int* i_ready_to_receive_flag, /* 6 */ \
+\
+        __global volatile int* local_barrier_flag, /* 7 */ \
+\
+        __global T* right_buffer, /* 8 */ \
+        __global volatile int* i_send_to_right_flag, /* 9 */ \
+        __global volatile int* right_ready_to_recv_flag, /* 10 */ \
+        int root /* 11 */ \
+    ) { \
+        return; \
+    }
 
 DEFINE_KERNEL_NUMA(int8, char4, 4)
 DEFINE_KERNEL_NUMA(uint8, uchar4, 4)

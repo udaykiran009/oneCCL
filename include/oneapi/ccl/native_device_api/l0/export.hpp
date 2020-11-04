@@ -5,15 +5,16 @@
 
 #include "oneapi/ccl/native_device_api/l0/declarations.hpp"
 
-namespace ccl
-{
+namespace ccl {
 
 template <>
 struct backend_info<CL_BACKEND_TYPE> {
     CCL_API static constexpr ccl::cl_backend_type type() {
-        return CL_BACKEND_TYPE; }
+        return CL_BACKEND_TYPE;
+    }
     CCL_API static constexpr const char* name() {
-        return "CL_INTEL_L0_BACKEND"; }
+        return "CL_INTEL_L0_BACKEND";
+    }
 };
 
 template <>
@@ -87,4 +88,4 @@ struct generic_event_type<CL_BACKEND_TYPE> {
 API_CLASS_TYPE_INFO(native::ccl_device::device_queue);
 //API_CLASS_TYPE_INFO(ze_command_queue_handle_t);
 API_CLASS_TYPE_INFO(ze_event_handle_t);
-}
+} // namespace ccl

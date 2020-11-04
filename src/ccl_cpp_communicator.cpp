@@ -47,8 +47,7 @@ namespace v1 {
 
 CCL_API communicator::communicator(impl_value_t&& impl) : base_t(std::move(impl)) {}
 
-CCL_API communicator::communicator(communicator&& src)
-        : base_t(std::move(src)) {}
+CCL_API communicator::communicator(communicator&& src) : base_t(std::move(src)) {}
 
 CCL_API communicator& communicator::operator=(communicator&& src) {
     if (src.get_impl() != this->get_impl()) {
@@ -91,17 +90,20 @@ CCL_API context communicator::get_context() const {
 
 /****API force instantiations for factory methods******/
 API_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(ccl::device, ccl::context)
-API_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(ccl::device,
-                                                                  ccl::context)
+API_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(ccl::device, ccl::context)
 API_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(ccl::device, ccl::context)
 
-API_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_context_type::ccl_native_t)
-API_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_context_type::ccl_native_t)
-API_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t, typename ccl::unified_context_type::ccl_native_t)
-
-API_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(
-    ccl::device_index_type,
+API_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t,
+                                               typename ccl::unified_context_type::ccl_native_t)
+API_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(
+    typename ccl::unified_device_type::ccl_native_t,
     typename ccl::unified_context_type::ccl_native_t)
+API_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(
+    typename ccl::unified_device_type::ccl_native_t,
+    typename ccl::unified_context_type::ccl_native_t)
+
+API_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(ccl::device_index_type,
+                                               typename ccl::unified_context_type::ccl_native_t)
 API_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(
     ccl::device_index_type,
     typename ccl::unified_context_type::ccl_native_t)

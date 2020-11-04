@@ -75,40 +75,47 @@ public:
                    send_buf,
                    ccl::native_type_info<native_type>::dtype,
                    device_stream),
-              temp_buffer(parent_communicator->get_device()
-                                    .template alloc_memory<native_type>(
-                                      512,
-                                      sizeof(native_type), get_ctx())),
+              temp_buffer(parent_communicator->get_device().template alloc_memory<native_type>(
+                  512,
+                  sizeof(native_type),
+                  get_ctx())),
               // left_wrote_to_me_flag
               income_data_flag(parent_communicator->get_device()
                                    .template alloc_memory<income_data_flag_gpu_type>(
                                        1,
-                                       sizeof(income_data_flag_gpu_type), get_ctx())),
+                                       sizeof(income_data_flag_gpu_type),
+                                       get_ctx())),
               // ready_to_recv_flag_arg
               ready_to_recv_flag(parent_communicator->get_device()
                                      .template alloc_memory<ready_to_recv_flag_gpu_type>(
                                          1,
-                                         sizeof(ready_to_recv_flag_gpu_type), get_ctx())),
-              proxy_size_flag_entry(parent_communicator->get_device()
-                                    .template alloc_memory<proxy_size_flag_gpu_type>(
-                                        1,
-                                      sizeof(proxy_size_flag_gpu_type), get_ctx())),
+                                         sizeof(ready_to_recv_flag_gpu_type),
+                                         get_ctx())),
+              proxy_size_flag_entry(
+                  parent_communicator->get_device().template alloc_memory<proxy_size_flag_gpu_type>(
+                      1,
+                      sizeof(proxy_size_flag_gpu_type),
+                      get_ctx())),
               recv_counts_buf(parent_communicator->get_device()
                                   .template alloc_memory<recv_counts_typed_entry_type>(
                                       512,
-                                      sizeof(recv_counts_typed_entry_type), get_ctx())),
+                                      sizeof(recv_counts_typed_entry_type),
+                                      get_ctx())),
               recv_offsets_buf(parent_communicator->get_device()
                                    .template alloc_memory<recv_offsets_typed_entry_type>(
                                        comm_addr.size,
-                                       sizeof(recv_offsets_typed_entry_type), get_ctx())),
+                                       sizeof(recv_offsets_typed_entry_type),
+                                       get_ctx())),
               send_counts_buf(parent_communicator->get_device()
                                   .template alloc_memory<recv_counts_typed_entry_type>(
                                       512,
-                                      sizeof(recv_counts_typed_entry_type), get_ctx())),
+                                      sizeof(recv_counts_typed_entry_type),
+                                      get_ctx())),
               send_offsets_buf(parent_communicator->get_device()
                                    .template alloc_memory<send_offsets_typed_entry_type>(
                                        comm_addr.size,
-                                       sizeof(send_offsets_typed_entry_type), get_ctx()))
+                                       sizeof(send_offsets_typed_entry_type),
+                                       get_ctx()))
 
     {
         // copy recv_buf into recv_buf_entry
@@ -166,9 +173,12 @@ public:
         //remember list_closed event index
         list_closed_epoch_id = list_closed_epoch.load();
 
-        ENTRY_LOG_DEBUG("Created, next_rank:", next_rank, " ,WaitCount: ", wait_count.load(), 
-                        ", ListClosedEpoch: ", list_closed_epoch_id);
-
+        ENTRY_LOG_DEBUG("Created, next_rank:",
+                        next_rank,
+                        " ,WaitCount: ",
+                        wait_count.load(),
+                        ", ListClosedEpoch: ",
+                        list_closed_epoch_id);
     }
 
     ~l0_alltoallv_typed_entry() {
@@ -268,8 +278,7 @@ protected:
                                                          topology,
                                                          ccl::device_topology_type::ring,
                                                          native_type>();
-        if (!(*kernel_router)(main_entry_function))
-        {
+        if (!(*kernel_router)(main_entry_function)) {
             return false;
         }
 
@@ -284,104 +293,111 @@ protected:
             kernel_bind_epoch_id = exec_count;
 
             //L0 Workaround launch kernel require critical section
-            result = zeCommandListAppendLaunchKernel(cmd_list.get(),
-                                                     main_entry_function.handle,
-                                                     &launch_args,
-                                                     nullptr,
-                                                     0,
-                                                     nullptr);
+            result = zeCommandListAppendLaunchKernel(
+                cmd_list.get(), main_entry_function.handle, &launch_args, nullptr, 0, nullptr);
             if (result != ZE_RESULT_SUCCESS) {
-                    LOG_ERROR("zeCommandListAppendLaunchKernel failed, error: ", to_string(result));
-                    throw std::runtime_error("zeCommandListAppendLaunchKernel failed");
+                LOG_ERROR("zeCommandListAppendLaunchKernel failed, error: ", to_string(result));
+                throw std::runtime_error("zeCommandListAppendLaunchKernel failed");
             }
             is_kernel_added = true;
 
             ENTRY_LOG_DEBUG("Append kernel successfully: ",
-                        main_entry_function.to_string(),
-                        " in list: ", cmd_list.get());
+                            main_entry_function.to_string(),
+                            " in list: ",
+                            cmd_list.get());
         }
 
         while (exec_count < registered_thread.size()) {
             ENTRY_LOG_TRACE("waiting thread counts, exec_cont: ", exec_count);
         }
 
-            //TODO L0 workaround
-            ENTRY_LOG_INFO("Check L0 Workaround: WaitCount: ",
-                     wait_count,
-                     ", ExecCount: ",
-                     exec_count,
-                     ", CurIndex: ",
-                     kernel_bind_epoch_id);
+        //TODO L0 workaround
+        ENTRY_LOG_INFO("Check L0 Workaround: WaitCount: ",
+                       wait_count,
+                       ", ExecCount: ",
+                       exec_count,
+                       ", CurIndex: ",
+                       kernel_bind_epoch_id);
 
-            if (kernel_bind_epoch_id % wait_count == 0 /*std::is_same<gpu_comm_impl, ccl_gpu_comm>::value*/) {
-                if (topology == ccl::group_split_type::cluster) {
-                    // TODO: implement process communicator case
-                    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + "TODO: implement process communicator case");
-                    // auto c = ccl::detail::environment::instance().create_communicator();
-                    // if (c.rank() == 0) {
-                        // LOG_INFO("L0 Workaround: one device close list!!!",
-                        //          "WaitCount: ",
-                        //          wait_count,
-                        //          ", ExecCount: ",
-                        //          exec_count,
-                        //          ", CurIndex: ",
-                        //          cur_index);
-                        // result = zeCommandListClose(device.get_cmd_list().get());
-                        // if (result != ZE_RESULT_SUCCESS) {
-                        //     LOG_ERROR("zeCommandListClose failed, error: ",
-                        //               native::to_string(result));
-                        //     throw std::runtime_error("zeCommandListClose failed");
-                        // }
-                    // }
-                }
-                else {
-                    ENTRY_LOG_INFO("L0 Workaround: one device close list!!!\n",
-                             "WaitCount: ",
-                             wait_count,
-                             ", ExecCount: ",
-                             exec_count,
-                             ", CurIndex: ",
-                             kernel_bind_epoch_id);
+        if (kernel_bind_epoch_id % wait_count ==
+            0 /*std::is_same<gpu_comm_impl, ccl_gpu_comm>::value*/) {
+            if (topology == ccl::group_split_type::cluster) {
+                // TODO: implement process communicator case
+                throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
+                                     "TODO: implement process communicator case");
+                // auto c = ccl::detail::environment::instance().create_communicator();
+                // if (c.rank() == 0) {
+                // LOG_INFO("L0 Workaround: one device close list!!!",
+                //          "WaitCount: ",
+                //          wait_count,
+                //          ", ExecCount: ",
+                //          exec_count,
+                //          ", CurIndex: ",
+                //          cur_index);
+                // result = zeCommandListClose(device.get_cmd_list().get());
+                // if (result != ZE_RESULT_SUCCESS) {
+                //     LOG_ERROR("zeCommandListClose failed, error: ",
+                //               native::to_string(result));
+                //     throw std::runtime_error("zeCommandListClose failed");
+                // }
+                // }
+            }
+            else {
+                ENTRY_LOG_INFO("L0 Workaround: one device close list!!!\n",
+                               "WaitCount: ",
+                               wait_count,
+                               ", ExecCount: ",
+                               exec_count,
+                               ", CurIndex: ",
+                               kernel_bind_epoch_id);
 
-                    {
-                        std::unique_lock<std::mutex> lock(global_mutex);
-                        result = zeCommandListClose(cmd_list.get());
-                        if (result != ZE_RESULT_SUCCESS) {
-                            LOG_ERROR("zeCommandListClose failed, error: ", native::to_string(result));
-                            throw std::runtime_error("zeCommandListClose failed");
-                        }
-
-                        auto queue_prop = ccl_device::get_default_queue_desc();
-                        auto& cmd_queue = device.get_cmd_queue(queue_prop, get_ctx());
-                        ENTRY_LOG_INFO("Execute list:", cmd_list.get(), ", queue: ", cmd_queue.get(), ", go to submit entry");
-                        ze_result_t ret = zeCommandQueueExecuteCommandLists(
-                                cmd_queue.get(), 1, cmd_list.get_ptr(), this->fence);
-                        if (ret != ZE_RESULT_SUCCESS) {
-                            throw ccl::exception(std::string("cannot execute command list, error: ") +
-                                                std::to_string(ret));
-                        }
-
-                        ret = zeFenceQueryStatus(this->fence);
-                        ENTRY_LOG_DEBUG("Fence query status: ", native::to_string(ret), ", queue: ", cmd_queue.get());
+                {
+                    std::unique_lock<std::mutex> lock(global_mutex);
+                    result = zeCommandListClose(cmd_list.get());
+                    if (result != ZE_RESULT_SUCCESS) {
+                        LOG_ERROR("zeCommandListClose failed, error: ", native::to_string(result));
+                        throw std::runtime_error("zeCommandListClose failed");
                     }
-                }
 
-                list_closed_epoch.fetch_add(1);
-                ENTRY_LOG_INFO("List closed:", cmd_list.get(), ", go to submit entry");
-                return true;
+                    auto queue_prop = ccl_device::get_default_queue_desc();
+                    auto& cmd_queue = device.get_cmd_queue(queue_prop, get_ctx());
+                    ENTRY_LOG_INFO("Execute list:",
+                                   cmd_list.get(),
+                                   ", queue: ",
+                                   cmd_queue.get(),
+                                   ", go to submit entry");
+                    ze_result_t ret = zeCommandQueueExecuteCommandLists(
+                        cmd_queue.get(), 1, cmd_list.get_ptr(), this->fence);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw ccl::exception(std::string("cannot execute command list, error: ") +
+                                             std::to_string(ret));
+                    }
+
+                    ret = zeFenceQueryStatus(this->fence);
+                    ENTRY_LOG_DEBUG("Fence query status: ",
+                                    native::to_string(ret),
+                                    ", queue: ",
+                                    cmd_queue.get());
+                }
             }
-            else if (kernel_bind_epoch_id > wait_count
-                    || list_closed_epoch.load() != list_closed_epoch_id /* epoch changed */) {
-                ENTRY_LOG_INFO("L0 Workaround: one device should close list before!!! ",
-                         "WaitCount: ",
-                         wait_count,
-                         ", ExecCount: ",
-                         exec_count,
-                         ", CurIndex: ",
-                         kernel_bind_epoch_id);
-                ENTRY_LOG_INFO("Dirfferent entry closed the list:", cmd_list.get(), ", go to submit entry");
-                return true;
-            }
+
+            list_closed_epoch.fetch_add(1);
+            ENTRY_LOG_INFO("List closed:", cmd_list.get(), ", go to submit entry");
+            return true;
+        }
+        else if (kernel_bind_epoch_id > wait_count ||
+                 list_closed_epoch.load() != list_closed_epoch_id /* epoch changed */) {
+            ENTRY_LOG_INFO("L0 Workaround: one device should close list before!!! ",
+                           "WaitCount: ",
+                           wait_count,
+                           ", ExecCount: ",
+                           exec_count,
+                           ", CurIndex: ",
+                           kernel_bind_epoch_id);
+            ENTRY_LOG_INFO(
+                "Dirfferent entry closed the list:", cmd_list.get(), ", go to submit entry");
+            return true;
+        }
         return false;
     }
 
@@ -402,6 +418,7 @@ private:
     ccl_device::device_memory<send_counts_typed_entry_type> send_counts_buf;
     ccl_device::device_memory<send_offsets_typed_entry_type> send_offsets_buf;
     std::shared_ptr<ccl_context> ctx;
+
 public:
     bool execute(kernel_main_typed& main_entry_function, kernel_main_typed& right_kernel) {
         //Check argument binding in kernels for next rank
@@ -412,9 +429,7 @@ public:
                                             typename kernel_main_typed::proxy_size_flag_arg>();
         if (is_right_kernel_ready) {
             if (is_kernel_added) {
-                ENTRY_LOG_TRACE("Function: ",
-                          main_entry_function.to_string(),
-                          " - binded already");
+                ENTRY_LOG_TRACE("Function: ", main_entry_function.to_string(), " - binded already");
                 return true;
             }
 
@@ -431,23 +446,22 @@ public:
             typename kernel_main_typed::proxy_size_flag_arg::return_t right_proxy_size_flag_arg =
                 right_kernel.template get_arg<typename kernel_main_typed::proxy_size_flag_arg>();
 
-            ENTRY_LOG_DEBUG("Bind final arguments for kernel: ",
-                      kernel_main_typed::name());
+            ENTRY_LOG_DEBUG("Bind final arguments for kernel: ", kernel_main_typed::name());
             ENTRY_LOG_TRACE("Args: \n{ ",
-                      right_tmp_recv_buf_arg.first,
-                      ", ",
-                      right_tmp_recv_buf_arg.second,
-                      "}\n",
-                      "{ ",
-                      right_income_data_flag_arg.first,
-                      ", ",
-                      right_income_data_flag_arg.second,
-                      "}\n",
-                      "{ ",
-                      right_ready_to_recv_flag_arg.first,
-                      ", ",
-                      right_ready_to_recv_flag_arg.second,
-                      "}\n");
+                            right_tmp_recv_buf_arg.first,
+                            ", ",
+                            right_tmp_recv_buf_arg.second,
+                            "}\n",
+                            "{ ",
+                            right_income_data_flag_arg.first,
+                            ", ",
+                            right_income_data_flag_arg.second,
+                            "}\n",
+                            "{ ",
+                            right_ready_to_recv_flag_arg.first,
+                            ", ",
+                            right_ready_to_recv_flag_arg.second,
+                            "}\n");
 
             //TODO register argument for current device kernel: use array-version
             main_entry_function
@@ -459,8 +473,7 @@ public:
                     right_income_data_flag_arg.second,
                     right_ready_to_recv_flag_arg.second,
                     right_proxy_size_flag_arg.second);
-            ENTRY_LOG_DEBUG("Final Function: ",
-                      main_entry_function.to_string());
+            ENTRY_LOG_DEBUG("Final Function: ", main_entry_function.to_string());
         }
         return is_right_kernel_ready;
     }

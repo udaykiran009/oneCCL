@@ -34,13 +34,13 @@ public:
         size_t offset = inout_buf.get_offset();
         const ccl::fn_context context = { sched->coll_attr.match_id.c_str(), offset };
         ccl::status comp_status = ccl_comp_reduce(in_buf.get_ptr(bytes),
-                                                   in_cnt,
-                                                   inout_buf.get_ptr(bytes),
-                                                   out_cnt,
-                                                   dtype,
-                                                   op,
-                                                   fn,
-                                                   &context);
+                                                  in_cnt,
+                                                  inout_buf.get_ptr(bytes),
+                                                  out_cnt,
+                                                  dtype,
+                                                  op,
+                                                  fn,
+                                                  &context);
         CCL_ASSERT(comp_status == ccl::status::success, "bad status ", comp_status);
 
         status = ccl_sched_entry_status_complete;

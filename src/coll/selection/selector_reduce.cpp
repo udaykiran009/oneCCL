@@ -33,7 +33,7 @@ bool ccl_algorithm_selector_helper<ccl_coll_reduce_algo>::can_use(
     if (algo == ccl_coll_reduce_rabenseifner && (int)param.count < param.comm->pof2())
         can_use = false;
     else if (algo == ccl_coll_reduce_direct &&
-        (ccl::global_data::env().atl_transport == ccl_atl_ofi))
+             (ccl::global_data::env().atl_transport == ccl_atl_ofi))
         can_use = false;
 
     return can_use;

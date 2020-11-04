@@ -12,7 +12,6 @@ namespace ccl {
 #else
 #ifdef MULTI_GPU_SUPPORT
 
-
 #else //MULTI_GPU_SUPPORT
 
 #endif

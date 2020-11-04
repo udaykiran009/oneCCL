@@ -149,8 +149,7 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
     CCL_THROW_IF_NOT(param.ctype == ccl_coll_allgatherv || !(attr.vector_buf),
                      "vector buffer is supported for allgatherv only");
 
-    CCL_THROW_IF_NOT(param.dtype.idx() != ccl::datatype::float16,
-                     "FP16 is unsupported yet");
+    CCL_THROW_IF_NOT(param.dtype.idx() != ccl::datatype::float16, "FP16 is unsupported yet");
 
     if (param.ctype == ccl_coll_sparse_allreduce) {
         CCL_THROW_IF_NOT(

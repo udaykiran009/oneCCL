@@ -8,9 +8,7 @@ DEFINE_KERNEL_TYPES(alltoallv)
 
 namespace ring_single_device_case {
 
-namespace ring_alltoallv_case {
-
-}
+namespace ring_alltoallv_case {}
 
 TYPED_TEST_CASE(ring_alltoallv_single_device_fixture, TestTypes);
 
@@ -131,10 +129,12 @@ TYPED_TEST(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt
 
             // allocate flags & memory
             // memory
-            auto mem_send =
-                device.alloc_memory<native_type>(total_send_sizes[thread_idx], sizeof(native_type), ctx);
-            auto mem_recv = device.alloc_memory<native_type>(total_recv_size, sizeof(native_type), ctx);
-            auto mem_tmp = device.alloc_memory<native_type>(tmp_buffer_size, sizeof(native_type), ctx);
+            auto mem_send = device.alloc_memory<native_type>(
+                total_send_sizes[thread_idx], sizeof(native_type), ctx);
+            auto mem_recv =
+                device.alloc_memory<native_type>(total_recv_size, sizeof(native_type), ctx);
+            auto mem_tmp =
+                device.alloc_memory<native_type>(tmp_buffer_size, sizeof(native_type), ctx);
 
             mem_send.enqueue_write_sync(send_values[thread_idx]);
             mem_recv.enqueue_write_sync(recv_values[thread_idx]);

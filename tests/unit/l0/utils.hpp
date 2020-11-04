@@ -321,15 +321,13 @@ struct handles_storage {
                   const size_t& thread_idx,
                   CheckFunctor lambda,
                   Args&&... params) {
-
         using std::to_string;
 
         auto check_lambda = std::bind(lambda, std::forward<Args>(params)..., std::placeholders::_1);
         auto it = std::find_if_not(vec.begin(), vec.end(), check_lambda);
         if (it != vec.end())
-            throw check_on_exception(to_string(std::distance(vec.begin(), it)),
-                                     to_string(*it),
-                                     to_string(thread_idx));
+            throw check_on_exception(
+                to_string(std::distance(vec.begin(), it)), to_string(*it), to_string(thread_idx));
     }
 
     template <class CheckFunctor, class... Args>
@@ -378,14 +376,14 @@ struct ipc_server_handles_storage {
 
         ipc_handles_container& ipc_cont = per_thread_storage[thread_idx];
 
-        std::transform(
-            memory_handles.begin(),
-            memory_handles.end(),
-            std::back_inserter(ipc_cont),
-            [](native::ccl_device::device_memory<T>* memory_handle) {
-                auto device_ptr = memory_handle->get_owner().lock();
-                return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle, ctx);
-            });
+        std::transform(memory_handles.begin(),
+                       memory_handles.end(),
+                       std::back_inserter(ipc_cont),
+                       [](native::ccl_device::device_memory<T>* memory_handle) {
+                           auto device_ptr = memory_handle->get_owner().lock();
+                           return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle,
+                                                                              ctx);
+                       });
     }
 
     std::vector<uint8_t> serialize_storage(size_t thread_idx) {
@@ -454,8 +452,8 @@ struct ipc_client_handles_storage {
                     throw std::runtime_error("Cannot find ipc device in global driver");
                 }
 
-                per_thread_storage[thread_id].emplace_back(
-                    owner_device->restore_shared_ipc_memory(std::move(recv_ipc_handle), std::move(ctx)));
+                per_thread_storage[thread_id].emplace_back(owner_device->restore_shared_ipc_memory(
+                    std::move(recv_ipc_handle), std::move(ctx)));
                 restored_handles++;
             }
             catch (const std::exception& ex) {
@@ -471,5 +469,4 @@ struct ipc_client_handles_storage {
         }
         return restored_handles;
     }
-
 };

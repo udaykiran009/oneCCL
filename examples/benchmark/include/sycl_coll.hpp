@@ -21,11 +21,9 @@ struct sycl_base_coll : base_coll, private strategy {
     using coll_strategy = strategy;
 
     template <class... Args>
-    sycl_base_coll(bench_init_attr init_attr,
-                   Args&&... args)
+    sycl_base_coll(bench_init_attr init_attr, Args&&... args)
             : base_coll(init_attr),
               coll_strategy() {
-
         auto& transport = transport_data::instance();
         auto streams = transport.get_bench_streams();
 
@@ -33,9 +31,7 @@ struct sycl_base_coll : base_coll, private strategy {
         size_t recv_multiplier = coll_strategy::get_recv_multiplier();
 
         for (size_t rank_idx = 0; rank_idx < base_coll::get_ranks_per_proc(); rank_idx++) {
-
             if (base_coll::get_sycl_mem_type() == SYCL_MEM_USM) {
-
                 allocators.push_back(buf_allocator<Dtype>(streams[rank_idx].get_native()));
 
                 auto& allocator = allocators[rank_idx];
@@ -58,10 +54,10 @@ struct sycl_base_coll : base_coll, private strategy {
             }
             else {
                 for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
-                    send_bufs[idx][rank_idx] =
-                        new cl::sycl::buffer<Dtype, 1>(base_coll::get_max_elem_count() * send_multiplier);
-                    recv_bufs[idx][rank_idx] =
-                        new cl::sycl::buffer<Dtype, 1>(base_coll::get_max_elem_count() * recv_multiplier);
+                    send_bufs[idx][rank_idx] = new cl::sycl::buffer<Dtype, 1>(
+                        base_coll::get_max_elem_count() * send_multiplier);
+                    recv_bufs[idx][rank_idx] = new cl::sycl::buffer<Dtype, 1>(
+                        base_coll::get_max_elem_count() * recv_multiplier);
                 }
             }
         }
@@ -73,9 +69,7 @@ struct sycl_base_coll : base_coll, private strategy {
     sycl_base_coll(bench_init_attr init_attr) : sycl_base_coll(init_attr, 1, 1) {}
 
     virtual ~sycl_base_coll() {
-
         for (size_t rank_idx = 0; rank_idx < base_coll::get_ranks_per_proc(); rank_idx++) {
-
             if (base_coll::get_sycl_mem_type() == SYCL_MEM_BUF) {
                 for (size_t idx = 0; idx < base_coll::get_buf_count(); idx++) {
                     delete static_cast<sycl_buffer_t<Dtype>*>(send_bufs[idx][rank_idx]);
@@ -93,28 +87,27 @@ struct sycl_base_coll : base_coll, private strategy {
                        size_t buf_idx,
                        const bench_exec_attr& attr,
                        req_list_t& reqs) override {
-
         auto& transport = transport_data::instance();
         auto& comms = transport.get_comms();
         auto streams = transport.get_streams();
         size_t ranks_per_proc = base_coll::get_ranks_per_proc();
 
         for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
-
             if (base_coll::get_sycl_mem_type() == SYCL_MEM_USM) {
-                coll_strategy::start_internal(
-                    comms[rank_idx],
-                    count,
-                    static_cast<Dtype*>(send_bufs[buf_idx][rank_idx]),
-                    static_cast<Dtype*>(recv_bufs[buf_idx][rank_idx]),
-                    attr,
-                    reqs,
-                    streams[rank_idx],
-                    coll_strategy::get_op_attr(attr));
+                coll_strategy::start_internal(comms[rank_idx],
+                                              count,
+                                              static_cast<Dtype*>(send_bufs[buf_idx][rank_idx]),
+                                              static_cast<Dtype*>(recv_bufs[buf_idx][rank_idx]),
+                                              attr,
+                                              reqs,
+                                              streams[rank_idx],
+                                              coll_strategy::get_op_attr(attr));
             }
             else {
-                sycl_buffer_t<Dtype>& send_buf = *(static_cast<sycl_buffer_t<Dtype>*>(send_bufs[buf_idx][rank_idx]));
-                sycl_buffer_t<Dtype>& recv_buf = *(static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[buf_idx][rank_idx]));
+                sycl_buffer_t<Dtype>& send_buf =
+                    *(static_cast<sycl_buffer_t<Dtype>*>(send_bufs[buf_idx][rank_idx]));
+                sycl_buffer_t<Dtype>& recv_buf =
+                    *(static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[buf_idx][rank_idx]));
                 coll_strategy::template start_internal<sycl_buffer_t<Dtype>&>(
                     comms[rank_idx],
                     count,
@@ -131,8 +124,7 @@ struct sycl_base_coll : base_coll, private strategy {
     virtual void prepare_internal(size_t elem_count,
                                   ccl::communicator& comm,
                                   ccl::stream& stream,
-                                  size_t rank_idx) override
-    {
+                                  size_t rank_idx) override {
         int comm_rank = comm.rank();
 
         size_t send_count = coll_strategy::get_send_multiplier() * elem_count;
@@ -144,29 +136,33 @@ struct sycl_base_coll : base_coll, private strategy {
         std::fill(host_send_buf.begin(), host_send_buf.end(), comm_rank);
 
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
-
             if (base_coll::get_sycl_mem_type() == SYCL_MEM_USM) {
+                stream.get_native()
+                    .memcpy(send_bufs[b_idx][rank_idx], host_send_buf.data(), send_bytes)
+                    .wait();
 
-                stream.get_native().memcpy(send_bufs[b_idx][rank_idx],
-                                           host_send_buf.data(),
-                                           send_bytes).wait();
-
-                stream.get_native().memset(recv_bufs[b_idx][rank_idx],
-                                           0,
-                                           recv_bytes).wait();
+                stream.get_native().memset(recv_bufs[b_idx][rank_idx], 0, recv_bytes).wait();
             }
             else {
-                stream.get_native().submit([&](handler& h) {
-                    auto send_buf = (static_cast<sycl_buffer_t<Dtype>*>(send_bufs[b_idx][rank_idx]));
-                    auto send_buf_acc = send_buf->template get_access<mode::write>(h, send_count);
-                    h.fill(send_buf_acc, static_cast<Dtype>(comm_rank));
-                }).wait();
+                stream.get_native()
+                    .submit([&](handler& h) {
+                        auto send_buf =
+                            (static_cast<sycl_buffer_t<Dtype>*>(send_bufs[b_idx][rank_idx]));
+                        auto send_buf_acc =
+                            send_buf->template get_access<mode::write>(h, send_count);
+                        h.fill(send_buf_acc, static_cast<Dtype>(comm_rank));
+                    })
+                    .wait();
 
-                stream.get_native().submit([&](handler& h) {
-                    auto recv_buf = (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx][rank_idx]));
-                    auto recv_buf_acc = recv_buf->template get_access<mode::write>(h, recv_count);
-                    h.fill(recv_buf_acc, static_cast<Dtype>(0));
-                }).wait();
+                stream.get_native()
+                    .submit([&](handler& h) {
+                        auto recv_buf =
+                            (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx][rank_idx]));
+                        auto recv_buf_acc =
+                            recv_buf->template get_access<mode::write>(h, recv_count);
+                        h.fill(recv_buf_acc, static_cast<Dtype>(0));
+                    })
+                    .wait();
             }
         }
     }

@@ -10,40 +10,37 @@
 
 /* allgatherv */
 template <class buffer_type>
-ccl::event process_a2a_communicator::allgatherv_impl(
-    const buffer_type* send_buf,
-    size_t send_count,
-    buffer_type* recv_buf,
-    const ccl::vector_class<size_t>& recv_counts,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::allgatherv_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event process_a2a_communicator::allgatherv_impl(const buffer_type* send_buf,
+                                                     size_t send_count,
+                                                     buffer_type* recv_buf,
+                                                     const ccl::vector_class<size_t>& recv_counts,
+                                                     const ccl::stream::impl_value_t& stream,
+                                                     const ccl::allgatherv_attr& attr,
+                                                     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 template <class buffer_type>
-ccl::event process_a2a_communicator::allgatherv_impl(
-    const buffer_type* send_buf,
-    size_t send_count,
-    ccl::vector_class<buffer_type*>& recv_buf,
-    const ccl::vector_class<size_t>& recv_counts,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::allgatherv_attr& attr,
+ccl::event process_a2a_communicator::allgatherv_impl(const buffer_type* send_buf,
+                                                     size_t send_count,
+                                                     ccl::vector_class<buffer_type*>& recv_buf,
+                                                     const ccl::vector_class<size_t>& recv_counts,
+                                                     const ccl::stream::impl_value_t& stream,
+                                                     const ccl::allgatherv_attr& attr,
 
-    const ccl::vector_class<ccl::event>& deps) {
+                                                     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 template <class buffer_type>
-ccl::event process_a2a_communicator::allgatherv_impl(
-    const buffer_type& send_buf,
-    size_t send_count,
-    buffer_type& recv_buf,
-    const ccl::vector_class<size_t>& recv_counts,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::allgatherv_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event process_a2a_communicator::allgatherv_impl(const buffer_type& send_buf,
+                                                     size_t send_count,
+                                                     buffer_type& recv_buf,
+                                                     const ccl::vector_class<size_t>& recv_counts,
+                                                     const ccl::stream::impl_value_t& stream,
+                                                     const ccl::allgatherv_attr& attr,
+                                                     const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
@@ -63,14 +60,13 @@ ccl::event process_a2a_communicator::allgatherv_impl(
 
 /* allreduce */
 template <class buffer_type>
-ccl::event process_a2a_communicator::allreduce_impl(
-    const buffer_type* send_buf,
-    buffer_type* recv_buf,
-    size_t count,
-    ccl::reduction reduction,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::allreduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event process_a2a_communicator::allreduce_impl(const buffer_type* send_buf,
+                                                    buffer_type* recv_buf,
+                                                    size_t count,
+                                                    ccl::reduction reduction,
+                                                    const ccl::stream::impl_value_t& stream,
+                                                    const ccl::allreduce_attr& attr,
+                                                    const ccl::vector_class<ccl::event>& deps) {
     using namespace native;
 
     static constexpr ccl::group_split_type group_id = base_t::topology_type();
@@ -190,56 +186,51 @@ ccl::event process_a2a_communicator::allreduce_impl(
     if (schedule) {
         LOG_DEBUG("Device group finalized");
     }
-    return std::unique_ptr<ccl::event_impl>(
-        new ccl::gpu_shared_event_impl(std::move(schedule)));
+    return std::unique_ptr<ccl::event_impl>(new ccl::gpu_shared_event_impl(std::move(schedule)));
 }
 
 template <class buffer_type>
-ccl::event process_a2a_communicator::allreduce_impl(
-    const buffer_type& send_buf,
-    buffer_type& recv_buf,
-    size_t count,
-    ccl::reduction reduction,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::allreduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event process_a2a_communicator::allreduce_impl(const buffer_type& send_buf,
+                                                    buffer_type& recv_buf,
+                                                    size_t count,
+                                                    ccl::reduction reduction,
+                                                    const ccl::stream::impl_value_t& stream,
+                                                    const ccl::allreduce_attr& attr,
+                                                    const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 /* alltoall */
 template <class buffer_type>
-ccl::event process_a2a_communicator::alltoall_impl(
-    const buffer_type* send_buf,
-    buffer_type* recv_buf,
-    size_t count,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::alltoall_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event process_a2a_communicator::alltoall_impl(const buffer_type* send_buf,
+                                                   buffer_type* recv_buf,
+                                                   size_t count,
+                                                   const ccl::stream::impl_value_t& stream,
+                                                   const ccl::alltoall_attr& attr,
+                                                   const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 template <class buffer_type>
-ccl::event process_a2a_communicator::alltoall_impl(
-    const ccl::vector_class<buffer_type*>& send_buf,
-    const ccl::vector_class<buffer_type*>& recv_buf,
-    size_t count,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::alltoall_attr& attr,
+ccl::event process_a2a_communicator::alltoall_impl(const ccl::vector_class<buffer_type*>& send_buf,
+                                                   const ccl::vector_class<buffer_type*>& recv_buf,
+                                                   size_t count,
+                                                   const ccl::stream::impl_value_t& stream,
+                                                   const ccl::alltoall_attr& attr,
 
-    const ccl::vector_class<ccl::event>& deps) {
+                                                   const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 template <class buffer_type>
-ccl::event process_a2a_communicator::alltoall_impl(
-    const buffer_type& send_buf,
-    buffer_type& recv_buf,
-    size_t count,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::alltoall_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event process_a2a_communicator::alltoall_impl(const buffer_type& send_buf,
+                                                   buffer_type& recv_buf,
+                                                   size_t count,
+                                                   const ccl::stream::impl_value_t& stream,
+                                                   const ccl::alltoall_attr& attr,
+                                                   const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
@@ -258,40 +249,37 @@ ccl::event process_a2a_communicator::alltoall_impl(
 
 /* alltoallv */
 template <class buffer_type>
-ccl::event process_a2a_communicator::alltoallv_impl(
-    const buffer_type* send_buf,
-    const ccl::vector_class<size_t>& send_counts,
-    buffer_type* recv_buf,
-    const ccl::vector_class<size_t>& recv_counts,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::alltoallv_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event process_a2a_communicator::alltoallv_impl(const buffer_type* send_buf,
+                                                    const ccl::vector_class<size_t>& send_counts,
+                                                    buffer_type* recv_buf,
+                                                    const ccl::vector_class<size_t>& recv_counts,
+                                                    const ccl::stream::impl_value_t& stream,
+                                                    const ccl::alltoallv_attr& attr,
+                                                    const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 template <class buffer_type>
-ccl::event process_a2a_communicator::alltoallv_impl(
-    const ccl::vector_class<buffer_type*>& send_buf,
-    const ccl::vector_class<size_t>& send_counts,
-    const ccl::vector_class<buffer_type*>& recv_buf,
-    const ccl::vector_class<size_t>& recv_counts,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::alltoallv_attr& attr,
+ccl::event process_a2a_communicator::alltoallv_impl(const ccl::vector_class<buffer_type*>& send_buf,
+                                                    const ccl::vector_class<size_t>& send_counts,
+                                                    const ccl::vector_class<buffer_type*>& recv_buf,
+                                                    const ccl::vector_class<size_t>& recv_counts,
+                                                    const ccl::stream::impl_value_t& stream,
+                                                    const ccl::alltoallv_attr& attr,
 
-    const ccl::vector_class<ccl::event>& dep) {
+                                                    const ccl::vector_class<ccl::event>& dep) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 template <class buffer_type>
-ccl::event process_a2a_communicator::alltoallv_impl(
-    const buffer_type& send_buf,
-    const ccl::vector_class<size_t>& send_counts,
-    buffer_type& recv_buf,
-    const ccl::vector_class<size_t>& recv_counts,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::alltoallv_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event process_a2a_communicator::alltoallv_impl(const buffer_type& send_buf,
+                                                    const ccl::vector_class<size_t>& send_counts,
+                                                    buffer_type& recv_buf,
+                                                    const ccl::vector_class<size_t>& recv_counts,
+                                                    const ccl::stream::impl_value_t& stream,
+                                                    const ccl::alltoallv_attr& attr,
+                                                    const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
@@ -311,54 +299,50 @@ ccl::event process_a2a_communicator::alltoallv_impl(
 
 /* bcast */
 template <class buffer_type>
-ccl::event process_a2a_communicator::broadcast_impl(
-    buffer_type* buf,
-    size_t count,
-    int root,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::broadcast_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event process_a2a_communicator::broadcast_impl(buffer_type* buf,
+                                                    size_t count,
+                                                    int root,
+                                                    const ccl::stream::impl_value_t& stream,
+                                                    const ccl::broadcast_attr& attr,
+                                                    const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 template <class buffer_type>
-ccl::event process_a2a_communicator::broadcast_impl(
-    buffer_type& buf,
-    size_t count,
-    int root,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::broadcast_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event process_a2a_communicator::broadcast_impl(buffer_type& buf,
+                                                    size_t count,
+                                                    int root,
+                                                    const ccl::stream::impl_value_t& stream,
+                                                    const ccl::broadcast_attr& attr,
+                                                    const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 /* reduce */
 template <class buffer_type>
-ccl::event process_a2a_communicator::reduce_impl(
-    const buffer_type* send_buf,
-    buffer_type* recv_buf,
-    size_t count,
-    ccl::reduction reduction,
-    int root,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::reduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event process_a2a_communicator::reduce_impl(const buffer_type* send_buf,
+                                                 buffer_type* recv_buf,
+                                                 size_t count,
+                                                 ccl::reduction reduction,
+                                                 int root,
+                                                 const ccl::stream::impl_value_t& stream,
+                                                 const ccl::reduce_attr& attr,
+                                                 const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 template <class buffer_type>
-ccl::event process_a2a_communicator::reduce_impl(
-    const buffer_type& send_buf,
-    buffer_type& recv_buf,
-    size_t count,
-    ccl::reduction reduction,
-    int root,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::reduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event process_a2a_communicator::reduce_impl(const buffer_type& send_buf,
+                                                 buffer_type& recv_buf,
+                                                 size_t count,
+                                                 ccl::reduction reduction,
+                                                 int root,
+                                                 const ccl::stream::impl_value_t& stream,
+                                                 const ccl::reduce_attr& attr,
+                                                 const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }

@@ -45,7 +45,8 @@ public:
         void* buf1 = nullptr; /* non-data buffer which can be used for caching */
         void* buf2 = nullptr; /* non-data buffer which can be used for caching */
         ccl::datatype dtype = ccl::datatype::int8;
-        ccl::datatype itype = ccl::datatype::int8; /* used in sparse collective to store index type */
+        ccl::datatype itype =
+            ccl::datatype::int8; /* used in sparse collective to store index type */
         ccl::reduction reduction = ccl::reduction::sum;
         size_t count1 = 0;
         size_t count2 = 0;

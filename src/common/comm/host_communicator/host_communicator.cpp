@@ -21,10 +21,7 @@
 
 namespace ccl {
 
-host_communicator::host_communicator()
-        : comm_attr(ccl::create_comm_split_attr())
-{
-}
+host_communicator::host_communicator() : comm_attr(ccl::create_comm_split_attr()) {}
 
 host_communicator::host_communicator(int size, shared_ptr_class<kvs_interface> kvs)
         : comm_attr(ccl::create_comm_split_attr()),
@@ -39,7 +36,6 @@ host_communicator::host_communicator(int size, int rank, shared_ptr_class<kvs_in
         : comm_attr(ccl::create_comm_split_attr()),
           comm_rank(rank),
           comm_size(size) {
-
     if (rank > size || size <= 0) {
         throw ccl::exception("Incorrect rank or size value when creating a host communicator");
     }
@@ -58,21 +54,19 @@ host_communicator::host_communicator(std::shared_ptr<atl_wrapper> atl)
         : comm_attr(ccl::create_comm_split_attr()),
           comm_rank(atl->get_rank()),
           comm_size(atl->get_size()) {
-
     int rank = atl->get_rank();
     int size = atl->get_size();
 
     if (rank > size || size <= 0) {
         throw ccl::exception("Incorrect rank or size value when creating \
-                             a host communicator: rank" + std::to_string(rank)
-                             + " size: " + std::to_string(size));
+                             a host communicator: rank" +
+                             std::to_string(rank) + " size: " + std::to_string(size));
     }
 
     LOG_DEBUG("host_communicator ctor");
 
     ccl::global_data& data = ccl::global_data::get();
-    comm_impl =
-        std::shared_ptr<ccl_comm>(new ccl_comm(rank, size, data.comm_ids->acquire(), atl));
+    comm_impl = std::shared_ptr<ccl_comm>(new ccl_comm(rank, size, data.comm_ids->acquire(), atl));
 }
 
 host_communicator::host_communicator(std::shared_ptr<ccl_comm> impl)
@@ -116,16 +110,11 @@ ccl::communicator_interface::context_t host_communicator::get_context() const {
 void host_communicator::exchange_colors(std::vector<int>& colors) {
     size_t send_count = 1;
     vector_class<size_t> recv_counts(colors.size(), send_count);
-    auto attr = create_operation_attr<allgatherv_attr>(
-        attr_val<operation_attr_id::to_cache>(false));
+    auto attr =
+        create_operation_attr<allgatherv_attr>(attr_val<operation_attr_id::to_cache>(false));
 
-    this->allgatherv_impl(colors.data(),
-                          send_count,
-                          colors.data(),
-                          recv_counts,
-                          {},
-                          attr,
-                          {}).wait();
+    this->allgatherv_impl(colors.data(), send_count, colors.data(), recv_counts, {}, attr, {})
+        .wait();
 }
 
 ccl_comm* host_communicator::create_with_color(int color,
@@ -147,7 +136,7 @@ ccl_comm* host_communicator::create_with_color(int color,
 ccl::communicator_interface_ptr host_communicator::split(const comm_split_attr& attr) {
     if (!attr.is_valid<comm_split_attr_id::color>()) {
         throw ccl::exception(std::string(__FUNCTION__) +
-                        " - 'Color' split attribute for host communicator is not set");
+                             " - 'Color' split attribute for host communicator is not set");
     }
 
     ccl::global_data& data = ccl::global_data::get();
@@ -160,17 +149,15 @@ ccl::communicator_interface_ptr host_communicator::split(const comm_split_attr& 
         new host_communicator(std::shared_ptr<ccl_comm>(new_comm)));
 }
 
-ccl::event host_communicator::barrier(
-    const ccl::stream::impl_value_t& op_stream,
-    const ccl::barrier_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event host_communicator::barrier(const ccl::stream::impl_value_t& op_stream,
+                                      const ccl::barrier_attr& attr,
+                                      const ccl::vector_class<ccl::event>& deps) {
     return get_impl()->barrier_impl(op_stream, attr, deps);
 }
 
-ccl::event host_communicator::barrier_impl(
-    const ccl::stream::impl_value_t& op_stream,
-    const ccl::barrier_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event host_communicator::barrier_impl(const ccl::stream::impl_value_t& op_stream,
+                                           const ccl::barrier_attr& attr,
+                                           const ccl::vector_class<ccl::event>& deps) {
     // TODO what exactly we need to do with 'attr' here?
 
     ccl_barrier_impl(comm_impl.get(), op_stream.get());
@@ -181,89 +168,83 @@ ccl::event host_communicator::barrier_impl(
 }
 
 /* allgatherv */
-ccl::event host_communicator::allgatherv_impl(
-    const void* send_buf,
-    size_t send_count,
-    void* recv_buf,
-    const ccl::vector_class<size_t>& recv_counts,
-    ccl::datatype dtype,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::allgatherv_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event host_communicator::allgatherv_impl(const void* send_buf,
+                                              size_t send_count,
+                                              void* recv_buf,
+                                              const ccl::vector_class<size_t>& recv_counts,
+                                              ccl::datatype dtype,
+                                              const ccl::stream::impl_value_t& stream,
+                                              const ccl::allgatherv_attr& attr,
+                                              const ccl::vector_class<ccl::event>& deps) {
     ccl_request* req = ccl_allgatherv_impl(
         send_buf, send_count, recv_buf, recv_counts.data(), dtype, attr, comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
-ccl::event host_communicator::allgatherv_impl(
-    const void* send_buf,
-    size_t send_count,
-    const ccl::vector_class<void*>& recv_bufs,
-    const ccl::vector_class<size_t>& recv_counts,
-    ccl::datatype dtype,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::allgatherv_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event host_communicator::allgatherv_impl(const void* send_buf,
+                                              size_t send_count,
+                                              const ccl::vector_class<void*>& recv_bufs,
+                                              const ccl::vector_class<size_t>& recv_counts,
+                                              ccl::datatype dtype,
+                                              const ccl::stream::impl_value_t& stream,
+                                              const ccl::allgatherv_attr& attr,
+                                              const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 /* allreduce */
-ccl::event host_communicator::allreduce_impl(
-    const void* send_buf,
-    void* recv_buf,
-    size_t count,
-    ccl::datatype dtype,
-    ccl::reduction reduction,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::allreduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
-    ccl_request* req =
-        ccl_allreduce_impl(send_buf, recv_buf, count, dtype, reduction, attr, comm_impl.get(), nullptr);
+ccl::event host_communicator::allreduce_impl(const void* send_buf,
+                                             void* recv_buf,
+                                             size_t count,
+                                             ccl::datatype dtype,
+                                             ccl::reduction reduction,
+                                             const ccl::stream::impl_value_t& stream,
+                                             const ccl::allreduce_attr& attr,
+                                             const ccl::vector_class<ccl::event>& deps) {
+    ccl_request* req = ccl_allreduce_impl(
+        send_buf, recv_buf, count, dtype, reduction, attr, comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 /* alltoall */
-ccl::event host_communicator::alltoall_impl(
-    const void* send_buf,
-    void* recv_buf,
-    size_t count,
-    ccl::datatype dtype,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::alltoall_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event host_communicator::alltoall_impl(const void* send_buf,
+                                            void* recv_buf,
+                                            size_t count,
+                                            ccl::datatype dtype,
+                                            const ccl::stream::impl_value_t& stream,
+                                            const ccl::alltoall_attr& attr,
+                                            const ccl::vector_class<ccl::event>& deps) {
     ccl_request* req =
         ccl_alltoall_impl(send_buf, recv_buf, count, dtype, attr, comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
-ccl::event host_communicator::alltoall_impl(
-    const ccl::vector_class<void*>& send_buf,
-    const ccl::vector_class<void*>& recv_buf,
-    size_t count,
-    ccl::datatype dtype,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::alltoall_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event host_communicator::alltoall_impl(const ccl::vector_class<void*>& send_buf,
+                                            const ccl::vector_class<void*>& recv_buf,
+                                            size_t count,
+                                            ccl::datatype dtype,
+                                            const ccl::stream::impl_value_t& stream,
+                                            const ccl::alltoall_attr& attr,
+                                            const ccl::vector_class<ccl::event>& deps) {
     // TODO not implemented
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 /* alltoallv */
-ccl::event host_communicator::alltoallv_impl(
-    const void* send_buf,
-    const ccl::vector_class<size_t>& send_counts,
-    void* recv_buf,
-    const ccl::vector_class<size_t>& recv_counts,
-    ccl::datatype dtype,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::alltoallv_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event host_communicator::alltoallv_impl(const void* send_buf,
+                                             const ccl::vector_class<size_t>& send_counts,
+                                             void* recv_buf,
+                                             const ccl::vector_class<size_t>& recv_counts,
+                                             ccl::datatype dtype,
+                                             const ccl::stream::impl_value_t& stream,
+                                             const ccl::alltoallv_attr& attr,
+                                             const ccl::vector_class<ccl::event>& deps) {
     ccl_request* req = ccl_alltoallv_impl(send_buf,
                                           send_counts.data(),
                                           recv_buf,
@@ -276,45 +257,42 @@ ccl::event host_communicator::alltoallv_impl(
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
-ccl::event host_communicator::alltoallv_impl(
-    const ccl::vector_class<void*>& send_buf,
-    const ccl::vector_class<size_t>& send_counts,
-    ccl::vector_class<void*> recv_buf,
-    const ccl::vector_class<size_t>& recv_counts,
-    ccl::datatype dtype,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::alltoallv_attr& attr,
-    const ccl::vector_class<ccl::event>& dep) {
+ccl::event host_communicator::alltoallv_impl(const ccl::vector_class<void*>& send_buf,
+                                             const ccl::vector_class<size_t>& send_counts,
+                                             ccl::vector_class<void*> recv_buf,
+                                             const ccl::vector_class<size_t>& recv_counts,
+                                             ccl::datatype dtype,
+                                             const ccl::stream::impl_value_t& stream,
+                                             const ccl::alltoallv_attr& attr,
+                                             const ccl::vector_class<ccl::event>& dep) {
     // TODO not implemented
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 /* bcast */
-ccl::event host_communicator::broadcast_impl(
-    void* buf,
-    size_t count,
-    ccl::datatype dtype,
-    int root,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::broadcast_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event host_communicator::broadcast_impl(void* buf,
+                                             size_t count,
+                                             ccl::datatype dtype,
+                                             int root,
+                                             const ccl::stream::impl_value_t& stream,
+                                             const ccl::broadcast_attr& attr,
+                                             const ccl::vector_class<ccl::event>& deps) {
     ccl_request* req = ccl_broadcast_impl(buf, count, dtype, root, attr, comm_impl.get(), nullptr);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 /* reduce */
-ccl::event host_communicator::reduce_impl(
-    const void* send_buf,
-    void* recv_buf,
-    size_t count,
-    ccl::datatype dtype,
-    ccl::reduction reduction,
-    int root,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::reduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event host_communicator::reduce_impl(const void* send_buf,
+                                          void* recv_buf,
+                                          size_t count,
+                                          ccl::datatype dtype,
+                                          ccl::reduction reduction,
+                                          int root,
+                                          const ccl::stream::impl_value_t& stream,
+                                          const ccl::reduce_attr& attr,
+                                          const ccl::vector_class<ccl::event>& deps) {
     ccl_request* req = ccl_reduce_impl(
         send_buf, recv_buf, count, dtype, reduction, root, attr, comm_impl.get(), nullptr);
 
@@ -322,15 +300,14 @@ ccl::event host_communicator::reduce_impl(
 }
 
 /* reduce_scatter */
-ccl::event host_communicator::reduce_scatter_impl(
-    const void* send_buf,
-    void* recv_buf,
-    size_t recv_count,
-    ccl::datatype dtype,
-    ccl::reduction reduction,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::reduce_scatter_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event host_communicator::reduce_scatter_impl(const void* send_buf,
+                                                  void* recv_buf,
+                                                  size_t recv_count,
+                                                  ccl::datatype dtype,
+                                                  ccl::reduction reduction,
+                                                  const ccl::stream::impl_value_t& stream,
+                                                  const ccl::reduce_scatter_attr& attr,
+                                                  const ccl::vector_class<ccl::event>& deps) {
     ccl_request* req = ccl_reduce_scatter_impl(
         send_buf, recv_buf, recv_count, dtype, reduction, attr, comm_impl.get(), nullptr);
 
@@ -338,21 +315,20 @@ ccl::event host_communicator::reduce_scatter_impl(
 }
 
 /* sparse_allreduce */
-ccl::event host_communicator::sparse_allreduce_impl(
-    const void* send_ind_buf,
-    size_t send_ind_count,
-    const void* send_val_buf,
-    size_t send_val_count,
-    void* recv_ind_buf,
-    size_t recv_ind_count,
-    void* recv_val_buf,
-    size_t recv_val_count,
-    ccl::datatype index_dtype,
-    ccl::datatype value_dtype,
-    ccl::reduction reduction,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::sparse_allreduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event host_communicator::sparse_allreduce_impl(const void* send_ind_buf,
+                                                    size_t send_ind_count,
+                                                    const void* send_val_buf,
+                                                    size_t send_val_count,
+                                                    void* recv_ind_buf,
+                                                    size_t recv_ind_count,
+                                                    void* recv_val_buf,
+                                                    size_t recv_val_count,
+                                                    ccl::datatype index_dtype,
+                                                    ccl::datatype value_dtype,
+                                                    ccl::reduction reduction,
+                                                    const ccl::stream::impl_value_t& stream,
+                                                    const ccl::sparse_allreduce_attr& attr,
+                                                    const ccl::vector_class<ccl::event>& deps) {
     ccl_request* req = ccl_sparse_allreduce_impl(send_ind_buf,
                                                  send_ind_count,
                                                  send_val_buf,

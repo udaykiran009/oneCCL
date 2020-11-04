@@ -52,13 +52,18 @@ template <class resource_owner, class cl_context>
 using event = cl_base<ze_event_handle_t, resource_owner, cl_context>;
 
 template <class elem_t, class resource_owner, class cl_context>
-struct memory/*<elem_t, resource_owner, cl_context>*/ : private cl_base<elem_t*, resource_owner, cl_context> {
+struct memory /*<elem_t, resource_owner, cl_context>*/ : private cl_base<elem_t*,
+                                                                         resource_owner,
+                                                                         cl_context> {
     using base = cl_base<elem_t*, resource_owner, cl_context>;
     using base::get_owner;
     using base::get_ctx;
     using base::handle;
 
-    memory(elem_t* h, size_t count, std::weak_ptr<resource_owner>&& owner, std::weak_ptr<cl_context>&& context);
+    memory(elem_t* h,
+           size_t count,
+           std::weak_ptr<resource_owner>&& owner,
+           std::weak_ptr<cl_context>&& context);
 
     /**
      *  Memory operations
@@ -73,14 +78,15 @@ struct memory/*<elem_t, resource_owner, cl_context>*/ : private cl_base<elem_t*,
     void enqueue_write_sync(const elem_t* src, int n);
 
     // async
-    queue_fence<resource_owner, cl_context> enqueue_write_async(const std::vector<elem_t>& src,
-                                                    queue<resource_owner, cl_context>& queue);
+    queue_fence<resource_owner, cl_context> enqueue_write_async(
+        const std::vector<elem_t>& src,
+        queue<resource_owner, cl_context>& queue);
     template <int N>
-    queue_fence<resource_owner, cl_context> enqueue_write_async(const std::array<elem_t, N>& src,
-                                                    queue<resource_owner, cl_context>& queue);
-    queue_fence<resource_owner, cl_context> enqueue_write_async(const elem_t* src,
-                                                    size_t n,
-                                                    queue<resource_owner, cl_context>& queue);
+    queue_fence<resource_owner, cl_context> enqueue_write_async(
+        const std::array<elem_t, N>& src,
+        queue<resource_owner, cl_context>& queue);
+    queue_fence<resource_owner, cl_context>
+    enqueue_write_async(const elem_t* src, size_t n, queue<resource_owner, cl_context>& queue);
 
     // sync memory-copy read
     std::vector<elem_t> enqueue_read_sync(size_t requested_size = 0) const;

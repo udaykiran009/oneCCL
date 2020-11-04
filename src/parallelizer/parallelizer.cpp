@@ -418,7 +418,8 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
                         ccl_buffer(&(coll_param.sycl_send_buf),
                                    coll_param.count * comm_size * dtype_size,
                                    ccl_buffer_type::INDIRECT),
-                        ccl_buffer((void*)coll_param.send_buf, coll_param.count * comm_size * dtype_size),
+                        ccl_buffer((void*)coll_param.send_buf,
+                                   coll_param.count * comm_size * dtype_size),
                         coll_param.count * comm_size,
                         dtype,
                         coll_param.stream);
@@ -438,15 +439,14 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
                                             coll_param.count * comm_size * dtype_size,
                                             offsets[idx],
                                             ccl_buffer_type::INDIRECT);
-                param.recv_buf = ccl_buffer(&(coll_param.recv_buf),
-                                            recv_buf_size,
-                                            offsets[idx],
-                                            ccl_buffer_type::INDIRECT);
+                param.recv_buf = ccl_buffer(
+                    &(coll_param.recv_buf), recv_buf_size, offsets[idx], ccl_buffer_type::INDIRECT);
                 param.count = counts[idx];
                 param.dtype = dtype;
                 param.reduction = coll_param.reduction;
                 param.comm = comm;
-                coll_entry_helper::add_coll_entry<ccl_coll_reduce_scatter>(part_scheds[idx].get(), param);
+                coll_entry_helper::add_coll_entry<ccl_coll_reduce_scatter>(part_scheds[idx].get(),
+                                                                           param);
             }
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
@@ -456,8 +456,8 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
                     part_scheds[0].get(),
                     ccl_buffer(coll_param.recv_buf, coll_param.count * dtype_size),
                     ccl_buffer(&(coll_param.sycl_recv_buf),
-                                coll_param.count * dtype_size,
-                                ccl_buffer_type::INDIRECT),
+                               coll_param.count * dtype_size,
+                               ccl_buffer_type::INDIRECT),
                     coll_param.count,
                     dtype,
                     coll_param.stream);

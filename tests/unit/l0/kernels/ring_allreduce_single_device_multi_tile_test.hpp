@@ -13,11 +13,11 @@ TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_de
     const size_t num_thread = 2;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
-    ze_device_mem_alloc_desc_t mem_descr {
-            .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
-            .pNext = NULL,
-            .flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED,
-            .ordinal = 0,
+    ze_device_mem_alloc_desc_t mem_descr{
+        .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
+        .pNext = NULL,
+        .flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED,
+        .ordinal = 0,
     };
 
     handles_storage<native_type> memory_storage(42 * num_thread);
@@ -51,9 +51,9 @@ TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_de
         int rank_idx = rank_device_idx;
         int rank_size = subdevices.size();
         size_t elem_count = buffer_size;
-        this->output << "Create device memory & flags handles for device by index: "    \
-                     << std::to_string(sub_device->get_device_id()) <<                  \
-                     ", as rank: (" << rank_device_idx << "/" << rank_size << ")" << std::endl;
+        this->output << "Create device memory & flags handles for device by index: "
+                     << std::to_string(sub_device->get_device_id()) << ", as rank: ("
+                     << rank_device_idx << "/" << rank_size << ")" << std::endl;
 
         comm_param_storage[rank_device_idx].push_back(rank_idx);
         comm_param_storage[rank_device_idx].push_back(rank_size);
@@ -62,9 +62,12 @@ TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_de
         //allocate flags & memory
         // memory
         this->output << "Alloc memory handles: " << std::endl;
-        auto mem_send = sub_device->alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
-        auto mem_recv = sub_device->alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
-        auto temp_recv = sub_device->alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx, mem_descr);
+        auto mem_send =
+            sub_device->alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
+        auto mem_recv =
+            sub_device->alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
+        auto temp_recv =
+            sub_device->alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx, mem_descr);
         mem_send.enqueue_write_sync(send_values);
         mem_recv.enqueue_write_sync(recv_values);
         temp_recv.enqueue_write_sync(recv_values);
@@ -122,9 +125,9 @@ TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_de
         ccl_subdevice& device = *(dev_it->second);
         ccl_device::device_module& module = *(device_modules.find(&device)->second);
 
-        this->output << "Preparing kernels params: name of kernel: " << desc.pKernelName <<"\n"      \
-                    << "  device id: " << ccl::to_string(device.get_device_path()) << "\n"           \
-                    << "  Rank idx" << rank_device_idx << std::endl;
+        this->output << "Preparing kernels params: name of kernel: " << desc.pKernelName << "\n"
+                     << "  device id: " << ccl::to_string(device.get_device_path()) << "\n"
+                     << "  Rank idx" << rank_device_idx << std::endl;
 
         ze_kernel_handle_t handle = nullptr;
         try {
@@ -134,7 +137,7 @@ TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_de
                                          ", error: " + native::to_string(result));
             }
 
-            this->output << "Create list & queue with default properties on device by id: " \
+            this->output << "Create list & queue with default properties on device by id: "
                          << ccl::to_string(device.get_device_path()) << std::endl;
 
             thread_kernels.emplace(rank_device_idx, std::move(handle));
@@ -165,9 +168,9 @@ TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_de
         auto& flag_handles = flags_storage.per_thread_storage.find(thread_idx)->second;
         auto& comm_handles = comm_param_storage.find(thread_idx)->second;
 
-        this->output <<"Launch kernel params: \n" <<                                             \
-                       " Sub_device idx" << ccl::to_string(subdevice.get_device_path()) <<       \
-                       ",  Rank idx" << rank_device_idx << std::endl;
+        this->output << "Launch kernel params: \n"
+                     << " Sub_device idx" << ccl::to_string(subdevice.get_device_path())
+                     << ",  Rank idx" << rank_device_idx << std::endl;
 
         ccl_device::device_queue& queue = thread_queue.find(thread_idx)->second;
         ccl_device::device_cmd_list& list = thread_cmd_list.find(thread_idx)->second;

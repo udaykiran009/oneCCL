@@ -122,8 +122,7 @@ bool thread_group_ring_topology::build_specific(
     out << "\nStart indexer:" << std::endl;
     detail::id_thread_table assigned_ids; //device_id -> thread_id
     auto& ctx_per_thread_data = context.thread_device_topology;
-    std::vector<detail::marked_idx> marked_id_ring =
-        detail::create_marked(id_ring); // marked graph
+    std::vector<detail::marked_idx> marked_id_ring = detail::create_marked(id_ring); // marked graph
 
     auto topology_comm_addr = comm_addr;
     topology_comm_addr.comm_size = marked_id_ring.size();
@@ -139,9 +138,8 @@ bool thread_group_ring_topology::build_specific(
             devices_factory.thread_gpu_comms.find(thread_id)->second;
 
         // use graph ids to enumerate thread plain list `thread_gpu_comms` into `out_indexed_devices`
-        auto rank_builder =
-            create_device_functor<detail::graph_ring_indexer<group_id(), class_id>>(
-                marked_id_ring, assigned_ids, thread_id, out_indexed_devices->get_device_storage());
+        auto rank_builder = create_device_functor<detail::graph_ring_indexer<group_id(), class_id>>(
+            marked_id_ring, assigned_ids, thread_id, out_indexed_devices->get_device_storage());
         ccl_tuple_for_each(*non_indexed_plain_devices, rank_builder);
 
         detail::printer<group_id(), class_id> p;
@@ -190,9 +188,8 @@ bool thread_group_ring_topology::build_specific(
             auto& next_thread_ring_topology = context.get_thread_topology<class_id>(next_thread_id)
                                                   .get_topology(ring_index)
                                                   ->get_device_storage();
-            const auto& real =
-                detail::get_device_with_max_rank<ccl_gpu_comm, group_id(), class_id>(
-                    next_thread_ring_topology, id_ring);
+            const auto& real = detail::get_device_with_max_rank<ccl_gpu_comm, group_id(), class_id>(
+                next_thread_ring_topology, id_ring);
             const auto& virt =
                 detail::get_device_with_max_rank<ccl_virtual_gpu_comm, group_id(), class_id>(
                     next_thread_ring_topology, id_ring);
@@ -400,9 +397,9 @@ bool thread_group_ring_topology::build_scale_up_specific(
                     indexed_devices_for_current_thread, id_ring);
             const auto& curr_scale_virt =
                 detail::get_device_with_min_rank<ccl_numa_proxy<ccl_virtual_gpu_comm>,
-                                                  group_id(),
-                                                  class_id>(indexed_devices_for_current_thread,
-                                                            id_ring);
+                                                 group_id(),
+                                                 class_id>(indexed_devices_for_current_thread,
+                                                           id_ring);
 
             size_t tg_max_rank = std::max({ std::get<0>(curr_real),
                                             std::get<0>(curr_virt),
@@ -437,12 +434,12 @@ bool thread_group_ring_topology::build_scale_up_specific(
                         next_thread_ring_topology, id_ring);
                 const auto& scale_real =
                     detail::get_device_with_max_rank<ccl_numa_proxy<ccl_gpu_comm>,
-                                                      group_id(),
-                                                      class_id>(next_thread_ring_topology, id_ring);
+                                                     group_id(),
+                                                     class_id>(next_thread_ring_topology, id_ring);
                 const auto& scale_virt =
                     detail::get_device_with_max_rank<ccl_numa_proxy<ccl_virtual_gpu_comm>,
-                                                      group_id(),
-                                                      class_id>(next_thread_ring_topology, id_ring);
+                                                     group_id(),
+                                                     class_id>(next_thread_ring_topology, id_ring);
                 if (next_rank != std::min({ std::get<0>(real),
                                             std::get<0>(virt),
                                             std::get<0>(scale_real),

@@ -4,7 +4,6 @@ using namespace std;
 using namespace sycl;
 
 int main(int argc, char *argv[]) {
-
     const size_t count = 10 * 1024 * 1024;
 
     int i = 0;
@@ -62,11 +61,10 @@ int main(int argc, char *argv[]) {
 
     /* open buffers and modify them on the device side */
     q.submit([&](auto &h) {
-        h.parallel_for(count * size,
-                                                          [=](auto id) {
-                                                              send_buf[id] = id / count + 1;
-                                                              recv_buf[id] = -1;
-                                                          });
+        h.parallel_for(count * size, [=](auto id) {
+            send_buf[id] = id / count + 1;
+            recv_buf[id] = -1;
+        });
     });
 
     if (!handle_exception(q))

@@ -17,7 +17,7 @@ struct thread_group_context;
 
 namespace ccl {
 namespace v1 {
-    class communicator;
+class communicator;
 }
 class host_communicator;
 struct communicator_interface;

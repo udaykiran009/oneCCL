@@ -239,7 +239,7 @@ std::pair<bool, std::string> check_ring_multiple_topologies(
         if (!top_type) {
             res = false;
             descr += std::string("Thread: ") + std::to_string(thread_id) +
-                     " - there is no topology: " + std::to_string((int) topology);
+                     " - there is no topology: " + std::to_string((int)topology);
             break;
         }
 
@@ -247,7 +247,7 @@ std::pair<bool, std::string> check_ring_multiple_topologies(
         if (!devices_ptr) {
             res = false;
             descr += std::string("Thread: ") + std::to_string(thread_id) +
-                     " - there are no devices for topology: " + std::to_string((int) topology);
+                     " - there are no devices for topology: " + std::to_string((int)topology);
             break;
         }
 
@@ -387,12 +387,12 @@ native::detail::cross_device_rating test_custom_p2p_ping(
 }
 
 native::detail::cross_device_rating all_p2p_accessible(const native::ccl_device&,
-                                                        const native::ccl_device&) {
+                                                       const native::ccl_device&) {
     return 1;
 }
 
 native::detail::cross_device_rating nobody_p2p_accessible(const native::ccl_device&,
-                                                           const native::ccl_device&) {
+                                                          const native::ccl_device&) {
     return 0;
 }
 

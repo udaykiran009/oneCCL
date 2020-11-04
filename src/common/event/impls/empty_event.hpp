@@ -9,9 +9,7 @@ class empty_event_impl final : public event_impl {
 public:
     empty_event_impl() = default;
 
-    void wait() override {
-
-    }
+    void wait() override {}
 
     bool test() override {
         return true;

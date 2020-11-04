@@ -44,13 +44,11 @@ CCL_API void device::build_from_params() {
     get_impl()->build_from_params();
 }
 
-CCL_API device::native_t& device::get_native()
-{
+CCL_API device::native_t& device::get_native() {
     return const_cast<device::native_t&>(static_cast<const device*>(this)->get_native());
 }
 
-CCL_API const device::native_t& device::get_native() const
-{
+CCL_API const device::native_t& device::get_native() const {
     return get_impl()->get_attribute_value(
         detail::ccl_api_type_attr_traits<device_attr_id, device_attr_id::native_handle>{});
 }

@@ -20,7 +20,6 @@ void kvs_str_copy(char* dst, const char* src, size_t bytes) {
 }
 
 size_t helper::replace_str(char* str, int old_rank, int new_rank) {
-
     throw std::runtime_error("unexpected path");
 
     char old_str[INT_STR_SIZE];

@@ -479,8 +479,8 @@ device_path_deserializer::deserialize_global_colored_graph_list_indices(const ra
 }
 
 detail::colored_idx device_path_deserializer::extract_index(raw_data_t::const_iterator it_begin,
-                                                             raw_data_t::const_iterator it_end,
-                                                             std::false_type raw_index) {
+                                                            raw_data_t::const_iterator it_end,
+                                                            std::false_type raw_index) {
     constexpr size_t color_size = sizeof(detail::color_t);
     constexpr size_t stride = sizeof(detail::colored_idx) - sizeof(ccl::device_index_type);
     if (std::distance(it_begin, it_end) %

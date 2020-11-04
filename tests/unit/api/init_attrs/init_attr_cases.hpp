@@ -55,5 +55,4 @@ TEST(init_attr, move_init_attr) {
     ASSERT_TRUE(moved_attr2.get_impl().get() != orig_attr2.get_impl().get());
 }
 
-
 } // namespace init_attr_suite

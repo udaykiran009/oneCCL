@@ -12,7 +12,7 @@ struct ccl_device;
 }
 namespace ccl {
 namespace v1 {
-    class comm_split_attr;
+class comm_split_attr;
 }
 
 #ifdef MULTI_GPU_SUPPORT

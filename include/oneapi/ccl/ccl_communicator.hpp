@@ -6,12 +6,12 @@
 
 namespace ccl {
 namespace detail {
-    class environment;
+class environment;
 }
 
 struct communicator_interface;
 
-template<cl_backend_type type>
+template <cl_backend_type type>
 struct comm_impl_dispatch_selector;
 
 class comm_group;
@@ -28,9 +28,9 @@ struct impl_dispatch;
  * Use ccl::create_communicator for communicator objects creation.
  */
 class communicator final : public ccl_api_base_movable<communicator,
-                                                              direct_access_policy,
-                                                              communicator_interface,
-                                                              std::shared_ptr> {
+                                                       direct_access_policy,
+                                                       communicator_interface,
+                                                       std::shared_ptr> {
 public:
     using base_t = ccl_api_base_movable<communicator,
                                         direct_access_policy,
@@ -97,7 +97,7 @@ private:
     friend class ccl::comm_group;
     friend struct ccl::v1::impl_dispatch;
 
-    template<cl_backend_type type>
+    template <cl_backend_type type>
     friend struct ccl::comm_impl_dispatch_selector;
 
     communicator(impl_value_t&& impl);

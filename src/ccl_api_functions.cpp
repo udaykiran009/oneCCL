@@ -29,12 +29,9 @@ struct impl_dispatch {
 
 #ifdef MULTI_GPU_SUPPORT
 /* register a gpu module */
-void register_gpu_module(std::string kernel_dir_path)
-{
-    if (!kernel_dir_path.empty())
-    {
-        if(*kernel_dir_path.rbegin() != '/')
-        {
+void register_gpu_module(std::string kernel_dir_path) {
+    if (!kernel_dir_path.empty()) {
+        if (*kernel_dir_path.rbegin() != '/') {
             kernel_dir_path += '/';
         }
     }
@@ -48,43 +45,38 @@ void register_gpu_module(std::string kernel_dir_path)
 
     // allgatherv
     std::string kernel_path = kernel_dir_path + "ring_allgatherv.spv";
-    register_gpu_module_source(kernel_path.c_str(),
-                                ccl::device_topology_type::ring,
-                                ccl_coll_allgatherv);
+    register_gpu_module_source(
+        kernel_path.c_str(), ccl::device_topology_type::ring, ccl_coll_allgatherv);
     // kernel_path = kernel_dir_path + "a2a_allgatherv.spv";
     // register_gpu_module_source(kernel_path.c_str(),
     //                             ccl::device_topology_type::a2a,
     //                             ccl_coll_allgatherv);
     // alltoallv
     kernel_path = kernel_dir_path + "ring_alltoallv.spv";
-    register_gpu_module_source(kernel_path.c_str(),
-                               ccl::device_topology_type::ring,
-                               ccl_coll_alltoallv);
+    register_gpu_module_source(
+        kernel_path.c_str(), ccl::device_topology_type::ring, ccl_coll_alltoallv);
     // register_gpu_module_source("kernels/a2a_alltoallv.spv",
     //                             ccl::device_topology_type::a2a,
     //                             ccl_coll_alltoallv);
     // allreduce
     kernel_path = kernel_dir_path + "ring_allreduce.spv";
-    register_gpu_module_source(kernel_path.c_str(),
-                                ccl::device_topology_type::ring,
-                                ccl_coll_allreduce);
+    register_gpu_module_source(
+        kernel_path.c_str(), ccl::device_topology_type::ring, ccl_coll_allreduce);
     // kernel_path = kernel_dir_path + "a2a_allreduce.spv";
     // register_gpu_module_source(kernel_path.c_str(),
     //                             ccl::device_topology_type::a2a,
     //                             ccl_coll_allreduce);
     // // bcast
     kernel_path = kernel_dir_path + "ring_bcast.spv";
-    register_gpu_module_source(kernel_path.c_str(),
-                                ccl::device_topology_type::ring,
-                                ccl_coll_bcast);
+    register_gpu_module_source(
+        kernel_path.c_str(), ccl::device_topology_type::ring, ccl_coll_bcast);
     // kernel_path = kernel_dir_path + "a2a_bcast.spv";
     // register_gpu_module_source(kernel_path.c_str(),
     //                            ccl::device_topology_type::a2a,
     //                            ccl_coll_bcast);
     kernel_path = kernel_dir_path + "ring_reduce.spv";
-    register_gpu_module_source(kernel_path.c_str(),
-                                ccl::device_topology_type::ring,
-                                ccl_coll_reduce);
+    register_gpu_module_source(
+        kernel_path.c_str(), ccl::device_topology_type::ring, ccl_coll_reduce);
     // kernel_path = kernel_dir_path + "a2a_reduce.spv";
     // register_gpu_module_source(kernel_path.c_str(),
     //                            ccl::device_topology_type::a2a,
@@ -99,8 +91,7 @@ void CCL_API init(const init_attr& attr) {
     const auto& env_object = ccl::global_data::env();
 
     //WA
-    if (!env_object.kernel_path.empty())
-    {
+    if (!env_object.kernel_path.empty()) {
         register_gpu_module(env_object.kernel_path);
     }
 #endif //MULTI_GPU_SUPPORT
@@ -135,31 +126,28 @@ shared_ptr_class<kvs> CCL_API create_kvs(const kvs::address_type& addr, const kv
 }
 
 /* device */
-device CCL_API create_device()
-{
-    static empty_t empty {};
+device CCL_API create_device() {
+    static empty_t empty{};
     return detail::environment::instance().create_device(empty);
 }
 
 /* context */
-context CCL_API create_context()
-{
-    static empty_t empty {};
+context CCL_API create_context() {
+    static empty_t empty{};
     return detail::environment::instance().create_context(empty);
 }
 
 /* stream */
-stream CCL_API create_stream()
-{
+stream CCL_API create_stream() {
     return default_stream;
 }
 
 #ifdef CCL_ENABLE_SYCL
 communicator create_single_device_communicator(const int comm_size,
-                                                      const int rank,
-                                                      const cl::sycl::device& device,
-                                                      const cl::sycl::context& context,
-                                                      shared_ptr_class<kvs_interface> kvs) {
+                                               const int rank,
+                                               const cl::sycl::device& device,
+                                               const cl::sycl::context& context,
+                                               shared_ptr_class<kvs_interface> kvs) {
     return detail::environment::instance().create_single_device_communicator(
         comm_size, rank, device, context, kvs);
 }
@@ -201,7 +189,9 @@ communicator CCL_API create_communicator(const comm_attr& attr) {
     return ccl::detail::environment::instance().create_communicator(attr);
 }
 
-communicator CCL_API create_communicator(const int size, shared_ptr_class<kvs_interface> kvs, const comm_attr& attr) {
+communicator CCL_API create_communicator(const int size,
+                                         shared_ptr_class<kvs_interface> kvs,
+                                         const comm_attr& attr) {
     return ccl::detail::environment::instance().create_communicator(size, kvs, attr);
 }
 
@@ -221,20 +211,22 @@ communicator CCL_API create_communicator(const int size,
 #define CHECK_DEPS(deps) \
     do { \
         if (!deps.empty()) { \
-            throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - handling a vector of events that the operation should depend on is not implemented"); \
+            throw ccl::exception( \
+                std::string(__PRETTY_FUNCTION__) + \
+                " - handling a vector of events that the operation should depend on is not implemented"); \
         } \
     } while (0)
 
 /* allgatherv */
 CCL_API event allgatherv(const void* send_buf,
-                           size_t send_count,
-                           void* recv_buf,
-                           const vector_class<size_t>& recv_counts,
-                           datatype dtype,
-                           const communicator& comm,
-                           const stream& op_stream,
-                           const allgatherv_attr& attr,
-                           const vector_class<event>& deps) {
+                         size_t send_count,
+                         void* recv_buf,
+                         const vector_class<size_t>& recv_counts,
+                         datatype dtype,
+                         const communicator& comm,
+                         const stream& op_stream,
+                         const allgatherv_attr& attr,
+                         const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
@@ -242,13 +234,13 @@ CCL_API event allgatherv(const void* send_buf,
 }
 
 CCL_API event allgatherv(const void* send_buf,
-                           size_t send_count,
-                           void* recv_buf,
-                           const vector_class<size_t>& recv_counts,
-                           datatype dtype,
-                           const communicator& comm,
-                           const allgatherv_attr& attr,
-                           const vector_class<event>& deps) {
+                         size_t send_count,
+                         void* recv_buf,
+                         const vector_class<size_t>& recv_counts,
+                         datatype dtype,
+                         const communicator& comm,
+                         const allgatherv_attr& attr,
+                         const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
@@ -256,14 +248,14 @@ CCL_API event allgatherv(const void* send_buf,
 }
 
 CCL_API event allgatherv(const void* send_buf,
-                           size_t send_count,
-                           const vector_class<void*>& recv_bufs,
-                           const vector_class<size_t>& recv_counts,
-                           datatype dtype,
-                           const communicator& comm,
-                           const stream& op_stream,
-                           const allgatherv_attr& attr,
-                           const vector_class<event>& deps) {
+                         size_t send_count,
+                         const vector_class<void*>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
+                         datatype dtype,
+                         const communicator& comm,
+                         const stream& op_stream,
+                         const allgatherv_attr& attr,
+                         const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
@@ -271,13 +263,13 @@ CCL_API event allgatherv(const void* send_buf,
 }
 
 CCL_API event allgatherv(const void* send_buf,
-                           size_t send_count,
-                           const vector_class<void*>& recv_bufs,
-                           const vector_class<size_t>& recv_counts,
-                           datatype dtype,
-                           const communicator& comm,
-                           const allgatherv_attr& attr,
-                           const vector_class<event>& deps) {
+                         size_t send_count,
+                         const vector_class<void*>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
+                         datatype dtype,
+                         const communicator& comm,
+                         const allgatherv_attr& attr,
+                         const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
@@ -286,13 +278,13 @@ CCL_API event allgatherv(const void* send_buf,
 
 template <class BufferType, typename T>
 event allgatherv(const BufferType* send_buf,
-                   size_t send_count,
-                   BufferType* recv_buf,
-                   const vector_class<size_t>& recv_counts,
-                   const communicator& comm,
-                   const stream& op_stream,
-                   const allgatherv_attr& attr,
-                   const vector_class<event>& deps) {
+                 size_t send_count,
+                 BufferType* recv_buf,
+                 const vector_class<size_t>& recv_counts,
+                 const communicator& comm,
+                 const stream& op_stream,
+                 const allgatherv_attr& attr,
+                 const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
@@ -301,12 +293,12 @@ event allgatherv(const BufferType* send_buf,
 
 template <class BufferType, typename T>
 event allgatherv(const BufferType* send_buf,
-                   size_t send_count,
-                   BufferType* recv_buf,
-                   const vector_class<size_t>& recv_counts,
-                   const communicator& comm,
-                   const allgatherv_attr& attr,
-                   const vector_class<event>& deps) {
+                 size_t send_count,
+                 BufferType* recv_buf,
+                 const vector_class<size_t>& recv_counts,
+                 const communicator& comm,
+                 const allgatherv_attr& attr,
+                 const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
@@ -315,13 +307,13 @@ event allgatherv(const BufferType* send_buf,
 
 template <class BufferType, typename T>
 event allgatherv(const BufferType* send_buf,
-                   size_t send_count,
-                   vector_class<BufferType*>& recv_bufs,
-                   const vector_class<size_t>& recv_counts,
-                   const communicator& comm,
-                   const stream& op_stream,
-                   const allgatherv_attr& attr,
-                   const vector_class<event>& deps) {
+                 size_t send_count,
+                 vector_class<BufferType*>& recv_bufs,
+                 const vector_class<size_t>& recv_counts,
+                 const communicator& comm,
+                 const stream& op_stream,
+                 const allgatherv_attr& attr,
+                 const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
@@ -330,12 +322,12 @@ event allgatherv(const BufferType* send_buf,
 
 template <class BufferType, typename T>
 event allgatherv(const BufferType* send_buf,
-                   size_t send_count,
-                   vector_class<BufferType*>& recv_bufs,
-                   const vector_class<size_t>& recv_counts,
-                   const communicator& comm,
-                   const allgatherv_attr& attr,
-                   const vector_class<event>& deps) {
+                 size_t send_count,
+                 vector_class<BufferType*>& recv_bufs,
+                 const vector_class<size_t>& recv_counts,
+                 const communicator& comm,
+                 const allgatherv_attr& attr,
+                 const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
@@ -344,13 +336,13 @@ event allgatherv(const BufferType* send_buf,
 
 template <class BufferObjectType, typename T>
 event allgatherv(const BufferObjectType& send_buf,
-                   size_t send_count,
-                   BufferObjectType& recv_buf,
-                   const vector_class<size_t>& recv_counts,
-                   const communicator& comm,
-                   const stream& op_stream,
-                   const allgatherv_attr& attr,
-                   const vector_class<event>& deps) {
+                 size_t send_count,
+                 BufferObjectType& recv_buf,
+                 const vector_class<size_t>& recv_counts,
+                 const communicator& comm,
+                 const stream& op_stream,
+                 const allgatherv_attr& attr,
+                 const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
@@ -359,12 +351,12 @@ event allgatherv(const BufferObjectType& send_buf,
 
 template <class BufferObjectType, typename T>
 event allgatherv(const BufferObjectType& send_buf,
-                   size_t send_count,
-                   BufferObjectType& recv_buf,
-                   const vector_class<size_t>& recv_counts,
-                   const communicator& comm,
-                   const allgatherv_attr& attr,
-                   const vector_class<event>& deps) {
+                 size_t send_count,
+                 BufferObjectType& recv_buf,
+                 const vector_class<size_t>& recv_counts,
+                 const communicator& comm,
+                 const allgatherv_attr& attr,
+                 const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
@@ -373,13 +365,13 @@ event allgatherv(const BufferObjectType& send_buf,
 
 template <class BufferObjectType, typename T>
 event allgatherv(const BufferObjectType& send_buf,
-                   size_t send_count,
-                   vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs,
-                   const vector_class<size_t>& recv_counts,
-                   const communicator& comm,
-                   const stream& op_stream,
-                   const allgatherv_attr& attr,
-                   const vector_class<event>& deps) {
+                 size_t send_count,
+                 vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs,
+                 const vector_class<size_t>& recv_counts,
+                 const communicator& comm,
+                 const stream& op_stream,
+                 const allgatherv_attr& attr,
+                 const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
@@ -388,12 +380,12 @@ event allgatherv(const BufferObjectType& send_buf,
 
 template <class BufferObjectType, typename T>
 event allgatherv(const BufferObjectType& send_buf,
-                   size_t send_count,
-                   vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs,
-                   const vector_class<size_t>& recv_counts,
-                   const communicator& comm,
-                   const allgatherv_attr& attr,
-                   const vector_class<event>& deps) {
+                 size_t send_count,
+                 vector_class<ccl::reference_wrapper_class<BufferObjectType>>& recv_bufs,
+                 const vector_class<size_t>& recv_counts,
+                 const communicator& comm,
+                 const allgatherv_attr& attr,
+                 const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
@@ -402,14 +394,14 @@ event allgatherv(const BufferObjectType& send_buf,
 
 /* allreduce */
 CCL_API event allreduce(const void* send_buf,
-                          void* recv_buf,
-                          size_t count,
-                          datatype dtype,
-                          reduction reduction,
-                          const communicator& comm,
-                          const stream& op_stream,
-                          const allreduce_attr& attr,
-                          const vector_class<event>& deps) {
+                        void* recv_buf,
+                        size_t count,
+                        datatype dtype,
+                        reduction reduction,
+                        const communicator& comm,
+                        const stream& op_stream,
+                        const allreduce_attr& attr,
+                        const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allreduce(
@@ -417,13 +409,13 @@ CCL_API event allreduce(const void* send_buf,
 }
 
 CCL_API event allreduce(const void* send_buf,
-                          void* recv_buf,
-                          size_t count,
-                          datatype dtype,
-                          reduction reduction,
-                          const communicator& comm,
-                          const allreduce_attr& attr,
-                          const vector_class<event>& deps) {
+                        void* recv_buf,
+                        size_t count,
+                        datatype dtype,
+                        reduction reduction,
+                        const communicator& comm,
+                        const allreduce_attr& attr,
+                        const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allreduce(
@@ -432,13 +424,13 @@ CCL_API event allreduce(const void* send_buf,
 
 template <class BufferType, typename T>
 event allreduce(const BufferType* send_buf,
-                  BufferType* recv_buf,
-                  size_t count,
-                  reduction reduction,
-                  const communicator& comm,
-                  const stream& op_stream,
-                  const allreduce_attr& attr,
-                  const vector_class<event>& deps) {
+                BufferType* recv_buf,
+                size_t count,
+                reduction reduction,
+                const communicator& comm,
+                const stream& op_stream,
+                const allreduce_attr& attr,
+                const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allreduce(send_buf, recv_buf, count, reduction, disp(op_stream), attr, deps);
@@ -446,26 +438,27 @@ event allreduce(const BufferType* send_buf,
 
 template <class BufferType, typename T>
 event allreduce(const BufferType* send_buf,
-                  BufferType* recv_buf,
-                  size_t count,
-                  reduction reduction,
-                  const communicator& comm,
-                  const allreduce_attr& attr,
-                  const vector_class<event>& deps) {
+                BufferType* recv_buf,
+                size_t count,
+                reduction reduction,
+                const communicator& comm,
+                const allreduce_attr& attr,
+                const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
-    return disp(comm)->allreduce(send_buf, recv_buf, count, reduction, disp(default_stream), attr, deps);
+    return disp(comm)->allreduce(
+        send_buf, recv_buf, count, reduction, disp(default_stream), attr, deps);
 }
 
 template <class BufferObjectType, typename T>
 event allreduce(const BufferObjectType& send_buf,
-                  BufferObjectType& recv_buf,
-                  size_t count,
-                  reduction reduction,
-                  const communicator& comm,
-                  const stream& op_stream,
-                  const allreduce_attr& attr,
-                  const vector_class<event>& deps) {
+                BufferObjectType& recv_buf,
+                size_t count,
+                reduction reduction,
+                const communicator& comm,
+                const stream& op_stream,
+                const allreduce_attr& attr,
+                const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allreduce(send_buf, recv_buf, count, reduction, disp(op_stream), attr, deps);
@@ -473,51 +466,52 @@ event allreduce(const BufferObjectType& send_buf,
 
 template <class BufferObjectType, typename T>
 event allreduce(const BufferObjectType& send_buf,
-                  BufferObjectType& recv_buf,
-                  size_t count,
-                  reduction reduction,
-                  const communicator& comm,
-                  const allreduce_attr& attr,
-                  const vector_class<event>& deps) {
+                BufferObjectType& recv_buf,
+                size_t count,
+                reduction reduction,
+                const communicator& comm,
+                const allreduce_attr& attr,
+                const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
-    return disp(comm)->allreduce(send_buf, recv_buf, count, reduction, disp(default_stream), attr, deps);
+    return disp(comm)->allreduce(
+        send_buf, recv_buf, count, reduction, disp(default_stream), attr, deps);
 }
 
 /* alltoall */
 CCL_API event alltoall(const void* send_buf,
-                         void* recv_buf,
-                         size_t count,
-                         datatype dtype,
-                         const communicator& comm,
-                         const stream& op_stream,
-                         const alltoall_attr& attr,
-                         const vector_class<event>& deps) {
+                       void* recv_buf,
+                       size_t count,
+                       datatype dtype,
+                       const communicator& comm,
+                       const stream& op_stream,
+                       const alltoall_attr& attr,
+                       const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, dtype, disp(op_stream), attr, deps);
 }
 
 CCL_API event alltoall(const void* send_buf,
-                         void* recv_buf,
-                         size_t count,
-                         datatype dtype,
-                         const communicator& comm,
-                         const alltoall_attr& attr,
-                         const vector_class<event>& deps) {
+                       void* recv_buf,
+                       size_t count,
+                       datatype dtype,
+                       const communicator& comm,
+                       const alltoall_attr& attr,
+                       const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, dtype, disp(default_stream), attr, deps);
 }
 
 CCL_API event alltoall(const vector_class<void*>& send_buf,
-                         const vector_class<void*>& recv_buf,
-                         size_t count,
-                         datatype dtype,
-                         const communicator& comm,
-                         const stream& op_stream,
-                         const alltoall_attr& attr,
-                         const vector_class<event>& deps) {
+                       const vector_class<void*>& recv_buf,
+                       size_t count,
+                       datatype dtype,
+                       const communicator& comm,
+                       const stream& op_stream,
+                       const alltoall_attr& attr,
+                       const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, dtype, disp(op_stream), attr, deps);
@@ -525,12 +519,12 @@ CCL_API event alltoall(const vector_class<void*>& send_buf,
 
 template <class BufferType, typename T>
 event alltoall(const BufferType* send_buf,
-                 BufferType* recv_buf,
-                 size_t count,
-                 const communicator& comm,
-                 const stream& op_stream,
-                 const alltoall_attr& attr,
-                 const vector_class<event>& deps) {
+               BufferType* recv_buf,
+               size_t count,
+               const communicator& comm,
+               const stream& op_stream,
+               const alltoall_attr& attr,
+               const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(op_stream), attr, deps);
@@ -538,11 +532,11 @@ event alltoall(const BufferType* send_buf,
 
 template <class BufferType, typename T>
 event alltoall(const BufferType* send_buf,
-                 BufferType* recv_buf,
-                 size_t count,
-                 const communicator& comm,
-                 const alltoall_attr& attr,
-                 const vector_class<event>& deps) {
+               BufferType* recv_buf,
+               size_t count,
+               const communicator& comm,
+               const alltoall_attr& attr,
+               const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(default_stream), attr, deps);
@@ -550,12 +544,12 @@ event alltoall(const BufferType* send_buf,
 
 template <class BufferType, typename T>
 event alltoall(const vector_class<BufferType*>& send_buf,
-                 const vector_class<BufferType*>& recv_buf,
-                 size_t count,
-                 const communicator& comm,
-                 const stream& op_stream,
-                 const alltoall_attr& attr,
-                 const vector_class<event>& deps) {
+               const vector_class<BufferType*>& recv_buf,
+               size_t count,
+               const communicator& comm,
+               const stream& op_stream,
+               const alltoall_attr& attr,
+               const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(op_stream), attr, deps);
@@ -563,11 +557,11 @@ event alltoall(const vector_class<BufferType*>& send_buf,
 
 template <class BufferType, typename T>
 event alltoall(const vector_class<BufferType*>& send_buf,
-                 const vector_class<BufferType*>& recv_buf,
-                 size_t count,
-                 const communicator& comm,
-                 const alltoall_attr& attr,
-                 const vector_class<event>& deps) {
+               const vector_class<BufferType*>& recv_buf,
+               size_t count,
+               const communicator& comm,
+               const alltoall_attr& attr,
+               const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(default_stream), attr, deps);
@@ -575,12 +569,12 @@ event alltoall(const vector_class<BufferType*>& send_buf,
 
 template <class BufferObjectType, typename T>
 event alltoall(const BufferObjectType& send_buf,
-                 BufferObjectType& recv_buf,
-                 size_t count,
-                 const communicator& comm,
-                 const stream& op_stream,
-                 const alltoall_attr& attr,
-                 const vector_class<event>& deps) {
+               BufferObjectType& recv_buf,
+               size_t count,
+               const communicator& comm,
+               const stream& op_stream,
+               const alltoall_attr& attr,
+               const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(op_stream), attr, deps);
@@ -588,11 +582,11 @@ event alltoall(const BufferObjectType& send_buf,
 
 template <class BufferObjectType, typename T>
 event alltoall(const BufferObjectType& send_buf,
-                 BufferObjectType& recv_buf,
-                 size_t count,
-                 const communicator& comm,
-                 const alltoall_attr& attr,
-                 const vector_class<event>& deps) {
+               BufferObjectType& recv_buf,
+               size_t count,
+               const communicator& comm,
+               const alltoall_attr& attr,
+               const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(default_stream), attr, deps);
@@ -600,12 +594,12 @@ event alltoall(const BufferObjectType& send_buf,
 
 template <class BufferObjectType, typename T>
 event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& send_buf,
-                 const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
-                 size_t count,
-                 const communicator& comm,
-                 const stream& op_stream,
-                 const alltoall_attr& attr,
-                 const vector_class<event>& deps) {
+               const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
+               size_t count,
+               const communicator& comm,
+               const stream& op_stream,
+               const alltoall_attr& attr,
+               const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(op_stream), attr, deps);
@@ -613,11 +607,11 @@ event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& se
 
 template <class BufferObjectType, typename T>
 event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& send_buf,
-                 const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
-                 size_t count,
-                 const communicator& comm,
-                 const alltoall_attr& attr,
-                 const vector_class<event>& deps) {
+               const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
+               size_t count,
+               const communicator& comm,
+               const alltoall_attr& attr,
+               const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(default_stream), attr, deps);
@@ -625,14 +619,14 @@ event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& se
 
 /* alltoallv */
 CCL_API event alltoallv(const void* send_buf,
-                          const vector_class<size_t>& send_counts,
-                          void* recv_buf,
-                          const vector_class<size_t>& recv_counts,
-                          datatype dtype,
-                          const communicator& comm,
-                          const stream& op_stream,
-                          const alltoallv_attr& attr,
-                          const vector_class<event>& deps) {
+                        const vector_class<size_t>& send_counts,
+                        void* recv_buf,
+                        const vector_class<size_t>& recv_counts,
+                        datatype dtype,
+                        const communicator& comm,
+                        const stream& op_stream,
+                        const alltoallv_attr& attr,
+                        const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
@@ -640,13 +634,13 @@ CCL_API event alltoallv(const void* send_buf,
 }
 
 CCL_API event alltoallv(const void* send_buf,
-                          const vector_class<size_t>& send_counts,
-                          void* recv_buf,
-                          const vector_class<size_t>& recv_counts,
-                          datatype dtype,
-                          const communicator& comm,
-                          const alltoallv_attr& attr,
-                          const vector_class<event>& deps) {
+                        const vector_class<size_t>& send_counts,
+                        void* recv_buf,
+                        const vector_class<size_t>& recv_counts,
+                        datatype dtype,
+                        const communicator& comm,
+                        const alltoallv_attr& attr,
+                        const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
@@ -654,14 +648,14 @@ CCL_API event alltoallv(const void* send_buf,
 }
 
 CCL_API event alltoallv(const vector_class<void*>& send_bufs,
-                          const vector_class<size_t>& send_counts,
-                          const vector_class<void*>& recv_bufs,
-                          const vector_class<size_t>& recv_counts,
-                          datatype dtype,
-                          const communicator& comm,
-                          const stream& op_stream,
-                          const alltoallv_attr& attr,
-                          const vector_class<event>& deps) {
+                        const vector_class<size_t>& send_counts,
+                        const vector_class<void*>& recv_bufs,
+                        const vector_class<size_t>& recv_counts,
+                        datatype dtype,
+                        const communicator& comm,
+                        const stream& op_stream,
+                        const alltoallv_attr& attr,
+                        const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
@@ -669,13 +663,13 @@ CCL_API event alltoallv(const vector_class<void*>& send_bufs,
 }
 
 CCL_API event alltoallv(const vector_class<void*>& send_bufs,
-                          const vector_class<size_t>& send_counts,
-                          const vector_class<void*>& recv_bufs,
-                          const vector_class<size_t>& recv_counts,
-                          datatype dtype,
-                          const communicator& comm,
-                          const alltoallv_attr& attr,
-                          const vector_class<event>& deps) {
+                        const vector_class<size_t>& send_counts,
+                        const vector_class<void*>& recv_bufs,
+                        const vector_class<size_t>& recv_counts,
+                        datatype dtype,
+                        const communicator& comm,
+                        const alltoallv_attr& attr,
+                        const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
@@ -684,13 +678,13 @@ CCL_API event alltoallv(const vector_class<void*>& send_bufs,
 
 template <class BufferType, typename T>
 event alltoallv(const BufferType* send_buf,
-                  const vector_class<size_t>& send_counts,
-                  BufferType* recv_buf,
-                  const vector_class<size_t>& recv_counts,
-                  const communicator& comm,
-                  const stream& op_stream,
-                  const alltoallv_attr& attr,
-                  const vector_class<event>& deps) {
+                const vector_class<size_t>& send_counts,
+                BufferType* recv_buf,
+                const vector_class<size_t>& recv_counts,
+                const communicator& comm,
+                const stream& op_stream,
+                const alltoallv_attr& attr,
+                const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
@@ -699,12 +693,12 @@ event alltoallv(const BufferType* send_buf,
 
 template <class BufferType, typename T>
 event alltoallv(const BufferType* send_buf,
-                  const vector_class<size_t>& send_counts,
-                  BufferType* recv_buf,
-                  const vector_class<size_t>& recv_counts,
-                  const communicator& comm,
-                  const alltoallv_attr& attr,
-                  const vector_class<event>& deps) {
+                const vector_class<size_t>& send_counts,
+                BufferType* recv_buf,
+                const vector_class<size_t>& recv_counts,
+                const communicator& comm,
+                const alltoallv_attr& attr,
+                const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
@@ -713,13 +707,13 @@ event alltoallv(const BufferType* send_buf,
 
 template <class BufferType, typename T>
 event alltoallv(const vector_class<BufferType*>& send_bufs,
-                  const vector_class<size_t>& send_counts,
-                  const vector_class<BufferType*>& recv_bufs,
-                  const vector_class<size_t>& recv_counts,
-                  const communicator& comm,
-                  const stream& op_stream,
-                  const alltoallv_attr& attr,
-                  const vector_class<event>& deps) {
+                const vector_class<size_t>& send_counts,
+                const vector_class<BufferType*>& recv_bufs,
+                const vector_class<size_t>& recv_counts,
+                const communicator& comm,
+                const stream& op_stream,
+                const alltoallv_attr& attr,
+                const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
@@ -728,12 +722,12 @@ event alltoallv(const vector_class<BufferType*>& send_bufs,
 
 template <class BufferType, typename T>
 event alltoallv(const vector_class<BufferType*>& send_bufs,
-                  const vector_class<size_t>& send_counts,
-                  const vector_class<BufferType*>& recv_bufs,
-                  const vector_class<size_t>& recv_counts,
-                  const communicator& comm,
-                  const alltoallv_attr& attr,
-                  const vector_class<event>& deps) {
+                const vector_class<size_t>& send_counts,
+                const vector_class<BufferType*>& recv_bufs,
+                const vector_class<size_t>& recv_counts,
+                const communicator& comm,
+                const alltoallv_attr& attr,
+                const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
@@ -742,13 +736,13 @@ event alltoallv(const vector_class<BufferType*>& send_bufs,
 
 template <class BufferObjectType, typename T>
 event alltoallv(const BufferObjectType& send_buf,
-                  const vector_class<size_t>& send_counts,
-                  BufferObjectType& recv_buf,
-                  const vector_class<size_t>& recv_counts,
-                  const communicator& comm,
-                  const stream& op_stream,
-                  const alltoallv_attr& attr,
-                  const vector_class<event>& deps) {
+                const vector_class<size_t>& send_counts,
+                BufferObjectType& recv_buf,
+                const vector_class<size_t>& recv_counts,
+                const communicator& comm,
+                const stream& op_stream,
+                const alltoallv_attr& attr,
+                const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
@@ -757,12 +751,12 @@ event alltoallv(const BufferObjectType& send_buf,
 
 template <class BufferObjectType, typename T>
 event alltoallv(const BufferObjectType& send_buf,
-                  const vector_class<size_t>& send_counts,
-                  BufferObjectType& recv_buf,
-                  const vector_class<size_t>& recv_counts,
-                  const communicator& comm,
-                  const alltoallv_attr& attr,
-                  const vector_class<event>& deps) {
+                const vector_class<size_t>& send_counts,
+                BufferObjectType& recv_buf,
+                const vector_class<size_t>& recv_counts,
+                const communicator& comm,
+                const alltoallv_attr& attr,
+                const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
@@ -771,13 +765,13 @@ event alltoallv(const BufferObjectType& send_buf,
 
 template <class BufferObjectType, typename T>
 event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& send_bufs,
-                  const vector_class<size_t>& send_counts,
-                  const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
-                  const vector_class<size_t>& recv_counts,
-                  const communicator& comm,
-                  const stream& op_stream,
-                  const alltoallv_attr& attr,
-                  const vector_class<event>& deps) {
+                const vector_class<size_t>& send_counts,
+                const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
+                const vector_class<size_t>& recv_counts,
+                const communicator& comm,
+                const stream& op_stream,
+                const alltoallv_attr& attr,
+                const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
@@ -786,12 +780,12 @@ event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& s
 
 template <class BufferObjectType, typename T>
 event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& send_bufs,
-                  const vector_class<size_t>& send_counts,
-                  const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
-                  const vector_class<size_t>& recv_counts,
-                  const communicator& comm,
-                  const alltoallv_attr& attr,
-                  const vector_class<event>& deps) {
+                const vector_class<size_t>& send_counts,
+                const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
+                const vector_class<size_t>& recv_counts,
+                const communicator& comm,
+                const alltoallv_attr& attr,
+                const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
@@ -800,17 +794,17 @@ event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& s
 
 /* barrier */
 CCL_API event barrier(const communicator& comm,
-                        const stream& op_stream,
-                        const barrier_attr& attr,
-                        const vector_class<event>& deps) {
+                      const stream& op_stream,
+                      const barrier_attr& attr,
+                      const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->barrier(disp(op_stream), attr, deps);
 }
 
 CCL_API event barrier(const communicator& comm,
-                        const barrier_attr& attr,
-                        const vector_class<event>& deps) {
+                      const barrier_attr& attr,
+                      const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->barrier(disp(default_stream), attr, deps);
@@ -818,25 +812,25 @@ CCL_API event barrier(const communicator& comm,
 
 /* broadcast */
 CCL_API event broadcast(void* buf,
-                          size_t count,
-                          datatype dtype,
-                          int root,
-                          const communicator& comm,
-                          const stream& op_stream,
-                          const broadcast_attr& attr,
-                          const vector_class<event>& deps) {
+                        size_t count,
+                        datatype dtype,
+                        int root,
+                        const communicator& comm,
+                        const stream& op_stream,
+                        const broadcast_attr& attr,
+                        const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->bcast(buf, count, dtype, root, disp(op_stream), attr, deps);
 }
 
 CCL_API event broadcast(void* buf,
-                          size_t count,
-                          datatype dtype,
-                          int root,
-                          const communicator& comm,
-                          const broadcast_attr& attr,
-                          const vector_class<event>& deps) {
+                        size_t count,
+                        datatype dtype,
+                        int root,
+                        const communicator& comm,
+                        const broadcast_attr& attr,
+                        const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->bcast(buf, count, dtype, root, disp(default_stream), attr, deps);
@@ -844,12 +838,12 @@ CCL_API event broadcast(void* buf,
 
 template <class BufferType, typename T>
 event broadcast(BufferType* buf,
-                  size_t count,
-                  int root,
-                  const communicator& comm,
-                  const stream& op_stream,
-                  const broadcast_attr& attr,
-                  const vector_class<event>& deps)
+                size_t count,
+                int root,
+                const communicator& comm,
+                const stream& op_stream,
+                const broadcast_attr& attr,
+                const vector_class<event>& deps)
 
 {
     CHECK_DEPS(deps);
@@ -859,11 +853,11 @@ event broadcast(BufferType* buf,
 
 template <class BufferType, typename T>
 event broadcast(BufferType* buf,
-                  size_t count,
-                  int root,
-                  const communicator& comm,
-                  const broadcast_attr& attr,
-                  const vector_class<event>& deps)
+                size_t count,
+                int root,
+                const communicator& comm,
+                const broadcast_attr& attr,
+                const vector_class<event>& deps)
 
 {
     CHECK_DEPS(deps);
@@ -873,12 +867,12 @@ event broadcast(BufferType* buf,
 
 template <class BufferObjectType, typename T>
 event broadcast(BufferObjectType& buf,
-                  size_t count,
-                  int root,
-                  const communicator& comm,
-                  const stream& op_stream,
-                  const broadcast_attr& attr,
-                  const vector_class<event>& deps) {
+                size_t count,
+                int root,
+                const communicator& comm,
+                const stream& op_stream,
+                const broadcast_attr& attr,
+                const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->bcast(buf, count, root, disp(op_stream), attr, deps);
@@ -886,11 +880,11 @@ event broadcast(BufferObjectType& buf,
 
 template <class BufferObjectType, typename T>
 event broadcast(BufferObjectType& buf,
-                  size_t count,
-                  int root,
-                  const communicator& comm,
-                  const broadcast_attr& attr,
-                  const vector_class<event>& deps) {
+                size_t count,
+                int root,
+                const communicator& comm,
+                const broadcast_attr& attr,
+                const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->bcast(buf, count, root, disp(default_stream), attr, deps);
@@ -898,15 +892,15 @@ event broadcast(BufferObjectType& buf,
 
 /* reduce */
 CCL_API event reduce(const void* send_buf,
-                       void* recv_buf,
-                       size_t count,
-                       datatype dtype,
-                       reduction reduction,
-                       int root,
-                       const communicator& comm,
-                       const stream& op_stream,
-                       const reduce_attr& attr,
-                       const vector_class<event>& deps) {
+                     void* recv_buf,
+                     size_t count,
+                     datatype dtype,
+                     reduction reduction,
+                     int root,
+                     const communicator& comm,
+                     const stream& op_stream,
+                     const reduce_attr& attr,
+                     const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce(
@@ -914,14 +908,14 @@ CCL_API event reduce(const void* send_buf,
 }
 
 CCL_API event reduce(const void* send_buf,
-                       void* recv_buf,
-                       size_t count,
-                       datatype dtype,
-                       reduction reduction,
-                       int root,
-                       const communicator& comm,
-                       const reduce_attr& attr,
-                       const vector_class<event>& deps) {
+                     void* recv_buf,
+                     size_t count,
+                     datatype dtype,
+                     reduction reduction,
+                     int root,
+                     const communicator& comm,
+                     const reduce_attr& attr,
+                     const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce(
@@ -930,14 +924,14 @@ CCL_API event reduce(const void* send_buf,
 
 template <class BufferType, typename T>
 event reduce(const BufferType* send_buf,
-               BufferType* recv_buf,
-               size_t count,
-               reduction reduction,
-               int root,
-               const communicator& comm,
-               const stream& op_stream,
-               const reduce_attr& attr,
-               const vector_class<event>& deps) {
+             BufferType* recv_buf,
+             size_t count,
+             reduction reduction,
+             int root,
+             const communicator& comm,
+             const stream& op_stream,
+             const reduce_attr& attr,
+             const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce(
@@ -946,13 +940,13 @@ event reduce(const BufferType* send_buf,
 
 template <class BufferType, typename T>
 event reduce(const BufferType* send_buf,
-               BufferType* recv_buf,
-               size_t count,
-               reduction reduction,
-               int root,
-               const communicator& comm,
-               const reduce_attr& attr,
-               const vector_class<event>& deps) {
+             BufferType* recv_buf,
+             size_t count,
+             reduction reduction,
+             int root,
+             const communicator& comm,
+             const reduce_attr& attr,
+             const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce(
@@ -961,14 +955,14 @@ event reduce(const BufferType* send_buf,
 
 template <class BufferObjectType, typename T>
 event reduce(const BufferObjectType& send_buf,
-               BufferObjectType& recv_buf,
-               size_t count,
-               reduction reduction,
-               int root,
-               const communicator& comm,
-               const stream& op_stream,
-               const reduce_attr& attr,
-               const vector_class<event>& deps) {
+             BufferObjectType& recv_buf,
+             size_t count,
+             reduction reduction,
+             int root,
+             const communicator& comm,
+             const stream& op_stream,
+             const reduce_attr& attr,
+             const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce(
@@ -977,13 +971,13 @@ event reduce(const BufferObjectType& send_buf,
 
 template <class BufferObjectType, typename T>
 event reduce(const BufferObjectType& send_buf,
-               BufferObjectType& recv_buf,
-               size_t count,
-               reduction reduction,
-               int root,
-               const communicator& comm,
-               const reduce_attr& attr,
-               const vector_class<event>& deps) {
+             BufferObjectType& recv_buf,
+             size_t count,
+             reduction reduction,
+             int root,
+             const communicator& comm,
+             const reduce_attr& attr,
+             const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce(
@@ -992,14 +986,14 @@ event reduce(const BufferObjectType& send_buf,
 
 /* reduce_scatter */
 CCL_API event reduce_scatter(const void* send_buf,
-                               void* recv_buf,
-                               size_t recv_count,
-                               datatype dtype,
-                               reduction reduction,
-                               const communicator& comm,
-                               const stream& op_stream,
-                               const reduce_scatter_attr& attr,
-                               const vector_class<event>& deps) {
+                             void* recv_buf,
+                             size_t recv_count,
+                             datatype dtype,
+                             reduction reduction,
+                             const communicator& comm,
+                             const stream& op_stream,
+                             const reduce_scatter_attr& attr,
+                             const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce_scatter(
@@ -1007,13 +1001,13 @@ CCL_API event reduce_scatter(const void* send_buf,
 }
 
 CCL_API event reduce_scatter(const void* send_buf,
-                               void* recv_buf,
-                               size_t recv_count,
-                               datatype dtype,
-                               reduction reduction,
-                               const communicator& comm,
-                               const reduce_scatter_attr& attr,
-                               const vector_class<event>& deps) {
+                             void* recv_buf,
+                             size_t recv_count,
+                             datatype dtype,
+                             reduction reduction,
+                             const communicator& comm,
+                             const reduce_scatter_attr& attr,
+                             const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce_scatter(
@@ -1022,13 +1016,13 @@ CCL_API event reduce_scatter(const void* send_buf,
 
 template <class BufferType, typename T>
 event reduce_scatter(const BufferType* send_buf,
-                       BufferType* recv_buf,
-                       size_t recv_count,
-                       reduction reduction,
-                       const communicator& comm,
-                       const stream& op_stream,
-                       const reduce_scatter_attr& attr,
-                       const vector_class<event>& deps) {
+                     BufferType* recv_buf,
+                     size_t recv_count,
+                     reduction reduction,
+                     const communicator& comm,
+                     const stream& op_stream,
+                     const reduce_scatter_attr& attr,
+                     const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce_scatter(
@@ -1037,12 +1031,12 @@ event reduce_scatter(const BufferType* send_buf,
 
 template <class BufferType, typename T>
 event reduce_scatter(const BufferType* send_buf,
-                       BufferType* recv_buf,
-                       size_t recv_count,
-                       reduction reduction,
-                       const communicator& comm,
-                       const reduce_scatter_attr& attr,
-                       const vector_class<event>& deps) {
+                     BufferType* recv_buf,
+                     size_t recv_count,
+                     reduction reduction,
+                     const communicator& comm,
+                     const reduce_scatter_attr& attr,
+                     const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce_scatter(
@@ -1051,13 +1045,13 @@ event reduce_scatter(const BufferType* send_buf,
 
 template <class BufferObjectType, typename T>
 event reduce_scatter(const BufferObjectType& send_buf,
-                       BufferObjectType& recv_buf,
-                       size_t recv_count,
-                       reduction reduction,
-                       const communicator& comm,
-                       const stream& op_stream,
-                       const reduce_scatter_attr& attr,
-                       const vector_class<event>& deps) {
+                     BufferObjectType& recv_buf,
+                     size_t recv_count,
+                     reduction reduction,
+                     const communicator& comm,
+                     const stream& op_stream,
+                     const reduce_scatter_attr& attr,
+                     const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce_scatter(
@@ -1066,12 +1060,12 @@ event reduce_scatter(const BufferObjectType& send_buf,
 
 template <class BufferObjectType, typename T>
 event reduce_scatter(const BufferObjectType& send_buf,
-                       BufferObjectType& recv_buf,
-                       size_t recv_count,
-                       reduction reduction,
-                       const communicator& comm,
-                       const reduce_scatter_attr& attr,
-                       const vector_class<event>& deps) {
+                     BufferObjectType& recv_buf,
+                     size_t recv_count,
+                     reduction reduction,
+                     const communicator& comm,
+                     const reduce_scatter_attr& attr,
+                     const vector_class<event>& deps) {
     CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce_scatter(
@@ -1084,20 +1078,20 @@ namespace preview {
 
 /* sparse_allreduce */
 CCL_API ccl::event sparse_allreduce(const void* send_ind_buf,
-                                      size_t send_ind_count,
-                                      const void* send_val_buf,
-                                      size_t send_val_count,
-                                      void* recv_ind_buf,
-                                      size_t recv_ind_count,
-                                      void* recv_val_buf,
-                                      size_t recv_val_count,
-                                      ccl::datatype index_dtype,
-                                      ccl::datatype value_dtype,
-                                      ccl::reduction reduction,
-                                      const ccl::communicator& comm,
-                                      const ccl::stream& op_stream,
-                                      const ccl::sparse_allreduce_attr& attr,
-                                      const ccl::vector_class<ccl::event>& deps) {
+                                    size_t send_ind_count,
+                                    const void* send_val_buf,
+                                    size_t send_val_count,
+                                    void* recv_ind_buf,
+                                    size_t recv_ind_count,
+                                    void* recv_val_buf,
+                                    size_t recv_val_count,
+                                    ccl::datatype index_dtype,
+                                    ccl::datatype value_dtype,
+                                    ccl::reduction reduction,
+                                    const ccl::communicator& comm,
+                                    const ccl::stream& op_stream,
+                                    const ccl::sparse_allreduce_attr& attr,
+                                    const ccl::vector_class<ccl::event>& deps) {
     CHECK_DEPS(deps);
     ccl::impl_dispatch disp;
     return disp(comm)->sparse_allreduce(send_ind_buf,
@@ -1117,19 +1111,19 @@ CCL_API ccl::event sparse_allreduce(const void* send_ind_buf,
 }
 
 CCL_API ccl::event sparse_allreduce(const void* send_ind_buf,
-                                      size_t send_ind_count,
-                                      const void* send_val_buf,
-                                      size_t send_val_count,
-                                      void* recv_ind_buf,
-                                      size_t recv_ind_count,
-                                      void* recv_val_buf,
-                                      size_t recv_val_count,
-                                      ccl::datatype index_dtype,
-                                      ccl::datatype value_dtype,
-                                      ccl::reduction reduction,
-                                      const ccl::communicator& comm,
-                                      const ccl::sparse_allreduce_attr& attr,
-                                      const ccl::vector_class<ccl::event>& deps) {
+                                    size_t send_ind_count,
+                                    const void* send_val_buf,
+                                    size_t send_val_count,
+                                    void* recv_ind_buf,
+                                    size_t recv_ind_count,
+                                    void* recv_val_buf,
+                                    size_t recv_val_count,
+                                    ccl::datatype index_dtype,
+                                    ccl::datatype value_dtype,
+                                    ccl::reduction reduction,
+                                    const ccl::communicator& comm,
+                                    const ccl::sparse_allreduce_attr& attr,
+                                    const ccl::vector_class<ccl::event>& deps) {
     CHECK_DEPS(deps);
     ccl::impl_dispatch disp;
     return disp(comm)->sparse_allreduce(send_ind_buf,
@@ -1150,18 +1144,18 @@ CCL_API ccl::event sparse_allreduce(const void* send_ind_buf,
 
 template <class IndexBufferType, class ValueBufferType, typename T>
 ccl::event sparse_allreduce(const IndexBufferType* send_ind_buf,
-                              size_t send_ind_count,
-                              const ValueBufferType* send_val_buf,
-                              size_t send_val_count,
-                              IndexBufferType* recv_ind_buf,
-                              size_t recv_ind_count,
-                              ValueBufferType* recv_val_buf,
-                              size_t recv_val_count,
-                              ccl::reduction reduction,
-                              const ccl::communicator& comm,
-                              const ccl::stream& op_stream,
-                              const ccl::sparse_allreduce_attr& attr,
-                              const ccl::vector_class<ccl::event>& deps) {
+                            size_t send_ind_count,
+                            const ValueBufferType* send_val_buf,
+                            size_t send_val_count,
+                            IndexBufferType* recv_ind_buf,
+                            size_t recv_ind_count,
+                            ValueBufferType* recv_val_buf,
+                            size_t recv_val_count,
+                            ccl::reduction reduction,
+                            const ccl::communicator& comm,
+                            const ccl::stream& op_stream,
+                            const ccl::sparse_allreduce_attr& attr,
+                            const ccl::vector_class<ccl::event>& deps) {
     CHECK_DEPS(deps);
     ccl::impl_dispatch disp;
     return disp(comm)->sparse_allreduce(send_ind_buf,
@@ -1180,17 +1174,17 @@ ccl::event sparse_allreduce(const IndexBufferType* send_ind_buf,
 
 template <class IndexBufferType, class ValueBufferType, typename T>
 ccl::event sparse_allreduce(const IndexBufferType* send_ind_buf,
-                              size_t send_ind_count,
-                              const ValueBufferType* send_val_buf,
-                              size_t send_val_count,
-                              IndexBufferType* recv_ind_buf,
-                              size_t recv_ind_count,
-                              ValueBufferType* recv_val_buf,
-                              size_t recv_val_count,
-                              ccl::reduction reduction,
-                              const ccl::communicator& comm,
-                              const ccl::sparse_allreduce_attr& attr,
-                              const ccl::vector_class<ccl::event>& deps) {
+                            size_t send_ind_count,
+                            const ValueBufferType* send_val_buf,
+                            size_t send_val_count,
+                            IndexBufferType* recv_ind_buf,
+                            size_t recv_ind_count,
+                            ValueBufferType* recv_val_buf,
+                            size_t recv_val_count,
+                            ccl::reduction reduction,
+                            const ccl::communicator& comm,
+                            const ccl::sparse_allreduce_attr& attr,
+                            const ccl::vector_class<ccl::event>& deps) {
     CHECK_DEPS(deps);
     ccl::impl_dispatch disp;
     return disp(comm)->sparse_allreduce(send_ind_buf,

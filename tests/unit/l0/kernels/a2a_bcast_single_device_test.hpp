@@ -44,7 +44,7 @@ DEFINE_KERNEL_TYPE_A2A(float32, float)
 DEFINE_KERNEL_TYPE_A2A(float64, double)
 // DEFINE_KERNEL_TYPE_A2A(bfloat16, ushort)
 
-}
+} // namespace a2a_bcast_case
 
 TYPED_TEST_CASE(a2a_bcast_single_device_fixture, TestTypes);
 
@@ -161,7 +161,8 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     typename handles_storage<int>::thread_handles_container rank_flags =
         flags_storage.collect_handles_by_index({ 0, 1 });
 
-    std::vector<typename a2a_bcast_case::a2a_param_traits<native_type>::comm_data_type> a2a_comm(num_thread);
+    std::vector<typename a2a_bcast_case::a2a_param_traits<native_type>::comm_data_type> a2a_comm(
+        num_thread);
 
     //Register memory handles to A2A
     for (size_t thread_id = 0; thread_id < rank_mem.size(); thread_id++) {
@@ -176,7 +177,9 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     //prepare gpu object
     auto a2a_comm_handle =
         device.alloc_memory<typename a2a_bcast_case::a2a_param_traits<native_type>::comm_data_type>(
-            num_thread, sizeof(typename a2a_bcast_case::a2a_param_traits<native_type>::comm_data_type), ctx);
+            num_thread,
+            sizeof(typename a2a_bcast_case::a2a_param_traits<native_type>::comm_data_type),
+            ctx);
     a2a_comm_handle.enqueue_write_sync(a2a_comm);
 
     //prepare kernels in multithreading environment

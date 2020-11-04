@@ -25,13 +25,13 @@ ccl_ipc_gpu_comm::ccl_ipc_gpu_comm(ccl_device& assigned_device,
         case ccl::group_split_type::cluster: {
             switch (class_id) {
                 case ccl::device_topology_type::ring: {
-                    reset_rank<ccl::group_split_type::cluster,
-                               ccl::device_topology_type::ring>(idx, size);
+                    reset_rank<ccl::group_split_type::cluster, ccl::device_topology_type::ring>(
+                        idx, size);
                     break;
                 }
                 case ccl::device_topology_type::a2a: {
-                    reset_rank<ccl::group_split_type::cluster,
-                               ccl::device_topology_type::a2a>(idx, size);
+                    reset_rank<ccl::group_split_type::cluster, ccl::device_topology_type::a2a>(
+                        idx, size);
                     break;
                 }
                 default: {

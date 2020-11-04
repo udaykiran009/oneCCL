@@ -69,8 +69,8 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
             // memory
             auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
             auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
-            auto temp_recv =
-                device.alloc_memory<native_type>(buffer_size / num_thread, sizeof(native_type), ctx);
+            auto temp_recv = device.alloc_memory<native_type>(
+                buffer_size / num_thread, sizeof(native_type), ctx);
             mem_send.enqueue_write_sync(send_values);
             mem_recv.enqueue_write_sync(recv_values);
             temp_recv.enqueue_write_sync(recv_values.begin(),

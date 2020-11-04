@@ -5,11 +5,10 @@ namespace native {
 struct process_group_context;
 }
 
-class process_ring_communicator
-        : public typed_base_communicator<process_ring_communicator,
-                                         ccl::group_split_type::cluster,
-                                         ccl::device_topology_type::ring,
-                                         ccl::gpu_communicator_traits> {
+class process_ring_communicator : public typed_base_communicator<process_ring_communicator,
+                                                                 ccl::group_split_type::cluster,
+                                                                 ccl::device_topology_type::ring,
+                                                                 ccl::gpu_communicator_traits> {
 public:
     using base_t = typed_base_communicator<process_ring_communicator,
                                            ccl::group_split_type::cluster,
@@ -25,8 +24,8 @@ public:
     void visit(ccl::gpu_comm_attr& comm_attr) override;
 
     ccl::event barrier(const ccl::stream::impl_value_t& stream,
-                           const ccl::barrier_attr& attr,
-                           const ccl::vector_class<ccl::event>& deps) override;
+                       const ccl::barrier_attr& attr,
+                       const ccl::vector_class<ccl::event>& deps) override;
 
     COMM_IMPL_DECLARATION
     COMM_IMPL_CLASS_DECLARATION

@@ -71,7 +71,8 @@ struct process_group_context
 
     const ccl::process_aggregated_device_mask_t& get_node_afinity_mask(
         const ccl::host_id& host) const;
-    const ccl::process_device_indices_type& get_node_afinity_indices(const ccl::host_id& host) const;
+    const ccl::process_device_indices_type& get_node_afinity_indices(
+        const ccl::host_id& host) const;
 
     void set_node_afinity_indices(const ccl::host_id& host,
                                   int rank_id,

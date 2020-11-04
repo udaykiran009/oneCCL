@@ -9,7 +9,5 @@
 namespace ccl {
 
 env_data::env_data() : log_level(static_cast<int>(ccl_log_level::DEBUG)) {}
-void env_data::print()
-{
-}
+void env_data::print() {}
 } /* namespace ccl */

@@ -9,10 +9,10 @@
 #define RANKS_PER_THREAD            "RANKS_PER_THREAD"
 #define PROCESS_THREAD_NAME         "PROCESS_THREAD_NAME"
 
-#define REQUESTED_RANK_TO_NAME      "REQUESTED_RANK_TO_NAME"
-#define GLOBAL_NAME_TO_RANK         "GLOBAL_NAME_TO_RANK"
-#define GLOBAL_RANK_TO_NAME         "GLOBAL_RANK_TO_NAME"
-#define LOCAL_KVS_ID                "LOCAL_KVS_ID"
+#define REQUESTED_RANK_TO_NAME "REQUESTED_RANK_TO_NAME"
+#define GLOBAL_NAME_TO_RANK    "GLOBAL_NAME_TO_RANK"
+#define GLOBAL_RANK_TO_NAME    "GLOBAL_RANK_TO_NAME"
+#define LOCAL_KVS_ID           "LOCAL_KVS_ID"
 
 pmi_resizable_simple::pmi_resizable_simple(int size,
                                            const std::vector<int>& ranks,
@@ -33,8 +33,7 @@ int pmi_resizable_simple::is_pm_resize_enabled() {
 atl_status_t pmi_resizable_simple::pmrt_init(const char* main_addr) {
     (void)main_addr;
     char* connection_timeout_str = getenv("CCL_KVS_GET_TIMEOUT");
-    if (connection_timeout_str)
-    {
+    if (connection_timeout_str) {
         connection_timeout = atoi(connection_timeout_str);
     }
     local_id = 0;
@@ -86,9 +85,9 @@ void pmi_resizable_simple::pmrt_finalize() {
     is_finalized = true;
     free(val_storage);
 
-    if (getenv("CCL_PMI_FORCE_FINALIZE"))
-    {
-        printf("skip pmi_resizable_simple::pmrt_finalize\n"); fflush(stdout);
+    if (getenv("CCL_PMI_FORCE_FINALIZE")) {
+        printf("skip pmi_resizable_simple::pmrt_finalize\n");
+        fflush(stdout);
         return;
     }
 
@@ -221,12 +220,15 @@ int pmi_resizable_simple::kvs_get_value(const char* kvs_name, const char* key, c
     size_t connection_time = 0;
     start_time = time(NULL);
     while (k->kvs_get_value_by_name_key(result_kvs_name.c_str(), key, value) == 0 &&
-        connection_time < connection_timeout) {
+           connection_time < connection_timeout) {
         connection_time = time(NULL) - start_time;
     }
     if (connection_time >= connection_timeout) {
         printf("KVS get error: timeout limit (%zu > %zu), prefix: %s, key %s\n",
-            connection_time, connection_timeout, result_kvs_name.c_str(), key);
+               connection_time,
+               connection_timeout,
+               result_kvs_name.c_str(),
+               key);
         exit(1);
     }
 
@@ -287,9 +289,8 @@ void pmi_resizable_simple::register_my_proc_name() {
     }
     my_proccess_name = std::string(hostname) + std::to_string(my_pid);
 
-    kvs_set_value(PROCESS_THREAD_NAME,
-                  std::to_string(assigned_thread_idx).c_str(),
-                  my_proccess_name.c_str());
+    kvs_set_value(
+        PROCESS_THREAD_NAME, std::to_string(assigned_thread_idx).c_str(), my_proccess_name.c_str());
 }
 
 void pmi_resizable_simple::get_my_proc_idx_and_proc_count() {

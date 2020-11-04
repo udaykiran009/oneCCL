@@ -8,12 +8,10 @@ namespace ccl {
 
 namespace v1 {
 
-class string
-{
+class string {
 public:
-
     ~string() {
-        delete [] storage;
+        delete[] storage;
         storage = nullptr;
         len = 0;
     }
@@ -45,18 +43,18 @@ public:
         str.storage = nullptr;
     }
 
-    string(const std::string& str){
+    string(const std::string& str) {
         len = str.length();
         storage = new char[len + 1];
         memcpy(storage, str.c_str(), len * sizeof(char));
         storage[len] = '\0';
     }
 
-    string& operator= (const string& str) {
+    string& operator=(const string& str) {
         if (this != &str) {
             if (len != str.len) {
                 len = str.len;
-                delete [] storage;
+                delete[] storage;
                 storage = new char[len + 1];
             }
             memcpy(storage, str.storage, len * sizeof(char));
@@ -81,17 +79,16 @@ public:
         return storage;
     };
 
-    operator std::string () const {
+    operator std::string() const {
         return std::string(storage);
     }
 
-    friend std::ostream& operator<< (std::ostream& out,
-                                     const string& str) {
+    friend std::ostream& operator<<(std::ostream& out, const string& str) {
         out << str.storage;
         return out;
     }
 
-    string operator+ (const char* str) {
+    string operator+(const char* str) {
         auto str_len = strlen(str);
         if (str_len > 0) {
             auto new_storage = new char[len + str_len + 1];
@@ -105,35 +102,35 @@ public:
         return string(storage);
     }
 
-    string operator+ (const string& str) {
+    string operator+(const string& str) {
         return (*this + str.c_str());
     }
 
-    string operator+ (const std::string& str) {
+    string operator+(const std::string& str) {
         return (*this + str.c_str());
     }
 
-    friend std::string operator+(const std::string &str1, const string &str2) {
+    friend std::string operator+(const std::string& str1, const string& str2) {
         return (str1 + str2.c_str());
     }
 
-    friend bool operator> (const string &str1, const string &str2) {
+    friend bool operator>(const string& str1, const string& str2) {
         return strcmp(str1.c_str(), str2.c_str()) > 0;
     }
 
-    friend bool operator<= (const string &str1, const string &str2) {
+    friend bool operator<=(const string& str1, const string& str2) {
         return strcmp(str1.c_str(), str2.c_str()) <= 0;
     }
 
-    friend bool operator< (const string &str1, const string &str2) {
+    friend bool operator<(const string& str1, const string& str2) {
         return strcmp(str1.c_str(), str2.c_str()) < 0;
     }
 
-    friend bool operator>= (const string &str1, const string &str2) {
+    friend bool operator>=(const string& str1, const string& str2) {
         return strcmp(str1.c_str(), str2.c_str()) >= 0;
     }
 
-    friend bool operator== (const string &str1, const string &str2) {
+    friend bool operator==(const string& str1, const string& str2) {
         return strcmp(str1.c_str(), str2.c_str()) == 0;
     }
 

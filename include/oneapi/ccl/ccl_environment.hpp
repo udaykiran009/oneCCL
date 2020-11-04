@@ -78,7 +78,8 @@ public:
     template <class... attr_value_pair_t>
     static init_attr create_init_attr(attr_value_pair_t&&... avps) {
         auto init_create_attr = create_postponed_api_type<init_attr>();
-        int expander[]{ (init_create_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        int expander[]{ (init_create_attr.template set<attr_value_pair_t::idx()>(avps.val()),
+                         0)... };
         (void)expander;
         return init_create_attr;
     }
@@ -90,7 +91,6 @@ public:
         (void)expander;
         return op_attr;
     }
-
 
     /******************** DATATYPE ********************/
 
@@ -107,20 +107,19 @@ public:
     void deregister_datatype(ccl::datatype dtype);
     size_t get_datatype_size(ccl::datatype dtype) const;
 
-
     /******************** KVS ********************/
 
     template <class... attr_value_pair_t>
     static kvs_attr create_kvs_attr(attr_value_pair_t&&... avps) {
         auto kvs_create_attr = create_postponed_api_type<kvs_attr>();
-        int expander[]{ (kvs_create_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        int expander[]{ (kvs_create_attr.template set<attr_value_pair_t::idx()>(avps.val()),
+                         0)... };
         (void)expander;
         return kvs_create_attr;
     }
 
     shared_ptr_class<kvs> create_main_kvs(const kvs_attr& attr) const;
     shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr, const kvs_attr& attr) const;
-
 
     /******************** DEVICE ********************/
 
@@ -140,25 +139,24 @@ public:
         return str;
     }
 
-
     /******************** CONTEXT ********************/
 
     context create_context(empty_t empty) const;
 
-    template <class native_device_contex_type,
-              class = typename std::enable_if<is_device_supported<native_device_contex_type>()>::type>
+    template <
+        class native_device_contex_type,
+        class = typename std::enable_if<is_device_supported<native_device_contex_type>()>::type>
     context create_context(native_device_contex_type&& native_context) const;
 
     template <class... attr_value_pair_t>
     context create_context_from_attr(typename unified_context_type::ccl_native_t ctx,
-                                   attr_value_pair_t&&... avps) const {
+                                     attr_value_pair_t&&... avps) const {
         context str = create_postponed_api_type<context>(ctx);
         int expander[]{ (str.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
         (void)expander;
         str.build_from_params();
         return str;
     }
-
 
     /******************** EVENT ********************/
 
@@ -170,11 +168,9 @@ public:
 
     template <class event_handle_type,
               class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
-    event create_event(event_handle_type& native_event_handle,
-                       event::context_t& context) {
+    event create_event(event_handle_type& native_event_handle, event::context_t& context) {
         return event::create_from_native(native_event_handle, context);
     }
-
 
     /******************** STREAM ********************/
 
@@ -208,16 +204,14 @@ public:
         return str;
     }
 
-
     /******************** COMMUNICATOR ********************/
 
 #ifdef CCL_ENABLE_SYCL
-    communicator create_single_device_communicator(
-        int comm_size,
-        int rank,
-        const cl::sycl::device& device,
-        const cl::sycl::context& context,
-        shared_ptr_class<kvs_interface> kvs) const;
+    communicator create_single_device_communicator(int comm_size,
+                                                   int rank,
+                                                   const cl::sycl::device& device,
+                                                   const cl::sycl::context& context,
+                                                   shared_ptr_class<kvs_interface> kvs) const;
 #endif
 
     template <class... attr_value_pair_t>
@@ -231,25 +225,27 @@ public:
     template <class... attr_value_pair_t>
     static comm_attr create_comm_attr(attr_value_pair_t&&... avps) {
         auto comm_create_attr = create_postponed_api_type<comm_attr>();
-        int expander[]{ (comm_create_attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+        int expander[]{ (comm_create_attr.template set<attr_value_pair_t::idx()>(avps.val()),
+                         0)... };
         (void)expander;
         return comm_create_attr;
     }
 
     communicator create_communicator(const comm_attr& attr) const;
-    communicator create_communicator(size_t size, shared_ptr_class<kvs_interface> kvs, const comm_attr& attr) const;
+    communicator create_communicator(size_t size,
+                                     shared_ptr_class<kvs_interface> kvs,
+                                     const comm_attr& attr) const;
     communicator create_communicator(size_t size,
                                      int rank,
                                      shared_ptr_class<kvs_interface> kvs,
                                      const comm_attr& attr) const;
 
     template <class DeviceType, class ContextType>
-    vector_class<communicator> create_communicators(
-        int comm_size,
-        const vector_class<DeviceType>& local_devices,
-        const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs,
-        const comm_attr& attr) const;
+    vector_class<communicator> create_communicators(int comm_size,
+                                                    const vector_class<DeviceType>& local_devices,
+                                                    const ContextType& context,
+                                                    shared_ptr_class<kvs_interface> kvs,
+                                                    const comm_attr& attr) const;
 
     template <class DeviceType, class ContextType>
     vector_class<communicator> create_communicators(

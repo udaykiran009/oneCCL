@@ -7,7 +7,7 @@
 class ccl_device_impl;
 namespace ccl {
 namespace detail {
-    class environment;
+class environment;
 }
 
 namespace v1 {
@@ -38,8 +38,9 @@ public:
     /**
      * Declare native device type
      */
-    using native_t = typename detail::ccl_api_type_attr_traits<device_attr_id,
-                                                               device_attr_id::native_handle>::return_type;
+    using native_t =
+        typename detail::ccl_api_type_attr_traits<device_attr_id,
+                                                  device_attr_id::native_handle>::return_type;
 
     device(device&& src);
     device(const device& src);
@@ -51,7 +52,6 @@ public:
     bool operator!=(const device& rhs) const noexcept;
     bool operator<(const device& rhs) const noexcept;
 
-
     /**
      * Get specific attribute value by @attrId
      */
@@ -62,8 +62,9 @@ public:
     /**
      * Get native device object
      */
-     native_t& get_native();
-     const native_t& get_native() const;
+    native_t& get_native();
+    const native_t& get_native() const;
+
 private:
     friend class ccl::detail::environment;
     friend class ccl::v1::communicator;
@@ -90,7 +91,7 @@ private:
 
     template <class device_handle_type, class... attr_value_pair_t>
     static device create_device_from_attr(device_handle_type& native_device_handle,
-                                        attr_value_pair_t&&... avps);
+                                          attr_value_pair_t&&... avps);
 };
 
 template <device_attr_id t, class value_type>
@@ -98,13 +99,14 @@ constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<device_attr_
     return detail::attr_value_tripple<device_attr_id, t, value_type>(v);
 }
 
-template<class DeviceType>
-using rank_device_pair_t = ccl::pair_class<size_t, typename std::remove_reference<typename std::remove_cv<DeviceType>::type>::type>;
+template <class DeviceType>
+using rank_device_pair_t = ccl::pair_class<
+    size_t,
+    typename std::remove_reference<typename std::remove_cv<DeviceType>::type>::type>;
 
 template <class device_value_type>
-constexpr auto attr_val(int rank, device_value_type&& v)
-    -> rank_device_pair_t<device_value_type>{
-    return rank_device_pair_t<device_value_type>{rank, std::forward<device_value_type>(v)};
+constexpr auto attr_val(int rank, device_value_type&& v) -> rank_device_pair_t<device_value_type> {
+    return rank_device_pair_t<device_value_type>{ rank, std::forward<device_value_type>(v) };
 }
 
 } // namespace v1

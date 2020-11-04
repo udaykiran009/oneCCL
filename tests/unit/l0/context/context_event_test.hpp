@@ -36,7 +36,7 @@ TEST_F(shared_context_fixture, observer_event_test) {
     ccl::detail::environment::instance();
 
     using namespace native;
-    
+
     //TODO
     std::shared_ptr<ccl_context> ctx;
     // check global driver

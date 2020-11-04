@@ -1,7 +1,6 @@
 #pragma once
 
 struct allgatherv_strategy_impl {
-
     std::vector<size_t> recv_counts;
 
     allgatherv_strategy_impl() {
@@ -37,11 +36,10 @@ struct allgatherv_strategy_impl {
                         const bench_exec_attr& bench_attr,
                         req_list_t& reqs,
                         Args&&... args) {
-
         for (int idx = 0; idx < comm.size(); idx++) {
             recv_counts[idx] = count;
         }
-        reqs.push_back(
-            ccl::allgatherv(send_buf, count, recv_buf, recv_counts, comm, std::forward<Args>(args)...));
+        reqs.push_back(ccl::allgatherv(
+            send_buf, count, recv_buf, recv_counts, comm, std::forward<Args>(args)...));
     }
 };

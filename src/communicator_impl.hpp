@@ -35,7 +35,6 @@ struct device_attr_impl
 };
 }*/
 
-
 namespace ccl {
 
 namespace v1 {
@@ -53,14 +52,14 @@ CCL_API vector_class<communicator> communicator::create_communicators(
 
 using rank_t = int;
 
-
 template <class DeviceType, class ContextType>
 CCL_API vector_class<communicator> communicator::create_communicators(
     const int size,
     const vector_class<pair_class<int, DeviceType>>& devices,
     const ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
-    return comm_impl_dispatch_selector<CL_BACKEND_TYPE>::create_communicators_selector(size, devices, context, kvs);
+    return comm_impl_dispatch_selector<CL_BACKEND_TYPE>::create_communicators_selector(
+        size, devices, context, kvs);
 #if 0
     vector_class<int> local_thread_ranks;
     local_thread_ranks.reserve(devices.size());
@@ -97,7 +96,8 @@ CCL_API vector_class<communicator> communicator::create_communicators(
     shared_ptr_class<kvs_interface> kvs)
 
 {
-    return comm_impl_dispatch_selector<CL_BACKEND_TYPE>::create_communicators_selector(size, devices, context, kvs);
+    return comm_impl_dispatch_selector<CL_BACKEND_TYPE>::create_communicators_selector(
+        size, devices, context, kvs);
 #if 0
     vector_class<int> local_thread_ranks;
     local_thread_ranks.reserve(devices.size());
@@ -139,8 +139,7 @@ communicator communicator::create_communicator(const comm_attr& attr) {
 
     LOG_DEBUG("Create host communicator");
 
-    communicator_interface_ptr impl =
-        communicator_interface::create_communicator_impl();
+    communicator_interface_ptr impl = communicator_interface::create_communicator_impl();
 
     return communicator(std::move(impl));
 }
@@ -159,8 +158,7 @@ communicator communicator::create_communicator(const int size,
 
     LOG_DEBUG("Create host communicator");
 
-    communicator_interface_ptr impl =
-        communicator_interface::create_communicator_impl(size, kvs);
+    communicator_interface_ptr impl = communicator_interface::create_communicator_impl(size, kvs);
 
     return communicator(std::move(impl));
 }
@@ -176,7 +174,6 @@ communicator communicator::create_communicator(const int size,
                                                const int rank,
                                                shared_ptr_class<kvs_interface> kvs,
                                                const comm_attr& attr) {
-
     LOG_DEBUG("Create host communicator: size ", size, ", rank ", rank);
 
     communicator_interface_ptr impl =
@@ -191,24 +188,21 @@ communicator communicator::create_communicator(const int size,
 
 /***************************TypeGenerations*********************************************************/
 #define API_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
-    template ccl::vector_class<ccl::communicator> CCL_API \
-    ccl::communicator::create_communicators( \
+    template ccl::vector_class<ccl::communicator> CCL_API ccl::communicator::create_communicators( \
         const int comm_size, \
         const ccl::vector_class<DeviceType>& local_devices, \
         const ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs);
 
 #define API_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
-    template ccl::vector_class<ccl::communicator> CCL_API \
-    ccl::communicator::create_communicators( \
+    template ccl::vector_class<ccl::communicator> CCL_API ccl::communicator::create_communicators( \
         const int comm_size, \
         const ccl::vector_class<ccl::pair_class<int, DeviceType>>& local_rank_device_map, \
         const ContextType& context, \
         ccl::shared_ptr_class<ccl::kvs_interface> kvs);
 
 #define API_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(DeviceType, ContextType) \
-    template ccl::vector_class<ccl::communicator> CCL_API \
-    ccl::communicator::create_communicators( \
+    template ccl::vector_class<ccl::communicator> CCL_API ccl::communicator::create_communicators( \
         const int comm_size, \
         const ccl::map_class<int, DeviceType>& local_rank_device_map, \
         const ContextType& context, \

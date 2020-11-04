@@ -11,9 +11,7 @@ public:
     using base::comm_rank_t;
     using impl_t = ccl_gpu_comm;
 
-    template <ccl_coll_type algo_type,
-              ccl::group_split_type group,
-              ccl::device_topology_type mode>
+    template <ccl_coll_type algo_type, ccl::group_split_type group, ccl::device_topology_type mode>
     using gpu_module_t = device_coll_module<algo_type, group, mode>;
 
     template <ccl_coll_type algo_type,

@@ -17,7 +17,6 @@ using coll_list_t = std::vector<std::shared_ptr<base_coll>>;
 using req_list_t = std::vector<ccl::event>;
 
 typedef struct bench_exec_attr {
-
     bench_exec_attr() = default;
     template <ccl::operation_attr_id attrId, class value_t>
     struct setter {
@@ -31,8 +30,7 @@ typedef struct bench_exec_attr {
     struct factory {
         template <class attr_t>
         void operator()(ccl::shared_ptr_class<attr_t>& attr) {
-            attr = std::make_shared<attr_t>(
-                ccl::create_operation_attr<attr_t>());
+            attr = std::make_shared<attr_t>(ccl::create_operation_attr<attr_t>());
         }
     };
 
@@ -56,8 +54,8 @@ typedef struct bench_exec_attr {
     }
 
     template <ccl::operation_attr_id attrId, class Value>
-    typename ccl::detail::ccl_api_type_attr_traits<ccl::operation_attr_id, attrId>::return_type
-    set(const Value& v) {
+    typename ccl::detail::ccl_api_type_attr_traits<ccl::operation_attr_id, attrId>::return_type set(
+        const Value& v) {
         ccl_tuple_for_each(coll_attrs, setter<attrId, Value>(v));
         return v;
     }
@@ -107,10 +105,7 @@ struct base_coll {
         size_t ranks_per_proc = base_coll::get_ranks_per_proc();
 
         for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
-            prepare_internal(elem_count,
-                             comms[rank_idx],
-                             streams[rank_idx],
-                             rank_idx);
+            prepare_internal(elem_count, comms[rank_idx], streams[rank_idx], rank_idx);
         }
     }
 
@@ -121,22 +116,19 @@ struct base_coll {
         size_t ranks_per_proc = base_coll::get_ranks_per_proc();
 
         for (size_t rank_idx = 0; rank_idx < ranks_per_proc; rank_idx++) {
-            finalize_internal(elem_count,
-                              comms[rank_idx],
-                              streams[rank_idx],
-                              rank_idx);
+            finalize_internal(elem_count, comms[rank_idx], streams[rank_idx], rank_idx);
         }
     }
 
     virtual void prepare_internal(size_t elem_count,
-                         ccl::communicator& comm,
-                         ccl::stream& stream,
-                         size_t rank_idx) = 0;
+                                  ccl::communicator& comm,
+                                  ccl::stream& stream,
+                                  size_t rank_idx) = 0;
 
     virtual void finalize_internal(size_t elem_count,
-                          ccl::communicator& comm,
-                          ccl::stream& stream,
-                          size_t rank_idx) = 0;
+                                   ccl::communicator& comm,
+                                   ccl::stream& stream,
+                                   size_t rank_idx) = 0;
 
     virtual ccl::datatype get_dtype() const = 0;
 
@@ -175,6 +167,5 @@ struct base_coll {
     std::vector<std::vector<void*>> recv_bufs;
 
 private:
-
     bench_init_attr init_attr;
 };

@@ -33,7 +33,8 @@ bool thread_group_context::sync_barrier(const ccl::device_indices_type& device_i
 void thread_group_context::aggregate_device_indices(size_t thread_id,
                                                     const ccl::device_indices_type& new_indices) {}
 
-const ccl::process_device_indices_type& thread_group_context::get_thread_group_device_indices() const {
+const ccl::process_device_indices_type& thread_group_context::get_thread_group_device_indices()
+    const {
     return per_thread_indices;
 }
 

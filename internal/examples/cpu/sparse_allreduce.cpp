@@ -129,4 +129,6 @@ int main(int argc, char** argv) {
 }
 #endif
 
-int main() { return 0; }
+int main() {
+    return 0;
+}

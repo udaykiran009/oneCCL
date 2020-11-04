@@ -28,7 +28,6 @@ struct reduce_scatter_strategy_impl {
                         const bench_exec_attr& bench_attr,
                         req_list_t& reqs,
                         Args&&... args) {
-
         size_t recv_count = send_count / comm.size();
 
         if (recv_count == 0) {

@@ -13,8 +13,8 @@ struct ccl_device;
 struct ccl_context;
 
 detail::cross_device_rating property_p2p_rating_calculator(const ccl_device& lhs,
-                                                            const ccl_device& rhs,
-                                                            size_t weight);
+                                                           const ccl_device& rhs,
+                                                           size_t weight);
 
 // TODO not thread-safe!!!
 struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_context_holder>,
@@ -93,43 +93,59 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
     template <class elem_t>
     device_memory<elem_t> alloc_memory(
         size_t count,
-        size_t alignment, std::shared_ptr<ccl_context> ctx,
+        size_t alignment,
+        std::shared_ptr<ccl_context> ctx,
         const ze_device_mem_alloc_desc_t& mem_descr = get_default_mem_alloc_desc(),
         const ze_host_mem_alloc_desc_t& host_descr = get_default_host_alloc_desc()) {
-        return device_memory<elem_t>(reinterpret_cast<elem_t*>(device_alloc_memory(
-                                         count * sizeof(elem_t), alignment, mem_descr, host_descr, ctx)),
-                                     count,
-                                     get_ptr(), ctx);
+        return device_memory<elem_t>(
+            reinterpret_cast<elem_t*>(
+                device_alloc_memory(count * sizeof(elem_t), alignment, mem_descr, host_descr, ctx)),
+            count,
+            get_ptr(),
+            ctx);
     }
 
     template <class elem_t>
     device_memory_ptr<elem_t> alloc_shared_memory(
         size_t count,
         size_t alignment,
-        const ze_host_mem_alloc_desc_t& host_desc, std::shared_ptr<ccl_context> ctx,
+        const ze_host_mem_alloc_desc_t& host_desc,
+        std::shared_ptr<ccl_context> ctx,
         const ze_device_mem_alloc_desc_t& mem_descr = get_default_mem_alloc_desc()) {
         return std::make_shared<device_memory<elem_t>>(
             reinterpret_cast<elem_t*>(device_alloc_shared_memory(
                 count * sizeof(elem_t), alignment, host_desc, mem_descr, ctx)),
             count,
-            get_ptr(), ctx);
+            get_ptr(),
+            ctx);
     }
-    device_ipc_memory_handle create_ipc_memory_handle(void* device_mem_ptr, std::shared_ptr<ccl_context> ctx);
-    std::shared_ptr<device_ipc_memory_handle> create_shared_ipc_memory_handle(void* device_mem_ptr, std::shared_ptr<ccl_context> ctx);
+    device_ipc_memory_handle create_ipc_memory_handle(void* device_mem_ptr,
+                                                      std::shared_ptr<ccl_context> ctx);
+    std::shared_ptr<device_ipc_memory_handle> create_shared_ipc_memory_handle(
+        void* device_mem_ptr,
+        std::shared_ptr<ccl_context> ctx);
 
-    device_ipc_memory get_ipc_memory(std::shared_ptr<device_ipc_memory_handle>&& handle, std::shared_ptr<ccl_context> ctx);
+    device_ipc_memory get_ipc_memory(std::shared_ptr<device_ipc_memory_handle>&& handle,
+                                     std::shared_ptr<ccl_context> ctx);
     std::shared_ptr<device_ipc_memory> restore_shared_ipc_memory(
-        std::shared_ptr<device_ipc_memory_handle>&& handle, std::shared_ptr<ccl_context> ctx);
+        std::shared_ptr<device_ipc_memory_handle>&& handle,
+        std::shared_ptr<ccl_context> ctx);
 
-    device_queue create_cmd_queue(std::shared_ptr<ccl_context> ctx,
+    device_queue create_cmd_queue(
+        std::shared_ptr<ccl_context> ctx,
         const ze_command_queue_desc_t& properties = get_default_queue_desc());
     device_queue_fence& get_fence(const device_queue& queue, std::shared_ptr<ccl_context> ctx);
-    device_queue& get_cmd_queue(const ze_command_queue_desc_t& properties, std::shared_ptr<ccl_context> ctx);
-    device_cmd_list create_cmd_list(std::shared_ptr<ccl_context> ctx,
+    device_queue& get_cmd_queue(const ze_command_queue_desc_t& properties,
+                                std::shared_ptr<ccl_context> ctx);
+    device_cmd_list create_cmd_list(
+        std::shared_ptr<ccl_context> ctx,
         const ze_command_list_desc_t& properties = get_default_list_desc());
-    device_cmd_list& get_cmd_list(std::shared_ptr<ccl_context> ctx,
+    device_cmd_list& get_cmd_list(
+        std::shared_ptr<ccl_context> ctx,
         const ze_command_list_desc_t& properties = get_default_list_desc());
-    device_module_ptr create_module(const ze_module_desc_t& descr, size_t hash, std::shared_ptr<ccl_context> ctx);
+    device_module_ptr create_module(const ze_module_desc_t& descr,
+                                    size_t hash,
+                                    std::shared_ptr<ccl_context> ctx);
 
     template <class elem_t>
     bool is_own_memory(const device_memory<elem_t>& mem_handle) {
@@ -139,7 +155,8 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
             //return true;
         }*/
 
-        handle_t assoc_handle = get_assoc_device_handle(mem_handle.handle, get_owner(), std::shared_ptr<ccl_context> { });
+        handle_t assoc_handle =
+            get_assoc_device_handle(mem_handle.handle, get_owner(), std::shared_ptr<ccl_context>{});
         return assoc_handle == handle;
     }
 
@@ -155,7 +172,7 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
     template <class elem_t>
     void on_delete(elem_t* mem_handle, ze_context_handle_t& ctx) {
         // TODO: ctx
-        device_free_memory(static_cast<void*>(mem_handle), std::shared_ptr<ccl_context> { });
+        device_free_memory(static_cast<void*>(mem_handle), std::shared_ptr<ccl_context>{});
     }
 
     // serialize/deserialize
@@ -173,7 +190,10 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
     std::shared_ptr<ccl_context> get_default_context();
 
 private:
-    ccl_device(handle_t h, owner_ptr_t&& parent, std::weak_ptr<ccl_context_holder>&& ctx, std::false_type);
+    ccl_device(handle_t h,
+               owner_ptr_t&& parent,
+               std::weak_ptr<ccl_context_holder>&& ctx,
+               std::false_type);
     void initialize_device_data();
     void* device_alloc_memory(size_t bytes_count,
                               size_t alignment,
@@ -186,8 +206,9 @@ private:
                                      const ze_device_mem_alloc_desc_t& mem_descr,
                                      std::shared_ptr<ccl_context> ctx);
 
-    static handle_t get_assoc_device_handle(const void* ptr, const ccl_device_driver* driver,
-                                                            std::shared_ptr<ccl_context> ctx);
+    static handle_t get_assoc_device_handle(const void* ptr,
+                                            const ccl_device_driver* driver,
+                                            std::shared_ptr<ccl_context> ctx);
     void device_free_memory(void* mem_ptr, std::shared_ptr<ccl_context> ctx);
 
     //TODO shared mutex?

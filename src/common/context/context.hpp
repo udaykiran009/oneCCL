@@ -6,9 +6,7 @@
 #include "oneapi/ccl/ccl_context_attr_ids_traits.hpp"
 #include "common/utils/utils.hpp"
 
-
-class ccl_context_impl
-{
+class ccl_context_impl {
 public:
     using context_native_handle_t = typename ccl::unified_context_type::handle_t;
     using context_native_t = typename ccl::unified_context_type::ccl_native_t;
@@ -20,8 +18,7 @@ public:
     ccl_context_impl(context_native_t& ctx, const ccl::library_version& version);
     ccl_context_impl(const context_native_t& ctx, const ccl::library_version& version);
     ccl_context_impl(context_native_t&& ctx, const ccl::library_version& version);
-    ccl_context_impl(context_native_handle_t ctx_handle,
-                    const ccl::library_version& version);
+    ccl_context_impl(context_native_handle_t ctx_handle, const ccl::library_version& version);
     ~ccl_context_impl() = default;
 
     //Export Attributes
@@ -32,14 +29,15 @@ public:
     const typename version_traits_t::return_type& get_attribute_value(
         const version_traits_t& id) const;
 
-
     using cl_backend_traits_t =
-        ccl::detail::ccl_api_type_attr_traits<ccl::context_attr_id, ccl::context_attr_id::cl_backend>;
-    const typename cl_backend_traits_t::return_type& get_attribute_value(const cl_backend_traits_t& id) const;
+        ccl::detail::ccl_api_type_attr_traits<ccl::context_attr_id,
+                                              ccl::context_attr_id::cl_backend>;
+    const typename cl_backend_traits_t::return_type& get_attribute_value(
+        const cl_backend_traits_t& id) const;
 
     using native_handle_traits_t =
         ccl::detail::ccl_api_type_attr_traits<ccl::context_attr_id,
-                                               ccl::context_attr_id::native_handle>;
+                                              ccl::context_attr_id::native_handle>;
     typename native_handle_traits_t::return_type& get_attribute_value(
         const native_handle_traits_t& id);
 

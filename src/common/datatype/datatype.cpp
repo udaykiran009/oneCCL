@@ -27,7 +27,8 @@ ccl_datatype_storage::ccl_datatype_storage() {
     LOG_DEBUG("create datatype_storage");
 
     using IntType = typename std::underlying_type<ccl::datatype>::type;
-    custom_idx = static_cast<ccl::datatype>(static_cast<IntType>(ccl::datatype::last_predefined) + 1);
+    custom_idx =
+        static_cast<ccl::datatype>(static_cast<IntType>(ccl::datatype::last_predefined) + 1);
 
     size_t size = 0;
     std::string name_str;

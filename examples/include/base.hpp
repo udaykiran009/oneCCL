@@ -100,7 +100,6 @@ double when(void) {
 }
 
 void mpi_finalize() {
-
     int is_finalized = 0;
     MPI_Finalized(&is_finalized);
 

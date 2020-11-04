@@ -16,16 +16,15 @@
 #include "base_utils.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
-
 #define COUNT     512 //(10*1024*1024)
 #define COLL_ROOT (0)
 
 template <class processing_type>
 void user_thread_idx(size_t thread_idx,
-                    std::vector<std::pair<size_t, ccl::device_index_type>> ranked_device_indices,
-                    std::shared_ptr<::native::ccl_context> ctx,
-                    int total_devices_in_cluster,
-                    std::shared_ptr<ccl::kvs_interface> kvs) {
+                     std::vector<std::pair<size_t, ccl::device_index_type>> ranked_device_indices,
+                     std::shared_ptr<::native::ccl_context> ctx,
+                     int total_devices_in_cluster,
+                     std::shared_ptr<ccl::kvs_interface> kvs) {
     using namespace ::native;
 
     /* TODO: Check its functionality */
@@ -44,12 +43,10 @@ void user_thread_idx(size_t thread_idx,
     // API
     // Create device communicators
     std::vector<ccl::communicator> comms =
-        ccl::create_communicators(
-            total_devices_in_cluster, ranked_device_indices, ctx, kvs);
+        ccl::create_communicators(total_devices_in_cluster, ranked_device_indices, ctx, kvs);
 
     std::cout << "Create device communicators, expected count: " << ranked_device_indices.size()
-              << ", context: " << ctx.get()
-              << std::endl;
+              << ", context: " << ctx.get() << std::endl;
 
     // alloc memory specific to devices
     for (auto& comm : comms) {
@@ -99,11 +96,8 @@ void user_thread_idx(size_t thread_idx,
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
         auto& stream = streams.find(rank)->second;
 
-        reqs.push_back(ccl::broadcast(mem_objects[0].get(),
-                                      mem_objects[0].count(),
-                                      root,
-                                      comm,
-                                      stream));
+        reqs.push_back(
+            ccl::broadcast(mem_objects[0].get(), mem_objects[0].count(), root, comm, stream));
     }
 
     //wait
@@ -238,8 +232,7 @@ int main(int argc, char** argv) {
 
             if (process_index == static_cast<size_t>(mpi_rank)) {
                 for (auto device_vendor_id : device_group_affinity) {
-                    devices_for_mpi_rank[thread_index].push_back(
-                        device_vendor_id);
+                    devices_for_mpi_rank[thread_index].push_back(device_vendor_id);
                 }
             }
         }
@@ -261,15 +254,15 @@ int main(int argc, char** argv) {
             devices_in_process.end(), thread_devices.second.begin(), thread_devices.second.end());
     }
     const auto& drivers = native::get_platform().get_drivers();
-    if (drivers.empty())
-    {
+    if (drivers.empty()) {
         std::cerr << "No drivers in L0 native paltform. Exit" << std::endl;
         return -1;
     }
 
     // get GPU driver, it's only one driver at the moment
     auto gpu_driver = drivers.begin()->second;
-    decltype(gpu_driver->create_context()) ctx;/*default context*/ // = gpu_driver->create_context();
+    decltype(gpu_driver->create_context()) ctx;
+    /*default context*/ // = gpu_driver->create_context();
 
     for (auto thread_affinity_it = thread_group_affinity.begin();
          thread_affinity_it != thread_group_affinity.end();
@@ -303,6 +296,4 @@ int main(int argc, char** argv) {
     for (auto& t : thread_group) {
         t.join();
     }
-
 }
-

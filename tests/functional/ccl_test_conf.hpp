@@ -270,7 +270,9 @@ ccl::reduction get_ccl_lib_reduction(const ccl_test_conf& test_conf) {
     return ccl_reduction_values[test_conf.reduction];
 }
 
-#define max_test_count() (ORDER_LAST * ORDER_LAST * CMPT_LAST * SNCT_LAST * DT_LAST * ST_LAST * RT_LAST * BC_LAST * CT_LAST * PT_LAST * PTYPE_LAST * ETYPE_LAST)
+#define max_test_count() \
+    (ORDER_LAST * ORDER_LAST * CMPT_LAST * SNCT_LAST * DT_LAST * ST_LAST * RT_LAST * BC_LAST * \
+     CT_LAST * PT_LAST * PTYPE_LAST * ETYPE_LAST)
 
 size_t calculate_test_count() {
     size_t test_count = max_test_count();
@@ -377,7 +379,6 @@ int is_bf16_enabled() {
 std::vector<ccl_test_conf> test_params;
 
 void init_test_params() {
-
     test_params.resize(calculate_test_count());
 
     size_t idx = 0;
@@ -435,8 +436,7 @@ void init_test_params() {
                                                     test_params[idx].sync_type = sync_type;
                                                     test_params[idx].completion_type =
                                                         completion_type;
-                                                    test_params[idx].reduction =
-                                                        reduction_type;
+                                                    test_params[idx].reduction = reduction_type;
                                                     test_params[idx].buffer_count = buffer_count;
                                                     test_params[idx].start_order_type =
                                                         start_order_type;

@@ -102,9 +102,13 @@ public:
                  plain_recv_data.size());
 
         ccl::stream::impl_value_t empty{};
-        event = ccl_communicator->allgatherv_impl(
-            (int8_t*)plain_send_data.data(), send_bytes, (int8_t*)plain_recv_data.data(), recv_bytes,
-            empty, ccl::default_allgatherv_attr, {});
+        event = ccl_communicator->allgatherv_impl((int8_t*)plain_send_data.data(),
+                                                  send_bytes,
+                                                  (int8_t*)plain_recv_data.data(),
+                                                  recv_bytes,
+                                                  empty,
+                                                  ccl::default_allgatherv_attr,
+                                                  {});
         status = ccl_sched_entry_status_started;
 
         //TODO prepare foreign_device_ipc_mem_storage handles array

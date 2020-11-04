@@ -4,7 +4,6 @@ using namespace std;
 using namespace sycl;
 
 int main(int argc, char *argv[]) {
-
     const size_t count = 10 * 1024 * 1024;
 
     int i = 0;
@@ -92,10 +91,10 @@ int main(int argc, char *argv[]) {
         accessor expected_buf_acc(expected_buf, h, read_only);
         accessor check_buf_acc(check_buf, h, write_only);
         h.parallel_for(size * count, [=](auto id) {
-                if (recv_buf[id] != expected_buf_acc[id]) {
-                    check_buf_acc[id] = -1;
-                }
-            });
+            if (recv_buf[id] != expected_buf_acc[id]) {
+                check_buf_acc[id] = -1;
+            }
+        });
     });
 
     if (!handle_exception(q))

@@ -221,9 +221,7 @@ static void atl_ofi_print_coord(atl_proc_coord_t* coord) {
                         coord->local_count);
 }
 
-static inline atl_ofi_prov_t* atl_ofi_get_prov(atl_ep_t* ep,
-                                               int peer_proc_idx,
-                                               size_t msg_size) {
+static inline atl_ofi_prov_t* atl_ofi_get_prov(atl_ep_t* ep, int peer_proc_idx, size_t msg_size) {
     size_t prov_idx;
     atl_ofi_ctx_t* ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
 
@@ -722,7 +720,6 @@ static int atl_ofi_wait_cancel_cq(struct fid_cq* cq) {
 }
 
 static atl_status_t atl_ofi_prov_ep_init(atl_ofi_prov_t* prov, size_t ep_idx) {
-
     ssize_t ret = 0;
 
     struct fi_cq_attr cq_attr;
@@ -889,7 +886,6 @@ static atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
 }
 
 static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t& attr) {
-    
     atl_ofi_set_env(attr);
 
     char* prov_env = getenv("FI_PROVIDER");

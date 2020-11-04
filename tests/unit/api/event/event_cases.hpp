@@ -55,12 +55,12 @@ TEST(event, move_event) {
 }
 
 TEST(event, native_event) {
-    #ifndef CCL_ENABLE_SYCL
-        ccl::v1::event::native_t native_ev; // this is shared_ptr for all, exclude sycl
-        ccl::v1::event new_ev = ccl::v1::event::create_from_native(native_ev);
-        ccl::v1::event::native_t new_native_ev = new_ev.get_native();
-        (void)new_native_ev;
-    #endif
+#ifndef CCL_ENABLE_SYCL
+    ccl::v1::event::native_t native_ev; // this is shared_ptr for all, exclude sycl
+    ccl::v1::event new_ev = ccl::v1::event::create_from_native(native_ev);
+    ccl::v1::event::native_t new_native_ev = new_ev.get_native();
+    (void)new_native_ev;
+#endif
 }
 
 } // namespace event_suite

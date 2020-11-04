@@ -13,9 +13,7 @@ DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, max);
 
 namespace ring_single_device_case {
 
-namespace ring_allreduce_case {
-
-}
+namespace ring_allreduce_case {}
 
 TYPED_TEST_CASE(ring_allreduce_single_device_fixture, TestTypesAndOpsAllreduce);
 
@@ -31,11 +29,11 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
     const size_t num_thread = 4;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
-    ze_device_mem_alloc_desc_t mem_descr {
-            .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
-            .pNext = NULL,
-            .flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED,
-            .ordinal = 0,
+    ze_device_mem_alloc_desc_t mem_descr{
+        .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
+        .pNext = NULL,
+        .flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED,
+        .ordinal = 0,
     };
 
     handles_storage<native_type> memory_storage(mem_group_count * num_thread);
@@ -72,8 +70,8 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
             int rank_idx = thread_idx;
             int rank_size = num_thread;
             size_t elem_count = buffer_size;
-            this->output << "Device id" << ccl::to_string(device.get_device_path()) <<    \
-                            ", rank id" << rank_idx << std::endl;
+            this->output << "Device id" << ccl::to_string(device.get_device_path()) << ", rank id"
+                         << rank_idx << std::endl;
 
             comm_param_storage[thread_idx].push_back(rank_idx);
             comm_param_storage[thread_idx].push_back(rank_size);
@@ -86,8 +84,8 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
 
             /* FIXME: use 2x size for tmp buffer for parallel recv and reduce+send */
             /* consider to remove tmp buffer further */
-            auto temp_recv =
-                device.alloc_memory<native_type>(2 * buffer_size / num_thread, sizeof(native_type), ctx, mem_descr);
+            auto temp_recv = device.alloc_memory<native_type>(
+                2 * buffer_size / num_thread, sizeof(native_type), ctx, mem_descr);
 
             mem_send.enqueue_write_sync(send_values);
             mem_recv.enqueue_write_sync(recv_values);

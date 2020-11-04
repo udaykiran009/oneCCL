@@ -153,12 +153,8 @@ typedef struct {
                          int dst_proc_idx,
                          uint64_t tag,
                          atl_req_t* req);
-    atl_status_t (*recv)(atl_ep_t* ep,
-                         void* buf,
-                         size_t len,
-                         int src_proc_idx,
-                         uint64_t tag,
-                         atl_req_t* req);
+    atl_status_t (
+        *recv)(atl_ep_t* ep, void* buf, size_t len, int src_proc_idx, uint64_t tag, atl_req_t* req);
     atl_status_t (
         *probe)(atl_ep_t* ep, int src_proc_idx, uint64_t tag, int* found, size_t* recv_len);
 } atl_p2p_ops_t;

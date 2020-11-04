@@ -4,7 +4,6 @@ using namespace std;
 using namespace sycl;
 
 int main(int argc, char *argv[]) {
-
     const size_t count = 10 * 1024 * 1024;
     const size_t root_rank = 0;
 

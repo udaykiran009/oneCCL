@@ -211,9 +211,13 @@ void ccl_sched_base::alloc_buffers_for_sycl_copy() {
         return;
 
     LOG_DEBUG("alloc tmp buffers for D2H and H2D copies, coll_type ",
-              ccl_coll_type_to_str(param.ctype), ", dtype_size ", param.dtype.size(),
-              ", comm_size ", param.comm->size(),
-              ", count ", param.count);
+              ccl_coll_type_to_str(param.ctype),
+              ", dtype_size ",
+              param.dtype.size(),
+              ", comm_size ",
+              param.comm->size(),
+              ", count ",
+              param.count);
 
     size_t idx, send_count = 0, recv_count = 0;
 
@@ -268,7 +272,8 @@ void ccl_sched_base::alloc_buffers_for_sycl_copy() {
         case ccl_coll_reduce_scatter:
             param.sycl_send_buf = static_cast<ccl_sycl_buffer_t*>((void*)param.send_buf);
             param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t*>(param.recv_buf);
-            param.send_buf = alloc_buffer(param.count * param.comm->size() * param.dtype.size()).get_ptr();
+            param.send_buf =
+                alloc_buffer(param.count * param.comm->size() * param.dtype.size()).get_ptr();
             param.recv_buf = alloc_buffer(param.count * param.dtype.size()).get_ptr();
             break;
         case ccl_coll_sparse_allreduce:

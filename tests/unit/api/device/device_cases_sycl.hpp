@@ -17,7 +17,6 @@
 namespace device_suite {
 
 TEST(device_api, device_from_empty) {
-
     static typename ccl::unified_device_type::ccl_native_t default_native_device;
 
     auto str = ccl::v1::device::create_device(default_native_device);
@@ -35,8 +34,7 @@ TEST(device_api, device_from_sycl_device_creation) {
 
 TEST(device_api, device_from_sycl_context_creation) {
     auto dev = cl::sycl::device();
-    if (!dev.is_host())
-    {
+    if (!dev.is_host()) {
         cl_device_id h = dev.get();
         auto str = ccl::v1::device::create_device_from_attr(h);
 

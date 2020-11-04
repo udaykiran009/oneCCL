@@ -1,8 +1,7 @@
 #include "atl_ofi.h"
 #include "atl_ofi.c"
 
-atl_status_t atl_ofi::atl_set_env(const atl_attr_t& attr)
-{
+atl_status_t atl_ofi::atl_set_env(const atl_attr_t& attr) {
     return atl_ofi_set_env(attr);
 }
 
@@ -157,11 +156,7 @@ atl_status_t atl_ofi::atl_ep_barrier(atl_ep_t* ep, atl_req_t* req) {
     return atl_ofi_ep_barrier(ep, req);
 }
 
-atl_status_t atl_ofi::atl_ep_bcast(atl_ep_t* ep,
-                                   void* buf,
-                                   size_t len,
-                                   int root,
-                                   atl_req_t* req) {
+atl_status_t atl_ofi::atl_ep_bcast(atl_ep_t* ep, void* buf, size_t len, int root, atl_req_t* req) {
     return atl_ofi_ep_bcast(ep, buf, len, root, req);
 }
 

@@ -136,7 +136,8 @@ int pmi_resizable::PMIR_Update(void) {
             if (!is_first_collect || ask_only_framework == 1)
                 answer = call_resize_fn(count_pods - killed_ranks_count + new_ranks_count);
             else {
-                if ((int)(h->get_replica_size()) != count_pods - killed_ranks_count + new_ranks_count)
+                if ((int)(h->get_replica_size()) !=
+                    count_pods - killed_ranks_count + new_ranks_count)
                     answer = KVS_RA_WAIT;
                 else
                     answer = KVS_RA_RUN;

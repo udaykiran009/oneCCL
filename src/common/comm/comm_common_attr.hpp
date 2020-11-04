@@ -9,8 +9,7 @@ public:
     /**
      * `version` operations
      */
-    using version_traits_t =
-    detail::ccl_api_type_attr_traits<comm_attr_id, comm_attr_id::version>;
+    using version_traits_t = detail::ccl_api_type_attr_traits<comm_attr_id, comm_attr_id::version>;
 
     const typename version_traits_t::return_type& get_attribute_value(
         const version_traits_t& id) const {
@@ -24,13 +23,13 @@ public:
         return version;
     }
 
-    ccl_comm_attr_impl(const typename version_traits_t::return_type& version)
-        : version(version) {}
+    ccl_comm_attr_impl(const typename version_traits_t::return_type& version) : version(version) {}
 
     template <comm_attr_id attr_id>
     bool is_valid() const noexcept {
         return (attr_id == comm_attr_id::version);
     }
+
 protected:
     typename version_traits_t::return_type version;
 };

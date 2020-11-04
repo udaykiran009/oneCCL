@@ -6,15 +6,15 @@
 #include "common/utils/enums.hpp"
 
 #define CCL_FLOATS_IN_M512 16
-#define CCL_BF16_SHIFT    16
+#define CCL_BF16_SHIFT     16
 
 #ifdef CCL_BF16_COMPILER
 
 void ccl_bf16_reduce(const void* in_buf,
-                      size_t in_cnt,
-                      void* inout_buf,
-                      size_t* out_cnt,
-                      ccl::reduction reduction_op) {
+                     size_t in_cnt,
+                     void* inout_buf,
+                     size_t* out_cnt,
+                     ccl::reduction reduction_op) {
     LOG_DEBUG("BF16 reduction for %zu elements\n", in_cnt);
 
     if (out_cnt != nullptr) {
@@ -98,10 +98,10 @@ void ccl_convert_bf16_to_fp32_arrays(void* recv_buf_bf16, float* recv_buf, size_
 #else /* CCL_BF16_COMPILER */
 
 void ccl_bf16_reduce(const void* in_buf,
-                      size_t in_cnt,
-                      void* inout_buf,
-                      size_t* out_cnt,
-                      ccl::reduction reduction_op) {
+                     size_t in_cnt,
+                     void* inout_buf,
+                     size_t* out_cnt,
+                     ccl::reduction reduction_op) {
     CCL_FATAL("BF16 reduction is requested but CCL was compiled w/o BF16 support");
 }
 

@@ -95,7 +95,8 @@ void thread_group_context::aggregate_device_indices(size_t thread_id,
     per_thread_indices.insert({ thread_id, new_indices });
 }
 
-const ccl::process_device_indices_type& thread_group_context::get_thread_group_device_indices() const {
+const ccl::process_device_indices_type& thread_group_context::get_thread_group_device_indices()
+    const {
     return per_thread_indices;
 }
 

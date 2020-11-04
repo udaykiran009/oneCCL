@@ -38,11 +38,12 @@ TEST(coll_attr, allgather_copy_on_write_attr) {
 
     //make sure original impl is unchanged
     ASSERT_TRUE(original_inner_impl_ptr != attr.get_impl());
-    ASSERT_EQ(std::static_pointer_cast<ccl::ccl_operation_attr_impl_t>(original_inner_impl_ptr)
-                  ->get_attribute_value(
-                      ccl::detail::ccl_api_type_attr_traits<ccl::v1::operation_attr_id,
-                                                             ccl::v1::operation_attr_id::priority>{}),
-              10);
+    ASSERT_EQ(
+        std::static_pointer_cast<ccl::ccl_operation_attr_impl_t>(original_inner_impl_ptr)
+            ->get_attribute_value(
+                ccl::detail::ccl_api_type_attr_traits<ccl::v1::operation_attr_id,
+                                                      ccl::v1::operation_attr_id::priority>{}),
+        10);
 }
 
 TEST(coll_attr, allgather_copy_attr) {

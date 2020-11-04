@@ -6,7 +6,6 @@
 using namespace std;
 
 int main() {
-
     const size_t count = 4096;
 
     size_t i = 0;
@@ -49,11 +48,7 @@ int main() {
     }
 
     /* invoke allreduce */
-    ccl::allreduce(send_buf,
-                   recv_buf,
-                   count,
-                   ccl::reduction::sum,
-                   comm).wait();
+    ccl::allreduce(send_buf, recv_buf, count, ccl::reduction::sum, comm).wait();
 
     /* check correctness of recv_buf */
     for (i = 0; i < count; i++) {

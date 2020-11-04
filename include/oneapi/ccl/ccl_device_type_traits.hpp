@@ -4,13 +4,13 @@
 #error "Do not include this file directly. Please include 'ccl_type_traits.hpp'"
 #endif
 
-#include  "oneapi/ccl/native_device_api/export_api.hpp"
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 
 namespace ccl {
 
 #define SUPPORTED_KERNEL_NATIVE_DATA_TYPES \
-	int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, \
-	ccl::float16, float, double, ccl::bfloat16
+    int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, ccl::float16, float, \
+        double, ccl::bfloat16
 
 template <class native_stream>
 constexpr bool is_stream_supported() {
@@ -27,13 +27,13 @@ constexpr bool is_event_supported() {
 template <class native_device>
 constexpr bool is_device_supported() {
     return api_type_info<typename std::remove_pointer<typename std::remove_cv<
-                         typename std::remove_reference<native_device>::type>::type>::type>::is_supported();
+        typename std::remove_reference<native_device>::type>::type>::type>::is_supported();
 }
 
 template <class native_context>
 constexpr bool is_context_supported() {
     return api_type_info<typename std::remove_pointer<typename std::remove_cv<
-                         typename std::remove_reference<native_context>::type>::type>::type>::is_supported();
+        typename std::remove_reference<native_context>::type>::type>::type>::is_supported();
 }
 
 /**

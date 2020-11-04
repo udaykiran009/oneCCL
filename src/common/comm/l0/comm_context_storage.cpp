@@ -16,13 +16,10 @@ group_context::comm_group_t group_context::group_by_kvs(
     const std::vector<int>& local_thread_device_group_ranks,
     int cluster_device_group_size,
     std::shared_ptr<kvs_interface> kvs) {
-
     LOG_INFO("Thread acquire by barrier");
     std::shared_ptr<ikvs_wrapper> kvs_wrap = std::shared_ptr<ikvs_wrapper>(new users_kvs(kvs));
-    std::shared_ptr<atl_wrapper> atl =
-        std::shared_ptr<atl_wrapper>(new atl_wrapper(cluster_device_group_size,
-                                                    local_thread_device_group_ranks,
-                                                    kvs_wrap));
+    std::shared_ptr<atl_wrapper> atl = std::shared_ptr<atl_wrapper>(
+        new atl_wrapper(cluster_device_group_size, local_thread_device_group_ranks, kvs_wrap));
 
     /* Indicate that multiple devices are not supported, don't throw anything if kernel_path env variable
      * is set to enable our testing with partial functionality.
@@ -34,10 +31,12 @@ group_context::comm_group_t group_context::group_by_kvs(
     }
 
     LOG_INFO("Thread released by barrier");
-    LOG_INFO("Cluster_device_group size: ", cluster_device_group_size,
-             "\nThread device group ranks size: ", local_thread_device_group_ranks.size());
-    for (size_t i = 0; i < local_thread_device_group_ranks.size(); i++){
-         LOG_INFO("\nLocal thread device group ranks: ", local_thread_device_group_ranks[i]);
+    LOG_INFO("Cluster_device_group size: ",
+             cluster_device_group_size,
+             "\nThread device group ranks size: ",
+             local_thread_device_group_ranks.size());
+    for (size_t i = 0; i < local_thread_device_group_ranks.size(); i++) {
+        LOG_INFO("\nLocal thread device group ranks: ", local_thread_device_group_ranks[i]);
     }
     // register group slot in global context table, based on communicator id
     comm_group_t group = group_context::group_by_comm(atl);
@@ -50,20 +49,19 @@ group_context::comm_group_t group_context::group_by_kvs(
 }
 
 group_context::comm_group_t group_context::group_by_comm(std::shared_ptr<atl_wrapper> atl) {
-
     LOG_INFO("\n",
-         "\nATL info:",
-         "\n  threads per process: ",
-         atl->get_threads_per_process(),
-         "\n  ranks per process:   ",
-         atl->get_ranks_per_process(),
-         "\n  atl size:            ",
-         atl->get_size(),
-         "\n  rank:                ",
-         atl->get_rank(),
-        "\n  unique id of atl:     ",
-         atl->get_id(),
-         "\n")
+             "\nATL info:",
+             "\n  threads per process: ",
+             atl->get_threads_per_process(),
+             "\n  ranks per process:   ",
+             atl->get_ranks_per_process(),
+             "\n  atl size:            ",
+             atl->get_size(),
+             "\n  rank:                ",
+             atl->get_rank(),
+             "\n  unique id of atl:     ",
+             atl->get_id(),
+             "\n")
 
     comm_group_t group;
     {
@@ -75,8 +73,7 @@ group_context::comm_group_t group_context::group_by_comm(std::shared_ptr<atl_wra
 
         auto ctx_it = communicator_group_map.find(unique_id);
         if (ctx_it == communicator_group_map.end()) {
-            std::shared_ptr<host_communicator> host_comm =
-                        std::make_shared<host_communicator>(atl);
+            std::shared_ptr<host_communicator> host_comm = std::make_shared<host_communicator>(atl);
             group.reset(
                 new ccl::comm_group(host_comm, threads_per_process, ranks_per_process, unique_id));
             communicator_group_map.insert({ unique_id, group });

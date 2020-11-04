@@ -16,7 +16,8 @@ typed_base_communicator<TEMPLATE_DEF_ARG>::typed_base_communicator(
     size_t thread_idx,
     size_t process_idx,
     const ccl::comm_split_attr& attr)
-        : base_communicator(std::move(owned_device), std::move(ctx),
+        : base_communicator(std::move(owned_device),
+                            std::move(ctx),
                             thread_idx,
                             process_idx /*, comm_attr*/,
                             attr) {}
@@ -47,8 +48,8 @@ std::string typed_base_communicator<TEMPLATE_DEF_ARG>::to_string() const {
 }
 
 template <TEMPLATE_DECL_ARG>
-std::shared_ptr<ccl::communicator_interface>
-typed_base_communicator<TEMPLATE_DEF_ARG>::split(const ccl::comm_split_attr& attr) {
+std::shared_ptr<ccl::communicator_interface> typed_base_communicator<TEMPLATE_DEF_ARG>::split(
+    const ccl::comm_split_attr& attr) {
     return {};
 }
 

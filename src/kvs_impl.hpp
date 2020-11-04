@@ -7,13 +7,10 @@
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_kvs.hpp"
 
-
 namespace ccl {
 
 class kvs_impl {
-
 public:
-
     kvs_impl() {
         inter_kvs = std::shared_ptr<internal_kvs>(new internal_kvs());
         inter_kvs->kvs_main_server_address_reserve(addr.data());

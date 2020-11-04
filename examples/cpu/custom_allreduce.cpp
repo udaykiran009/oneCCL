@@ -277,7 +277,6 @@ void do_reduction_custom(const void* in_buf,
 }
 
 int main() {
-
     setenv("CCL_ATL_TRANSPORT", "ofi", 1);
 
     ccl::init();

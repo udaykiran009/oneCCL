@@ -159,7 +159,6 @@ void env_data::parse() {
 }
 
 void env_data::print() {
-
     std::lock_guard<ccl_spinlock> lock{ print_guard };
 
     if (was_printed)
@@ -218,7 +217,9 @@ void env_data::print() {
     LOG_INFO(
         CCL_REDUCE, ": ", (reduce_algo_raw.length()) ? reduce_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(
-        CCL_REDUCE_SCATTER, ": ", (reduce_scatter_algo_raw.length()) ? reduce_scatter_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
+        CCL_REDUCE_SCATTER,
+        ": ",
+        (reduce_scatter_algo_raw.length()) ? reduce_scatter_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_SPARSE_ALLREDUCE,
              ": ",
              (sparse_allreduce_algo_raw.length()) ? sparse_allreduce_algo_raw
@@ -277,20 +278,18 @@ void env_data::print() {
     if (bf16_impl_type != ccl_bf16_none) {
         LOG_INFO("\n\nBF16 is enabled through ",
                  (bf16_impl_type == ccl_bf16_avx512bf) ? "AVX512-BF" : "AVX512-F",
-                "\n");
+                 "\n");
     }
     else {
 #ifdef CCL_BF16_COMPILER
-       LOG_INFO("\n\nBF16 is disabled on HW level\n");
+        LOG_INFO("\n\nBF16 is disabled on HW level\n");
 #else
-       LOG_INFO("\n\nBF16 is disabled on compiler level\n");
+        LOG_INFO("\n\nBF16 is disabled on compiler level\n");
 #endif
     }
-
 }
 
-void env_data::set_internal_env()
-{
+void env_data::set_internal_env() {
     auto attr = ccl_executor::generate_atl_attr(*this);
     atl_wrapper::set_internal_env(attr);
 }
@@ -402,9 +401,8 @@ int env_data::env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_cou
 
 void env_data::env_2_atl_transport() {
     if (!getenv(CCL_ATL_TRANSPORT) && !with_mpirun()) {
-
         LOG_INFO("\n\nDid not find MPI-launcher specific variables, switch to ATL/OFI"
-          "\nTo force enable ATL/MPI set CCL_ATL_TRANSPORT=mpi\n");
+                 "\nTo force enable ATL/MPI set CCL_ATL_TRANSPORT=mpi\n");
 
         atl_transport = ccl_atl_ofi;
     }
@@ -413,10 +411,10 @@ void env_data::env_2_atl_transport() {
 }
 
 bool env_data::with_mpirun() {
-    return (getenv("MPI_LOCALRANKID") ||
-            getenv("MPI_LOCALNRANKS") ||
-            getenv("PMI_RANK") ||
-            getenv("PMI_SIZE")) ? true : false;
+    return (getenv("MPI_LOCALRANKID") || getenv("MPI_LOCALNRANKS") || getenv("PMI_RANK") ||
+            getenv("PMI_SIZE"))
+               ? true
+               : false;
 }
 
 } /* namespace ccl */

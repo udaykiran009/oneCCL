@@ -15,19 +15,17 @@ public:
     exception(const std::string &domain, const std::string &function, const std::string &info = "")
             : std::exception() {
         msg = std::string("oneCCL: ") + domain +
-               ((domain.length() != 0 && function.length() != 0) ? "/" : "") + function +
-               ((info.length() != 0)
-                    ? (((domain.length() + function.length() != 0) ? ": " : "") + info)
-                    : "");
+              ((domain.length() != 0 && function.length() != 0) ? "/" : "") + function +
+              ((info.length() != 0)
+                   ? (((domain.length() + function.length() != 0) ? ": " : "") + info)
+                   : "");
     }
 
-    exception(const std::string &info = "")
-            : std::exception() {
+    exception(const std::string &info = "") : std::exception() {
         msg = std::string("oneCCL: ") + info;
     }
 
-    exception(const char* info)
-            : std::exception() {
+    exception(const char *info) : std::exception() {
         msg = std::string("oneCCL: ") + std::string(info);
     }
 
@@ -38,7 +36,8 @@ public:
 
 class invalid_argument : public exception {
 public:
-    invalid_argument(const std::string &domain, const std::string &function,
+    invalid_argument(const std::string &domain,
+                     const std::string &function,
                      const std::string &info = "")
             : exception(domain, function, "invalid argument " + info) {}
 };
@@ -60,15 +59,17 @@ public:
 
 class unimplemented : public exception {
 public:
-    unimplemented(const std::string &domain, const std::string &function,
+    unimplemented(const std::string &domain,
+                  const std::string &function,
                   const std::string &info = "")
             : exception(domain, function, "function is not implemented " + info) {}
 };
 
 class unsupported : public exception {
 public:
-    unsupported(const std::string &domain, const std::string &function,
-                  const std::string &info = "")
+    unsupported(const std::string &domain,
+                const std::string &function,
+                const std::string &info = "")
             : exception(domain, function, "function is not supported " + info) {}
 };
 

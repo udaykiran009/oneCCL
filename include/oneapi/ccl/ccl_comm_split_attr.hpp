@@ -6,7 +6,7 @@
 
 namespace ccl {
 namespace detail {
-    class environment;
+class environment;
 }
 
 class ccl_comm_split_attr_impl;

@@ -94,7 +94,8 @@ CCL_API generic_device_type<cl_backend_type::dpcpp_sycl>::generic_device_type(
     device = *it;
 }
 
-generic_device_type<cl_backend_type::dpcpp_sycl>::generic_device_type(const cl::sycl::device& in_device)
+generic_device_type<cl_backend_type::dpcpp_sycl>::generic_device_type(
+    const cl::sycl::device& in_device)
         : device(in_device) {}
 
 device_index_type generic_device_type<cl_backend_type::dpcpp_sycl>::get_id() const {
@@ -128,7 +129,6 @@ generic_event_type<cl_backend_type::dpcpp_sycl>::get() const noexcept {
     return event;
 }
 
-
 /**
  * Stream
  */
@@ -144,7 +144,6 @@ const generic_stream_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
 generic_stream_type<cl_backend_type::dpcpp_sycl>::get() const noexcept {
     return queue;
 }
-
 
 /**
  * Platform
@@ -162,5 +161,5 @@ const generic_platform_type<cl_backend_type::dpcpp_sycl>::ccl_native_t&
 generic_platform_type<cl_backend_type::dpcpp_sycl>::get() const noexcept {
     return platform;
 }
-}
+} // namespace ccl
 #endif //CCL_ENABLE_SYCL and !defined(MULTI_GPU_SUPPORT)

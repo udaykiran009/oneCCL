@@ -39,7 +39,6 @@ inline bool has_accelerator() {
 }
 
 inline bool check_sycl_usm(queue& q, usm::alloc alloc_type) {
-
     bool ret = true;
 
     device d = q.get_device();
@@ -58,7 +57,6 @@ inline bool check_sycl_usm(queue& q, usm::alloc alloc_type) {
 }
 
 std::string get_preferred_gpu_platform_name() {
-
     std::string backend;
     std::string result;
 
@@ -80,16 +78,12 @@ std::string get_preferred_gpu_platform_name() {
     auto plaform_list = sycl::platform::get_platforms();
 
     for (const auto& platform : plaform_list) {
-
         auto platform_name = platform.get_info<sycl::info::platform::name>();
 
         auto devices = platform.get_devices();
-        auto gpu_dev =
-            std::find_if(devices.begin(),
-                         devices.end(),
-                         [](const sycl::device& d) {
-                            return d.is_gpu();
-                         });
+        auto gpu_dev = std::find_if(devices.begin(), devices.end(), [](const sycl::device& d) {
+            return d.is_gpu();
+        });
 
         if (gpu_dev == devices.end()) {
             // cout << "platform [" << platform_name
@@ -114,7 +108,6 @@ std::string get_preferred_gpu_platform_name() {
 }
 
 std::vector<sycl::device> create_sycl_gpu_devices() {
-
     constexpr char dev_prefix[] = "-- ";
     constexpr char sub_dev_prefix[] = "---- ";
 
@@ -125,7 +118,6 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
     cout << "preferred platform: [" << preferred_platform_name << "]\n";
 
     for (const auto& platform : plaform_list) {
-
         auto platform_name = platform.get_info<sycl::info::platform::name>();
 
         if (platform_name.compare(preferred_platform_name) != 0)
@@ -136,13 +128,10 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
         auto device_list = platform.get_devices();
 
         for (const auto& device : device_list) {
-
             auto device_name = device.get_info<cl::sycl::info::device::name>();
 
             if (!device.is_gpu()) {
-                cout << dev_prefix
-                     << "device [" << device_name
-                     << "] is not GPU, skipping\n";
+                cout << dev_prefix << "device [" << device_name << "] is not GPU, skipping\n";
                 continue;
             }
 
@@ -150,57 +139,52 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
 
             if (std::find(part_props.begin(),
                           part_props.end(),
-                          info::partition_property::partition_by_affinity_domain) == part_props.end()) {
-                cout << dev_prefix
-                     << "device [" << device_name
+                          info::partition_property::partition_by_affinity_domain) ==
+                part_props.end()) {
+                cout << dev_prefix << "device [" << device_name
                      << "] does not support partition by affinity domain"
                      << ", use root device\n";
                 result.push_back(device);
                 continue;
             }
 
-            auto part_affinity_domains = device.get_info<info::device::partition_affinity_domains>();
+            auto part_affinity_domains =
+                device.get_info<info::device::partition_affinity_domains>();
 
             if (std::find(part_affinity_domains.begin(),
                           part_affinity_domains.end(),
-                          info::partition_affinity_domain::next_partitionable) == part_affinity_domains.end()) {
-                cout << dev_prefix
-                     << "device [" << device_name
+                          info::partition_affinity_domain::next_partitionable) ==
+                part_affinity_domains.end()) {
+                cout << dev_prefix << "device [" << device_name
                      << "] does not support next_partitionable affinity domain"
                      << ", use root device\n";
                 result.push_back(device);
                 continue;
             }
 
-            cout << dev_prefix
-                 << "device [" << device_name << "] should provide "
+            cout << dev_prefix << "device [" << device_name << "] should provide "
                  << device.template get_info<info::device::partition_max_sub_devices>()
                  << " sub-devices\n";
 
-            auto sub_devices = device.create_sub_devices<
-                  info::partition_property::partition_by_affinity_domain>(
+            auto sub_devices =
+                device.create_sub_devices<info::partition_property::partition_by_affinity_domain>(
                     info::partition_affinity_domain::next_partitionable);
 
             if (sub_devices.empty()) {
                 /* TODO: remove when SYCL/L0 sub-devices will be supported */
-                cout << dev_prefix
-                     << "device [" << device_name
-                     << "] does not provide sub-devices"
+                cout << dev_prefix << "device [" << device_name << "] does not provide sub-devices"
                      << ", use root device\n";
                 result.push_back(device);
                 continue;
             }
 
-            cout << dev_prefix
-                 << "device [" << device_name << "] provides "
-                 << sub_devices.size()
+            cout << dev_prefix << "device [" << device_name << "] provides " << sub_devices.size()
                  << " sub-devices\n";
             result.insert(result.end(), sub_devices.begin(), sub_devices.end());
 
-            for (auto idx = 0; idx <sub_devices.size(); idx++) {
-                cout << sub_dev_prefix
-                     << "sub-device " << idx
-                     << ": [" << sub_devices[idx].get_info<cl::sycl::info::device::name>() << "]\n";
+            for (auto idx = 0; idx < sub_devices.size(); idx++) {
+                cout << sub_dev_prefix << "sub-device " << idx << ": ["
+                     << sub_devices[idx].get_info<cl::sycl::info::device::name>() << "]\n";
             }
         }
     }
@@ -216,7 +200,6 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
 
 std::vector<sycl::queue> create_sycl_queues(const std::string& device_type,
                                             const std::vector<int>& ranks) {
-
     std::vector<sycl::device> devices;
 
     try {
@@ -239,7 +222,8 @@ std::vector<sycl::queue> create_sycl_queues(const std::string& device_type,
                 }
                 else {
                     selector.reset(new default_selector());
-                    cout << "GPU is unavailable, default_selector has been created instead of gpu_selector.\n";
+                    cout
+                        << "GPU is unavailable, default_selector has been created instead of gpu_selector.\n";
                 }
             }
             else if (device_type.compare("host") == 0) {
@@ -317,15 +301,12 @@ std::vector<sycl::queue> create_sycl_queues(const std::string& device_type,
     for (size_t idx = 0; idx < ctx_devices.size(); idx++) {
         cout << "[" << idx << "]: [" << ctx_devices[idx].get_info<info::device::name>() << "]\n";
         queues.push_back(sycl::queue(ctx_devices[idx], exception_handler));
-     }
+    }
 
     return queues;
 }
 
-inline bool create_sycl_queue(int argc,
-                              char* argv[],
-                              int rank,
-                              queue& q) {
+inline bool create_sycl_queue(int argc, char* argv[], int rank, queue& q) {
     if (argc >= 2) {
         try {
             std::vector<int> ranks = { rank };
@@ -385,14 +366,11 @@ std::pair<usm::alloc, std::string> take_usm_type(const int argc, char* str_type)
     return std::make_pair(usm_alloc_type, str_usm_alloc_type);
 }
 
-template <typename  T>
+template <typename T>
 struct buf_allocator {
-
     const size_t alignment = 64;
 
-    buf_allocator(queue& q)
-        : q(q)
-    {}
+    buf_allocator(queue& q) : q(q) {}
 
     ~buf_allocator() {
         for (auto& ptr : memory_storage) {
@@ -405,7 +383,7 @@ struct buf_allocator {
         if (alloc_type == usm::alloc::host)
             ptr = aligned_alloc_host<T>(alignment, count, q);
         else if (alloc_type == usm::alloc::device)
-            ptr =  aligned_alloc_device<T>(alignment, count, q);
+            ptr = aligned_alloc_device<T>(alignment, count, q);
         else if (alloc_type == usm::alloc::shared)
             ptr = aligned_alloc_shared<T>(alignment, count, q);
         else
@@ -414,17 +392,15 @@ struct buf_allocator {
         auto it = memory_storage.find(ptr);
         if (it != memory_storage.end()) {
             throw std::runtime_error(string(__PRETTY_FUNCTION__) +
-                                        " - allocator already owns this pointer");
+                                     " - allocator already owns this pointer");
         }
         memory_storage.insert(ptr);
 
         auto pointer_type = sycl::get_pointer_type(ptr, q.get_context());
         if (pointer_type != alloc_type)
-            throw std::runtime_error(string(__PRETTY_FUNCTION__)
-                + "pointer_type "
-                + std::to_string((int)pointer_type)
-                + " doesn't match with requested "
-                + std::to_string((int)alloc_type));
+            throw std::runtime_error(
+                string(__PRETTY_FUNCTION__) + "pointer_type " + std::to_string((int)pointer_type) +
+                " doesn't match with requested " + std::to_string((int)alloc_type));
 
         return ptr;
     }
@@ -433,7 +409,7 @@ struct buf_allocator {
         auto it = memory_storage.find(ptr);
         if (it == memory_storage.end()) {
             throw std::runtime_error(string(__PRETTY_FUNCTION__) +
-                                        " - allocator doesn't own this pointer");
+                                     " - allocator doesn't own this pointer");
         }
         free(ptr, q);
         memory_storage.erase(it);

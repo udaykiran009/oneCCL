@@ -6,7 +6,7 @@
 
 namespace ccl {
 namespace detail {
-    class environment;
+class environment;
 }
 
 class ccl_kvs_attr_impl;
@@ -18,13 +18,10 @@ struct ccl_empty_attr;
 /**
  * kvsunicator attributes
  */
-class kvs_attr : public ccl_api_base_copyable<kvs_attr,
-    copy_on_write_access_policy,
-    ccl_kvs_attr_impl> {
+class kvs_attr
+        : public ccl_api_base_copyable<kvs_attr, copy_on_write_access_policy, ccl_kvs_attr_impl> {
 public:
-    using base_t = ccl_api_base_copyable<kvs_attr,
-        copy_on_write_access_policy,
-        ccl_kvs_attr_impl>;
+    using base_t = ccl_api_base_copyable<kvs_attr, copy_on_write_access_policy, ccl_kvs_attr_impl>;
 
     /**
      * Declare PIMPL type
@@ -65,17 +62,15 @@ private:
     friend class ccl::detail::environment;
     friend struct ccl::v1::ccl_empty_attr;
 
-    kvs_attr(
-        const typename detail::ccl_api_type_attr_traits<kvs_attr_id,
-            kvs_attr_id::version>::return_type&
-        version);
+    kvs_attr(const typename detail::ccl_api_type_attr_traits<kvs_attr_id,
+                                                             kvs_attr_id::version>::return_type&
+                 version);
 };
 
 extern kvs_attr default_kvs_attr;
 
 template <kvs_attr_id t, class value_type>
-constexpr auto attr_val(value_type v)
--> detail::attr_value_tripple<kvs_attr_id, t, value_type> {
+constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<kvs_attr_id, t, value_type> {
     return detail::attr_value_tripple<kvs_attr_id, t, value_type>(v);
 }
 

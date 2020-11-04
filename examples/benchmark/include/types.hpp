@@ -33,29 +33,22 @@ typedef enum { SYCL_DEV_HOST, SYCL_DEV_CPU, SYCL_DEV_GPU } sycl_dev_type_t;
 typedef enum { SYCL_MEM_USM, SYCL_MEM_BUF } sycl_mem_type_t;
 typedef enum { SYCL_USM_SHARED, SYCL_USM_DEVICE } sycl_usm_type_t;
 
-std::map<backend_type_t, std::string> backend_names = {
-    std::make_pair(BACKEND_HOST, "host"),
-    std::make_pair(BACKEND_SYCL, "sycl")
-};
+std::map<backend_type_t, std::string> backend_names = { std::make_pair(BACKEND_HOST, "host"),
+                                                        std::make_pair(BACKEND_SYCL, "sycl") };
 
 std::map<loop_type_t, std::string> loop_names = { std::make_pair(LOOP_REGULAR, "regular"),
                                                   std::make_pair(LOOP_UNORDERED, "unordered") };
 
-std::map<sycl_dev_type_t, std::string> sycl_dev_names = {
-    std::make_pair(SYCL_DEV_HOST, "host"),
-    std::make_pair(SYCL_DEV_CPU, "cpu"),
-    std::make_pair(SYCL_DEV_GPU, "gpu")
-};
+std::map<sycl_dev_type_t, std::string> sycl_dev_names = { std::make_pair(SYCL_DEV_HOST, "host"),
+                                                          std::make_pair(SYCL_DEV_CPU, "cpu"),
+                                                          std::make_pair(SYCL_DEV_GPU, "gpu") };
 
-std::map<sycl_mem_type_t, std::string> sycl_mem_names = {
-    std::make_pair(SYCL_MEM_USM, "usm"),
-    std::make_pair(SYCL_MEM_BUF, "buf")
-};
+std::map<sycl_mem_type_t, std::string> sycl_mem_names = { std::make_pair(SYCL_MEM_USM, "usm"),
+                                                          std::make_pair(SYCL_MEM_BUF, "buf") };
 
-std::map<sycl_usm_type_t, std::string> sycl_usm_names = {
-    std::make_pair(SYCL_USM_SHARED, "shared"),
-    std::make_pair(SYCL_USM_DEVICE, "device")
-};
+std::map<sycl_usm_type_t, std::string> sycl_usm_names = { std::make_pair(SYCL_USM_SHARED, "shared"),
+                                                          std::make_pair(SYCL_USM_DEVICE,
+                                                                         "device") };
 
 // TODO: add ccl::bfloat16
 std::map<ccl::datatype, std::string> dtype_names = {

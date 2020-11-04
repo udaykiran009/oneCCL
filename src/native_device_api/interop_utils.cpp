@@ -70,7 +70,6 @@ std::string to_string(usm_support_mode val) {
 }
 
 size_t get_platform_type_index(const ccl::unified_device_type::ccl_native_t& device) {
-
     size_t index = 2; //`gpu` for default L0 backend
 
 #ifdef CCL_ENABLE_SYCL
@@ -131,8 +130,10 @@ assoc_result check_assoc_device_memory(const void* mem,
 
     auto pointer_type_idx = utils::enum_to_underlying(pointer_type);
     CCL_THROW_IF_NOT(pointer_type_idx < usm_target_table[platform_type_index].size(),
-        "usm_type index ", pointer_type_idx,
-        " is larger that array size ", usm_target_table[platform_type_index].size());
+                     "usm_type index ",
+                     pointer_type_idx,
+                     " is larger that array size ",
+                     usm_target_table[platform_type_index].size());
 
     std::get<assoc_result_index::SUPPORT_MODE>(ret) =
         usm_target_table[platform_type_index][pointer_type_idx];
@@ -152,27 +153,22 @@ assoc_result check_assoc_device_memory(const void* mem,
 usm_support_mode check_assoc_device_memory(const std::vector<void*>& mems,
                                            const ccl::unified_device_type::ccl_native_t& device,
                                            const ccl::unified_context_type::ccl_native_t& ctx) {
-
     usm_support_mode ret = usm_support_mode::direct;
     std::string err_msg;
 
     for (size_t idx = 0; idx < mems.size(); idx++) {
         usm_support_mode mode;
-        std::tie(mode, std::ignore, err_msg) =
-            check_assoc_device_memory(mems[idx], device, ctx);
+        std::tie(mode, std::ignore, err_msg) = check_assoc_device_memory(mems[idx], device, ctx);
 
         if (idx > 0)
-            CCL_THROW_IF_NOT(
-                mode == ret,
-                "different USM modes between buffers: ", err_msg);
+            CCL_THROW_IF_NOT(mode == ret, "different USM modes between buffers: ", err_msg);
 
         ret = mode;
 
-        CCL_THROW_IF_NOT(
-            (mode == usm_support_mode::direct) ||
-            (mode == usm_support_mode::shared) ||
-            (mode == usm_support_mode::need_conversion),
-            "unsupported USM configuration: ", err_msg);
+        CCL_THROW_IF_NOT((mode == usm_support_mode::direct) || (mode == usm_support_mode::shared) ||
+                             (mode == usm_support_mode::need_conversion),
+                         "unsupported USM configuration: ",
+                         err_msg);
     }
 
     return ret;

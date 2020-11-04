@@ -28,8 +28,8 @@ std::shared_ptr<ccl_subdevice> ccl_subdevice::create(handle_t handle,
                                                      owner_ptr_t&& device,
                                                      base::owner_ptr_t&& driver) {
     auto ctx = driver.lock()->get_driver_contexts();
-    std::shared_ptr<ccl_subdevice> subdevice =
-        std::make_shared<ccl_subdevice>(handle, std::move(device), std::move(driver), std::move(ctx));
+    std::shared_ptr<ccl_subdevice> subdevice = std::make_shared<ccl_subdevice>(
+        handle, std::move(device), std::move(driver), std::move(ctx));
     return subdevice;
 }
 
@@ -104,7 +104,10 @@ ccl_subdevice::ccl_subdevice(handle_t h,
           parent_device(std::move(device)) {}
 
 CCL_API
-ccl_subdevice::ccl_subdevice(handle_t h, owner_ptr_t&& device, base::owner_ptr_t&& driver, base::context_ptr_t&& ctx)
+ccl_subdevice::ccl_subdevice(handle_t h,
+                             owner_ptr_t&& device,
+                             base::owner_ptr_t&& driver,
+                             base::context_ptr_t&& ctx)
         : //  my_enable_shared_from_this<ccl_subdevice>(),
           base(h, std::move(driver), std::move(ctx)),
           parent_device(std::move(device)) {

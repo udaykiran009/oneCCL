@@ -76,8 +76,8 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
             // memory
             auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
             auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
-            auto temp_recv =
-                device.alloc_memory<native_type>(buffer_size / num_thread, sizeof(native_type), ctx);
+            auto temp_recv = device.alloc_memory<native_type>(
+                buffer_size / num_thread, sizeof(native_type), ctx);
 
             mem_send.enqueue_write_sync(send_values);
             mem_recv.enqueue_write_sync(recv_values);
@@ -143,8 +143,8 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
     }
 
     //prepare gpu object
-    auto a2a_comm_handle =
-        device.alloc_memory<a2a_gpu_comm_data_float32>(num_thread, sizeof(a2a_gpu_comm_data_float32), ctx);
+    auto a2a_comm_handle = device.alloc_memory<a2a_gpu_comm_data_float32>(
+        num_thread, sizeof(a2a_gpu_comm_data_float32), ctx);
     a2a_comm_handle.enqueue_write_sync(a2a_comm);
 
     //prepare kernels in multithreading environment

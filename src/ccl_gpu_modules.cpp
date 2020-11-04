@@ -9,8 +9,8 @@
 #include "coll/algorithms/algorithms_enum.hpp"
 
 ccl::status CCL_API register_gpu_module_source(const char* path,
-                                                ccl::device_topology_type topology_class,
-                                                ccl_coll_type type) {
+                                               ccl::device_topology_type topology_class,
+                                               ccl_coll_type type) {
     ccl::device_topology_type t_class = static_cast<ccl::device_topology_type>(topology_class);
     char pwd[PATH_MAX];
     char* ret = getcwd(pwd, sizeof(pwd));
@@ -55,10 +55,10 @@ ccl::status CCL_API register_gpu_module_source(const char* path,
                 native::specific_modules_source_data_storage::instance()
                     .load_kernel_source<ccl_coll_reduce_scatter>(path, t_class);
                 break;
-            default: 
-                throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
-                                                    " - get unexpected ccl collective type: " +
-                                                    std::to_string(type));
+            default:
+                throw std::runtime_error(
+                    std::string(__PRETTY_FUNCTION__) +
+                    " - get unexpected ccl collective type: " + std::to_string(type));
                 break;
         }
     }

@@ -12,8 +12,7 @@ DEFINE_KERNEL_TYPES_FOR_OP(reduce, max);
 
 namespace ring_single_device_case {
 
-namespace ring_reduce_case {
-}
+namespace ring_reduce_case {}
 
 TYPED_TEST_CASE(ring_reduce_single_device_fixture, TestTypesAndOps);
 
@@ -58,7 +57,8 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
     for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         size_t mult = 0;
         for (size_t idx = 1; idx <= buffer_size; ++idx, ++mult) {
-            send_values[thread_idx].push_back(static_cast<native_type>(idx * ((thread_idx + mult) % num_thread + 1)));
+            send_values[thread_idx].push_back(
+                static_cast<native_type>(idx * ((thread_idx + mult) % num_thread + 1)));
         }
     }
     //std::iota(send_values.begin(), send_values.end(), 1);
@@ -86,8 +86,8 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
             // memory
             auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
             auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
-            auto temp_recv =
-                device.alloc_memory<native_type>(buffer_size / num_thread, sizeof(native_type), ctx);
+            auto temp_recv = device.alloc_memory<native_type>(
+                buffer_size / num_thread, sizeof(native_type), ctx);
             mem_send.enqueue_write_sync(send_values[thread_idx]);
             mem_recv.enqueue_write_sync(recv_values);
             temp_recv.enqueue_write_sync(recv_values.begin(),
@@ -241,7 +241,7 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
                         continue; //skip this argument
                     }
 
-                    out << "index: " << mem_offset[i] << ": " << (void*) mem << std::endl;
+                    out << "index: " << mem_offset[i] << ": " << (void*)mem << std::endl;
                     result = zeKernelSetArgumentValue(kernel, mem_offset[i], sizeof(mem), &mem);
                     if (result != ZE_RESULT_SUCCESS) {
                         throw std::runtime_error(
@@ -384,7 +384,7 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
                     native_type totalVal = op.init();
                     for (size_t i = 0; i < num_thread; ++i) {
                         auto val = corr_val * (i % num_thread + 1);
-                        totalVal = op(totalVal,  static_cast<native_type>(val));
+                        totalVal = op(totalVal, static_cast<native_type>(val));
                     }
 
                     if (!(value == totalVal)) {
@@ -400,8 +400,7 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
                 return true;
             };
 
-            memory_storage.check_results(
-                thread_idx, out, 1, lambda, root, thread_idx, num_thread);
+            memory_storage.check_results(thread_idx, out, 1, lambda, root, thread_idx, num_thread);
         }
     }
     catch (check_on_exception& ex) {

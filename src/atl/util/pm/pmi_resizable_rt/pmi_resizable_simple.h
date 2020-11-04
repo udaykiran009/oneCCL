@@ -81,7 +81,6 @@ public:
     void pmrt_finalize() override;
 
 private:
-
     bool is_finalized{ false };
     atl_status_t pmrt_init(const char* main_addr = nullptr);
 

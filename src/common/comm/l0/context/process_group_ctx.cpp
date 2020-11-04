@@ -185,9 +185,13 @@ bool process_group_context::build_cluster_affinity_table(
     requests.reserve(hostname_indices_requests_count);
     {
         ccl::stream::impl_value_t empty_stream{};
-        requests.push_back(ccl_communicator->allgatherv_impl(
-            &send_hostname_size, 1, receive_hostname_sizes.data(), recv_counts,
-            empty_stream, ccl::default_allgatherv_attr, {}));
+        requests.push_back(ccl_communicator->allgatherv_impl(&send_hostname_size,
+                                                             1,
+                                                             receive_hostname_sizes.data(),
+                                                             recv_counts,
+                                                             empty_stream,
+                                                             ccl::default_allgatherv_attr,
+                                                             {}));
         LOG_TRACE("Request hostname sizes, process (",
                   ccl_communicator->rank(),
                   "/",
@@ -241,9 +245,13 @@ bool process_group_context::build_cluster_affinity_table(
         hostnames.resize(total_hostname_size);
 
         ccl::stream::impl_value_t empty_stream{};
-        requests.push_back(ccl_communicator->allgatherv_impl(
-            (int8_t*)my_host_name.data(), send_hostname_size, (int8_t*)hostnames.data(), receive_hostname_sizes,
-            empty_stream, ccl::default_allgatherv_attr, {}));
+        requests.push_back(ccl_communicator->allgatherv_impl((int8_t*)my_host_name.data(),
+                                                             send_hostname_size,
+                                                             (int8_t*)hostnames.data(),
+                                                             receive_hostname_sizes,
+                                                             empty_stream,
+                                                             ccl::default_allgatherv_attr,
+                                                             {}));
         LOG_TRACE("Submit request for hostnames. Process (",
                   ccl_communicator->rank(),
                   "/",
@@ -616,8 +624,13 @@ void process_group_context::collect_cluster_colored_plain_graphs(
                   send_count);
         ccl::stream::impl_value_t empty_stream{};
         ccl_communicator
-            ->allgatherv_impl(&send_count, 1, recv_counts_process_graph_sizes.data(), recv_counts,
-            empty_stream, ccl::default_allgatherv_attr, {})
+            ->allgatherv_impl(&send_count,
+                              1,
+                              recv_counts_process_graph_sizes.data(),
+                              recv_counts,
+                              empty_stream,
+                              ccl::default_allgatherv_attr,
+                              {})
             .wait();
     }
 

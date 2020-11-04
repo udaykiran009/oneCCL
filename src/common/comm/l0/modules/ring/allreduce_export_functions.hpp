@@ -38,10 +38,12 @@ struct ring_allreduce_kernel
         thread_safe_uncached_arg<main_kernel_args::args_start_index + 3, processing_type*>;
     using tmp_recv_buf_arg_type = typename tmp_recv_buf_arg::arg_type;
 
-    using income_data_flag_arg = thread_safe_uncached_arg<main_kernel_args::args_start_index + 4, int*>;
+    using income_data_flag_arg =
+        thread_safe_uncached_arg<main_kernel_args::args_start_index + 4, int*>;
     using income_data_flag_arg_type = typename income_data_flag_arg::arg_type;
 
-    using ready_to_recv_flag_arg = thread_safe_uncached_arg<main_kernel_args::args_start_index + 5, int*>;
+    using ready_to_recv_flag_arg =
+        thread_safe_uncached_arg<main_kernel_args::args_start_index + 5, int*>;
     using ready_to_recv_flag_arg_type = typename ready_to_recv_flag_arg::arg_type;
 
     using local_barrier_flag_arg = arg<main_kernel_args::args_start_index + 6, int*>;

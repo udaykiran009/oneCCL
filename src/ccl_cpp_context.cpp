@@ -43,13 +43,11 @@ CCL_API void context::build_from_params() {
     get_impl()->build_from_params();
 }
 
-CCL_API context::native_t& context::get_native()
-{
+CCL_API context::native_t& context::get_native() {
     return const_cast<context::native_t&>(static_cast<const context*>(this)->get_native());
 }
 
-CCL_API const context::native_t& context::get_native() const
-{
+CCL_API const context::native_t& context::get_native() const {
     return get_impl()->get_attribute_value(
         detail::ccl_api_type_attr_traits<context_attr_id, context_attr_id::native_handle>{});
 }
@@ -57,7 +55,6 @@ CCL_API const context::native_t& context::get_native() const
 } // namespace v1
 
 } // namespace ccl
-
 
 API_CONTEXT_CREATION_FORCE_INSTANTIATION(typename ccl::unified_context_type::ccl_native_t)
 

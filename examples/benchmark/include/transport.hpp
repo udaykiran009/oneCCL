@@ -7,9 +7,7 @@
 #include "types.hpp"
 
 class transport_data {
-
 public:
-
     static transport_data& instance();
     static size_t get_comm_size();
 
@@ -25,7 +23,6 @@ public:
     std::vector<ccl::stream>& get_bench_streams();
 
 private:
-
     transport_data();
     ~transport_data();
 

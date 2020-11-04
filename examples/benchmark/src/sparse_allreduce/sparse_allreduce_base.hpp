@@ -67,16 +67,16 @@ struct base_sparse_allreduce_coll
     }
 
     virtual void prepare_internal(size_t elem_count,
-                         ccl::communicator& comm,
-                         ccl::stream& stream,
-                         size_t rank_idx) override {
+                                  ccl::communicator& comm,
+                                  ccl::stream& stream,
+                                  size_t rank_idx) override {
         ASSERT(0, "unexpected");
     }
 
     virtual void finalize_internal(size_t elem_count,
-                          ccl::communicator& comm,
-                          ccl::stream& stream,
-                          size_t rank_idx) override {
+                                   ccl::communicator& comm,
+                                   ccl::stream& stream,
+                                   size_t rank_idx) override {
         ASSERT(0, "unexpected");
     }
 };

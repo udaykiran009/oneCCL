@@ -13,10 +13,10 @@ void ccl_bf16_reduce(const void* in_buf, size_t in_cnt,
                      ccl::reduction reduction_op);
 #else
 void ccl_bf16_reduce(const void* in_buf,
-                      size_t in_cnt,
-                      void* inout_buf,
-                      size_t* out_cnt,
-                      ccl::reduction reduction_op);
+                     size_t in_cnt,
+                     void* inout_buf,
+                     size_t* out_cnt,
+                     ccl::reduction reduction_op);
 #endif
 
 void ccl_convert_fp32_to_bf16_arrays(void*, void*, size_t);

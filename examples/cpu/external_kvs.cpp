@@ -1,7 +1,6 @@
 #include "base.hpp"
 
 class external_kvs : public ccl::kvs_interface {
-
 public:
     external_kvs(ccl::shared_ptr_class<ccl::kvs> kvs) : kvs(kvs) {}
 
@@ -9,8 +8,7 @@ public:
         return kvs->get(key);
     }
 
-    virtual void set(const ccl::string_class& key,
-                     const ccl::vector_class<char>& data) const {
+    virtual void set(const ccl::string_class& key, const ccl::vector_class<char>& data) const {
         return kvs->set(key, data);
     }
 
@@ -30,12 +28,9 @@ void run_collective(const char* cmd_name,
 
     for (size_t idx = 0; idx < ITERS; ++idx) {
         auto start = std::chrono::system_clock::now();
-        ccl::allreduce(send_buf.data(),
-                       recv_buf.data(),
-                       recv_buf.size(),
-                       ccl::reduction::sum,
-                       comm,
-                       attr).wait();
+        ccl::allreduce(
+            send_buf.data(), recv_buf.data(), recv_buf.size(), ccl::reduction::sum, comm, attr)
+            .wait();
         exec_time += std::chrono::system_clock::now() - start;
     }
 
@@ -56,7 +51,6 @@ void run_collective(const char* cmd_name,
 }
 
 int main() {
-
     ccl::init_attr init_attr = ccl::create_init_attr();
     ccl::init(init_attr);
 
@@ -82,8 +76,7 @@ int main() {
     auto comm = ccl::create_communicator(size, rank, ext_kvs);
     auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
 
-    MSG_LOOP(comm,
-             std::vector<float> send_buf(msg_count, static_cast<float>(comm.rank()));
+    MSG_LOOP(comm, std::vector<float> send_buf(msg_count, static_cast<float>(comm.rank()));
              std::vector<float> recv_buf(msg_count);
              run_collective("regular allreduce", send_buf, recv_buf, comm, attr););
 

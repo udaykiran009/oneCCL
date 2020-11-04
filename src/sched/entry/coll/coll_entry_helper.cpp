@@ -1,8 +1,8 @@
 #include "sched/entry/coll/coll_entry_helper.hpp"
 
 ccl::status coll_entry_helper::build_schedule(ccl_sched* sched,
-                                               const ccl_sched* parent_sched,
-                                               const ccl_coll_entry_param& param) {
+                                              const ccl_sched* parent_sched,
+                                              const ccl_coll_entry_param& param) {
     ccl::status res = ccl::status::success;
 
     if (param.ctype == ccl_coll_allreduce || param.ctype == ccl_coll_reduce ||

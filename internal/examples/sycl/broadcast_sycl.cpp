@@ -39,8 +39,7 @@ void user_thread_idx(size_t thread_idx,
 
     /* create device communicators */
     std::vector<ccl::communicator> comms =
-        ccl::create_communicators(
-             total_devices_in_cluster, devices, ctx, kvs_instance);
+        ccl::create_communicators(total_devices_in_cluster, devices, ctx, kvs_instance);
 
     std::cout << "Create device communicators, expected count: " << devices.size() << std::endl;
 
@@ -55,19 +54,21 @@ void user_thread_idx(size_t thread_idx,
         streams.emplace(rank, ccl::create_stream(q));
 
         /* create allocators and put them in a map to keep actual handles of buf_allocator */
-        allocators.emplace(rank, std::unique_ptr<buf_allocator<processing_type>>
-                          (new buf_allocator<processing_type>(q)));
+        allocators.emplace(
+            rank,
+            std::unique_ptr<buf_allocator<processing_type>>(new buf_allocator<processing_type>(q)));
         auto& alloc_ptr = allocators.find(rank)->second;
 
         /* create buffer */
         auto mem_buf = alloc_ptr->allocate(COUNT, usm_alloc_type);
 
         /* open mem_buf and modify it on the device side */
-        q.submit([&](auto &h) {
+        q.submit([&](auto& h) {
             h.parallel_for(COUNT, [=](auto id) {
-                if (rank == root){
+                if (rank == root) {
                     mem_buf[id] = 1;
-                } else {
+                }
+                else {
                     mem_buf[id] = -1;
                 }
             });
@@ -90,12 +91,7 @@ void user_thread_idx(size_t thread_idx,
         auto& stream = streams.find(rank)->second;
 
         /* invoke operation */
-        reqs.push_back(ccl::broadcast(mem_objects[0],
-                                      COUNT,
-                                      root,
-                                      comm,
-                                      stream,
-                                      attr));
+        reqs.push_back(ccl::broadcast(mem_objects[0], COUNT, root, comm, stream, attr));
     }
 
     /* wait */
@@ -114,7 +110,7 @@ void user_thread_idx(size_t thread_idx,
         auto mem_buf = mem_objects[0];
         auto q = stream.get_native();
 
-        q.submit([&](auto &h) {
+        q.submit([&](auto& h) {
             accessor check_buf_acc(check_buf, h, write_only);
             h.parallel_for(COUNT, [=](auto id) {
                 if (mem_buf[id] != 1) {
@@ -158,7 +154,7 @@ int main(int argc, char** argv) {
 
     /* take usm allocation type, default: shared */
     auto pair_usm_type = take_usm_type(argc, argv[1]);
-    std::cout << "USM allocation type: "<< pair_usm_type.second << std::endl;
+    std::cout << "USM allocation type: " << pair_usm_type.second << std::endl;
     /* extract GPU affinities by processes using '#' separator from L0_CLUSTER_AFFINITY_MASK */
     std::vector<std::string> process_group_gpu_affinity;
     utils::str_to_array<std::string>(affinity_env_value, process_group_gpu_affinity, '#');
@@ -197,28 +193,28 @@ int main(int argc, char** argv) {
 
     for (size_t process_index = 0; process_index < process_group_gpu_affinity.size();
          process_index++) {
-
         /* extract  GPU affinities by thread inside process using '|' separator from L0_CLUSTER_AFFINITY_MASK */
         utils::str_to_array<std::string>(process_group_gpu_affinity[process_index].c_str(),
                                          thread_group_gpu_affinity_per_process[process_index],
-                                        '|');
+                                         '|');
 
         const std::vector<std::string>& thread_gpu_affinity =
             thread_group_gpu_affinity_per_process.find(process_index)->second;
 
-        device_rank_for_mpi_rank_id_offset = utils::take_mpi_rank_id_offest(process_index, mpi_size,
-                                                                            total_device_in_cluster);
+        device_rank_for_mpi_rank_id_offset =
+            utils::take_mpi_rank_id_offest(process_index, mpi_size, total_device_in_cluster);
 
         std::cout << "For process by id: " << process_index
                   << ", expected threads in process count: " << thread_gpu_affinity.size()
                   << std::endl;
 
-        node_device_indices[process_index] = utils::extract_indices_for_threads(process_index,
-                                                                                mpi_rank,
-                                                                                thread_gpu_affinity,
-                                                                                total_device_in_cluster,
-                                                                                total_devices_in_process,
-                                                                                devices_for_mpi_rank);
+        node_device_indices[process_index] =
+            utils::extract_indices_for_threads(process_index,
+                                               mpi_rank,
+                                               thread_gpu_affinity,
+                                               total_device_in_cluster,
+                                               total_devices_in_process,
+                                               devices_for_mpi_rank);
     }
 
     /* calculate total devices for cluster */
@@ -272,4 +268,3 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-

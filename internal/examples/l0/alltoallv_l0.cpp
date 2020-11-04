@@ -23,8 +23,6 @@ int gpu_topology_type = 1; //0 - between devices in single thread
     //1 - between multiple threads in single process
     //2 - between nultiple processes
 
-
-
 #ifdef CCL_ENABLE_SYCL
 template <class processing_type>
 void user_thread_idx(size_t thread_idx,
@@ -50,8 +48,7 @@ void user_thread_idx(size_t thread_idx,
 
     // Create device communicators
     std::vector<ccl::communicator> comms =
-        ccl::create_communicators(
-            total_devices_in_cluster, devices, ctx, kvs_instance);
+        ccl::create_communicators(total_devices_in_cluster, devices, ctx, kvs_instance);
 
     std::cout << "Create device communicators, expected count: " << devices.size() << std::endl;
 
@@ -93,10 +90,10 @@ void user_thread_idx(size_t thread_idx,
         streams.emplace(rank, ccl::create_stream(q));
 
         // allocate memory
-        processing_type* mem_send = static_cast<processing_type*>(
-            cl::sycl::aligned_alloc_shared(alignof(processing_type), COUNT * sizeof(processing_type), q));
-        processing_type* mem_recv = static_cast<processing_type*>(
-            cl::sycl::aligned_alloc_shared(alignof(processing_type), COUNT * sizeof(processing_type), q));
+        processing_type* mem_send = static_cast<processing_type*>(cl::sycl::aligned_alloc_shared(
+            alignof(processing_type), COUNT * sizeof(processing_type), q));
+        processing_type* mem_recv = static_cast<processing_type*>(cl::sycl::aligned_alloc_shared(
+            alignof(processing_type), COUNT * sizeof(processing_type), q));
 
         // set initial memory
         {
@@ -132,10 +129,10 @@ void user_thread_idx(size_t thread_idx,
         auto attr = ccl::create_operation_attr<ccl::alltoallv_attr>();
         auto& stream = streams.find(rank)->second;
         // invoke operation
-        reqs.push_back(ccl::alltoallv(mem_objects[0],       //send_buf
-                                      send_counts,          //send_counts
-                                      mem_objects[1],       //recv_buf
-                                      recv_counts,          //recv_counts
+        reqs.push_back(ccl::alltoallv(mem_objects[0], //send_buf
+                                      send_counts, //send_counts
+                                      mem_objects[1], //recv_buf
+                                      recv_counts, //recv_counts
                                       comm,
                                       stream,
                                       attr));
@@ -156,8 +153,7 @@ void user_thread_idx(size_t thread_idx,
             std::cout << "rank : " << rank << std::endl;
             for (const auto& mem : handles) {
                 // std::vector<processing_type> tmp = mem.enqueue_read_sync();
-                std::copy(
-                    mem, mem + COUNT, std::ostream_iterator<processing_type>(std::cout, ","));
+                std::copy(mem, mem + COUNT, std::ostream_iterator<processing_type>(std::cout, ","));
                 std::cout << "\n\n" << std::endl;
             }
         }
@@ -185,8 +181,7 @@ void user_thread_idx(size_t thread_idx,
     // API
 
     // create 'global_communicator' for wire-up processes in cluster
-    ccl::shared_communicator_t global_communicator(
-        ccl::create_communicator());
+    ccl::shared_communicator_t global_communicator(ccl::create_communicator());
 
     // create 'comm_group' for wire-up threads in processes
     ccl::comm_group_t group = ccl::create_comm_group(
@@ -456,15 +451,15 @@ int main(int argc, char** argv) {
     auto ctx = cl::sycl::context(*devices_in_process.begin()); //use single device
 #else
     const auto& drivers = native::get_platform().get_drivers();
-    if (drivers.empty())
-    {
+    if (drivers.empty()) {
         std::cerr << "No drivers in L0 native paltform. Exit" << std::endl;
         return -1;
     }
 
     // get GPU driver, it's only one driver at the moment
     auto gpu_driver = drivers.begin()->second;
-    decltype(gpu_driver->create_context()) ctx;/*default context*/ // = gpu_driver->create_context();
+    decltype(gpu_driver->create_context()) ctx;
+    /*default context*/ // = gpu_driver->create_context();
 #endif
     for (auto thread_affinity_it = thread_group_affinity.begin();
          thread_affinity_it != thread_group_affinity.end();

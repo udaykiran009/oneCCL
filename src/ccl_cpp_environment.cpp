@@ -32,35 +32,30 @@ ccl::library_version CCL_API environment::get_library_version() {
     return utils::get_library_version();
 }
 
-
 /******************** KVS ********************/
 
 shared_ptr_class<kvs> environment::create_main_kvs(const kvs_attr& attr) const {
     return std::shared_ptr<kvs>(new kvs(attr));
 }
 
-shared_ptr_class<kvs> environment::create_kvs(const kvs::address_type& addr, const kvs_attr& attr) const {
+shared_ptr_class<kvs> environment::create_kvs(const kvs::address_type& addr,
+                                              const kvs_attr& attr) const {
     return std::shared_ptr<kvs>(new kvs(addr, attr));
 }
 
-
 /******************** DEVICE ********************/
 
-device environment::create_device(empty_t empty) const
-{
+device environment::create_device(empty_t empty) const {
     static typename ccl::unified_device_type::ccl_native_t default_native_device;
     return device::create_device(default_native_device);
 }
 
-
 /******************** CONTEXT ********************/
 
-context environment::create_context(empty_t empty) const
-{
+context environment::create_context(empty_t empty) const {
     static typename ccl::unified_context_type::ccl_native_t default_native_context;
     return context::create_context(default_native_context);
 }
-
 
 /******************** DATATYPE ********************/
 
@@ -92,7 +87,6 @@ size_t environment::get_datatype_size(ccl::datatype dtype) const {
     return ccl::global_data::get().dtypes->get(dtype).size();
 }
 
-
 /******************** STREAM ********************/
 
 stream CCL_API environment::create_stream(typename unified_device_type::ccl_native_t device) {
@@ -121,10 +115,10 @@ communicator environment::create_single_device_communicator(
     std::shared_ptr<atl_wrapper> atl =
         std::shared_ptr<atl_wrapper>(new atl_wrapper(comm_size, { rank }, kvs_wrapper));
 
-    comm_split_attr attr = create_comm_split_attr(
-        attr_val<comm_split_attr_id::group>(group_split_type::undetermined));
-    ccl::communicator_interface_ptr impl =
-        ccl::communicator_interface::create_communicator_impl(device, context, rank, comm_size, attr, atl);
+    comm_split_attr attr =
+        create_comm_split_attr(attr_val<comm_split_attr_id::group>(group_split_type::undetermined));
+    ccl::communicator_interface_ptr impl = ccl::communicator_interface::create_communicator_impl(
+        device, context, rank, comm_size, attr, atl);
 
     //TODO use gpu_comm_attr to automatically visit()
     auto single_dev_comm = std::dynamic_pointer_cast<single_device_communicator>(impl);
@@ -138,15 +132,15 @@ communicator environment::create_communicator(const comm_attr& attr) const {
 }
 
 communicator environment::create_communicator(const size_t size,
-                                                   ccl::shared_ptr_class<kvs_interface> kvs,
-                                                   const comm_attr& attr) const {
+                                              ccl::shared_ptr_class<kvs_interface> kvs,
+                                              const comm_attr& attr) const {
     return communicator::create_communicator(size, kvs, attr);
 }
 
 communicator environment::create_communicator(const size_t size,
-                                                   const int rank,
-                                                   ccl::shared_ptr_class<kvs_interface> kvs,
-                                                   const comm_attr& attr) const {
+                                              const int rank,
+                                              ccl::shared_ptr_class<kvs_interface> kvs,
+                                              const comm_attr& attr) const {
     return communicator::create_communicator(size, rank, kvs, attr);
 }
 
@@ -154,11 +148,9 @@ communicator environment::create_communicator(const size_t size,
 
 } // namespace ccl
 
-
 /******************** TypeGenerations ********************/
 
-CREATE_DEV_COMM_INSTANTIATION(ccl::device,
-                              ccl::context)
+CREATE_DEV_COMM_INSTANTIATION(ccl::device, ccl::context)
 CREATE_DEV_COMM_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t,
                               typename ccl::unified_context_type::ccl_native_t)
 CREATE_DEV_COMM_INSTANTIATION(ccl::device_index_type,

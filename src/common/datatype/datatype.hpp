@@ -38,11 +38,9 @@ private:
 /* frequently used in multiple places */
 extern ccl_datatype ccl_datatype_int8;
 
-struct ccl_datatype_hasher
-{
+struct ccl_datatype_hasher {
     template <typename T>
-    std::size_t operator()(T t) const
-    {
+    std::size_t operator()(T t) const {
         return static_cast<std::size_t>(t);
     }
 };
@@ -50,9 +48,7 @@ struct ccl_datatype_hasher
 using ccl_datatype_lock_t = ccl_spinlock;
 
 using ccl_datatype_table_t =
-    std::unordered_map<ccl::datatype,
-                       std::pair<ccl_datatype, std::string>,
-                       ccl_datatype_hasher>;
+    std::unordered_map<ccl::datatype, std::pair<ccl_datatype, std::string>, ccl_datatype_hasher>;
 
 class ccl_datatype_storage {
 public:

@@ -3,12 +3,12 @@
 #include "sched/entry/factory/entry_factory.hpp"
 
 ccl::status ccl_coll_build_direct_allgatherv(ccl_sched* sched,
-                                              ccl_buffer send_buf,
-                                              size_t send_count,
-                                              ccl_buffer recv_buf,
-                                              const size_t* recv_counts,
-                                              const ccl_datatype& dtype,
-                                              ccl_comm* comm) {
+                                             ccl_buffer send_buf,
+                                             size_t send_count,
+                                             ccl_buffer recv_buf,
+                                             const size_t* recv_counts,
+                                             const ccl_datatype& dtype,
+                                             ccl_comm* comm) {
     LOG_DEBUG("build direct allgatherv");
 
     entry_factory::make_entry<allgatherv_entry>(
@@ -17,12 +17,12 @@ ccl::status ccl_coll_build_direct_allgatherv(ccl_sched* sched,
 }
 
 ccl::status ccl_coll_build_naive_allgatherv(ccl_sched* sched,
-                                             ccl_buffer send_buf,
-                                             size_t send_count,
-                                             ccl_buffer recv_buf,
-                                             const size_t* recv_counts,
-                                             const ccl_datatype& dtype,
-                                             ccl_comm* comm) {
+                                            ccl_buffer send_buf,
+                                            size_t send_count,
+                                            ccl_buffer recv_buf,
+                                            const size_t* recv_counts,
+                                            const ccl_datatype& dtype,
+                                            ccl_comm* comm) {
     LOG_DEBUG("build naive allgatherv");
 
     int comm_size = comm->size();
@@ -58,12 +58,12 @@ ccl::status ccl_coll_build_naive_allgatherv(ccl_sched* sched,
 }
 
 ccl::status ccl_coll_build_ring_allgatherv(ccl_sched* sched,
-                                            ccl_buffer send_buf,
-                                            size_t send_count,
-                                            ccl_buffer recv_buf,
-                                            const size_t* recv_counts,
-                                            const ccl_datatype& dtype,
-                                            ccl_comm* comm) {
+                                           ccl_buffer send_buf,
+                                           size_t send_count,
+                                           ccl_buffer recv_buf,
+                                           const size_t* recv_counts,
+                                           const ccl_datatype& dtype,
+                                           ccl_comm* comm) {
     LOG_DEBUG("build ring allgatherv, send_count ", send_count);
 
     ccl::status status = ccl::status::success;

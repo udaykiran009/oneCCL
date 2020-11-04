@@ -509,18 +509,18 @@ ccl::status sparse_coalesce_ring(const void* ctx) {
 
 template <typename i_type, typename v_type>
 ccl::status ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
-                                                  ccl_buffer send_ind_buf,
-                                                  size_t send_ind_count,
-                                                  ccl_buffer send_val_buf,
-                                                  size_t send_val_count,
-                                                  void** recv_ind_buf,
-                                                  size_t* recv_ind_count,
-                                                  void** recv_val_buf,
-                                                  size_t* recv_val_count,
-                                                  const ccl_datatype& index_dtype,
-                                                  const ccl_datatype& value_dtype,
-                                                  ccl::reduction op,
-                                                  ccl_comm* comm) {
+                                                 ccl_buffer send_ind_buf,
+                                                 size_t send_ind_count,
+                                                 ccl_buffer send_val_buf,
+                                                 size_t send_val_count,
+                                                 void** recv_ind_buf,
+                                                 size_t* recv_ind_count,
+                                                 void** recv_val_buf,
+                                                 size_t* recv_val_count,
+                                                 const ccl_datatype& index_dtype,
+                                                 const ccl_datatype& value_dtype,
+                                                 ccl::reduction op,
+                                                 ccl_comm* comm) {
     ccl::status status = ccl::status::success;
 
     int comm_size = comm->size();
@@ -729,18 +729,18 @@ ccl::status sparse_coalesce_mask(const void* ctx) {
 
 template <typename i_type, typename v_type>
 ccl::status ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
-                                                  ccl_buffer send_ind_buf,
-                                                  size_t send_ind_count,
-                                                  ccl_buffer send_val_buf,
-                                                  size_t send_val_count,
-                                                  void** recv_ind_buf,
-                                                  size_t* recv_ind_count,
-                                                  void** recv_val_buf,
-                                                  size_t* recv_val_count,
-                                                  const ccl_datatype& index_dtype,
-                                                  const ccl_datatype& value_dtype,
-                                                  ccl::reduction op,
-                                                  ccl_comm* comm) {
+                                                 ccl_buffer send_ind_buf,
+                                                 size_t send_ind_count,
+                                                 ccl_buffer send_val_buf,
+                                                 size_t send_val_count,
+                                                 void** recv_ind_buf,
+                                                 size_t* recv_ind_count,
+                                                 void** recv_val_buf,
+                                                 size_t* recv_val_count,
+                                                 const ccl_datatype& index_dtype,
+                                                 const ccl_datatype& value_dtype,
+                                                 ccl::reduction op,
+                                                 ccl_comm* comm) {
     ccl::status status = ccl::status::success;
 
     int comm_size = comm->size();
@@ -1039,18 +1039,18 @@ ccl::status sparse_coalesce_allgatherv(const void* ctx) {
 
 template <typename i_type, typename v_type>
 ccl::status ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched* sched,
-                                                          ccl_buffer send_ind_buf,
-                                                          size_t send_ind_count,
-                                                          ccl_buffer send_val_buf,
-                                                          size_t send_val_count,
-                                                          void** recv_ind_buf,
-                                                          size_t* recv_ind_count,
-                                                          void** recv_val_buf,
-                                                          size_t* recv_val_count,
-                                                          const ccl_datatype& index_dtype,
-                                                          const ccl_datatype& value_dtype,
-                                                          ccl::reduction op,
-                                                          ccl_comm* comm) {
+                                                         ccl_buffer send_ind_buf,
+                                                         size_t send_ind_count,
+                                                         ccl_buffer send_val_buf,
+                                                         size_t send_val_count,
+                                                         void** recv_ind_buf,
+                                                         size_t* recv_ind_count,
+                                                         void** recv_val_buf,
+                                                         size_t* recv_val_count,
+                                                         const ccl_datatype& index_dtype,
+                                                         const ccl_datatype& value_dtype,
+                                                         ccl::reduction op,
+                                                         ccl_comm* comm) {
     ccl::status status = ccl::status::success;
 
     int comm_size = comm->size();

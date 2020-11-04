@@ -67,8 +67,7 @@ public:
 
     bool is_ready() const override;
 
-    native::ccl_driver_context_ptr get_native_context()
-    {
+    native::ccl_driver_context_ptr get_native_context() {
         return native::get_runtime_context(context.get());
     }
 

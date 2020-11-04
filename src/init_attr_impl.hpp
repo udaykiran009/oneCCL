@@ -11,8 +11,7 @@ public:
     /**
      * `version` operations
      */
-    using version_traits_t =
-        detail::ccl_api_type_attr_traits<init_attr_id, init_attr_id::version>;
+    using version_traits_t = detail::ccl_api_type_attr_traits<init_attr_id, init_attr_id::version>;
 
     const typename version_traits_t::return_type& get_attribute_value(
         const version_traits_t& id) const {
@@ -26,14 +25,11 @@ public:
         return version;
     }
 
-    init_attr_impl(const typename version_traits_t::return_type& version)
-            : version(version) {}
+    init_attr_impl(const typename version_traits_t::return_type& version) : version(version) {}
 
 protected:
     typename version_traits_t::return_type version;
 };
-
-
 
 namespace v1 {
 
@@ -47,8 +43,8 @@ Value init_attr::set(const Value& v) {
 }
 
 template <init_attr_id attrId>
-const typename detail::ccl_api_type_attr_traits<init_attr_id, attrId>::return_type&
-init_attr::get() const {
+const typename detail::ccl_api_type_attr_traits<init_attr_id, attrId>::return_type& init_attr::get()
+    const {
     return get_impl()->get_attribute_value(
         detail::ccl_api_type_attr_traits<init_attr_id, attrId>{});
 }

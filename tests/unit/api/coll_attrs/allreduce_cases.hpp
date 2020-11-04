@@ -35,7 +35,7 @@ TEST(coll_attr, allreduce_copy_on_write_attr) {
         original_inner_impl_ptr
             ->get_attribute_value(
                 ccl::detail::ccl_api_type_attr_traits<ccl::v1::allreduce_attr_id,
-                                                       ccl::v1::allreduce_attr_id::reduction_fn>{})
+                                                      ccl::v1::allreduce_attr_id::reduction_fn>{})
             .get(),
         function);
 }

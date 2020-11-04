@@ -12,8 +12,7 @@ public:
 
     ccl_alltoall_attr_impl_t(
         const typename detail::ccl_api_type_attr_traits<operation_attr_id,
-                                                            operation_attr_id::version>::type&
-            version);
+                                                        operation_attr_id::version>::type& version);
 };
 
 } // namespace ccl

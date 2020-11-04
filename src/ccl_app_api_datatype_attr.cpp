@@ -17,8 +17,7 @@ namespace v1 {
     template CCL_API IN_Value class_name::set<IN_attrId, IN_Value>(const IN_Value& v);
 
 #define API_FORCE_GETTER_INSTANTIATION(class_name, IN_attrId, OUT_Traits_Value) \
-    template CCL_API const typename OUT_Traits_Value<datatype_attr_id, \
-                                                              IN_attrId>::return_type& \
+    template CCL_API const typename OUT_Traits_Value<datatype_attr_id, IN_attrId>::return_type& \
     class_name::get<IN_attrId>() const;
 
 /**
@@ -30,7 +29,7 @@ CCL_API datatype_attr::datatype_attr(const datatype_attr& src) : base_t(src) {}
 
 CCL_API datatype_attr::datatype_attr(
     const typename detail::ccl_api_type_attr_traits<datatype_attr_id,
-                                                     datatype_attr_id::version>::return_type&
+                                                    datatype_attr_id::version>::return_type&
         version)
         : base_t(impl_value_t(new impl_t(version))) {}
 

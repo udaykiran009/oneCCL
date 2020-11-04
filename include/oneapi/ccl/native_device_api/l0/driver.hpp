@@ -12,8 +12,9 @@ struct ccl_device_driver;
 struct ccl_device;
 struct ccl_context;
 struct ccl_context_holder;
-struct ccl_device_driver : public cl_base<ze_driver_handle_t, ccl_device_platform, ccl_context_holder>,
-                           std::enable_shared_from_this<ccl_device_driver> {
+struct ccl_device_driver
+        : public cl_base<ze_driver_handle_t, ccl_device_platform, ccl_context_holder>,
+          std::enable_shared_from_this<ccl_device_driver> {
     friend std::ostream& operator<<(std::ostream&, const ccl_device_driver&);
 
     using base = cl_base<ze_driver_handle_t, ccl_device_platform, ccl_context_holder>;
@@ -29,7 +30,10 @@ struct ccl_device_driver : public cl_base<ze_driver_handle_t, ccl_device_platfor
     using devices_storage_type = std::map<ccl::index_type, device_ptr>;
     using indexed_driver_handles = indexed_storage<handle_t>;
 
-    ccl_device_driver(handle_t h, uint32_t id, owner_ptr_t&& platform, std::weak_ptr<ccl_context_holder>&& ctx);
+    ccl_device_driver(handle_t h,
+                      uint32_t id,
+                      owner_ptr_t&& platform,
+                      std::weak_ptr<ccl_context_holder>&& ctx);
 
     static indexed_driver_handles get_handles(
         const ccl::device_indices_type& requested_driver_indexes = ccl::device_indices_type());

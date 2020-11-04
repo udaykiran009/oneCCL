@@ -69,8 +69,7 @@ double msg_timers_stddev[MSG_COUNT];
 
 size_t comp_delay_ms;
 
-void do_iter(size_t iter_idx,
-             ccl::communicator& comm) {
+void do_iter(size_t iter_idx, ccl::communicator& comm) {
     if (comm.rank() == 0) {
         printf("started iter %zu\n", iter_idx);
         fflush(stdout);
@@ -98,7 +97,8 @@ void do_iter(size_t iter_idx,
                            ccl::datatype::float32,
                            ccl::reduction::sum,
                            comm,
-                           attr).wait();
+                           attr)
+                .wait();
             tmp_stop_timer = when();
             msg_iso_timers[idx] += (tmp_stop_timer - tmp_start_timer);
         }
@@ -177,7 +177,6 @@ void do_iter(size_t iter_idx,
 }
 
 int main() {
-    
     setenv("CCL_PRIORITY", "direct", 0);
 
     ccl::init();
@@ -270,17 +269,10 @@ int main() {
     std::vector<double> recv_iter_timers(size);
     std::vector<size_t> recv_iter_timers_counts(size, 1);
 
-    ccl::allgatherv(msg_timers,
-                    MSG_COUNT,
-                    recv_msg_timers.data(),
-                    recv_msg_timers_counts,
-                    comm).wait();
+    ccl::allgatherv(msg_timers, MSG_COUNT, recv_msg_timers.data(), recv_msg_timers_counts, comm)
+        .wait();
 
-    ccl::allgatherv(&iter_timer,
-                    1,
-                    recv_iter_timers.data(),
-                    recv_iter_timers_counts,
-                    comm).wait();
+    ccl::allgatherv(&iter_timer, 1, recv_iter_timers.data(), recv_iter_timers_counts, comm).wait();
 
     if (rank == 0) {
         size_t rank_idx;

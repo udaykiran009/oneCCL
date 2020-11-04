@@ -35,9 +35,9 @@
     } while (0)
 
 ccl::status ccl_comp_copy(const void* in_buf,
-                           void* out_buf,
-                           size_t count,
-                           const ccl_datatype& dtype) {
+                          void* out_buf,
+                          size_t count,
+                          const ccl_datatype& dtype) {
     CCL_ASSERT(in_buf, "in_buf is null");
     CCL_ASSERT(out_buf, "out_buf is null");
     CCL_MEMCPY(out_buf, in_buf, count * dtype.size());
@@ -45,13 +45,13 @@ ccl::status ccl_comp_copy(const void* in_buf,
 }
 
 ccl::status ccl_comp_reduce(const void* in_buf,
-                             size_t in_count,
-                             void* inout_buf,
-                             size_t* out_count,
-                             const ccl_datatype& dtype,
-                             ccl::reduction reduction,
-                             ccl::reduction_fn reduction_fn,
-                             const ccl::fn_context* context) {
+                            size_t in_count,
+                            void* inout_buf,
+                            size_t* out_count,
+                            const ccl_datatype& dtype,
+                            ccl::reduction reduction,
+                            ccl::reduction_fn reduction_fn,
+                            const ccl::fn_context* context) {
     if (reduction == ccl::reduction::custom) {
         CCL_THROW_IF_NOT(reduction_fn, "custom reduction requires user callback");
         reduction_fn(in_buf, in_count, inout_buf, out_count, dtype.idx(), context);
@@ -82,17 +82,17 @@ ccl::status ccl_comp_reduce(const void* in_buf,
 }
 
 ccl::status ccl_comp_batch_reduce(const void* in_buf,
-                                   const std::vector<size_t>& offsets,
-                                   size_t in_count,
-                                   void* inout_buf,
-                                   size_t* out_count,
-                                   const ccl_datatype& dtype,
-                                   ccl::reduction reduction,
-                                   ccl::reduction_fn reduction_fn,
-                                   const ccl::fn_context* context,
-                                   int bf16_keep_precision_mode,
-                                   float* tmp,
-                                   float* acc) {
+                                  const std::vector<size_t>& offsets,
+                                  size_t in_count,
+                                  void* inout_buf,
+                                  size_t* out_count,
+                                  const ccl_datatype& dtype,
+                                  ccl::reduction reduction,
+                                  ccl::reduction_fn reduction_fn,
+                                  const ccl::fn_context* context,
+                                  int bf16_keep_precision_mode,
+                                  float* tmp,
+                                  float* acc) {
     if (bf16_keep_precision_mode) {
         //->acc, tmp fusion_buffer_cache???
 

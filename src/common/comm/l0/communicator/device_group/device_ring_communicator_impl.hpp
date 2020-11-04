@@ -294,29 +294,27 @@ ccl::event device_group_ring_communicator::broadcast_impl(
 
 /* reduce */
 template <class buffer_type>
-ccl::event device_group_ring_communicator::reduce_impl(
-    const buffer_type* send_buf,
-    buffer_type* recv_buf,
-    size_t count,
-    ccl::reduction reduction,
-    int root,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::reduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event device_group_ring_communicator::reduce_impl(const buffer_type* send_buf,
+                                                       buffer_type* recv_buf,
+                                                       size_t count,
+                                                       ccl::reduction reduction,
+                                                       int root,
+                                                       const ccl::stream::impl_value_t& stream,
+                                                       const ccl::reduce_attr& attr,
+                                                       const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 template <class buffer_type>
-ccl::event device_group_ring_communicator::reduce_impl(
-    const buffer_type& send_buf,
-    buffer_type& recv_buf,
-    size_t count,
-    ccl::reduction reduction,
-    int root,
-    const ccl::stream::impl_value_t& stream,
-    const ccl::reduce_attr& attr,
-    const ccl::vector_class<ccl::event>& deps) {
+ccl::event device_group_ring_communicator::reduce_impl(const buffer_type& send_buf,
+                                                       buffer_type& recv_buf,
+                                                       size_t count,
+                                                       ccl::reduction reduction,
+                                                       int root,
+                                                       const ccl::stream::impl_value_t& stream,
+                                                       const ccl::reduce_attr& attr,
+                                                       const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
@@ -348,26 +346,25 @@ ccl::event device_group_ring_communicator::reduce_scatter_impl(
 
 /* sparse_allreduce */
 template <class index_buffer_type, class value_buffer_type>
-ccl::event
-device_group_ring_communicator::sparse_allreduce_impl(const index_buffer_type* send_ind_buf,
-                                                      size_t send_ind_count,
-                                                      const value_buffer_type* send_val_buf,
-                                                      size_t send_val_count,
-                                                      index_buffer_type* recv_ind_buf,
-                                                      size_t recv_ind_count,
-                                                      value_buffer_type* recv_val_buf,
-                                                      size_t recv_val_count,
-                                                      ccl::reduction reduction,
-                                                      const ccl::stream::impl_value_t& stream,
-                                                      const ccl::sparse_allreduce_attr& attr,
-                                                      const ccl::vector_class<ccl::event>& deps) {
+ccl::event device_group_ring_communicator::sparse_allreduce_impl(
+    const index_buffer_type* send_ind_buf,
+    size_t send_ind_count,
+    const value_buffer_type* send_val_buf,
+    size_t send_val_count,
+    index_buffer_type* recv_ind_buf,
+    size_t recv_ind_count,
+    value_buffer_type* recv_val_buf,
+    size_t recv_val_count,
+    ccl::reduction reduction,
+    const ccl::stream::impl_value_t& stream,
+    const ccl::sparse_allreduce_attr& attr,
+    const ccl::vector_class<ccl::event>& deps) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
     return {};
 }
 
 template <class index_buffer_container_type, class value_buffer_container_type>
-ccl::event
-device_group_ring_communicator::sparse_allreduce_impl(
+ccl::event device_group_ring_communicator::sparse_allreduce_impl(
     const index_buffer_container_type& send_ind_buf,
     size_t send_ind_count,
     const value_buffer_container_type& send_val_buf,

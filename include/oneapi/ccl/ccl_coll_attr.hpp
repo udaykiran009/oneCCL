@@ -6,7 +6,7 @@
 
 namespace ccl {
 namespace detail {
-    class environment;
+class environment;
 }
 
 class ccl_allgatherv_attr_impl_t;
@@ -77,8 +77,7 @@ private:
     friend struct ccl::ccl_empty_attr;
     allgatherv_attr(
         const typename detail::ccl_api_type_attr_traits<operation_attr_id,
-                                                         operation_attr_id::version>::type&
-            version);
+                                                        operation_attr_id::version>::type& version);
 };
 
 /**
@@ -136,8 +135,7 @@ private:
     friend struct ccl::ccl_empty_attr;
     allreduce_attr(
         const typename detail::ccl_api_type_attr_traits<operation_attr_id,
-                                                         operation_attr_id::version>::type&
-            version);
+                                                        operation_attr_id::version>::type& version);
 };
 
 /**
@@ -194,8 +192,7 @@ private:
     friend struct ccl::ccl_empty_attr;
     alltoall_attr(
         const typename detail::ccl_api_type_attr_traits<operation_attr_id,
-                                                         operation_attr_id::version>::type&
-            version);
+                                                        operation_attr_id::version>::type& version);
 };
 
 /**
@@ -253,8 +250,7 @@ private:
     friend struct ccl::ccl_empty_attr;
     alltoallv_attr(
         const typename detail::ccl_api_type_attr_traits<operation_attr_id,
-                                                         operation_attr_id::version>::type&
-            version);
+                                                        operation_attr_id::version>::type& version);
 };
 
 /**
@@ -309,9 +305,9 @@ public:
 private:
     friend class ccl::detail::environment;
     friend struct ccl::ccl_empty_attr;
-    barrier_attr(const typename detail::ccl_api_type_attr_traits<operation_attr_id,
-                                                                  operation_attr_id::version>::type&
-                     version);
+    barrier_attr(
+        const typename detail::ccl_api_type_attr_traits<operation_attr_id,
+                                                        operation_attr_id::version>::type& version);
     ;
 };
 
@@ -370,8 +366,7 @@ private:
     friend struct ccl::ccl_empty_attr;
     broadcast_attr(
         const typename detail::ccl_api_type_attr_traits<operation_attr_id,
-                                                         operation_attr_id::version>::type&
-            version);
+                                                        operation_attr_id::version>::type& version);
 };
 
 /**
@@ -426,9 +421,9 @@ public:
 private:
     friend class ccl::detail::environment;
     friend struct ccl::ccl_empty_attr;
-    reduce_attr(const typename detail::ccl_api_type_attr_traits<operation_attr_id,
-                                                                 operation_attr_id::version>::type&
-                    version);
+    reduce_attr(
+        const typename detail::ccl_api_type_attr_traits<operation_attr_id,
+                                                        operation_attr_id::version>::type& version);
 };
 
 /**
@@ -486,8 +481,7 @@ private:
     friend struct ccl::ccl_empty_attr;
     reduce_scatter_attr(
         const typename detail::ccl_api_type_attr_traits<operation_attr_id,
-                                                         operation_attr_id::version>::type&
-            version);
+                                                        operation_attr_id::version>::type& version);
     ;
 };
 
@@ -546,11 +540,9 @@ private:
     friend struct ccl::ccl_empty_attr;
     sparse_allreduce_attr(
         const typename detail::ccl_api_type_attr_traits<operation_attr_id,
-                                                         operation_attr_id::version>::type&
-            version);
+                                                        operation_attr_id::version>::type& version);
     ;
 };
-
 
 /**
  * Declare extern empty attributes
@@ -564,7 +556,6 @@ extern reduce_attr default_reduce_attr;
 extern reduce_scatter_attr default_reduce_scatter_attr;
 extern sparse_allreduce_attr default_sparse_allreduce_attr;
 extern barrier_attr default_barrier_attr;
-
 
 /**
  * Fabric helpers
@@ -600,8 +591,7 @@ constexpr auto attr_val(value_type v)
 }
 
 template <reduce_attr_id t, class value_type>
-constexpr auto attr_val(value_type v)
-    -> detail::attr_value_tripple<reduce_attr_id, t, value_type> {
+constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<reduce_attr_id, t, value_type> {
     return detail::attr_value_tripple<reduce_attr_id, t, value_type>(v);
 }
 
@@ -622,7 +612,6 @@ constexpr auto attr_val(value_type v)
     -> detail::attr_value_tripple<operation_attr_id, t, value_type> {
     return detail::attr_value_tripple<operation_attr_id, t, value_type>(v);
 }
-
 
 /* TODO temporary function for UT compilation: would be part of detail::environment in final*/
 template <class coll_attribute_type, class... attr_value_pair_t>

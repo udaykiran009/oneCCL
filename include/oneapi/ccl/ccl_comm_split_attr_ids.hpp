@@ -17,18 +17,17 @@ enum class comm_split_attr_id : int {
     last_value
 };
 
-enum class
-    group_split_type : int { // TODO fill in this enum with the actual values
-        undetermined = -1,
-        //device,
-        thread,
-        process,
-        //socket,
-        //node,
-        cluster,
+enum class group_split_type : int { // TODO fill in this enum with the actual values
+    undetermined = -1,
+    //device,
+    thread,
+    process,
+    //socket,
+    //node,
+    cluster,
 
-        last_value
-    };
+    last_value
+};
 
 } // namespace v1
 

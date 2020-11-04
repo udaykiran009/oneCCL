@@ -39,7 +39,6 @@ ccl::shared_ptr_class<ccl::kvs> transport_data::get_kvs() {
 }
 
 void transport_data::init_by_mpi() {
-
     ccl::init();
 
     MPI_Init(NULL, NULL);
@@ -77,7 +76,6 @@ std::vector<ccl::stream>& transport_data::get_bench_streams() {
 }
 
 void transport_data::init_comms(user_options_t& options) {
-
     int ranks_per_proc = options.ranks_per_proc;
 
     std::vector<int> local_ranks;
@@ -127,7 +125,9 @@ void transport_data::init_comms(user_options_t& options) {
     comms = ccl::create_communicators(size * ranks_per_proc, r2d_map, context, kvs);
 
     ASSERT((int)comms.size() == ranks_per_proc,
-        "unexpected comms size %zu, expected %d", comms.size(), ranks_per_proc);
+           "unexpected comms size %zu, expected %d",
+           comms.size(),
+           ranks_per_proc);
 }
 
 std::vector<ccl::communicator>& transport_data::get_comms() {

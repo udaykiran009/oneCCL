@@ -6,7 +6,7 @@
 
 namespace ccl {
 namespace detail {
-    class environment;
+class environment;
 }
 
 class event_impl;
@@ -82,8 +82,7 @@ private:
     friend class ccl::detail::environment;
 
     static event create_from_native(native_t& native_event);
-    static event create_from_native(native_handle_t native_event_handle,
-                                    context_t context);
+    static event create_from_native(native_handle_t native_event_handle, context_t context);
 };
 
 } // namespace v1

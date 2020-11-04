@@ -76,7 +76,6 @@ CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
         ccl_device::get_handles(*driver, get_device_indices(rank_device_affinity));
     for (const auto& val : collected_devices_list) {
         driver->devices.emplace(val.first, ccl_device::create(val.second, driver->get_ptr()));
-
     }
 
     return driver;
@@ -234,8 +233,7 @@ CCL_API ccl::device_mask_t ccl_device_driver::get_device_mask(
 CCL_API std::shared_ptr<ccl_context> ccl_device_driver::create_context() {
     ze_result_t status = ZE_RESULT_SUCCESS;
     ze_context_handle_t context;
-    ze_context_desc_t context_desc = {
-      ZE_STRUCTURE_TYPE_CONTEXT_DESC, nullptr, 0};
+    ze_context_desc_t context_desc = { ZE_STRUCTURE_TYPE_CONTEXT_DESC, nullptr, 0 };
 
     status = zeContextCreate(handle, &context_desc, &context);
     if (status != ZE_RESULT_SUCCESS) {
@@ -246,8 +244,8 @@ CCL_API std::shared_ptr<ccl_context> ccl_device_driver::create_context() {
     return create_context_from_handle(context);
 }
 
-CCL_API std::shared_ptr<ccl_context> ccl_device_driver::create_context_from_handle(ccl_context::handle_t h)
-{
+CCL_API std::shared_ptr<ccl_context> ccl_device_driver::create_context_from_handle(
+    ccl_context::handle_t h) {
     auto platform = get_owner();
     auto ctx_holder = get_ctx().lock();
 
@@ -256,8 +254,8 @@ CCL_API std::shared_ptr<ccl_context> ccl_device_driver::create_context_from_hand
 
 void CCL_API ccl_device_driver::on_delete(ze_device_handle_t& sub_device_handle,
                                           ze_context_handle_t& context) {
-     // status = zeContextDestroy(context);
-     // assert(status == ZE_RESULT_SUCCESS);
+    // status = zeContextDestroy(context);
+    // assert(status == ZE_RESULT_SUCCESS);
 }
 
 std::string CCL_API ccl_device_driver::to_string(const std::string& prefix) const {

@@ -19,7 +19,10 @@ void copy_memory_to_device_sync_unsafe(void* dst,
 }
 
 template <TEMPLATE_DECL_ARG>
-memory<TEMPLATE_DEF_ARG>::memory(elem_t* h, size_t count, std::weak_ptr<resource_owner>&& owner, std::weak_ptr<cl_context>&& context)
+memory<TEMPLATE_DEF_ARG>::memory(elem_t* h,
+                                 size_t count,
+                                 std::weak_ptr<resource_owner>&& owner,
+                                 std::weak_ptr<cl_context>&& context)
         : base(h, std::move(owner), std::move(context)),
           elem_count(count) {}
 

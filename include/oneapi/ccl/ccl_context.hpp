@@ -7,7 +7,7 @@
 class ccl_context_impl;
 namespace ccl {
 namespace detail {
-    class environment;
+class environment;
 }
 
 namespace v1 {
@@ -38,8 +38,9 @@ public:
     /**
      * Declare native context type
      */
-    using native_t = typename detail::ccl_api_type_attr_traits<context_attr_id,
-                                                               context_attr_id::native_handle>::return_type;
+    using native_t =
+        typename detail::ccl_api_type_attr_traits<context_attr_id,
+                                                  context_attr_id::native_handle>::return_type;
     context(context&& src);
     context(const context& src);
     context& operator=(const context& src);
@@ -60,8 +61,9 @@ public:
     /**
      * Get native context object
      */
-     native_t& get_native();
-     const native_t& get_native() const;
+    native_t& get_native();
+    const native_t& get_native() const;
+
 private:
     friend class ccl::detail::environment;
     friend class ccl::v1::communicator;
@@ -76,8 +78,9 @@ private:
     typename detail::ccl_api_type_attr_traits<context_attr_id, attrId>::return_type set(const Value& v);
 
     void build_from_params();
-    context(const typename detail::ccl_api_type_attr_traits<context_attr_id,
-                                                           context_attr_id::version>::type& version);
+    context(
+        const typename detail::ccl_api_type_attr_traits<context_attr_id,
+                                                        context_attr_id::version>::type& version);
 
     /**
      * Factory methods
@@ -88,11 +91,12 @@ private:
 
     template <class context_handle_type, class... attr_value_pair_t>
     static context create_context_from_attr(context_handle_type& native_context_handle,
-                                        attr_value_pair_t&&... avps);
+                                            attr_value_pair_t&&... avps);
 };
 
 template <context_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<context_attr_id, t, value_type> {
+constexpr auto attr_val(value_type v)
+    -> detail::attr_value_tripple<context_attr_id, t, value_type> {
     return detail::attr_value_tripple<context_attr_id, t, value_type>(v);
 }
 

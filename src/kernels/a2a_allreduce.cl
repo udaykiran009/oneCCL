@@ -69,11 +69,11 @@
     }
 
 __kernel void allreduce_execution_float32(int rank_id,
-                                        int comm_size,
-                                        size_t elems_count,
-                                        const __global float* input_buffer,
-                                        __global float* output_buffer,
-                                        __global a2a_gpu_comm_data_float32* comm_matrix) {
+                                          int comm_size,
+                                          size_t elems_count,
+                                          const __global float* input_buffer,
+                                          __global float* output_buffer,
+                                          __global a2a_gpu_comm_data_float32* comm_matrix) {
     //Limitations:
     //1) WG count is equal to ranks
 

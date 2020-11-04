@@ -19,6 +19,6 @@ generic_context_type<cl_backend_type::empty_backend>::get() const noexcept {
     //TODO
     return context; //native::get_platform();
 }
-}
+} // namespace ccl
 
 #endif //#if !defined(MULTI_GPU_SUPPORT) and !defined(CCL_ENABLE_SYCL)

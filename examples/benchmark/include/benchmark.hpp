@@ -28,46 +28,45 @@ using namespace cl::sycl::access;
 #include "sparse_allreduce/sparse_detail.hpp"
 
 void print_help_usage(const char* app) {
-    PRINT(
-        "\nUSAGE:\n"
-        "\t%s [OPTIONS]\n\n"
-        "OPTIONS:\n"
-        "\t[-b,--backend <backend>]: %s\n"
-        "\t[-e,--loop <execution loop>]: %s\n"
-        "\t[-i,--iters <iteration count>]: %d\n"
-        "\t[-w,--warmup_iters <warm up iteration count>]: %d\n"
-        "\t[-p,--buf_count <number of parallel operations within single collective>]: %d\n"
-        "\t[-f,--min_elem_count <minimum number of elements for single collective>]: %d\n"
-        "\t[-t,--max_elem_count <maximum number of elements for single collective>]: %d\n"
-        "\t[-c,--check <check result correctness>]: %d\n"
-        "\t[-a,--sycl_dev_type <sycl device type>]: %s\n"
-        "\t[-m,--sycl_mem_type <sycl memory type>]: %s\n"
-        "\t[-u,--sycl_usm_type <sycl usm type>]: %s\n"
-        "\t[-k,--ranks_per_proc <rank count per process>]: %d\n"
-        "\t[-l,--coll <collectives list/all>]: %s\n"
-        "\t[-d,--dtype <datatypes list/all>]: %s\n"
-        "\t[-r,--reduction <reductions list/all>]: %s\n"
-        "\t[-o,--csv_filepath <file to store CSV-formatted data into>]: %s\n"
-        "\t[-h,--help]\n\n"
-        "example:\n\t--coll allgatherv,allreduce --backend host --loop regular\n"
-        "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n",
-        app,
-        backend_names[DEFAULT_BACKEND].c_str(),
-        loop_names[DEFAULT_LOOP].c_str(),
-        DEFAULT_ITERS,
-        DEFAULT_WARMUP_ITERS,
-        DEFAULT_BUF_COUNT,
-        DEFAULT_MIN_ELEM_COUNT,
-        DEFAULT_MAX_ELEM_COUNT,
-        DEFAULT_CHECK_VALUES,
-        sycl_dev_names[DEFAULT_SYCL_DEV_TYPE].c_str(),
-        sycl_mem_names[DEFAULT_SYCL_MEM_TYPE].c_str(),
-        sycl_usm_names[DEFAULT_SYCL_USM_TYPE].c_str(),
-        DEFAULT_RANKS_PER_PROC,
-        DEFAULT_COLL_LIST,
-        DEFAULT_DTYPES_LIST,
-        DEFAULT_REDUCTIONS_LIST,
-        DEFAULT_CSV_FILEPATH);
+    PRINT("\nUSAGE:\n"
+          "\t%s [OPTIONS]\n\n"
+          "OPTIONS:\n"
+          "\t[-b,--backend <backend>]: %s\n"
+          "\t[-e,--loop <execution loop>]: %s\n"
+          "\t[-i,--iters <iteration count>]: %d\n"
+          "\t[-w,--warmup_iters <warm up iteration count>]: %d\n"
+          "\t[-p,--buf_count <number of parallel operations within single collective>]: %d\n"
+          "\t[-f,--min_elem_count <minimum number of elements for single collective>]: %d\n"
+          "\t[-t,--max_elem_count <maximum number of elements for single collective>]: %d\n"
+          "\t[-c,--check <check result correctness>]: %d\n"
+          "\t[-a,--sycl_dev_type <sycl device type>]: %s\n"
+          "\t[-m,--sycl_mem_type <sycl memory type>]: %s\n"
+          "\t[-u,--sycl_usm_type <sycl usm type>]: %s\n"
+          "\t[-k,--ranks_per_proc <rank count per process>]: %d\n"
+          "\t[-l,--coll <collectives list/all>]: %s\n"
+          "\t[-d,--dtype <datatypes list/all>]: %s\n"
+          "\t[-r,--reduction <reductions list/all>]: %s\n"
+          "\t[-o,--csv_filepath <file to store CSV-formatted data into>]: %s\n"
+          "\t[-h,--help]\n\n"
+          "example:\n\t--coll allgatherv,allreduce --backend host --loop regular\n"
+          "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n",
+          app,
+          backend_names[DEFAULT_BACKEND].c_str(),
+          loop_names[DEFAULT_LOOP].c_str(),
+          DEFAULT_ITERS,
+          DEFAULT_WARMUP_ITERS,
+          DEFAULT_BUF_COUNT,
+          DEFAULT_MIN_ELEM_COUNT,
+          DEFAULT_MAX_ELEM_COUNT,
+          DEFAULT_CHECK_VALUES,
+          sycl_dev_names[DEFAULT_SYCL_DEV_TYPE].c_str(),
+          sycl_mem_names[DEFAULT_SYCL_MEM_TYPE].c_str(),
+          sycl_usm_names[DEFAULT_SYCL_USM_TYPE].c_str(),
+          DEFAULT_RANKS_PER_PROC,
+          DEFAULT_COLL_LIST,
+          DEFAULT_DTYPES_LIST,
+          DEFAULT_REDUCTIONS_LIST,
+          DEFAULT_CSV_FILEPATH);
 }
 
 template <class Dtype, class Container>
@@ -162,7 +161,8 @@ int set_sycl_dev_type(const std::string& option_value, sycl_dev_type_t& dev) {
 
 int set_sycl_mem_type(const std::string& option_value, sycl_mem_type_t& mem) {
     std::string option_name = "sycl_mem_type";
-    std::set<std::string> supported_option_values{ sycl_mem_names[SYCL_MEM_USM], sycl_mem_names[SYCL_MEM_BUF] };
+    std::set<std::string> supported_option_values{ sycl_mem_names[SYCL_MEM_USM],
+                                                   sycl_mem_names[SYCL_MEM_BUF] };
 
     if (check_supported_options(option_name, option_value, supported_option_values))
         return -1;
@@ -174,7 +174,8 @@ int set_sycl_mem_type(const std::string& option_value, sycl_mem_type_t& mem) {
 
 int set_sycl_usm_type(const std::string& option_value, sycl_usm_type_t& usm) {
     std::string option_name = "sycl_usm_type";
-    std::set<std::string> supported_option_values{ sycl_usm_names[SYCL_USM_SHARED], sycl_usm_names[SYCL_USM_DEVICE] };
+    std::set<std::string> supported_option_values{ sycl_usm_names[SYCL_USM_SHARED],
+                                                   sycl_usm_names[SYCL_USM_DEVICE] };
 
     if (check_supported_options(option_name, option_value, supported_option_values))
         return -1;
@@ -185,7 +186,6 @@ int set_sycl_usm_type(const std::string& option_value, sycl_usm_type_t& usm) {
 }
 
 size_t get_iter_count(size_t bytes, size_t max_iter_count) {
-
     size_t n, res = max_iter_count;
     n = bytes >> 18;
     while (n) {
@@ -207,7 +207,6 @@ void print_timings(ccl::communicator& comm,
                    const size_t iter_count,
                    ccl::datatype dtype,
                    ccl::reduction op) {
-
     const size_t buf_count = options.buf_count;
     const size_t ncolls = options.coll_names.size();
     std::vector<double> all_timers(ncolls * comm.size());
@@ -220,7 +219,6 @@ void print_timings(ccl::communicator& comm,
     ccl::allgatherv(local_timers.data(), ncolls, all_timers.data(), recv_counts, comm).wait();
 
     if (comm.rank() == 0) {
-
         std::vector<double> timers(comm.size(), 0);
         for (int r = 0; r < comm.size(); ++r) {
             for (size_t c = 0; c < ncolls; ++c) {
@@ -262,12 +260,10 @@ void print_timings(ccl::communicator& comm,
         // we write one line per collop, dtype and reduction
         // hence average is per collop, not the aggregate over all
         if (!options.csv_filepath.empty()) {
-
             std::ofstream csvf;
             csvf.open(options.csv_filepath, std::ios::app);
 
             if (csvf.is_open()) {
-
                 std::vector<double> avg_timer(ncolls, 0);
 
                 for (int r = 0; r < comm.size(); ++r) {
@@ -284,8 +280,7 @@ void print_timings(ccl::communicator& comm,
                 for (auto cop = options.coll_names.begin(); cop != options.coll_names.end();
                      ++cop, ++i) {
                     csvf << comm.size() << "," << (*cop) << "," << reduction_names[op] << ","
-                         << dtype_names[dtype] << ","
-                         << ccl::get_datatype_size(dtype) << ","
+                         << dtype_names[dtype] << "," << ccl::get_datatype_size(dtype) << ","
                          << elem_count << "," << buf_count << "," << avg_timer[i] << std::endl;
                 }
                 csvf.close();
@@ -296,9 +291,7 @@ void print_timings(ccl::communicator& comm,
     ccl::barrier(comm);
 }
 
-int parse_user_options(int& argc,
-                       char**(&argv),
-                       user_options_t& options) {
+int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
     int ch;
     int errors = 0;
 
@@ -419,8 +412,7 @@ int parse_user_options(int& argc,
     return 0;
 }
 
-void print_user_options(const user_options_t& options,
-                        const ccl::communicator& comm) {
+void print_user_options(const user_options_t& options, const ccl::communicator& comm) {
     std::stringstream ss;
     ss << "colls:          ";
     std::copy(options.coll_names.begin(),

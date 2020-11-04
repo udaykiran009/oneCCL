@@ -6,7 +6,7 @@
 
 namespace ccl {
 namespace detail {
-    class environment;
+class environment;
 }
 
 class ccl_comm_attr_impl;
@@ -18,13 +18,11 @@ struct ccl_empty_attr;
 /**
  * Communicator attributes
  */
-class comm_attr : public ccl_api_base_copyable<comm_attr,
-    copy_on_write_access_policy,
-    ccl_comm_attr_impl> {
+class comm_attr
+        : public ccl_api_base_copyable<comm_attr, copy_on_write_access_policy, ccl_comm_attr_impl> {
 public:
-    using base_t = ccl_api_base_copyable<comm_attr,
-        copy_on_write_access_policy,
-        ccl_comm_attr_impl>;
+    using base_t =
+        ccl_api_base_copyable<comm_attr, copy_on_write_access_policy, ccl_comm_attr_impl>;
 
     /**
      * Declare PIMPL type
@@ -65,16 +63,14 @@ private:
     friend class ccl::detail::environment;
     friend struct ccl::ccl_empty_attr;
 
-    comm_attr(
-        const typename detail::ccl_api_type_attr_traits<comm_attr_id,
-                                                        comm_attr_id::version>::return_type&
-            version);
+    comm_attr(const typename detail::ccl_api_type_attr_traits<comm_attr_id,
+                                                              comm_attr_id::version>::return_type&
+                  version);
 };
 extern comm_attr default_comm_attr;
 
 template <comm_attr_id t, class value_type>
-constexpr auto attr_val(value_type v)
--> detail::attr_value_tripple<comm_attr_id, t, value_type> {
+constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<comm_attr_id, t, value_type> {
     return detail::attr_value_tripple<comm_attr_id, t, value_type>(v);
 }
 

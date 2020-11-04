@@ -45,18 +45,18 @@ CCL_API ccl_device_driver::device_ptr get_runtime_device(const DeviceType& devic
     return detail::get_runtime_device_impl(device);
 }
 
-
 template <class ContextType>
 CCL_API ccl_driver_context_ptr get_runtime_context(const ContextType& ctx) {
-
 #ifdef CCL_ENABLE_SYCL
-    static_assert(std::is_same<typename std::remove_cv<ContextType>::type, cl::sycl::context>::value, "Invalid ContextType");
+    static_assert(
+        std::is_same<typename std::remove_cv<ContextType>::type, cl::sycl::context>::value,
+        "Invalid ContextType");
     auto l0_handle_ptr = ctx.template get_native<cl::sycl::backend::level_zero>();
     if (!l0_handle_ptr) {
         throw std::runtime_error(std::string(__FUNCTION__) +
                                  " - failed for sycl context: handle is nullptr!");
     }
-    auto &drivers = get_platform().get_drivers();
+    auto& drivers = get_platform().get_drivers();
     assert(drivers.size() == 1 && "Only one driver supported for L0 at now");
     return drivers.begin()->second->create_context_from_handle(l0_handle_ptr);
 #else

@@ -51,11 +51,11 @@ TEST(stream_api, stream_from_sycl_context_creation) {
 TEST(stream_api, stream_from_sycl_context_creation_with_attr) {
     auto dev = cl::sycl::device();
     auto ctx = cl::sycl::context(dev);
-    auto str =
-        ccl::v1::stream::create_stream_from_attr(dev,
-                                             ctx,
-                                             ccl::v1::attr_val<ccl::v1::stream_attr_id::ordinal>(1),
-                                             ccl::v1::attr_val<ccl::v1::stream_attr_id::priority>(100));
+    auto str = ccl::v1::stream::create_stream_from_attr(
+        dev,
+        ctx,
+        ccl::v1::attr_val<ccl::v1::stream_attr_id::ordinal>(1),
+        ccl::v1::attr_val<ccl::v1::stream_attr_id::priority>(100));
 
     ASSERT_TRUE(str.get<ccl::v1::stream_attr_id::version>().full != nullptr);
 

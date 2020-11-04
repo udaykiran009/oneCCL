@@ -1,7 +1,9 @@
 #include <string>
 
 #include "base.hpp"
-int main() {return 0;}
+int main() {
+    return 0;
+}
 #if 0
 #define CUSTOM_BASE_DTYPE        int
 #define CUSTOM_REPEAT_COUNT      8

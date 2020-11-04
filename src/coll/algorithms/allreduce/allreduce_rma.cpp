@@ -104,12 +104,12 @@ ccl::status rma_ring_allreduce_get_remote_recv_buf_mr(const void* ctx, void* fie
 }
 
 ccl::status ccl_coll_build_ring_rma_allreduce(ccl_sched* sched,
-                                               ccl_buffer send_buf,
-                                               ccl_buffer recv_buf,
-                                               size_t count,
-                                               const ccl_datatype& dtype,
-                                               ccl::reduction op,
-                                               ccl_comm* comm) {
+                                              ccl_buffer send_buf,
+                                              ccl_buffer recv_buf,
+                                              size_t count,
+                                              const ccl_datatype& dtype,
+                                              ccl::reduction op,
+                                              ccl_comm* comm) {
     int inplace = (send_buf == recv_buf) ? 1 : 0;
     LOG_DEBUG("build ring rma allreduce (", (inplace) ? "in-place" : "out-of-place", ")");
 

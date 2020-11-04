@@ -142,33 +142,32 @@ void check_comm_split_identical_color(ccl::communicator& comm) {
     if (new_comm.size() != comm.size()) {
         printf("FAILED (split)\n");
 
-        throw std::runtime_error("the sizes of new communicator and base communicator are not equal. New comm size " +
-                                    std::to_string(new_comm.size()) + " Base comm size " +
-                                    std::to_string(comm.size()));
+        throw std::runtime_error(
+            "the sizes of new communicator and base communicator are not equal. New comm size " +
+            std::to_string(new_comm.size()) + " Base comm size " + std::to_string(comm.size()));
     }
 
     if (new_comm.rank() != comm.rank()) {
         printf("FAILED (split)\n");
 
-        throw std::runtime_error("the sizes of new communicator and base communicator are not equal. New comm rank " +
-                                    std::to_string(new_comm.rank()) + " Base comm rank " +
-                                    std::to_string(comm.rank()));
+        throw std::runtime_error(
+            "the sizes of new communicator and base communicator are not equal. New comm rank " +
+            std::to_string(new_comm.rank()) + " Base comm rank " + std::to_string(comm.rank()));
     }
 
     PRINT_BY_ROOT(comm,
-                    "base comm: rank = %d, size = %d; "
-                    "new comm: rank = %d, size = %d",
-                    comm.rank(),
-                    new_comm.size(),
-                    comm.rank(),
-                    new_comm.size());
+                  "base comm: rank = %d, size = %d; "
+                  "new comm: rank = %d, size = %d",
+                  comm.rank(),
+                  new_comm.size(),
+                  comm.rank(),
+                  new_comm.size());
 
     PRINT_BY_ROOT(comm, " - allreduce test on a new communicator");
     check_allreduce_on_comm(new_comm);
 }
 
 int main() {
-
     /**
      * The example only works with CCL_ATL_TRANSPORT=ofi
      */

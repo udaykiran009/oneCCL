@@ -6,15 +6,14 @@
 namespace ccl {
 
 #define SUPPORTED_HW_TOPOLOGIES_DECL_LIST \
-    ccl::group_split_type::thread, ccl::group_split_type::process, \
-        ccl::group_split_type::cluster
+    ccl::group_split_type::thread, ccl::group_split_type::process, ccl::group_split_type::cluster
 
 #define SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST \
     ccl::device_topology_type::ring, ccl::device_topology_type::a2a
 } // namespace ccl
 
-using device_group_split_type_names = utils::enum_to_str<
-    static_cast<typename std::underlying_type<ccl::group_split_type>::type>(
+using device_group_split_type_names =
+    utils::enum_to_str<static_cast<typename std::underlying_type<ccl::group_split_type>::type>(
         ccl::group_split_type::last_value)>;
 inline std::string to_string(ccl::group_split_type type) {
     return device_group_split_type_names({

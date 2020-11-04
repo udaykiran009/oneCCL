@@ -17,7 +17,7 @@
         double log_base2 = log(comm_size) / log(2); \
         double g = (log_base2 * BF16_PRECISION) / (1 - (log_base2 * BF16_PRECISION)); \
         for (size_t i = 0; i < COUNT; i++) { \
-            double expected = ((comm_size * (comm_size - 1) / 2) + ((float)(i) * comm_size)); \
+            double expected = ((comm_size * (comm_size - 1) / 2) + ((float)(i)*comm_size)); \
             double max_error = g * expected; \
             if (fabs(max_error) < fabs(expected - recv_buf[i])) { \
                 printf( \
@@ -35,7 +35,6 @@
 using namespace std;
 
 int main() {
-
     const size_t count = 4096;
 
     size_t idx = 0;
@@ -78,12 +77,9 @@ int main() {
     else {
         cout << "BF16 is enabled\n";
         convert_fp32_to_bf16_arrays(send_buf, send_buf_bf16, count);
-        ccl::allreduce(send_buf_bf16,
-                       recv_buf_bf16,
-                       count,
-                       ccl::datatype::bfloat16,
-                       ccl::reduction::sum,
-                       comm).wait();
+        ccl::allreduce(
+            send_buf_bf16, recv_buf_bf16, count, ccl::datatype::bfloat16, ccl::reduction::sum, comm)
+            .wait();
         convert_bf16_to_fp32_arrays(recv_buf_bf16, recv_buf, count);
         CHECK_ERROR(send_buf, recv_buf, comm);
 

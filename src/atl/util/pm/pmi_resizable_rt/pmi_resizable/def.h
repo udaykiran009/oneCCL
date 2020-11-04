@@ -33,13 +33,18 @@
                 res = op(fd, (char*)buf + shift, size - shift); \
                 if (res == -1) { \
                     if (errno != EINTR) { \
-                        printf("" #msg ": " #op ": error: buf %p, size %zu, shift %zu\n", buf, size, shift); \
+                        printf("" #msg ": " #op ": error: buf %p, size %zu, shift %zu\n", \
+                               buf, \
+                               size, \
+                               shift); \
                         perror("read/write error"); \
                         exit(EXIT_FAILURE); \
                     } \
                 } \
                 else if (res == 0) { \
-                    printf("" #msg ": " #op ": can not process all data, size %zu, shift %zu\n", size, shift); \
+                    printf("" #msg ": " #op ": can not process all data, size %zu, shift %zu\n", \
+                           size, \
+                           shift); \
                     exit(EXIT_FAILURE); \
                 } \
                 else { \
@@ -48,7 +53,6 @@
             } \
         } \
     } while (0)
-
 
 #define DO_RW_OP_1(op, fd, buf, size, res, msg) \
     do { \
@@ -62,11 +66,14 @@
             res = op(fd, (char*)buf + shift, size - shift); \
             if (res == -1) { \
                 if (errno != EINTR) { \
-                    printf("" #msg ": " #op ": error: buf %p, size %zu, shift %zu\n", buf, size, shift); \
+                    printf("" #msg ": " #op ": error: buf %p, size %zu, shift %zu\n", \
+                           buf, \
+                           size, \
+                           shift); \
                     perror("read/write error"); \
                     exit(EXIT_FAILURE); \
                 } \
-            }\
+            } \
             else { \
                 shift += res; \
             } \
@@ -91,11 +98,11 @@
 #define GREP_TEMPLATE               "| grep \"%s\""
 #define GREP_COUNT_TEMPLATE         "| grep -c \"%s\""
 #define CONCAT_TWO_COMMAND_TEMPLATE "%s %s"
-#define RANK_TEMPLATE             "%d"
-#define SIZE_T_TEMPLATE           "%zu"
+#define RANK_TEMPLATE               "%d"
+#define SIZE_T_TEMPLATE             "%zu"
 
-#define KVS_NAME    "CCL_POD_ADDR"
-#define KVS_BARRIER "CCL_BARRIER"
+#define KVS_NAME         "CCL_POD_ADDR"
+#define KVS_BARRIER      "CCL_BARRIER"
 #define KVS_BARRIER_FULL "CCL_BARRIER_FULL"
 
 #define KVS_IDX               "IDX"

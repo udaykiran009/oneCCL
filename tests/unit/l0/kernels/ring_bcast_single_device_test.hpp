@@ -10,9 +10,7 @@ DEFINE_KERNEL_TYPES(bcast)
 
 namespace ring_single_device_case {
 
-namespace ring_bcast_case {
-
-}
+namespace ring_bcast_case {}
 
 TYPED_TEST_CASE(ring_bcast_single_device_fixture, TestTypes);
 TYPED_TEST(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
@@ -230,7 +228,7 @@ TYPED_TEST(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
                         continue; //skip this argument
                     }
 
-                    out << "index: " << mem_offset[i] << ": " << (void*) mem << std::endl;
+                    out << "index: " << mem_offset[i] << ": " << (void*)mem << std::endl;
                     result = zeKernelSetArgumentValue(kernel, mem_offset[i], sizeof(mem), &mem);
                     if (result != ZE_RESULT_SUCCESS) {
                         throw std::runtime_error(
@@ -349,8 +347,7 @@ TYPED_TEST(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
                 return true;
             };
 
-            memory_storage.check_results(
-                thread_idx, out, 0, lambda, root, thread_idx, buffer_size);
+            memory_storage.check_results(thread_idx, out, 0, lambda, root, thread_idx, buffer_size);
         }
     }
     catch (check_on_exception& ex) {

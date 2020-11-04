@@ -6,8 +6,7 @@
 #include "oneapi/ccl/ccl_types.hpp"
 #include "oneapi/ccl/ccl_kvs.hpp"
 
-void ccl_comm::allocate_resources()
-{
+void ccl_comm::allocate_resources() {
     if (ccl::global_data::env().enable_unordered_coll) {
         unordered_coll_manager =
             std::unique_ptr<ccl_unordered_coll_manager>(new ccl_unordered_coll_manager(*this));
@@ -15,13 +14,12 @@ void ccl_comm::allocate_resources()
 
     auto& env_object = ccl::global_data::env();
 
-    allreduce_2d_builder = std::unique_ptr<ccl_allreduce_2d_builder>(
-      new ccl_allreduce_2d_builder(
-          (env_object.allreduce_2d_base_size != CCL_ENV_SIZET_NOT_SPECIFIED)
-              ? env_object.allreduce_2d_base_size
-               : ccl::global_data::get().executor->get_local_proc_count(),
-           env_object.allreduce_2d_switch_dims,
-           this));
+    allreduce_2d_builder = std::unique_ptr<ccl_allreduce_2d_builder>(new ccl_allreduce_2d_builder(
+        (env_object.allreduce_2d_base_size != CCL_ENV_SIZET_NOT_SPECIFIED)
+            ? env_object.allreduce_2d_base_size
+            : ccl::global_data::get().executor->get_local_proc_count(),
+        env_object.allreduce_2d_switch_dims,
+        this));
 
     if (m_rank == 0)
         env_object.print();
@@ -48,8 +46,7 @@ ccl_comm::ccl_comm(int rank,
           on_process_ranks_number(1) {
     reset(rank, size);
 
-    if (!share_resources)
-    {
+    if (!share_resources) {
         allocate_resources();
     }
 }
@@ -72,19 +69,16 @@ ccl_comm::ccl_comm(const std::vector<int>& local_ranks,
         : m_id(std::move(id)),
           m_local2global_map(),
           m_dtree(local_ranks.size(), comm_size) {
-
     std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs_instance));
 
-    atl = std::shared_ptr<atl_wrapper>(
-        new atl_wrapper(comm_size, local_ranks, kvs_wrapper));
+    atl = std::shared_ptr<atl_wrapper>(new atl_wrapper(comm_size, local_ranks, kvs_wrapper));
 
     thread_number = atl->get_threads_per_process();
     on_process_ranks_number = atl->get_ranks_per_process();
 
     reset(atl->get_rank(), atl->get_size());
 
-    if (!share_resources)
-    {
+    if (!share_resources) {
         allocate_resources();
     }
 }
@@ -119,8 +113,12 @@ ccl_comm* ccl_comm::create_with_colors(const std::vector<int>& colors,
         rank_map.clear();
     }
 
-    ccl_comm* comm = new ccl_comm(
-        new_comm_rank, new_comm_size, comm_ids->acquire(), std::move(rank_map), parent_comm->atl, share_resources);
+    ccl_comm* comm = new ccl_comm(new_comm_rank,
+                                  new_comm_size,
+                                  comm_ids->acquire(),
+                                  std::move(rank_map),
+                                  parent_comm->atl,
+                                  share_resources);
 
     LOG_DEBUG("new comm: color ",
               color,
@@ -136,7 +134,8 @@ ccl_comm* ccl_comm::create_with_colors(const std::vector<int>& colors,
 
 std::shared_ptr<ccl_comm> ccl_comm::clone_with_new_id(ccl_comm_id_storage::comm_id&& id) {
     ccl_rank2rank_map rank_map{ m_local2global_map };
-    return std::make_shared<ccl_comm>(m_rank, m_size, std::move(id), std::move(rank_map), atl, true /*share_resources*/);
+    return std::make_shared<ccl_comm>(
+        m_rank, m_size, std::move(id), std::move(rank_map), atl, true /*share_resources*/);
 }
 
 int ccl_comm::get_global_rank(int rank) const {

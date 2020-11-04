@@ -19,7 +19,6 @@ void do_regular(ccl::communicator& service_comm,
                 coll_list_t& all_colls,
                 req_list_t& reqs,
                 const user_options_t& options) {
-
     std::stringstream match_id_stream;
 
     for (auto dtype : all_dtypes) {
@@ -43,8 +42,10 @@ void do_regular(ccl::communicator& service_comm,
             if (!find_key_val(reduction_op, reduction_names, reduction))
                 continue;
 
-            PRINT_BY_ROOT(
-                service_comm, "\ndtype: %s\nreduction: %s\n", dtype_name.c_str(), reduction.c_str());
+            PRINT_BY_ROOT(service_comm,
+                          "\ndtype: %s\nreduction: %s\n",
+                          dtype_name.c_str(),
+                          reduction.c_str());
 
             reqs.reserve(colls.size() * options.buf_count);
 
@@ -68,11 +69,7 @@ void do_regular(ccl::communicator& service_comm,
                           service_comm.size());
 
             if (options.buf_count == 1) {
-                PRINT_BY_ROOT(service_comm,
-                              "%10s %12s %11s",
-                              "#bytes",
-                              "avg[usec]",
-                              "stddev[%]");
+                PRINT_BY_ROOT(service_comm, "%10s %12s %11s", "#bytes", "avg[usec]", "stddev[%]");
             }
             else {
                 PRINT_BY_ROOT(service_comm,
@@ -85,27 +82,25 @@ void do_regular(ccl::communicator& service_comm,
 
             for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                  count *= 2) {
-
                 size_t iter_count =
                     get_iter_count(count * ccl::get_datatype_size(dtype), options.iters);
 
                 size_t warmup_iter_count =
                     get_iter_count(count * ccl::get_datatype_size(dtype), options.warmup_iters);
-            
+
                 try {
                     // we store times for each collective separately,
                     // but aggregate over buffers and iterations
                     std::vector<double> coll_timers(colls.size(), 0);
                     for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
-
                         auto& coll = colls[coll_idx];
 
                         ccl::barrier(service_comm);
 
                         double t1 = 0, t2 = 0, t = 0;
 
-                        for (size_t iter_idx = 0; iter_idx < (iter_count + warmup_iter_count); iter_idx++) {
-
+                        for (size_t iter_idx = 0; iter_idx < (iter_count + warmup_iter_count);
+                             iter_idx++) {
                             // collective is configured to handle only
                             // options.buf_count many buffers/executions 'at once'.
                             // -> check cannot combine executions over iterations
@@ -119,10 +114,10 @@ void do_regular(ccl::communicator& service_comm,
                             t1 = when();
 
                             for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
-                                match_id_stream << "coll_" << coll->name()
-                                                << "_" << coll_idx << "_count_" << count 
-                                                << "_buf_" << buf_idx;
-                                bench_attr.set<ccl::operation_attr_id::match_id>(ccl::string_class(match_id_stream.str()));
+                                match_id_stream << "coll_" << coll->name() << "_" << coll_idx
+                                                << "_count_" << count << "_buf_" << buf_idx;
+                                bench_attr.set<ccl::operation_attr_id::match_id>(
+                                    ccl::string_class(match_id_stream.str()));
                                 match_id_stream.str("");
                                 coll->start(count, buf_idx, bench_attr, reqs);
                             }
@@ -145,9 +140,8 @@ void do_regular(ccl::communicator& service_comm,
                         coll_timers[coll_idx] += t;
                     }
 
-                    print_timings(service_comm, coll_timers,
-                                  options, count, iter_count,
-                                  dtype, reduction_op);
+                    print_timings(
+                        service_comm, coll_timers, options, count, iter_count, dtype, reduction_op);
                 }
                 catch (const std::exception& ex) {
                     ASSERT(0, "error on count %zu, reason: %s", count, ex.what());
@@ -162,7 +156,6 @@ void do_unordered(ccl::communicator& service_comm,
                   coll_list_t& all_colls,
                   req_list_t& reqs,
                   const user_options_t& options) {
-
     std::set<ccl::string_class> match_ids;
     std::stringstream match_id_stream;
 
@@ -187,8 +180,10 @@ void do_unordered(ccl::communicator& service_comm,
             if (!find_key_val(reduction_op, reduction_names, reduction))
                 continue;
 
-            PRINT_BY_ROOT(
-                service_comm, "\ndtype: %s\nreduction: %s\n", dtype_name.c_str(), reduction.c_str());
+            PRINT_BY_ROOT(service_comm,
+                          "\ndtype: %s\nreduction: %s\n",
+                          dtype_name.c_str(),
+                          reduction.c_str());
 
             int rank = service_comm.rank();
 
@@ -205,14 +200,13 @@ void do_unordered(ccl::communicator& service_comm,
                         for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
                             auto& coll = colls[coll_idx];
                             for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
-                                match_id_stream << "coll_" << coll->name()
-                                                << "_" << coll_idx << "_count_" << count 
-                                                << "_buf_" << buf_idx;
-                                bench_attr.set<ccl::operation_attr_id::match_id>(ccl::string_class(match_id_stream.str()));
+                                match_id_stream << "coll_" << coll->name() << "_" << coll_idx
+                                                << "_count_" << count << "_buf_" << buf_idx;
+                                bench_attr.set<ccl::operation_attr_id::match_id>(
+                                    ccl::string_class(match_id_stream.str()));
                                 match_ids.insert(match_id_stream.str());
                                 match_id_stream.str("");
                                 coll->start(count, buf_idx, bench_attr, reqs);
-                                
                             }
                         }
                     }
@@ -222,10 +216,10 @@ void do_unordered(ccl::communicator& service_comm,
                             auto& coll = colls[real_coll_idx];
                             for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
                                 size_t real_buf_idx = options.buf_count - buf_idx - 1;
-                                match_id_stream << "coll_" << coll->name()
-                                                << "_" << real_coll_idx << "_count_" << count 
-                                                << "_buf_" << real_buf_idx;
-                                bench_attr.set<ccl::operation_attr_id::match_id>(ccl::string_class(match_id_stream.str()));
+                                match_id_stream << "coll_" << coll->name() << "_" << real_coll_idx
+                                                << "_count_" << count << "_buf_" << real_buf_idx;
+                                bench_attr.set<ccl::operation_attr_id::match_id>(
+                                    ccl::string_class(match_id_stream.str()));
                                 match_ids.insert(match_id_stream.str());
                                 match_id_stream.str("");
                                 coll->start(count, real_buf_idx, bench_attr, reqs);
@@ -257,9 +251,7 @@ void do_unordered(ccl::communicator& service_comm,
 }
 
 template <class Dtype>
-void create_cpu_colls(bench_init_attr& init_attr,
-                      user_options_t& options,
-                      coll_list_t& colls) {
+void create_cpu_colls(bench_init_attr& init_attr, user_options_t& options, coll_list_t& colls) {
     // using namespace sparse_detail;
     // using incremental_index_int_sparse_strategy =
     //     sparse_allreduce_strategy_impl<int, sparse_detail::incremental_indices_distributor>;
@@ -291,35 +283,35 @@ void create_cpu_colls(bench_init_attr& init_attr,
         else if (name == reduce_scatter_strategy_impl::class_name()) {
             colls.emplace_back(new cpu_reduce_scatter_coll<Dtype>(init_attr));
         }
-//         else if (name.find(incremental_index_int_sparse_strategy::class_name()) !=
-//                  std::string::npos) {
-//             if (name.find(incremental_index_bf16_sparse_strategy::class_name()) !=
-//                 std::string::npos) {
-//                 if (is_bf16_enabled() == 0) {
-//                     error_messages_stream << "bfloat16 is not supported for current CPU, skipping "
-//                                           << name << ".\n";
-//                     names_it = options.coll_names.erase(names_it);
-//                     continue;
-//                 }
-// #ifdef CCL_bf16_COMPILER
-//                 colls.emplace_back(
-//                     new cpu_sparse_allreduce_coll<ccl::bfloat16,
-//                                                   int64_t,
-//                                                   sparse_detail::incremental_indices_distributor>(
-//                         init_attr,
-//                         sizeof(float) / sizeof(ccl::bfloat16),
-//                         sizeof(float) / sizeof(ccl::bfloat16)));
-// #else
-//                 error_messages_stream << "bfloat16 is not supported by current compiler, skipping "
-//                                       << name << ".\n";
-//                 names_it = options.coll_names.erase(names_it);
-//                 continue;
-// #endif
-//             }
-//             else {
-//                 colls.emplace_back(new cpu_sparse_allreduce_coll<Dtype, int64_t>(init_attr));
-//             }
-//         }
+        //         else if (name.find(incremental_index_int_sparse_strategy::class_name()) !=
+        //                  std::string::npos) {
+        //             if (name.find(incremental_index_bf16_sparse_strategy::class_name()) !=
+        //                 std::string::npos) {
+        //                 if (is_bf16_enabled() == 0) {
+        //                     error_messages_stream << "bfloat16 is not supported for current CPU, skipping "
+        //                                           << name << ".\n";
+        //                     names_it = options.coll_names.erase(names_it);
+        //                     continue;
+        //                 }
+        // #ifdef CCL_bf16_COMPILER
+        //                 colls.emplace_back(
+        //                     new cpu_sparse_allreduce_coll<ccl::bfloat16,
+        //                                                   int64_t,
+        //                                                   sparse_detail::incremental_indices_distributor>(
+        //                         init_attr,
+        //                         sizeof(float) / sizeof(ccl::bfloat16),
+        //                         sizeof(float) / sizeof(ccl::bfloat16)));
+        // #else
+        //                 error_messages_stream << "bfloat16 is not supported by current compiler, skipping "
+        //                                       << name << ".\n";
+        //                 names_it = options.coll_names.erase(names_it);
+        //                 continue;
+        // #endif
+        //             }
+        //             else {
+        //                 colls.emplace_back(new cpu_sparse_allreduce_coll<Dtype, int64_t>(init_attr));
+        //             }
+        //         }
         else {
             ASSERT(0, "create_colls error, unknown coll name: %s", name.c_str());
         }
@@ -339,9 +331,7 @@ void create_cpu_colls(bench_init_attr& init_attr,
 
 #ifdef CCL_ENABLE_SYCL
 template <class Dtype>
-void create_sycl_colls(bench_init_attr& init_attr,
-                       user_options_t& options,
-                       coll_list_t& colls) {
+void create_sycl_colls(bench_init_attr& init_attr, user_options_t& options, coll_list_t& colls) {
     // using incremental_index_int_sparse_strategy =
     //     sparse_allreduce_strategy_impl<int, sparse_detail::incremental_indices_distributor>;
     // using incremental_index_bf16_sparse_strategy =
@@ -373,48 +363,48 @@ void create_sycl_colls(bench_init_attr& init_attr,
         else if (name == reduce_scatter_strategy_impl::class_name()) {
             colls.emplace_back(new sycl_reduce_scatter_coll<Dtype>(init_attr));
         }
-//         else if (name.find(incremental_index_int_sparse_strategy::class_name()) !=
-//                  std::string::npos) {
-//             // TODO case is not supported yet
-//             if (true) {
-//                 error_messages_stream << "SYCL coll: skipping " << name
-//                                       << ", because it is not supported yet.\n";
-//                 names_it = options.coll_names.erase(names_it);
-//                 continue;
-//             }
-//             colls.emplace_back(new sycl_sparse_allreduce_coll<Dtype, int>(init_attr));
-//         }
-//         else if (name.find(incremental_index_bf16_sparse_strategy::class_name()) !=
-//                  std::string::npos) {
-//             // TODO case is not supported yet
-//             if (true) {
-//                 error_messages_stream << "SYCL coll: skipping " << name
-//                                       << ", because it is not supported yet.\n";
-//                 names_it = options.coll_names.erase(names_it);
-//                 continue;
-//             }
+        //         else if (name.find(incremental_index_int_sparse_strategy::class_name()) !=
+        //                  std::string::npos) {
+        //             // TODO case is not supported yet
+        //             if (true) {
+        //                 error_messages_stream << "SYCL coll: skipping " << name
+        //                                       << ", because it is not supported yet.\n";
+        //                 names_it = options.coll_names.erase(names_it);
+        //                 continue;
+        //             }
+        //             colls.emplace_back(new sycl_sparse_allreduce_coll<Dtype, int>(init_attr));
+        //         }
+        //         else if (name.find(incremental_index_bf16_sparse_strategy::class_name()) !=
+        //                  std::string::npos) {
+        //             // TODO case is not supported yet
+        //             if (true) {
+        //                 error_messages_stream << "SYCL coll: skipping " << name
+        //                                       << ", because it is not supported yet.\n";
+        //                 names_it = options.coll_names.erase(names_it);
+        //                 continue;
+        //             }
 
-//             if (is_bf16_enabled() == 0) {
-//                 error_messages_stream << "SYCL bf16 is not supported for current CPU, skipping "
-//                                       << name << ".\n";
-//                 names_it = options.coll_names.erase(names_it);
-//                 continue;
-//             }
-// #ifdef CCL_bf16_COMPILER
-//             colls.emplace_back(
-//                 new sycl_sparse_allreduce_coll<ccl::bfloat16,
-//                                                int64_t,
-//                                                sparse_detail::incremental_indices_distributor>(
-//                     init_attr,
-//                     sizeof(float) / sizeof(ccl::bfloat16),
-//                     sizeof(float) / sizeof(ccl::bfloat16)));
-// #else
-//             error_messages_stream << "SYCL bf16 is not supported by current compiler, skipping "
-//                                   << name << ".\n";
-//             names_it = options.coll_names.erase(names_it);
-//             continue;
-// #endif
-//         }
+        //             if (is_bf16_enabled() == 0) {
+        //                 error_messages_stream << "SYCL bf16 is not supported for current CPU, skipping "
+        //                                       << name << ".\n";
+        //                 names_it = options.coll_names.erase(names_it);
+        //                 continue;
+        //             }
+        // #ifdef CCL_bf16_COMPILER
+        //             colls.emplace_back(
+        //                 new sycl_sparse_allreduce_coll<ccl::bfloat16,
+        //                                                int64_t,
+        //                                                sparse_detail::incremental_indices_distributor>(
+        //                     init_attr,
+        //                     sizeof(float) / sizeof(ccl::bfloat16),
+        //                     sizeof(float) / sizeof(ccl::bfloat16)));
+        // #else
+        //             error_messages_stream << "SYCL bf16 is not supported by current compiler, skipping "
+        //                                   << name << ".\n";
+        //             names_it = options.coll_names.erase(names_it);
+        //             continue;
+        // #endif
+        //         }
         else {
             ASSERT(0, "create_colls error, unknown coll name: %s", name.c_str());
         }
@@ -437,9 +427,7 @@ void create_sycl_colls(bench_init_attr& init_attr,
 template <class Dtype>
 void create_colls(bench_init_attr& init_attr, user_options_t& options, coll_list_t& colls) {
     switch (options.backend) {
-        case BACKEND_HOST:
-            create_cpu_colls<Dtype>(init_attr, options, colls);
-            break;
+        case BACKEND_HOST: create_cpu_colls<Dtype>(init_attr, options, colls); break;
         case BACKEND_SYCL:
 #ifdef CCL_ENABLE_SYCL
             create_sycl_colls<Dtype>(init_attr, options, colls);
@@ -451,10 +439,7 @@ void create_colls(bench_init_attr& init_attr, user_options_t& options, coll_list
     }
 }
 
-void create_all_colls(bench_init_attr& init_attr,
-                      user_options_t& options,
-                      coll_list_t& colls) {
-
+void create_all_colls(bench_init_attr& init_attr, user_options_t& options, coll_list_t& colls) {
     for (auto& dtype : options.dtypes) {
         if (dtype == dtype_names[ccl::datatype::int8])
             create_colls<int8_t>(init_attr, options, colls);

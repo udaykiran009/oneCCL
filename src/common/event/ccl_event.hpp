@@ -7,10 +7,10 @@
 #include "common/utils/utils.hpp"
 
 namespace ccl {
-    namespace detail {
-        class environment;
-    }
+namespace detail {
+class environment;
 }
+} // namespace ccl
 
 class alignas(CACHELINE_SIZE) ccl_event {
 public:
@@ -42,7 +42,7 @@ public:
 
     using native_handle_traits_t =
         ccl::detail::ccl_api_type_attr_traits<ccl::event_attr_id,
-                                               ccl::event_attr_id::native_handle>;
+                                              ccl::event_attr_id::native_handle>;
     typename native_handle_traits_t::return_type& get_attribute_value(
         const native_handle_traits_t& id);
 
@@ -51,8 +51,7 @@ public:
     typename context_traits_t::return_type& get_attribute_value(const context_traits_t& id);
 
     using command_type_traits_t =
-        ccl::detail::ccl_api_type_attr_traits<ccl::event_attr_id,
-                                               ccl::event_attr_id::command_type>;
+        ccl::detail::ccl_api_type_attr_traits<ccl::event_attr_id, ccl::event_attr_id::command_type>;
     typename command_type_traits_t::return_type set_attribute_value(
         typename command_type_traits_t::type val,
         const command_type_traits_t& t);
@@ -62,7 +61,7 @@ public:
 
     using command_execution_status_traits_t =
         ccl::detail::ccl_api_type_attr_traits<ccl::event_attr_id,
-                                               ccl::event_attr_id::command_execution_status>;
+                                              ccl::event_attr_id::command_execution_status>;
     typename command_execution_status_traits_t::return_type set_attribute_value(
         typename command_execution_status_traits_t::type val,
         const command_execution_status_traits_t& t);

@@ -13,12 +13,11 @@ public:
 
     ccl_reduce_scatter_attr_impl_t(
         const typename detail::ccl_api_type_attr_traits<operation_attr_id,
-                                                            operation_attr_id::version>::type&
-            version);
+                                                        operation_attr_id::version>::type& version);
 
     using reduction_fn_traits_t =
         detail::ccl_api_type_attr_traits<reduce_scatter_attr_id,
-                                          reduce_scatter_attr_id::reduction_fn>;
+                                         reduce_scatter_attr_id::reduction_fn>;
     typename reduction_fn_traits_t::return_type set_attribute_value(
         typename reduction_fn_traits_t::type val,
         const reduction_fn_traits_t& t);

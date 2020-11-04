@@ -200,9 +200,9 @@ void print_err_message(char* err_message, std::ostream& output) {
     }
 
     char* arrerr_message = new char[full_message_len];
-    ccl::allgatherv(err_message, message_len,
-                    arrerr_message, arr_message_len,
-                    ccl::datatype::int8, comm).wait();
+    ccl::allgatherv(
+        err_message, message_len, arrerr_message, arr_message_len, ccl::datatype::int8, comm)
+        .wait();
 
     if (process_idx == 0) {
         output << arrerr_message;

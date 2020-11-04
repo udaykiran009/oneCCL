@@ -6,7 +6,7 @@
 
 namespace ccl {
 namespace detail {
-    class environment;
+class environment;
 }
 
 class ccl_datatype_attr_impl;
@@ -56,7 +56,7 @@ private:
     friend class ccl::detail::environment;
     datatype_attr(
         const typename detail::ccl_api_type_attr_traits<datatype_attr_id,
-                                                         datatype_attr_id::version>::return_type&
+                                                        datatype_attr_id::version>::return_type&
             version);
 };
 
