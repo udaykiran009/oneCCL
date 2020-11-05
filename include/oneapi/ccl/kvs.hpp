@@ -17,9 +17,9 @@ class CCL_API kvs_interface {
 public:
     virtual ~kvs_interface() = default;
 
-    virtual vector_class<char> get(const string_class& key) const = 0;
+    virtual vector_class<char> get(const string_class& key) = 0;
 
-    virtual void set(const string_class& key, const vector_class<char>& data) const = 0;
+    virtual void set(const string_class& key, const vector_class<char>& data) = 0;
 };
 
 class CCL_API kvs final : public kvs_interface {
@@ -31,9 +31,9 @@ public:
 
     address_type get_address() const;
 
-    vector_class<char> get(const string_class& key) const override;
+    vector_class<char> get(const string_class& key) override;
 
-    void set(const string_class& key, const vector_class<char>& data) const override;
+    void set(const string_class& key, const vector_class<char>& data) override;
 
 private:
     friend class ccl::detail::environment;

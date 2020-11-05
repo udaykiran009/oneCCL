@@ -1,5 +1,5 @@
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_kvs.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/kvs.hpp"
 #include "common/log/log.hpp"
 #include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/comm/l0/gpu_comm_attr.hpp"

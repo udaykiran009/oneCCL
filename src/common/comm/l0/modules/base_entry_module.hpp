@@ -1,6 +1,6 @@
 #pragma once
 #include "oneapi/ccl/native_device_api/export_api.hpp"
-#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/type_traits.hpp"
 #include "supported_topologies.hpp"
 #include "common/comm/l0/modules/kernel_functions.hpp"
 

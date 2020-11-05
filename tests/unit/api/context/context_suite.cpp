@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "oneapi/ccl/ccl_config.h"
+#include "oneapi/ccl/config.h"
 
 #ifdef CCL_ENABLE_SYCL
 #include "context_cases_sycl.hpp"

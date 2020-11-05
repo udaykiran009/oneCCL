@@ -9,52 +9,52 @@
 #include <utility>
 #include <vector>
 
-#include "oneapi/ccl/ccl_types_policy.hpp"
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_type_traits.hpp"
-#include "oneapi/ccl/ccl_coll_attr_ids.hpp"
-#include "oneapi/ccl/ccl_coll_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_coll_attr.hpp"
+#include "oneapi/ccl/types_policy.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/type_traits.hpp"
+#include "oneapi/ccl/coll_attr_ids.hpp"
+#include "oneapi/ccl/coll_attr_ids_traits.hpp"
+#include "oneapi/ccl/coll_attr.hpp"
 
-#include "oneapi/ccl/ccl_comm_attr_ids.hpp"
-#include "oneapi/ccl/ccl_comm_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_comm_attr.hpp"
+#include "oneapi/ccl/comm_attr_ids.hpp"
+#include "oneapi/ccl/comm_attr_ids_traits.hpp"
+#include "oneapi/ccl/comm_attr.hpp"
 
-#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
-#include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_comm_split_attr.hpp"
+#include "oneapi/ccl/comm_split_attr_ids.hpp"
+#include "oneapi/ccl/comm_split_attr_ids_traits.hpp"
+#include "oneapi/ccl/comm_split_attr.hpp"
 
-#include "oneapi/ccl/ccl_context_attr_ids.hpp"
-#include "oneapi/ccl/ccl_context_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_context.hpp"
+#include "oneapi/ccl/context_attr_ids.hpp"
+#include "oneapi/ccl/context_attr_ids_traits.hpp"
+#include "oneapi/ccl/context.hpp"
 
-#include "oneapi/ccl/ccl_datatype_attr_ids.hpp"
-#include "oneapi/ccl/ccl_datatype_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_datatype_attr.hpp"
+#include "oneapi/ccl/datatype_attr_ids.hpp"
+#include "oneapi/ccl/datatype_attr_ids_traits.hpp"
+#include "oneapi/ccl/datatype_attr.hpp"
 
-#include "oneapi/ccl/ccl_device_attr_ids.hpp"
-#include "oneapi/ccl/ccl_device_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_device.hpp"
+#include "oneapi/ccl/device_attr_ids.hpp"
+#include "oneapi/ccl/device_attr_ids_traits.hpp"
+#include "oneapi/ccl/device.hpp"
 
-#include "oneapi/ccl/ccl_init_attr_ids.hpp"
-#include "oneapi/ccl/ccl_init_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_init_attr.hpp"
+#include "oneapi/ccl/init_attr_ids.hpp"
+#include "oneapi/ccl/init_attr_ids_traits.hpp"
+#include "oneapi/ccl/init_attr.hpp"
 
-#include "oneapi/ccl/ccl_kvs_attr_ids.hpp"
-#include "oneapi/ccl/ccl_kvs_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_kvs_attr.hpp"
+#include "oneapi/ccl/kvs_attr_ids.hpp"
+#include "oneapi/ccl/kvs_attr_ids_traits.hpp"
+#include "oneapi/ccl/kvs_attr.hpp"
 
-#include "oneapi/ccl/ccl_kvs.hpp"
+#include "oneapi/ccl/kvs.hpp"
 
-#include "oneapi/ccl/ccl_event.hpp"
+#include "oneapi/ccl/event.hpp"
 
-#include "oneapi/ccl/ccl_stream_attr_ids.hpp"
-#include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_stream.hpp"
+#include "oneapi/ccl/stream_attr_ids.hpp"
+#include "oneapi/ccl/stream_attr_ids_traits.hpp"
+#include "oneapi/ccl/stream.hpp"
 
-#include "oneapi/ccl/ccl_communicator.hpp"
+#include "oneapi/ccl/communicator.hpp"
 
-#include "oneapi/ccl/ccl_exception.hpp"
+#include "oneapi/ccl/exception.hpp"
 
 namespace ccl {
 

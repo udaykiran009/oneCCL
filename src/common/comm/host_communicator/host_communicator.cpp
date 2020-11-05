@@ -1,8 +1,8 @@
 #include "common/global/global.hpp"
 #include "common/comm/host_communicator/host_communicator_impl.hpp"
-#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
-#include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_comm_split_attr.hpp"
+#include "oneapi/ccl/comm_split_attr_ids.hpp"
+#include "oneapi/ccl/comm_split_attr_ids_traits.hpp"
+#include "oneapi/ccl/comm_split_attr.hpp"
 
 #include "common/request/request.hpp"
 #include "common/event/impls/host_event.hpp"

@@ -1,5 +1,5 @@
-#include "oneapi/ccl/ccl_config.h"
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/config.h"
+#include "oneapi/ccl/types.hpp"
 #include "common/utils/version.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 

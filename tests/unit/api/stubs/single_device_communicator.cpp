@@ -1,5 +1,5 @@
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/type_traits.hpp"
 //#include "typed_base_communicator_impl.hpp"
 #include "common/comm/single_device_communicator/single_device_communicator.hpp"
 #include "common/comm/l0/gpu_comm_attr.hpp"

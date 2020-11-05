@@ -1,4 +1,4 @@
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/types.hpp"
 #include "common/utils/version.hpp"
 
 namespace ccl {

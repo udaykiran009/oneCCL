@@ -3,29 +3,29 @@
 //API headers with declaration of new API object
 #define private public
 #define protected public
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_aliases.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/aliases.hpp"
 
-#include "oneapi/ccl/ccl_type_traits.hpp"
-#include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/type_traits.hpp"
+#include "oneapi/ccl/types_policy.hpp"
 
-#include "oneapi/ccl/ccl_coll_attr_ids.hpp"
-#include "oneapi/ccl/ccl_coll_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_coll_attr.hpp"
+#include "oneapi/ccl/coll_attr_ids.hpp"
+#include "oneapi/ccl/coll_attr_ids_traits.hpp"
+#include "oneapi/ccl/coll_attr.hpp"
 
-#include "oneapi/ccl/ccl_comm_attr_ids.hpp"
-#include "oneapi/ccl/ccl_comm_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_comm_attr.hpp"
+#include "oneapi/ccl/comm_attr_ids.hpp"
+#include "oneapi/ccl/comm_attr_ids_traits.hpp"
+#include "oneapi/ccl/comm_attr.hpp"
 
-#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
-#include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_comm_split_attr.hpp"
+#include "oneapi/ccl/comm_split_attr_ids.hpp"
+#include "oneapi/ccl/comm_split_attr_ids_traits.hpp"
+#include "oneapi/ccl/comm_split_attr.hpp"
 
-#include "oneapi/ccl/ccl_stream_attr_ids.hpp"
-#include "oneapi/ccl/ccl_stream_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_stream.hpp"
+#include "oneapi/ccl/stream_attr_ids.hpp"
+#include "oneapi/ccl/stream_attr_ids_traits.hpp"
+#include "oneapi/ccl/stream.hpp"
 
-#include "oneapi/ccl/ccl_event.hpp"
+#include "oneapi/ccl/event.hpp"
 
 #include "coll/coll_attributes.hpp"
 
@@ -35,7 +35,7 @@
 #include "common/comm/comm_split_common_attr.hpp"
 #include "comm_split_attr_impl.hpp"
 
-#include "oneapi/ccl/ccl_communicator.hpp"
+#include "oneapi/ccl/communicator.hpp"
 #include "common/comm/l0/comm_context_storage.hpp"
 
 #include "stream_impl.hpp"

@@ -1,4 +1,4 @@
-#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/type_traits.hpp"
 #include "coll/algorithms/sparse_allreduce/sparse_handler.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 

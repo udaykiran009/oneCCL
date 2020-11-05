@@ -1,9 +1,9 @@
 #pragma once
-#include "oneapi/ccl/ccl_types_policy.hpp"
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_type_traits.hpp"
-#include "oneapi/ccl/ccl_context_attr_ids.hpp"
-#include "oneapi/ccl/ccl_context_attr_ids_traits.hpp"
+#include "oneapi/ccl/types_policy.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/type_traits.hpp"
+#include "oneapi/ccl/context_attr_ids.hpp"
+#include "oneapi/ccl/context_attr_ids_traits.hpp"
 #include "common/utils/utils.hpp"
 
 class ccl_context_impl {

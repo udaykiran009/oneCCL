@@ -7,7 +7,7 @@
 #include "common/global/global.hpp"
 #include "common/log/log.hpp"
 #include "exec/exec.hpp"
-#include "oneapi/ccl/ccl_environment.hpp"
+#include "oneapi/ccl/environment.hpp"
 #include "common/utils/version.hpp"
 
 namespace ccl {

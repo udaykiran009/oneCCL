@@ -1,8 +1,8 @@
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_environment.hpp"
-#include "oneapi/ccl/ccl_api_functions.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/environment.hpp"
+#include "oneapi/ccl/api_functions.hpp"
 #include "common/comm/host_communicator/host_communicator.hpp"
-#include "oneapi/ccl/ccl_exception.hpp"
+#include "oneapi/ccl/exception.hpp"
 
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 #include "common/comm/comm_interface.hpp"

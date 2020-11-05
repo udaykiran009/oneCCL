@@ -1,6 +1,6 @@
 #pragma once
 
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/types.hpp"
 
 #ifdef CCL_BF16_TARGET_ATTRIBUTES
 #ifdef CCL_BF16_AVX512BF_COMPILER

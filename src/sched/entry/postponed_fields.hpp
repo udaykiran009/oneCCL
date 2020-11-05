@@ -4,7 +4,7 @@
 #include <set>
 #include <tuple>
 
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/types.hpp"
 #include "common/log/log.hpp"
 #include "common/utils/tuple.hpp"
 #include "internal_types.hpp"

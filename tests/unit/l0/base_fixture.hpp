@@ -20,7 +20,7 @@ struct native_type_info {
 };
 } // namespace ccl
 #else
-#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/type_traits.hpp"
 #endif
 
 using bfloat16 = ccl::bfloat16;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "oneapi/ccl.hpp"
-#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/type_traits.hpp"
 
 template <class communicator_impl>
 struct alltoallv_usm_visitor {

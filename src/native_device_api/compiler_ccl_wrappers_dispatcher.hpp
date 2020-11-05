@@ -3,7 +3,7 @@
 #if defined(MULTI_GPU_SUPPORT)
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "oneapi/ccl/native_device_api/l0/declarations.hpp"
-#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/type_traits.hpp"
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl/backend/level_zero.hpp>

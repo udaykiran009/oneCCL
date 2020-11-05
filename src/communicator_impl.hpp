@@ -1,8 +1,8 @@
 #pragma once
-#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
-#include "oneapi/ccl/ccl_comm_split_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_comm_split_attr.hpp"
-#include "oneapi/ccl/ccl_communicator.hpp"
+#include "oneapi/ccl/comm_split_attr_ids.hpp"
+#include "oneapi/ccl/comm_split_attr_ids_traits.hpp"
+#include "oneapi/ccl/comm_split_attr.hpp"
+#include "oneapi/ccl/communicator.hpp"
 
 #include "common/comm/l0/comm_context_id.hpp"
 #include "communicator_impl_details.hpp"

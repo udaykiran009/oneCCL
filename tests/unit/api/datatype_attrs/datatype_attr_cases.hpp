@@ -3,12 +3,12 @@
 //API headers with declaration of new API object
 #define private public
 #define protected public
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_aliases.hpp"
-#include "oneapi/ccl/ccl_types_policy.hpp"
-#include "oneapi/ccl/ccl_datatype_attr_ids.hpp"
-#include "oneapi/ccl/ccl_datatype_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_datatype_attr.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/aliases.hpp"
+#include "oneapi/ccl/types_policy.hpp"
+#include "oneapi/ccl/datatype_attr_ids.hpp"
+#include "oneapi/ccl/datatype_attr_ids_traits.hpp"
+#include "oneapi/ccl/datatype_attr.hpp"
 
 #include "datatype_attr_creation_impl.hpp"
 

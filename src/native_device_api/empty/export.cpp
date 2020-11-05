@@ -1,8 +1,8 @@
-#include "oneapi/ccl/ccl_config.h"
+#include "oneapi/ccl/config.h"
 #if !defined(MULTI_GPU_SUPPORT) and !defined(CCL_ENABLE_SYCL)
 
 #include "oneapi/ccl/native_device_api/empty/export.hpp"
-#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/type_traits.hpp"
 #include "common/log/log.hpp"
 #include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
 

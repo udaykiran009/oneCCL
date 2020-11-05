@@ -1,6 +1,6 @@
 #define once
 
-#include "oneapi/ccl/ccl_lp_types.hpp"
+#include "oneapi/ccl/lp_types.hpp"
 
 using bfloat16 = ccl::bfloat16;
 

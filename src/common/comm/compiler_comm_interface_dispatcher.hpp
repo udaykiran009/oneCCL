@@ -2,7 +2,7 @@
 #include <cstddef>
 #include <memory>
 
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/types.hpp"
 #include "supported_topologies.hpp"
 #include "communicator_traits.hpp"
 #include "atl/atl_wrapper.h"

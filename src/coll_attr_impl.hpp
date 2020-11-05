@@ -1,6 +1,6 @@
 #pragma once
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_coll_attr.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/coll_attr.hpp"
 #include "coll/coll_attributes.hpp"
 
 namespace ccl {

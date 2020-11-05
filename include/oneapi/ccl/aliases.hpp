@@ -10,7 +10,8 @@
 #include <tuple>
 #include <utility>
 #include <vector>
-#include "ccl_string.hpp"
+
+#include "oneapi/ccl/string.hpp"
 
 namespace ccl {
 template <class T, class Alloc = std::allocator<T>>

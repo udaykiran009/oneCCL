@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "oneapi/ccl/ccl_config.h"
+#include "oneapi/ccl/config.h"
 
 #include <bitset>
 #include <iostream>
@@ -13,8 +13,8 @@
 #include <stdexcept>
 #include <vector>
 
-#include "oneapi/ccl/ccl_aliases.hpp"
-#include "oneapi/ccl/ccl_exception.hpp"
+#include "oneapi/ccl/aliases.hpp"
+#include "oneapi/ccl/exception.hpp"
 
 namespace ccl {
 
@@ -60,11 +60,6 @@ inline std::ostream& operator<<(std::ostream& os, const ccl::datatype& dt) {
     return os;
 }
 
-typedef struct {
-    const char* match_id;
-    const size_t offset;
-} fn_context;
-
 /**
  * Sparse coalesce modes
  * 
@@ -83,28 +78,6 @@ enum class sparse_coalesce_mode : int {
     last_value
 };
 
-/* in_buf, in_count, inout_buf, out_count, dtype, context */
-typedef void (
-    *reduction_fn)(const void*, size_t, void*, size_t*, ccl::datatype, const ccl::fn_context*);
-
-/* idx_buf, idx_count, idx_dtype, val_buf, val_count, val_dtype, user_context */
-typedef void (*sparse_allreduce_completion_fn)(const void*,
-                                               size_t,
-                                               ccl::datatype,
-                                               const void*,
-                                               size_t,
-                                               ccl::datatype,
-                                               const void*);
-
-/* idx_count, idx_dtype, val_count, val_dtype, user_context, out_idx_buf, out_val_buf */
-typedef void (*sparse_allreduce_alloc_fn)(size_t,
-                                          ccl::datatype,
-                                          size_t,
-                                          ccl::datatype,
-                                          const void*,
-                                          void**,
-                                          void**);
-
 /**
  * Supported CL backend types
  */
@@ -116,19 +89,6 @@ enum class cl_backend_type : int {
 
     last_value
 };
-
-/**
- * Library version description
- */
-typedef struct {
-    unsigned int major;
-    unsigned int minor;
-    unsigned int update;
-    const char* product_status;
-    const char* build_date;
-    const char* full;
-    string_class cl_backend_name;
-} library_version;
 
 /**
  * Type traits, which describes how-to types would be interpretered by ccl API
@@ -148,15 +108,66 @@ struct ccl_type_info_export {
 };
 
 namespace v1 {
+
+/**
+ * Library version description
+ */
+typedef struct {
+    unsigned int major;
+    unsigned int minor;
+    unsigned int update;
+    const char* product_status;
+    const char* build_date;
+    const char* full;
+    string_class cl_backend_name;
+} library_version;
+
+typedef struct {
+    const char* match_id;
+    const size_t offset;
+} fn_context;
+
+/* in_buf, in_count, inout_buf, out_count, dtype, context */
+typedef void (
+    *reduction_fn)(const void*, size_t, void*, size_t*, ccl::datatype, const ccl::v1::fn_context*);
+
 struct ccl_empty_attr {
-    static ccl::library_version version;
+    static ccl::v1::library_version version;
 
     template <class attr>
     static attr create_empty();
 };
+
 } // namespace v1
 
+namespace preview {
+
+/* idx_buf, idx_count, idx_dtype, val_buf, val_count, val_dtype, user_context */
+typedef void (*sparse_allreduce_completion_fn)(const void*,
+                                               size_t,
+                                               ccl::datatype,
+                                               const void*,
+                                               size_t,
+                                               ccl::datatype,
+                                               const void*);
+
+/* idx_count, idx_dtype, val_count, val_dtype, user_context, out_idx_buf, out_val_buf */
+typedef void (*sparse_allreduce_alloc_fn)(size_t,
+                                          ccl::datatype,
+                                          size_t,
+                                          ccl::datatype,
+                                          const void*,
+                                          void**,
+                                          void**);
+} // namespace preview
+
+using v1::library_version;
+using v1::fn_context;
+using v1::reduction_fn;
 using v1::ccl_empty_attr;
+
+using preview::sparse_allreduce_completion_fn;
+using preview::sparse_allreduce_alloc_fn;
 
 /**
  * API object attributes traits
@@ -168,4 +179,4 @@ struct param_traits {};
 } //namespace info
 } // namespace ccl
 
-#include "oneapi/ccl/ccl_device_types.hpp"
+#include "oneapi/ccl/device_types.hpp"

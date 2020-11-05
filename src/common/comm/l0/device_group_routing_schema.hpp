@@ -2,7 +2,7 @@
 #include <cassert>
 #include <memory>
 #include <sstream>
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/types.hpp"
 #include "common/utils/enums.hpp"
 #include "common/utils/tuple.hpp"
 #include "supported_topologies.hpp"

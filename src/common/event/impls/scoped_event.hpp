@@ -1,6 +1,6 @@
 #pragma once
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_event.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/event.hpp"
 #include "common/utils/tuple.hpp"
 #include "common/event/impls/event_impl.hpp"
 

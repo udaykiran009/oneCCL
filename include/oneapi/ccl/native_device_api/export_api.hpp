@@ -1,5 +1,5 @@
 #pragma once
-#include "oneapi/ccl/ccl_config.h"
+#include "oneapi/ccl/config.h"
 
 #ifdef CCL_ENABLE_SYCL
 #ifdef MULTI_GPU_SUPPORT

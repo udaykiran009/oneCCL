@@ -4,8 +4,8 @@
 
 #include "atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.h"
 #include "common/log/log.hpp"
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_kvs.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/kvs.hpp"
 
 namespace ccl {
 
@@ -26,7 +26,7 @@ public:
         return addr;
     }
 
-    vector_class<char> get(const string_class& key) const {
+    vector_class<char> get(const string_class& key) {
         char ret[128];
         inter_kvs->kvs_get_value_by_name_key(prefix.c_str(), key.c_str(), ret);
         size_t ret_len = strlen(ret);
@@ -40,7 +40,7 @@ public:
         return ret_vec;
     }
 
-    void set(const string_class& key, const vector_class<char>& data) const {
+    void set(const string_class& key, const vector_class<char>& data) {
         CCL_THROW_IF_NOT(!data.empty(), "data should have at least one element");
         CCL_THROW_IF_NOT(data.back() == '\0', "data should have terminating symbol");
         CCL_THROW_IF_NOT(data.data(), "data pointer should be non-null");
@@ -63,11 +63,11 @@ kvs::address_type CCL_API kvs::get_address() const {
     return pimpl->get_addr();
 }
 
-vector_class<char> CCL_API kvs::get(const string_class& key) const {
+vector_class<char> CCL_API kvs::get(const string_class& key) {
     return pimpl->get(key);
 }
 
-void CCL_API kvs::set(const string_class& key, const vector_class<char>& data) const {
+void CCL_API kvs::set(const string_class& key, const vector_class<char>& data) {
     pimpl->set(key, data);
 }
 

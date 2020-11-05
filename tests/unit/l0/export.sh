@@ -96,13 +96,13 @@ function copy_dirs()
 function export_ccl_common()
 {
      declare -a CCLPublicSourceArray=(
-                            "${PROJECT_DIR}/include/oneapi/ccl/ccl_aliases.hpp"
-                            "${PROJECT_DIR}/include/oneapi/ccl/ccl_exception.hpp"
-                            "${PROJECT_DIR}/include/oneapi/ccl/ccl_string.hpp"
-                            "${PROJECT_DIR}/include/oneapi/ccl/ccl_types.hpp"
-                            "${PROJECT_DIR}/include/oneapi/ccl/ccl_type_traits.hpp"
-                            "${PROJECT_DIR}/include/oneapi/ccl/ccl_device_types.hpp"
-                            "${PROJECT_DIR}/include/oneapi/ccl/ccl_device_type_traits.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/aliases.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/exception.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/string.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/types.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/type_traits.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/device_types.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/device_type_traits.hpp"
                             )
     copy_files "oneapi/ccl" ${CCLPublicSourceArray[@]}
 
@@ -140,7 +140,7 @@ function export_test_common()
 
 function copy_all_stuff()
 {
-    printf "#define CCL_PRODUCT_FULL 0\n#define CCL_API\n#define MULTI_GPU_SUPPORT" > "${export_dir}/oneapi/ccl/ccl_config.h"
+    printf "#define CCL_PRODUCT_FULL 0\n#define CCL_API\n#define MULTI_GPU_SUPPORT" > "${export_dir}/oneapi/ccl/config.h"
     mkdir -p "${export_dir}/kernels"
     declare -a TestSuite=("${SCRIPT_DIR}/kernels/*_test.hpp"
                           "${SCRIPT_DIR}/kernels/*_fixture.hpp")

@@ -1,9 +1,9 @@
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_aliases.hpp"
-#include "oneapi/ccl/ccl_types_policy.hpp"
-#include "oneapi/ccl/ccl_kvs_attr_ids.hpp"
-#include "oneapi/ccl/ccl_kvs_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_kvs_attr.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/aliases.hpp"
+#include "oneapi/ccl/types_policy.hpp"
+#include "oneapi/ccl/kvs_attr_ids.hpp"
+#include "oneapi/ccl/kvs_attr_ids_traits.hpp"
+#include "oneapi/ccl/kvs_attr.hpp"
 
 // Core file with PIMPL implementation
 #include "atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/kvs_common_attr.hpp"

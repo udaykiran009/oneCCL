@@ -1,6 +1,6 @@
 #pragma once
 
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/types.hpp"
 #include "coll/algorithms/algorithms_enum.hpp"
 #include "internal_types.hpp"
 

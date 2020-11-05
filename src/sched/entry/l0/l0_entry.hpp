@@ -1,7 +1,7 @@
 #pragma once
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/types.hpp"
 #include "common/datatype/datatype.hpp"
-#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/type_traits.hpp"
 #include "oneapi/ccl/native_device_api/l0/primitives.hpp"
 #include "common/comm/l0/modules/kernel_functions.hpp"
 

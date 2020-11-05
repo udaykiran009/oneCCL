@@ -1,8 +1,8 @@
 #pragma once
 #include <sstream>
 
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_comm_split_attr_ids.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/comm_split_attr_ids.hpp"
 #include "common/comm/l0/device_containers.hpp"
 
 namespace native {

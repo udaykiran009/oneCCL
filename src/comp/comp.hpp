@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common/datatype/datatype.hpp"
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/types.hpp"
 #include "internal_types.hpp"
 
 ccl::status ccl_comp_copy(const void* in_buf,
