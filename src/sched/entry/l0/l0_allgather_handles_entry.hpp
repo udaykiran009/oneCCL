@@ -2,7 +2,7 @@
 
 #include <initializer_list>
 #include <iterator>
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/types.hpp"
 #include "common/datatype/datatype.hpp"
 #include "comp/comp.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"

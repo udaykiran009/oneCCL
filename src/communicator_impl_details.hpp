@@ -1,4 +1,4 @@
-#include "oneapi/ccl/ccl_exception.hpp"
+#include "oneapi/ccl/exception.hpp"
 #include "common/comm/comm_interface.hpp"
 #include "common/comm/single_device_communicator/single_device_communicator.hpp"
 

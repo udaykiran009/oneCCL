@@ -1,5 +1,5 @@
 #include "oneapi/ccl.hpp"
-#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/type_traits.hpp"
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 #include "common/comm/single_device_communicator/single_device_communicator_impl.hpp"
 #ifdef MULTI_GPU_SUPPORT

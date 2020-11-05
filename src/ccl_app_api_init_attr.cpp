@@ -1,9 +1,9 @@
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_aliases.hpp"
-#include "oneapi/ccl/ccl_types_policy.hpp"
-#include "oneapi/ccl/ccl_init_attr_ids.hpp"
-#include "oneapi/ccl/ccl_init_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_init_attr.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/aliases.hpp"
+#include "oneapi/ccl/types_policy.hpp"
+#include "oneapi/ccl/init_attr_ids.hpp"
+#include "oneapi/ccl/init_attr_ids_traits.hpp"
+#include "oneapi/ccl/init_attr.hpp"
 
 // Core file with PIMPL implementation
 #include "init_attr_impl.hpp"

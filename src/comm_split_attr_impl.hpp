@@ -1,6 +1,6 @@
 #pragma once
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_comm_split_attr.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/comm_split_attr.hpp"
 
 namespace ccl {
 

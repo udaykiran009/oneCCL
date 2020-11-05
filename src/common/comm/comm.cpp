@@ -3,8 +3,8 @@
 #include "common/comm/comm.hpp"
 #include "common/global/global.hpp"
 #include "sched/sched.hpp"
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_kvs.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/kvs.hpp"
 
 void ccl_comm::allocate_resources() {
     if (ccl::global_data::env().enable_unordered_coll) {

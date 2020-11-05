@@ -1,5 +1,5 @@
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_types_policy.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/types_policy.hpp"
 #include "common/event/impls/event_impl.hpp"
 #include "common/event/impls/empty_event.hpp"
 #include "common/event/impls/native_event.hpp"

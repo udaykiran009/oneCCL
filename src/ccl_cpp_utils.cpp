@@ -1,8 +1,8 @@
 #include <sstream>
 
-#include "oneapi/ccl/ccl_config.h"
-#include "oneapi/ccl/ccl_lp_types.hpp"
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/config.h"
+#include "oneapi/ccl/lp_types.hpp"
+#include "oneapi/ccl/types.hpp"
 #include "common/utils/enums.hpp"
 
 std::ostream& operator<<(std::ostream& out, const ccl::device_index_type& index);

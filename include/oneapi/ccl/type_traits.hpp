@@ -7,8 +7,8 @@
 #include <CL/sycl.hpp>
 #endif
 
-#include "oneapi/ccl/ccl_lp_types.hpp"
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/lp_types.hpp"
+#include "oneapi/ccl/types.hpp"
 
 namespace ccl {
 /**
@@ -150,4 +150,4 @@ constexpr bool is_class_supported() {
 
 } // namespace ccl
 
-#include "oneapi/ccl/ccl_device_type_traits.hpp"
+#include "oneapi/ccl/device_type_traits.hpp"

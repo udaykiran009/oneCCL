@@ -1,4 +1,4 @@
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/types.hpp"
 #include "stream_impl.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 

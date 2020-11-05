@@ -1,6 +1,6 @@
 #pragma once
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/type_traits.hpp"
 #include "common/comm/single_device_communicator/single_device_base.hpp"
 
 #define TEMPLATE_DECL_ARG class comm_impl, class communicator_traits

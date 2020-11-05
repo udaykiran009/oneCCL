@@ -1,5 +1,5 @@
 #pragma once
-#include "include/oneapi/ccl/ccl_types.hpp"
+#include "include/oneapi/ccl/types.hpp"
 #include "coll/algorithm/algorithms_enum.hpp"
 
 namespace native {

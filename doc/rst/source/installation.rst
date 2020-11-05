@@ -64,30 +64,21 @@ You can customize CLI-based installation (for example, specify directory, compil
 
   ::
 
-    cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/installation/directory
+    cmake .. -DCMAKE_INSTALL_PREFIX=</path/to/installation/directory>
 
-  If no ``-DCMAKE_INSTALL_PREFIX`` is specified, |product_short| is installed into the ``_install`` subdirectory of the current build directory.
-  For example, ``ccl/build/_install``.
+  If no ``-DCMAKE_INSTALL_PREFIX`` is specified, |product_short| is installed into the ``_install`` subdirectory of the current build directory. For example, ``ccl/build/_install``.
 
 * To specify **compiler**, modify the ``cmake`` command:
 
   ::
 
-     cmake .. -DCMAKE_C_COMPILER=your_c_compiler -DCMAKE_CXX_COMPILER=your_cxx_compiler
+     cmake .. -DCMAKE_C_COMPILER=<c_compiler> -DCMAKE_CXX_COMPILER=<cxx_compiler>
 
-  If ``CMAKE_CXX_COMPILER`` requires ``SYCL`` cross-platform abstraction level it should be specified in ``-DCOMPUTE_RUNTIME`` ( ``compute++`` and ``dpcpp`` supported only):
-
-  ::
-
-     cmake .. -DCMAKE_C_COMPILER=your_c_compiler -DCMAKE_CXX_COMPILER=compute++ -DCOMPUTE_RUNTIME=computecpp
-     cmake .. -DCMAKE_C_COMPILER=your_c_compiler -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_RUNTIME=dpcpp
-
-  OpenCL search location path hint can be specified by using standart environment ``OPENCLROOT`` additionally:
+  To enable ``SYCL`` devices communication support specify ``SYCL`` compiler and set ``-DCOMPUTE_RUNTIME`` (DPC++ supported only):
 
   ::
 
-     OPENCLROOT=your_opencl_location cmake .. -DCMAKE_C_COMPILER=your_c_compiler -DCMAKE_CXX_COMPILER=compute++ -DCOMPUTE_RUNTIME=computecpp
-
+     cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_RUNTIME=dpcpp
 
 * To specify the **build type**, modify the ``cmake`` command:
 
@@ -106,20 +97,6 @@ You can customize CLI-based installation (for example, specify directory, compil
   ::
 
      make -j install
-
-* To build with Address Sanitizer, modify the ``cmake`` command as follow:
-
-  ::
-
-     cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_ASAN=true
-
-  Make sure that ``libasan.so`` exists.
-
-  .. note::
-
-     Address sanitizer only works in the debug build.
-
-Binary releases are available on our release page.
 
 Installation using tar.gz
 *************************

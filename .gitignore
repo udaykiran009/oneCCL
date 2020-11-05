@@ -18,4 +18,4 @@ doc/rst/build/
 doc/rst/source/api
 .vs
 .vscode
-include/oneapi/ccl/ccl_config.h
+include/oneapi/ccl/config.h

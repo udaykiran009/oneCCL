@@ -1,4 +1,4 @@
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/types.hpp"
 #include "common/global/global.hpp"
 #include "common/log/log.hpp"
 #include "comp/bf16/bf16.hpp"

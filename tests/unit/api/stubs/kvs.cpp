@@ -1,10 +1,10 @@
 #include "kvs.hpp"
 
-ccl::vector_class<char> stub_kvs::get(const ccl::string_class& key) const {
+ccl::vector_class<char> stub_kvs::get(const ccl::string_class& key) {
     return {};
 }
 
-void stub_kvs::set(const ccl::string_class& key, const ccl::vector_class<char>& data) const {}
+void stub_kvs::set(const ccl::string_class& key, const ccl::vector_class<char>& data) {}
 
 namespace ccl {
 class kvs_impl {};
@@ -17,13 +17,13 @@ ccl::kvs::address_type ccl::kvs::get_address() const {
     return empty;
 }
 
-ccl::vector_class<char> ccl::kvs::get(const ccl::string_class& key) const {
+ccl::vector_class<char> ccl::kvs::get(const ccl::string_class& key) {
     (void)key;
     ccl::vector_class<char> empty;
     return empty;
 }
 
-void ccl::kvs::set(const ccl::string_class& key, const ccl::vector_class<char>& data) const {
+void ccl::kvs::set(const ccl::string_class& key, const ccl::vector_class<char>& data) {
     (void)key;
     (void)data;
 }

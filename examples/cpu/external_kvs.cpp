@@ -4,11 +4,11 @@ class external_kvs : public ccl::kvs_interface {
 public:
     external_kvs(ccl::shared_ptr_class<ccl::kvs> kvs) : kvs(kvs) {}
 
-    virtual ccl::vector_class<char> get(const ccl::string_class& key) const {
+    virtual ccl::vector_class<char> get(const ccl::string_class& key) {
         return kvs->get(key);
     }
 
-    virtual void set(const ccl::string_class& key, const ccl::vector_class<char>& data) const {
+    virtual void set(const ccl::string_class& key, const ccl::vector_class<char>& data) {
         return kvs->set(key, data);
     }
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_environment.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/environment.hpp"
 
 #include "coll/coll_attributes.hpp"
 
@@ -18,7 +18,7 @@
 #include "common/global/global.hpp"
 #include "common/comm/comm.hpp"
 
-#include "oneapi/ccl/ccl_communicator.hpp"
+#include "oneapi/ccl/communicator.hpp"
 
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "common/utils/version.hpp"

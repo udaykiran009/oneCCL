@@ -1,8 +1,8 @@
 #pragma once
-#include "oneapi/ccl/ccl_types.hpp"
-#include "oneapi/ccl/ccl_init_attr_ids.hpp"
-#include "oneapi/ccl/ccl_init_attr_ids_traits.hpp"
-#include "oneapi/ccl/ccl_init_attr.hpp"
+#include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/init_attr_ids.hpp"
+#include "oneapi/ccl/init_attr_ids_traits.hpp"
+#include "oneapi/ccl/init_attr.hpp"
 
 namespace ccl {
 

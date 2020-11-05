@@ -1,5 +1,5 @@
 #pragma once
-#include "oneapi/ccl/ccl_types.hpp"
+#include "oneapi/ccl/types.hpp"
 
 #define CL_BACKEND_TYPE ccl::cl_backend_type::l0
 

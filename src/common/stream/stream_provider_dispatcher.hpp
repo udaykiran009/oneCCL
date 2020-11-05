@@ -7,7 +7,7 @@
 #include <CL/sycl.hpp>
 #endif
 
-#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/type_traits.hpp"
 
 /**
  * Supported stream types

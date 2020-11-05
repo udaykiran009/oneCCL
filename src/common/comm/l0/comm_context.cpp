@@ -1,4 +1,4 @@
-#include "oneapi/ccl/ccl_aliases.hpp"
+#include "oneapi/ccl/aliases.hpp"
 #include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/comm/l0/comm_context_impl.hpp"
 #include "common/utils/spinlock.hpp"

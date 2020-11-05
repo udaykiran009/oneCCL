@@ -1,5 +1,5 @@
 #include "oneapi/ccl.hpp"
-#include "oneapi/ccl/ccl_type_traits.hpp"
+#include "oneapi/ccl/type_traits.hpp"
 #include "common/comm/l0/communicator/device_group/device_ring_communicator_impl.hpp"
 #include "common/comm/l0/gpu_comm_attr.hpp"
 #include "common/comm/l0/context/thread_group_ctx.hpp"
