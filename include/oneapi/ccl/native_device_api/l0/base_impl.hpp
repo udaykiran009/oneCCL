@@ -44,7 +44,7 @@ template <TEMPLATE_DECL_ARG>
 cl_base<TEMPLATE_DEF_ARG>::~cl_base() noexcept {
     auto lock = owner.lock();
     // auto ctx = context.lock(); ctx->get();
-    ze_context_handle_t ctxtmp;
+    ze_context_handle_t ctxtmp = nullptr;
     if (lock) {
         lock->on_delete(handle, ctxtmp);
     }

@@ -208,7 +208,10 @@ void get_my_job_name(const char* connect_api_template) {
             pod_name,
             get_kvs_val);
 
-    fp = popen(run_str, READ_ONLY);
+    if ((fp = popen(run_str, READ_ONLY)) == NULL) {
+        printf("Can't get %s", strerror(errno));
+        exit(1);
+    }
     CHECK_FGETS(fgets(job_name, MAX_KVS_NAME_LENGTH, fp), job_name);
     pclose(fp);
     if (job_name[0] == NULL_CHAR) {
@@ -353,8 +356,17 @@ size_t get_by_template(char*** kvs_entry,
         free(*kvs_entry);
 
     *kvs_entry = (char**)malloc(sizeof(char*) * count);
-    for (i = 0; i < count; i++)
+    if(*kvs_entry == NULL) {
+        printf("Memory allocation failed\n");
+        exit(1);
+    }
+    for (i = 0; i < count; i++){
         (*kvs_entry)[i] = (char*)malloc(sizeof(char) * max_count);
+        if((*kvs_entry)[i] == NULL) {
+            printf("Memory allocation failed\n");
+            exit(1);
+        }
+    }
 
     i = 0;
 

@@ -70,7 +70,9 @@ CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
     auto ctx = platform.lock()->get_platform_contexts();
     std::shared_ptr<ccl_device_driver> driver =
         std::make_shared<ccl_device_driver>(h, id, std::move(platform), std::move(ctx));
-    driver->create_context();
+    if(!driver->create_context()) {
+       throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + " - create context is invalid");
+    }
 
     auto collected_devices_list =
         ccl_device::get_handles(*driver, get_device_indices(rank_device_affinity));
@@ -89,7 +91,9 @@ CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
     auto ctx = platform.lock()->get_platform_contexts();
     std::shared_ptr<ccl_device_driver> driver =
         std::make_shared<ccl_device_driver>(h, id, std::move(platform), ctx);
-    driver->create_context();
+    if(!driver->create_context()) {
+       throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + " - create context is invalid");
+    }
 
     auto collected_devices_list = ccl_device::get_handles(*driver, rank_device_affinity);
     try {
