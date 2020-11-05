@@ -10,11 +10,7 @@ Installation
 
 This page explains how to install and configure the |product_full| (|product_short|).
 
-|product_short| supports different installation scenarios:
-
-* `Installation using command line interface`_
-* `Installation using tar.gz`_
-* `Installation using RPM`_
+|product_short| supports different installation scenarios using command line interface.
 
 .. note:: Visit |sys_req|_ to learn about hardware and software requirements for |product_short|.
 
@@ -84,50 +80,10 @@ You can customize CLI-based installation (for example, specify directory, compil
 
   ::
 
-     cmake .. -DCMAKE_BUILD_TYPE=[Debug|Release|RelWithDebInfo|MinSizeRel]
+     cmake .. -DCMAKE_BUILD_TYPE=[Debug|Release]
 
 * To enable ``make`` verbose output to see all parameters used by ``make`` during compilation and linkage, modify the ``make`` command as follows:
 
   ::
 
-     make -j VERBOSE=1
-
-* To archive installed files:
-
-  ::
-
-     make -j install
-
-Installation using tar.gz
-*************************
-
-To install |product_short| using the |tgz_file|_ in a user mode, execute the following commands:
-
-.. prompt:: bash
-
-   tar zxf l_ccl-devel-64-<version>.<update>.<package#>.tgz
-   cd l_ccl_<version>.<update>.<package#>
-   ./install.sh
-
-There is no uninstall script. To uninstall |product_short|, delete the whole installation directory.
-
-Installation using RPM
-**********************
-
-You can get |product_short| through the RPM Package Manager. To install the library in a root mode using RPM, follow these steps:
-
-#. Log in as root.
-
-#. Install the following package:
-
-  .. prompt:: bash
-
-     rpm -i intel-ccl-devel-64-<version>.<update>-<package#>.x86_64.rpm
-
-     where ``<version>.<update>-<package#>`` is a string. For example, ``2017.0-009``.
-
-To uninstall |product_short| using the RPM Package Manager, execute this command:
-
-  .. prompt:: bash
-
-     rpm -e intel-ccl-devel-64-<version>.<update>-<package#>.x86_64
+     make -j VERBOSE=1 install
