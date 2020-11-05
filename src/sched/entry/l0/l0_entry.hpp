@@ -66,6 +66,37 @@ static std::mutex global_fence_mutex;
         } while (0); \
     }
 
+// This is a internal gpu entry state to keep track of the progress
+// filling and submitting a kernel as well as its execution
+enum class gpu_entry_state {
+    // default state
+    initial,
+    // Entry is fully constructed
+    created,
+    // Local parameters are filled and the entry is waiting for
+    // parameters from the neighbour entry. No further progress
+    // until these parameters are received. After that
+    // the entry appends it's kernel. After that the kernel is
+    // submited to the queue(only one rank does that in case of
+    // virtual device.
+    wait_for_entry,
+    // The kernel is submited and the entry is waiting for kernel
+    // completion by checking fence status.
+    wait_for_completion,
+    // Execution is done, it's possible to reuse the entry by
+    // moving the entry to created state
+    completed,
+    // Last element in the enum, not used as state
+    last
+};
+
+inline std::string to_string(gpu_entry_state state) {
+    return utils::enum_to_str<static_cast<int>(gpu_entry_state::last)>{
+        "initial", "created", "wait_for_entry", "wait_for_completion", "completed"
+    }
+        .choose(state);
+}
+
 namespace native {
 template <class native_type,
           class gpu_comm_impl,
@@ -114,7 +145,12 @@ public:
               send_buf(send_buf),
               dtype(dtype_in),
               device_stream(stream),
-              ctx(in_ctx) {}
+              ctx(in_ctx),
+              entry_state(gpu_entry_state::initial) {
+        // TODO: remove once all the child entries are refactored to not
+        // use fence field directly
+        fence = get_fence();
+    }
 
     virtual ~base_gpu_entry() {}
 
@@ -124,14 +160,15 @@ public:
             //TODO make check, that device_stream belong to the device
             auto queue_prop = ccl_device::get_default_queue_desc();
             auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
-            fence = device.get_fence(cmd_queue, ctx).get();
+
+            auto fence = parent_communicator->get_fence(get_queue(), get_ctx());
 
             ENTRY_LOG_DEBUG("start base entry initialization, ctx: ",
                             ctx.get(),
                             ", queue: ",
                             cmd_queue.get(),
                             ", fence: ",
-                            fence);
+                            fence.get());
         }
         //else
         //{
@@ -171,56 +208,6 @@ public:
 
     bool submit_for_execution() {
         ready_to_exec = finalize_entry();
-        if (ready_to_exec) {
-            //TODO L0 workaround
-            //if(std::is_same<gpu_comm_impl, ccl_gpu_comm>::value)
-            if (gpu_comm_impl::type_idx() == ccl_gpu_comm::type_idx() or
-                gpu_comm_impl::type_idx() == ccl_ipc_source_gpu_comm<ccl_gpu_comm>::type_idx()) {
-                ccl_device &device = parent_communicator->get_device();
-                auto queue_prop = ccl_device::get_default_queue_desc();
-                auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
-                auto &cmd_list = device.get_cmd_list(ctx);
-                ENTRY_LOG_DEBUG("Start submit for execution: main device: ",
-                                parent_communicator->to_string(),
-                                ", queue: ",
-                                cmd_queue.get(),
-                                ", list: ",
-                                cmd_list.get());
-                if (group_id == ccl::group_split_type::cluster) {
-                    //auto c = ccl::detail::environment::instance().create_communicator();
-                    //(void)c;
-                    //if(c->rank() == 0)
-                    {
-                        // Execute command list in command queue
-                        //TODO SPECIAL FOR VIRTUAL
-                        /*
-                    if(std::is_same<gpu_comm, ccl_virtual_gpu_comm>::value)
-                    {
-                        queue_prop.ordinal = parent_communicator->get_rank(); //TODO SPECIAL FOR VIRTUAL
-                    }
-                    queue_prop.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;*/
-
-                        ze_result_t ret = zeCommandQueueExecuteCommandLists(
-                            cmd_queue.get(), 1, cmd_list.get_ptr(), fence);
-                        if (ret != ZE_RESULT_SUCCESS) {
-                            throw ccl::exception(
-                                std::string("cannot execute command list, error: ") +
-                                std::to_string(ret));
-                        }
-                    }
-                }
-                else {
-                    /*-S-
-                    ze_result_t ret = zeCommandQueueExecuteCommandLists(
-                        cmd_queue.get(), 1, cmd_list.get_ptr(), fence);
-                    if (ret != ZE_RESULT_SUCCESS) {
-                        throw ccl::exception(std::string("cannot execute command list, error: ") +
-                                             std::to_string(ret));
-                    }
-                    */
-                }
-            }
-        }
         ENTRY_LOG_TRACE("submission result: ", ready_to_exec);
         return ready_to_exec;
     }
@@ -236,48 +223,22 @@ public:
             auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
 
             ENTRY_LOG_TRACE(" waiting for finished execution, queue: ", cmd_queue.get());
-            /* TODO fence!
-            ze_result_t ret = zeCommandQueueSynchronize(cmd_queue.handle,
-                                                          std::numeric_limits<uint32_t>::max());*/
-            ze_result_t ret = zeFenceQueryStatus(fence);
+
+            ze_result_t ret = get_fence_impl().query_status();
             ENTRY_LOG_TRACE(
                 "Fence query status: ", native::to_string(ret), ", queue: ", cmd_queue.get());
-            if (ret != ZE_RESULT_SUCCESS) {
-                if (ret != ZE_RESULT_NOT_READY) {
-                    //TODO L0 workaround: Virtual Device may execute this part before fence actually queued
-                    //Therefore, ZE_RESULT_ERROR_INVALID_ARGUMENT is normal for virtual device, but not for real
-                    if (gpu_comm_impl::type_idx() == ccl_gpu_comm::type_idx() or
-                        gpu_comm_impl::type_idx() ==
-                            ccl_ipc_source_gpu_comm<ccl_gpu_comm>::type_idx()) {
-                        if (group_id == ccl::group_split_type::cluster) {
-                            // TODO: implement process communicator case
-                            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
-                                                 "TODO: implement process communicator case");
-                            // auto c = ccl::detail::environment::instance().create_communicator();
-                            // if (c.rank() == 0) {
-                            // throw ccl::exception(
-                            //     std::string("cannot sync queue from real device, error: ") +
-                            //     native::to_string(ret));
-                            // }
-                        }
-                        else {
-                            throw ccl::exception(
-                                std::string("cannot sync queue from real device, error: ") +
-                                native::to_string(ret));
-                        }
-                    }
-                    else {
-                        if (ret != ZE_RESULT_ERROR_INVALID_ARGUMENT) {
-                            throw ccl::exception(
-                                std::string("cannot sync queue from virtual device, error: ") +
-                                native::to_string(ret));
-                        }
-                    }
-                }
-            }
-            else {
+            if (ret == ZE_RESULT_SUCCESS) {
+                this->set_state(gpu_entry_state::completed);
+
+                // Once all the ranks in the group got the notification, reset the state for further launches
+                reset_state();
+
                 status = ccl_sched_entry_status_complete;
                 ENTRY_LOG_DEBUG(" Completed on queue: ", cmd_queue.get());
+            }
+            else if (ret == ZE_RESULT_NOT_READY) {
+                // Just return in case if the kernel is not ready yet, will check again on the next iteration
+                return;
             }
         }
     }
@@ -286,14 +247,25 @@ public:
         return class_name();
     }
 
+    ccl_device::device_queue &get_queue() const {
+        ccl_device &device = parent_communicator->get_device();
+        return device.get_cmd_queue(ccl_device::get_default_queue_desc(), ctx);
+    }
+
     ze_fence_handle_t get_fence() {
-        return fence;
+        return get_fence_impl().get();
     }
 
 protected:
     virtual bool finalize_entry() = 0;
     virtual void dump_detail(std::stringstream &str) const override {
         ccl_logger::format(str, "{", name(), ", addr: ", comm_addr.to_string(), "}");
+    }
+
+    void reset_state() {
+        // Reset the state of the used handles
+        get_fence_impl().reset();
+        parent_communicator->get_cmd_list(get_ctx()).reset();
     }
 
 protected:
@@ -345,6 +317,20 @@ protected:
     // GPU
     bool ready_to_exec = false;
     ze_fence_handle_t fence;
+
+    auto get_fence_impl() -> decltype(parent_communicator->get_fence(get_queue(), get_ctx())) {
+        return parent_communicator->get_fence(get_queue(), get_ctx());
+    }
+
+    void set_state(gpu_entry_state new_state) noexcept {
+        ENTRY_LOG_DEBUG(
+            "switching entry state from ", to_string(entry_state), " to ", to_string(new_state));
+        entry_state = new_state;
+    }
+
+    gpu_entry_state get_state() const noexcept {
+        return entry_state;
+    }
 
     //TODO
     ze_group_count_t launch_args = { 1, 1, 1 };
@@ -501,6 +487,8 @@ protected:
 
 private:
     ccl_driver_context_ptr ctx;
+    // Internal gpu entry state to keep track of kernel status, it's not directly related to status field
+    gpu_entry_state entry_state;
 };
 
 } // namespace native

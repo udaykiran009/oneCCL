@@ -79,6 +79,11 @@ public:
         return { "virtual module" };
     }
 
+    cmd_list_proxy get_cmd_list(std::shared_ptr<ccl_context> ctx);
+
+    fence_proxy get_fence(const ccl_device::device_queue& cmd_queue,
+                          std::shared_ptr<ccl_context> ctx);
+
 private:
     ccl_gpu_comm& real_gpu_comm;
     supported_modules registered_modules;

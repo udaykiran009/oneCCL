@@ -35,6 +35,7 @@ list (APPEND EXTENSIONS_SRC
                     common/comm/l0/comm_context.cpp
                     common/comm/l0/comm_context_storage.cpp
 
+                    common/comm/l0/devices/ccl_gpu_base_comm.cpp
                     common/comm/l0/devices/ccl_gpu_comm.cpp
                     common/comm/l0/devices/ccl_virtual_gpu_comm.cpp
                     common/comm/l0/devices/ccl_ipc_gpu_comm.cpp

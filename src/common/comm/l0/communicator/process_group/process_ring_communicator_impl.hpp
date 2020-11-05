@@ -8,6 +8,8 @@
 #include "common/comm/l0/scheduler/allied_process_group_scheduler.hpp"
 #include "common/event/impls/gpu_event.hpp"
 
+#include "sched/entry/l0/l0_allreduce_typed_entry.hpp"
+
 /* allgatherv */
 template <class buffer_type>
 ccl::event process_ring_communicator::allgatherv_impl(const buffer_type* send_buf,
