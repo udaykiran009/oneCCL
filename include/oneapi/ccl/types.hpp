@@ -18,6 +18,8 @@
 
 namespace ccl {
 
+namespace v1 {
+
 /**
  * Supported reduction operations
  */
@@ -53,31 +55,6 @@ enum class datatype : int {
     last_predefined = bfloat16
 };
 
-string_class to_string(const ccl::datatype& dt);
-
-inline std::ostream& operator<<(std::ostream& os, const ccl::datatype& dt) {
-    os << ccl::to_string(dt);
-    return os;
-}
-
-/**
- * Sparse coalesce modes
- * 
- * Use this variable to set sparse_allreduce coalescing mode:
- * regular        - run regular coalesce funtion;
- * disable        - disables coalesce function in sparse_allreduce,
- *                  allgathered data is returned;
- * keep_precision - on every local reduce bf16 data is converted to fp32,
- *                  reduced and then converted back to bf16.
- */
-enum class sparse_coalesce_mode : int {
-    regular = 0,
-    disable,
-    keep_precision,
-
-    last_value
-};
-
 /**
  * Supported CL backend types
  */
@@ -89,6 +66,12 @@ enum class cl_backend_type : int {
 
     last_value
 };
+
+} // namespace v1
+
+using v1::reduction;
+using v1::datatype;
+using v1::cl_backend_type;
 
 /**
  * Type traits, which describes how-to types would be interpretered by ccl API
@@ -142,6 +125,24 @@ struct ccl_empty_attr {
 
 namespace preview {
 
+/**
+ * Sparse coalesce modes
+ * 
+ * Use this variable to set sparse_allreduce coalescing mode:
+ * regular        - run regular coalesce funtion;
+ * disable        - disables coalesce function in sparse_allreduce,
+ *                  allgathered data is returned;
+ * keep_precision - on every local reduce bf16 data is converted to fp32,
+ *                  reduced and then converted back to bf16.
+ */
+enum class sparse_coalesce_mode : int {
+    regular = 0,
+    disable,
+    keep_precision,
+
+    last_value
+};
+
 /* idx_buf, idx_count, idx_dtype, val_buf, val_count, val_dtype, user_context */
 typedef void (*sparse_allreduce_completion_fn)(const void*,
                                                size_t,
@@ -166,6 +167,7 @@ using v1::fn_context;
 using v1::reduction_fn;
 using v1::ccl_empty_attr;
 
+using preview::sparse_coalesce_mode;
 using preview::sparse_allreduce_completion_fn;
 using preview::sparse_allreduce_alloc_fn;
 

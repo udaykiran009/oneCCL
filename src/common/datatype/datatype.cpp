@@ -5,6 +5,26 @@
 #include "common/utils/enums.hpp"
 #include "exec/exec.hpp"
 
+namespace ccl {
+using datatype_str_enum =
+    utils::enum_to_str<utils::enum_to_underlying(datatype::last_predefined) + 1>;
+string_class to_string(const datatype& dt) {
+    return datatype_str_enum({ "INT8",
+                               "UINT8",
+                               "INT16",
+                               "UINT16",
+                               "INT32",
+                               "UINT32",
+                               "INT64",
+                               "UINT64",
+                               "FLOAT16",
+                               "FLOAT32",
+                               "FLOAT64",
+                               "BFLOAT16" })
+        .choose(dt, "CUSTOM_TYPE");
+}
+} // namespace ccl
+
 ccl_datatype ccl_datatype_int8;
 
 ccl::datatype& operator++(ccl::datatype& d) {
@@ -18,6 +38,25 @@ ccl::datatype operator++(ccl::datatype& d, int) {
     ++d;
     return tmp;
 }
+
+std::ostream& operator<<(std::ostream& os, const ccl::datatype& dt) {
+    os << ccl::to_string(dt);
+    return os;
+}
+
+// CCL_API
+// std::string to_string(const bfloat16& v) {
+//     std::stringstream ss;
+//     ss << "bf16::data " << v.data;
+//     return ss.str();
+// }
+
+// CCL_API
+// std::string to_string(const float16& v) {
+//     std::stringstream ss;
+//     ss << "fp16::data " << v.data;
+//     return ss.str();
+// }
 
 ccl_datatype::ccl_datatype(ccl::datatype idx, size_t size) : m_idx(idx), m_size(size) {
     CCL_THROW_IF_NOT(m_size > 0, "unexpected datatype size ", m_size);

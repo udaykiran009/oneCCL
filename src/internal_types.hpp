@@ -33,4 +33,15 @@ typedef void (*epilogue_fn)(const void*,
                             ccl::datatype,
                             const ccl::fn_context*);
 
+/**
+ * Supported device topology type
+ */
+enum device_topology_type : int {
+    undetermined = -1,
+    ring,
+    a2a,
+
+    last_class_value
+};
+
 } // namespace ccl

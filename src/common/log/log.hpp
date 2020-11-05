@@ -12,6 +12,8 @@
 #include "common/utils/spinlock.hpp"
 #include "common/utils/utils.hpp"
 
+std::ostream& operator<<(std::ostream& os, const ccl::datatype& dt);
+
 #define __FILENAME__ \
     ({ \
         const char* ptr = strrchr(__FILE__, '/'); \

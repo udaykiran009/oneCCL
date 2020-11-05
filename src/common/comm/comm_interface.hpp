@@ -1,4 +1,5 @@
 #pragma once
+
 #include "oneapi/ccl/types.hpp"
 #include "oneapi/ccl/type_traits.hpp"
 #include "oneapi/ccl/types_policy.hpp"
@@ -14,6 +15,7 @@
 
 #include "common/comm/compiler_comm_interface_dispatcher.hpp"
 #include "common/comm/l0/comm_context_id.hpp"
+#include "internal_types.hpp"
 
 namespace native {
 struct ccl_device;
