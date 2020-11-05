@@ -77,7 +77,7 @@ int pmi_listener::collect_sock_addr(std::shared_ptr<helper> h) {
     }
 
     server_addresses = (struct sockaddr_in*)malloc((num_listeners) * sizeof(struct sockaddr_in));
-    if(server_addresses == NULL) {
+    if (server_addresses == NULL) {
         printf("\nmemory allocation failed \n");
         res = -1;
         goto exit;
@@ -98,8 +98,7 @@ int pmi_listener::collect_sock_addr(std::shared_ptr<helper> h) {
             continue;
         }
 
-        if((server_addresses[i].sin_port = strtol(point_to_port, NULL, 10)) == 0)
-        {
+        if ((server_addresses[i].sin_port = strtol(point_to_port, NULL, 10)) == 0) {
             /* if a conversion error occurred, display a message and exit */
             if (errno == EINVAL) {
                 printf("\nconversion error occurred from: %hu\n", server_addresses[i].sin_port);
@@ -109,7 +108,8 @@ int pmi_listener::collect_sock_addr(std::shared_ptr<helper> h) {
 
             /* if the value provided was out of range, display a warning message */
             if (errno == ERANGE) {
-                printf("\nthe value provided was out of range, value: %hu\n", server_addresses[i].sin_port);
+                printf("\nthe value provided was out of range, value: %hu\n",
+                       server_addresses[i].sin_port);
                 res = -1;
                 goto exit;
             }

@@ -30,7 +30,6 @@ void init(const init_attr& attr = default_init_attr);
  */
 library_version get_library_version();
 
-
 /******************** DATATYPE ********************/
 
 /**
@@ -62,7 +61,6 @@ void deregister_datatype(datatype dtype);
  */
 size_t get_datatype_size(datatype dtype);
 
-
 /******************** KVS ********************/
 
 template <class... attr_value_pair_t>
@@ -88,7 +86,6 @@ shared_ptr_class<kvs> create_main_kvs(const kvs_attr& attr = default_kvs_attr);
 shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr,
                                  const kvs_attr& attr = default_kvs_attr);
 
-
 /******************** DEVICE ********************/
 
 /**
@@ -104,7 +101,6 @@ device create_device(native_device_type&& native_device) {
 }
 
 device create_device();
-
 
 /******************** CONTEXT ********************/
 
@@ -122,7 +118,6 @@ context create_context(native_context_type&& native_context) {
 
 context create_context();
 
-
 /******************** EVENT ********************/
 
 /**
@@ -134,7 +129,6 @@ template <class event_type, class = typename std::enable_if<is_event_supported<e
 event create_event(event_type& native_event) {
     return detail::environment::instance().create_event(native_event);
 }
-
 
 /******************** STREAM ********************/
 
@@ -150,7 +144,6 @@ stream create_stream(native_stream_type& native_stream) {
 }
 
 stream create_stream();
-
 
 /******************** COMMUNICATOR ********************/
 
@@ -290,9 +283,7 @@ vector_class<communicator> create_communicators(int size,
 
 } // namespace preview
 
-
 namespace v1 {
-
 
 /******************** OPERATION ********************/
 

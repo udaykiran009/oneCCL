@@ -80,15 +80,15 @@ void PMIU_printf(int print_flag, const char *fmt, ...) {
                 MPL_snprintf(filename, sizeof(filename), "testclient-%s.out", p);
                 logfile = fopen(filename, "w");
                 if (logfile == NULL) {
-                   printf("Error opening file %s \n", strerror(errno));
-                   return;
-               }
+                    printf("Error opening file %s \n", strerror(errno));
+                    return;
+                }
             }
             else {
                 logfile = fopen("testserver.out", "w");
                 if (logfile == NULL) {
-                   printf("Error opening file %s \n", strerror(errno));
-                   return;
+                    printf("Error opening file %s \n", strerror(errno));
+                    return;
                 }
             }
         }

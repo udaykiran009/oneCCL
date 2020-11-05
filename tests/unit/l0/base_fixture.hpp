@@ -32,8 +32,8 @@ std::string to_string(const bfloat16& v) {
     ss << "bf16::data " << v.data;
     return ss.str();
 }
-}
-}
+} // namespace v1
+} // namespace ccl
 
 #define DECLARE_KERNEL_TYPE(COLL) \
     template <class T> \

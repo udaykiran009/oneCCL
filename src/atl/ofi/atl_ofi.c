@@ -479,7 +479,7 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
 
         fi_addr_t* table;
         table = (fi_addr_t*)calloc(1, proc_count * sizeof(fi_addr_t));
-        if(table == NULL) {
+        if (table == NULL) {
             ATL_OFI_DEBUG_PRINT("Memory allocaion failed");
             ret = ATL_STATUS_FAILURE;
             goto err_ep_names;
@@ -897,7 +897,7 @@ static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t&
 
     if (prov_env && strlen(prov_env)) {
         ofi_ctx->prov_env_copy = (char*)calloc(strlen(prov_env) + 1, sizeof(char));
-        if(ofi_ctx->prov_env_copy == NULL) {
+        if (ofi_ctx->prov_env_copy == NULL) {
             ATL_OFI_DEBUG_PRINT("Memory allocaion failed");
             return ATL_STATUS_FAILURE;
         }
@@ -917,7 +917,7 @@ static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t&
                                         1; /* for terminating null symbol */
 
             char* prov_env_copy = (char*)calloc(prov_env_copy_size, sizeof(char));
-            if(prov_env_copy == NULL) {
+            if (prov_env_copy == NULL) {
                 ATL_OFI_DEBUG_PRINT("Memory allocaion failed");
                 return ATL_STATUS_FAILURE;
             }
