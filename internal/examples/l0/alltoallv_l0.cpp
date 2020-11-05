@@ -74,10 +74,6 @@ void user_thread_idx(size_t thread_idx,
         ccl::communicator::device_type dev = comm.get_device().get_native();
         int rank = comm.rank();
 
-        // create comm split attr
-        auto device_spilt_attr = ccl::create_comm_split_attr();
-        (void)device_spilt_attr;
-
         /* TODO: it is a temporary change. In the previous code,
          * there is ccl::create_stream() seg fault issue. NEED TO FIX THAT.
          */

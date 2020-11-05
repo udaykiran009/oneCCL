@@ -10,7 +10,6 @@ std::ostream& operator<<(std::ostream& out, const ccl::device_index_type& index)
 
 namespace ccl {
 
-CCL_API
 std::string to_string(const device_index_type& device_id) {
     std::stringstream ss;
     ss << "[" << std::get<ccl::device_index_enum::driver_index_id>(device_id) << ":"
@@ -28,7 +27,6 @@ std::string to_string(const device_index_type& device_id) {
     return ss.str();
 }
 
-CCL_API
 device_index_type from_string(const std::string& device_id_str) {
     std::string::size_type from_pos = device_id_str.find('[');
     if (from_pos == std::string::npos) {

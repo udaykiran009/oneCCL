@@ -116,7 +116,7 @@ communicator environment::create_single_device_communicator(
         std::shared_ptr<atl_wrapper>(new atl_wrapper(comm_size, { rank }, kvs_wrapper));
 
     comm_split_attr attr =
-        create_comm_split_attr(attr_val<comm_split_attr_id::group>(group_split_type::undetermined));
+        create_comm_split_attr(attr_val<comm_split_attr_id::group>(split_group::cluster/*group_split_type::undetermined*/));
     ccl::communicator_interface_ptr impl = ccl::communicator_interface::create_communicator_impl(
         device, context, rank, comm_size, attr, atl);
 

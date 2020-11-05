@@ -61,7 +61,7 @@ std::string get_preferred_gpu_platform_name() {
     std::string result;
 
     if (getenv("SYCL_BE") == nullptr) {
-        backend = "Level-Zero";
+        backend = "OpenCL";
     }
     else if (getenv("SYCL_BE") != nullptr) {
         if (std::strcmp(getenv("SYCL_BE"), "PI_LEVEL_ZERO") == 0) {

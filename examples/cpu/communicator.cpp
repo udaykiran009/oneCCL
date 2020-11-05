@@ -63,7 +63,7 @@ void check_comm_split_by_color(ccl::communicator& comm) {
     for (int split_by = 2; split_by <= comm.size(); split_by *= 2) {
         int color = comm.rank() % split_by;
         auto attr =
-            ccl::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(color));
+            ccl::preview::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(color));
         auto new_comm = comm.split(attr);
 
         int comm_size = comm.size();
@@ -105,7 +105,7 @@ void check_comm_split_identical(ccl::communicator& comm) {
     for (int split_by = 2; split_by <= comm.size(); split_by *= 2) {
         int color = comm.rank() % split_by;
         auto attr =
-            ccl::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(color));
+            ccl::preview::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(color));
         auto new_comm1 = comm.split(attr);
         auto new_comm2 = comm.split(attr);
 
@@ -136,7 +136,7 @@ void check_comm_split_identical(ccl::communicator& comm) {
 }
 
 void check_comm_split_identical_color(ccl::communicator& comm) {
-    auto attr = ccl::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(123));
+    auto attr = ccl::preview::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::color>(123));
     auto new_comm = comm.split(attr);
 
     if (new_comm.size() != comm.size()) {

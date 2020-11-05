@@ -17,13 +17,7 @@ enum class comm_split_attr_id : int {
     last_value
 };
 
-enum class group_split_type : int { // TODO fill in this enum with the actual values
-    undetermined = -1,
-    //device,
-    thread,
-    process,
-    //socket,
-    //node,
+enum class split_group : int {
     cluster,
 
     last_value
@@ -32,6 +26,6 @@ enum class group_split_type : int { // TODO fill in this enum with the actual va
 } // namespace v1
 
 using v1::comm_split_attr_id;
-using v1::group_split_type;
+using v1::split_group;
 
 } // namespace ccl

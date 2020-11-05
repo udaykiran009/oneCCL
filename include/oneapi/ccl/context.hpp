@@ -96,8 +96,8 @@ private:
 
 template <context_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> detail::attr_value_tripple<context_attr_id, t, value_type> {
-    return detail::attr_value_tripple<context_attr_id, t, value_type>(v);
+    -> detail::attr_value_triple<context_attr_id, t, value_type> {
+    return detail::attr_value_triple<context_attr_id, t, value_type>(v);
 }
 
 } // namespace v1

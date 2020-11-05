@@ -118,17 +118,27 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
     ccl::device_topology_type preferred_topology_class = ccl::device_topology_type::ring;
     ccl::group_split_type preferred_topology_group = ccl::group_split_type::process;
 
+    /* type from API */
+    ccl::split_group split_group = ccl::split_group::cluster;
+
     // read comm split attributes
     if (attr.is_valid<ccl::comm_split_attr_id::group>()) {
-        preferred_topology_group = attr.get<ccl::comm_split_attr_id::group>();
+        split_group = attr.get<ccl::comm_split_attr_id::group>();
         if (attr.is_valid<ccl::comm_split_attr_id::color>()) {
             throw ccl::exception(std::string(
                 "Invalid `comm_split_attr`: both `color` and `group` set. Only one is supported"));
         }
+        if (split_group != ccl::split_group::cluster)
+            throw ccl::exception("unexepcted split_group");
     }
     else if (attr.is_valid<ccl::comm_split_attr_id::color>()) {
         throw ccl::exception(std::string(__FUNCTION__) + " - not implemented for 'color'");
     }
+
+#ifdef CCL_ENABLE_SYCL
+    /* TODO: tmp code to select right branch in switch-case */
+    preferred_topology_group = ccl::group_split_type::undetermined;
+#endif
 
     // TODO creation host communicator from device
     // if (device is host ?)

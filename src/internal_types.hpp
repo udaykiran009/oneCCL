@@ -4,6 +4,29 @@
 
 namespace ccl {
 
+enum class group_split_type : int { // TODO fill in this enum with the actual values
+    undetermined = -1,
+    //device,
+    thread,
+    process,
+    //socket,
+    //node,
+    cluster,
+
+    last_value
+};
+
+/**
+ * Supported device topology type
+ */
+enum device_topology_type : int {
+    undetermined = -1,
+    ring,
+    a2a,
+
+    last_class_value
+};
+
 // TODO: refactor core code and remove this enum?
 enum status : int {
     success = 0,
@@ -32,16 +55,5 @@ typedef void (*epilogue_fn)(const void*,
                             size_t*,
                             ccl::datatype,
                             const ccl::fn_context*);
-
-/**
- * Supported device topology type
- */
-enum device_topology_type : int {
-    undetermined = -1,
-    ring,
-    a2a,
-
-    last_class_value
-};
 
 } // namespace ccl

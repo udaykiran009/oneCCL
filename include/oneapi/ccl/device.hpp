@@ -95,8 +95,8 @@ private:
 };
 
 template <device_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<device_attr_id, t, value_type> {
-    return detail::attr_value_tripple<device_attr_id, t, value_type>(v);
+constexpr auto attr_val(value_type v) -> detail::attr_value_triple<device_attr_id, t, value_type> {
+    return detail::attr_value_triple<device_attr_id, t, value_type>(v);
 }
 
 template <class DeviceType>

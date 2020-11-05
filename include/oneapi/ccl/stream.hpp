@@ -119,8 +119,8 @@ private:
 extern stream default_stream;
 
 template <stream_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<stream_attr_id, t, value_type> {
-    return detail::attr_value_tripple<stream_attr_id, t, value_type>(v);
+constexpr auto attr_val(value_type v) -> detail::attr_value_triple<stream_attr_id, t, value_type> {
+    return detail::attr_value_triple<stream_attr_id, t, value_type>(v);
 }
 
 } // namespace v1

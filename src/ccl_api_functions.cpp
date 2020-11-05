@@ -167,9 +167,11 @@ communicator create_single_device_communicator(const int comm_size,
 //     return return detail::environment::instance().create_single_device_communicator(world_size, rank, cl::sycl::device(selector), kvs);
 // }
 
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+} // namespace v1
 
-vector_class<communicator> split_device_communicators(
+namespace preview {
+
+vector_class<communicator> split_communicators(
     const vector_class<pair_class<communicator, comm_split_attr>>& attrs) {
     // TODO not implemented
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
@@ -177,12 +179,6 @@ vector_class<communicator> split_device_communicators(
     // return detail::environment::instance().split_device_communicators(attrs);
     return {};
 }
-
-#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
-
-} // namespace v1
-
-namespace preview {
 
 /* communicator */
 communicator CCL_API create_communicator(const comm_attr& attr) {

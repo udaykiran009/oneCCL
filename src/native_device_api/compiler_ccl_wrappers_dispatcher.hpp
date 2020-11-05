@@ -24,7 +24,7 @@ template <class DeviceType,
           typename std::enable_if<not std::is_same<typename std::remove_cv<DeviceType>::type,
                                                    ccl::device_index_type>::value,
                                   int>::type = 0>
-CCL_API ccl_device_driver::device_ptr get_runtime_device(const DeviceType& device) {
+/*CCL_API*/ ccl_device_driver::device_ptr get_runtime_device(const DeviceType& device) {
     static_assert(std::is_same<typename ccl::unified_device_type::ccl_native_t, DeviceType>::value,
                   "Unsupported 'DeviceType'");
     size_t driver_idx = 0; // limitation for OPENCL/SYCL
@@ -41,12 +41,12 @@ template <class DeviceType,
           typename std::enable_if<std::is_same<typename std::remove_cv<DeviceType>::type,
                                                ccl::device_index_type>::value,
                                   int>::type = 0>
-CCL_API ccl_device_driver::device_ptr get_runtime_device(const DeviceType& device) {
+/*CCL_API*/ ccl_device_driver::device_ptr get_runtime_device(const DeviceType& device) {
     return detail::get_runtime_device_impl(device);
 }
 
 template <class ContextType>
-CCL_API ccl_driver_context_ptr get_runtime_context(const ContextType& ctx) {
+/*CCL_API*/ ccl_driver_context_ptr get_runtime_context(const ContextType& ctx) {
 #ifdef CCL_ENABLE_SYCL
     static_assert(
         std::is_same<typename std::remove_cv<ContextType>::type, cl::sycl::context>::value,

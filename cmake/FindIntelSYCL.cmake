@@ -26,9 +26,11 @@ endif()
 
 set(OPENCLROOT "${dpcpp_root_hints}/include/sycl/CL/")
 
-find_package(L0)
-if(LevelZero_FOUND)
-    set(COMPUTE_RUNTIME_NAME ze_loader)
+if(TRY_ENABLE_SYCL_L0)
+    find_package(L0)
+    if(LevelZero_FOUND)
+        set(COMPUTE_RUNTIME_NAME ze_loader)
+    endif()
 endif()
 
 if (NOT COMPUTE_RUNTIME_NAME)

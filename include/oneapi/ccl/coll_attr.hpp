@@ -562,55 +562,55 @@ extern barrier_attr default_barrier_attr;
  */
 template <allgatherv_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> detail::attr_value_tripple<allgatherv_attr_id, t, value_type> {
-    return detail::attr_value_tripple<allgatherv_attr_id, t, value_type>(v);
+    -> detail::attr_value_triple<allgatherv_attr_id, t, value_type> {
+    return detail::attr_value_triple<allgatherv_attr_id, t, value_type>(v);
 }
 
 template <allreduce_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> detail::attr_value_tripple<allreduce_attr_id, t, value_type> {
-    return detail::attr_value_tripple<allreduce_attr_id, t, value_type>(v);
+    -> detail::attr_value_triple<allreduce_attr_id, t, value_type> {
+    return detail::attr_value_triple<allreduce_attr_id, t, value_type>(v);
 }
 
 template <alltoall_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> detail::attr_value_tripple<alltoall_attr_id, t, value_type> {
-    return detail::attr_value_tripple<alltoall_attr_id, t, value_type>(v);
+    -> detail::attr_value_triple<alltoall_attr_id, t, value_type> {
+    return detail::attr_value_triple<alltoall_attr_id, t, value_type>(v);
 }
 
 template <alltoallv_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> detail::attr_value_tripple<alltoallv_attr_id, t, value_type> {
-    return detail::attr_value_tripple<alltoallv_attr_id, t, value_type>(v);
+    -> detail::attr_value_triple<alltoallv_attr_id, t, value_type> {
+    return detail::attr_value_triple<alltoallv_attr_id, t, value_type>(v);
 }
 
 template <broadcast_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> detail::attr_value_tripple<broadcast_attr_id, t, value_type> {
-    return detail::attr_value_tripple<broadcast_attr_id, t, value_type>(v);
+    -> detail::attr_value_triple<broadcast_attr_id, t, value_type> {
+    return detail::attr_value_triple<broadcast_attr_id, t, value_type>(v);
 }
 
 template <reduce_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<reduce_attr_id, t, value_type> {
-    return detail::attr_value_tripple<reduce_attr_id, t, value_type>(v);
+constexpr auto attr_val(value_type v) -> detail::attr_value_triple<reduce_attr_id, t, value_type> {
+    return detail::attr_value_triple<reduce_attr_id, t, value_type>(v);
 }
 
 template <reduce_scatter_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> detail::attr_value_tripple<reduce_scatter_attr_id, t, value_type> {
-    return detail::attr_value_tripple<reduce_scatter_attr_id, t, value_type>(v);
+    -> detail::attr_value_triple<reduce_scatter_attr_id, t, value_type> {
+    return detail::attr_value_triple<reduce_scatter_attr_id, t, value_type>(v);
 }
 
 template <sparse_allreduce_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> detail::attr_value_tripple<sparse_allreduce_attr_id, t, value_type> {
-    return detail::attr_value_tripple<sparse_allreduce_attr_id, t, value_type>(v);
+    -> detail::attr_value_triple<sparse_allreduce_attr_id, t, value_type> {
+    return detail::attr_value_triple<sparse_allreduce_attr_id, t, value_type>(v);
 }
 
 template <operation_attr_id t, class value_type>
 constexpr auto attr_val(value_type v)
-    -> detail::attr_value_tripple<operation_attr_id, t, value_type> {
-    return detail::attr_value_tripple<operation_attr_id, t, value_type>(v);
+    -> detail::attr_value_triple<operation_attr_id, t, value_type> {
+    return detail::attr_value_triple<operation_attr_id, t, value_type>(v);
 }
 
 /* TODO temporary function for UT compilation: would be part of detail::environment in final*/

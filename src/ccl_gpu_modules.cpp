@@ -8,7 +8,7 @@
 #include "common/comm/l0/device_group_routing_schema.hpp"
 #include "coll/algorithms/algorithms_enum.hpp"
 
-ccl::status CCL_API register_gpu_module_source(const char* path,
+ccl::status register_gpu_module_source(const char* path,
                                                ccl::device_topology_type topology_class,
                                                ccl_coll_type type) {
     ccl::device_topology_type t_class = static_cast<ccl::device_topology_type>(topology_class);
