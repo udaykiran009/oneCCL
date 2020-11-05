@@ -1,4 +1,5 @@
 #pragma once
+
 #include "oneapi/ccl/types.hpp"
 
 #define CL_BACKEND_TYPE ccl::cl_backend_type::dpcpp_sycl_l0

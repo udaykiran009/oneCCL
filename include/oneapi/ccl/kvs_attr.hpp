@@ -70,8 +70,8 @@ private:
 extern kvs_attr default_kvs_attr;
 
 template <kvs_attr_id t, class value_type>
-constexpr auto attr_val(value_type v) -> detail::attr_value_tripple<kvs_attr_id, t, value_type> {
-    return detail::attr_value_tripple<kvs_attr_id, t, value_type>(v);
+constexpr auto attr_val(value_type v) -> detail::attr_value_triple<kvs_attr_id, t, value_type> {
+    return detail::attr_value_triple<kvs_attr_id, t, value_type>(v);
 }
 
 } // namespace v1

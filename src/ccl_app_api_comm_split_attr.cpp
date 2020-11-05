@@ -56,7 +56,7 @@ API_FORCE_INSTANTIATION(comm_split_attr,
                         detail::ccl_api_type_attr_traits)
 API_FORCE_INSTANTIATION(comm_split_attr,
                         comm_split_attr_id::group,
-                        group_split_type,
+                        split_group,
                         detail::ccl_api_type_attr_traits)
 API_FORCE_INSTANTIATION(comm_split_attr,
                         comm_split_attr_id::version,

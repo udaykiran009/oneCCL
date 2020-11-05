@@ -20,7 +20,7 @@ struct ccl_api_type_attr_traits<comm_split_attr_id, comm_split_attr_id::color> {
 
 template <>
 struct ccl_api_type_attr_traits<comm_split_attr_id, comm_split_attr_id::group> {
-    using type = group_split_type;
+    using type = split_group;
 };
 
 } // namespace detail

@@ -10,6 +10,10 @@ namespace v1 {
 
 /******************** INIT ********************/
 
+/**
+ * Creates an attribute object, which may used to control init operation
+ * @return an attribute object
+ */
 template <class... attr_value_pair_t>
 init_attr create_init_attr(attr_value_pair_t&&... avps) {
     return detail::environment::create_init_attr(std::forward<attr_value_pair_t>(avps)...);
@@ -17,6 +21,7 @@ init_attr create_init_attr(attr_value_pair_t&&... avps) {
 
 /**
  * Initializes the library. Optional for invocation.
+  * @param attr optional init attributes
  */
 void init(const init_attr& attr = default_init_attr);
 
@@ -25,10 +30,11 @@ void init(const init_attr& attr = default_init_attr);
  */
 library_version get_library_version();
 
+
 /******************** DATATYPE ********************/
 
 /**
- * Creates a datatype attribute object, which may used to register custom datatype
+ * Creates an attribute object, which may used to register custom datatype
  * @return an attribute object
  */
 template <class... attr_value_pair_t>
@@ -56,16 +62,19 @@ void deregister_datatype(datatype dtype);
  */
 size_t get_datatype_size(datatype dtype);
 
+
 /******************** KVS ********************/
 
 template <class... attr_value_pair_t>
 kvs_attr create_kvs_attr(attr_value_pair_t&&... avps) {
     return detail::environment::create_kvs_attr(std::forward<attr_value_pair_t>(avps)...);
 }
+
 /**
  * Creates a main key-value store.
  * It's address should be distributed using out of band communication mechanism
- * and be used to create key-value stores on other ranks.
+ * and be used to create key-value stores on other processes.
+ * @param attr optional kvs attributes
  * @return kvs object
  */
 shared_ptr_class<kvs> create_main_kvs(const kvs_attr& attr = default_kvs_attr);
@@ -73,10 +82,12 @@ shared_ptr_class<kvs> create_main_kvs(const kvs_attr& attr = default_kvs_attr);
 /**
  * Creates a new key-value store from main kvs address
  * @param addr address of main kvs
+ * @param attr optional kvs attributes
  * @return kvs object
  */
 shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr,
                                  const kvs_attr& attr = default_kvs_attr);
+
 
 /******************** DEVICE ********************/
 
@@ -85,8 +96,6 @@ shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr,
  * @param native_device the existing handle of device
  * @return device object
  */
-device create_device();
-
 template <class native_device_type,
           class = typename std::enable_if<is_device_supported<native_device_type>()>::type>
 device create_device(native_device_type&& native_device) {
@@ -94,21 +103,25 @@ device create_device(native_device_type&& native_device) {
         std::forward<native_device_type>(native_device));
 }
 
+device create_device();
+
+
 /******************** CONTEXT ********************/
 
 /**
- * Creates a new context from @native_device_contex_type
+ * Creates a new context from @native_contex_type
  * @param native_context the existing handle of context
  * @return context object
  */
-context create_context();
-
 template <class native_context_type,
           class = typename std::enable_if<is_context_supported<native_context_type>()>::type>
 context create_context(native_context_type&& native_context) {
     return detail::environment::instance().create_context(
         std::forward<native_context_type>(native_context));
 }
+
+context create_context();
+
 
 /******************** EVENT ********************/
 
@@ -122,17 +135,6 @@ event create_event(event_type& native_event) {
     return detail::environment::instance().create_event(native_event);
 }
 
-/**
- * Creates a new event from @event_handle_type
- * @param native_event_handle the existing handle of event
- * @param context the existing handle of context
- * @return event object
- */
-template <class event_handle_type,
-          class = typename std::enable_if<is_event_supported<event_handle_type>()>::type>
-event create_event(event_handle_type& native_event_handle, event::context_t& context) {
-    return detail::environment::instance().create_event(native_event_handle, context);
-}
 
 /******************** STREAM ********************/
 
@@ -141,27 +143,40 @@ event create_event(event_handle_type& native_event_handle, event::context_t& con
  * @param native_stream the existing handle of stream
  * @return stream object
  */
-stream create_stream();
-
 template <class native_stream_type,
           class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
 stream create_stream(native_stream_type& native_stream) {
     return detail::environment::instance().create_stream(native_stream);
 }
 
+stream create_stream();
+
+
 /******************** COMMUNICATOR ********************/
 
-template <class... attr_value_pair_t>
-comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) {
-    return detail::environment::create_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
-}
-
+/**
+ * Creates an attribute object, which may used to control create communicator operation
+ * @return an attribute object
+ */
 template <class... attr_value_pair_t>
 comm_attr create_comm_attr(attr_value_pair_t&&... avps) {
     return detail::environment::create_comm_attr(std::forward<attr_value_pair_t>(avps)...);
 }
 
 } // namespace v1
+
+namespace preview {
+
+/**
+ * Creates an attribute object, which may used to control split communicator operation
+ * @return an attribute object
+ */
+template <class... attr_value_pair_t>
+comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) {
+    return detail::environment::create_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
+}
+
+} // namespace preview
 
 namespace v1 {
 
@@ -180,6 +195,7 @@ communicator create_communicator(int size,
 /**
  * Creates a new communicators with user supplied size, ranks, local device-rank mapping and kvs.
  * @param size user-supplied total number of ranks
+ * @param device local device
  * @param devices user-supplied mapping of local ranks on devices
  * @param context context containing the devices
  * @param kvs key-value store for ranks wire-up
@@ -223,6 +239,8 @@ communicator create_communicator(int size,
 
     return std::move(comms[0]);
 }
+
+} // namespace v1
 
 namespace preview {
 
@@ -272,10 +290,14 @@ vector_class<communicator> create_communicators(int size,
 
 } // namespace preview
 
+
+namespace v1 {
+
+
 /******************** OPERATION ********************/
 
 /**
- * Creates an operation attribute object, which may used to customize communication operation
+ * Creates an attribute object, which may used to customize communication operation
  * @return an attribute object
  */
 template <class coll_attribute_type, class... attr_value_pair_t>
@@ -299,7 +321,7 @@ coll_attribute_type CCL_API create_operation_attr(attr_value_pair_t&&... avps) {
  * @param recv_counts array with the number of elements of type @c dtype to be received from each rank
  * @param dtype the datatype of elements in @c send_buf and @c recv_buf
  * @param comm the communicator for which the operation will be performed
- * @param stream an optional stream associated with the operation
+ * @param stream a stream associated with the operation
  * @param attr optional attributes to customize operation
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
@@ -446,7 +468,7 @@ event allgatherv(const BufferObjectType& send_buf,
  * @param dtype the datatype of elements in @c send_buf and @c recv_buf
  * @param rtype the type of the reduction operation to be applied
  * @param comm the communicator for which the operation will be performed
- * @param stream an optional stream associated with the operation
+ * @param stream a stream associated with the operation
  * @param attr optional attributes to customize operation
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
@@ -532,7 +554,7 @@ event allreduce(const BufferObjectType& send_buf,
  * @param count the number of elements of type @c dtype to be send to or to received from each rank
  * @param dtype the datatype of elements in @c send_buf and @c recv_buf
  * @param comm the communicator for which the operation will be performed
- * @param stream an optional stream associated with the operation
+ * @param stream a stream associated with the operation
  * @param attr optional attributes to customize operation
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
@@ -671,7 +693,7 @@ event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& se
  * @param recv_counts array with the number of elements of type @c dtype in receive blocks from each rank
  * @param dtype the datatype of elements in @c send_buf and @c recv_buf
  * @param comm the communicator for which the operation will be performed
- * @param stream an optional stream associated with the operation
+ * @param stream a stream associated with the operation
  * @param attr optional attributes to customize operation
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
@@ -815,7 +837,7 @@ event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& s
 
 /**
  * @param comm the communicator for which the operation will be performed
- * @param stream an optional stream associated with the operation
+ * @param stream a stream associated with the operation
  * @param attr optional attributes to customize operation
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
@@ -841,7 +863,7 @@ event barrier(const communicator& comm,
  * @param dtype the datatype of elements in @c buf
  * @param root the rank that broadcasts @c buf
  * @param comm the communicator for which the operation will be performed
- * @param stream an optional stream associated with the operation
+ * @param stream a stream associated with the operation
  * @param attr optional attributes to customize operation
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
@@ -919,7 +941,7 @@ event broadcast(BufferObjectType& buf,
  * @param rtype the type of the reduction operation to be applied
  * @param root the rank that gets the result of reduction
  * @param comm the communicator for which the operation will be performed
- * @param stream an optional stream associated with the operation
+ * @param stream a stream associated with the operation
  * @param attr optional attributes to customize operation
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
@@ -1007,7 +1029,7 @@ event reduce(const BufferObjectType& send_buf,
  * @param dtype the datatype of elements in @c send_buf and @c recv_buf
  * @param rtype the type of the reduction operation to be applied
  * @param comm the communicator for which the operation will be performed
- * @param stream an optional stream associated with the operation
+ * @param stream a stream associated with the operation
  * @param attr optional attributes to customize operation
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
@@ -1100,7 +1122,7 @@ namespace preview {
  * @param val_dtype the datatype of elements in @c send_val_buf and @c recv_val_buf
  * @param rtype the type of the reduction operation to be applied
  * @param comm the communicator for which the operation will be performed
- * @param stream an optional stream associated with the operation
+ * @param stream a stream associated with the operation
  * @param attr optional attributes to customize operation
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation

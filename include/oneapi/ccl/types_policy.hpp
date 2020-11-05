@@ -179,14 +179,14 @@ template <class attr, attr id>
 struct ccl_api_type_attr_traits {};
 
 template <class attrib_id, attrib_id attrId, class value_type>
-struct attr_value_tripple {
+struct attr_value_triple {
     using type_t = attrib_id;
     using value_t = value_type;
     static constexpr attrib_id idx() {
         return attrId;
     }
 
-    explicit attr_value_tripple(value_t val) : m_val(val) {}
+    explicit attr_value_triple(value_t val) : m_val(val) {}
     const value_type& val() {
         return m_val;
     }

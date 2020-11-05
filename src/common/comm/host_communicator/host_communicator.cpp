@@ -21,10 +21,12 @@
 
 namespace ccl {
 
-host_communicator::host_communicator() : comm_attr(ccl::create_comm_split_attr()) {}
+using ccl::preview::create_comm_split_attr;
+
+host_communicator::host_communicator() : comm_attr(create_comm_split_attr()) {}
 
 host_communicator::host_communicator(int size, shared_ptr_class<kvs_interface> kvs)
-        : comm_attr(ccl::create_comm_split_attr()),
+        : comm_attr(create_comm_split_attr()),
           comm_rank(0),
           comm_size(size) {
     if (size <= 0) {
@@ -33,7 +35,7 @@ host_communicator::host_communicator(int size, shared_ptr_class<kvs_interface> k
 }
 
 host_communicator::host_communicator(int size, int rank, shared_ptr_class<kvs_interface> kvs)
-        : comm_attr(ccl::create_comm_split_attr()),
+        : comm_attr(create_comm_split_attr()),
           comm_rank(rank),
           comm_size(size) {
     if (rank > size || size <= 0) {
@@ -51,7 +53,7 @@ host_communicator::host_communicator(int size, int rank, shared_ptr_class<kvs_in
 }
 
 host_communicator::host_communicator(std::shared_ptr<atl_wrapper> atl)
-        : comm_attr(ccl::create_comm_split_attr()),
+        : comm_attr(create_comm_split_attr()),
           comm_rank(atl->get_rank()),
           comm_size(atl->get_size()) {
     int rank = atl->get_rank();
@@ -71,7 +73,7 @@ host_communicator::host_communicator(std::shared_ptr<atl_wrapper> atl)
 
 host_communicator::host_communicator(std::shared_ptr<ccl_comm> impl)
         : comm_impl(impl),
-          comm_attr(ccl::create_comm_split_attr()),
+          comm_attr(create_comm_split_attr()),
           comm_rank(impl->rank()),
           comm_size(impl->size()) {}
 

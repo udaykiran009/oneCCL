@@ -43,30 +43,30 @@ TEST(comm_split_attr, comm_split_attr_color) {
 
 TEST(comm_split_attr, comm_split_attr_group) {
     auto attr = ccl::v1::default_comm_split_attr;
-    attr.set<ccl::v1::comm_split_attr_id::group>(ccl::v1::group_split_type::thread);
+    attr.set<ccl::v1::comm_split_attr_id::group>(ccl::v1::split_group::cluster);
     ASSERT_TRUE(attr.get<ccl::v1::comm_split_attr_id::version>().full != nullptr);
 
     ASSERT_TRUE(attr.is_valid<ccl::v1::comm_split_attr_id::group>());
-    ASSERT_EQ(attr.get<ccl::v1::comm_split_attr_id::group>(), ccl::v1::group_split_type::thread);
+    ASSERT_EQ(attr.get<ccl::v1::comm_split_attr_id::group>(), ccl::v1::split_group::cluster);
 
     auto old_value =
-        attr.set<ccl::v1::comm_split_attr_id::group>(ccl::v1::group_split_type::process);
+        attr.set<ccl::v1::comm_split_attr_id::group>(ccl::v1::split_group::last_value);
     ASSERT_TRUE(attr.is_valid<ccl::v1::comm_split_attr_id::group>());
-    ASSERT_EQ(attr.get<ccl::v1::comm_split_attr_id::group>(), ccl::v1::group_split_type::process);
-    ASSERT_EQ(old_value, ccl::v1::group_split_type::thread);
+    ASSERT_EQ(attr.get<ccl::v1::comm_split_attr_id::group>(), ccl::v1::split_group::last_value);
+    ASSERT_EQ(old_value, ccl::v1::split_group::cluster);
 }
 
 TEST(comm_split_attr, copy_on_write_comm_split_attr) {
     auto attr = ccl::v1::default_comm_split_attr;
-    attr.set<ccl::v1::comm_split_attr_id::group>(ccl::v1::group_split_type::thread);
+    attr.set<ccl::v1::comm_split_attr_id::group>(ccl::v1::split_group::cluster);
 
     auto original_inner_impl_ptr = attr.get_impl();
 
-    ASSERT_EQ(attr.get<ccl::v1::comm_split_attr_id::group>(), ccl::v1::group_split_type::thread);
+    ASSERT_EQ(attr.get<ccl::v1::comm_split_attr_id::group>(), ccl::v1::split_group::cluster);
 
     //set new val
-    attr.set<ccl::v1::comm_split_attr_id::group>(ccl::v1::group_split_type::process);
-    ASSERT_EQ(attr.get<ccl::v1::comm_split_attr_id::group>(), ccl::v1::group_split_type::process);
+    attr.set<ccl::v1::comm_split_attr_id::group>(ccl::v1::split_group::last_value);
+    ASSERT_EQ(attr.get<ccl::v1::comm_split_attr_id::group>(), ccl::v1::split_group::last_value);
 
     //make sure original impl is unchanged
     ASSERT_TRUE(original_inner_impl_ptr != attr.get_impl());
@@ -74,12 +74,12 @@ TEST(comm_split_attr, copy_on_write_comm_split_attr) {
                   ->get_attribute_value(
                       ccl::detail::ccl_api_type_attr_traits<ccl::v1::comm_split_attr_id,
                                                             ccl::v1::comm_split_attr_id::group>{}),
-              ccl::v1::group_split_type::thread);
+              ccl::v1::split_group::cluster);
 }
 
 TEST(comm_split_attr, copy_comm_split_attr) {
     auto attr = ccl::v1::default_comm_split_attr;
-    attr.set<ccl::v1::comm_split_attr_id::color>(666);
+    attr.set<ccl::v1::comm_split_attr_id::color>(123);
 
     auto original_inner_impl_ptr = attr.get_impl().get();
     auto attr2 = attr;
@@ -87,13 +87,13 @@ TEST(comm_split_attr, copy_comm_split_attr) {
     ASSERT_TRUE(original_inner_impl_ptr != copied_inner_impl_ptr);
     ASSERT_TRUE(attr.get_impl());
     ASSERT_TRUE(attr2.get<ccl::v1::comm_split_attr_id::version>().full != nullptr);
-    ASSERT_EQ(attr2.get<ccl::v1::comm_split_attr_id::color>(), 666);
+    ASSERT_EQ(attr2.get<ccl::v1::comm_split_attr_id::color>(), 123);
 }
 
 TEST(comm_split_attr, move_comm_split_attr) {
     /* move constructor test */
     auto orig_attr = ccl::v1::default_comm_split_attr;
-    orig_attr.set<ccl::v1::comm_split_attr_id::color>(667);
+    orig_attr.set<ccl::v1::comm_split_attr_id::color>(124);
 
     auto orig_inner_impl_ptr = orig_attr.get_impl().get();
     auto moved_attr = (std::move(orig_attr));
@@ -103,7 +103,7 @@ TEST(comm_split_attr, move_comm_split_attr) {
     ASSERT_TRUE(moved_attr.get_impl());
     ASSERT_TRUE(!orig_attr.get_impl());
     ASSERT_TRUE(moved_attr.is_valid<ccl::v1::comm_split_attr_id::color>());
-    ASSERT_EQ(moved_attr.get<ccl::v1::comm_split_attr_id::color>(), 667);
+    ASSERT_EQ(moved_attr.get<ccl::v1::comm_split_attr_id::color>(), 124);
 
     /* move assignment test*/
     auto orig_attr2 = ccl::v1::default_comm_split_attr;
@@ -124,7 +124,7 @@ TEST(comm_split_attr, comm_split_attr_valid) {
     ASSERT_TRUE(!attr.is_valid<ccl::v1::comm_split_attr_id::color>());
     ASSERT_TRUE(!attr.is_valid<ccl::v1::comm_split_attr_id::group>());
 
-    attr.set<ccl::v1::comm_split_attr_id::group>(ccl::v1::group_split_type::process);
+    attr.set<ccl::v1::comm_split_attr_id::group>(ccl::v1::split_group::last_value);
     ASSERT_TRUE(attr.is_valid<ccl::v1::comm_split_attr_id::group>());
     ASSERT_TRUE(!attr.is_valid<ccl::v1::comm_split_attr_id::color>());
 

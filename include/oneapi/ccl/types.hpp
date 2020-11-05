@@ -121,10 +121,6 @@ struct ccl_empty_attr {
     static attr create_empty();
 };
 
-} // namespace v1
-
-namespace preview {
-
 /**
  * Sparse coalesce modes
  * 
@@ -160,16 +156,16 @@ typedef void (*sparse_allreduce_alloc_fn)(size_t,
                                           const void*,
                                           void**,
                                           void**);
-} // namespace preview
+} // namespace v1
 
 using v1::library_version;
 using v1::fn_context;
 using v1::reduction_fn;
 using v1::ccl_empty_attr;
 
-using preview::sparse_coalesce_mode;
-using preview::sparse_allreduce_completion_fn;
-using preview::sparse_allreduce_alloc_fn;
+using v1::sparse_coalesce_mode;
+using v1::sparse_allreduce_completion_fn;
+using v1::sparse_allreduce_alloc_fn;
 
 /**
  * API object attributes traits
