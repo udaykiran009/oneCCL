@@ -206,7 +206,7 @@ size_t internal_kvs::kvs_get_keys_values_by_name(const char* kvs_name,
             free(*kvs_keys);
 
         *kvs_keys = (char**)calloc(count, sizeof(char*));
-        if((*kvs_keys) == NULL) {
+        if ((*kvs_keys) == NULL) {
             printf("Memory allocation failed\n");
             exit(1);
         }
@@ -220,7 +220,7 @@ size_t internal_kvs::kvs_get_keys_values_by_name(const char* kvs_name,
             free(*kvs_values);
 
         *kvs_values = (char**)calloc(count, sizeof(char*));
-        if((*kvs_values) == NULL) {
+        if ((*kvs_values) == NULL) {
             printf("Memory allocation failed\n");
             exit(1);
         }

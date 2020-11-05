@@ -49,8 +49,7 @@ TEST(comm_split_attr, comm_split_attr_group) {
     ASSERT_TRUE(attr.is_valid<ccl::v1::comm_split_attr_id::group>());
     ASSERT_EQ(attr.get<ccl::v1::comm_split_attr_id::group>(), ccl::v1::split_group::cluster);
 
-    auto old_value =
-        attr.set<ccl::v1::comm_split_attr_id::group>(ccl::v1::split_group::last_value);
+    auto old_value = attr.set<ccl::v1::comm_split_attr_id::group>(ccl::v1::split_group::last_value);
     ASSERT_TRUE(attr.is_valid<ccl::v1::comm_split_attr_id::group>());
     ASSERT_EQ(attr.get<ccl::v1::comm_split_attr_id::group>(), ccl::v1::split_group::last_value);
     ASSERT_EQ(old_value, ccl::v1::split_group::cluster);

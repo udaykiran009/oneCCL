@@ -9,8 +9,8 @@
 #include "coll/algorithms/algorithms_enum.hpp"
 
 ccl::status register_gpu_module_source(const char* path,
-                                               ccl::device_topology_type topology_class,
-                                               ccl_coll_type type) {
+                                       ccl::device_topology_type topology_class,
+                                       ccl_coll_type type) {
     ccl::device_topology_type t_class = static_cast<ccl::device_topology_type>(topology_class);
     char pwd[PATH_MAX];
     char* ret = getcwd(pwd, sizeof(pwd));

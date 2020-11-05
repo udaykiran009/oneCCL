@@ -441,7 +441,7 @@ struct ipc_client_handles_storage {
                     &recv_data_start, recv_data_size, global_platform);
 
                 std::shared_ptr<ccl_device> owner_device = recv_ipc_handle->get_owner().lock();
-                if(!owner_device) {
+                if (!owner_device) {
                     throw std::runtime_error("Owner device for received IPC hanlde doesn't exist");
                 }
                 auto ipc_device_it = std::find_if(

@@ -69,7 +69,7 @@ void rank_list_keep_first_n(rank_list_t** origin_list, size_t n) {
 void rank_list_add(rank_list_t** origin_list, int rank) {
     if ((*origin_list) == NULL) {
         (*origin_list) = (rank_list_t*)malloc(sizeof(rank_list_t));
-        if((*origin_list) == NULL) {
+        if ((*origin_list) == NULL) {
             printf("Memory allocation failed\n");
             return;
         }

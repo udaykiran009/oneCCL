@@ -356,13 +356,13 @@ size_t get_by_template(char*** kvs_entry,
         free(*kvs_entry);
 
     *kvs_entry = (char**)malloc(sizeof(char*) * count);
-    if(*kvs_entry == NULL) {
+    if (*kvs_entry == NULL) {
         printf("Memory allocation failed\n");
         exit(1);
     }
-    for (i = 0; i < count; i++){
+    for (i = 0; i < count; i++) {
         (*kvs_entry)[i] = (char*)malloc(sizeof(char) * max_count);
-        if((*kvs_entry)[i] == NULL) {
+        if ((*kvs_entry)[i] == NULL) {
             printf("Memory allocation failed\n");
             exit(1);
         }

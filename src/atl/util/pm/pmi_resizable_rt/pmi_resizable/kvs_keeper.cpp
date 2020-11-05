@@ -83,10 +83,10 @@ size_t get_keys_values(const char* kvs_name,
         exit(1);
     }
     *kvs_keys = (char**)malloc(sizeof(char*) * count);
-     if (*kvs_keys == NULL) {
+    if (*kvs_keys == NULL) {
         printf("Memory allocation failed\n");
         exit(1);
-     }
+    }
 
     for (i = 0; i < count; i++) {
         (*kvs_keys)[i] = (char*)malloc(sizeof(char) * MAX_KVS_KEY_LENGTH);
