@@ -301,51 +301,38 @@ protected:
         return ctx;
     }
 
-    template <template <size_t pos, class Policy> class KernelArg, size_t POS, class POL>
-    device_memory<typename std::remove_pointer<typename KernelArg<POS, POL>::arg_type>::type>
-    alloc_memory_wrap(const KernelArg<POS, POL> &arg,
-                      std::shared_ptr<gpu_comm> parent_communicator,
-                      size_t cnt,
-                      std::shared_ptr<ccl_context> ctx) {
-        using alloc_type =
-            typename std::remove_pointer<typename KernelArg<POS, POL>::arg_type>::type;
-        auto memory = parent_communicator->get_device().template alloc_memory<alloc_type>(
-            cnt, sizeof(alloc_type), ctx);
-        LOG_DEBUG("Allocation memory by default: ",
-                  POS,
-                  ", ctx: ",
-                  (void *)ctx.get(),
-                  ", memory: ",
-                  (void *)memory.get());
-        return memory;
+    template <class options>
+    ze_device_mem_alloc_desc_t get_mem_descr(options opt) {
+        ze_device_mem_alloc_desc_t mem_descr = ccl_device::get_default_mem_alloc_desc();
+        // Explicitly reset flags to avoid potential conflicts with the default value
+        mem_descr.flags = 0;
+        mem_descr.flags |= (opt.is_uncached() ? ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED
+                                              : ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_CACHED);
+
+        return mem_descr;
     }
 
-    template <template <size_t pos, class> class KernelArg, size_t POS, class Type, bool B>
-    device_memory<typename std::remove_pointer<
-        typename KernelArg<POS, arg_access_policy_atomic_uncached<POS, Type, B>>::arg_type>::type>
-    alloc_memory_wrap(const KernelArg<POS, arg_access_policy_atomic_uncached<POS, Type, B>> &arg,
-                      std::shared_ptr<gpu_comm> parent_communicator,
-                      size_t cnt,
-                      std::shared_ptr<ccl_context> ctx) {
-        using alloc_type = typename std::remove_pointer<
-            typename KernelArg<POS,
-                               arg_access_policy_atomic_uncached<POS, Type, B>>::arg_type>::type;
-        ze_device_mem_alloc_desc_t mem_descr{
-            .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
-            .pNext = NULL,
-            .flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED,
-            .ordinal = 0,
-        };
-        auto memory = parent_communicator->get_device().template alloc_memory<alloc_type>(
-            cnt, sizeof(alloc_type), ctx, mem_descr);
-        LOG_DEBUG("Allocation memory with bias uncached flag: ",
-                  POS,
+    // Wrapper to handle memory allocation with different options
+    template <class kernel_arg,
+              // Get the actual underlying type to specify the type for the allocation
+              class arg_type = typename std::remove_pointer<typename kernel_arg::arg_type>::type>
+    device_memory<arg_type> alloc_memory_wrap(const kernel_arg &arg,
+                                              std::shared_ptr<gpu_comm> parent_communicator,
+                                              size_t cnt,
+                                              std::shared_ptr<ccl_context> ctx) {
+        auto mem_descr = get_mem_descr(typename kernel_arg::options_t{});
+        auto memory = parent_communicator->get_device().template alloc_memory<arg_type>(
+            cnt, sizeof(arg_type), ctx, mem_descr);
+
+        LOG_DEBUG("Allocation memory by default: ",
+                  kernel_arg::index,
                   ", ctx: ",
                   (void *)ctx.get(),
                   ", memory: ",
                   (void *)memory.get(),
-                  " mem_descr: ",
+                  ", mem_descr: ",
                   native::to_string(mem_descr));
+
         return memory;
     }
 
