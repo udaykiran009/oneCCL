@@ -355,7 +355,7 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
     atl_ctx_t* ctx = &(ofi_ctx->ctx);
     atl_ofi_prov_t* prov = &(ofi_ctx->provs[prov_idx]);
 
-    atl_status_t ret;
+    atl_status_t ret = ATL_STATUS_SUCCESS;
     int i;
     size_t j;
     int insert_count;
@@ -479,6 +479,11 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
 
         fi_addr_t* table;
         table = (fi_addr_t*)calloc(1, proc_count * sizeof(fi_addr_t));
+        if(table == NULL) {
+            ATL_OFI_DEBUG_PRINT("Memory allocaion failed");
+            ret = ATL_STATUS_FAILURE;
+            goto err_ep_names;
+        }
         memcpy(table, prov->addr_table, proc_count * sizeof(fi_addr_t));
 
         for (i = 0; i < proc_count; i++) {
@@ -892,6 +897,10 @@ static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t&
 
     if (prov_env && strlen(prov_env)) {
         ofi_ctx->prov_env_copy = (char*)calloc(strlen(prov_env) + 1, sizeof(char));
+        if(ofi_ctx->prov_env_copy == NULL) {
+            ATL_OFI_DEBUG_PRINT("Memory allocaion failed");
+            return ATL_STATUS_FAILURE;
+        }
         memcpy(ofi_ctx->prov_env_copy, prov_env, strlen(prov_env));
     }
     else
@@ -907,8 +916,11 @@ static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t&
                                         (single_prov ? 0 : 1) + /* for delimeter */
                                         1; /* for terminating null symbol */
 
-            char* prov_env_copy;
-            prov_env_copy = (char*)calloc(prov_env_copy_size, sizeof(char));
+            char* prov_env_copy = (char*)calloc(prov_env_copy_size, sizeof(char));
+            if(prov_env_copy == NULL) {
+                ATL_OFI_DEBUG_PRINT("Memory allocaion failed");
+                return ATL_STATUS_FAILURE;
+            }
 
             if (single_prov)
                 snprintf(prov_env_copy, prov_env_copy_size, "%s", ATL_OFI_SHM_PROV_NAME);

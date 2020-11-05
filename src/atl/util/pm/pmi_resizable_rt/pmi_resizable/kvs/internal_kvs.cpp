@@ -195,7 +195,6 @@ size_t internal_kvs::kvs_get_keys_values_by_name(const char* kvs_name,
         return count;
 
     answers = (kvs_request_t*)calloc(count, sizeof(kvs_request_t));
-
     DO_RW_OP(read,
              client_op_sock,
              answers,
@@ -207,6 +206,10 @@ size_t internal_kvs::kvs_get_keys_values_by_name(const char* kvs_name,
             free(*kvs_keys);
 
         *kvs_keys = (char**)calloc(count, sizeof(char*));
+        if((*kvs_keys) == NULL) {
+            printf("Memory allocation failed\n");
+            exit(1);
+        }
         for (i = 0; i < count; i++) {
             (*kvs_keys)[i] = (char*)calloc(MAX_KVS_KEY_LENGTH, sizeof(char));
             kvs_str_copy((*kvs_keys)[i], answers[i].key, MAX_KVS_KEY_LENGTH);
@@ -217,6 +220,10 @@ size_t internal_kvs::kvs_get_keys_values_by_name(const char* kvs_name,
             free(*kvs_values);
 
         *kvs_values = (char**)calloc(count, sizeof(char*));
+        if((*kvs_values) == NULL) {
+            printf("Memory allocation failed\n");
+            exit(1);
+        }
         for (i = 0; i < count; i++) {
             (*kvs_values)[i] = (char*)calloc(MAX_KVS_VAL_LENGTH, sizeof(char));
             kvs_str_copy((*kvs_values)[i], answers[i].val, MAX_KVS_VAL_LENGTH);
@@ -433,6 +440,10 @@ void* kvs_server_init(void* args) {
                             break;
 
                         answers = (kvs_request_t*)calloc(count, sizeof(kvs_request_t));
+                        if (answers == NULL) {
+                            printf("Memory allocation failed\n");
+                            break;
+                        }
                         for (j = 0; j < count; j++) {
                             kvs_str_copy(answers[j].name, request.name, MAX_KVS_NAME_LENGTH);
                             kvs_str_copy(answers[j].key, kvs_keys[j], MAX_KVS_KEY_LENGTH);
