@@ -9,17 +9,6 @@ namespace ccl {
  * Push the following code into something similar with 'ccl_device_types.hpp'
  */
 
-/**
- * Supported device topology type
- */
-enum device_topology_type : int {
-    undetermined = -1,
-    ring,
-    a2a,
-
-    last_class_value
-};
-
 using process_id = size_t;
 using host_id = std::string;
 

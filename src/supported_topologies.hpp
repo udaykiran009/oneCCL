@@ -1,7 +1,9 @@
 #pragma once
+
 #include "oneapi/ccl/type_traits.hpp"
 #include "oneapi/ccl/comm_split_attr_ids.hpp"
 #include "common/utils/enums.hpp"
+#include "internal_types.hpp"
 
 namespace ccl {
 

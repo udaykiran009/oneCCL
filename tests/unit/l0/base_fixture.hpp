@@ -23,7 +23,17 @@ struct native_type_info {
 #include "oneapi/ccl/type_traits.hpp"
 #endif
 
-using bfloat16 = ccl::bfloat16;
+using bfloat16 = ccl::v1::bfloat16;
+
+namespace ccl {
+namespace v1 {
+std::string to_string(const bfloat16& v) {
+    std::stringstream ss;
+    ss << "bf16::data " << v.data;
+    return ss.str();
+}
+}
+}
 
 #define DECLARE_KERNEL_TYPE(COLL) \
     template <class T> \

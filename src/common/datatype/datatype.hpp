@@ -80,5 +80,9 @@ private:
     ccl_datatype_table_t custom_table;
 };
 
+namespace ccl {
+string_class to_string(const datatype& dt);
+}
+
 ccl::datatype& operator++(ccl::datatype& d);
 ccl::datatype operator++(ccl::datatype& d, int);
