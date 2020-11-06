@@ -82,25 +82,25 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 extensions = [
     'sphinx.ext.autosectionlabel',
     'breathe',
-    'exhale',
+#    'exhale',
     'sphinx-prompt',
     'sphinx_tabs.tabs'
 ]
 
 breathe_projects = {
-    project:"../../doxygen/xml"
+    "oneccl":"../../doxygen/xml"
 }
-breathe_default_project = project
+breathe_default_project = "oneccl"
 
 # Setup the exhale extension
-exhale_args = {
-    # These arguments are required
-    "containmentFolder":     "./api",
-    "rootFileName":          "library_root.rst",
-    "rootFileTitle":         "Library API",
-    "doxygenStripFromPath":  "..",
-    "fullApiSubSectionTitle": 'Full API'
-}
+#exhale_args = {
+#    # These arguments are required
+#    "containmentFolder":     "./api",
+#    "rootFileName":          "library_root.rst",
+#    "rootFileTitle":         "Library API",
+#    "doxygenStripFromPath":  "..",
+#    "fullApiSubSectionTitle": 'Full API'
+#}
 
 # Tell sphinx what the primary language being documented is.
 primary_domain = 'cpp'
