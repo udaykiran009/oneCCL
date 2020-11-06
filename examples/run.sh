@@ -257,7 +257,7 @@ run()
 
     if [[ ${MODE} = "cpu" ]]
     then
-        dir_list="cpu common benchmark"
+        dir_list="cpu common benchmark external_launcher"
         bench_backend_list="host"
         example_selector_list="cpu host default"
     else
@@ -282,10 +282,15 @@ run()
                     grep -v 'custom_allreduce' |
                     grep -v 'datatype' |
                     grep -v 'communicator' |
-                    grep -v 'sparse_allreduce'`
+                    grep -v 'sparse_allreduce' |
+                    grep -v 'run_binary.sh' |
+                    grep -v 'run.sh' |
+                    grep -v 'external_launcher'`
             else
                 examples_to_run=`find . -type f -executable -printf '%P\n' |
-                    grep -v 'sparse_allreduce'`
+                    grep -v 'sparse_allreduce' |
+                    grep -v 'run_binary.sh' |
+                    grep -v 'run.sh'`
             fi
 
             for example in $examples_to_run
@@ -375,6 +380,23 @@ run()
                             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} "${selector} ${usm}"
                         done
                     done
+                elif [ "$dir_name" == "external_launcher" ] && [ "$transport" == "ofi" ];
+                then
+                    if [ -z "${I_MPI_HYDRA_HOST_FILE}" ];
+                    then
+                        echo "Error: I_MPI_HYDRA_HOST_FILE was not set."
+                        exit 1
+                    else
+                        ccl_hosts=`echo $I_MPI_HYDRA_HOST_FILE`
+                        ccl_world_size=4
+                        ccl_vars="${CCL_ROOT}/env/setvars.sh"
+                        if [ ! -f "$ccl_vars" ];
+                        then 
+                            # not a standalone version
+                            ccl_vars="${CCL_ROOT}/env/vars.sh"
+                        fi
+                        eval `echo ./run.sh $ccl_vars $ccl_hosts $ccl_world_size`
+                    fi
                 else
                     if [[ "${example}" == *"communicator"* ]]
                     then
