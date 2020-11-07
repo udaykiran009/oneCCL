@@ -261,7 +261,8 @@ int main() {
         msg_pure_wait_timers[idx] /= ITER_COUNT;
     }
 
-    ccl::barrier(comm);
+    auto attr = ccl::create_operation_attr<ccl::barrier_attr>();
+    ccl::barrier(comm, attr);
 
     std::vector<double> recv_msg_timers(size * MSG_COUNT);
     std::vector<size_t> recv_msg_timers_counts(size, MSG_COUNT);

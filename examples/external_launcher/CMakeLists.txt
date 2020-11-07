@@ -7,7 +7,6 @@ foreach(src ${sources})
     target_link_libraries(${executable} PUBLIC rt)
     target_link_libraries(${executable} PUBLIC m)
     target_link_libraries(${executable} PRIVATE ccl)
-    target_link_libraries(${executable} PUBLIC mpi)
     install(TARGETS ${executable} RUNTIME DESTINATION ${CCL_INSTALL_EXAMPLES}/external_launcher OPTIONAL)
 endforeach()
 

@@ -69,13 +69,13 @@ private:
     friend struct ccl::ccl_empty_attr;
     friend struct ccl::v1::impl_dispatch;
 
-    template <class... attr_value_pair_t>
+    template <class... attr_val_type>
     friend stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
                                           typename unified_context_type::ccl_native_t context,
-                                          attr_value_pair_t&&... avps);
-    template <class... attr_value_pair_t>
+                                          attr_val_type&&... avs);
+    template <class... attr_val_type>
     friend stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
-                                          attr_value_pair_t&&... avps);
+                                          attr_val_type&&... avs);
 
     stream(impl_value_t&& impl);
 
@@ -103,14 +103,14 @@ private:
               class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
     static stream create_stream(native_stream_type& native_stream, native_context_type& native_ctx);
 
-    template <class... attr_value_pair_t>
+    template <class... attr_val_type>
     static stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
-                                          attr_value_pair_t&&... avps);
+                                          attr_val_type&&... avs);
 
-    template <class... attr_value_pair_t>
+    template <class... attr_val_type>
     static stream create_stream_from_attr(typename unified_device_type::ccl_native_t device,
                                           typename unified_context_type::ccl_native_t context,
-                                          attr_value_pair_t&&... avps);
+                                          attr_val_type&&... avs);
 };
 
 /**

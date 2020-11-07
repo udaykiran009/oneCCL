@@ -25,15 +25,17 @@ public:
 
 class file_store : public base_store {
 public:
-    file_store(const char* path, const std::chrono::seconds& timeout)
+    file_store(std::string path, int rank, const std::chrono::seconds& timeout)
             : base_store(),
               path(path),
+              rank(rank),
               pos(0),
               fd(-1),
               timeout(timeout){};
 
     virtual ~file_store() {
-        std::remove(path.c_str());
+        if (rank == 0)
+            std::remove(path.c_str());
     };
 
     void release_resources() {
@@ -77,6 +79,7 @@ public:
     };
 
     int read(void* data, size_t size) override {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10 * rank));
         const auto time_start = std::chrono::steady_clock::now();
         while (1) {
             std::unique_lock<std::mutex> locker(mtx);
@@ -89,6 +92,7 @@ public:
                     throw std::runtime_error("Timeout " + std::to_string(timeout.count()) +
                                              "s waiting for the file " + path + " to open");
                 }
+                std::this_thread::sleep_for(std::chrono::milliseconds(10 * rank));
                 continue;
             }
             else {
@@ -115,6 +119,7 @@ public:
                         throw std::runtime_error("Timeout " + std::to_string(timeout.count()) +
                                                  "s waiting for the file " + path + " to read");
                     }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10 * rank));
                     continue;
                 }
 
@@ -150,6 +155,7 @@ public:
 
 protected:
     std::string path;
+    int rank;
     off_t pos;
     int fd;
     std::chrono::seconds timeout;

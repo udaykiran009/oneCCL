@@ -20,9 +20,9 @@ namespace v1 {
  * \brief Creates an attribute object, which may used to control init operation
  * @return an attribute object
  */
-template <class... attr_value_pair_t>
-init_attr create_init_attr(attr_value_pair_t&&... avps) {
-    return detail::environment::create_init_attr(std::forward<attr_value_pair_t>(avps)...);
+template <class... attr_val_type>
+init_attr create_init_attr(attr_val_type&&... avs) {
+    return detail::environment::create_init_attr(std::forward<attr_val_type>(avs)...);
 }
 
 /**
@@ -45,15 +45,14 @@ library_version get_library_version();
  */
 /** @} */ // end of datatype
 
-
 /**
  * \ingroup datatype
  * \brief Creates an attribute object, which may used to register custom datatype
  * @return an attribute object
  */
-template <class... attr_value_pair_t>
-datatype_attr create_datatype_attr(attr_value_pair_t&&... avps) {
-    return detail::environment::create_datatype_attr(std::forward<attr_value_pair_t>(avps)...);
+template <class... attr_val_type>
+datatype_attr create_datatype_attr(attr_val_type&&... avs) {
+    return detail::environment::create_datatype_attr(std::forward<attr_val_type>(avs)...);
 }
 
 /**
@@ -89,9 +88,9 @@ size_t get_datatype_size(datatype dtype);
 /**
  * \ingroup kvs
  */
-template <class... attr_value_pair_t>
-kvs_attr create_kvs_attr(attr_value_pair_t&&... avps) {
-    return detail::environment::create_kvs_attr(std::forward<attr_value_pair_t>(avps)...);
+template <class... attr_val_type>
+kvs_attr create_kvs_attr(attr_val_type&&... avs) {
+    return detail::environment::create_kvs_attr(std::forward<attr_val_type>(avs)...);
 }
 
 /**
@@ -146,7 +145,6 @@ device create_device();
  */
 /** @} */ // end of context
 
-
 /**
  * \ingroup context
  * \brief Creates a new context from @native_contex_type
@@ -172,7 +170,6 @@ context create_context();
  */
 /** @} */ // end of event
 
-
 /**
  * \ingroup event
  * \brief Creates a new event from @native_event_type
@@ -190,7 +187,6 @@ event create_event(event_type& native_event) {
  * @{
  */
 /** @} */ // end of stream
-
 
 /**
  * \ingroup stream
@@ -221,9 +217,9 @@ stream create_stream();
  * \brief Creates an attribute object, which may used to control create communicator operation
  * @return an attribute object
  */
-template <class... attr_value_pair_t>
-comm_attr create_comm_attr(attr_value_pair_t&&... avps) {
-    return detail::environment::create_comm_attr(std::forward<attr_value_pair_t>(avps)...);
+template <class... attr_val_type>
+comm_attr create_comm_attr(attr_val_type&&... avs) {
+    return detail::environment::create_comm_attr(std::forward<attr_val_type>(avs)...);
 }
 
 } // namespace v1
@@ -235,9 +231,9 @@ namespace preview {
  * \brief Creates an attribute object, which may used to control split communicator operation
  * @return an attribute object
  */
-template <class... attr_value_pair_t>
-comm_split_attr create_comm_split_attr(attr_value_pair_t&&... avps) {
-    return detail::environment::create_comm_split_attr(std::forward<attr_value_pair_t>(avps)...);
+template <class... attr_val_type>
+comm_split_attr create_comm_split_attr(attr_val_type&&... avs) {
+    return detail::environment::create_comm_split_attr(std::forward<attr_val_type>(avs)...);
 }
 
 } // namespace preview
@@ -374,10 +370,10 @@ namespace v1 {
  * \brief Creates an attribute object, which may used to customize communication operation
  * @return an attribute object
  */
-template <class coll_attribute_type, class... attr_value_pair_t>
-coll_attribute_type CCL_API create_operation_attr(attr_value_pair_t&&... avps) {
+template <class coll_attribute_type, class... attr_val_type>
+coll_attribute_type CCL_API create_operation_attr(attr_val_type&&... avs) {
     return detail::environment::create_operation_attr<coll_attribute_type>(
-        std::forward<attr_value_pair_t>(avps)...);
+        std::forward<attr_val_type>(avs)...);
 }
 
 /** @defgroup allgatherv
