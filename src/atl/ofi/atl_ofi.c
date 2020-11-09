@@ -12,6 +12,7 @@
 #include <sys/syscall.h>
 #include <time.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "atl.h"
 
@@ -138,6 +139,21 @@ static inline atl_status_t atl_ofi_ep_poll(atl_ep_t* ep);
             res = (ret) ? ATL_STATUS_FAILURE : ATL_STATUS_SUCCESS; \
         res; \
     })
+
+long int safe_c_strtol(const char* str, char** endptr, int base) {
+    long int val = strtol(str, endptr, base);
+    if (val == 0) {
+        /* if a conversion error occurred, display a message and exit */
+        if (errno == EINVAL) {
+            printf("\nconversion error occurred from: %ld\n", val);
+        }
+        /* if the value provided was out of range, display a warning message */
+        if (errno == ERANGE) {
+            printf("\nthe value provided was out of range, value: %ld\n", val);
+        }
+    }
+    return val;
+}
 
 typedef enum {
     ATL_OFI_COMP_POSTED,
@@ -1818,7 +1834,8 @@ static atl_status_t atl_ofi_init(int* argc,
         ofi_ctx->timeout_sec = ATL_OFI_DEFAULT_TIMEOUT_SEC;
         char* timeout_sec_env = getenv(ATL_OFI_TIMEOUT_SEC_ENV);
         if (timeout_sec_env) {
-            ofi_ctx->timeout_sec = strtol(timeout_sec_env, NULL, 10);
+            if ((ofi_ctx->timeout_sec = safe_c_strtol(timeout_sec_env, NULL, 10)) == 0)
+                goto err;
         }
     }
 
@@ -1826,7 +1843,8 @@ static atl_status_t atl_ofi_init(int* argc,
     char* max_retry_count_env;
     max_retry_count_env = getenv(ATL_OFI_MAX_RETRY_COUNT_ENV);
     if (max_retry_count_env) {
-        ofi_ctx->max_retry_count = strtol(max_retry_count_env, NULL, 10);
+        if ((ofi_ctx->max_retry_count = safe_c_strtol(max_retry_count_env, NULL, 10)) == 0)
+            goto err;
     }
 
     if ((coord->global_count == coord->local_count) && (coord->global_count <= 4)) {
