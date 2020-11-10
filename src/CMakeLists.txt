@@ -165,7 +165,7 @@ set(CCL_SRC
 
     common/comm/atl_tag.cpp
     common/comm/comm.cpp
-    common/comm/comm_interface.cpp
+    common/comm/compiler_comm_interface_dispatcher.cpp
     common/comm/host_communicator/host_communicator.cpp
 
     common/context/context.cpp

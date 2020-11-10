@@ -54,7 +54,7 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/common/event/impls/native_event.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/stream/stream.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/comm.cpp"
-             "${PROJECT_SOURCE_DIR}/src/common/comm/comm_interface.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/compiler_comm_interface_dispatcher.cpp"
 #             "${PROJECT_SOURCE_DIR}/src/native_device_api/interop_utils.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_utils.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp"
