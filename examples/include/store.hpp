@@ -1,11 +1,12 @@
 #pragma once
+
 #include <chrono>
-#include <sys/file.h>
 #include <mutex>
 #include <string>
+#include <sys/file.h>
 #include <thread>
-#include <vector>
 #include <unistd.h>
+#include <vector>
 
 #define CHECK(ret, msg) \
     if ((ret) < 0) { \
@@ -79,7 +80,6 @@ public:
     };
 
     int read(void* data, size_t size) override {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10 * rank));
         const auto time_start = std::chrono::steady_clock::now();
         while (1) {
             std::unique_lock<std::mutex> locker(mtx);

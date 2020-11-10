@@ -121,7 +121,15 @@ function run()
     fi
     echo $LOG_FILE
 
-    source ${MPI_VARS} -i_mpi_library_kind=release_mt
+    if [[ $CCL_VARS == *"setvars.sh"* ]];
+    then
+        echo "Use standalone CCL variables script"
+    elif [[ $CCL_VARS == *"vars.sh"* ]];
+    then
+        echo "Use oneAPI CCL variables script"
+        source ${MPI_VARS} -i_mpi_library_kind=release_mt
+    fi
+
     export CCL_CONFIGURATION="cpu_icc"
     source ${CCL_VARS} --ccl-configuration="${CCL_CONFIGURATION}"
 

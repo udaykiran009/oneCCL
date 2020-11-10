@@ -79,9 +79,19 @@ parse_arguments()
         exit 1
     fi
 
-    if [ -z "${IMPI_PATH}" ];
+    if [[ $VARS == *"setvars.sh"* ]];
     then
-        echo_log "ERROR: set IMPI_PATH"
+        echo "Use standalone CCL variables script"
+    elif [[ $VARS == *"vars.sh"* ]];
+    then
+        echo "Use oneAPI CCL variables script"
+        if [ -z "${IMPI_PATH}" ];
+        then
+            echo_log "ERROR: set IMPI_PATH"
+            exit 1
+        fi
+    else
+        echo_log "ERROR: unknown CCL variables script"
         exit 1
     fi
 
@@ -117,7 +127,7 @@ cleanup_hosts()
     for host in "${hostlist[@]}"
     do
         echo "host ${host}"
-        cmd="killall -9 external_launcher"
+        cmd="killall -9 external_launcher run_binary.sh"
         ssh ${host} $cmd
     done
 }
