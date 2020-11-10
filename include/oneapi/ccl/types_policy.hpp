@@ -178,12 +178,12 @@ namespace detail {
 template <class attr, attr id>
 struct ccl_api_type_attr_traits {};
 
-template <class attrib_id, attrib_id attrId, class value_type>
+template <class attr_id_type, attr_id_type attr_id, class value_type>
 struct attr_value_triple {
-    using type_t = attrib_id;
+    using type_t = attr_id_type;
     using value_t = value_type;
-    static constexpr attrib_id idx() {
-        return attrId;
+    static constexpr attr_id_type idx() {
+        return attr_id;
     }
 
     explicit attr_value_triple(value_t val) : m_val(val) {}

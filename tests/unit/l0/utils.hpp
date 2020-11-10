@@ -61,6 +61,7 @@ public:
         return m_msg.c_str();
     }
 };
+
 std::shared_ptr<native::ccl_context> ctx;
 template <typename T>
 inline void str_to_array(const char* input, std::vector<T>& output, char delimiter) {
@@ -142,6 +143,16 @@ std::vector<uint8_t> load_binary_file(const std::string& source_path) {
     binary_file.resize(length);
     stream.read(reinterpret_cast<char*>(binary_file.data()), length);
     return binary_file;
+}
+
+template <class Container>
+typename Container::mapped_type& find_storage_val(Container& storage, int thread_idx) {
+    if (storage.find(thread_idx) == storage.end()) {
+        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
+                                 std::string("Cannot find storage for thread: ") +
+                                 std::to_string(thread_idx));
+    }
+    return storage.find(thread_idx)->second;
 }
 
 template <class T>

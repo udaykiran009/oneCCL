@@ -55,11 +55,11 @@ Contents:
    sparse_collectives.rst
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Reference Materials
 
    env_variables.rst
-   api/library_root.rst
+   api.rst
 
 .. toctree::
    :hidden: 

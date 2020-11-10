@@ -118,5 +118,5 @@ private:
     size_t barrier_num_full = 0;
     std::vector<int> requested2global;
     size_t local_id;
-    size_t connection_timeout = 120; /* in seconds */
+    size_t kvs_get_timeout = 60; /* in seconds */
 };

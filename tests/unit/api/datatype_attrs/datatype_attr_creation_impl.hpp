@@ -7,12 +7,12 @@ namespace ccl {
 namespace v1 {
 
 /* TODO temporary function for UT compilation: would be part of ccl::detail::environment in final*/
-template <class... attr_value_pair_t>
-datatype_attr create_datatype_attr(attr_value_pair_t&&... avps) {
+template <class... attr_val_type>
+datatype_attr create_datatype_attr(attr_val_type&&... avs) {
     ccl::library_version ret{};
     auto attr = datatype_attr(ret);
 
-    int expander[]{ (attr.template set<attr_value_pair_t::idx()>(avps.val()), 0)... };
+    int expander[]{ (attr.template set<attr_val_type::idx()>(avs.val()), 0)... };
     (void)expander;
     return attr;
 }

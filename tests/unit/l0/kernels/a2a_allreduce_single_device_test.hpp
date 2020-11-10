@@ -190,9 +190,9 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
     for (auto& idx_kernel : thread_kernels) {
         size_t thread_idx = idx_kernel.first;
         ze_kernel_handle_t kernel = idx_kernel.second;
-        auto& mem_handles = memory_storage.per_thread_storage.find(thread_idx)->second;
-        auto& flag_handles = flags_storage.per_thread_storage.find(thread_idx)->second;
-        auto& comm_handles = comm_param_storage.find(thread_idx)->second;
+        auto& mem_handles = find_storage_val(memory_storage.per_thread_storage, thread_idx);
+        auto& flag_handles = find_storage_val(flags_storage.per_thread_storage, thread_idx);
+        auto& comm_handles = find_storage_val(comm_param_storage, thread_idx);
         (void)flag_handles;
 
         //WORKAROUND: ONLY ONE LIST & QUEUE!

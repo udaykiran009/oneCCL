@@ -36,9 +36,9 @@ function check_test()
     test_passed=`grep -E -c -i 'PASSED' ${test_log}`
     if [[ "${test_file}" != *"communicator"* ]] && [[ "${test_file}" != *"datatype"* ]];
     then
-        test_failed=`grep -E -c -i 'error|invalid|Aborted|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
+        test_failed=`grep -E -c -i 'error|invalid|Aborted|fail|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
     else
-        test_failed=`grep -E -c -i 'Aborted|invalid|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
+        test_failed=`grep -E -c -i 'Aborted|invalid|fail|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
     fi
     test_skipped=`grep -E -c -i 'unavailable|skipped|skip' ${test_log}`
     if ([ ${test_passed} -eq 0 ] || [ ${test_skipped} -eq 0 ]) && [ ${test_failed} -ne 0 ]
@@ -257,7 +257,7 @@ run()
 
     if [[ ${MODE} = "cpu" ]]
     then
-        dir_list="cpu common benchmark"
+        dir_list="cpu common benchmark external_launcher"
         bench_backend_list="host"
         example_selector_list="cpu host default"
     else
@@ -282,10 +282,15 @@ run()
                     grep -v 'custom_allreduce' |
                     grep -v 'datatype' |
                     grep -v 'communicator' |
-                    grep -v 'sparse_allreduce'`
+                    grep -v 'sparse_allreduce' |
+                    grep -v 'run_binary.sh' |
+                    grep -v 'run.sh' |
+                    grep -v 'external_launcher'`
             else
                 examples_to_run=`find . -type f -executable -printf '%P\n' |
-                    grep -v 'sparse_allreduce'`
+                    grep -v 'sparse_allreduce' |
+                    grep -v 'run_binary.sh' |
+                    grep -v 'run.sh'`
             fi
 
             for example in $examples_to_run
@@ -375,6 +380,31 @@ run()
                             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} "${selector} ${usm}"
                         done
                     done
+                elif [ "$dir_name" == "external_launcher" ];
+                then
+                    if [ "$transport" != "ofi" ];
+                    then
+                        continue
+                    fi
+
+                    if [ -z "${I_MPI_HYDRA_HOST_FILE}" ];
+                    then
+                        echo "Error: I_MPI_HYDRA_HOST_FILE was not set."
+                        exit 1
+                    else
+                        ccl_hosts=`echo $I_MPI_HYDRA_HOST_FILE`
+                        ccl_world_size=4
+                        ccl_vars="${CCL_ROOT}/env/setvars.sh"
+                        if [ ! -f "$ccl_vars" ];
+                        then 
+                            # not a standalone version
+                            ccl_vars="${CCL_ROOT}/env/vars.sh"
+                        fi
+
+                        test_log="$EXAMPLE_WORK_DIR/$dir_name/log.txt"
+                        ${EXAMPLE_WORK_DIR}/${dir_name}/run.sh -v $ccl_vars -h $ccl_hosts -s $ccl_world_size 2>&1 | tee ${test_log}
+                        check_test ${test_log} "external_launcher"
+                    fi
                 else
                     if [[ "${example}" == *"communicator"* ]]
                     then

@@ -127,6 +127,11 @@ default structure and identifies the file types stored in each sub-directory:
 				|   |   |-- reduce.cpp                                                                                 
 				|   |   |-- reduce_cpp.cpp                                                                                  
 				|   |   `-- unordered_allreduce.cpp                                                                    
+				|   |-- external_launcher                                                                                            
+				|   |   |-- CMakeLists.txt                                                                             
+				|   |   |-- external_launcher.cpp                                                                           
+				|   |   |-- run.sh                                                                      
+				|   |   `-- run_binary.sh                                                                      
 				|   |-- include                                                                                        
 				|   |   |-- base.h                                                                                     
 				|   |   |-- base.hpp                                                                                   
