@@ -52,14 +52,18 @@ struct copy_on_write_access_policy {
     static void create(ccl_api_t* dst, const ccl_api_t& src) {
         static_assert(std::is_same<typename ccl_api_t::acc_policy_t, self_t>::value,
                       "ccl_api_t is not provide 'copy_on_write_access_policy'");
-        dst->get_impl().reset(new T(*src.get_impl().get()));
+        if (dst != &src) {
+            dst->get_impl().reset(new T(*src.get_impl().get()));
+        }
     }
 
     template <class ccl_api_t>
     static void create(ccl_api_t* dst, ccl_api_t&& src) {
         static_assert(std::is_same<typename ccl_api_t::acc_policy_t, self_t>::value,
                       "ccl_api_t is not provide 'copy_on_write_access_policy'");
-        dst->get_impl().swap(src.get_impl());
+        if (dst != &src) {
+            dst->get_impl().swap(src.get_impl());
+        }
     }
 
     template <template <class...> class wrapper>
@@ -86,14 +90,18 @@ struct direct_access_policy {
     static void create(ccl_api_t* dst, const ccl_api_t& src) {
         static_assert(std::is_same<typename ccl_api_t::acc_policy_t, self_t>::value,
                       "ccl_api_t is not provide 'copy_on_write_access_policy'");
-        dst->get_impl() = src.get_impl();
+        if (dst != &src) {
+            dst->get_impl() = src.get_impl();
+        }
     }
 
     template <class ccl_api_t>
     static void create(ccl_api_t* dst, ccl_api_t&& src) {
         static_assert(std::is_same<typename ccl_api_t::acc_policy_t, self_t>::value,
                       "ccl_api_t is not provide 'copy_on_write_access_policy'");
-        dst->get_impl().swap(src.get_impl());
+        if (dst != &src) {
+            dst->get_impl().swap(src.get_impl());
+        }
     }
 
     template <template <class...> class wrapper>

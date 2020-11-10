@@ -61,6 +61,16 @@ CCL_API allgatherv_attr::allgatherv_attr(
                                                     operation_attr_id::version>::type& version)
         : base_t(impl_value_t(new impl_t(version))) {}
 
+CCL_API allgatherv_attr& allgatherv_attr::operator=(allgatherv_attr&& src) noexcept {
+    this->acc_policy_t::create(this, std::move(src));
+    return *this;
+}
+
+CCL_API allgatherv_attr& allgatherv_attr::operator=(const allgatherv_attr& src) {
+    this->acc_policy_t::create(this, src);
+    return *this;
+}
+
 CCL_API allgatherv_attr::~allgatherv_attr() {}
 
 /**
@@ -74,6 +84,16 @@ CCL_API allreduce_attr::allreduce_attr(
     const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                     operation_attr_id::version>::type& version)
         : base_t(impl_value_t(new impl_t(version))) {}
+
+CCL_API allreduce_attr& allreduce_attr::operator=(allreduce_attr&& src) noexcept {
+    this->acc_policy_t::create(this, std::move(src));
+    return *this;
+}
+
+CCL_API allreduce_attr& allreduce_attr::operator=(const allreduce_attr& src) {
+    this->acc_policy_t::create(this, src);
+    return *this;
+}
 
 CCL_API allreduce_attr::~allreduce_attr() {}
 
@@ -89,6 +109,16 @@ CCL_API alltoall_attr::alltoall_attr(
                                                     operation_attr_id::version>::type& version)
         : base_t(impl_value_t(new impl_t(version))) {}
 
+CCL_API alltoall_attr& alltoall_attr::operator=(alltoall_attr&& src) noexcept {
+    this->acc_policy_t::create(this, std::move(src));
+    return *this;
+}
+
+CCL_API alltoall_attr& alltoall_attr::operator=(const alltoall_attr& src) {
+    this->acc_policy_t::create(this, src);
+    return *this;
+}
+
 CCL_API alltoall_attr::~alltoall_attr() {}
 
 /**
@@ -102,6 +132,16 @@ CCL_API alltoallv_attr::alltoallv_attr(
     const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                     operation_attr_id::version>::type& version)
         : base_t(impl_value_t(new impl_t(version))) {}
+
+CCL_API alltoallv_attr& alltoallv_attr::operator=(alltoallv_attr&& src) noexcept {
+    this->acc_policy_t::create(this, std::move(src));
+    return *this;
+}
+
+CCL_API alltoallv_attr& alltoallv_attr::operator=(const alltoallv_attr& src) {
+    this->acc_policy_t::create(this, src);
+    return *this;
+}
 
 CCL_API alltoallv_attr::~alltoallv_attr() {}
 
@@ -117,6 +157,16 @@ CCL_API barrier_attr::barrier_attr(
                                                     operation_attr_id::version>::type& version)
         : base_t(impl_value_t(new impl_t(version))) {}
 
+CCL_API barrier_attr& barrier_attr::operator=(barrier_attr&& src) noexcept {
+    this->acc_policy_t::create(this, std::move(src));
+    return *this;
+}
+
+CCL_API barrier_attr& barrier_attr::operator=(const barrier_attr& src) {
+    this->acc_policy_t::create(this, src);
+    return *this;
+}
+
 CCL_API barrier_attr::~barrier_attr() {}
 
 /**
@@ -131,6 +181,16 @@ CCL_API broadcast_attr::broadcast_attr(
                                                     operation_attr_id::version>::type& version)
         : base_t(impl_value_t(new impl_t(version))) {}
 
+CCL_API broadcast_attr& broadcast_attr::operator=(broadcast_attr&& src) noexcept {
+    this->acc_policy_t::create(this, std::move(src));
+    return *this;
+}
+
+CCL_API broadcast_attr& broadcast_attr::operator=(const broadcast_attr& src) {
+    this->acc_policy_t::create(this, src);
+    return *this;
+}
+
 CCL_API broadcast_attr::~broadcast_attr() {}
 
 /**
@@ -144,6 +204,16 @@ CCL_API reduce_attr::reduce_attr(
     const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                     operation_attr_id::version>::type& version)
         : base_t(impl_value_t(new impl_t(version))) {}
+
+CCL_API reduce_attr& reduce_attr::operator=(reduce_attr&& src) noexcept {
+    this->acc_policy_t::create(this, std::move(src));
+    return *this;
+}
+
+CCL_API reduce_attr& reduce_attr::operator=(const reduce_attr& src) {
+    this->acc_policy_t::create(this, src);
+    return *this;
+}
 
 CCL_API reduce_attr::~reduce_attr() {}
 
@@ -160,6 +230,16 @@ CCL_API reduce_scatter_attr::reduce_scatter_attr(
                                                     operation_attr_id::version>::type& version)
         : base_t(impl_value_t(new impl_t(version))) {}
 
+CCL_API reduce_scatter_attr& reduce_scatter_attr::operator=(reduce_scatter_attr&& src) noexcept {
+    this->acc_policy_t::create(this, std::move(src));
+    return *this;
+}
+
+CCL_API reduce_scatter_attr& reduce_scatter_attr::operator=(const reduce_scatter_attr& src) {
+    this->acc_policy_t::create(this, src);
+    return *this;
+}
+
 CCL_API reduce_scatter_attr::~reduce_scatter_attr() {}
 
 /**
@@ -170,6 +250,17 @@ CCL_API sparse_allreduce_attr::sparse_allreduce_attr(sparse_allreduce_attr&& src
 
 CCL_API sparse_allreduce_attr::sparse_allreduce_attr(const sparse_allreduce_attr& src)
         : base_t(src) {}
+
+CCL_API sparse_allreduce_attr& sparse_allreduce_attr::operator=(
+    sparse_allreduce_attr&& src) noexcept {
+    this->acc_policy_t::create(this, std::move(src));
+    return *this;
+}
+
+CCL_API sparse_allreduce_attr& sparse_allreduce_attr::operator=(const sparse_allreduce_attr& src) {
+    this->acc_policy_t::create(this, src);
+    return *this;
+}
 
 CCL_API sparse_allreduce_attr::sparse_allreduce_attr(
     const typename detail::ccl_api_type_attr_traits<operation_attr_id,
