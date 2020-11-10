@@ -262,6 +262,17 @@ size_t internal_kvs::kvs_get_replica_size(void) {
     return replica_size;
 }
 
+void kvs_keys_values_clean(char*** kvs_keys, char*** kvs_values, int count) {
+    for (int i = 0; i < count; i++) {
+        free(*kvs_keys[i]);
+        free(*kvs_values[i]);
+    }
+    free(*kvs_keys);
+    free(*kvs_values);
+    kvs_keys = NULL;
+    kvs_values = NULL;
+}
+
 void* kvs_server_init(void* args) {
     struct sockaddr_in addr;
     int server_control_sock;
@@ -412,7 +423,7 @@ void* kvs_server_init(void* args) {
                     }
                     case AM_GET_REPLICA: {
                         char* replica_size_str = getenv(CCL_WORLD_SIZE_ENV);
-                        count = (replica_size_str != NULL) ? strtol(replica_size_str, NULL, 10)
+                        count = (replica_size_str != NULL) ? safe_strtol(replica_size_str, NULL, 10)
                                                            : client_count;
                         DO_RW_OP(write,
                                  client_op_sockets[i],
@@ -442,6 +453,7 @@ void* kvs_server_init(void* args) {
                         answers = (kvs_request_t*)calloc(count, sizeof(kvs_request_t));
                         if (answers == NULL) {
                             printf("Memory allocation failed\n");
+                            kvs_keys_values_clean(&kvs_keys, &kvs_values, count);
                             break;
                         }
                         for (j = 0; j < count; j++) {
@@ -458,12 +470,7 @@ void* kvs_server_init(void* args) {
                                  "server: get_keys_values write data");
 
                         free(answers);
-                        for (j = 0; j < count; j++) {
-                            free(kvs_keys[j]);
-                            free(kvs_values[j]);
-                        }
-                        free(kvs_keys);
-                        free(kvs_values);
+                        kvs_keys_values_clean(&kvs_keys, &kvs_values, count);
                         break;
                     }
                     default: {
@@ -533,7 +540,7 @@ size_t init_main_server_by_k8s(void) {
 
     request_k8s_kvs_get_master(local_host_ip, main_host_ip, port_str);
 
-    main_port = strtol(port_str, NULL, 10);
+    main_port = safe_strtol(port_str, NULL, 10);
     main_server_address.sin_port = main_port;
     if (inet_pton(AF_INET, main_host_ip, &(main_server_address.sin_addr)) <= 0) {
         printf("invalid address/ address not supported: %s\n", main_host_ip);
@@ -562,7 +569,7 @@ size_t init_main_server_by_env(void) {
     port[0] = '\0';
     port++;
 
-    main_port = strtol(port, NULL, 10);
+    main_port = safe_strtol(port, NULL, 10);
     main_server_address.sin_port = main_port;
 
     if (inet_pton(AF_INET, main_host_ip, &(main_server_address.sin_addr)) <= 0) {
@@ -601,7 +608,7 @@ size_t init_main_server_by_string(const char* main_addr) {
     port[0] = '\0';
     port++;
 
-    main_port = strtol(port, NULL, 10);
+    main_port = safe_strtol(port, NULL, 10);
     main_server_address.sin_port = main_port;
 
     if (inet_pton(AF_INET, main_host_ip, &(main_server_address.sin_addr)) <= 0) {

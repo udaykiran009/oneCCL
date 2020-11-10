@@ -15,7 +15,7 @@ _deb/
 *.tgz
 *.tar.gz
 doc/rst/build/
-doc/rst/source/api
+doc/doxygen/*
 .vs
 .vscode
 include/oneapi/ccl/config.h

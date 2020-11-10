@@ -52,6 +52,10 @@ struct ccl_api_type_attr_traits<operation_attr_id, operation_attr_id::match_id> 
 };
 
 /**
+ * Traits specialization for allgatherv op attributes
+ */
+
+/**
  * Traits specialization for allreduce op attributes
  */
 template <>
@@ -66,6 +70,10 @@ struct ccl_api_type_attr_traits<allreduce_attr_id, allreduce_attr_id::reduction_
 
 /**
  * Traits specialization for alltoallv op attributes
+ */
+
+/**
+ * Traits specialization for barrier op attributes
  */
 
 /**
@@ -114,9 +122,6 @@ struct ccl_api_type_attr_traits<sparse_allreduce_attr_id, sparse_allreduce_attr_
     using return_type = type;
 };
 
-/**
- * Traits specialization for barrier op attributes
- */
 } // namespace detail
 
 } // namespace ccl

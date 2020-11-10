@@ -372,6 +372,9 @@ struct buf_allocator {
 
     buf_allocator(queue& q) : q(q) {}
 
+    buf_allocator(const buf_allocator&) = delete;
+    buf_allocator(buf_allocator&&) = default;
+
     ~buf_allocator() {
         for (auto& ptr : memory_storage) {
             sycl::free(ptr, q);

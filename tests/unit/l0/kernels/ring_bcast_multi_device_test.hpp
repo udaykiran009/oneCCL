@@ -157,9 +157,10 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
     for (auto dev_it = driver->devices.begin(); dev_it != driver->devices.end(); ++dev_it) {
         ccl_device& device = *dev_it->second;
         ze_kernel_handle_t kernel = thread_kernels.find(thread_idx)->second;
-        auto& mem_handles = memory_storage.per_thread_storage.find(thread_idx)->second;
-        auto& flag_handles = flags_storage.per_thread_storage.find(thread_idx)->second;
-        auto& comm_handles = comm_param_storage.find(thread_idx)->second;
+
+        auto& mem_handles = find_storage_val(memory_storage.per_thread_storage, thread_idx);
+        auto& flag_handles = find_storage_val(flags_storage.per_thread_storage, thread_idx);
+        auto& comm_handles = find_storage_val(comm_param_storage, thread_idx);
 
         this->output << "Launch kernel params: \n"
                      << " Device idx" << ccl::to_string(device.get_device_path()) << ",  Rank idx"
