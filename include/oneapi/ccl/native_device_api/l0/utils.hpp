@@ -41,6 +41,7 @@ template <class Lock, class Resource>
 struct unique_accessor {
     unique_accessor(Lock& mutex, Resource& storage) : lock(mutex), inner_data(storage) {}
     unique_accessor(unique_accessor&& src) = default;
+    unique_accessor& operator=(unique_accessor&& src) = delete;
 
     Resource& get() {
         return inner_data;

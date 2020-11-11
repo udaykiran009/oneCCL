@@ -5,6 +5,7 @@ template <class impl_t>
 class non_copyable {
 public:
     non_copyable(const non_copyable&) = delete;
+    non_copyable& operator=(const non_copyable& src) = delete;
     impl_t& operator=(const impl_t&) = delete;
 
 protected:
@@ -16,6 +17,7 @@ template <class impl_t>
 class non_movable {
 public:
     non_movable(non_movable&&) = delete;
+    non_movable& operator=(non_movable&& src) = delete;
     impl_t& operator=(impl_t&&) = delete;
 
 protected:
@@ -136,6 +138,8 @@ protected:
     ccl_api_base_copyable(ccl_api_base_copyable&& src) {
         access_policy_t<impl_t>::create(this, std::move(src));
     }
+    ccl_api_base_copyable& operator=(const ccl_api_base_copyable& src) = delete;
+    ccl_api_base_copyable& operator=(ccl_api_base_copyable&& src) = delete;
     ~ccl_api_base_copyable() = default;
 
     impl_value_t& get_impl() {
@@ -168,6 +172,7 @@ protected:
     ccl_api_base_movable(ccl_api_base_movable&& src) {
         access_policy_t<impl_t>::create(this, std::move(src));
     }
+    ccl_api_base_movable& operator=(ccl_api_base_movable&& src) = delete;
     ~ccl_api_base_movable() = default;
 
     impl_value_t& get_impl() {
