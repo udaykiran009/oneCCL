@@ -14,14 +14,13 @@ namespace native {
 
 //Adapter for different thread devices
 template <class device_t>
-class ccl_ipc_source_gpu_comm
-        : public ccl_gpu_base_comm<ccl_ipc_source_gpu_comm<device_t>,
-                                   gpu_types::IPC_GPU + device_t::type_idx()>,
-          public proxy_multiple_observer<ccl_ipc_source_gpu_comm<device_t>,
-                                         std::nullptr_t,
-                                         std::nullptr_t,
-                                         process_group_context>,
-           public net::ipc_client {
+class ccl_ipc_source_gpu_comm : public ccl_gpu_base_comm<ccl_ipc_source_gpu_comm<device_t>,
+                                                         gpu_types::IPC_GPU + device_t::type_idx()>,
+                                public proxy_multiple_observer<ccl_ipc_source_gpu_comm<device_t>,
+                                                               std::nullptr_t,
+                                                               std::nullptr_t,
+                                                               process_group_context>,
+                                public net::ipc_client {
 public:
     using base = ccl_gpu_base_comm<ccl_ipc_source_gpu_comm<device_t>,
                                    gpu_types::IPC_GPU + device_t::type_idx()>;
@@ -125,16 +124,15 @@ public:
             .template get_gpu_kernel<module_type, group_id, class_id, native_data_type>();
     }
 
-    template <
-        class native_data_type,
-        ccl::group_split_type group_id,
-        ccl::device_topology_type class_id,
-        class gpu_entry>
+    template <class native_data_type,
+              ccl::group_split_type group_id,
+              ccl::device_topology_type class_id,
+              class gpu_entry>
 
     gpu_kernel_t<gpu_entry::type(), group_id, class_id, native_data_type>& register_entry(
         gpu_entry& entry) {
-
-        static_assert(group_id == ccl::group_split_type::cluster, "ccl_ipc_source_gpu_comm available for ccl::group_split_type::cluster only");
+        static_assert(group_id == ccl::group_split_type::cluster,
+                      "ccl_ipc_source_gpu_comm available for ccl::group_split_type::cluster only");
         const topology_addr<group_id, class_id>& comm_addr =
             base::template get_comm_data<group_id, class_id>();
         LOG_DEBUG("entry: ", gpu_entry::class_name(), " registered on: ", comm_addr.to_string());

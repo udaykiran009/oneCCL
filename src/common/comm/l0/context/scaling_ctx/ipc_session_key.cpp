@@ -10,4 +10,4 @@ std::string ipc_session_key::to_string() const {
     return std::to_string(hash);
 }
 
-}
+} // namespace native

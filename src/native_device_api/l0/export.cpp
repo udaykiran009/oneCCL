@@ -11,7 +11,8 @@ namespace ccl {
  * Context
  */
 CCL_API generic_context_type<cl_backend_type::l0>::generic_context_type() {}
-CCL_API generic_context_type<cl_backend_type::l0>::generic_context_type(ccl_native_t ctx) : context(ctx) {}
+CCL_API generic_context_type<cl_backend_type::l0>::generic_context_type(ccl_native_t ctx)
+        : context(ctx) {}
 
 CCL_API generic_context_type<cl_backend_type::l0>::ccl_native_t&
 generic_context_type<cl_backend_type::l0>::get() noexcept {
@@ -28,7 +29,8 @@ generic_context_type<cl_backend_type::l0>::get() const noexcept {
 /**
  * Device
  */
-CCL_API generic_device_type<cl_backend_type::l0>::generic_device_type(device_index_type id) : device(id) {}
+CCL_API generic_device_type<cl_backend_type::l0>::generic_device_type(device_index_type id)
+        : device(id) {}
 
 CCL_API generic_device_type<cl_backend_type::l0>::generic_device_type(ccl_native_t dev)
         : device(dev->get_device_path()) {}

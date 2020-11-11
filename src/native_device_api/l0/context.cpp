@@ -7,9 +7,8 @@
 
 namespace native {
 
-ccl_context::ccl_context(handle_t h, owner_ptr_t&& platform):
-            base(h, std::move(platform), std::weak_ptr<ccl_context> { }) {  }
-
+ccl_context::ccl_context(handle_t h, owner_ptr_t&& platform)
+        : base(h, std::move(platform), std::weak_ptr<ccl_context>{}) {}
 
 std::string ccl_context::to_string() const {
     std::stringstream ss;
@@ -22,8 +21,7 @@ context_array_t::context_array_accessor context_array_t::access() {
     return context_array_accessor(m, contexts);
 }
 
-context_array_t::const_context_array_accessor context_array_t::access() const
-{
+context_array_t::const_context_array_accessor context_array_t::access() const {
     return const_context_array_accessor(m, contexts);
 }
 // Thread safe context storage holder
@@ -41,23 +39,21 @@ std::shared_ptr<ccl_context> ccl_context_holder::emplace(ccl_device_driver* key,
     return acc.get().back();
 }
 
-context_array_t& ccl_context_holder::get_context_storage(ccl_device_driver *driver)
-{
-    std::unique_lock<std::mutex> lock(m);    //TODO use shared lock with upgrade concept
+context_array_t& ccl_context_holder::get_context_storage(ccl_device_driver* driver) {
+    std::unique_lock<std::mutex> lock(m); //TODO use shared lock with upgrade concept
     context_array_t& cont = drivers_context[driver];
     return cont;
 }
 
-const context_array_t& ccl_context_holder::get_context_storage(const ccl_device_driver *driver) const
-{
-    std::unique_lock<std::mutex> lock(m);    //TODO use simple shared lock
+const context_array_t& ccl_context_holder::get_context_storage(
+    const ccl_device_driver* driver) const {
+    std::unique_lock<std::mutex> lock(m); //TODO use simple shared lock
     auto it = drivers_context.find(driver);
-    if (it == drivers_context.end())
-    {
+    if (it == drivers_context.end()) {
         throw std::runtime_error(std::string(__FUNCTION__) + " - cannot find context for driver: " +
                                  driver->to_string() + "\nTotal driver_context count: " +
                                  std::to_string(drivers_context.size()));
     }
     return it->second;
 }
-}// namespace native
+} // namespace native

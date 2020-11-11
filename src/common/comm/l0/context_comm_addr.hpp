@@ -10,4 +10,4 @@ struct context_comm_addr {
 
     std::string to_string() const;
 };
-}
+} // namespace ccl

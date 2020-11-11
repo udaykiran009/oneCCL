@@ -9,4 +9,4 @@ std::string context_comm_addr::to_string() const {
        << comm_size << ")";
     return ss.str();
 }
-}
+} // namespace ccl

@@ -46,9 +46,11 @@ private:
 
 struct ccl_context_holder {
     ze_context_handle_t get();
-    std::shared_ptr<ccl_context> emplace(ccl_device_driver *driver, std::shared_ptr<ccl_context>&& ctx);
-    context_array_t& get_context_storage(ccl_device_driver *driver);
-    const context_array_t& get_context_storage(const ccl_device_driver *driver) const;
+    std::shared_ptr<ccl_context> emplace(ccl_device_driver* driver,
+                                         std::shared_ptr<ccl_context>&& ctx);
+    context_array_t& get_context_storage(ccl_device_driver* driver);
+    const context_array_t& get_context_storage(const ccl_device_driver* driver) const;
+
 private:
     mutable std::mutex m;
     std::map<const ccl_device_driver*, context_array_t> drivers_context;

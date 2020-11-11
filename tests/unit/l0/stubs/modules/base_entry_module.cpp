@@ -15,8 +15,7 @@ gpu_module_base::~gpu_module_base() {
     release();
 }
 
-void gpu_module_base::release() {
-}
+void gpu_module_base::release() {}
 
 gpu_module_base::handle gpu_module_base::get() const {
     return module;

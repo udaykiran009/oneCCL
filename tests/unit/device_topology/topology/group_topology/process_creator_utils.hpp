@@ -448,13 +448,16 @@ TEST_F(router_fixture, simple_multithreaded_merge_test) {
         global_colored_plain_graphs merged_cluster_graphs(proces_num);
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++) {
             global_colored_plain_graphs local_merged_cluster_graphs =
-                    top.merge_allied_nodes_in_colored_plain_graphs(ss, pg_comm->cluster_gpu_indices,
-                                                                   pr_index, proces_num,
-                                                                   my_colored_rings,
-                                                 std::bind(::utils::test_custom_p2p_ping,
-                                                           std::placeholders::_1,
-                                                           std::placeholders::_2,
-                                                           expected_matrix));
+                top.merge_allied_nodes_in_colored_plain_graphs(
+                    ss,
+                    pg_comm->cluster_gpu_indices,
+                    pr_index,
+                    proces_num,
+                    my_colored_rings,
+                    std::bind(::utils::test_custom_p2p_ping,
+                              std::placeholders::_1,
+                              std::placeholders::_2,
+                              expected_matrix));
             merged_cluster_graphs[pr_index] = local_merged_cluster_graphs[pr_index];
         }
 
@@ -906,13 +909,16 @@ TEST_F(router_fixture, simple_scaleout_multithreaded_merge_test) {
         global_colored_plain_graphs merged_cluster_graphs(proces_num);
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++) {
             global_colored_plain_graphs local_merged_cluster_graphs =
-                    top.merge_allied_nodes_in_colored_plain_graphs(ss, pg_comm->cluster_gpu_indices,
-                                                                   pr_index, proces_num,
-                                                                   my_colored_rings,
-                                                 std::bind(::utils::test_custom_p2p_ping,
-                                                           std::placeholders::_1,
-                                                           std::placeholders::_2,
-                                                           expected_matrix));
+                top.merge_allied_nodes_in_colored_plain_graphs(
+                    ss,
+                    pg_comm->cluster_gpu_indices,
+                    pr_index,
+                    proces_num,
+                    my_colored_rings,
+                    std::bind(::utils::test_custom_p2p_ping,
+                              std::placeholders::_1,
+                              std::placeholders::_2,
+                              expected_matrix));
             merged_cluster_graphs[pr_index] = local_merged_cluster_graphs[pr_index];
         }
 
@@ -1112,13 +1118,16 @@ TEST_F(router_fixture, symmetric_scaleout_test) {
         global_colored_plain_graphs merged_cluster_graphs(proces_num);
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++) {
             global_colored_plain_graphs local_merged_cluster_graphs =
-                    top.merge_allied_nodes_in_colored_plain_graphs(ss, pg_comm->cluster_gpu_indices,
-                                                                   pr_index, proces_num,
-                                                                   my_colored_rings,
-                                                std::bind(::utils::test_custom_p2p_ping,
-                                                           std::placeholders::_1,
-                                                           std::placeholders::_2,
-                                                           expected_matrix));
+                top.merge_allied_nodes_in_colored_plain_graphs(
+                    ss,
+                    pg_comm->cluster_gpu_indices,
+                    pr_index,
+                    proces_num,
+                    my_colored_rings,
+                    std::bind(::utils::test_custom_p2p_ping,
+                              std::placeholders::_1,
+                              std::placeholders::_2,
+                              expected_matrix));
             merged_cluster_graphs[pr_index] = local_merged_cluster_graphs[pr_index];
         }
 
@@ -1488,13 +1497,16 @@ TEST_F(router_fixture, symmetric_scaleout_multithreaded_merge_test) {
         global_colored_plain_graphs merged_cluster_graphs(proces_num);
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++) {
             global_colored_plain_graphs local_merged_cluster_graphs =
-                    top.merge_allied_nodes_in_colored_plain_graphs(ss, pg_comm->cluster_gpu_indices,
-                                                                   pr_index, proces_num,
-                                                                   my_colored_rings,
-                                                 std::bind(::utils::test_custom_p2p_ping,
-                                                           std::placeholders::_1,
-                                                           std::placeholders::_2,
-                                                           expected_matrix));
+                top.merge_allied_nodes_in_colored_plain_graphs(
+                    ss,
+                    pg_comm->cluster_gpu_indices,
+                    pr_index,
+                    proces_num,
+                    my_colored_rings,
+                    std::bind(::utils::test_custom_p2p_ping,
+                              std::placeholders::_1,
+                              std::placeholders::_2,
+                              expected_matrix));
             merged_cluster_graphs[pr_index] = local_merged_cluster_graphs[pr_index];
         }
 
@@ -1717,13 +1729,16 @@ TEST_F(router_fixture, unsymmetric_scaleout_test) {
         global_colored_plain_graphs merged_cluster_graphs(proces_num);
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++) {
             global_colored_plain_graphs local_merged_cluster_graphs =
-                    top.merge_allied_nodes_in_colored_plain_graphs(ss, pg_comm->cluster_gpu_indices,
-                                                                   pr_index, proces_num,
-                                                                   my_colored_rings,
-                                                std::bind(::utils::test_custom_p2p_ping,
-                                                           std::placeholders::_1,
-                                                           std::placeholders::_2,
-                                                           expected_matrix));
+                top.merge_allied_nodes_in_colored_plain_graphs(
+                    ss,
+                    pg_comm->cluster_gpu_indices,
+                    pr_index,
+                    proces_num,
+                    my_colored_rings,
+                    std::bind(::utils::test_custom_p2p_ping,
+                              std::placeholders::_1,
+                              std::placeholders::_2,
+                              expected_matrix));
             merged_cluster_graphs[pr_index] = local_merged_cluster_graphs[pr_index];
         }
 

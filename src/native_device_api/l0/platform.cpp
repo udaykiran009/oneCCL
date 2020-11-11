@@ -31,7 +31,8 @@ CCL_API ccl_device_platform& get_platform() {
 
 CCL_API std::shared_ptr<ccl_device_platform> ccl_device_platform::create(
     const ccl::device_indices_type& indices /* = device_indices_per_driver()*/) {
-    std::shared_ptr<ccl_device_platform> platform(new ccl_device_platform(indices.size()/*platform ID by devices count*/));
+    std::shared_ptr<ccl_device_platform> platform(
+        new ccl_device_platform(indices.size() /*platform ID by devices count*/));
     platform->init_drivers(indices);
     return platform;
 }
@@ -215,7 +216,7 @@ std::string CCL_API ccl_device_platform::to_string() const {
     out << "Platform:\n{\n";
     std::string driver_prefix = "\t";
     out << driver_prefix << "PlatformID: " << id << "\n";
-    out << driver_prefix << "PID: " << pid  << "\n\n";
+    out << driver_prefix << "PID: " << pid << "\n\n";
     for (const auto& driver_pair : drivers) {
         out << driver_pair.second->to_string(driver_prefix) << std::endl;
     }
@@ -252,20 +253,19 @@ detail::adjacency_matrix ccl_device_platform::calculate_device_access_metric(
     return result;
 }
 
-CCL_API std::shared_ptr<ccl_device_platform> ccl_device_platform::clone(platform_id_type id, pid_t foreign_pid) const
-{
+CCL_API std::shared_ptr<ccl_device_platform> ccl_device_platform::clone(platform_id_type id,
+                                                                        pid_t foreign_pid) const {
     //TODO make swallow copy
     std::shared_ptr<ccl_device_platform> ret(new ccl_device_platform(id));
     ret->pid = foreign_pid;
     return ret;
 }
 
-CCL_API std::weak_ptr<ccl_device_platform> ccl_device_platform::deserialize(const uint8_t** data,
-                                                 size_t& size,
-                                                 std::shared_ptr<ccl_device_platform>& out_platform)
-{
-    constexpr size_t expected_bytes = sizeof(pid_t) + sizeof(pid_t) +
-                                      sizeof(platform_id_type);
+CCL_API std::weak_ptr<ccl_device_platform> ccl_device_platform::deserialize(
+    const uint8_t** data,
+    size_t& size,
+    std::shared_ptr<ccl_device_platform>& out_platform) {
+    constexpr size_t expected_bytes = sizeof(pid_t) + sizeof(pid_t) + sizeof(platform_id_type);
     if (!*data or size < expected_bytes) {
         throw std::runtime_error(std::string("cannot deserialize ccl_device_platform: ") +
                                  "not enough data, required: " + std::to_string(expected_bytes) +
@@ -274,11 +274,12 @@ CCL_API std::weak_ptr<ccl_device_platform> ccl_device_platform::deserialize(cons
 
     pid_t sender_pid = *(reinterpret_cast<const pid_t*>(*data));
     pid_t sender_tid = *(reinterpret_cast<const pid_t*>(*data + sizeof(sender_pid)));
-    platform_id_type sender_id = *(reinterpret_cast<const platform_id_type*>(*data + sizeof(sender_pid) + sizeof(sender_tid)));
+    platform_id_type sender_id = *(
+        reinterpret_cast<const platform_id_type*>(*data + sizeof(sender_pid) + sizeof(sender_tid)));
 
     //make clone of Global Platform for IPC communications
     auto& global_platform = get_platform();
-    out_platform = global_platform.clone(sender_id, sender_pid/*, sender_tid*/);
+    out_platform = global_platform.clone(sender_id, sender_pid /*, sender_tid*/);
 
     size -= expected_bytes;
     *data += expected_bytes;
@@ -287,13 +288,11 @@ CCL_API std::weak_ptr<ccl_device_platform> ccl_device_platform::deserialize(cons
 }
 
 CCL_API size_t ccl_device_platform::serialize(std::vector<uint8_t>& out,
-                                      size_t from_pos,
-                                      size_t expected_size) const
-{
+                                              size_t from_pos,
+                                              size_t expected_size) const {
     pid_t src_process_tid = gettid();
-    constexpr size_t expected_platform_bytes = sizeof(pid) +
-                                               sizeof(src_process_tid) +
-                                               sizeof(platform_id_type);
+    constexpr size_t expected_platform_bytes =
+        sizeof(pid) + sizeof(src_process_tid) + sizeof(platform_id_type);
 
     //prepare continuous vector
     out.resize(from_pos + expected_size + expected_platform_bytes);

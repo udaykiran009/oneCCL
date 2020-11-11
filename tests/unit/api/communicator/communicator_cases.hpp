@@ -57,8 +57,8 @@ namespace device_communicator_suite {
 
 TEST(device_communicator_api, device_comm_from_device_index) {
     int total_devices_size = 4;
-    ccl::vector_class<ccl::device_index_type> devices( total_devices_size,
-                                                       ccl::from_string("[0:6459]") );
+    ccl::vector_class<ccl::device_index_type> devices(total_devices_size,
+                                                      ccl::from_string("[0:6459]"));
     auto ctx = native::get_platform().get_driver(0)->create_context();
     std::shared_ptr<stub_kvs> stub_storage;
 

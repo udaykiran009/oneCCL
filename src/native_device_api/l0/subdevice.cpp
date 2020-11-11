@@ -181,9 +181,10 @@ size_t ccl_subdevice::serialize(std::vector<uint8_t>& out,
 }
 
 CCL_API
-std::weak_ptr<ccl_subdevice> ccl_subdevice::deserialize(const uint8_t** data,
-                                                        size_t& size,
-                                                        std::shared_ptr<ccl_device_platform>& out_platform) {
+std::weak_ptr<ccl_subdevice> ccl_subdevice::deserialize(
+    const uint8_t** data,
+    size_t& size,
+    std::shared_ptr<ccl_device_platform>& out_platform) {
     //restore driver
     auto device = ccl_device::deserialize(data, size, out_platform).lock();
     if (!device) {

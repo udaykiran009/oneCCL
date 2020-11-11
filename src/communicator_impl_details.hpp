@@ -275,8 +275,8 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
         std::shared_ptr<atl_wrapper> atl = std::shared_ptr<atl_wrapper>(
             new atl_wrapper(cluster_devices_size, { rank }, kvs_wrapper));
 
-        ccl::comm_split_attr attr =
-            preview::create_comm_split_attr(ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::group_split_type::undetermined));
+        ccl::comm_split_attr attr = preview::create_comm_split_attr(
+            ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::group_split_type::undetermined));
         ccl::communicator_interface_ptr impl =
             ccl::communicator_interface::create_communicator_impl(
                 device, context, rank, cluster_devices_size, attr, atl);

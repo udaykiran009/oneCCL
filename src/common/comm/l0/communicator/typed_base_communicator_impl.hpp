@@ -57,10 +57,9 @@ void typed_base_communicator<TEMPLATE_DEF_ARG>::initialize_comm_addr(
 
         auto& binder = get_impl()->get_communication_device();
         device_community_impl = new_community;
-        device_community_impl.template bind_device_by_id<topology_type()>(device_id,
-                                                                          registered_addr,
-                                                                          binder
-                                                                          /*TODO PUT your preferred rank here*/);
+        device_community_impl.template bind_device_by_id<topology_type()>(
+            device_id, registered_addr, binder
+            /*TODO PUT your preferred rank here*/);
         // print assigned device from topology
         ccl_tuple_for_each(binder, p);
     }
@@ -68,10 +67,6 @@ void typed_base_communicator<TEMPLATE_DEF_ARG>::initialize_comm_addr(
     //TODO multiple topologies in curr class_id
     comm_rank = registered_addr.comm_rank;
     comm_size = registered_addr.comm_size;
-
-
-
-
 
     LOG_INFO("Communicator finalized. Rank (",
              comm_rank,

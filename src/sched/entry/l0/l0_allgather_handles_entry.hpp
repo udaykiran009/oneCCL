@@ -150,7 +150,7 @@ public:
                      */
                     auto recv_ip_handle = ccl_device::device_ipc_memory_handle::deserialize<
                         ccl_device::device_ipc_memory_handle>(
-                        &recv_data_start, recv_data_size, ctx,  get_platform());
+                        &recv_data_start, recv_data_size, ctx, get_platform());
 
                     std::shared_ptr<ccl_ipc_gpu_comm> ipc_mem_owner;
                     {

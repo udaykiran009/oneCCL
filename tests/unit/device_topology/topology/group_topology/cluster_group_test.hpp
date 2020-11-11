@@ -47,10 +47,11 @@ TEST_F(router_fixture, cluster_simple_scaleup_test) {
         };
 
         // stub for real device connectivity
-        native::detail::p2p_rating_function rating_function = std::bind(::utils::test_custom_p2p_ping,
-                                                                        std::placeholders::_1,
-                                                                        std::placeholders::_2,
-                                                                        expected_matrix);
+        native::detail::p2p_rating_function rating_function =
+            std::bind(::utils::test_custom_p2p_ping,
+                      std::placeholders::_1,
+                      std::placeholders::_2,
+                      expected_matrix);
 
         // stub for cluster device topology
         global_sorted_colored_plain_graphs control_cluster_topology{
@@ -176,10 +177,11 @@ TEST_F(router_fixture, cluster_simple_scaleout_test) {
         };
 
         // stub for real device connectivity
-        native::detail::p2p_rating_function rating_function = std::bind(::utils::test_custom_p2p_ping,
-                                                                        std::placeholders::_1,
-                                                                        std::placeholders::_2,
-                                                                        expected_matrix);
+        native::detail::p2p_rating_function rating_function =
+            std::bind(::utils::test_custom_p2p_ping,
+                      std::placeholders::_1,
+                      std::placeholders::_2,
+                      expected_matrix);
 
         // stub for cluster device topology
         global_sorted_colored_plain_graphs control_cluster_topology{
@@ -307,10 +309,11 @@ TEST_F(router_fixture, cluster_simple_scaleup_scaleout_test) {
         };
 
         // stub for real device connectivity
-        native::detail::p2p_rating_function rating_function = std::bind(::utils::test_custom_p2p_ping,
-                                                                        std::placeholders::_1,
-                                                                        std::placeholders::_2,
-                                                                        expected_matrix);
+        native::detail::p2p_rating_function rating_function =
+            std::bind(::utils::test_custom_p2p_ping,
+                      std::placeholders::_1,
+                      std::placeholders::_2,
+                      expected_matrix);
 
         // stub for cluster device topology
         global_sorted_colored_plain_graphs control_cluster_topology{
@@ -476,10 +479,11 @@ TEST_F(router_fixture, cluster_numa_scaleup_test) {
                                               { dev_5, 1 } } } };
 
         // stub for real device connectivity
-        native::detail::p2p_rating_function rating_function = std::bind(::utils::test_custom_p2p_ping,
-                                                                        std::placeholders::_1,
-                                                                        std::placeholders::_2,
-                                                                        expected_matrix);
+        native::detail::p2p_rating_function rating_function =
+            std::bind(::utils::test_custom_p2p_ping,
+                      std::placeholders::_1,
+                      std::placeholders::_2,
+                      expected_matrix);
 
         // stub for cluster device topology
         global_sorted_colored_plain_graphs control_cluster_topology{
@@ -649,10 +653,11 @@ TEST_F(router_fixture, cluster_numa_scaleout_test) {
                                               { dev_5, 1 } } } };
 
         // stub for real device connectivity
-        native::detail::p2p_rating_function rating_function = std::bind(::utils::test_custom_p2p_ping,
-                                                                        std::placeholders::_1,
-                                                                        std::placeholders::_2,
-                                                                        expected_matrix);
+        native::detail::p2p_rating_function rating_function =
+            std::bind(::utils::test_custom_p2p_ping,
+                      std::placeholders::_1,
+                      std::placeholders::_2,
+                      expected_matrix);
 
         // stub for cluster device topology
         global_sorted_colored_plain_graphs control_cluster_topology{
@@ -835,10 +840,11 @@ TEST_F(router_fixture, cluster_numa_scaleup_scale_out_test) {
                                               { dev_6, 1 } } } };
 
         // stub for real device connectivity
-        native::detail::p2p_rating_function rating_function = std::bind(::utils::test_custom_p2p_ping,
-                                                                        std::placeholders::_1,
-                                                                        std::placeholders::_2,
-                                                                        expected_matrix);
+        native::detail::p2p_rating_function rating_function =
+            std::bind(::utils::test_custom_p2p_ping,
+                      std::placeholders::_1,
+                      std::placeholders::_2,
+                      expected_matrix);
 
         // stub for cluster device topology
         global_sorted_colored_plain_graphs control_cluster_topology{

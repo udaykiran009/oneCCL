@@ -109,18 +109,15 @@ device_index_type from_string(const std::string& device_id_str) {
 }
 
 CCL_API
-std::string to_string(const device_indices_type& device_indices)
-{
+std::string to_string(const device_indices_type& device_indices) {
     std::string str;
     constexpr const char separator[] = ", ";
 
-    if (!device_indices.empty())
-    {
+    if (!device_indices.empty()) {
         auto index_it = device_indices.begin();
         auto prev_end_index_it = device_indices.begin();
         std::advance(prev_end_index_it, device_indices.size() - 1);
-        for (; index_it != prev_end_index_it; ++index_it)
-        {
+        for (; index_it != prev_end_index_it; ++index_it) {
             str += to_string(*index_it);
             str += separator;
         }
@@ -131,22 +128,18 @@ std::string to_string(const device_indices_type& device_indices)
 }
 
 CCL_API
-std::string to_string(const process_device_indices_type& indices)
-{
+std::string to_string(const process_device_indices_type& indices) {
     std::stringstream ss;
-    for (const auto& process : indices)
-    {
+    for (const auto& process : indices) {
         ss << process.first << "\t" << to_string(process.second) << "\n";
     }
     return ss.str();
 }
 
 CCL_API
-std::string to_string(const cluster_device_indices_type& indices)
-{
+std::string to_string(const cluster_device_indices_type& indices) {
     std::stringstream ss;
-    for (const auto& host : indices)
-    {
+    for (const auto& host : indices) {
         ss << host.first << "\n" << to_string(host.second) << "\n";
     }
     return ss.str();

@@ -15,7 +15,7 @@ struct device_community {
             : community_addr(comm_addr),
               devices(new specific_indexed_device_storage()) {}
 
-     device_rank_table_t registered_device_id;
+    device_rank_table_t registered_device_id;
 
     specific_indexed_device_storage& get_device_storage() {
         auto& ptr = get_impl();
@@ -37,12 +37,11 @@ struct device_community {
         return devices ? std::get<device_t::type_idx()>(*devices).size() : 0;
     }
 
-    template <ccl::group_split_type group_id, class ...DeviceTypes>
+    template <ccl::group_split_type group_id, class... DeviceTypes>
     void bind_device_by_id(const ccl::device_index_type& device_id,
                            ccl::context_comm_addr& registered_addr,
                            device_variant_t<DeviceTypes...>& out_binder,
-                           size_t preferred_rank)
-    {
+                           size_t preferred_rank) {
         if (!get_impl()) {
             std::string err_str;
             {
@@ -81,7 +80,8 @@ struct device_community {
         }
 
         // find device in topology and obtain its rank/sie
-        detail::rank_binder<group_id, schema_id> initializer(device_id, get_device_storage(), registered_device_id, preferred_rank);
+        detail::rank_binder<group_id, schema_id> initializer(
+            device_id, get_device_storage(), registered_device_id, preferred_rank);
         ccl_tuple_for_each(out_binder, initializer);
 
         // copy shared data from community addr

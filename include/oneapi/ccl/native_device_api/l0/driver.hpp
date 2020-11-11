@@ -33,7 +33,10 @@ struct ccl_device_driver
 
     using driver_index_type = uint32_t;
 
-    ccl_device_driver(handle_t h, driver_index_type id, owner_ptr_t&& platform, std::weak_ptr<ccl_context_holder>&& ctx);
+    ccl_device_driver(handle_t h,
+                      driver_index_type id,
+                      owner_ptr_t&& platform,
+                      std::weak_ptr<ccl_context_holder>&& ctx);
 
     static indexed_driver_handles get_handles(
         const ccl::device_indices_type& requested_driver_indexes = ccl::device_indices_type());
@@ -72,15 +75,15 @@ struct ccl_device_driver
     void on_delete(ze_device_handle_t& sub_device_handle, ze_context_handle_t& ctx);
 
     // serialize/deserialize
-     static constexpr size_t get_size_for_serialize() {
+    static constexpr size_t get_size_for_serialize() {
         return /*owner_t::get_size_for_serialize()*/
-               sizeof(int) + sizeof(int) + sizeof(size_t)  +
-               sizeof(driver_index_type);
+            sizeof(int) + sizeof(int) + sizeof(size_t) + sizeof(driver_index_type);
     }
 
-    static std::weak_ptr<ccl_device_driver> deserialize(const uint8_t** data,
-                                                        size_t& size,
-                                                        std::shared_ptr<ccl_device_platform>& out_platform);
+    static std::weak_ptr<ccl_device_driver> deserialize(
+        const uint8_t** data,
+        size_t& size,
+        std::shared_ptr<ccl_device_platform>& out_platform);
     size_t serialize(std::vector<uint8_t>& out, size_t from_pos, size_t expected_size) const;
 
     // utility

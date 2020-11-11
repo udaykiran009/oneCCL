@@ -38,10 +38,11 @@ private:
  */
 
 template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
-rank_binder<group_id, class_id>::rank_binder(const ccl::device_index_type& in_device_idx,
-                                             const native::specific_indexed_device_storage& in_dev_storage,
-                                             device_rank_table_t& registered_ids,
-                                             size_t preferred_rank)
+rank_binder<group_id, class_id>::rank_binder(
+    const ccl::device_index_type& in_device_idx,
+    const native::specific_indexed_device_storage& in_dev_storage,
+    device_rank_table_t& registered_ids,
+    size_t preferred_rank)
         : device_id(in_device_idx),
           in_device_storage(in_dev_storage),
           registered_device_id(registered_ids),
@@ -49,14 +50,13 @@ rank_binder<group_id, class_id>::rank_binder(const ccl::device_index_type& in_de
 
 template <ccl::group_split_type group_id, ccl::device_topology_type class_id>
 template <class device_t>
-void rank_binder<group_id, class_id>::operator()(
-    native::device_t_ptr<device_t>& comm_device) {
+void rank_binder<group_id, class_id>::operator()(native::device_t_ptr<device_t>& comm_device) {
     if (find) {
         return;
     }
 
     const native::indexed_device_container<device_t>& in_typed_container =
-            ccl_tuple_get<native::indexed_device_container<device_t>>(in_device_storage);
+        ccl_tuple_get<native::indexed_device_container<device_t>>(in_device_storage);
 
     for (const auto& dev : in_typed_container) {
         ccl_device& device = dev.second->get_device();
@@ -66,17 +66,15 @@ void rank_binder<group_id, class_id>::operator()(
                 find = true;
 
                 // set rank for device: automatically or user-preferred
-                if (preferred_rank_id == std::numeric_limits<size_t>::max())
-                {
+                if (preferred_rank_id == std::numeric_limits<size_t>::max()) {
                     // automatically from logical topology
                     rank = dev.first;
                 }
-                else
-                {
+                else {
                     //use user defined rank
                     rank = preferred_rank_id;
                 }
-                registered_device_id.insert({device_id, rank});
+                registered_device_id.insert({ device_id, rank });
 
                 //bind device
                 comm_device = dev.second;

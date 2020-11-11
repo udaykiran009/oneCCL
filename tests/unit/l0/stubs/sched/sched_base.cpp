@@ -14,8 +14,7 @@ void ccl_sched_base::set_coll_attr(const ccl_coll_attr& attr) {
 }
 
 void ccl_sched_base::update_coll_param_and_attr(const ccl_coll_param& param,
-                                                const ccl_coll_attr& attr) {
-}
+                                                const ccl_coll_attr& attr) {}
 
 size_t ccl_sched_base::get_priority() const {
     return 0;
@@ -35,16 +34,12 @@ ccl_buffer ccl_sched_base::find_and_realloc_buffer(void* in_ptr,
     return ccl_buffer();
 }
 
-void ccl_sched_base::free_buffers() {
-}
+void ccl_sched_base::free_buffers() {}
 
-void ccl_sched_base::add_memory_region(atl_mr_t* mr) {
-}
+void ccl_sched_base::add_memory_region(atl_mr_t* mr) {}
 
-void ccl_sched_base::alloc_buffers_for_sycl_copy() {
-}
+void ccl_sched_base::alloc_buffers_for_sycl_copy() {}
 
-void ccl_sched_base::update_id() {
-}
+void ccl_sched_base::update_id() {}
 
 void ccl_sched_base::dump(std::ostream& out, const char* name) const {}

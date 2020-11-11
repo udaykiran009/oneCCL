@@ -381,19 +381,22 @@ struct ipc_server_handles_storage {
     }
 
     template <class... Handles>
-    void create_ipcs(std::shared_ptr<native::ccl_context> ctx, size_t thread_idx, size_t threads_count, Handles*... h) {
+    void create_ipcs(std::shared_ptr<native::ccl_context> ctx,
+                     size_t thread_idx,
+                     size_t threads_count,
+                     Handles*... h) {
         std::array<native::ccl_device::device_memory<T>*, sizeof...(h)> memory_handles{ h... };
 
         ipc_handles_container& ipc_cont = per_thread_storage[thread_idx];
 
-        std::transform(
-            memory_handles.begin(),
-            memory_handles.end(),
-            std::back_inserter(ipc_cont),
-            [ctx](native::ccl_device::device_memory<T>* memory_handle) {
-                auto device_ptr = memory_handle->get_owner().lock();
-                return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle, ctx);
-            });
+        std::transform(memory_handles.begin(),
+                       memory_handles.end(),
+                       std::back_inserter(ipc_cont),
+                       [ctx](native::ccl_device::device_memory<T>* memory_handle) {
+                           auto device_ptr = memory_handle->get_owner().lock();
+                           return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle,
+                                                                              ctx);
+                       });
     }
 
     std::vector<uint8_t> serialize_storage(size_t thread_idx) {
@@ -431,7 +434,8 @@ struct ipc_client_handles_storage {
 
     std::map<size_t, ipc_client_handles_container> per_thread_storage;
 
-    size_t deserialize(std::shared_ptr<native::ccl_context> ctx, const std::vector<uint8_t>& received_raw_handles,
+    size_t deserialize(std::shared_ptr<native::ccl_context> ctx,
+                       const std::vector<uint8_t>& received_raw_handles,
                        size_t expected_handles,
                        native::ccl_device_platform& global_platform,
                        std::shared_ptr<native::ccl_device_platform> pl) {

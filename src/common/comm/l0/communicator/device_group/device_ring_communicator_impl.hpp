@@ -104,10 +104,12 @@ ccl::event device_group_ring_communicator::allreduce_impl(
     using community_t = typename device_community_container<class_id>::element_type;
     community_t community = device_community_impl.get_topology(ring_index);
 
-    communication_device_expander<buffer_type, group_id, class_id,
-                                  native::l0_allreduce_typed_entry> expander;
-    ccl_tuple_for_each_args(communication_device, expander,
-                            ctx, community,
+    communication_device_expander<buffer_type, group_id, class_id, native::l0_allreduce_typed_entry>
+        expander;
+    ccl_tuple_for_each_args(communication_device,
+                            expander,
+                            ctx,
+                            community,
                             this->get_native_context(),
                             send_entry_buffer,
                             recv_entry_buffer,

@@ -19,7 +19,7 @@ class ccl_ipc_gpu_comm : public ccl_gpu_base_comm<ccl_ipc_gpu_comm, gpu_types::I
                                                         std::nullptr_t,
                                                         std::nullptr_t,
                                                         process_group_context>,
-                        public net::ipc_server {
+                         public net::ipc_server {
 public:
     using base = ccl_gpu_base_comm<ccl_ipc_gpu_comm, gpu_types::IPC_DESTINATION_GPU>;
 
@@ -78,6 +78,7 @@ public:
     }
 
     supported_modules& get_registered_modules();
+
 private:
     supported_modules registered_modules;
 };

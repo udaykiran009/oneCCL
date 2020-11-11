@@ -41,10 +41,10 @@ public:
     COMM_IMPL_SPARSE_DECLARATION
     COMM_IMPL_SPARSE_CLASS_DECLARATION
 
-    communication_devices_t& get_communication_device()
-    {
+    communication_devices_t& get_communication_device() {
         return communication_device;
     }
+
 private:
     std::shared_ptr<native::thread_group_context> ctx;
     communication_devices_t communication_device;

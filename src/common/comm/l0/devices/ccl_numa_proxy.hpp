@@ -71,8 +71,8 @@ public:
               class gpu_entry>
     gpu_kernel_t<gpu_entry::type(), group_id, class_id, native_data_type>& register_entry(
         gpu_entry& entry) {
-
-        static_assert(group_id == ccl::group_split_type::cluster, "ccl_numa_proxy available for ccl::group_split_type::cluster only");
+        static_assert(group_id == ccl::group_split_type::cluster,
+                      "ccl_numa_proxy available for ccl::group_split_type::cluster only");
 
         const topology_addr<group_id, class_id>& comm_addr =
             base::template get_comm_data<group_id, class_id>();

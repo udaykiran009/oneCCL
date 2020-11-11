@@ -20,7 +20,8 @@ public:
 
     std::shared_ptr<ipc_tx_connection> create_connection(const std::string& addr);
     bool stop_all();
+
 private:
     std::map<std::string, std::shared_ptr<ipc_tx_connection>> connections;
 };
-}
+} // namespace net

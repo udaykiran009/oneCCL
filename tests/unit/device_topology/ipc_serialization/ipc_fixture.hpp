@@ -19,7 +19,6 @@ protected:
     }
 };
 
-
 class ipc_handles_fixture : public common_fixture {
 public:
     int wait_for_child_fork(int pid) {
@@ -27,8 +26,7 @@ public:
     }
 
 protected:
-    ipc_handles_fixture(): common_fixture(get_global_device_indices()) {
-    }
+    ipc_handles_fixture() : common_fixture(get_global_device_indices()) {}
 
     virtual ~ipc_handles_fixture() override {}
 
@@ -37,37 +35,40 @@ protected:
     }
 
     inline void wait_phase(unsigned char phase) {
-
         int ret = writeToSocket(communication_socket, &phase, sizeof(phase));
-        if(ret != 0) {
-            std::cerr << "Cannot writeToSocket on phase: " << (int)phase << ", error: " << strerror(errno) << std::endl;;
+        if (ret != 0) {
+            std::cerr << "Cannot writeToSocket on phase: " << (int)phase
+                      << ", error: " << strerror(errno) << std::endl;
+            ;
             abort();
         }
 
         unsigned char get_phase = phase + 1;
         ret = readFromSocket(communication_socket, &get_phase, sizeof(get_phase));
-        if(ret != 0) {
-            std::cerr << "Cannot readFromSocket on phase: " << (int)phase << ", error: " << strerror(errno) << std::endl;
+        if (ret != 0) {
+            std::cerr << "Cannot readFromSocket on phase: " << (int)phase
+                      << ", error: " << strerror(errno) << std::endl;
             abort();
         }
 
-        if(phase != get_phase) {
-            std::cerr << "wait_phase phases mismatch! wait phase: " << (int)phase << ", got phase: " << (int)get_phase << std::endl;;
+        if (phase != get_phase) {
+            std::cerr << "wait_phase phases mismatch! wait phase: " << (int)phase
+                      << ", got phase: " << (int)get_phase << std::endl;
+            ;
             abort();
         }
     }
 
     void SetUp() override {
-
-        if(global_affinities.size() != 2)
-        {
+        if (global_affinities.size() != 2) {
             std::cerr << __FUNCTION__ << " - not enough devices in L0_CLUSTER_AFFINITY_MASK."
                       << "Two devices required at least" << std::endl;
             abort();
         }
         if (socketpair(AF_LOCAL, SOCK_STREAM, 0, sockets) < 0) {
-            std::cerr << __FUNCTION__ << " - cannot create sockets pairt before fork: "
-                      << strerror(errno) << std::endl;
+            std::cerr << __FUNCTION__
+                      << " - cannot create sockets pairt before fork: " << strerror(errno)
+                      << std::endl;
             abort();
         }
 
@@ -76,8 +77,8 @@ protected:
 
         pid = fork();
         if (pid < 0) {
-            std::cerr << __FUNCTION__ << " - cannot fork() process: "
-                      << strerror(errno) << std::endl;
+            std::cerr << __FUNCTION__ << " - cannot fork() process: " << strerror(errno)
+                      << std::endl;
             abort();
         }
         else if (pid == 0) //child

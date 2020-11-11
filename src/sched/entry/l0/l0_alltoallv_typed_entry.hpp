@@ -478,8 +478,7 @@ public:
     }
 
     bool execute(kernel_main_typed& main_entry_function, kernel_ipc_typed& right_kernel) {
-
-        bool is_right_kernel_ready  = false;
+        bool is_right_kernel_ready = false;
         /* TODO UNSUPPORTED
 
         //Check argument binding in kernels for next rank

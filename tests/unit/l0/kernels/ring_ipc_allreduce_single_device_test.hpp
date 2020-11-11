@@ -98,8 +98,8 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
             read_for_receive_flag.enqueue_write_sync({ (int)0 });
             barrier_flag.enqueue_write_sync({ (int)0 });
 
-            ipc_server_flags.create_ipcs(ctx,
-                thread_idx, num_thread, &left_wrote_2_me_flag, &read_for_receive_flag);
+            ipc_server_flags.create_ipcs(
+                ctx, thread_idx, num_thread, &left_wrote_2_me_flag, &read_for_receive_flag);
 
             /* fill array in specific order
              * Left: l_L, l_R, l_B, r_L, r_R
@@ -168,11 +168,11 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
             flags_serialized[thread_id].assign(received_raw_handles.begin() + mem_send,
                                                received_raw_handles.end());
 
-            size_t count =
-                ipc_client_memory.deserialize(ctx, memory_serialized.at(thread_id), 1, *global_platform, ipc_platform);
+            size_t count = ipc_client_memory.deserialize(
+                ctx, memory_serialized.at(thread_id), 1, *global_platform, ipc_platform);
             UT_ASSERT(count == 1, "Deserialized 1 IPC memory handle");
-            count =
-                ipc_client_flags.deserialize(ctx, flags_serialized.at(thread_id), 2, *global_platform, ipc_platform);
+            count = ipc_client_flags.deserialize(
+                ctx, flags_serialized.at(thread_id), 2, *global_platform, ipc_platform);
             UT_ASSERT(count == 2, "Deserialized 2 IPC flag handles");
         }
     }

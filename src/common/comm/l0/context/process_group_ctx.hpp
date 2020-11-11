@@ -19,18 +19,16 @@ struct allied_process_group_scheduler;
 //TODO separate class on two: context & process device requestor
 struct process_group_context
         : scaling_ctx_dispatcher<
-                numa_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>,
-                scale_up_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>,
-                scale_out_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>,
-                ipc_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>> {
-
+              numa_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>,
+              scale_up_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>,
+              scale_out_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>,
+              ipc_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>> {
     using numa_context_base = numa_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>;
     using scaleup_context_base =
         scale_up_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>;
     using scaleout_context_base =
         scale_out_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>;
-    using ipc_context_base =
-        ipc_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>;
+    using ipc_context_base = ipc_ctx<process_group_context, SUPPORTED_TOPOLOGY_CLASSES_DECL_LIST>;
 
     friend class device_group_ring_topology;
     friend class thread_group_ring_topology;
@@ -124,7 +122,6 @@ struct process_group_context
     const scaleout_context_base& get_scaleout_ctx() const;
     ipc_context_base& get_ipc_ctx();
     const ipc_context_base& get_ipc_ctx() const;
-
 
     virtual /*TODO use stub*/
         void

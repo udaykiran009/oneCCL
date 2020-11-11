@@ -50,15 +50,15 @@ struct ccl_device_platform : std::enable_shared_from_this<ccl_device_platform> {
         return sizeof(pid_t) + sizeof(pid_t) + sizeof(platform_id_type);
     }
 
-    static std::weak_ptr<ccl_device_platform> deserialize(const uint8_t** data,
-                                                 size_t& size,
-                                                 std::shared_ptr<ccl_device_platform>& out_platform);
-    size_t serialize(std::vector<uint8_t>& out,
-                             size_t from_pos,
-                             size_t expected_size) const;
+    static std::weak_ptr<ccl_device_platform> deserialize(
+        const uint8_t** data,
+        size_t& size,
+        std::shared_ptr<ccl_device_platform>& out_platform);
+    size_t serialize(std::vector<uint8_t>& out, size_t from_pos, size_t expected_size) const;
 
     platform_id_type get_id() const noexcept;
     pid_t get_pid() const noexcept;
+
 private:
     ccl_device_platform(platform_id_type platform_id = 0);
 

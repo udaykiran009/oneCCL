@@ -186,8 +186,8 @@ inline bool cluster_group_device_creator::build_all(
 
         //TODO schoose the first one
         shared_ipc_devices.emplace_back(shared_ipc_devices_candidates.size() /*color*/,
-                                 *shared_ipc_devices_candidates.begin() /*device*/,
-                                 thread_index /*thread to insertion*/);
+                                        *shared_ipc_devices_candidates.begin() /*device*/,
+                                        thread_index /*thread to insertion*/);
 
         shared_ipc_links_per_proc = *processes_on_node.begin();
         scale_out_links_per_proc = process_size / shared_ipc_links_per_proc;

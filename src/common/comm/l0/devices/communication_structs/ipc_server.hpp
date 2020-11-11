@@ -25,8 +25,8 @@ public:
     std::unique_ptr<ipc_rx_connection> process_connection();
 
 private:
-    int listen_fd {-1};
+    int listen_fd{ -1 };
     sockaddr_un server_addr{};
-    std::string server_shared_name {};
+    std::string server_shared_name{};
 };
-}
+} // namespace net

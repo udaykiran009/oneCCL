@@ -177,13 +177,13 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
 
     // serialize/deserialize
     static constexpr size_t get_size_for_serialize() {
-        return owner_t::get_size_for_serialize() +
-               sizeof(device_properties.deviceId);
+        return owner_t::get_size_for_serialize() + sizeof(device_properties.deviceId);
     }
 
-    static std::weak_ptr<ccl_device> deserialize(const uint8_t** data,
-                                                 size_t& size,
-                                                 std::shared_ptr<ccl_device_platform>& out_platform);
+    static std::weak_ptr<ccl_device> deserialize(
+        const uint8_t** data,
+        size_t& size,
+        std::shared_ptr<ccl_device_platform>& out_platform);
     virtual size_t serialize(std::vector<uint8_t>& out,
                              size_t from_pos,
                              size_t expected_size) const;
@@ -206,8 +206,9 @@ private:
                                      const ze_device_mem_alloc_desc_t& mem_descr,
                                      std::shared_ptr<ccl_context> ctx);
 
-    static handle_t get_assoc_device_handle(const void* ptr, const ccl_device_driver* driver,
-                                                            std::shared_ptr<ccl_context> ctx);
+    static handle_t get_assoc_device_handle(const void* ptr,
+                                            const ccl_device_driver* driver,
+                                            std::shared_ptr<ccl_context> ctx);
     void device_free_memory(void* mem_ptr, ze_context_handle_t& ctx);
 
     //TODO shared mutex?

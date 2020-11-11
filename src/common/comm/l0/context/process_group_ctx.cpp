@@ -107,26 +107,28 @@ bool process_group_context::sync_barrier(const ccl::device_indices_type& thread_
     //find possible IPC device with P2P capability
     LOG_INFO("Process (", process_idx, "/", process_count, ") starts hardware topologies creation");
 
-
     /* TODO -S- enable it later
     cluster_group_device_creator ally_process_topology(
         process_idx, process_count, *this, *gpu_device_storage);
     */
     {
         LOG_INFO("TODO - Limitation on node processes considered!!!\n"
-                 "process_idx: ", process_idx, ", process_count: ", process_count,
-                 ", cluster_device_rank_offset: ", cluster_device_rank_offset,
-                 ", cluster_device_size: ", cluster_device_size);
+                 "process_idx: ",
+                 process_idx,
+                 ", process_count: ",
+                 process_count,
+                 ", cluster_device_rank_offset: ",
+                 cluster_device_rank_offset,
+                 ", cluster_device_size: ",
+                 cluster_device_size);
         //TODO -S- Temporary solution for IPC topology
-        allied_process_group_ring_topology ally_process_topology(process_idx, process_count, *this,
-                                                             *gpu_device_storage,
-                                                             cluster_device_rank_offset,
-                                                             cluster_device_size,
-                                                             comm_addr);
-
-
-
-
+        allied_process_group_ring_topology ally_process_topology(process_idx,
+                                                                 process_count,
+                                                                 *this,
+                                                                 *gpu_device_storage,
+                                                                 cluster_device_rank_offset,
+                                                                 cluster_device_size,
+                                                                 comm_addr);
 
         const ccl::process_device_indices_type& node_mask = get_node_afinity_indices(get_host_id());
 
@@ -134,7 +136,7 @@ bool process_group_context::sync_barrier(const ccl::device_indices_type& thread_
         detail::adjacency_matrix p2p_dependency_graph =
             ally_process_topology.build_p2p_capability_matrix(ss, node_mask);
         ss << "\nMatrix\n" << p2p_dependency_graph << std::endl;
-/* TODO -S- enaled it later
+        /* TODO -S- enaled it later
         if (!ally_process_topology.build_all(ss,
                                              comm_addr,
                                              thread_group_ctx->get_thread_group_device_indices(),
@@ -143,12 +145,10 @@ bool process_group_context::sync_barrier(const ccl::device_indices_type& thread_
             abort();
         }
 */
-        if (!ally_process_topology.build_all(ss,
-                                         thread_group_ctx->get_thread_group_device_indices(),
-                                         p2p_dependency_graph))
+        if (!ally_process_topology.build_all(
+                ss, thread_group_ctx->get_thread_group_device_indices(), p2p_dependency_graph))
 
-
-        LOG_DEBUG("Build IPC ring succesfully. Log:\n", ss.str());
+            LOG_DEBUG("Build IPC ring succesfully. Log:\n", ss.str());
     }
 
     {
@@ -167,7 +167,6 @@ bool process_group_context::sync_barrier(const ccl::device_indices_type& thread_
 
     LOG_INFO("initialize IPC context");
     get_ipc_ctx().initialize_ctx(ccl_communicator);
-
 
     // dump topology
     std::stringstream out;
@@ -266,25 +265,23 @@ bool process_group_context::build_cluster_affinity_table(
         receive_process_indices_sizes.begin(), receive_process_indices_sizes.end(), 0);
     LOG_DEBUG("Memory required for device indices size: ", total_device_indices_count, " count");
 
-
-
     //TODO -S- temporary START
     //calculate rank offset and total device count in cluster
     {
         auto my_rank_mask_size_it = receive_process_indices_sizes.begin();
         std::advance(my_rank_mask_size_it, ccl_communicator->rank());
-        cluster_device_rank_offset = std::accumulate(receive_process_indices_sizes.begin(),
-                                                     my_rank_mask_size_it,
-                                                     0);
-        cluster_device_size = std::accumulate(my_rank_mask_size_it,
-                                              receive_process_indices_sizes.end(),
-                                              cluster_device_rank_offset);
+        cluster_device_rank_offset =
+            std::accumulate(receive_process_indices_sizes.begin(), my_rank_mask_size_it, 0);
+        cluster_device_size = std::accumulate(
+            my_rank_mask_size_it, receive_process_indices_sizes.end(), cluster_device_rank_offset);
     }
-    LOG_INFO("Process idx: ", ccl_communicator->rank(),
-             ", device rank offset: ", cluster_device_rank_offset,
-             ", total device count: ", cluster_device_size);
+    LOG_INFO("Process idx: ",
+             ccl_communicator->rank(),
+             ", device rank offset: ",
+             cluster_device_rank_offset,
+             ", total device count: ",
+             cluster_device_size);
     //TODO -S- temporary END
-
 
     //Serialize own devices path data
     auto serialized_indices = detail::serialize::device_path_serializer::serialize_indices(
@@ -661,9 +658,9 @@ void process_group_context::collect_cluster_colored_plain_graphs(
     using namespace detail::serialize;
 
     LOG_INFO("Collect cluster colored plain graphs, process initiator: ",
-              process_idx,
-              ", graphs count: ",
-              detail::to_string(send_graph));
+             process_idx,
+             ", graphs count: ",
+             detail::to_string(send_graph));
 
     // serialize current process graph list into bytes
     device_path_serializable::raw_data_t my_serialized_graph =
@@ -728,7 +725,8 @@ void process_group_context::collect_cluster_colored_plain_graphs(
 
     LOG_DEBUG("Deserialize recv_cluster_graphs");
     try {
-        for (process_num = 0; process_num < static_cast<size_t>(ccl_communicator->size()); process_num++) {
+        for (process_num = 0; process_num < static_cast<size_t>(ccl_communicator->size());
+             process_num++) {
             detail::colored_plain_graph_list graph =
                 device_path_deserializer::deserialize_colored_graph_list_indices(
                     recv_cluster_graphs, deserialized_bytes, offset_bytes);
@@ -766,7 +764,10 @@ void process_group_context::collect_cluster_colored_plain_graphs(
                              ex.what());
     }
 
-    LOG_DEBUG("Global colored_graph deserialized on process id: ", process_idx, ". Graphs:\n", detail::to_string(out_global_graphs));
+    LOG_DEBUG("Global colored_graph deserialized on process id: ",
+              process_idx,
+              ". Graphs:\n",
+              detail::to_string(out_global_graphs));
 }
 
 process_group_context::numa_context_base& process_group_context::get_numa_ctx() {
@@ -792,8 +793,7 @@ const process_group_context::scaleout_context_base& process_group_context::get_s
 process_group_context::ipc_context_base& process_group_context::get_ipc_ctx() {
     return *this;
 }
-const process_group_context::ipc_context_base& process_group_context::get_ipc_ctx()
-    const {
+const process_group_context::ipc_context_base& process_group_context::get_ipc_ctx() const {
     return *this;
 }
 } // namespace native

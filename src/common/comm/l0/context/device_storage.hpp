@@ -32,12 +32,11 @@ struct device_storage {
     // creation specific device type, determined from 'create_devices_by_indices'
     template <class device_t, class... Args>
     device_t_ptr<device_t> create_gpu_device(ccl_device& device, size_t ranks, Args&&... args) {
-
         //break compiler for 'device_t' constructible check
         static_assert(std::is_constructible<device_t,
-                                    typename std::add_lvalue_reference<ccl_device>::type,
-                                    size_t,
-                                    Args...>::value,
+                                            typename std::add_lvalue_reference<ccl_device>::type,
+                                            size_t,
+                                            Args...>::value,
                       "Object of class 'device_t' is not constructible from given arguments");
         std::shared_ptr<device_t> gpu_instance =
             std::make_shared<device_t>(device, ranks, std::forward<Args>(args)...);

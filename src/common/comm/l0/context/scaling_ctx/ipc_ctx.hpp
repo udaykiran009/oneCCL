@@ -29,9 +29,9 @@ class session;
 
 template <class Impl, ccl::device_topology_type... types>
 class ipc_ctx : public observer::base_scaling_ctx<ipc_ctx<Impl, types...>,
-                                                   ccl_ipc_source_gpu_comm<ccl_gpu_comm>,
-                                                   ccl_ipc_source_gpu_comm<ccl_virtual_gpu_comm>,
-                                                   ccl_ipc_gpu_comm> {
+                                                  ccl_ipc_source_gpu_comm<ccl_gpu_comm>,
+                                                  ccl_ipc_source_gpu_comm<ccl_virtual_gpu_comm>,
+                                                  ccl_ipc_gpu_comm> {
 public:
     static_assert(sizeof...(types), "types must be not 0");
     using context_impl = Impl;
@@ -53,8 +53,7 @@ public:
     observable_ipc_topologies observables;
     indexed_observable_ipc_topologies indexed_observables;
 
-    ipc_ctx() {
-    }
+    ipc_ctx() {}
 
     ~ipc_ctx() {
         stop.store(true);
@@ -64,94 +63,106 @@ public:
     void initialize_ctx(std::shared_ptr<ccl::host_communicator> communicator);
 
     // session data
-    template<class IPC_source_device_t>
-    struct ipc_src_session_data
-    {
+    template <class IPC_source_device_t>
+    struct ipc_src_session_data {
         std::map<IPC_source_device_t*, std::shared_ptr<session_table>> source_sessions;
     };
 
-    using session_table_t = std::tuple<ipc_src_session_data<observer_t<ccl_gpu_comm>>, ipc_src_session_data<observer_t<ccl_virtual_gpu_comm>>>;
+    using session_table_t = std::tuple<ipc_src_session_data<observer_t<ccl_gpu_comm>>,
+                                       ipc_src_session_data<observer_t<ccl_virtual_gpu_comm>>>;
     std::map<ccl_coll_type, session_table_t> collective_sessions;
 
     //observer subject interface implementations
     template <class device_t, ccl::device_topology_type topology_type>
-    void attach_ctx_observer(size_t rank_addr, observer_t<device_t>* observer_ptr,
+    void attach_ctx_observer(size_t rank_addr,
+                             observer_t<device_t>* observer_ptr,
                              std::integral_constant<ccl::device_topology_type, topology_type> val) {
         register_observer_impl<topology_type>(rank_addr, observer_ptr);
     }
 
     template <ccl::device_topology_type topology_type>
-    void attach_ctx_observer(size_t rank_addr, ccl_ipc_gpu_comm* observer_ptr,
+    void attach_ctx_observer(size_t rank_addr,
+                             ccl_ipc_gpu_comm* observer_ptr,
                              std::integral_constant<ccl::device_topology_type, topology_type> val) {
         register_observer_impl<topology_type>(rank_addr, observer_ptr);
     }
 
-    template<class device_t, ccl::device_topology_type class_id, class ipc_invoke_params_t>
+    template <class device_t, ccl::device_topology_type class_id, class ipc_invoke_params_t>
     void invoke_ctx_observer(observer_t<device_t>* observer_ptr,
                              std::integral_constant<ccl::device_topology_type, class_id> val,
-                             const ipc_session_key& session_key, ipc_invoke_params_t&& param) {
-
+                             const ipc_session_key& session_key,
+                             ipc_invoke_params_t&& param) {
         // sanity - check registered proxy
         observer::container_t<observer_t<device_t>>& container =
-        scaling_ctx_base_t::template get_types_container<observer_t<device_t>, class_id>(observables);
+            scaling_ctx_base_t::template get_types_container<observer_t<device_t>, class_id>(
+                observables);
 
         auto it = container.find(observer_ptr);
         if (it == container.end()) {
-            throw std::runtime_error(std::string("Observer is not registered: ") + observer_ptr->to_string() +
+            throw std::runtime_error(std::string("Observer is not registered: ") +
+                                     observer_ptr->to_string() +
                                      " total count: " + std::to_string(container.size()));
         }
 
         //Try to find existing session owner for coll type
         auto coll_session_table_it = collective_sessions.find(ipc_invoke_params_t::get_coll_type());
-        if(coll_session_table_it == collective_sessions.end()) {
+        if (coll_session_table_it == collective_sessions.end()) {
             std::stringstream ss;
-            for (const auto& val : collective_sessions)
-            {
+            for (const auto& val : collective_sessions) {
                 ss << ccl_coll_type_to_str(val.first) << ", ";
             }
-            LOG_ERROR("session_key: ", session_key.to_string(), ", cannot find collective session table for key: ",
-                  ccl_coll_type_to_str(ipc_invoke_params_t::get_coll_type()), ". Available keys: ",
-                  ss.str());
+            LOG_ERROR("session_key: ",
+                      session_key.to_string(),
+                      ", cannot find collective session table for key: ",
+                      ccl_coll_type_to_str(ipc_invoke_params_t::get_coll_type()),
+                      ". Available keys: ",
+                      ss.str());
             abort();
         }
 
-        auto& sessions_table = ccl_tuple_get<ipc_src_session_data<observer_t<device_t>>>(coll_session_table_it->second);
+        auto& sessions_table = ccl_tuple_get<ipc_src_session_data<observer_t<device_t>>>(
+            coll_session_table_it->second);
         auto session_table_it = sessions_table.source_sessions.find(observer_ptr);
         if (session_table_it == sessions_table.source_sessions.end()) {
             std::stringstream ss;
             ss << "sessions count: " << sessions_table.source_sessions.size() << std::endl;
-            for (const auto& val : sessions_table.source_sessions)
-            {
+            for (const auto& val : sessions_table.source_sessions) {
                 ss << val.first->to_string() << ", " << val.second->to_string() << std::endl;
             }
-            LOG_ERROR("session_key: ", session_key.to_string(), ", cannot find source session for device: ",
-                    observer_ptr->to_string(), ". Available keys: ",
-                    ss.str());
+            LOG_ERROR("session_key: ",
+                      session_key.to_string(),
+                      ", cannot find source session for device: ",
+                      observer_ptr->to_string(),
+                      ". Available keys: ",
+                      ss.str());
             abort();
         }
 
         std::shared_ptr<session_table> table = session_table_it->second;
-        if(!table) {
+        if (!table) {
             LOG_ERROR("session_key: ", session_key.to_string(), ", session table is empty. Abort");
             abort();
         }
 
         std::shared_ptr<session> sess;
-        LOG_DEBUG("session_key: ", session_key.to_string(), ", current sessions count: ", table->sessions.size());
+        LOG_DEBUG("session_key: ",
+                  session_key.to_string(),
+                  ", current sessions count: ",
+                  table->sessions.size());
         auto session_it = table->sessions.find(session_key);
-        if (session_it == table->sessions.end())
-        {
+        if (session_it == table->sessions.end()) {
             //create new session
-            const auto& comm_addr = observer_ptr->template get_comm_data<ccl::group_split_type::cluster,
-                                                ccl::device_topology_type::ring>();
+            const auto& comm_addr =
+                observer_ptr->template get_comm_data<ccl::group_split_type::cluster,
+                                                     ccl::device_topology_type::ring>();
 
             size_t rank_peer_addr = comm_addr.rank;
 
             std::string peer_addr = create_ipc_addr_for_rank(rank_peer_addr);
-            sess = table->create_session<class_id>(session_key, observer_ptr, peer_addr, std::move(param), comm_addr.rank);
+            sess = table->create_session<class_id>(
+                session_key, observer_ptr, peer_addr, std::move(param), comm_addr.rank);
         }
-        else
-        {
+        else {
             //renew existing
             sess = session_it->second;
         }
@@ -160,6 +171,7 @@ public:
     }
 
     void send_stop();
+
 private:
     std::string create_ipc_addr_for_rank(size_t rank) const;
     template <ccl::device_topology_type topology_type, class device_t>
@@ -177,6 +189,7 @@ private:
 
     void listener(ccl_ipc_gpu_comm* listener_device);
 
-    void append_session_for_processing(const ipc_session_key& session_key, std::shared_ptr<session> sess);
+    void append_session_for_processing(const ipc_session_key& session_key,
+                                       std::shared_ptr<session> sess);
 };
 } // namespace native

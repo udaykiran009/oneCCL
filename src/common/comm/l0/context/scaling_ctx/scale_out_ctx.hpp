@@ -51,7 +51,8 @@ public:
 
     //observer subject interface implementations
     template <class device_t, ccl::device_topology_type topology_type>
-    void attach_ctx_observer(size_t rank_addr, observer_t<device_t>* observer_ptr,
+    void attach_ctx_observer(size_t rank_addr,
+                             observer_t<device_t>* observer_ptr,
                              std::integral_constant<ccl::device_topology_type, topology_type> val) {
         register_observer_impl<topology_type>(rank_addr, observer_ptr);
     }

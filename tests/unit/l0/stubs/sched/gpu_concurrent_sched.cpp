@@ -6,9 +6,7 @@ ccl_gpu_concurrent_sched::ccl_gpu_concurrent_sched(
     const ccl_coll_param& coll_param /* = ccl_coll_param()*/)
         : ccl_sched_base(coll_param),
           ccl_request(),
-          partial_scheds(expected_threads_count) {
-
-}
+          partial_scheds(expected_threads_count) {}
 
 ccl_gpu_concurrent_sched::~ccl_gpu_concurrent_sched() {}
 

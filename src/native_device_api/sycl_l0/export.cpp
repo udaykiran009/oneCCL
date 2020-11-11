@@ -152,7 +152,8 @@ generic_stream_type<cl_backend_type::dpcpp_sycl_l0>::get() const noexcept {
 /**
  * Platform
  */
-CCL_API generic_platform_type<cl_backend_type::dpcpp_sycl_l0>::generic_platform_type(ccl_native_t& pl)
+CCL_API generic_platform_type<cl_backend_type::dpcpp_sycl_l0>::generic_platform_type(
+    ccl_native_t& pl)
         : platform(pl) {}
 
 CCL_API generic_platform_type<cl_backend_type::dpcpp_sycl_l0>::ccl_native_t&

@@ -23,7 +23,6 @@ public:
                                                              native::ccl_numa_proxy<native::ccl_gpu_comm>,
                                                              native::ccl_numa_proxy<native::ccl_virtual_gpu_comm>*/>;
 
-
     using coll_request_t = ccl::event;
 
     process_a2a_communicator(ccl::unified_device_type&& device,
@@ -43,10 +42,10 @@ public:
     COMM_IMPL_SPARSE_DECLARATION
     COMM_IMPL_SPARSE_CLASS_DECLARATION
 
-    communication_devices_t& get_communication_device()
-    {
+    communication_devices_t& get_communication_device() {
         return communication_device;
     }
+
 private:
     std::shared_ptr<native::process_group_context> ctx;
     communication_devices_t communication_device;

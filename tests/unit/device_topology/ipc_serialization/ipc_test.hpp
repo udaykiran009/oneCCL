@@ -64,7 +64,8 @@ TEST_F(ipc_handles_fixture, ipc_unix_server_handles_serialize) {
     output << "PID: " << *my_pid << " create ipc handle from memory handles" << std::endl;
     using ipc_handle_container = std::vector<ccl_device::device_ipc_memory_handle>;
     std::map<ccl_device*, ipc_handle_container> ipc_mem_storage_to_send;
-    using ipc_handles_ptr_container = std::vector<std::shared_ptr<ccl_device::device_ipc_memory_handle>>;
+    using ipc_handles_ptr_container =
+        std::vector<std::shared_ptr<ccl_device::device_ipc_memory_handle>>;
     std::map<ccl_device*, ipc_handles_ptr_container> ipc_mem_storage_to_receive;
     for (auto& device_storage : device_allocated_memory_storage) {
         // get device with its memory handles
@@ -80,12 +81,13 @@ TEST_F(ipc_handles_fixture, ipc_unix_server_handles_serialize) {
             in_ipc_handles.resize(memory_handles.size());
 
             // create ic handles to send it later
-            std::transform(memory_handles.begin(),
-                           memory_handles.end(),
-                           std::back_inserter(out_ipc_handles),
-                           [device_ptr, ctx](ccl_device::device_memory<native_type>& memory_handle) {
-                               return device_ptr->create_ipc_memory_handle(memory_handle.handle, ctx);
-                           });
+            std::transform(
+                memory_handles.begin(),
+                memory_handles.end(),
+                std::back_inserter(out_ipc_handles),
+                [device_ptr, ctx](ccl_device::device_memory<native_type>& memory_handle) {
+                    return device_ptr->create_ipc_memory_handle(memory_handle.handle, ctx);
+                });
         }
         catch (const std::exception& ex) {
             UT_ASSERT(false,
@@ -96,7 +98,7 @@ TEST_F(ipc_handles_fixture, ipc_unix_server_handles_serialize) {
 
     // send to other process
     ipc_server server;
-    std::string addr{"ipc_unix_suite_"};
+    std::string addr{ "ipc_unix_suite_" };
     std::string my_addr = addr + std::to_string(*my_pid);
     std::string other_addr = addr + std::to_string(*other_pid);
 
@@ -117,18 +119,16 @@ TEST_F(ipc_handles_fixture, ipc_unix_server_handles_serialize) {
     // send data
     std::map<ccl_device*, std::vector<uint8_t>> received_raw_data_per_device;
     for (const auto& device_storage : ipc_mem_storage_to_send) {
-
         const ipc_handle_container& ipc_mem_handles = device_storage.second;
-        std::vector<uint8_t> serialized_raw_handles = tx_conn->send_ipc_memory(ipc_mem_handles, *my_pid);
+        std::vector<uint8_t> serialized_raw_handles =
+            tx_conn->send_ipc_memory(ipc_mem_handles, *my_pid);
 
         //prepare recv array
         received_raw_data_per_device[device_storage.first].resize(serialized_raw_handles.size());
     }
 
-
     // receive data
     for (auto& device_storage : ipc_mem_storage_to_receive) {
-
         ipc_handles_ptr_container& ipc_handles = device_storage.second;
         std::vector<uint8_t>& data_to_recv = received_raw_data_per_device[device_storage.first];
 
@@ -138,8 +138,7 @@ TEST_F(ipc_handles_fixture, ipc_unix_server_handles_serialize) {
 
         UT_ASSERT(received_rank == *other_pid, "Received rank is invalid");
         size_t index = 0;
-        for(auto& recv_ipc_handle : ipc_handles) {
-
+        for (auto& recv_ipc_handle : ipc_handles) {
             std::shared_ptr<ccl_device> owner_device = recv_ipc_handle->get_owner().lock();
             auto ipc_device_it = std::find_if(
                 global_driver.devices.begin(),
@@ -152,39 +151,44 @@ TEST_F(ipc_handles_fixture, ipc_unix_server_handles_serialize) {
 
             output << "PID: " << *my_pid << " restore memory from IPC handle" << std::endl;
             try {
-                ccl_device::device_ipc_memory recovered_mem = owner_device->get_ipc_memory(std::move(recv_ipc_handle), ctx);
+                ccl_device::device_ipc_memory recovered_mem =
+                    owner_device->get_ipc_memory(std::move(recv_ipc_handle), ctx);
 
                 std::vector<native_type> read_data(data_size, 0);
-                if(index == 0) //send_mem
+                if (index == 0) //send_mem
                 {
-                    native::detail::copy_memory_to_device_sync_unsafe(read_data.data(),
-                                                recovered_mem.get().pointer,
-                                                data_size * sizeof(native_type),
-                                                owner_device,
-                                                ctx);
+                    native::detail::copy_memory_to_device_sync_unsafe(
+                        read_data.data(),
+                        recovered_mem.get().pointer,
+                        data_size * sizeof(native_type),
+                        owner_device,
+                        ctx);
 
                     std::vector<native_type> read_data_expected(data_size, *other_pid);
-                    UT_ASSERT(read_data == read_data_expected, "Get data for send_buf is unexpected!");
+                    UT_ASSERT(read_data == read_data_expected,
+                              "Get data for send_buf is unexpected!");
                 }
                 else //recv_mem
                 {
-                    native::detail::copy_memory_to_device_sync_unsafe(read_data.data(),
-                                               recovered_mem.get().pointer,
-                                               data_size * sizeof(native_type),
-                                               owner_device,
-                                               ctx);
+                    native::detail::copy_memory_to_device_sync_unsafe(
+                        read_data.data(),
+                        recovered_mem.get().pointer,
+                        data_size * sizeof(native_type),
+                        owner_device,
+                        ctx);
                     std::vector<native_type> read_data_expected(data_size, *my_pid);
-                    UT_ASSERT(read_data == read_data_expected, "Get data for send_buf is unexpected!");
+                    UT_ASSERT(read_data == read_data_expected,
+                              "Get data for send_buf is unexpected!");
                 }
             }
             catch (const std::exception& ex) {
                 UT_ASSERT(false,
-                        "Cannot restore ipc memory handle at index: " << index
-                            << ". Error: " << ex.what());
+                          "Cannot restore ipc memory handle at index: " << index << ". Error: "
+                                                                        << ex.what());
             }
-            index ++;
+            index++;
         }
     }
     output << "PID: " << *my_pid << " finalize process" << std::endl;
 }
-}
+} // namespace ipc_suite

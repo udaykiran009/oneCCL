@@ -13,7 +13,6 @@ ipc_client::~ipc_client() {
 }
 
 std::shared_ptr<ipc_tx_connection> ipc_client::create_connection(const std::string& addr) {
-
     LOG_DEBUG("Create or find existing connection to: ", addr);
     auto it = connections.find(addr);
     if (it != connections.end()) {
@@ -26,8 +25,8 @@ std::shared_ptr<ipc_tx_connection> ipc_client::create_connection(const std::stri
         tx_conn.reset(new ipc_tx_connection(addr));
     }
     catch (const std::exception& ex) {
-        LOG_ERROR("Cannot create TX connection to other IPC server on: ", addr,
-                  ", error: ", ex.what());
+        LOG_ERROR(
+            "Cannot create TX connection to other IPC server on: ", addr, ", error: ", ex.what());
         throw;
     }
 
@@ -38,12 +37,11 @@ std::shared_ptr<ipc_tx_connection> ipc_client::create_connection(const std::stri
 }
 
 bool ipc_client::stop_all() {
-
     LOG_DEBUG("Stop connections: ", connections.size());
-    for(auto &conn_pair : connections) {
+    for (auto& conn_pair : connections) {
         LOG_DEBUG("schedule stop connection to: ", conn_pair.first);
         conn_pair.second.reset();
     }
     return true;
 }
-}
+} // namespace net

@@ -72,7 +72,6 @@ communicator_interface_ptr communicator_interface_dispatcher::create_communicato
         attr,
         atl,
         preferred_topology_group);
-
 }
 
 template <class DeviceType,
@@ -120,9 +119,8 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
     const ccl::comm_split_attr& attr,
     std::shared_ptr<atl_wrapper> atl,
     ccl::group_split_type preferred_topology_group /* = ccl::group_split_type::undetermined */) {
-
     // TODO ring by default at now. Choose preferred a2a if availbale
-    ccl::device_topology_type preferred_topology_class  = ccl::device_topology_type::ring;
+    ccl::device_topology_type preferred_topology_class = ccl::device_topology_type::ring;
 
     // Use process class if not specified otherwise
     // TODO: implement a proper dispatching for other types
@@ -240,7 +238,8 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
         size_t process_idx, \
         const ccl::comm_split_attr& attr, \
         std::shared_ptr<atl_wrapper> atl, \
-        ccl::group_split_type preferred_topology_group /* = ccl::group_split_type::undetermined */);
+        ccl::group_split_type \
+            preferred_topology_group /* = ccl::group_split_type::undetermined */);
 
 #define COMMUNICATOR_INTERFACE_DISPATCHER_NON_CLASS_EXPLICIT_INSTANTIATION(DeviceType, \
                                                                            ContextType) \
@@ -252,7 +251,8 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
         size_t process_idx, \
         const ccl::comm_split_attr& attr, \
         std::shared_ptr<atl_wrapper> atl, \
-        ccl::group_split_type preferred_topology_group /* = ccl::group_split_type::undetermined */);
+        ccl::group_split_type \
+            preferred_topology_group /* = ccl::group_split_type::undetermined */);
 
 COMMUNICATOR_INTERFACE_DISPATCHER_CLASS_EXPLICIT_INSTANTIATION(
     typename ccl::unified_device_type::ccl_native_t,

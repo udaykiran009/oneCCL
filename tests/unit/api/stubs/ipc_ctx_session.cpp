@@ -5,18 +5,15 @@
 
 namespace native {
 
-session::session(origin_ipc_memory_container&& ipc_src_memory_handles, size_t source_ipc_device_rank) {
-}
+session::session(origin_ipc_memory_container&& ipc_src_memory_handles,
+                 size_t source_ipc_device_rank) {}
 
-session::~session()
-{
-}
+session::~session() {}
 
-void session::start(net::ipc_client* client, const std::string& addr) {
-}
+void session::start(net::ipc_client* client, const std::string& addr) {}
 
 std::string session::to_string() const {
-    return {"stub"};
+    return { "stub" };
 }
 
 bool session::process(const ccl_ipc_gpu_comm* indexed_ipc_dst_devices,
@@ -24,9 +21,7 @@ bool session::process(const ccl_ipc_gpu_comm* indexed_ipc_dst_devices,
     return true;
 }
 
-
-
-void session_table::start_session(std::shared_ptr<session> sess, net::ipc_client* client,
-                        const std::string& peer_addr)  {
-}
-}
+void session_table::start_session(std::shared_ptr<session> sess,
+                                  net::ipc_client* client,
+                                  const std::string& peer_addr) {}
+} // namespace native

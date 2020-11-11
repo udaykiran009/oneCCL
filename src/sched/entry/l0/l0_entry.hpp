@@ -116,7 +116,6 @@ public:
     using kernel_ipc_typed =
         typename ccl_ipc_gpu_comm::template gpu_kernel_t<type_op, group_id, class_id, native_type>;
 
-
     template <class elem_t>
     using device_memory = memory<elem_t, ccl_device, ccl_context>;
 
@@ -265,8 +264,9 @@ public:
     //USE GPU cache binding
     virtual std::vector<ccl_device::device_ipc_memory_handle> get_ipc_data() = 0;
     virtual native::ipc_session_key get_ipc_session_key() const {
-        return native::ipc_session_key {this};
+        return native::ipc_session_key{ this };
     }
+
 protected:
     virtual bool finalize_entry() = 0;
     virtual void dump_detail(std::stringstream &str) const override {
@@ -351,7 +351,6 @@ protected:
     create_kernel_router_for_rank(executor &exec,
                                   int next_rank,
                                   specific_indexed_device_storage &group_devices) {
-
         std::unique_ptr<base_connector_interface<kernel_main_typed>> kernel_router;
         while (!kernel_router) {
             //Gather data from in-process GPU
@@ -435,15 +434,13 @@ protected:
                     exec, right_main_func));
         }
 
-        while(!kernel_router)
-        {
+        while (!kernel_router) {
             //ipc-source GPU REAL
             using ipc_src_comm_device = ccl_ipc_source_gpu_comm<ccl_gpu_comm>;
-            native::indexed_device_container<ipc_src_comm_device>& map_devices =
-                                    std::get<ipc_src_comm_device::type_idx()>(group_devices);
+            native::indexed_device_container<ipc_src_comm_device> &map_devices =
+                std::get<ipc_src_comm_device::type_idx()>(group_devices);
             auto it = map_devices.find(next_rank);
-            if(it == map_devices.end())
-            {
+            if (it == map_devices.end()) {
                 break; // not ready yet!
             }
             std::shared_ptr<ipc_src_comm_device> gpu = it->second;
@@ -451,19 +448,18 @@ protected:
                 gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
 
             //communicate with real device from another thread
-            kernel_router.reset(new kernel_connector<kernel_main_typed,
-                                           executor,
-                                           kernel_main_typed>(exec, right_main_func));
+            kernel_router.reset(
+                new kernel_connector<kernel_main_typed, executor, kernel_main_typed>(
+                    exec, right_main_func));
         }
 
-        while(!kernel_router)
-        {
-             //ipc-source GPU VIRTUAL
+        while (!kernel_router) {
+            //ipc-source GPU VIRTUAL
             using ipc_src_comm_device = ccl_ipc_source_gpu_comm<ccl_virtual_gpu_comm>;
-            native::indexed_device_container<ipc_src_comm_device>& map_devices = std::get<ipc_src_comm_device::type_idx()>(group_devices);
+            native::indexed_device_container<ipc_src_comm_device> &map_devices =
+                std::get<ipc_src_comm_device::type_idx()>(group_devices);
             auto it = map_devices.find(next_rank);
-            if(it == map_devices.end())
-            {
+            if (it == map_devices.end()) {
                 break; // not ready yet!
             }
             std::shared_ptr<ipc_src_comm_device> gpu = it->second;
@@ -471,19 +467,17 @@ protected:
                 gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
 
             //communicate with virtual device from another thread
-            kernel_router.reset(new kernel_connector<kernel_main_typed,
-                                           executor,
-                                           kernel_main_typed>(exec, right_main_func));
+            kernel_router.reset(
+                new kernel_connector<kernel_main_typed, executor, kernel_main_typed>(
+                    exec, right_main_func));
         }
 
-
-        while(!kernel_router)
-        {
-             //ipc-source GPU VIRTUAL
-            native::indexed_device_container<ccl_ipc_gpu_comm>& map_devices = std::get<ccl_ipc_gpu_comm::type_idx()>(group_devices);
+        while (!kernel_router) {
+            //ipc-source GPU VIRTUAL
+            native::indexed_device_container<ccl_ipc_gpu_comm> &map_devices =
+                std::get<ccl_ipc_gpu_comm::type_idx()>(group_devices);
             auto it = map_devices.find(next_rank);
-            if(it == map_devices.end())
-            {
+            if (it == map_devices.end()) {
                 break; // not ready yet!
             }
             std::shared_ptr<ccl_ipc_gpu_comm> gpu = it->second;
@@ -491,9 +485,8 @@ protected:
                 gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
 
             //communicate with virtual device from another thread
-            kernel_router.reset(new kernel_connector<kernel_main_typed,
-                                           executor,
-                                           kernel_ipc_typed>(exec, right_main_func));
+            kernel_router.reset(new kernel_connector<kernel_main_typed, executor, kernel_ipc_typed>(
+                exec, right_main_func));
         }
 
         // TODO: check for launching ipc kernel

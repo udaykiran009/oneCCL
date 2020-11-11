@@ -4,7 +4,6 @@
 #define protected public
 #include "utils/utils_test.hpp"
 
-
 #include "graph_resolver/device_group_resolver.hpp"
 #include "graph_resolver/thread_group_resolver.hpp"
 #include "group_topology/device_group_test.hpp"

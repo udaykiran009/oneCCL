@@ -426,18 +426,16 @@ CCL_API ccl_device::handle_t ccl_device::get_assoc_device_handle(const void* ptr
     ze_memory_allocation_properties_t mem_prop;
     ze_device_handle_t alloc_device_handle{};
 
-    if(!ctx) {
-
+    if (!ctx) {
         auto& contexts_storage = driver->get_driver_contexts()->get_context_storage(driver);
         auto acc = contexts_storage.access();
         if (acc.get().empty())
             throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
-                                    " - no default driver in context map");
+                                     " - no default driver in context map");
         ctx = *acc.get().begin();
     }
 
-    ze_result_t result =
-        zeMemGetAllocProperties(ctx->get(), ptr, &mem_prop, &alloc_device_handle);
+    ze_result_t result = zeMemGetAllocProperties(ctx->get(), ptr, &mem_prop, &alloc_device_handle);
     if (result != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("Cannot zeMemGetAllocProperties: ") +
                                  native::to_string(result));
@@ -536,8 +534,7 @@ CCL_API ccl_device::device_ipc_memory ccl_device::get_ipc_memory(
         zeMemOpenIpcHandle(ctx->get(), handle, ipc_handle->handle, flag, &(ipc_memory.pointer));
     if (ret != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("cannot get open ipc mem handle from: ") +
-                                 native::to_string(ipc_handle->handle) +
-                                 "\n" + to_string() +
+                                 native::to_string(ipc_handle->handle) + "\n" + to_string() +
                                  "\nCtx: " + ctx->to_string() +
                                  "\nerror: " + native::to_string(ret));
     }
@@ -580,7 +577,6 @@ CCL_API std::shared_ptr<ccl_device::device_ipc_memory> ccl_device::restore_share
 }
 
 void CCL_API ccl_device::on_delete(ip_memory_elem_t& ipc_mem, ze_context_handle_t& ctx) {
-
     ze_result_t ret = zeMemCloseIpcHandle(ctx, ipc_mem.pointer);
     if (ret != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("cannot close ipc mem handle, error: ") +
@@ -750,9 +746,10 @@ size_t ccl_device::serialize(std::vector<uint8_t>& out,
     return serialized_bytes;
 }
 
-std::weak_ptr<ccl_device> ccl_device::deserialize(const uint8_t** data,
-                                                  size_t& size,
-                                                  std::shared_ptr<ccl_device_platform>& out_platform) {
+std::weak_ptr<ccl_device> ccl_device::deserialize(
+    const uint8_t** data,
+    size_t& size,
+    std::shared_ptr<ccl_device_platform>& out_platform) {
     //restore driver
     auto driver = ccl_device_driver::deserialize(data, size, out_platform).lock();
     if (!driver) {

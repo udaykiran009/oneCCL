@@ -214,7 +214,7 @@ public:
         return class_name();
     }
 
-    std::vector<ccl_device::device_ipc_memory_handle> get_ipc_data()override  {
+    std::vector<ccl_device::device_ipc_memory_handle> get_ipc_data() override {
         ccl_device& owned_device = parent_communicator->get_device();
 
         //TODO

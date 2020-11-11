@@ -23,63 +23,69 @@ ipc_ctx<TEMPLATE_DEF_ARG>::~ipc_ctx() {
 }
 */
 template <TEMPLATE_DECL_ARG>
-void ipc_ctx<TEMPLATE_DEF_ARG>::initialize_ctx(std::shared_ptr<ccl::host_communicator> communicator) {
+void ipc_ctx<TEMPLATE_DEF_ARG>::initialize_ctx(
+    std::shared_ptr<ccl::host_communicator> communicator) {
     (void)communicator;
     //send_stop();
     stop.store(false);
-    LOG_INFO("IPC context Initialized for mpi rank: (", std::to_string(communicator->rank()),
-             "/", std::to_string(communicator->size()), ")");
+    LOG_INFO("IPC context Initialized for mpi rank: (",
+             std::to_string(communicator->rank()),
+             "/",
+             std::to_string(communicator->size()),
+             ")");
 }
-
 
 template <TEMPLATE_DECL_ARG>
 template <ccl::device_topology_type class_id, class device_t>
-void ipc_ctx<TEMPLATE_DEF_ARG>::register_observer_impl(size_t rank_addr, observer_t<device_t>* observer_ptr) {
-
-    LOG_INFO("device rank addr: ", std::to_string(rank_addr),
-              ", device: ", observer_ptr->to_string());
+void ipc_ctx<TEMPLATE_DEF_ARG>::register_observer_impl(size_t rank_addr,
+                                                       observer_t<device_t>* observer_ptr) {
+    LOG_INFO(
+        "device rank addr: ", std::to_string(rank_addr), ", device: ", observer_ptr->to_string());
     observer::container_t<observer_t<device_t>>& container =
         scaling_ctx_base_t::template get_types_container<observer_t<device_t>, class_id>(
             observables);
     auto cont_it = container.find(observer_ptr);
-    if (cont_it == container.end())
-    {
+    if (cont_it == container.end()) {
         container.insert(observer_ptr);
 
         // prepare IPC session tables
-        for (size_t i = static_cast<size_t>(ccl_coll_allgatherv); i < static_cast<size_t>(ccl_coll_internal); i++)
-        {
+        for (size_t i = static_cast<size_t>(ccl_coll_allgatherv);
+             i < static_cast<size_t>(ccl_coll_internal);
+             i++) {
             ccl_coll_type type = static_cast<ccl_coll_type>(i);
 
             auto& tuple_sessions = collective_sessions[type];
-            auto& sessions_table = ccl_tuple_get<ipc_src_session_data<observer_t<device_t>>>(tuple_sessions);
-            sessions_table.source_sessions.emplace(observer_ptr, std::make_shared<session_table>(session_table {}));
+            auto& sessions_table =
+                ccl_tuple_get<ipc_src_session_data<observer_t<device_t>>>(tuple_sessions);
+            sessions_table.source_sessions.emplace(
+                observer_ptr, std::make_shared<session_table>(session_table{}));
         }
 
-
-        if (rank_addr == std::numeric_limits<size_t>::max())
-        {
+        if (rank_addr == std::numeric_limits<size_t>::max()) {
             return; //nothing to do more
         }
     }
 
     //reassign with index
-    assert(rank_addr != std::numeric_limits<size_t>::max() && "Reassign with assigned address failed");
+    assert(rank_addr != std::numeric_limits<size_t>::max() &&
+           "Reassign with assigned address failed");
 
     observer::indexed_container_t<observer_t<device_t>>& indexed_container =
-    scaling_ctx_base_t::template get_types_container<observer_t<device_t>, class_id>(indexed_observables);
+        scaling_ctx_base_t::template get_types_container<observer_t<device_t>, class_id>(
+            indexed_observables);
 
     auto indexed_it = indexed_container.find(rank_addr);
-    if (indexed_it != indexed_container.end())
-    {
+    if (indexed_it != indexed_container.end()) {
         // collect troubleshooting info
         std::stringstream ss;
-        for (const auto& indexed_dev : indexed_container)
-        {
-            ss << "rank: " << indexed_dev.first << ", dev: " << indexed_dev.second->to_string() << "\n";
+        for (const auto& indexed_dev : indexed_container) {
+            ss << "rank: " << indexed_dev.first << ", dev: " << indexed_dev.second->to_string()
+               << "\n";
         }
-        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + "- Cannot reassing rank: " + std::to_string(rank_addr) +
-                                 " for device:\n" + observer_ptr->to_string() + "\nBecause it registered already:\n" + ss.str());
+        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
+                                 "- Cannot reassing rank: " + std::to_string(rank_addr) +
+                                 " for device:\n" + observer_ptr->to_string() +
+                                 "\nBecause it registered already:\n" + ss.str());
     }
 
     indexed_container.emplace(rank_addr, observer_ptr);
@@ -87,45 +93,46 @@ void ipc_ctx<TEMPLATE_DEF_ARG>::register_observer_impl(size_t rank_addr, observe
 
 template <TEMPLATE_DECL_ARG>
 template <ccl::device_topology_type class_id>
-void ipc_ctx<TEMPLATE_DEF_ARG>::register_observer_impl(size_t rank_addr, ccl_ipc_gpu_comm* observer_ptr) {
-
-    LOG_INFO("DST device rank addr: ", std::to_string(rank_addr),
-              ", DST device: ", observer_ptr->to_string());
+void ipc_ctx<TEMPLATE_DEF_ARG>::register_observer_impl(size_t rank_addr,
+                                                       ccl_ipc_gpu_comm* observer_ptr) {
+    LOG_INFO("DST device rank addr: ",
+             std::to_string(rank_addr),
+             ", DST device: ",
+             observer_ptr->to_string());
     observer::container_t<ccl_ipc_gpu_comm>& container =
-        scaling_ctx_base_t::template get_types_container<ccl_ipc_gpu_comm, class_id>(
-            observables);
+        scaling_ctx_base_t::template get_types_container<ccl_ipc_gpu_comm, class_id>(observables);
     auto cont_it = container.find(observer_ptr);
-    if (cont_it == container.end())
-    {
+    if (cont_it == container.end()) {
         container.insert(observer_ptr);
 
-        if (rank_addr == std::numeric_limits<size_t>::max())
-        {
+        if (rank_addr == std::numeric_limits<size_t>::max()) {
             return; //nothing to do more
         }
     }
 
     //reassign with index
-    assert(rank_addr != std::numeric_limits<size_t>::max() && "Reassign with assigned address failed");
+    assert(rank_addr != std::numeric_limits<size_t>::max() &&
+           "Reassign with assigned address failed");
 
     observer::indexed_container_t<ccl_ipc_gpu_comm>& indexed_container =
-        scaling_ctx_base_t::template get_types_container<ccl_ipc_gpu_comm, class_id>(indexed_observables);
+        scaling_ctx_base_t::template get_types_container<ccl_ipc_gpu_comm, class_id>(
+            indexed_observables);
 
     auto indexed_it = indexed_container.find(rank_addr);
-    if (indexed_it != indexed_container.end())
-    {
+    if (indexed_it != indexed_container.end()) {
         // collect troubleshooting info
         std::stringstream ss;
-        for (const auto& indexed_dev : indexed_container)
-        {
-            ss << "rank: " << indexed_dev.first << ", dev: " << indexed_dev.second->to_string() << "\n";
+        for (const auto& indexed_dev : indexed_container) {
+            ss << "rank: " << indexed_dev.first << ", dev: " << indexed_dev.second->to_string()
+               << "\n";
         }
-        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + "- Cannot reassing rank: " + std::to_string(rank_addr) +
-                                    " for device:\n" + observer_ptr->to_string() + "\nBecause it registered already:\n" + ss.str());
+        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
+                                 "- Cannot reassing rank: " + std::to_string(rank_addr) +
+                                 " for device:\n" + observer_ptr->to_string() +
+                                 "\nBecause it registered already:\n" + ss.str());
     }
 
     indexed_container.emplace(rank_addr, observer_ptr);
-
 
     //Start IPC server for each DST device for listening incoming conections from SRC devices
     std::string addr = create_ipc_addr_for_rank(rank_addr);
@@ -134,22 +141,28 @@ void ipc_ctx<TEMPLATE_DEF_ARG>::register_observer_impl(size_t rank_addr, ccl_ipc
         observer_ptr->start(addr);
         auto it = listener_thread_map.find(observer_ptr);
         if (it != listener_thread_map.end()) {
-            throw std::runtime_error(std::string("IPC listener already exist for device: ") + observer_ptr->to_string());
+            throw std::runtime_error(std::string("IPC listener already exist for device: ") +
+                                     observer_ptr->to_string());
         }
 
-        listener_thread_map.emplace(observer_ptr, new std::thread(&ipc_ctx<TEMPLATE_DEF_ARG>::listener, this, observer_ptr));
+        listener_thread_map.emplace(
+            observer_ptr,
+            new std::thread(&ipc_ctx<TEMPLATE_DEF_ARG>::listener, this, observer_ptr));
         LOG_INFO("Listener thread started on addr: ", addr);
     }
     catch (const std::exception& ex) {
-        LOG_ERROR("Cannot start IPC listener on: ", addr, " for device: ", observer_ptr->to_string(),
-                  ", error: ", ex.what());
+        LOG_ERROR("Cannot start IPC listener on: ",
+                  addr,
+                  " for device: ",
+                  observer_ptr->to_string(),
+                  ", error: ",
+                  ex.what());
         throw;
     }
 }
 
 template <TEMPLATE_DECL_ARG>
 std::string ipc_ctx<TEMPLATE_DEF_ARG>::create_ipc_addr_for_rank(size_t rank) const {
-
     std::string ret;
 
     //TODO make unique for KVS group
@@ -162,7 +175,6 @@ std::string ipc_ctx<TEMPLATE_DEF_ARG>::create_ipc_addr_for_rank(size_t rank) con
 template <TEMPLATE_DECL_ARG>
 void ipc_ctx<TEMPLATE_DEF_ARG>::append_session_for_processing(const ipc_session_key& session_key,
                                                               std::shared_ptr<session> sess) {
-
     LOG_DEBUG("session_key: ", session_key.to_string(), ", selected session: ", sess->to_string());
     {
         std::lock_guard<std::mutex> lk(delivery_mutex);
@@ -172,20 +184,18 @@ void ipc_ctx<TEMPLATE_DEF_ARG>::append_session_for_processing(const ipc_session_
 }
 
 template <TEMPLATE_DECL_ARG>
-void ipc_ctx<TEMPLATE_DEF_ARG>::send_stop()
-{
+void ipc_ctx<TEMPLATE_DEF_ARG>::send_stop() {
     stop.store(true);
     delivery_condition.notify_all();
 }
 
 template <TEMPLATE_DECL_ARG>
 void ipc_ctx<TEMPLATE_DEF_ARG>::listener(ccl_ipc_gpu_comm* listener_device) {
-
     LOG_INFO("Start IPC context listener worker, Listener device: ", listener_device->to_string());
 
     // TODO ring only, peer-to-peer case: one SRC connects to one DST
     std::unique_ptr<net::ipc_rx_connection> incoming_connection;
-    while(!incoming_connection) {
+    while (!incoming_connection) {
         auto incoming = listener_device->process_connection();
         if (incoming) {
             LOG_INFO("Got connection on device: ", listener_device->to_string());
@@ -194,27 +204,28 @@ void ipc_ctx<TEMPLATE_DEF_ARG>::listener(ccl_ipc_gpu_comm* listener_device) {
     }
 
     // processing incoming data from connected clients
-    LOG_INFO("Start IPC context processing worker, Listener device: ", listener_device->to_string());
-    while(!stop.load()) {
-
+    LOG_INFO("Start IPC context processing worker, Listener device: ",
+             listener_device->to_string());
+    while (!stop.load()) {
         //TODO choose std::list
-        decltype(processing_queue) sessions_to_execute; {
+        decltype(processing_queue) sessions_to_execute;
+        {
             std::unique_lock<std::mutex> lk(delivery_mutex);
             delivery_condition.wait(lk, [this]() {
-                return !processing_queue.empty(); });
+                return !processing_queue.empty();
+            });
 
             sessions_to_execute.splice(sessions_to_execute.end(), processing_queue);
         }
 
         LOG_DEBUG("Sessions for processing: ", sessions_to_execute.size());
-        for (auto sess_it = sessions_to_execute.begin(); sess_it != sessions_to_execute.end() and !stop.load(); )
-        {
+        for (auto sess_it = sessions_to_execute.begin();
+             sess_it != sessions_to_execute.end() and !stop.load();) {
             shared_session_ptr sess = *sess_it;
 
             // try restore IPC handles
             LOG_DEBUG("process session: ", sess->to_string());
-            if(!sess->process(listener_device, incoming_connection.get()))
-            {
+            if (!sess->process(listener_device, incoming_connection.get())) {
                 ++sess_it;
                 continue;
             }
