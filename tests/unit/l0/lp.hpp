@@ -14,13 +14,15 @@ bfloat16 fp32_to_bf16(float val) {
     //return (reinterpret_cast<bfloat16*>(&val))[1];
 
     uint16_t int_val = 0;
-    memcpy(&int_val, &val + 2, 2);
+    memcpy(&int_val, reinterpret_cast<uint8_t*>(&val) + 2, 2);
     return bfloat16(int_val);
 }
 
 float bf16_to_fp32(bfloat16 val) {
+    float ret = 0;
     uint32_t temp = static_cast<uint32_t>(val.data) << 16;
-    return *(reinterpret_cast<float *>(&temp));
+    memcpy(&ret, &temp, sizeof(temp));
+    return ret;
 }
 
 #else
