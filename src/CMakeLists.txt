@@ -34,10 +34,17 @@ list (APPEND EXTENSIONS_SRC
 
                     common/comm/l0/comm_context.cpp
                     common/comm/l0/comm_context_storage.cpp
+                    common/comm/l0/context_comm_addr.cpp
 
+                    common/comm/l0/devices/ccl_gpu_base_comm.cpp
                     common/comm/l0/devices/ccl_gpu_comm.cpp
                     common/comm/l0/devices/ccl_virtual_gpu_comm.cpp
                     common/comm/l0/devices/ccl_ipc_gpu_comm.cpp
+
+                    common/comm/l0/devices/communication_structs/connection.cpp
+                    common/comm/l0/devices/communication_structs/ipc_connection.cpp
+                    common/comm/l0/devices/communication_structs/ipc_server.cpp
+                    common/comm/l0/devices/communication_structs/ipc_client.cpp
 
                     common/comm/single_device_communicator/single_device_communicator.cpp
                     common/comm/l0/communicator/device_group/device_ring_communicator.cpp
@@ -57,6 +64,10 @@ list (APPEND EXTENSIONS_SRC
                     common/comm/l0/topology/ring/thread_group_ring_creator.cpp
                     common/comm/l0/topology/ring/process_group_ring_creator.cpp
                     common/comm/l0/topology/topology_construction_utils.cpp
+
+                    common/comm/l0/context/scaling_ctx/ipc_ctx_session.cpp
+                    common/comm/l0/context/scaling_ctx/ipc_ctx_utils.cpp
+                    common/comm/l0/context/scaling_ctx/ipc_session_key.cpp
 
                     common/comm/l0/gpu_comm_attr.cpp
                     common/comm/l0/modules/base_entry_module.cpp
@@ -164,7 +175,7 @@ set(CCL_SRC
 
     common/comm/atl_tag.cpp
     common/comm/comm.cpp
-    common/comm/comm_interface.cpp
+    common/comm/compiler_comm_interface_dispatcher.cpp
     common/comm/host_communicator/host_communicator.cpp
 
     common/context/context.cpp

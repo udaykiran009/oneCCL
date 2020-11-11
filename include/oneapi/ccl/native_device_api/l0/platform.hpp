@@ -1,4 +1,5 @@
 #pragma once
+#include <unistd.h>
 
 #include "oneapi/ccl/native_device_api/l0/driver.hpp"
 #include "oneapi/ccl/native_device_api/l0/context.hpp"
@@ -11,6 +12,8 @@ struct ccl_device_platform : std::enable_shared_from_this<ccl_device_platform> {
     using driver_storage_type = std::map<ccl::index_type, driver_ptr>;
     using device_affinity_per_driver = std::map<size_t, ccl::device_mask_t>;
     using context_storage_type = std::shared_ptr<ccl_context_holder>;
+
+    using platform_id_type = size_t;
 
     //void init_drivers(const device_affinity_per_driver& affinities / * = device_affinity_per_driver()* /);
     void init_drivers(const ccl::device_indices_type& indices = ccl::device_indices_type());
@@ -42,11 +45,30 @@ struct ccl_device_platform : std::enable_shared_from_this<ccl_device_platform> {
         const ccl::device_indices_type& indices = ccl::device_indices_type(),
         detail::p2p_rating_function func = detail::binary_p2p_rating_calculator) const;
 
+    // serialize/deserialize
+    static constexpr size_t get_size_for_serialize() {
+        return sizeof(pid_t) + sizeof(pid_t) + sizeof(platform_id_type);
+    }
+
+    static std::weak_ptr<ccl_device_platform> deserialize(
+        const uint8_t** data,
+        size_t& size,
+        std::shared_ptr<ccl_device_platform>& out_platform);
+    size_t serialize(std::vector<uint8_t>& out, size_t from_pos, size_t expected_size) const;
+
+    platform_id_type get_id() const noexcept;
+    pid_t get_pid() const noexcept;
+
 private:
-    ccl_device_platform();
+    ccl_device_platform(platform_id_type platform_id = 0);
+
+    std::shared_ptr<ccl_device_platform> clone(platform_id_type id, pid_t foreign_pid) const;
 
     driver_storage_type drivers;
     context_storage_type context;
+
+    platform_id_type id;
+    pid_t pid;
 };
 
 //extern std::shared_ptr<ccl_device_platform> global_platform;

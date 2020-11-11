@@ -103,7 +103,8 @@ inline bool cluster_group_device_creator::build_all(
     ipc_devices_on_node.reserve(context.cluster_gpu_indices.size());
     processes_on_node.reserve(context.cluster_gpu_indices.size());
 
-    ccl::device_indices_type ipc_devices_candidates;
+    ccl::device_indices_type shared_ipc_devices_candidates;
+    ccl::device_indices_type ipc_p2p_devices_candidates;
     for (const auto& node_conf : context.cluster_gpu_indices) {
         const ccl::host_id& hostname = node_conf.first;
         const ccl::process_device_indices_type& processes = node_conf.second;
@@ -114,7 +115,7 @@ inline bool cluster_group_device_creator::build_all(
         if (!processes_on_node.empty()) {
             symm_test &= (*processes_on_node.rbegin() == processes.size());
 
-            node_device_intersection = ipc_devices_candidates;
+            node_device_intersection = shared_ipc_devices_candidates;
         }
         else {
             node_device_intersection = processes.begin()->second;
@@ -137,7 +138,7 @@ inline bool cluster_group_device_creator::build_all(
 
         if (hostname == context.get_host_id() && symm_test) {
             // remember ipc device candidates for my node
-            ipc_devices_candidates = node_device_intersection;
+            shared_ipc_devices_candidates = node_device_intersection;
         }
         //TODO - make smart logic: access each device to each for processes
         // because not necesary to have shared device id for both processes
@@ -162,8 +163,8 @@ inline bool cluster_group_device_creator::build_all(
     using thread_idx_t = size_t;
     using colored_device_per_thread = detail::colored_indexed_data<thread_idx_t>;
 
-    std::vector<colored_device_per_thread> ipc_devices;
-    size_t ipc_links_per_proc = 0;
+    std::vector<colored_device_per_thread> shared_ipc_devices;
+    size_t shared_ipc_links_per_proc = 0;
     std::vector<colored_device_per_thread> scale_up_devices;
     size_t scale_up_links_per_proc = 0;
     std::vector<colored_device_per_thread> scale_out_devices;
@@ -180,16 +181,16 @@ inline bool cluster_group_device_creator::build_all(
                                    thread_index);
 
     // check topology optimization
-    if (symm_test && not ipc_devices_candidates.empty()) {
+    if (symm_test && not shared_ipc_devices_candidates.empty()) {
         out << "Symmetric Configuration Detected: ICP for scale-up" << std::endl;
 
         //TODO schoose the first one
-        ipc_devices.emplace_back(ipc_devices_candidates.size() /*color*/,
-                                 *ipc_devices_candidates.begin() /*device*/,
-                                 thread_index /*thread to insertion*/);
+        shared_ipc_devices.emplace_back(shared_ipc_devices_candidates.size() /*color*/,
+                                        *shared_ipc_devices_candidates.begin() /*device*/,
+                                        thread_index /*thread to insertion*/);
 
-        ipc_links_per_proc = *processes_on_node.begin();
-        scale_out_links_per_proc = process_size / ipc_links_per_proc;
+        shared_ipc_links_per_proc = *processes_on_node.begin();
+        scale_out_links_per_proc = process_size / shared_ipc_links_per_proc;
 
         if (scale_out_links_per_proc == 0 or scale_out_links_per_proc == 1) {
             scale_out_links_per_proc = 0;
@@ -197,7 +198,7 @@ inline bool cluster_group_device_creator::build_all(
         }
         else {
             // scale-out links exist, then recalcuate comm color
-            size_t scale_out_color = process_size % ipc_links_per_proc;
+            size_t scale_out_color = process_size % shared_ipc_links_per_proc;
             std::for_each(scale_out_devices.begin(),
                           scale_out_devices.end(),
                           [scale_out_color](colored_device_per_thread& idx) {
@@ -256,11 +257,11 @@ inline bool cluster_group_device_creator::build_all(
     }
 
     out << "Final configuration info:\n";
-    out << "IPC: ";
-    for (const auto& idx : ipc_devices) {
+    out << "SHARED IPC: ";
+    for (const auto& idx : shared_ipc_devices) {
         out << idx << ", ";
     }
-    out << "\nipc comm count: " << ipc_links_per_proc;
+    out << "\nshared ipc comm count: " << shared_ipc_links_per_proc;
 
     out << "\nScaleUp: ";
     for (const auto& idx : scale_up_devices) {
@@ -280,7 +281,7 @@ inline bool cluster_group_device_creator::build_all(
         comm_addr,
         cur_process_per_thread_device_indices,
         single_node_matrix,
-        { ipc_devices, scale_up_devices, scale_out_devices },
+        { shared_ipc_devices, scale_up_devices, scale_out_devices },
         my_colored_graphs,
         process_device_rank_offset,
         accumulated_offset,
@@ -608,7 +609,45 @@ inline bool cluster_group_device_creator::build_impl(
             case 0: //IPC device
             {
                 for (const auto& idx : colored_devices) {
-                    (void)idx;
+                    size_t thread_id = idx.get_payload();
+
+                    std::shared_ptr<device_community<class_id>> community;
+                    if (graph_list.size() == 1) {
+                        community = context.get_process_topology<class_id>(process_index, thread_id)
+                                        .get_topology(ring_index);
+                    }
+                    else {
+                        community = context.get_process_topology<class_id>(process_index, thread_id)
+                                        .get_additiona_topology(ring_index);
+                    }
+
+                    auto& out_indexed_devices = community->get_device_storage();
+
+                    size_t inserted_device_type_index =
+                        detail::inject_ipc_src_device<group_id(),
+                                                       class_id,
+                                                       process_group_context,
+                                                       ccl_gpu_comm,
+                                                       ccl_virtual_gpu_comm
+                                                       /*,
+                                                        Too complex to support such topology without generic topology builder
+                                                       ccl_numa_proxy<ccl_gpu_comm>,
+                                                       ccl_numa_proxy<ccl_virtual_gpu_comm>
+                                                       */>(
+                            out_indexed_devices, idx.index, context, devices_factory);
+                    if (inserted_device_type_index != std::numeric_limits<size_t>::max()) {
+                        out << "Inject IPC_src device by order: " << inserted_device_type_index
+                            << "\nby idx: " << idx.to_string() << std::endl;
+                    }
+                    else {
+                        abort();
+                        assert(false && "Unsupported device type in topology creation");
+                        std::ostringstream ss;
+                        ss << out.rdbuf();
+                        throw std::runtime_error(
+                            std::string("Unsupported device type in topology creation. Log:\n") +
+                            ss.str());
+                    }
                 }
                 syntetic_device_type_index++;
                 break;

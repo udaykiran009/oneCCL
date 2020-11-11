@@ -19,7 +19,7 @@ TYPED_TEST(ring_alltoallv_single_device_fixture, ring_alltoallv_single_device_mt
     using native_type = TypeParam;
 
     // test case data
-    const size_t num_thread = 4;
+    const int num_thread = 4;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
 

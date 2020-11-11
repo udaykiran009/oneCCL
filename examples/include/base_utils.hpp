@@ -213,7 +213,7 @@ ccl::process_device_indices_type extract_indices_for_threads(
         if (mpi_rank_in_cluster == static_cast<size_t>(current_mpi_rank)) {
             for (auto device_vendor_id : device_group_affinity) {
                 devices_for_current_mpi_rank[thread_index].push_back(
-                    ccl::create_from_index(device_vendor_id).device);
+                    ccl::create_from_index(device_vendor_id).get());
             }
         }
     }

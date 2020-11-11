@@ -6,6 +6,9 @@
 #include "oneapi/ccl/native_device_api/l0/base.hpp"
 #include "oneapi/ccl/native_device_api/l0/context.hpp"
 namespace native {
+
+struct ccl_device_platform;
+
 std::string to_string(const ze_result_t result);
 std::string to_string(ze_memory_type_t type);
 std::string to_string(ze_memory_access_cap_flags_t cap);
@@ -119,4 +122,20 @@ struct command_list_desc_comparator {
     bool operator()(const ze_command_list_desc_t& lhs, const ze_command_list_desc_t& rhs) const;
 };
 
+void relink_ipc_descriptor_impl(
+    void* handle_ptr,
+    size_t handle_ptr_bytes,
+    const std::shared_ptr<ccl_device_platform>& received_process_platform,
+    const std::shared_ptr<ccl_device_platform>& send_process_platform);
+
+template <class resource_owner, class cl_context>
+void relink_ipc_handle_descriptor(
+    cl_base<ze_ipc_mem_handle_t, resource_owner, cl_context>& ipc_handle,
+    const std::shared_ptr<ccl_device_platform>& received_process_platform,
+    const std::shared_ptr<ccl_device_platform>& send_process_platform) {
+    relink_ipc_descriptor_impl(reinterpret_cast<void*>(ipc_handle.get_ptr()),
+                               sizeof(ipc_handle.get()),
+                               received_process_platform,
+                               send_process_platform);
+}
 } // namespace native

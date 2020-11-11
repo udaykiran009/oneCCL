@@ -181,11 +181,12 @@ size_t ccl_subdevice::serialize(std::vector<uint8_t>& out,
 }
 
 CCL_API
-std::weak_ptr<ccl_subdevice> ccl_subdevice::deserialize(const uint8_t** data,
-                                                        size_t& size,
-                                                        ccl_device_platform& platform) {
+std::weak_ptr<ccl_subdevice> ccl_subdevice::deserialize(
+    const uint8_t** data,
+    size_t& size,
+    std::shared_ptr<ccl_device_platform>& out_platform) {
     //restore driver
-    auto device = ccl_device::deserialize(data, size, platform).lock();
+    auto device = ccl_device::deserialize(data, size, out_platform).lock();
     if (!device) {
         throw std::runtime_error("cannot deserialize ccl_subdevice, because owner is nullptr");
     }

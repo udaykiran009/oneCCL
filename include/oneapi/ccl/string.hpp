@@ -37,8 +37,8 @@ public:
     }
 
     string(string&& str) noexcept {
-        len = str.len;
         storage = str.storage;
+        len = str.len;
         str.len = 0;
         str.storage = nullptr;
     }

@@ -61,6 +61,7 @@ void user_thread_idx(size_t thread_idx,
         /* create buffers */
         auto send_buf = alloc_ptr->allocate(COUNT, usm_alloc_type);
         auto recv_buf = alloc_ptr->allocate(COUNT, usm_alloc_type);
+        auto recv_buf2 = alloc_ptr->allocate(COUNT, usm_alloc_type);
 
         /* open send_buf and modify it on the device side */
         q.submit([&](auto& h) {
@@ -75,62 +76,86 @@ void user_thread_idx(size_t thread_idx,
         }
         memory_storage[rank].push_back(std::move(send_buf));
         memory_storage[rank].push_back(std::move(recv_buf));
+        memory_storage[rank].push_back(std::move(recv_buf2));
     }
 
-    /* allreduce */
-    std::vector<ccl::event> reqs;
-    for (auto& comm : comms) {
-        int rank = comm.rank();
+    // TODO: need to rework the example to better enable multiple iterations
+    for (int j = 0; j < 2; ++j) {
+        /* allreduce */
+        std::vector<ccl::event> reqs;
+        for (auto& comm : comms) {
+            size_t rank = comm.rank();
 
-        /* create operation attributes */
-        allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
-        auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
-        auto& stream = streams.find(rank)->second;
+            /* create operation attributes */
+            allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
+            auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
+            auto& stream = streams.find(rank)->second;
 
-        /* invoke operation */
-        reqs.push_back(ccl::allreduce(
-            mem_objects[0], mem_objects[1], COUNT, ccl::reduction::sum, comm, stream, attr));
-    }
+            /* invoke operation */
+            reqs.push_back(ccl::allreduce(mem_objects[j + 0],
+                                          mem_objects[j + 1],
+                                          COUNT,
+                                          ccl::reduction::sum,
+                                          comm,
+                                          stream,
+                                          attr));
+        }
 
-    /* wait */
-    for (auto& req : reqs) {
-        req.wait();
+        /* wait */
+        for (auto& req : reqs) {
+            req.wait();
+        }
     }
 
     /* open recv_buf and check its correctness on the device side */
-    buffer<processing_type> check_buf(COUNT);
+    buffer<processing_type> check_buf1(COUNT);
+    buffer<processing_type> check_buf2(COUNT);
     for (auto& comm : comms) {
         int rank = comm.rank();
 
         /* create operation attributes */
         auto stream = streams.find(rank)->second;
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
-        auto recv_buf = mem_objects[1];
+        auto recv_buf1 = mem_objects[1];
+        auto recv_buf2 = mem_objects[2];
         auto q = stream.get_native();
 
+        // Go through 2 recv buffers(from 1st and 2nd iterations) and check if they have
+        // the expected value and set the corresponding flag to check_buf
         q.submit([&](auto& h) {
-            accessor check_buf_acc(check_buf, h, write_only);
+            accessor check_buf1_acc(check_buf1, h, write_only);
+            accessor check_buf2_acc(check_buf2, h, write_only);
             h.parallel_for(COUNT, [=](auto id) {
-                if (recv_buf[id] != 1 * total_devices_in_cluster) {
-                    check_buf_acc[id] = -1;
+                if (recv_buf1[id] != 1 * total_devices_in_cluster) {
+                    check_buf1_acc[id] = false;
                 }
+
+                check_buf1_acc[id] = recv_buf1[id];
+                check_buf2_acc[id] = recv_buf2[id];
             });
         });
     }
 
     /* print out the result of the test on the host side */
+    static std::mutex printout_mutex;
     {
-        int i;
-        host_accessor check_buf_acc(check_buf, read_only);
-        for (i = 0; i < COUNT; i++) {
-            if (check_buf_acc[i] == -1) {
-                cout << "FAILED\n";
-                break;
+        std::unique_lock<std::mutex> lock(printout_mutex);
+
+        host_accessor check_buf1_acc(check_buf1, read_only);
+        host_accessor check_buf2_acc(check_buf2, read_only);
+        for (int i = 0; i < COUNT; i++) {
+            if (check_buf1_acc[i] != total_devices_in_cluster) {
+                cout << "FAILED at " << i << ", expected: " << total_devices_in_cluster
+                     << ", got: " << check_buf1_acc[i] << "\n";
+                exit(1);
+            }
+            if (check_buf2_acc[i] != total_devices_in_cluster * total_devices_in_cluster) {
+                cout << "FAILED at " << i << ", expected: " << total_devices_in_cluster
+                     << ", got: " << check_buf2_acc[i] << "\n";
+                exit(1);
             }
         }
-        if (i == COUNT) {
-            cout << "PASSED\n";
-        }
+        cout << "PASSED\n";
     }
 }
 

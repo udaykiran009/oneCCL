@@ -2,7 +2,17 @@
 #include <initializer_list>
 #include "../topology_utils.hpp"
 
-namespace topology_suite {
+namespace processgroup_topology_suite {
+
+static ccl::device_index_type dev_0(0, 0, ccl::unused_index_value);
+static ccl::device_index_type dev_1(0, 1, ccl::unused_index_value);
+static ccl::device_index_type dev_2(0, 2, ccl::unused_index_value);
+static ccl::device_index_type dev_3(0, 3, ccl::unused_index_value);
+static ccl::device_index_type dev_4(0, 4, ccl::unused_index_value);
+static ccl::device_index_type dev_5(0, 5, ccl::unused_index_value);
+static ccl::device_index_type dev_6(0, 6, ccl::unused_index_value);
+static ccl::device_index_type dev_7(0, 7, ccl::unused_index_value);
+
 struct allied_process_group_ring_topology_mock : public native::allied_process_group_ring_topology {
     allied_process_group_ring_topology_mock(size_t process_idx,
                                             size_t process_num,
@@ -78,13 +88,21 @@ struct allied_process_group_ring_topology_mock : public native::allied_process_g
                         "\n,Got:\n" + native::detail::to_string(cluster_graphs));
                 }
             }
-            return allied_process_group_ring_topology::merge_allied_nodes_in_colored_plain_graphs(
-                out,
-                cluster_indices,
-                process_index,
-                process_count,
-                overrided_colored_cluster_graphs_to_replace,
-                ping);
+            auto merged =
+                allied_process_group_ring_topology::merge_allied_nodes_in_colored_plain_graphs(
+                    out,
+                    cluster_indices,
+                    process_index,
+                    process_count,
+                    overrided_colored_cluster_graphs_to_replace,
+                    ping);
+            auto* test_ctx = dynamic_cast<stub::process_context*>(&context);
+            if (test_ctx && !overrided_colored_merged_cluster_graphs_to_check.empty()) {
+                test_ctx->set_collect_cluster_colored_plain_graphs(
+                    overrided_colored_merged_cluster_graphs_to_check);
+            }
+
+            return merged;
         }
 
         return allied_process_group_ring_topology::merge_allied_nodes_in_colored_plain_graphs(
@@ -226,25 +244,22 @@ private:
         overrided_colored_merged_cluster_graphs_to_replace;
 };
 
-TEST_F(router_fixture, single_process_group_single_threads_single_device_topology_test) {
+TEST_F(router_fixture,
+       process_group_test_single_process_single_threads_single_device_topology_test) {
     using namespace utils;
     using namespace native;
 
     size_t process_index = 0;
     constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
     {
+        stub::make_stub_devices({ dev_0 });
+
         //emulate last thread barrier creation
         //prepare thread context
-        process_creator_params params = prepare_process_params(
-            process_index,
-            { { 0,
-                { ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 0, ccl::unused_index_value) } } },
-            { { process_index,
-                { ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 0, ccl::unused_index_value) } } });
+        process_creator_params params =
+            prepare_process_params(process_index,
+                                   { { 0, { dev_0, dev_0, dev_0 } } },
+                                   { { process_index, { dev_0, dev_0, dev_0 } } });
         allied_process_group_ring_topology top(process_index,
                                                params.thread_ids.size(),
                                                *pg_comm,
@@ -256,8 +271,8 @@ TEST_F(router_fixture, single_process_group_single_threads_single_device_topolog
         std::string descr;
         std::stringstream ss;
         native::detail::adjacency_matrix matrix =
-            allied_process_group_ring_topology::build_p2p_capability_matrix(ss,
-                                                                            params.total_node_mask);
+            allied_process_group_ring_topology::build_p2p_capability_matrix(
+                ss, params.total_node_mask, ::utils::all_p2p_accessible);
 
         std::vector<ccl::device_indices_type> ipc_device_indices =
             process_group_context::get_ipc_device_indices_for_id(process_index,
@@ -265,9 +280,32 @@ TEST_F(router_fixture, single_process_group_single_threads_single_device_topolog
         UT_ASSERT(ipc_device_indices.empty(),
                   "ipc_device_indices should be empty for single node case");
 
+        // stub for cluster device topology
+        native::detail::global_sorted_colored_plain_graphs control_cluster_topology{
+            { 0,
+              {
+                  { { 0, dev_0 }, { 0, dev_0 }, { 0, dev_0 } },
+              } },
+        };
+        pg_comm->set_collect_cluster_colored_plain_graphs(control_cluster_topology);
+
+        // build device group context at first
+        for (size_t thread_id : params.thread_ids) {
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
+            device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
+            device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
+
+            std::stringstream ss;
+            native::detail::adjacency_matrix matrix =
+                device_group_ring_topology::build_p2p_capability_matrix(
+                    ss, group_indices_affinity, ::utils::all_p2p_accessible);
+            device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
+        }
+
         //test topology creation
         try {
-            res = top.build_all(ss, tg_comm->per_thread_indices, ipc_device_indices, matrix);
+            res =
+                top.build_all(ss, tg_comm->per_thread_indices, matrix, ::utils::all_p2p_accessible);
             output << ss.str() << std::endl;
         }
         catch (const std::exception& ex) {
@@ -283,27 +321,279 @@ TEST_F(router_fixture, single_process_group_single_threads_single_device_topolog
         //thread 0
         expected_thread_results.push_back(expected_indices_tuple(
             { optional_indices{ true, { 0 }, {} }, optional_indices{ true, { 1, 2 }, {} } }));
-        std::tie(res, descr) = check_ring_multiple_topologies<topology, process_group_context>(
+        std::tie(res, descr) = check_ring_multiple_topologies<topology,
+                                                              ccl::device_topology_type::ring,
+                                                              process_group_context>(
             pg_comm->process_device_topology, params.thread_ids, expected_thread_results);
         UT_ASSERT(res, descr);
     }
 }
 
-TEST_F(router_fixture, ally_process_group_topology_test) {
+//TODO SYMMETRIC tests - UNIFY IT
+TEST_F(router_fixture, process_group_test_real_ats_2tile_IPC_for_process_0) {
+    using namespace utils;
+    using namespace native;
+    using namespace native::detail;
+
+    size_t process_index = 0;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
+    {
+        stub::make_stub_devices({ { dev_0, dev_1 } });
+
+        //emulate last thread barrier creation
+        //prepare thread context
+        process_creator_params params = prepare_process_params(0, //local process
+                                                               { { 0,
+                                                                   {
+                                                                       dev_0,
+                                                                   } } },
+                                                               { //cluster
+                                                                 { 0, //process 0
+                                                                   {
+                                                                       dev_0,
+                                                                   } },
+                                                                 { 1, //process 1
+                                                                   {
+                                                                       dev_1,
+                                                                   } } });
+        allied_process_group_ring_topology_mock top(process_index,
+                                                    params.process_ids.size(),
+                                                    *pg_comm,
+                                                    *pg_comm->gpu_device_storage,
+                                                    params.cluster_device_rank_offset,
+                                                    params.cluster_device_size);
+
+        bool res;
+        std::string descr;
+        std::stringstream ss;
+
+        native::detail::adjacency_matrix matrix =
+            allied_process_group_ring_topology::build_p2p_capability_matrix(
+                ss, params.total_node_mask, ::utils::all_p2p_accessible);
+
+        std::vector<ccl::device_indices_type> ipc_device_indices =
+            process_group_context::get_ipc_device_indices_for_id(process_index,
+                                                                 params.total_node_mask);
+        UT_ASSERT(!ipc_device_indices.empty(),
+                  "ipc_device_indices should not be empty for single node case");
+
+        // stub for cluster device topology
+        native::detail::global_sorted_colored_plain_graphs control_cluster_topology{
+            { 0,
+              {
+                  {
+                      { 0, dev_0 },
+                  },
+              } },
+            { 1,
+              {
+                  {
+                      { 1, dev_1 },
+                  },
+              } }
+        };
+        pg_comm->set_collect_cluster_colored_plain_graphs(control_cluster_topology);
+        top.set_mock_colored_cluster_graphs_to_merge({ { process_index,
+                                                         { {
+                                                             { process_index, dev_0 },
+                                                         } } },
+                                                       { 1, { { { 1, dev_1 } } } } });
+        top.set_mock_merged_colored_cluster_graphs(
+            { { process_index, { { { 2, dev_1 }, { process_index, dev_0 }, { 1, dev_1 } } } },
+              { 1,
+                { {
+                    { process_index, dev_0 },
+                    { 1, dev_1 },
+                    { 2, dev_0 },
+                } } } });
+
+        // build device group context & thread group context at first
+        for (size_t thread_id : params.thread_ids) {
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
+            device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
+            device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
+
+            std::stringstream ss;
+            native::detail::adjacency_matrix matrix =
+                device_group_ring_topology::build_p2p_capability_matrix(
+                    ss, group_indices_affinity, ::utils::all_p2p_accessible);
+            device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
+        }
+
+        //test topology creation
+        try {
+            res =
+                top.build_all(ss, tg_comm->per_thread_indices, matrix, ::utils::all_p2p_accessible);
+            output << ss.str() << std::endl;
+        }
+        catch (const std::exception& ex) {
+            output << ss.str() << std::endl;
+            res = false;
+            descr += std::string("\nfailed with exception: ") + ex.what();
+        }
+
+        UT_ASSERT(res, "Cannot build topology: " << descr);
+
+        //Check topology
+        std::vector<expected_indices_tuple> expected_seq;
+        //thread 0
+        set_control_indices<ccl_ipc_source_gpu_comm<ccl_gpu_comm>>(
+            expected_seq, 0, optional_indices{ true, { 0 }, { 0 } });
+        set_control_indices<ccl_ipc_gpu_comm>(expected_seq,
+                                              0,
+                                              optional_indices{ true,
+                                                                { 1 },
+                                                                {
+                                                                    1,
+                                                                } });
+        std::tie(res, descr) = check_ring_multiple_topologies<topology,
+                                                              ccl::device_topology_type::ring,
+                                                              process_group_context>(
+            pg_comm->process_device_topology, params.thread_ids, expected_seq);
+        UT_ASSERT(res, descr);
+    }
+}
+
+//TODO SYMMETRIC tests - UNIFY IT
+TEST_F(router_fixture, process_group_test_real_ats_2tile_IPC_for_process_1) {
+    using namespace utils;
+    using namespace native;
+    using namespace native::detail;
+
+    size_t process_index = 1;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
+    {
+        stub::make_stub_devices({ { dev_0, dev_1 } });
+
+        //emulate last thread barrier creation
+        //prepare thread context
+        process_creator_params params = prepare_process_params(process_index, //local process
+                                                               { { 0,
+                                                                   {
+                                                                       dev_1,
+                                                                   } } },
+                                                               { //cluster
+                                                                 { 0, //process 0
+                                                                   {
+                                                                       dev_0,
+                                                                   } },
+                                                                 { 1, //process 1
+                                                                   {
+                                                                       dev_1,
+                                                                   } } });
+        allied_process_group_ring_topology_mock top(process_index,
+                                                    params.process_ids.size(),
+                                                    *pg_comm,
+                                                    *pg_comm->gpu_device_storage,
+                                                    params.cluster_device_rank_offset,
+                                                    params.cluster_device_size);
+
+        bool res;
+        std::string descr;
+        std::stringstream ss;
+
+        native::detail::adjacency_matrix matrix =
+            allied_process_group_ring_topology::build_p2p_capability_matrix(
+                ss, params.total_node_mask, ::utils::all_p2p_accessible);
+
+        std::vector<ccl::device_indices_type> ipc_device_indices =
+            process_group_context::get_ipc_device_indices_for_id(process_index,
+                                                                 params.total_node_mask);
+        UT_ASSERT(!ipc_device_indices.empty(),
+                  "ipc_device_indices should not be empty for single node case");
+
+        // stub for cluster device topology
+        native::detail::global_sorted_colored_plain_graphs control_cluster_topology{
+            { 0,
+              {
+                  {
+                      { 0, dev_0 },
+                  },
+              } },
+            { 1,
+              {
+                  {
+                      { 1, dev_1 },
+                  },
+              } }
+        };
+        pg_comm->set_collect_cluster_colored_plain_graphs(control_cluster_topology);
+        top.set_mock_colored_cluster_graphs_to_merge(
+            { { 0,
+                { {
+                    { 0, dev_0 },
+                } } },
+              { process_index, { { { process_index, dev_1 } } } } });
+        top.set_mock_merged_colored_cluster_graphs(
+            { { 0, { { { 2, dev_1 }, { 0, dev_0 }, { 1, dev_1 } } } },
+              { process_index,
+                { {
+                    { 0, dev_0 },
+                    { process_index, dev_1 },
+                    { 2, dev_0 },
+                } } } });
+
+        // build device group context & thread group context at first
+        for (size_t thread_id : params.thread_ids) {
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
+            device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
+            device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
+
+            std::stringstream ss;
+            native::detail::adjacency_matrix matrix =
+                device_group_ring_topology::build_p2p_capability_matrix(
+                    ss, group_indices_affinity, ::utils::all_p2p_accessible);
+            device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
+        }
+
+        //test topology creation
+        try {
+            res =
+                top.build_all(ss, tg_comm->per_thread_indices, matrix, ::utils::all_p2p_accessible);
+            output << ss.str() << std::endl;
+        }
+        catch (const std::exception& ex) {
+            output << ss.str() << std::endl;
+            res = false;
+            descr += std::string("\nfailed with exception: ") + ex.what();
+        }
+
+        UT_ASSERT(res, "Cannot build topology: " << descr);
+
+        //Check topology
+        std::vector<expected_indices_tuple> expected_seq;
+        //thread 0
+        set_control_indices<ccl_ipc_source_gpu_comm<ccl_gpu_comm>>(
+            expected_seq, 0, optional_indices{ true, { 1 }, { 1 } });
+        set_control_indices<ccl_ipc_gpu_comm>(expected_seq,
+                                              0,
+                                              optional_indices{ true,
+                                                                { 0 },
+                                                                {
+                                                                    0,
+                                                                } });
+        std::tie(res, descr) = check_ring_multiple_topologies<topology,
+                                                              ccl::device_topology_type::ring,
+                                                              process_group_context>(
+            pg_comm->process_device_topology, params.thread_ids, expected_seq);
+        UT_ASSERT(res, descr);
+    }
+}
+
+TEST_F(router_fixture, process_group_test_ally_process_group_topology_test) {
     using namespace utils;
     using namespace native;
 
     size_t process_index = 0;
     constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
     {
+        stub::make_stub_devices({ dev_0 });
+
         //emulate last thread barrier creation
-        process_creator_params params = prepare_process_params(
-            process_index,
-            { { 0, { ccl::device_index_type(0, 0, ccl::unused_index_value) } },
-              { 1, { ccl::device_index_type(0, 0, ccl::unused_index_value) } } },
-            { { process_index,
-                { ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 0, ccl::unused_index_value) } } });
+        process_creator_params params =
+            prepare_process_params(process_index,
+                                   { { 0, { dev_0 } }, { 1, { dev_0 } } },
+                                   { { process_index, { dev_0, dev_0 } } });
 
         allied_process_group_ring_topology top(process_index,
                                                params.process_ids.size(),
@@ -314,8 +604,8 @@ TEST_F(router_fixture, ally_process_group_topology_test) {
 
         std::stringstream ss;
         native::detail::adjacency_matrix matrix =
-            allied_process_group_ring_topology::build_p2p_capability_matrix(ss,
-                                                                            params.total_node_mask);
+            allied_process_group_ring_topology::build_p2p_capability_matrix(
+                ss, params.total_node_mask, ::utils::all_p2p_accessible);
         output << ss.str() << "\nResult matrix:\n" << matrix << std::endl;
         ss.clear();
 
@@ -328,7 +618,29 @@ TEST_F(router_fixture, ally_process_group_topology_test) {
         bool res;
         std::string descr;
 
-        res = top.build_all(ss, tg_comm->per_thread_indices, ipc_device_indices, matrix);
+        // stub for cluster device topology
+        native::detail::global_sorted_colored_plain_graphs control_cluster_topology{
+            { 0,
+              {
+                  { { 0, dev_0 }, { 0, dev_0 } },
+              } },
+        };
+        pg_comm->set_collect_cluster_colored_plain_graphs(control_cluster_topology);
+
+        // build device group context at first
+        for (size_t thread_id : params.thread_ids) {
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
+            device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
+            device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
+
+            std::stringstream ss;
+            native::detail::adjacency_matrix matrix =
+                device_group_ring_topology::build_p2p_capability_matrix(
+                    ss, group_indices_affinity, ::utils::all_p2p_accessible);
+            device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
+        }
+
+        res = top.build_all(ss, tg_comm->per_thread_indices, matrix, ::utils::all_p2p_accessible);
         UT_ASSERT(res, "Cannot build topology: " << ss.str());
         output << ss.str() << std::endl;
 
@@ -346,31 +658,20 @@ TEST_F(router_fixture, ally_process_group_topology_test) {
                                      optional_indices{ true, { 1 }, {} },
                                      optional_indices{ true, { 0 }, {} } }));
 
-        std::tie(res, descr) = check_ring_multiple_topologies<topology, process_group_context>(
+        std::tie(res, descr) = check_ring_multiple_topologies<topology,
+                                                              ccl::device_topology_type::ring,
+                                                              process_group_context>(
             pg_comm->process_device_topology, params.thread_ids, expected_thread_results);
         UT_ASSERT(res, descr);
     }
 
     {
+        stub::make_stub_devices({ dev_0, dev_1, dev_2, dev_3 });
         //emulate last thread barrier creation
         process_creator_params params = prepare_process_params(
             process_index,
-            { { 0,
-                { ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 0, ccl::unused_index_value) } },
-              { 1,
-                { ccl::device_index_type(0, 1, ccl::unused_index_value),
-                  ccl::device_index_type(0, 1, ccl::unused_index_value),
-                  ccl::device_index_type(0, 2, ccl::unused_index_value) } } },
-            { { process_index,
-                { ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 1, ccl::unused_index_value),
-                  ccl::device_index_type(0, 1, ccl::unused_index_value),
-                  ccl::device_index_type(0, 2, ccl::unused_index_value) } },
-              { 1, { ccl::device_index_type(0, 3, ccl::unused_index_value) } } });
+            { { 0, { dev_0, dev_0, dev_0 } }, { 1, { dev_1, dev_1, dev_2 } } },
+            { { process_index, { dev_0, dev_0, dev_0, dev_1, dev_1, dev_2 } }, { 1, { dev_3 } } });
 
         allied_process_group_ring_topology_mock top(process_index,
                                                     params.process_ids.size(),
@@ -381,8 +682,8 @@ TEST_F(router_fixture, ally_process_group_topology_test) {
 
         std::stringstream ss;
         native::detail::adjacency_matrix matrix =
-            allied_process_group_ring_topology::build_p2p_capability_matrix(ss,
-                                                                            params.total_node_mask);
+            allied_process_group_ring_topology::build_p2p_capability_matrix(
+                ss, params.total_node_mask, ::utils::all_p2p_accessible);
         output << ss.str() << "\nResult matrix:\n" << matrix << std::endl;
         ss.clear();
 
@@ -396,36 +697,64 @@ TEST_F(router_fixture, ally_process_group_topology_test) {
         std::string descr;
 
         //MockData
-        top.set_mock_colored_cluster_graphs_to_merge(
-            { { process_index,
-                { { { process_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 2, ccl::unused_index_value) } } } },
-              { 1, { { { 1, ccl::device_index_type(0, 3, ccl::unused_index_value) } } } } });
-        top.set_mock_merged_colored_cluster_graphs(
-            { { process_index,
-                { { { process_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 2, ccl::unused_index_value) },
-                    { 1, ccl::device_index_type(0, 3, ccl::unused_index_value) } } } },
-              { 1,
-                { {
-                    { 1, ccl::device_index_type(0, 3, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 2, ccl::unused_index_value) },
-                } } } });
+        // stub for cluster device topology
+        native::detail::global_sorted_colored_plain_graphs control_cluster_topology{
+            { 0,
+              {
+                  { { 0, dev_0 },
+                    { 0, dev_0 },
+                    { 0, dev_0 },
+                    { 0, dev_1 },
+                    { 0, dev_1 },
+                    { 0, dev_2 } },
+              } },
+            { 1,
+              {
+                  { { 1, dev_3 } },
+              } },
+        };
+        pg_comm->set_collect_cluster_colored_plain_graphs(control_cluster_topology);
+
+        top.set_mock_colored_cluster_graphs_to_merge({ { process_index,
+                                                         { { { process_index, dev_0 },
+                                                             { process_index, dev_0 },
+                                                             { process_index, dev_0 },
+                                                             { process_index, dev_1 },
+                                                             { process_index, dev_1 },
+                                                             { process_index, dev_2 } } } },
+                                                       { 1, { { { 1, dev_3 } } } } });
+        top.set_mock_merged_colored_cluster_graphs({ { process_index,
+                                                       { { { 2, dev_3 },
+                                                           { process_index, dev_0 },
+                                                           { process_index, dev_0 },
+                                                           { process_index, dev_0 },
+                                                           { process_index, dev_1 },
+                                                           { process_index, dev_1 },
+                                                           { process_index, dev_2 },
+                                                           { 1, dev_3 } } } },
+                                                     { 1,
+                                                       { {
+                                                           { process_index, dev_2 },
+                                                           { 1, dev_3 },
+                                                           { 2, dev_0 },
+                                                       } } } });
+
+        // build device group context at first
+        for (size_t thread_id : params.thread_ids) {
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
+            device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
+            device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
+
+            std::stringstream ss;
+            native::detail::adjacency_matrix matrix =
+                device_group_ring_topology::build_p2p_capability_matrix(
+                    ss, group_indices_affinity, ::utils::all_p2p_accessible);
+            device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
+        }
+
         try {
-            res = top.build_all(ss, tg_comm->per_thread_indices, ipc_device_indices, matrix);
+            res =
+                top.build_all(ss, tg_comm->per_thread_indices, matrix, ::utils::all_p2p_accessible);
             output << ss.str() << std::endl;
         }
         catch (const std::exception& ex) {
@@ -457,7 +786,9 @@ TEST_F(router_fixture, ally_process_group_topology_test) {
                                      optional_indices{ false, {}, {} },
                                      optional_indices{ true, { 6 }, {} } }));
 
-        std::tie(res, descr) = check_ring_multiple_topologies<topology, process_group_context>(
+        std::tie(res, descr) = check_ring_multiple_topologies<topology,
+                                                              ccl::device_topology_type::ring,
+                                                              process_group_context>(
             pg_comm->process_device_topology, params.thread_ids, expected_thread_results);
         UT_ASSERT(res, descr);
     }
@@ -466,25 +797,9 @@ TEST_F(router_fixture, ally_process_group_topology_test) {
         //emulate last thread barrier creation
         process_creator_params params = prepare_process_params(
             process_index,
-            { { 0,
-                { ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 2, ccl::unused_index_value),
-                  ccl::device_index_type(0, 0, ccl::unused_index_value) } },
-              { 1,
-                { ccl::device_index_type(0, 1, ccl::unused_index_value),
-                  ccl::device_index_type(0, 2, ccl::unused_index_value),
-                  ccl::device_index_type(0, 0, ccl::unused_index_value) } } },
-            { { 0,
-                { ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 2, ccl::unused_index_value),
-                  ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 1, ccl::unused_index_value),
-                  ccl::device_index_type(0, 2, ccl::unused_index_value),
-                  ccl::device_index_type(0, 0, ccl::unused_index_value) } },
-              { 1,
-                { ccl::device_index_type(0, 3, ccl::unused_index_value),
-                  ccl::device_index_type(0, 1, ccl::unused_index_value),
-                  ccl::device_index_type(0, 2, ccl::unused_index_value) } } });
+            { { 0, { dev_0, dev_2, dev_0 } }, { 1, { dev_1, dev_2, dev_0 } } },
+            { { 0, { dev_0, dev_2, dev_0, dev_1, dev_2, dev_0 } },
+              { 1, { dev_3, dev_1, dev_2 } } });
 
         allied_process_group_ring_topology_mock top(process_index,
                                                     params.process_ids.size(),
@@ -495,8 +810,8 @@ TEST_F(router_fixture, ally_process_group_topology_test) {
 
         std::stringstream ss;
         native::detail::adjacency_matrix matrix =
-            allied_process_group_ring_topology::build_p2p_capability_matrix(ss,
-                                                                            params.total_node_mask);
+            allied_process_group_ring_topology::build_p2p_capability_matrix(
+                ss, params.total_node_mask, ::utils::all_p2p_accessible);
         output << ss.str() << "\nResult matrix:\n" << matrix << std::endl;
         ss.clear();
 
@@ -509,20 +824,68 @@ TEST_F(router_fixture, ally_process_group_topology_test) {
         bool res;
         std::string descr;
 
+        //MockData
+        // stub for cluster device topology
+        native::detail::global_sorted_colored_plain_graphs control_cluster_topology{
+            { 0,
+              { {
+                  { 0, dev_0 },
+                  { 0, dev_2 },
+                  { 0, dev_0 },
+                  { 0, dev_1 },
+                  { 0, dev_2 },
+              } } },
+            { 1,
+              {
+                  { { 1, dev_1 }, { 1, dev_2 }, { 1, dev_3 } },
+              } },
+        };
+        pg_comm->set_collect_cluster_colored_plain_graphs(control_cluster_topology);
+
         top.set_mock_colored_cluster_graphs_to_merge(
             { { process_index,
-                { { { process_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 2, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
-                    { process_index, ccl::device_index_type(0, 2, ccl::unused_index_value) } } } },
-              { 1,
-                { { { 1, ccl::device_index_type(0, 1, ccl::unused_index_value) },
-                    { 1, ccl::device_index_type(0, 2, ccl::unused_index_value) },
-                    { 1, ccl::device_index_type(0, 3, ccl::unused_index_value) } } } } });
+                { {
+                    { process_index, dev_0 },
+                    { process_index, dev_2 },
+                    { process_index, dev_0 },
+                    { process_index, dev_1 },
+                    { process_index, dev_2 },
+                } } },
+              { 1, { { { 1, dev_1 }, { 1, dev_2 }, { 1, dev_3 } } } } });
+        top.set_mock_merged_colored_cluster_graphs({ { process_index,
+                                                       { { { 2, dev_1 },
+                                                           { process_index, dev_0 },
+                                                           { process_index, dev_0 },
+                                                           { process_index, dev_0 },
+                                                           { process_index, dev_1 },
+                                                           { process_index, dev_1 },
+                                                           { process_index, dev_2 },
+                                                           { 1, dev_1 } } } },
+                                                     { 1,
+                                                       { {
+                                                           { process_index, dev_2 },
+                                                           { 1, dev_1 },
+                                                           { 1, dev_2 },
+                                                           { 1, dev_3 },
+                                                           { 2, dev_0 },
+                                                       } } } });
+
+        // build device group context at first
+        for (size_t thread_id : params.thread_ids) {
+            const ccl::device_indices_type& group_indices_affinity = get_device_affinity(thread_id);
+            device_group_context& dev_group_ctx = *tg_comm->get_device_group_ctx(thread_id);
+            device_group_ring_topology device_top(dev_group_ctx, *pg_comm->gpu_device_storage);
+
+            std::stringstream ss;
+            native::detail::adjacency_matrix matrix =
+                device_group_ring_topology::build_p2p_capability_matrix(
+                    ss, group_indices_affinity, ::utils::all_p2p_accessible);
+            device_top.build(ss, dev_group_ctx.context_addr, group_indices_affinity, matrix);
+        }
+
         try {
-            res = top.build_all(ss, tg_comm->per_thread_indices, ipc_device_indices, matrix);
+            res =
+                top.build_all(ss, tg_comm->per_thread_indices, matrix, ::utils::all_p2p_accessible);
             output << ss.str() << std::endl;
         }
         catch (const std::exception& ex) {
@@ -534,6 +897,22 @@ TEST_F(router_fixture, ally_process_group_topology_test) {
         UT_ASSERT(res, "Cannot build topology: " << descr);
 
         //Check topology
+        /*
+        std::vector<expected_indices_tuple> expected_seq;
+        set_control_indices<ccl_gpu_scaleup_proxy<ccl_gpu_comm>>(
+            expected_seq, 0, optional_indices{ true, { 3 }, { 0 } });
+        set_control_indices<ccl_virtual_gpu_comm>(
+            expected_seq, 0, optional_indices{ true, { 4, 5 }, { 1, 2 } });
+
+        std::tie(res, descr) =
+            check_ring_multiple_topologies<topology, class_id, process_group_context>(
+                pg_comm->process_device_topology, params.thread_ids, expected_seq);
+        if (!res) {
+            output << "\nLOG:\n" << ss.str() << std::endl;
+            output << descr;
+            UT_ASSERT(res, descr);
+        }
+        */
         std::vector<expected_indices_tuple> expected_thread_results;
         //thread 0
         expected_thread_results.push_back(expected_indices_tuple({
@@ -554,57 +933,36 @@ TEST_F(router_fixture, ally_process_group_topology_test) {
                                      optional_indices{ false, {}, {} },
                                      optional_indices{ true, { 6 }, {} } }));
 
-        std::tie(res, descr) = check_ring_multiple_topologies<topology, process_group_context>(
-            pg_comm->process_device_topology, params.thread_ids, expected_thread_results);
+        std::tie(res, descr) = check_ring_multiple_topologies<topology,
+                                                              ccl::device_topology_type::ring,
+                                                              process_group_context>(
+            pg_comm->process_device_topology, params.thread_ids, expected_thread_results, true);
         UT_ASSERT(res, descr);
     }
 }
 
-TEST_F(router_fixture, inter_process_scale_up_process_group_topology_test) {
+TEST_F(router_fixture,
+       DISABLED_process_group_test_inter_process_scale_up_process_group_topology_test) {
     using namespace utils;
     using namespace native;
     using namespace native::detail;
 
     size_t process_index = 0;
 
-    constexpr ccl::group_split_type topology = ccl::group_split_type::process_group_torn_apart_ring;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
     {
+        stub::make_stub_devices({ dev_0, dev_1, dev_2, dev_3 });
         output << "TEST: scaleup between thread groups in one process group" << std::endl;
-        process_creator_params params = prepare_process_params(
-            process_index,
-            { { 0,
-                { ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 1, ccl::unused_index_value) } },
-              { 1,
-                { ccl::device_index_type(0, 2, ccl::unused_index_value),
-                  ccl::device_index_type(0, 3, ccl::unused_index_value) } } },
-            { { process_index,
-                { ccl::device_index_type(0, 0, ccl::unused_index_value),
-                  ccl::device_index_type(0, 1, ccl::unused_index_value),
-                  ccl::device_index_type(0, 2, ccl::unused_index_value),
-                  ccl::device_index_type(0, 3, ccl::unused_index_value) } } });
+        process_creator_params params =
+            prepare_process_params(process_index,
+                                   { { 0, { dev_0, dev_1 } }, { 1, { dev_2, dev_3 } } },
+                                   { { process_index, { dev_0, dev_1, dev_2, dev_3 } } });
 
         adjacency_matrix expected_matrix{
-            { ccl::device_index_type(0, 0, ccl::unused_index_value),
-              { { ccl::device_index_type(0, 0, ccl::unused_index_value), 1 },
-                { ccl::device_index_type(0, 1, ccl::unused_index_value), 1 },
-                { ccl::device_index_type(0, 2, ccl::unused_index_value), 0 },
-                { ccl::device_index_type(0, 3, ccl::unused_index_value), 0 } } },
-            { ccl::device_index_type(0, 1, ccl::unused_index_value),
-              { { ccl::device_index_type(0, 0, ccl::unused_index_value), 1 },
-                { ccl::device_index_type(0, 1, ccl::unused_index_value), 1 },
-                { ccl::device_index_type(0, 2, ccl::unused_index_value), 0 },
-                { ccl::device_index_type(0, 3, ccl::unused_index_value), 0 } } },
-            { ccl::device_index_type(0, 2, ccl::unused_index_value),
-              { { ccl::device_index_type(0, 0, ccl::unused_index_value), 0 },
-                { ccl::device_index_type(0, 1, ccl::unused_index_value), 0 },
-                { ccl::device_index_type(0, 2, ccl::unused_index_value), 1 },
-                { ccl::device_index_type(0, 3, ccl::unused_index_value), 1 } } },
-            { ccl::device_index_type(0, 3, ccl::unused_index_value),
-              { { ccl::device_index_type(0, 0, ccl::unused_index_value), 0 },
-                { ccl::device_index_type(0, 1, ccl::unused_index_value), 0 },
-                { ccl::device_index_type(0, 2, ccl::unused_index_value), 1 },
-                { ccl::device_index_type(0, 3, ccl::unused_index_value), 1 } } }
+            { dev_0, { { dev_0, 1 }, { dev_1, 1 }, { dev_2, 0 }, { dev_3, 0 } } },
+            { dev_1, { { dev_0, 1 }, { dev_1, 1 }, { dev_2, 0 }, { dev_3, 0 } } },
+            { dev_2, { { dev_0, 0 }, { dev_1, 0 }, { dev_2, 1 }, { dev_3, 1 } } },
+            { dev_3, { { dev_0, 0 }, { dev_1, 0 }, { dev_2, 1 }, { dev_3, 1 } } }
         };
 
         allied_process_group_ring_topology_mock top(process_index,
@@ -642,16 +1000,13 @@ TEST_F(router_fixture, inter_process_scale_up_process_group_topology_test) {
 
         top.set_mock_colored_cluster_graphs_to_merge({
             { process_index,
-              { { { process_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
-                  { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) } },
-                { { process_index, ccl::device_index_type(0, 2, ccl::unused_index_value) },
-                  { process_index, ccl::device_index_type(0, 3, ccl::unused_index_value) } } } },
+              { { { process_index, dev_0 }, { process_index, dev_1 } },
+                { { process_index, dev_2 }, { process_index, dev_3 } } } },
         });
 
         try {
             res = top.build_all(ss,
                                 tg_comm->per_thread_indices,
-                                ipc_device_indices,
                                 matrix,
                                 std::bind(test_custom_p2p_ping,
                                           std::placeholders::_1,
@@ -690,8 +1045,10 @@ TEST_F(router_fixture, inter_process_scale_up_process_group_topology_test) {
                                        optional_indices{ true, { 3 }, { 1 } },
                                        optional_indices{ false, {}, {} } }) });
 
-        std::tie(res, descr) = check_ring_multiple_topologies<topology, process_group_context>(
-            pg_comm->process_device_topology, params.thread_ids, expected_thread_results);
+        std::tie(res, descr) = check_ring_multiple_topologies<topology,
+                                                              ccl::device_topology_type::ring,
+                                                              process_group_context>(
+            pg_comm->process_device_topology, params.thread_ids, expected_thread_results, true, 0);
         if (!res) {
             output << "\nLOG:\n" << ss.str() << std::endl;
             output << descr;
@@ -700,14 +1057,16 @@ TEST_F(router_fixture, inter_process_scale_up_process_group_topology_test) {
     }
 }
 
-TEST_F(router_fixture, several_processes_with_inner_scale_up_in_process_group_topology_test) {
+TEST_F(
+    router_fixture,
+    DISABLED_process_group_test_several_processes_with_inner_scale_up_in_process_group_topology_test) {
     using namespace utils;
     using namespace native;
     using namespace native::detail;
 
     size_t process_index = 1;
 
-    constexpr ccl::group_split_type topology = ccl::group_split_type::process_group_torn_apart_ring;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
     {
         output << "TEST: scaleup between thread groups in one process group" << std::endl;
 
@@ -856,7 +1215,6 @@ TEST_F(router_fixture, several_processes_with_inner_scale_up_in_process_group_to
         try {
             res = top.build_all(ss,
                                 tg_comm->per_thread_indices,
-                                ipc_device_indices,
                                 matrix,
                                 std::bind(test_custom_p2p_ping,
                                           std::placeholders::_1,
@@ -895,8 +1253,10 @@ TEST_F(router_fixture, several_processes_with_inner_scale_up_in_process_group_to
                                        optional_indices{ true, { 3 }, { 1 } },
                                        optional_indices{ false, {}, {} } }) });
 
-        std::tie(res, descr) = check_ring_multiple_topologies<topology, process_group_context>(
-            pg_comm->process_device_topology, params.thread_ids, expected_thread_results);
+        std::tie(res, descr) = check_ring_multiple_topologies<topology,
+                                                              ccl::device_topology_type::ring,
+                                                              process_group_context>(
+            pg_comm->process_device_topology, params.thread_ids, expected_thread_results, true, 0);
         if (!res) {
             output << "\nLOG:\n" << ss.str() << std::endl;
             output << descr;
@@ -905,14 +1265,14 @@ TEST_F(router_fixture, several_processes_with_inner_scale_up_in_process_group_to
     }
 }
 
-TEST_F(router_fixture, scale_up_scale_out_process_group_topology_test) {
+TEST_F(router_fixture, DISABLED_process_group_test_scale_up_scale_out_process_group_topology_test) {
     using namespace utils;
     using namespace native;
     using namespace native::detail;
 
     size_t process_index = 0;
 
-    constexpr ccl::group_split_type topology = ccl::group_split_type::process_group_torn_apart_ring;
+    constexpr ccl::group_split_type topology = ccl::group_split_type::cluster;
     {
         output << "TEST: scaleup between thread groups in one process group" << std::endl;
 
@@ -1026,7 +1386,6 @@ TEST_F(router_fixture, scale_up_scale_out_process_group_topology_test) {
         try {
             res = top.build_all(ss,
                                 tg_comm->per_thread_indices,
-                                ipc_device_indices,
                                 matrix,
                                 std::bind(test_custom_p2p_ping,
                                           std::placeholders::_1,
@@ -1065,9 +1424,11 @@ TEST_F(router_fixture, scale_up_scale_out_process_group_topology_test) {
                                        optional_indices{ true, { 3 }, { 1 } },
                                        optional_indices{ false, {}, {} } }) });
 
-        std::tie(res, descr) = check_ring_multiple_topologies<topology, process_group_context>(
-            pg_comm->process_device_topology, params.thread_ids, expected_thread_results);
+        std::tie(res, descr) = check_ring_multiple_topologies<topology,
+                                                              ccl::device_topology_type::ring,
+                                                              process_group_context>(
+            pg_comm->process_device_topology, params.thread_ids, expected_thread_results, true, 0);
         UT_ASSERT(res, descr);
     }
 }
-} // namespace topology_suite
+} // namespace processgroup_topology_suite

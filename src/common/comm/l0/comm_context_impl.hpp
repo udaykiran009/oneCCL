@@ -35,14 +35,13 @@ ccl::communicator_interface_ptr ccl::comm_group::create_communicator_from_group(
     {
         LOG_TRACE("Create single device communicator from SYCL device");
         //TODO
-        ccl::comm_split_attr single_dev_attr = attr;
-        single_dev_attr.set<ccl::comm_split_attr_id::group>(ccl::split_group::cluster);
         impl = ccl::communicator_interface::create_communicator_impl(device,
                                                                      context,
                                                                      host_comm->rank(),
                                                                      host_comm->size(),
-                                                                     single_dev_attr,
-                                                                     host_comm->get_atl());
+                                                                     attr,
+                                                                     host_comm->get_atl(),
+                                                                     ccl::group_split_type::single);
     }
     else {
         // multiple device case

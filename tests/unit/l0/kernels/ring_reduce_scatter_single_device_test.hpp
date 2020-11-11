@@ -24,7 +24,7 @@ TYPED_TEST(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single
     using op_type = typename TypeParam::second_type;
 
     // test case data
-    const size_t num_thread = 4;
+    const int num_thread = 4;
     const size_t recv_buffer_size = 64;
     const size_t send_buffer_size = num_thread * recv_buffer_size;
     constexpr size_t mem_group_count = 3;

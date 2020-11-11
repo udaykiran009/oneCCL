@@ -72,12 +72,17 @@ public:
         //virtual based on real
         auto real_kernel = real_gpu_comm.get_gpu_module_ptr<module_type, group_id, class_id>();
 
-        std::get<utils::enum_to_underlying(class_id)>(
-            std::get<utils::enum_to_underlying(group_id)>(
+        std::get<::utils::enum_to_underlying(class_id)>(
+            std::get<::utils::enum_to_underlying(group_id)>(
                 std::get<module_type>(registered_modules)))
             .reset(new gpu_module_t<module_type, group_id, class_id>(real_kernel));
         return { "virtual module" };
     }
+
+    cmd_list_proxy get_cmd_list(std::shared_ptr<ccl_context> ctx);
+
+    fence_proxy get_fence(const ccl_device::device_queue& cmd_queue,
+                          std::shared_ptr<ccl_context> ctx);
 
 private:
     ccl_gpu_comm& real_gpu_comm;
