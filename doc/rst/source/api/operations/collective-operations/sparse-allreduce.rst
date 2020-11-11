@@ -1,4 +1,4 @@
-Sparse allreduce
+SparseAllreduce
 ****************
 
 .. doxygengroup:: sparseallreduce

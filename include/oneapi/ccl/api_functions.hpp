@@ -253,6 +253,9 @@ communicator create_communicator(int size,
                                  shared_ptr_class<kvs_interface> kvs,
                                  const comm_attr& attr = default_comm_attr);
 
+/*!
+ * \overload
+ */
 /**
  * \ingroup communicator
  * \brief Creates new communicators with user supplied size, ranks, local device-rank mapping and kvs.
@@ -273,6 +276,9 @@ vector_class<communicator> create_communicators(
     return detail::environment::instance().create_communicators(size, devices, context, kvs, attr);
 }
 
+/*!
+ * \overload
+ */
 template <class DeviceType, class ContextType>
 vector_class<communicator> create_communicators(int size,
                                                 const map_class<int, DeviceType>& devices,
@@ -282,6 +288,9 @@ vector_class<communicator> create_communicators(int size,
     return detail::environment::instance().create_communicators(size, devices, context, kvs, attr);
 }
 
+/*!
+ * \overload
+ */
 template <class DeviceType, class ContextType>
 communicator create_communicator(int size,
                                  int rank,
@@ -315,6 +324,9 @@ namespace preview {
 vector_class<communicator> split_communicators(
     const vector_class<pair_class<communicator, comm_split_attr>>& attrs);
 
+/*!
+ * \overload
+ */
 /**
  * \ingroup communicator
  * \brief Creates a new communicator with externally provided size, rank and kvs.
@@ -323,6 +335,9 @@ vector_class<communicator> split_communicators(
  */
 communicator create_communicator(const comm_attr& attr = default_comm_attr);
 
+/*!
+ * \overload
+ */
 /**
  * \ingroup communicator
  * \brief Creates a new communicator with user supplied size and kvs.
@@ -335,6 +350,10 @@ communicator create_communicator(int size,
                                  shared_ptr_class<kvs_interface> kvs,
                                  const comm_attr& attr = default_comm_attr);
 
+
+/*!
+ * \overload
+ */
 /**
  * \ingroup communicator
  * \brief Creates a new communicators with user supplied size, local devices and kvs.
