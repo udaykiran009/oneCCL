@@ -22,7 +22,7 @@ TYPED_TEST(ring_allgatherv_single_device_fixture, ring_allgatherv_single_device_
     using native_type = TypeParam;
 
     // test case data
-    const size_t num_thread = 4;
+    const int num_thread = 4;
     const size_t send_buffer_base_size = 128;
     const size_t recv_buffer_size = send_buffer_base_size * (num_thread / 2) * (1 + num_thread);
     constexpr size_t mem_group_count = 2;

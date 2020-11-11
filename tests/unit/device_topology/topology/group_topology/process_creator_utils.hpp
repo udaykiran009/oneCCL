@@ -1,7 +1,7 @@
 #pragma once
 #include <initializer_list>
 #include "../topology_utils.hpp"
-#include "../../stubs/stub_platform.hpp"
+#include "stubs/stub_platform.hpp"
 #include "common/comm/l0/topology/ring/ring_construction_utils.hpp"
 
 namespace topology_suite {
@@ -454,7 +454,7 @@ TEST_F(router_fixture, simple_multithreaded_merge_test) {
                     pr_index,
                     proces_num,
                     my_colored_rings,
-                    std::bind(utils::test_custom_p2p_ping,
+                    std::bind(::utils::test_custom_p2p_ping,
                               std::placeholders::_1,
                               std::placeholders::_2,
                               expected_matrix));
@@ -499,10 +499,10 @@ TEST_F(router_fixture, simple_multithreaded_merge_test) {
             if (merged_cluster_graphs != to_check) {
                 std::stringstream ss;
                 ss << "Verification: " << std::endl;
-                utils::dump_global_colored_graph(ss, to_check);
+                ::utils::dump_global_colored_graph(ss, to_check);
 
                 ss << "Got: " << std::endl;
-                utils::dump_global_colored_graph(ss, merged_cluster_graphs);
+                ::utils::dump_global_colored_graph(ss, merged_cluster_graphs);
 
                 UT_ASSERT(false, "Invalid cluster data after merge:\n" << ss.str());
             }
@@ -671,10 +671,10 @@ TEST_F(router_fixture, simple_scaleout_test) {
             if (merged_cluster_graphs != to_check) {
                 std::stringstream ss;
                 ss << "Verification: " << std::endl;
-                utils::dump_global_colored_graph(ss, to_check);
+                ::utils::dump_global_colored_graph(ss, to_check);
 
                 ss << "Got: " << std::endl;
-                utils::dump_global_colored_graph(ss, merged_cluster_graphs);
+                ::utils::dump_global_colored_graph(ss, merged_cluster_graphs);
 
                 UT_ASSERT(false, "Invalid cluster data after merge:\n" << ss.str());
             }
@@ -915,7 +915,7 @@ TEST_F(router_fixture, simple_scaleout_multithreaded_merge_test) {
                     pr_index,
                     proces_num,
                     my_colored_rings,
-                    std::bind(utils::test_custom_p2p_ping,
+                    std::bind(::utils::test_custom_p2p_ping,
                               std::placeholders::_1,
                               std::placeholders::_2,
                               expected_matrix));
@@ -951,10 +951,10 @@ TEST_F(router_fixture, simple_scaleout_multithreaded_merge_test) {
             if (merged_cluster_graphs != to_check) {
                 std::stringstream ss;
                 ss << "Verification: " << std::endl;
-                utils::dump_global_colored_graph(ss, to_check);
+                ::utils::dump_global_colored_graph(ss, to_check);
 
                 ss << "Got: " << std::endl;
-                utils::dump_global_colored_graph(ss, merged_cluster_graphs);
+                ::utils::dump_global_colored_graph(ss, merged_cluster_graphs);
 
                 UT_ASSERT(false, "Invalid cluster data after merge:\n" << ss.str());
             }
@@ -1124,7 +1124,7 @@ TEST_F(router_fixture, symmetric_scaleout_test) {
                     pr_index,
                     proces_num,
                     my_colored_rings,
-                    std::bind(utils::test_custom_p2p_ping,
+                    std::bind(::utils::test_custom_p2p_ping,
                               std::placeholders::_1,
                               std::placeholders::_2,
                               expected_matrix));
@@ -1181,10 +1181,10 @@ TEST_F(router_fixture, symmetric_scaleout_test) {
             if (merged_cluster_graphs != to_check) {
                 std::stringstream ss;
                 ss << "Verification: " << std::endl;
-                utils::dump_global_colored_graph(ss, to_check);
+                ::utils::dump_global_colored_graph(ss, to_check);
 
                 ss << "Got: " << std::endl;
-                utils::dump_global_colored_graph(ss, merged_cluster_graphs);
+                ::utils::dump_global_colored_graph(ss, merged_cluster_graphs);
 
                 UT_ASSERT(false, "Invalid cluster data after merge:\n" << ss.str());
             }
@@ -1503,7 +1503,7 @@ TEST_F(router_fixture, symmetric_scaleout_multithreaded_merge_test) {
                     pr_index,
                     proces_num,
                     my_colored_rings,
-                    std::bind(utils::test_custom_p2p_ping,
+                    std::bind(::utils::test_custom_p2p_ping,
                               std::placeholders::_1,
                               std::placeholders::_2,
                               expected_matrix));
@@ -1560,10 +1560,10 @@ TEST_F(router_fixture, symmetric_scaleout_multithreaded_merge_test) {
             if (merged_cluster_graphs != to_check) {
                 std::stringstream ss;
                 ss << "Verification: " << std::endl;
-                utils::dump_global_colored_graph(ss, to_check);
+                ::utils::dump_global_colored_graph(ss, to_check);
 
                 ss << "Got: " << std::endl;
-                utils::dump_global_colored_graph(ss, merged_cluster_graphs);
+                ::utils::dump_global_colored_graph(ss, merged_cluster_graphs);
 
                 UT_ASSERT(false, "Invalid cluster data after merge:\n" << ss.str());
             }
@@ -1735,7 +1735,7 @@ TEST_F(router_fixture, unsymmetric_scaleout_test) {
                     pr_index,
                     proces_num,
                     my_colored_rings,
-                    std::bind(utils::test_custom_p2p_ping,
+                    std::bind(::utils::test_custom_p2p_ping,
                               std::placeholders::_1,
                               std::placeholders::_2,
                               expected_matrix));
@@ -1798,10 +1798,10 @@ TEST_F(router_fixture, unsymmetric_scaleout_test) {
             if (merged_cluster_graphs != to_check) {
                 std::stringstream ss;
                 ss << "Verification: " << std::endl;
-                utils::dump_global_colored_graph(ss, to_check);
+                ::utils::dump_global_colored_graph(ss, to_check);
 
                 ss << "Got: " << std::endl;
-                utils::dump_global_colored_graph(ss, merged_cluster_graphs);
+                ::utils::dump_global_colored_graph(ss, merged_cluster_graphs);
 
                 UT_ASSERT(false, "Invalid cluster data after merge:\n" << ss.str());
             }

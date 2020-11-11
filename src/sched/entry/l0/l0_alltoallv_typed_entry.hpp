@@ -257,7 +257,7 @@ public:
         return class_name();
     }
 
-    std::vector<ccl_device::device_ipc_memory_handle> get_ipc_data() {
+    std::vector<ccl_device::device_ipc_memory_handle> get_ipc_data() override {
         ccl_device& owned_device = parent_communicator->get_device();
 
         //TODO
@@ -288,7 +288,6 @@ protected:
         if (!is_kernel_added) {
             std::unique_lock<std::mutex> lock(global_mutex);
             exec_count++;
-            (void)cur_index;
 
             kernel_bind_epoch_id = exec_count;
 
@@ -479,6 +478,9 @@ public:
     }
 
     bool execute(kernel_main_typed& main_entry_function, kernel_ipc_typed& right_kernel) {
+        bool is_right_kernel_ready = false;
+        /* TODO UNSUPPORTED
+
         //Check argument binding in kernels for next rank
         bool is_right_kernel_ready =
             right_kernel.template test_args< //typename kernel_ipc_typed::right_output_buf_arg,
@@ -545,9 +547,10 @@ public:
                       comm_addr.to_string(),
                       ". Function: ",
                       main_entry_function.to_string());
-        }
+        }*/
         return is_right_kernel_ready;
     }
+
     size_t list_closed_epoch_id = 0;
     size_t kernel_bind_epoch_id = 0;
 };

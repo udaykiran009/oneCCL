@@ -14,13 +14,11 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
 
     // test case data
     const size_t buffer_size = 512;
-    const size_t num_thread = 1;
+    const int num_thread = 1;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
     constexpr size_t ipc_mem_group_count = 1;
     constexpr size_t ipc_flag_group_count = 2;
-
-    std::shared_ptr<ccl_context> ctx;
 
     handles_storage<native_type> memory_storage(42 * num_thread);
     handles_storage<int> flags_storage(42 * num_thread);
@@ -49,6 +47,8 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
     std::iota(send_values.begin(), send_values.end(), 1);
     std::vector<native_type> recv_values(buffer_size, 0);
 
+    //ctx
+    std::shared_ptr<ccl_context> ctx = driver.create_context();
     // allocate device memory
     auto dev_it = driver.devices.begin();
     ccl_device& device = *dev_it->second;
@@ -76,7 +76,7 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
             temp_recv.enqueue_write_sync(recv_values.begin(),
                                          recv_values.begin() + buffer_size / num_thread);
 
-            ipc_server_memory.create_ipcs(thread_idx, num_thread, &temp_recv);
+            ipc_server_memory.create_ipcs(ctx, thread_idx, num_thread, &temp_recv);
 
             /* fill array in specific order
              * l - left
@@ -99,7 +99,7 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
             barrier_flag.enqueue_write_sync({ (int)0 });
 
             ipc_server_flags.create_ipcs(
-                thread_idx, num_thread, &left_wrote_2_me_flag, &read_for_receive_flag);
+                ctx, thread_idx, num_thread, &left_wrote_2_me_flag, &read_for_receive_flag);
 
             /* fill array in specific order
              * Left: l_L, l_R, l_B, r_L, r_R
@@ -157,6 +157,7 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
     readFromSocket(communication_socket, received_raw_handles.data(), received_raw_handles.size());
     UT_ASSERT(ret == 0, "Cannot readFromSocket" << strerror(errno));
 
+    std::shared_ptr<native::ccl_device_platform> ipc_platform;
     try {
         // deserialize
         for (size_t thread_id = 0; thread_id < num_thread; thread_id++) {
@@ -167,11 +168,11 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
             flags_serialized[thread_id].assign(received_raw_handles.begin() + mem_send,
                                                received_raw_handles.end());
 
-            size_t count =
-                ipc_client_memory.deserialize(memory_serialized.at(thread_id), 1, *global_platform);
+            size_t count = ipc_client_memory.deserialize(
+                ctx, memory_serialized.at(thread_id), 1, *global_platform, ipc_platform);
             UT_ASSERT(count == 1, "Deserialized 1 IPC memory handle");
-            count =
-                ipc_client_flags.deserialize(flags_serialized.at(thread_id), 2, *global_platform);
+            count = ipc_client_flags.deserialize(
+                ctx, flags_serialized.at(thread_id), 2, *global_platform, ipc_platform);
             UT_ASSERT(count == 2, "Deserialized 2 IPC flag handles");
         }
     }

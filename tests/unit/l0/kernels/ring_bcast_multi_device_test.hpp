@@ -8,7 +8,7 @@ using native_type = float;
 TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
     using namespace native;
     const size_t buffer_size = 512;
-    const size_t num_thread = 2;
+    const int num_thread = 2;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
 
@@ -22,7 +22,7 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
     auto drv_it = local_platform->drivers.find(0);
     UT_ASSERT(drv_it != local_platform->drivers.end(), "Driver by idx 0 must exist!");
     auto driver = drv_it->second;
-    size_t root = 2;
+    int root = 2;
 
     // device per thread
     UT_ASSERT(driver->devices.size() == local_affinity.size(),
@@ -100,7 +100,7 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
         rank_device_idx++;
     }
 
-    for (int rank_idx = 0; rank_idx < driver->devices.size(); rank_idx++) {
+    for (size_t rank_idx = 0; rank_idx < driver->devices.size(); rank_idx++) {
         memory_storage.rotate_shared_data(rank_idx, driver->devices.size(), mem_group_count);
         flags_storage.rotate_shared_data(rank_idx, driver->devices.size(), flag_group_count);
     }

@@ -27,7 +27,7 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
 
     // test case data
     const size_t buffer_size = 512;
-    const size_t num_thread = 4;
+    const int num_thread = 4;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
 
@@ -67,7 +67,7 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
     // allocate device memory
     auto dev_it = driver.devices.begin();
     ccl_device& device = *dev_it->second;
-    size_t root = 2;
+    int root = 2;
 
     for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         thread_indices.push_back(thread_idx);
@@ -378,7 +378,7 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
                                       size_t thread_idx,
                                       size_t num_thread,
                                       native_type value) -> bool {
-                if (root == thread_idx) {
+                if (root == static_cast<int>(thread_idx)) {
                     corr_val++;
                     constexpr auto op = op_type{};
 

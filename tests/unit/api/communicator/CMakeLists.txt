@@ -54,7 +54,7 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/common/event/impls/native_event.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/stream/stream.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/comm.cpp"
-             "${PROJECT_SOURCE_DIR}/src/common/comm/comm_interface.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/compiler_comm_interface_dispatcher.cpp"
 #             "${PROJECT_SOURCE_DIR}/src/native_device_api/interop_utils.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_utils.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp"
@@ -70,13 +70,19 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/atl_wrapper.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ccl_unordered_coll_manager.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/utils/version.cpp"
-             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ccl_allreduce_2d_builder.cpp")
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ccl_allreduce_2d_builder.cpp"
+)
+
 set(specific_sources)
 if(MULTI_GPU_SUPPORT)
     set(specific_sources
              "${PROJECT_SOURCE_DIR}/src/common/comm/l0/comm_context_storage.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/l0/comm_context.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/l0/gpu_comm_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context_comm_addr.cpp"
+
+             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs//ipc_ctx_session.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scaling_ctx/ipc_session_key.cpp"
 
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/single_device_communicator.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/device_topology_communicator.cpp"

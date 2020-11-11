@@ -14,6 +14,9 @@
 #include "common/comm/l0/modules_connector.hpp"
 #include "common/global/global.hpp"
 #include "common/stream/stream.hpp"
+
+#include "common/comm/l0/context/scaling_ctx/ipc_session_key.hpp"
+
 //TODO L0 Workaround
 #include <unistd.h>
 static std::mutex global_fence_mutex;
@@ -66,6 +69,37 @@ static std::mutex global_fence_mutex;
         } while (0); \
     }
 
+// This is a internal gpu entry state to keep track of the progress
+// filling and submitting a kernel as well as its execution
+enum class gpu_entry_state {
+    // default state
+    initial,
+    // Entry is fully constructed
+    created,
+    // Local parameters are filled and the entry is waiting for
+    // parameters from the neighbour entry. No further progress
+    // until these parameters are received. After that
+    // the entry appends it's kernel. After that the kernel is
+    // submited to the queue(only one rank does that in case of
+    // virtual device.
+    wait_for_entry,
+    // The kernel is submited and the entry is waiting for kernel
+    // completion by checking fence status.
+    wait_for_completion,
+    // Execution is done, it's possible to reuse the entry by
+    // moving the entry to created state
+    completed,
+    // Last element in the enum, not used as state
+    last
+};
+
+inline std::string to_string(gpu_entry_state state) {
+    return utils::enum_to_str<static_cast<int>(gpu_entry_state::last)>{
+        "initial", "created", "wait_for_entry", "wait_for_completion", "completed"
+    }
+        .choose(state);
+}
+
 namespace native {
 template <class native_type,
           class gpu_comm_impl,
@@ -79,6 +113,8 @@ public:
     using kernel_main_typed =
         typename gpu_comm::template gpu_kernel_t<type_op, group_id, class_id, native_type>;
     // using kernel_ipc_typed = ring_allreduce_ipc<native_type>;
+    using kernel_ipc_typed =
+        typename ccl_ipc_gpu_comm::template gpu_kernel_t<type_op, group_id, class_id, native_type>;
 
     template <class elem_t>
     using device_memory = memory<elem_t, ccl_device, ccl_context>;
@@ -114,7 +150,12 @@ public:
               send_buf(send_buf),
               dtype(dtype_in),
               device_stream(stream),
-              ctx(in_ctx) {}
+              ctx(in_ctx),
+              entry_state(gpu_entry_state::initial) {
+        // TODO: remove once all the child entries are refactored to not
+        // use fence field directly
+        fence = get_fence();
+    }
 
     virtual ~base_gpu_entry() {}
 
@@ -124,14 +165,15 @@ public:
             //TODO make check, that device_stream belong to the device
             auto queue_prop = ccl_device::get_default_queue_desc();
             auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
-            fence = device.get_fence(cmd_queue, ctx).get();
+
+            auto fence = parent_communicator->get_fence(get_queue(), get_ctx());
 
             ENTRY_LOG_DEBUG("start base entry initialization, ctx: ",
                             ctx.get(),
                             ", queue: ",
                             cmd_queue.get(),
                             ", fence: ",
-                            fence);
+                            fence.get());
         }
         //else
         //{
@@ -171,56 +213,6 @@ public:
 
     bool submit_for_execution() {
         ready_to_exec = finalize_entry();
-        if (ready_to_exec) {
-            //TODO L0 workaround
-            //if(std::is_same<gpu_comm_impl, ccl_gpu_comm>::value)
-            if (gpu_comm_impl::type_idx() == ccl_gpu_comm::type_idx() or
-                gpu_comm_impl::type_idx() == ccl_ipc_source_gpu_comm<ccl_gpu_comm>::type_idx()) {
-                ccl_device &device = parent_communicator->get_device();
-                auto queue_prop = ccl_device::get_default_queue_desc();
-                auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
-                auto &cmd_list = device.get_cmd_list(ctx);
-                ENTRY_LOG_DEBUG("Start submit for execution: main device: ",
-                                parent_communicator->to_string(),
-                                ", queue: ",
-                                cmd_queue.get(),
-                                ", list: ",
-                                cmd_list.get());
-                if (group_id == ccl::group_split_type::cluster) {
-                    //auto c = ccl::detail::environment::instance().create_communicator();
-                    //(void)c;
-                    //if(c->rank() == 0)
-                    {
-                        // Execute command list in command queue
-                        //TODO SPECIAL FOR VIRTUAL
-                        /*
-                    if(std::is_same<gpu_comm, ccl_virtual_gpu_comm>::value)
-                    {
-                        queue_prop.ordinal = parent_communicator->get_rank(); //TODO SPECIAL FOR VIRTUAL
-                    }
-                    queue_prop.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;*/
-
-                        ze_result_t ret = zeCommandQueueExecuteCommandLists(
-                            cmd_queue.get(), 1, cmd_list.get_ptr(), fence);
-                        if (ret != ZE_RESULT_SUCCESS) {
-                            throw ccl::exception(
-                                std::string("cannot execute command list, error: ") +
-                                std::to_string(ret));
-                        }
-                    }
-                }
-                else {
-                    /*-S-
-                    ze_result_t ret = zeCommandQueueExecuteCommandLists(
-                        cmd_queue.get(), 1, cmd_list.get_ptr(), fence);
-                    if (ret != ZE_RESULT_SUCCESS) {
-                        throw ccl::exception(std::string("cannot execute command list, error: ") +
-                                             std::to_string(ret));
-                    }
-                    */
-                }
-            }
-        }
         ENTRY_LOG_TRACE("submission result: ", ready_to_exec);
         return ready_to_exec;
     }
@@ -236,48 +228,22 @@ public:
             auto &cmd_queue = device.get_cmd_queue(queue_prop, ctx);
 
             ENTRY_LOG_TRACE(" waiting for finished execution, queue: ", cmd_queue.get());
-            /* TODO fence!
-            ze_result_t ret = zeCommandQueueSynchronize(cmd_queue.handle,
-                                                          std::numeric_limits<uint32_t>::max());*/
-            ze_result_t ret = zeFenceQueryStatus(fence);
+
+            ze_result_t ret = get_fence_impl().query_status();
             ENTRY_LOG_TRACE(
                 "Fence query status: ", native::to_string(ret), ", queue: ", cmd_queue.get());
-            if (ret != ZE_RESULT_SUCCESS) {
-                if (ret != ZE_RESULT_NOT_READY) {
-                    //TODO L0 workaround: Virtual Device may execute this part before fence actually queued
-                    //Therefore, ZE_RESULT_ERROR_INVALID_ARGUMENT is normal for virtual device, but not for real
-                    if (gpu_comm_impl::type_idx() == ccl_gpu_comm::type_idx() or
-                        gpu_comm_impl::type_idx() ==
-                            ccl_ipc_source_gpu_comm<ccl_gpu_comm>::type_idx()) {
-                        if (group_id == ccl::group_split_type::cluster) {
-                            // TODO: implement process communicator case
-                            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
-                                                 "TODO: implement process communicator case");
-                            // auto c = ccl::detail::environment::instance().create_communicator();
-                            // if (c.rank() == 0) {
-                            // throw ccl::exception(
-                            //     std::string("cannot sync queue from real device, error: ") +
-                            //     native::to_string(ret));
-                            // }
-                        }
-                        else {
-                            throw ccl::exception(
-                                std::string("cannot sync queue from real device, error: ") +
-                                native::to_string(ret));
-                        }
-                    }
-                    else {
-                        if (ret != ZE_RESULT_ERROR_INVALID_ARGUMENT) {
-                            throw ccl::exception(
-                                std::string("cannot sync queue from virtual device, error: ") +
-                                native::to_string(ret));
-                        }
-                    }
-                }
-            }
-            else {
+            if (ret == ZE_RESULT_SUCCESS) {
+                this->set_state(gpu_entry_state::completed);
+
+                // Once all the ranks in the group got the notification, reset the state for further launches
+                reset_state();
+
                 status = ccl_sched_entry_status_complete;
                 ENTRY_LOG_DEBUG(" Completed on queue: ", cmd_queue.get());
+            }
+            else if (ret == ZE_RESULT_NOT_READY) {
+                // Just return in case if the kernel is not ready yet, will check again on the next iteration
+                return;
             }
         }
     }
@@ -286,8 +252,19 @@ public:
         return class_name();
     }
 
+    ccl_device::device_queue &get_queue() const {
+        ccl_device &device = parent_communicator->get_device();
+        return device.get_cmd_queue(ccl_device::get_default_queue_desc(), ctx);
+    }
+
     ze_fence_handle_t get_fence() {
-        return fence;
+        return get_fence_impl().get();
+    }
+
+    //USE GPU cache binding
+    virtual std::vector<ccl_device::device_ipc_memory_handle> get_ipc_data() = 0;
+    virtual native::ipc_session_key get_ipc_session_key() const {
+        return native::ipc_session_key{ this };
     }
 
 protected:
@@ -296,56 +273,49 @@ protected:
         ccl_logger::format(str, "{", name(), ", addr: ", comm_addr.to_string(), "}");
     }
 
+    void reset_state() {
+        // Reset the state of the used handles
+        get_fence_impl().reset();
+        parent_communicator->get_cmd_list(get_ctx()).reset();
+    }
+
 protected:
     ccl_driver_context_ptr get_ctx() const {
         return ctx;
     }
 
-    template <template <size_t pos, class Policy> class KernelArg, size_t POS, class POL>
-    device_memory<typename std::remove_pointer<typename KernelArg<POS, POL>::arg_type>::type>
-    alloc_memory_wrap(const KernelArg<POS, POL> &arg,
-                      std::shared_ptr<gpu_comm> parent_communicator,
-                      size_t cnt,
-                      std::shared_ptr<ccl_context> ctx) {
-        using alloc_type =
-            typename std::remove_pointer<typename KernelArg<POS, POL>::arg_type>::type;
-        auto memory = parent_communicator->get_device().template alloc_memory<alloc_type>(
-            cnt, sizeof(alloc_type), ctx);
-        LOG_DEBUG("Allocation memory by default: ",
-                  POS,
-                  ", ctx: ",
-                  (void *)ctx.get(),
-                  ", memory: ",
-                  (void *)memory.get());
-        return memory;
+    template <class options>
+    ze_device_mem_alloc_desc_t get_mem_descr(options opt) {
+        ze_device_mem_alloc_desc_t mem_descr = ccl_device::get_default_mem_alloc_desc();
+        // Explicitly reset flags to avoid potential conflicts with the default value
+        mem_descr.flags = 0;
+        mem_descr.flags |= (opt.is_uncached() ? ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED
+                                              : ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_CACHED);
+
+        return mem_descr;
     }
 
-    template <template <size_t pos, class> class KernelArg, size_t POS, class Type, bool B>
-    device_memory<typename std::remove_pointer<
-        typename KernelArg<POS, arg_access_policy_atomic_uncached<POS, Type, B>>::arg_type>::type>
-    alloc_memory_wrap(const KernelArg<POS, arg_access_policy_atomic_uncached<POS, Type, B>> &arg,
-                      std::shared_ptr<gpu_comm> parent_communicator,
-                      size_t cnt,
-                      std::shared_ptr<ccl_context> ctx) {
-        using alloc_type = typename std::remove_pointer<
-            typename KernelArg<POS,
-                               arg_access_policy_atomic_uncached<POS, Type, B>>::arg_type>::type;
-        ze_device_mem_alloc_desc_t mem_descr{
-            .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
-            .pNext = NULL,
-            .flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED,
-            .ordinal = 0,
-        };
-        auto memory = parent_communicator->get_device().template alloc_memory<alloc_type>(
-            cnt, sizeof(alloc_type), ctx, mem_descr);
-        LOG_DEBUG("Allocation memory with bias uncached flag: ",
-                  POS,
+    // Wrapper to handle memory allocation with different options
+    template <class kernel_arg,
+              // Get the actual underlying type to specify the type for the allocation
+              class arg_type = typename std::remove_pointer<typename kernel_arg::arg_type>::type>
+    device_memory<arg_type> alloc_memory_wrap(const kernel_arg &arg,
+                                              std::shared_ptr<gpu_comm> parent_communicator,
+                                              size_t cnt,
+                                              std::shared_ptr<ccl_context> ctx) {
+        auto mem_descr = get_mem_descr(typename kernel_arg::options_t{});
+        auto memory = parent_communicator->get_device().template alloc_memory<arg_type>(
+            cnt, sizeof(arg_type), ctx, mem_descr);
+
+        LOG_DEBUG("Allocation memory by default: ",
+                  kernel_arg::index,
                   ", ctx: ",
                   (void *)ctx.get(),
                   ", memory: ",
                   (void *)memory.get(),
-                  " mem_descr: ",
+                  ", mem_descr: ",
                   native::to_string(mem_descr));
+
         return memory;
     }
 
@@ -358,6 +328,20 @@ protected:
     // GPU
     bool ready_to_exec = false;
     ze_fence_handle_t fence;
+
+    auto get_fence_impl() -> decltype(parent_communicator->get_fence(get_queue(), get_ctx())) {
+        return parent_communicator->get_fence(get_queue(), get_ctx());
+    }
+
+    void set_state(gpu_entry_state new_state) noexcept {
+        ENTRY_LOG_DEBUG(
+            "switching entry state from ", to_string(entry_state), " to ", to_string(new_state));
+        entry_state = new_state;
+    }
+
+    gpu_entry_state get_state() const noexcept {
+        return entry_state;
+    }
 
     //TODO
     ze_group_count_t launch_args = { 1, 1, 1 };
@@ -380,6 +364,21 @@ protected:
                 gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
 
             //communicate with real device
+            kernel_router.reset(
+                new kernel_connector<kernel_main_typed, executor, kernel_main_typed>(
+                    exec, right_main_func));
+        }
+
+        while (!kernel_router) {
+            //Virtual GPU
+            auto &map_devices = std::get<ccl_virtual_gpu_comm::type_idx()>(group_devices);
+            auto it = map_devices.find(next_rank);
+            if (it == map_devices.end()) {
+                break; // not ready yet!
+            }
+            std::shared_ptr<ccl_virtual_gpu_comm> gpu = it->second;
+            kernel_main_typed &right_main_func =
+                gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
             kernel_router.reset(
                 new kernel_connector<kernel_main_typed, executor, kernel_main_typed>(
                     exec, right_main_func));
@@ -419,7 +418,7 @@ protected:
             if (it == map_devices.end()) {
                 break; // not ready yet!
             }
-            std::shared_ptr<ccl_thread_comm<ccl_virtual_gpu_comm>> gpu = it->second;
+            std::shared_ptr<thread_group_comm_device> gpu = it->second;
             /*
             std::shared_ptr<thread_group_comm_device> gpu = map_devices.find(next_rank);
             if(gpu == nullptr)
@@ -434,58 +433,60 @@ protected:
                 new kernel_connector<kernel_main_typed, executor, kernel_main_typed>(
                     exec, right_main_func));
         }
-        /*
-        while(!kernel_router)
-        {
-            //ipc-source GPU
-            using thread_group_comm_device = ccl_ipc_source_gpu_comm<ccl_gpu_comm>;
-            native::indexed_device_container<thread_group_comm_device>& map_devices = std::get<thread_group_comm_device::type_idx()>(group_devices);
-            auto it = map_devices.find(next_rank);
-            if(it == map_devices.end())
-            {
-                break; // not ready yet!
-            }
-            std::shared_ptr<ccl_ipc_source_gpu_comm<ccl_gpu_comm>> gpu = it->second;
-            kernel_main_typed &right_main_func = gpu->get_gpu_kernel<type(), native_type>();
 
-            //communicate with real device from another thread
-            kernel_router.reset(new router<kernel_main_typed,
-                                           executor,
-                                           kernel_main_typed>(exec, right_main_func));
-        }
-
-        while(!kernel_router)
-        {
-            //concurrent GPU
-            using thread_group_comm_device = ccl_ipc_source_gpu_comm<ccl_virtual_gpu_comm>;
-            native::indexed_device_container<thread_group_comm_device>& map_devices = std::get<thread_group_comm_device::type_idx()>(group_devices);
-            auto it = map_devices.find(next_rank);
-            if(it == map_devices.end())
-            {
-                break; // not ready yet!
-            }
-            std::shared_ptr<ccl_ipc_source_gpu_comm<ccl_virtual_gpu_comm>> gpu = it->second;
-            kernel_main_typed &right_main_func = gpu->get_gpu_kernel<type(), native_type>();
-
-            //communicate with virtual device from another thread
-            kernel_router.reset(new router<kernel_main_typed,
-                                           executor,
-                                           kernel_main_typed>(exec, right_main_func));
-        }
-*/
         while (!kernel_router) {
-            //Virtual GPU
-            auto &map_devices = std::get<ccl_virtual_gpu_comm::type_idx()>(group_devices);
+            //ipc-source GPU REAL
+            using ipc_src_comm_device = ccl_ipc_source_gpu_comm<ccl_gpu_comm>;
+            native::indexed_device_container<ipc_src_comm_device> &map_devices =
+                std::get<ipc_src_comm_device::type_idx()>(group_devices);
             auto it = map_devices.find(next_rank);
             if (it == map_devices.end()) {
                 break; // not ready yet!
             }
-            std::shared_ptr<ccl_virtual_gpu_comm> gpu = it->second;
+            std::shared_ptr<ipc_src_comm_device> gpu = it->second;
             kernel_main_typed &right_main_func =
                 gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
+
+            //communicate with real device from another thread
             kernel_router.reset(
                 new kernel_connector<kernel_main_typed, executor, kernel_main_typed>(
                     exec, right_main_func));
+        }
+
+        while (!kernel_router) {
+            //ipc-source GPU VIRTUAL
+            using ipc_src_comm_device = ccl_ipc_source_gpu_comm<ccl_virtual_gpu_comm>;
+            native::indexed_device_container<ipc_src_comm_device> &map_devices =
+                std::get<ipc_src_comm_device::type_idx()>(group_devices);
+            auto it = map_devices.find(next_rank);
+            if (it == map_devices.end()) {
+                break; // not ready yet!
+            }
+            std::shared_ptr<ipc_src_comm_device> gpu = it->second;
+            kernel_main_typed &right_main_func =
+                gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
+
+            //communicate with virtual device from another thread
+            kernel_router.reset(
+                new kernel_connector<kernel_main_typed, executor, kernel_main_typed>(
+                    exec, right_main_func));
+        }
+
+        while (!kernel_router) {
+            //ipc-source GPU VIRTUAL
+            native::indexed_device_container<ccl_ipc_gpu_comm> &map_devices =
+                std::get<ccl_ipc_gpu_comm::type_idx()>(group_devices);
+            auto it = map_devices.find(next_rank);
+            if (it == map_devices.end()) {
+                break; // not ready yet!
+            }
+            std::shared_ptr<ccl_ipc_gpu_comm> gpu = it->second;
+            kernel_ipc_typed &right_main_func =
+                gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
+
+            //communicate with virtual device from another thread
+            kernel_router.reset(new kernel_connector<kernel_main_typed, executor, kernel_ipc_typed>(
+                exec, right_main_func));
         }
 
         // TODO: check for launching ipc kernel
@@ -514,6 +515,8 @@ protected:
 
 private:
     ccl_driver_context_ptr ctx;
+    // Internal gpu entry state to keep track of kernel status, it's not directly related to status field
+    gpu_entry_state entry_state;
 };
 
 } // namespace native

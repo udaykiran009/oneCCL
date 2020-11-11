@@ -61,7 +61,7 @@ public:
               ccl::device_topology_type class_id,
               class native_data_type>
     gpu_kernel_t<module_type, group_id, class_id, native_data_type>& get_gpu_kernel() {
-        this->template invoke<group_id>();
+        this->template invoke<group_id, class_id>();
 
         return wrapped_gpu_comm
             .template get_gpu_kernel<module_type, group_id, class_id, native_data_type>();

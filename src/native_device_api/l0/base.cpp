@@ -162,10 +162,8 @@ std::string CCL_API to_string(const ze_device_mem_alloc_desc_t& mem_descr) {
         flag = "ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_CACHED";
     }
     if (mem_descr.flags & ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED) {
-        flag = flag + " | " + "ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED";
-    }
-    if (mem_descr.flags & ZE_DEVICE_MEM_ALLOC_FLAG_FORCE_UINT32) {
-        flag = flag + " | " + "ZE_DEVICE_MEM_ALLOC_FLAG_FORCE_UINT32";
+        flag += flag.empty() ? "" : "|";
+        flag = flag + "ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED";
     }
     else {
         throw std::runtime_error(std::string("Unknown ze_device_mem_alloc_desc_t flag: ") +

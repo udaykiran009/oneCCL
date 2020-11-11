@@ -198,7 +198,7 @@ public:
         return class_name();
     }
 
-    std::vector<ccl_device::device_ipc_memory_handle> get_ipc_data() {
+    std::vector<ccl_device::device_ipc_memory_handle> get_ipc_data() override {
         ccl_device& owned_device = parent_communicator->get_device();
 
         //TODO
@@ -230,7 +230,6 @@ protected:
         if (!is_kernel_added) {
             std::unique_lock<std::mutex> lock(global_mutex);
             exec_count++;
-            (void)cur_index;
 
             kernel_bind_epoch_id = exec_count;
 

@@ -56,7 +56,7 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
 
     // test case data
     const size_t buffer_size = 512;
-    const size_t num_thread = 4;
+    const int num_thread = 4;
     constexpr size_t mem_group_count = 2;
     constexpr size_t a2a_mem_group_count = 1;
     constexpr size_t flag_group_count = 3;
@@ -87,7 +87,7 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     // allocate device memory
     auto dev_it = driver.devices.begin();
     ccl_device& device = *dev_it->second;
-    size_t root = 2;
+    int root = 2;
 
     for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         thread_indices.push_back(thread_idx);
@@ -150,7 +150,7 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
         }
     }
 
-    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         memory_storage.rotate_shared_data(thread_idx, num_thread, mem_group_count);
         flags_storage.rotate_shared_data(thread_idx, num_thread, flag_group_count);
     }

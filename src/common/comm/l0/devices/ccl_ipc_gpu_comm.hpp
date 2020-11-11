@@ -8,12 +8,25 @@
 #include <vector>
 
 #include "common/comm/l0/devices/ccl_gpu_base_comm.hpp"
+#include "common/comm/l0/devices/proxy_observer_types.hpp"
+
+#include "common/comm/l0/devices/communication_structs/ipc_server.hpp"
 
 namespace native {
 class ccl_ipc_gpu_comm : public ccl_gpu_base_comm<ccl_ipc_gpu_comm, gpu_types::IPC_DESTINATION_GPU>,
-                         public module_loader<ccl_ipc_gpu_comm> {
+                         public module_loader<ccl_ipc_gpu_comm>,
+                         public proxy_multiple_observer<ccl_ipc_gpu_comm,
+                                                        std::nullptr_t,
+                                                        std::nullptr_t,
+                                                        process_group_context>,
+                         public net::ipc_server {
 public:
     using base = ccl_gpu_base_comm<ccl_ipc_gpu_comm, gpu_types::IPC_DESTINATION_GPU>;
+
+    using proxy_base = proxy_multiple_observer<ccl_ipc_gpu_comm,
+                                               std::nullptr_t,
+                                               std::nullptr_t,
+                                               process_group_context>;
     using base::comm_rank_t;
     using impl_t = ccl_ipc_gpu_comm;
     template <ccl_coll_type algo_type, ccl::group_split_type group, ccl::device_topology_type mode>
@@ -37,7 +50,7 @@ public:
                      int size,
                      ccl::group_split_type group_id,
                      ccl::device_topology_type class_id);
-    ~ccl_ipc_gpu_comm() = default;
+    ~ccl_ipc_gpu_comm();
 
     std::string to_string_impl() const;
 
@@ -57,12 +70,14 @@ public:
               ccl::group_split_type group_id,
               ccl::device_topology_type class_id>
     std::string create_module_impl(const ze_module_desc_t& module_data) {
-        std::get<utils::enum_to_underlying(class_id)>(
-            std::get<utils::enum_to_underlying(group_id)>(
+        std::get<::utils::enum_to_underlying(class_id)>(
+            std::get<::utils::enum_to_underlying(group_id)>(
                 std::get<module_type>(registered_modules)))
             .reset(new gpu_module_t<module_type, group_id, class_id>(nullptr));
         return { "IPC module storage" };
     }
+
+    supported_modules& get_registered_modules();
 
 private:
     supported_modules registered_modules;

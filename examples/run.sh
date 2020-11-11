@@ -176,19 +176,25 @@ run_benchmark()
 
         if [ `echo $ccl_extra_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
         then
-            eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_options}` 2>&1 | tee ${test_log}
+            cmd=`echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_options}`
+            echo "Running: $cmd"
+            eval $cmd 2>&1 | tee ${test_log}
             check_test ${test_log} ${example}
         else
             log_2_test_log="${test_log}.2_ranks"
             echo "output for run with CCL_LOG_LEVEL=2 and 2 ranks has been redirected to log file ${log_2_test_log}"
-            eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_options}` > ${log_2_test_log} 2>&1
+            cmd=`echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_options}`
+            echo "Running: $cmd"
+            eval $cmd > ${log_2_test_log} 2>&1
             check_test ${log_2_test_log} ${example}
 
             if [ "${transport}" == "ofi" ];
             then
                 log_2_test_log="${test_log}.1_rank"
                 echo "output for run with CCL_LOG_LEVEL=2 and 1 rank has been redirected to log file ${log_2_test_log}"
-                eval `echo $ccl_extra_env mpiexec.hydra -n 1 -ppn $ppn -l ./$example ${final_options}` > ${log_2_test_log} 2>&1
+                cmd=`echo $ccl_extra_env mpiexec.hydra -n 1 -ppn $ppn -l ./$example ${final_options}`
+                echo "Running: $cmd"
+                eval $cmd > ${log_2_test_log} 2>&1
                 check_test ${log_2_test_log} ${example}
             fi
         fi
@@ -213,7 +219,9 @@ run_example()
     log_idx=${log_idx}+1
     local test_log="$EXAMPLE_WORK_DIR/$dir_name/run_${dir_name}_${transport}_${example}_${log_idx}.log"
 
-    eval `echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example $arg` 2>&1 | tee ${test_log}
+    cmd=`echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example $arg`
+    echo "Running $cmd"
+    eval $cmd 2>&1 | tee ${test_log}
     check_test ${test_log} ${example}
 }
 
@@ -396,7 +404,7 @@ run()
                         ccl_world_size=4
                         ccl_vars="${CCL_ROOT}/env/setvars.sh"
                         if [ ! -f "$ccl_vars" ];
-                        then 
+                        then
                             # not a standalone version
                             ccl_vars="${CCL_ROOT}/env/vars.sh"
                         fi

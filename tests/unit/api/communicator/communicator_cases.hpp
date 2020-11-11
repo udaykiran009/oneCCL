@@ -17,6 +17,10 @@
 #include "oneapi/ccl/comm_split_attr_ids_traits.hpp"
 #include "oneapi/ccl/comm_split_attr.hpp"
 
+#include "oneapi/ccl/comm_attr_ids.hpp"
+#include "oneapi/ccl/comm_attr_ids_traits.hpp"
+#include "oneapi/ccl/comm_attr.hpp"
+
 #include "oneapi/ccl/stream_attr_ids.hpp"
 #include "oneapi/ccl/stream_attr_ids_traits.hpp"
 #include "oneapi/ccl/stream.hpp"
@@ -53,8 +57,8 @@ namespace device_communicator_suite {
 
 TEST(device_communicator_api, device_comm_from_device_index) {
     int total_devices_size = 4;
-    ccl::vector_class<ccl::device_index_type> devices{ total_devices_size,
-                                                       ccl::from_string("[0:6459]") };
+    ccl::vector_class<ccl::device_index_type> devices(total_devices_size,
+                                                      ccl::from_string("[0:6459]"));
     auto ctx = native::get_platform().get_driver(0)->create_context();
     std::shared_ptr<stub_kvs> stub_storage;
 

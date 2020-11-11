@@ -10,7 +10,7 @@ TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_de
     using namespace native;
     // test case data
     const size_t buffer_size = 512;
-    const size_t num_thread = 2;
+    const int num_thread = 2;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
     ze_device_mem_alloc_desc_t mem_descr{
@@ -103,7 +103,7 @@ TEST_F(ring_allreduce_single_device_multi_tile_fixture, ring_allreduce_single_de
     }
 
     // TODO check may be not needed anymore
-    for (int rank_idx = 0; rank_idx < subdevices.size(); rank_idx++) {
+    for (size_t rank_idx = 0; rank_idx < subdevices.size(); rank_idx++) {
         memory_storage.rotate_shared_data(rank_idx, subdevices.size(), mem_group_count);
         flags_storage.rotate_shared_data(rank_idx, subdevices.size(), flag_group_count);
     }

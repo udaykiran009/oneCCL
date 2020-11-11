@@ -3,6 +3,62 @@
 #include "common/comm/l0/devices/ccl_gpu_base_comm.hpp"
 
 namespace native {
+
+// Proxy classes to encapsulate command list and fence handles. The extend the base classes to adding
+// thread-safety and refernece-counting semantic for L0 calls. The main purpose of this is to enable
+// multiple device emulation which is done by using "real" and "virtual" devices while using the same
+// underlying command list and command queue for the same hardware device
+// (this is sort of a workaround for a L0 limitation since submitting kernels into separate multiple
+// queues on the same device doesn't provide forward progress guarantee required by our kernels)
+// So reference-counting semantic allows to provide a simple interface and enforce the correct
+// order of L0 calls(i.e. some calls should be called only once while others - multiple times per logical device)
+//
+// They require an external state stored in ccl_gpu_comm(mutex and several atomic variables for reference
+// counting). The initial value of these ref counts is equal to the number of attached "virtual" devices + 1 for
+// "real" one(e.g. every time we register a "virtual" device the value is incremented by 1). On each call(e.g.
+// reset) we decrement the value and once it's 0, execute it and them restore to the same initial value, so
+// the state can be reused for further collective launches.
+class cmd_list_proxy : public cmd_list_proxy_base {
+private:
+    using base = cmd_list_proxy_base;
+    ccl_gpu_comm& comm;
+
+public:
+    cmd_list_proxy(ccl_device& device, ccl_device::device_cmd_list& cmd_list, ccl_gpu_comm& comm)
+            : base(device, cmd_list),
+              comm{ comm } {}
+
+    cmd_list_proxy(const cmd_list_proxy& other)
+            : base(other.device, other.cmd_list),
+              comm{ other.comm } {}
+
+    void append_kernel(ze_kernel_handle_t handle, ze_group_count_t* launch_args);
+    bool close_and_execute(std::shared_ptr<ccl_context> ctx, ze_fence_handle_t fence);
+    void reset();
+
+private:
+    int get_init_count() const;
+};
+
+class fence_proxy : public fence_proxy_base {
+private:
+    using base = fence_proxy_base;
+
+    ccl_gpu_comm& comm;
+
+public:
+    fence_proxy(ccl_device& device, ccl_device::device_queue_fence& fence, ccl_gpu_comm& comm)
+            : base{ device, fence },
+              comm{ comm } {}
+
+    fence_proxy(const fence_proxy& other) : base{ other.device, other.fence }, comm{ other.comm } {}
+
+    void reset();
+
+private:
+    int get_init_count() const;
+};
+
 class ccl_virtual_gpu_comm;
 class ccl_gpu_comm : public ccl_gpu_base_comm<ccl_gpu_comm, gpu_types::REAL_GPU>,
                      public module_loader<ccl_gpu_comm> {
@@ -109,8 +165,8 @@ public:
             LOG_ERROR(err_str);
             throw ccl::exception(err_str);
         }
-        std::get<utils::enum_to_underlying(class_id)>(
-            std::get<utils::enum_to_underlying(group_id)>(
+        std::get<::utils::enum_to_underlying(class_id)>(
+            std::get<::utils::enum_to_underlying(group_id)>(
                 std::get<module_type>(registered_modules)))
             .reset(new gpu_module_t<module_type, group_id, class_id>(handle));
         return descr;
@@ -121,9 +177,22 @@ public:
         return registered_virtual_gpu_count;
     }
 
+    cmd_list_proxy get_cmd_list(std::shared_ptr<ccl_context> ctx);
+
+    fence_proxy get_fence(const ccl_device::device_queue& cmd_queue,
+                          std::shared_ptr<ccl_context> ctx);
+
+    friend class cmd_list_proxy;
+    friend class fence_proxy;
+
 protected:
     supported_modules registered_modules;
     size_t registered_virtual_gpu_count = 0;
+
+    std::atomic<int> cmd_list_reset_ref_count;
+    std::atomic<int> cmd_list_close_ref_count;
+    std::atomic<int> fence_reset_ref_count;
+    std::mutex cmd_list_mutex;
 
 private:
     std::tuple<bool, ze_module_handle_t, std::string> create_module_handle(

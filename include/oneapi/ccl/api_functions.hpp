@@ -385,7 +385,7 @@ coll_attribute_type CCL_API create_operation_attr(attr_val_type&&... avs) {
  * \brief Allgatherv is a collective communication operation that collects data
  *        from all the ranks within a communicator into a single buffer.
  *        Different ranks may contribute segments of different sizes.
- *        The resulting data in the output buffer must be the same for each rank. 
+ *        The resulting data in the output buffer must be the same for each rank.
  * @param send_buf the buffer with @c send_count elements of @c dtype that stores local data to be gathered
  * @param send_count the number of elements of type @c dtype in @c send_buf
  * @param recv_buf [out] the buffer to store gathered result, should be large enough to hold values from all ranks
@@ -409,7 +409,7 @@ event allgatherv(const void* send_buf,
                  const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 event allgatherv(const void* send_buf,
                  size_t send_count,
@@ -421,7 +421,7 @@ event allgatherv(const void* send_buf,
                  const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 event allgatherv(const void* send_buf,
                  size_t send_count,
@@ -434,7 +434,7 @@ event allgatherv(const void* send_buf,
                  const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 event allgatherv(const void* send_buf,
                  size_t send_count,
@@ -446,7 +446,7 @@ event allgatherv(const void* send_buf,
                  const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -461,7 +461,7 @@ event allgatherv(const BufferType* send_buf,
                  const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -475,7 +475,7 @@ event allgatherv(const BufferType* send_buf,
                  const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -490,7 +490,7 @@ event allgatherv(const BufferType* send_buf,
                  const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -504,7 +504,7 @@ event allgatherv(const BufferType* send_buf,
                  const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -519,7 +519,7 @@ event allgatherv(const BufferObjectType& send_buf,
                  const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -533,7 +533,7 @@ event allgatherv(const BufferObjectType& send_buf,
                  const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -548,7 +548,7 @@ event allgatherv(const BufferObjectType& send_buf,
                  const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -592,7 +592,7 @@ event allreduce(const void* send_buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 event allreduce(const void* send_buf,
                 void* recv_buf,
@@ -604,7 +604,7 @@ event allreduce(const void* send_buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -619,7 +619,7 @@ event allreduce(const BufferType* send_buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -633,7 +633,7 @@ event allreduce(const BufferType* send_buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -648,7 +648,7 @@ event allreduce(const BufferObjectType& send_buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -695,7 +695,7 @@ event alltoall(const void* send_buf,
                const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 event alltoall(const void* send_buf,
                void* recv_buf,
@@ -706,7 +706,7 @@ event alltoall(const void* send_buf,
                const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 event alltoall(const vector_class<void*>& send_buf,
                const vector_class<void*>& recv_buf,
@@ -718,7 +718,7 @@ event alltoall(const vector_class<void*>& send_buf,
                const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 event alltoall(const vector_class<void*>& send_buf,
                const vector_class<void*>& recv_buf,
@@ -729,7 +729,7 @@ event alltoall(const vector_class<void*>& send_buf,
                const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -743,7 +743,7 @@ event alltoall(const BufferType* send_buf,
                const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -756,7 +756,7 @@ event alltoall(const BufferType* send_buf,
                const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -770,7 +770,7 @@ event alltoall(const vector_class<BufferType*>& send_buf,
                const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -783,7 +783,7 @@ event alltoall(const vector_class<BufferType*>& send_buf,
                const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -797,7 +797,7 @@ event alltoall(const BufferObjectType& send_buf,
                const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -810,7 +810,7 @@ event alltoall(const BufferObjectType& send_buf,
                const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -824,7 +824,7 @@ event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& se
                const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -871,7 +871,7 @@ event alltoallv(const void* send_buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 event alltoallv(const void* send_buf,
                 const vector_class<size_t>& send_counts,
@@ -883,7 +883,7 @@ event alltoallv(const void* send_buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 event alltoallv(const vector_class<void*>& send_bufs,
@@ -897,7 +897,7 @@ event alltoallv(const vector_class<void*>& send_bufs,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 event alltoallv(const vector_class<void*>& send_bufs,
@@ -910,7 +910,7 @@ event alltoallv(const vector_class<void*>& send_bufs,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -925,7 +925,7 @@ event alltoallv(const BufferType* send_buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -939,7 +939,7 @@ event alltoallv(const BufferType* send_buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -954,7 +954,7 @@ event alltoallv(const vector_class<BufferType*>& send_bufs,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -968,7 +968,7 @@ event alltoallv(const vector_class<BufferType*>& send_bufs,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -983,7 +983,7 @@ event alltoallv(const BufferObjectType& send_buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -997,7 +997,7 @@ event alltoallv(const BufferObjectType& send_buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -1012,7 +1012,7 @@ event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& s
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -1048,7 +1048,7 @@ event barrier(const communicator& comm,
               const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 event barrier(const communicator& comm,
               const barrier_attr& attr = default_barrier_attr,
@@ -1085,7 +1085,7 @@ event broadcast(void* buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 event broadcast(void* buf,
                 size_t count,
@@ -1096,7 +1096,7 @@ event broadcast(void* buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -1110,7 +1110,7 @@ event broadcast(BufferType* buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -1123,7 +1123,7 @@ event broadcast(BufferType* buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -1137,7 +1137,7 @@ event broadcast(BufferObjectType& buf,
                 const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -1184,7 +1184,7 @@ event reduce(const void* send_buf,
              const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 event reduce(const void* send_buf,
              void* recv_buf,
@@ -1197,7 +1197,7 @@ event reduce(const void* send_buf,
              const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -1213,7 +1213,7 @@ event reduce(const BufferType* send_buf,
              const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -1228,7 +1228,7 @@ event reduce(const BufferType* send_buf,
              const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -1244,7 +1244,7 @@ event reduce(const BufferObjectType& send_buf,
              const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -1290,7 +1290,7 @@ event reduce_scatter(const void* send_buf,
                      const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 event reduce_scatter(const void* send_buf,
                      void* recv_buf,
@@ -1302,7 +1302,7 @@ event reduce_scatter(const void* send_buf,
                      const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -1317,7 +1317,7 @@ event reduce_scatter(const BufferType* send_buf,
                      const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferType,
@@ -1331,7 +1331,7 @@ event reduce_scatter(const BufferType* send_buf,
                      const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -1346,7 +1346,7 @@ event reduce_scatter(const BufferObjectType& send_buf,
                      const vector_class<event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class BufferObjectType,
@@ -1408,7 +1408,7 @@ ccl::event sparse_allreduce(
     const ccl::vector_class<ccl::event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 ccl::event sparse_allreduce(
     const void* send_ind_buf,
@@ -1427,7 +1427,7 @@ ccl::event sparse_allreduce(
     const ccl::vector_class<ccl::event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class IndexBufferType,
@@ -1450,7 +1450,7 @@ ccl::event sparse_allreduce(
     const ccl::vector_class<ccl::event>& deps = {});
 
 /*!
- * \overload 
+ * \overload
  */
 /* Type safety version */
 template <class IndexBufferType,

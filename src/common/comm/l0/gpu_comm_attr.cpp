@@ -7,13 +7,6 @@
 
 namespace ccl {
 
-std::string context_comm_addr::to_string() const {
-    std::stringstream ss;
-    ss << "thread(" << thread_idx << "/" << thread_count << "), rank(" << comm_rank << "/"
-       << comm_size << ")";
-    return ss.str();
-}
-
 thread_local size_t gpu_comm_attr::thread_id = 0;
 
 gpu_comm_attr::gpu_comm_attr(std::shared_ptr<host_communicator> parent_comm,
