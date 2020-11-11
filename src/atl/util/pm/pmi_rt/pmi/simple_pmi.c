@@ -929,10 +929,16 @@ static int PMII_Connect_to_pm(char* hostname, int portnum) {
             case EISCONN: /*  (already connected) */ break;
 
             case ETIMEDOUT: /* timed out */
+                if (q_wait)
+                    close(fd);
                 PMIU_printf(1, "connect failed with timeout\n");
                 return PMI_FAIL;
 
-            default: PMIU_printf(1, "connect failed with errno %d\n", errno); return PMI_FAIL;
+            default:
+                if (q_wait)
+                    close(fd);
+                PMIU_printf(1, "connect failed with errno %d\n", errno);
+                return PMI_FAIL;
         }
     }
 
@@ -1118,19 +1124,19 @@ static int PMII_singinit(void) {
     rc = bind(singinit_listen_sock, (struct sockaddr*)&sin, sizeof(sin));
     if (rc == -1) {
         perror("PMII_singinit: socket bind failed");
-        return PMI_FAIL;
+        goto err;
     }
     len = sizeof(struct sockaddr_in);
     rc = getsockname(singinit_listen_sock, (struct sockaddr*)&sin, &len);
     if (rc == -1) {
         perror("PMII_singinit: getsockname failed");
-        return PMI_FAIL;
+        goto err;
     }
     MPL_snprintf(port_c, sizeof(port_c), "%d", ntohs(sin.sin_port));
     rc = listen(singinit_listen_sock, 5);
     if (rc == -1) {
         perror("PMII_singinit: listen failed");
-        return PMI_FAIL;
+        goto err;
     }
 
     PMIU_printf(PMI_debug_init, "Starting mpiexec with %s\n", port_c);
@@ -1139,6 +1145,7 @@ static int PMII_singinit(void) {
     pid = fork();
     if (pid < 0) {
         perror("PMII_singinit: fork failed");
+        close(singinit_listen_sock);
         exit(-1);
     }
     else if (pid == 0) {
@@ -1157,7 +1164,7 @@ static int PMII_singinit(void) {
         PMIU_printf(
             1, "  for which process manager support was required, e.g. spawn or universe_size.\n");
         PMIU_printf(1, "  But the necessary mpiexec is not in your path.\n");
-        return PMI_FAIL;
+        goto err;
     }
     else {
         char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
@@ -1168,7 +1175,7 @@ static int PMII_singinit(void) {
         PMI_fd = accept_one_connection(singinit_listen_sock);
         if (PMI_fd < 0) {
             PMIU_printf(1, "Failed to establish singleton init connection\n");
-            return PMI_FAIL;
+            goto err;
         }
         /* Execute the singleton init protocol */
         rc = PMIU_readline(PMI_fd, buf, PMIU_MAXLINE);
@@ -1178,12 +1185,12 @@ static int PMII_singinit(void) {
         PMIU_getval("cmd", cmd, PMIU_MAXLINE);
         if (strcmp(cmd, "singinit") != 0) {
             PMIU_printf(1, "unexpected command from PM: %s\n", cmd);
-            return PMI_FAIL;
+            goto err;
         }
         p = PMIU_getval("authtype", cmd, PMIU_MAXLINE);
         if (p && strcmp(cmd, "none") != 0) {
             PMIU_printf(1, "unsupported authentication method %s\n", cmd);
-            return PMI_FAIL;
+            goto err;
         }
         /* p = PMIU_getval( "authstring", cmd, PMIU_MAXLINE ); */
 
@@ -1194,19 +1201,19 @@ static int PMII_singinit(void) {
                           PMI_VERSION,
                           PMI_SUBVERSION);
         if (rc < 0) {
-            return PMI_FAIL;
+            goto err;
         }
         PMIU_printf(PMI_debug_init, "GetResponse with %s\n", buf);
 
         rc = GetResponse(buf, "singinit_info", 0);
         if (rc != 0) {
             PMIU_printf(1, "GetResponse failed\n");
-            return PMI_FAIL;
+            goto err;
         }
         p = PMIU_getval("versionok", cmd, PMIU_MAXLINE);
         if (p && strcmp(cmd, "yes") != 0) {
             PMIU_printf(1, "Process manager needs a different PMI version\n");
-            return PMI_FAIL;
+            goto err;
         }
         p = PMIU_getval("stdio", cmd, PMIU_MAXLINE);
         if (p && strcmp(cmd, "yes") == 0) {
@@ -1228,6 +1235,10 @@ static int PMII_singinit(void) {
         PMIU_printf(PMI_debug_init, "Done with singinit handshake\n");
     }
     return PMI_SUCCESS;
+
+err:
+    close(singinit_listen_sock);
+    return PMI_FAIL;
 }
 
 /* Promote PMI to a fully initialized version if it was started as
