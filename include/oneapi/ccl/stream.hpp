@@ -48,6 +48,7 @@ public:
 
     stream(stream&& src);
     stream(const stream& src);
+    stream& operator=(stream&& src) noexcept;
     stream& operator=(const stream& src);
 
     /**
