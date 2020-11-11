@@ -1532,7 +1532,8 @@ static atl_status_t atl_ofi_init(int* argc,
     if (!ofi_ctx)
         return ATL_STATUS_FAILURE;
 
-    atl_ofi_adjust_env(ofi_ctx, *attr);
+    if (atl_ofi_adjust_env(ofi_ctx, *attr) != ATL_STATUS_SUCCESS)
+        return ATL_STATUS_FAILURE;
 
     atl_ctx_t* ctx = &(ofi_ctx->ctx);
 
@@ -1774,7 +1775,6 @@ static atl_status_t atl_ofi_init(int* argc,
 
         if (prov_info->domain_attr->max_ep_tx_ctx > 1) {
             ATL_OFI_CALL(fi_scalable_ep(prov->domain, prov_info, &prov->sep, NULL), ret, goto err);
-
             ATL_OFI_CALL(fi_scalable_ep_bind(prov->sep, &prov->av->fid, 0), ret, goto err);
         }
 
@@ -1874,6 +1874,8 @@ static atl_status_t atl_ofi_init(int* argc,
     return ATL_STATUS_SUCCESS;
 
 err:
+    free(ofi_ctx->prov_env_copy);
+    ofi_ctx->prov_env_copy = NULL;
 
     ATL_OFI_PRINT("can't find suitable provider");
 

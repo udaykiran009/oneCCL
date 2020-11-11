@@ -312,19 +312,20 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
                 }
                 out << std::endl;
 
-                // lock before submitting to the command list
-                thread_lock.lock();
+                ze_result_t ret = ZE_RESULT_SUCCESS;
+                {
+                    // lock before submitting to the command list
+                    std::lock_guard<std::mutex> lock(thread_lock);
 
-                ze_result_t ret = zeCommandListAppendLaunchKernel(
-                    list.handle, kernel, &launch_args, nullptr, 0, nullptr);
-                if (ret != ZE_RESULT_SUCCESS) {
-                    throw std::runtime_error(
-                        std::string("cannot zeCommandListAppendLaunchKernel, error: ") +
-                        std::to_string(ret));
+                    ret = zeCommandListAppendLaunchKernel(
+                        list.handle, kernel, &launch_args, nullptr, 0, nullptr);
+                    if (ret != ZE_RESULT_SUCCESS) {
+                        throw std::runtime_error(
+                            std::string("cannot zeCommandListAppendLaunchKernel, error: ") +
+                            std::to_string(ret));
+                    }
+                    val++;
                 }
-                val++;
-
-                thread_lock.unlock();
 
                 // sync and make sure all threads have arrived up to this point.
                 while (val < num_thread) {
