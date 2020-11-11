@@ -242,29 +242,15 @@ namespace v1 {
 
 /**
  * \ingroup communicator
- * \brief Creates a new communicator with user supplied size, rank and kvs.
- * @param size user-supplied total number of ranks
- * @param rank user-supplied rank
- * @param kvs key-value store for ranks wire-up
- * @return communicator
- */
-communicator create_communicator(int size,
-                                 int rank,
-                                 shared_ptr_class<kvs_interface> kvs,
-                                 const comm_attr& attr = default_comm_attr);
-
-/*!
- * \overload
- */
-/**
- * \ingroup communicator
  * \brief Creates new communicators with user supplied size, ranks, local device-rank mapping and kvs.
  * @param size user-supplied total number of ranks
+ * @param rank user-supplied rank
  * @param device local device
  * @param devices user-supplied mapping of local ranks on devices
  * @param context context containing the devices
  * @param kvs key-value store for ranks wire-up
- * @return vector of communicators
+ * @param attr optional communicator attributes
+ * @return vector of communicators / communicator
  */
 template <class DeviceType, class ContextType>
 vector_class<communicator> create_communicators(
@@ -311,49 +297,18 @@ communicator create_communicator(int size,
     return std::move(comms[0]);
 }
 
+/*!
+ * \overload
+ */
+communicator create_communicator(int size,
+                                 int rank,
+                                 shared_ptr_class<kvs_interface> kvs,
+                                 const comm_attr& attr = default_comm_attr);
+
 } // namespace v1
 
 namespace preview {
 
-/**
- * \ingroup communicator
- * \brief Splits communicators according to attributes.
- * @param attrs split attributes for local communicators
- * @return vector of communicators
- */
-vector_class<communicator> split_communicators(
-    const vector_class<pair_class<communicator, comm_split_attr>>& attrs);
-
-/*!
- * \overload
- */
-/**
- * \ingroup communicator
- * \brief Creates a new communicator with externally provided size, rank and kvs.
- *        Implementation is platform specific and non portable.
- * @return communicator
- */
-communicator create_communicator(const comm_attr& attr = default_comm_attr);
-
-/*!
- * \overload
- */
-/**
- * \ingroup communicator
- * \brief Creates a new communicator with user supplied size and kvs.
- *        Rank will be assigned automatically.
- * @param size user-supplied total number of ranks
- * @param kvs key-value store for ranks wire-up
- * @return communicator
- */
-communicator create_communicator(int size,
-                                 shared_ptr_class<kvs_interface> kvs,
-                                 const comm_attr& attr = default_comm_attr);
-
-
-/*!
- * \overload
- */
 /**
  * \ingroup communicator
  * \brief Creates a new communicators with user supplied size, local devices and kvs.
@@ -362,7 +317,8 @@ communicator create_communicator(int size,
  * @param devices user-supplied device objects for local ranks
  * @param context context containing the devices
  * @param kvs key-value store for ranks wire-up
- * @return vector of communicators
+  * @param attr optional communicator attributes
+ * @return vector of communicators / communicator
  */
 template <class DeviceType, class ContextType>
 vector_class<communicator> create_communicators(int size,
@@ -372,6 +328,34 @@ vector_class<communicator> create_communicators(int size,
                                                 const comm_attr& attr = default_comm_attr) {
     return detail::environment::instance().create_communicators(size, devices, context, kvs, attr);
 }
+
+/*!
+ * \overload
+ */
+communicator create_communicator(int size,
+                                 shared_ptr_class<kvs_interface> kvs,
+                                 const comm_attr& attr = default_comm_attr);
+
+/*!
+ * \overload
+ */
+/**
+ * \ingroup communicator
+ * \brief Creates a new communicator with externally provided size, rank and kvs.
+ *        Implementation is platform specific and non portable.
+  * @param attr optional communicator attributes
+ * @return communicator
+ */
+communicator create_communicator(const comm_attr& attr = default_comm_attr);
+
+/**
+ * \ingroup communicator
+ * \brief Splits communicators according to attributes.
+ * @param attrs split attributes for local communicators
+ * @return vector of communicators
+ */
+vector_class<communicator> split_communicators(
+    const vector_class<pair_class<communicator, comm_split_attr>>& attrs);
 
 } // namespace preview
 
