@@ -3,8 +3,9 @@
 #include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
 
 #include "common/comm/l0/topology/topology_serializer.hpp"
+#include "common/comm/host_communicator/host_communicator.hpp"
 
-#if 0
+
 namespace native
 {
 
@@ -12,13 +13,15 @@ allied_process_group_ring_topology::allied_process_group_ring_topology(size_t pr
                                                                        size_t process_nums,
                                                                        process_group_context &ctx,
                                                                        device_storage& devs,
-                                                                       size_t cluster_rank_offset, size_t cluster_size) :
+                                                                       size_t cluster_rank_offset, size_t cluster_size,
+                                                                       const ccl::context_comm_addr& comm_addr) :
  process_index(process_idx),
  process_count(process_nums),
  context(ctx),
  devices(devs),
  device_cluster_rank_offset(cluster_rank_offset),
- device_cluster_size(cluster_size)
+ device_cluster_size(cluster_size),
+ ctx_comm_addr(comm_addr)
 {
 }
 
@@ -204,44 +207,52 @@ bool allied_process_group_ring_topology::build(std::ostream& out,
     }
 
     //torn-apart ring
-    return build_specific(out, full_device_indices, id_rings);
+    throw std::runtime_error("return build_specific(out, full_device_indices, id_rings - UNSUPPORTED");
+    return false;
 }
 
 bool allied_process_group_ring_topology::build_all(std::ostream& out,
                                                   const ccl::process_device_indices_type& per_thread_device_indices,
-                                                  const std::vector<ccl::device_indices_type>& ipc_device_indices,
                                                   const detail::adjacency_matrix& matrix,
                                                   detail::p2p_rating_function ping)
 {
-    out << "\n/************* \"" << allied_process_group_ring_topology::name()
-        << "\" for threads: " << context.process_device_topology.size()
-        << "*************/\n" << std::endl;
+    const std::string& threads_indices_str =  ccl::to_string(per_thread_device_indices);
+    LOG_DEBUG("\n/************* \"", allied_process_group_ring_topology::name(),
+             "\" for threads: ", context.process_device_topology.size(),
+             "*************/\n");
 
-    detail::plain_graph_list my_rings = create_my_process_graphs(out,
-                                                                  per_thread_device_indices,
-                                                                  matrix,
-                                                                  ping);
+    LOG_DEBUG("Process: ", process_index, ", threads indices: ", threads_indices_str);
+    out << "Build process group device graphs, from threads: " << per_thread_device_indices.size()
+        << ", threads indices: \n" <<threads_indices_str << std::endl;
+
+    detail::plain_graph_list my_rings = create_my_process_graphs(per_thread_device_indices,
+                                                                 matrix,
+                                                                 ping);
     size_t size = my_rings.size();
-    out << "Resolved graphs count: " << size << "\n";
+    LOG_DEBUG("Resolved graphs count: ", size, ", process_index: ", process_index);
     if (!size)
     {
         out << "Cannot build any ring" << std::endl;
         return false;
     }
 
-    out << "Graph for process: " << process_index << "\n";
-    out << detail::to_string(my_rings) << std::endl;
+    {
+        const std::string& graph_to_str = detail::to_string(my_rings);
+        out << "Graph for process: " << process_index << "\n";
+        out << graph_to_str << std::endl;
+
+        LOG_DEBUG("Graph for process: ", process_index, " resolved:\n", graph_to_str);
+    }
 
     out << "Transform graph to colored with process color: " << process_index << "\n";
     detail::colored_plain_graph_list my_colored_ring = detail::create_colored(my_rings, process_index);
 
-    detail::global_sorted_colored_plain_graphs global_graphs =
-                                    collect_cluster_colored_plain_graphs(out,
-                                                                 context.get_communicator(),
-                                                                 process_index, my_colored_ring);
+    detail::global_sorted_colored_plain_graphs global_graphs;
+    context.collect_cluster_colored_plain_graphs(my_colored_ring, global_graphs);
 
     std::map<size_t, size_t> process_device_rank_offset;
     size_t accumulated_offset = 0;
+
     for (typename detail::global_sorted_colored_plain_graphs::value_type& process_graphs : global_graphs)
     {
         size_t process_num = process_graphs.first;
@@ -264,22 +275,23 @@ bool allied_process_group_ring_topology::build_all(std::ostream& out,
                                                                     global_graphs,
                                                                     ping);
 
+    const std::string& merged_cluster_graphs_str =  detail::to_string(merged_cluster_graphs);
+    LOG_INFO("Cluster merged graphs process idx: ", process_index, " result:\n", merged_cluster_graphs_str);
     out << "Cluster merged graphs result on process idx: " << process_index << std::endl;
-    out << detail::to_string(merged_cluster_graphs) << std::endl;
+    out << merged_cluster_graphs_str << std::endl;
 
     detail::colored_plain_graph_list my_merged_rings =
             resize_merged_colored_graphs_for_process(process_index, process_count,
                                                      merged_cluster_graphs,
                                                      my_colored_ring, out);
 
+    const std::string& my_merged_rings_str = detail::to_string(my_merged_rings);
+    LOG_INFO("Resized merged graph list on process idx: ", process_index, " result:\n", my_merged_rings_str);
     out << "Resized merged graph list on process idx: " << process_index << std::endl;
-    out << detail::to_string(my_merged_rings) << std::endl;
 
     out << "Notify merged graphs changes for cluster\n";
-    detail::global_sorted_colored_plain_graphs global_merged_graphs =
-                                    collect_cluster_colored_plain_graphs(out,
-                                                                 context.get_communicator(),
-                                                                 process_index, my_merged_rings);
+    detail::global_sorted_colored_plain_graphs global_merged_graphs;
+    context.collect_cluster_colored_plain_graphs(my_merged_rings, global_merged_graphs);
 
     ccl::process_device_indices_type scaleout_devices =
                         create_scaleout_devices_in_colored_graphs_for_process(
@@ -288,18 +300,10 @@ bool allied_process_group_ring_topology::build_all(std::ostream& out,
                                                                 global_merged_graphs,
                                                                 global_graphs,
                                                                 out);
-    out << "Collected scaleout devices: \n";
-    for (const auto& pair_idx : scaleout_devices)
-    {
-        out << "{process: " << pair_idx.first
-            << ", device: ";
-        for (const auto& idx : pair_idx.second)
-        {
-            out << idx << ", ";
-        }
-        out <<"}, ";
-    }
-    out << std::endl;
+    const std::string& scaleout_devices_str = ccl::to_string(scaleout_devices);
+    LOG_INFO("Collected scaleout devices on process: ", process_index, " result:\n", scaleout_devices_str);
+    out << "Collected scaleout_devices: \n";
+    out << scaleout_devices_str  << std::endl;
 
     ccl::process_device_indices_type ipc_devices =
                         create_ipc_devices_in_colored_graphs_for_process(
@@ -308,23 +312,10 @@ bool allied_process_group_ring_topology::build_all(std::ostream& out,
                                                                 global_merged_graphs,
                                                                 global_graphs,
                                                                 out);
+    const std::string& ipc_devices_str = ccl::to_string(ipc_devices);
+    LOG_INFO("Collected IPC devices on process: ", process_index, " result:\n", ipc_devices_str);
     out << "Collected ipc_devices: \n";
-    for (const auto& pair_idx : ipc_devices)
-    {
-        out << "{process: " << pair_idx.first
-            << ", device: ";
-        for (const auto& idx : pair_idx.second)
-        {
-            out << idx << ", ";
-        }
-        out <<"}, ";
-    }
-    out << std::endl;
-
-    my_merged_rings = global_merged_graphs.find(process_index)->second;
-    out << "Final process idx: " << process_index
-        << ", has got colored graphs count: " << my_merged_rings.size() << std::endl;
-    out << detail::to_string(my_merged_rings) << std::endl;
+    out << ipc_devices_str  << std::endl;
 
     // enumerate as usual
     if (scaleout_devices.empty())
@@ -341,32 +332,37 @@ bool allied_process_group_ring_topology::build_all(std::ostream& out,
             return build_specific_colored(out, per_thread_device_indices,
                                           ipc_devices, *my_merged_rings.begin(),
                                           process_device_rank_offset);
-        }
+        }/*
         //torn-apart ring
         return build_specific_scale_up(out, per_thread_device_indices,
                               ipc_devices, my_merged_rings,
                               process_device_rank_offset);
+        */
+        throw std::runtime_error("torn-apart ring\n"
+                                 "return build_specific_scale_up(out, per_thread_device_indices,\n"
+                                 "ipc_devices, my_merged_rings,\n"
+                                 "process_device_rank_offset)\n"
+                                 "UNSUPPORTED");
     }
-    //torn-apart ring with scaleout
-    return build_specific_scale_up_out(out, per_thread_device_indices,
-                          scaleout_devices, ipc_devices,
-                          my_merged_rings, process_device_rank_offset);
+    throw std::runtime_error("torn-apart ring with scaleout\n"
+                                 "return build_specific_scale_up_out(out, per_thread_device_indices,\n"
+                                 "scaleout_devices, ipc_devices,\n"
+                                 "my_merged_rings, process_device_rank_offset)\n"
+                                 "UNSUPPORTED");
+    return false;
 }
 
 detail::plain_graph_list
         allied_process_group_ring_topology::create_my_process_graphs(
-                                std::ostream& out,
                                 const ccl::process_device_indices_type& per_thread_device_indices,
                                 const detail::adjacency_matrix& matrix,
                                 detail::p2p_rating_function ping)
 {
-    out << "Build device graphs, from threads: " << per_thread_device_indices.size() << std::endl;
     return detail::graph_list_resolver(matrix, per_thread_device_indices, ping);
-
 }
 detail::global_sorted_plain_graphs
         allied_process_group_ring_topology::collect_cluster_plain_graphs(std::ostream& out,
-                                                                         std::shared_ptr<ccl::communicator> comm,
+                                                                         std::shared_ptr<ccl::host_communicator> comm,
                                                                          size_t process_index,
                                                                          const detail::plain_graph_list& my_process_graph)
 {
@@ -382,13 +378,14 @@ detail::global_sorted_plain_graphs
     size_t send_count = my_serialized_graph.size();
     std::vector<size_t> receive_process_graph_sizes(comm->size());
 
-    //std::vector<ccl::event> requests;
+    //std::vector<ccl::host_communicator::coll_request_t> requests;
     out << "Ask graph lists sizes by process index: " << process_index
         << ", serialized size: " << send_count << std::endl;
-    auto req = ccl::allgatherv(&send_count, 1,
+    ccl::stream::impl_value_t empty_stream{};
+    auto req = comm->allgatherv_impl(&send_count, 1,
                                  receive_process_graph_sizes.data(),
-                                 recv_process_indices_counts.data(),
-                                 comm);
+                                 recv_process_indices_counts,
+                                 empty_stream, ccl::default_allgatherv_attr, {});
 
     req.wait();
     size_t global_graph_data_size = std::accumulate(receive_process_graph_sizes.begin(),
@@ -402,10 +399,11 @@ detail::global_sorted_plain_graphs
             << ", serialized size: " << send_count << std::endl;
 
         global_serialized_graph.resize(global_graph_data_size);
-        req = ccl::allgatherv(reinterpret_cast<char*>(my_serialized_graph.data()), send_count,
-                               reinterpret_cast<char*>(global_serialized_graph.data()),
-                               receive_process_graph_sizes.data(),
-                               comm);
+        req = comm->allgatherv_impl(reinterpret_cast<void*>(my_serialized_graph.data()), send_count,
+                               reinterpret_cast<void*>(global_serialized_graph.data()),
+                               receive_process_graph_sizes,
+                               ccl::datatype::int8,
+                               empty_stream, ccl::default_allgatherv_attr, {});
         req.wait();
     }
     catch(const std::exception& ex)
@@ -420,7 +418,7 @@ detail::global_sorted_plain_graphs
     detail::global_sorted_plain_graphs global_ret;
 
     out << "Deserialize graph_lists" << std::endl;
-    for(size_t i = 0; i < comm->size(); i++)
+    for(size_t i = 0; i < static_cast<size_t>(comm->size()); i++)
     {
         detail::plain_graph_list graph =
                 device_path_deserializer::deserialize_graph_list_indices(global_serialized_graph,
@@ -439,7 +437,7 @@ detail::global_sorted_plain_graphs
 detail::global_sorted_colored_plain_graphs
         allied_process_group_ring_topology::collect_cluster_colored_plain_graphs(
                                                     std::ostream& out,
-                                                    std::shared_ptr<ccl::communicator> comm,
+                                                    std::shared_ptr<ccl::host_communicator> comm,
                                                     size_t process_index,
                                                     const detail::colored_plain_graph_list& my_process_graph)
 {
@@ -455,13 +453,13 @@ detail::global_sorted_colored_plain_graphs
     size_t send_count = my_serialized_graph.size();
     std::vector<size_t> receive_process_graph_sizes(comm->size());
 
-    //std::vector<ccl::event> requests;
     out << "Ask graph lists sizes by process index: " << process_index
         << ", serialized size: " << send_count << std::endl;
-    auto req = ccl::allgatherv(&send_count, 1,
+    ccl::stream::impl_value_t empty_stream{};
+    auto req = comm->allgatherv_impl(&send_count, 1,
                                  receive_process_graph_sizes.data(),
-                                 recv_process_indices_counts.data(),
-                                 comm);
+                                 recv_process_indices_counts,
+                                 empty_stream, ccl::default_allgatherv_attr, {});
 
     req.wait();
     size_t global_graph_data_size = std::accumulate(receive_process_graph_sizes.begin(),
@@ -475,9 +473,11 @@ detail::global_sorted_colored_plain_graphs
             << ", serialized size: " << send_count << std::endl;
 
         global_serialized_graph.resize(global_graph_data_size);
-        req = ccl::allgatherv(reinterpret_cast<char*>(my_serialized_graph.data()), send_count,
-                               reinterpret_cast<char*>(global_serialized_graph.data()),
-                               receive_process_graph_sizes.data());
+        req = comm->allgatherv_impl(reinterpret_cast<void*>(my_serialized_graph.data()), send_count,
+                               reinterpret_cast<void*>(global_serialized_graph.data()),
+                               receive_process_graph_sizes,
+                               ccl::datatype::int8,
+                               empty_stream, ccl::default_allgatherv_attr, {});
         req.wait();
     }
     catch(const std::exception& ex)
@@ -492,7 +492,7 @@ detail::global_sorted_colored_plain_graphs
     detail::global_sorted_colored_plain_graphs global_ret;
 
     out << "Deserialize colored_graph_lists" << std::endl;
-    for(size_t i = 0; i < comm->size(); i++)
+    for(size_t i = 0; i < static_cast<size_t>(comm->size()); i++)
     {
         detail::colored_plain_graph_list graph =
                 device_path_deserializer::deserialize_colored_graph_list_indices(global_serialized_graph,
@@ -988,7 +988,7 @@ ccl::process_device_indices_type
     optional_process right_process_idx = std::make_pair(true,
                                                         ((process_idx + 1) % cluster_size));
 
-    out << "Create scaleout devices for process: (" << process_idx << "/" << cluster_size << ")"
+    out << "Create IPC devices for process: (" << process_idx << "/" << cluster_size << ")"
         << ", left_process_idx: " << left_process_idx.second
         << ", right_process_idx: " << right_process_idx.second << std::endl;
 
@@ -1078,7 +1078,7 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
                                                         const ccl::process_device_indices_type& per_thread_device_indices,
                                                         const detail::plain_graph& id_ring)
 {
-    constexpr ccl::group_split_type topology_type = ccl::group_split_type::cluster;
+    constexpr ccl::device_topology_type topology_type = ccl::device_topology_type::ring;
 
     out << "Start building topology: " << ::to_string(topology_type) << ", for graph:\n";
     for (const auto& id : id_ring)
@@ -1090,20 +1090,31 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
     out << "\nStart indexer:" << std::endl;
     auto& ctx_per_thread_data = context.process_device_topology;
     detail::id_thread_table assigned_ids;
+    auto topology_comm_addr = ctx_comm_addr;
+    topology_comm_addr.comm_size = device_cluster_size;
+
     std::vector<detail::marked_idx> marked_id_ring = detail::create_marked(id_ring);
     for (auto per_thread_it = ctx_per_thread_data.begin(); per_thread_it != ctx_per_thread_data.end();
          ++per_thread_it)
     {
         size_t thread_id = per_thread_it->first;        // first
+
+        /**Initialize empty topologies**/
+        if (context.get_process_topology<topology_type>(process_index, thread_id).closed_rings.empty()) {
+            context.get_process_topology<topology_type>(process_index, thread_id).set_topology(
+                            std::make_shared<device_community<topology_type>>(topology_comm_addr));
+        }
+
         auto& out_indexed_devices =
                 context.get_process_topology<topology_type>(process_index,
-                                                            thread_id)->get_device_storage(); // just second
+                                                            thread_id).get_topology()->get_device_storage(); // just second
 
         std::shared_ptr<specific_plain_device_storage> non_indexed_plain_devices =
                                                     devices.thread_gpu_comms.find(thread_id)->second;
 
         auto rank_builder =
-                    create_device_functor<detail::graph_ring_indexer_ext<topology_type>>(marked_id_ring,
+                    create_device_functor<detail::graph_ring_indexer_ext<type(),
+                                                                         topology_type>>(marked_id_ring,
                                                                                           assigned_ids,
                                                                                           thread_id,
                                                                                           out_indexed_devices,
@@ -1112,7 +1123,7 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
                                                                                           device_cluster_size);
         ccl_tuple_for_each(*non_indexed_plain_devices, rank_builder);
 
-        detail::printer<topology_type> p;
+        detail::printer<ccl::group_split_type::cluster, topology_type> p;
         ccl_tuple_for_each(*non_indexed_plain_devices, p);
         out << "Indexer result for devices in thread idx ("
             << thread_id << "/" << ctx_per_thread_data.size() << "):\n"
@@ -1121,7 +1132,8 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
 
     //allocate IPC devices pool with rank from unassigned IDs
     detail::ipc_devices_pool ipc_comms =
-                    detail::create_ipc_gpu_comms<topology_type>(assigned_ids, id_ring, devices,
+                    detail::create_ipc_gpu_comms<type(),
+                                                 topology_type>(assigned_ids, id_ring, devices,
                                                                  device_cluster_size,
                                                                  device_cluster_rank_offset);
     out << "Created IPC devices: " << ipc_comms.size() << ", for cluster_size: " << device_cluster_size
@@ -1137,9 +1149,9 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
          // find max rank in current thread device list
         auto& indexed_devices_for_current_thread =
                     context.get_process_topology<topology_type>(process_index,
-                                                                current_thread_idx)->get_device_storage();
-        const auto& curr_real = detail::get_device_with_min_rank<ccl_gpu_comm, topology_type>(indexed_devices_for_current_thread, id_ring);
-        const auto& curr_virt = detail::get_device_with_min_rank<ccl_virtual_gpu_comm, topology_type>(indexed_devices_for_current_thread, id_ring);
+                                                                current_thread_idx).get_topology()->get_device_storage();
+        const auto& curr_real = detail::get_device_with_min_rank<ccl_gpu_comm, type(), topology_type>(indexed_devices_for_current_thread, id_ring);
+        const auto& curr_virt = detail::get_device_with_min_rank<ccl_virtual_gpu_comm, type(), topology_type>(indexed_devices_for_current_thread, id_ring);
 
         size_t tg_max_rank = std::max({std::get<0>(curr_real), std::get<0>(curr_virt)});
 
@@ -1165,9 +1177,9 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
             // search next_rank in that thread
             auto& next_thread_ring_topology =
                         context.get_process_topology<topology_type>(process_index,
-                                                                    next_thread_id)->get_device_storage();
-            const auto& real = detail::get_device_with_max_rank<ccl_gpu_comm, topology_type>(next_thread_ring_topology, id_ring);
-            const auto& virt = detail::get_device_with_max_rank<ccl_virtual_gpu_comm, topology_type>(next_thread_ring_topology, id_ring);
+                                                                    next_thread_id).get_topology()->get_device_storage();
+            const auto& real = detail::get_device_with_max_rank<ccl_gpu_comm, type(), topology_type>(next_thread_ring_topology, id_ring);
+            const auto& virt = detail::get_device_with_max_rank<ccl_virtual_gpu_comm,  type(),topology_type>(next_thread_ring_topology, id_ring);
 
             if (next_rank != std::min({std::get<0>(real), std::get<0>(virt)}))
             {
@@ -1183,7 +1195,7 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
             if (next_rank == std::get<0>(real))
             {
                 auto locker =
-                    detail::add_concurrent_locker_device<ccl_gpu_comm, topology_type>(next_rank,
+                    detail::add_concurrent_locker_device<ccl_gpu_comm, type(), topology_type>(next_rank,
                                                                                        0,
                                                                                        real,
                                                                                        devices,indexed_devices_for_current_thread);
@@ -1194,7 +1206,7 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
             else if (next_rank == std::get<0>(virt))
             {
                 auto locker =
-                    detail::add_concurrent_locker_device<ccl_virtual_gpu_comm, topology_type>(next_rank,
+                    detail::add_concurrent_locker_device<ccl_virtual_gpu_comm, type(), topology_type>(next_rank,
                                                                                                0,
                                                                                                virt,
                                                                                                devices,indexed_devices_for_current_thread);
@@ -1227,7 +1239,7 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
                 std::cerr << "Cannot find IPC deice by rank: " << next_rank << "\nPrevious log:\n" << ss.str() <<"\nAbort Program" << std::endl;
                 abort();
             }
-            const auto& comm_addr = ipc_it->second->template get_comm_data<topology_type>();
+            const auto& comm_addr = ipc_it->second->template get_comm_data<type(), topology_type>();
             curr_locker_map.insert({comm_addr.rank, ipc_it->second});
             out << "Added locker for thread idx: " << current_thread_idx  <<":\n" << ipc_it->second->to_string() << std::endl;
         }
@@ -1235,8 +1247,8 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
         //upgrade left gpu device to IPC SOURCE type
         if (!ipc_comms.empty()/*has another IPC Device*/ and current_thread_idx == 0 /* left comm is IPC comm for last process*/ )
         {
-            const auto& real = detail::get_device_with_max_rank<ccl_gpu_comm, topology_type>(indexed_devices_for_current_thread, id_ring);
-            const auto& virt = detail::get_device_with_max_rank<ccl_virtual_gpu_comm, topology_type>(indexed_devices_for_current_thread, id_ring);
+            const auto& real = detail::get_device_with_max_rank<ccl_gpu_comm, type(), topology_type>(indexed_devices_for_current_thread, id_ring);
+            const auto& virt = detail::get_device_with_max_rank<ccl_virtual_gpu_comm, type(), topology_type>(indexed_devices_for_current_thread, id_ring);
 
             size_t left_ipc_source_rank = std::min({std::get<0>(real), std::get<0>(virt)});
             out << "Upgrade thread id: " << current_thread_idx
@@ -1247,7 +1259,7 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
             {
                 auto locker =
                             detail::add_ipc_source_locker_device<ccl_gpu_comm,
-                                                                  topology_type>(next_rank,
+                                                                  type(), topology_type>(next_rank,
                                                                                  0,
                                                                                  real,
                                                                                  devices,indexed_devices_for_current_thread);
@@ -1259,7 +1271,7 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
             {
                 auto locker =
                             detail::add_ipc_source_locker_device<ccl_virtual_gpu_comm,
-                                                                  topology_type>(next_rank,
+                                                                  type(), topology_type>(next_rank,
                                                                                  0,
                                                                                  virt,
                                                                                  devices,indexed_devices_for_current_thread);
@@ -1272,6 +1284,8 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
     return true;
 }
 
+
+// Well tested topology creator
 bool allied_process_group_ring_topology::build_specific_colored(std::ostream& out,
                         const ccl::process_device_indices_type& per_thread_device_indices,
                         const ccl::process_device_indices_type& ipc_device_indices,
@@ -1281,7 +1295,7 @@ bool allied_process_group_ring_topology::build_specific_colored(std::ostream& ou
     //continuous ring, without scale-up devices
     //processes connected using IPC devices
     //Rank = Index
-    constexpr ccl::group_split_type topology_type = ccl::group_split_type::cluster;
+    constexpr ccl::device_topology_type topology_type = ccl::device_topology_type::ring;
 
     out << "Start building topology: " << ::to_string(topology_type) << ", for colored graph:\n"
         << detail::to_string(id_ring) << std::endl;
@@ -1289,6 +1303,7 @@ bool allied_process_group_ring_topology::build_specific_colored(std::ostream& ou
     // id_ring - inter-thread ring
     out << "\nStart indexer:" << std::endl;
 
+    // get in-process devices rank offset in cluster map
     auto offset_it = process_device_rank_offset.find(process_index);
     if (offset_it == process_device_rank_offset.end())
     {
@@ -1296,32 +1311,81 @@ bool allied_process_group_ring_topology::build_specific_colored(std::ostream& ou
     }
 
     size_t device_rank_offset = offset_it->second;
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// let's start IPC devices search & creation
+// TODO
+// We need upgrade algo for detection IPC destination devices, which belong to specific thread in process
+// Currently the final thread in list owns IPC device
+/////////////////////////////////////////////////////////////////////////////////////////////////////
     out << "global rank offset: " << device_rank_offset << std::endl;
     auto& ctx_per_thread_data = context.process_device_topology;
+    auto topology_comm_addr = ctx_comm_addr;
+    topology_comm_addr.comm_size = device_cluster_size;
+
+    // remember ring first position, which has not termination color, but actual process id
+    // It's because after merge id_rings routine we got merged id_rings
+    // `merged` means:
+    // from left side of list we have IPC devices for left process relation to current process
+    // from right side of list we also have IPC devices for right process relation to current process
+    // SO, ir_rings starts NOT from existing process devices
+    auto local_proc_ring_start = std::find_if(id_ring.begin(), id_ring.end(), [this](native::detail::colored_idx& val) {
+                return (val.color != process_count); // first not terminator index
+            });
+    auto id_ring_begin = id_ring.begin();
+    size_t distance = std::distance(id_ring_begin, local_proc_ring_start);
+
+    LOG_DEBUG("apply index builder for local thread context, threads count: ", ctx_per_thread_data.size(),
+              ", process indices ring offset: ", distance);
     for (auto per_thread_it = ctx_per_thread_data.begin(); per_thread_it != ctx_per_thread_data.end();
          ++per_thread_it)
     {
         size_t thread_id = per_thread_it->first;        // first
+        const auto& thread_dev_indices = per_thread_device_indices.find(thread_id)->second;
+
+        /**Initialize empty topologies**/
+        if (context.get_process_topology<topology_type>(process_index, thread_id).closed_rings.empty()) {
+            context.get_process_topology<topology_type>(process_index, thread_id).set_topology(
+                            std::make_shared<device_community<topology_type>>(topology_comm_addr));
+        }
+
+        // Get reference on OUT-enumerated devices array
         auto& out_indexed_devices =
                 context.get_process_topology<topology_type>(process_index,
-                                                            thread_id)->get_device_storage(); // just second
+                                                            thread_id).get_topology()->get_device_storage(); // just second
 
+        // Get IN-non-enumerated devices for current thread
         std::shared_ptr<specific_plain_device_storage> non_indexed_plain_devices =
                                                     devices.thread_gpu_comms.find(thread_id)->second;
 
         //allocate IPC devices pool(if needed)
-        detail::cluster_ipc_devices_pool ipc_comms =
-                    detail::create_filtered_ipc_destination_gpu_comms<topology_type>(
+        LOG_DEBUG("LIMITATION: Allocate IPC pool for the LAST thread: ", thread_id, ", ipc_device_indices cound: ", ipc_device_indices.size());
+        detail::cluster_ipc_devices_pool ipc_comms;
+        if(thread_id == ctx_per_thread_data.size() - 1) //TODO only final thread owns IPC devies at now
+        {
+            ipc_comms =
+                    detail::create_filtered_ipc_destination_gpu_comms<type(), topology_type>(
                                             id_ring,
                                             ipc_device_indices,
                                             process_index,
                                             process_count,
+                                            context,
                                             devices,
                                             *non_indexed_plain_devices);
+        }
+        LOG_DEBUG("Create indexer builder for process index: ", process_index,
+                  ", process_count: ", process_count, ", device rank offset: ", device_rank_offset,
+                  ", thread devices: ", thread_dev_indices.size(),
+                  ", ipc_device_indices count: ", ipc_device_indices.size());
 
+        // Rank builder operaes on IN-non-enumarated devices:
+        // 1) find its position (using ID comparison & color) in id_ring
+        // 2) calculate operational rank as position offset  in id_ring
+        // 3) calcuate operations size as whole id_ring size
+        // 4) adjust ranks & size to actual using `device_rank_offset` specifically for process
+        // 5) put enumerated device into OUT-enumerated devices array `out_indexed_devices`
         auto rank_builder =
-                    create_device_functor<detail::smart_ring_indexer<topology_type>>(
+                    create_device_functor<detail::smart_ring_indexer<type(), topology_type,
+                                                                     process_group_context>>(
                                             id_ring,
                                             process_index,
                                             process_count,
@@ -1329,29 +1393,39 @@ bool allied_process_group_ring_topology::build_specific_colored(std::ostream& ou
                                             devices,
                                             out_indexed_devices,
                                             ipc_device_indices,
-                                            ccl::process_device_indices_type{});
+                                            ccl::process_device_indices_type{},
+                                            local_proc_ring_start,
+                                            context);
         //start indexer
         ccl_tuple_for_each(*non_indexed_plain_devices, rank_builder);
 
-        detail::printer<topology_type> p;
-        ccl_tuple_for_each(*non_indexed_plain_devices, p);
-        out << "Indexer result for devices in thread idx ("
-            << thread_id << "/" << ctx_per_thread_data.size() << "):\n"
-            << p.to_string() << std::endl;
+        detail::printer<type(), topology_type> p;
+        ccl_tuple_for_each(out_indexed_devices, p);
+
+        {
+            std::stringstream ss;
+            ss << "Indexer result for devices in thread idx ("
+               << thread_id << "/" << ctx_per_thread_data.size() << "):\n"
+               << p.to_string() << std::endl;
+            const std::string& str = ss.str();
+            LOG_DEBUG(str);
+            out << str;
+        }
     }
 
     out << "\nStart ring builder" << std::endl;
+    LOG_DEBUG("Start ring builder for threads: ", ctx_per_thread_data.size());
     for(size_t current_thread_idx = 0; current_thread_idx < ctx_per_thread_data.size(); current_thread_idx++)
     {
         // find max rank in current thread device list
         auto& indexed_devices_for_current_thread =
                     context.get_process_topology<topology_type>(process_index,
-                                                                current_thread_idx)->get_device_storage();
+                                                                current_thread_idx).get_topology()->get_device_storage();
         const auto& curr_real =
-                    detail::get_device_with_min_rank<ccl_gpu_comm, topology_type>(
+                    detail::get_device_with_min_rank<ccl_gpu_comm, type(), topology_type>(
                                         indexed_devices_for_current_thread, id_ring);
         const auto& curr_virt =
-                    detail::get_device_with_min_rank<ccl_virtual_gpu_comm, topology_type>(
+                    detail::get_device_with_min_rank<ccl_virtual_gpu_comm, type(), topology_type>(
                                         indexed_devices_for_current_thread, id_ring);
 
         size_t tg_max_rank = std::max({std::get<0>(curr_real), std::get<0>(curr_virt)});
@@ -1359,11 +1433,17 @@ bool allied_process_group_ring_topology::build_specific_colored(std::ostream& ou
         // find thread, which will connect to current thread max rank with next_rank
         size_t next_rank = (tg_max_rank + 1 ) % id_ring.size();
 
-        out << "Current thread: " << current_thread_idx << ", max rank candidates: "
-            << std::get<0>(curr_real) << ", " << std::get<0>(curr_virt)
-            << ", selected max rank: " << tg_max_rank
-            << ", expected next_rank: " << next_rank << std::endl;
+        {
+            std::stringstream ss;
 
+            ss << "Current thread: " << current_thread_idx << ", max rank candidates: "
+               << std::get<0>(curr_real) << ", " << std::get<0>(curr_virt)
+               << ", selected max rank: " << tg_max_rank
+               << ", expected next_rank: " << next_rank << std::endl;
+            const std::string str = ss.str();
+            LOG_DEBUG(str);
+            out << str;
+        }
 
         //Find in local threads at first
         bool find_in_current_process = false;
@@ -1378,12 +1458,12 @@ bool allied_process_group_ring_topology::build_specific_colored(std::ostream& ou
             // search next_rank in that thread
             auto& next_thread_ring_topology =
                         context.get_process_topology<topology_type>(process_index,
-                                                                    next_thread_id)->get_device_storage();
+                                                                    next_thread_id).get_topology()->get_device_storage();
             const auto& real =
-                    detail::get_device_with_max_rank<ccl_gpu_comm, topology_type>(
+                    detail::get_device_with_max_rank<ccl_gpu_comm, type(), topology_type>(
                                         next_thread_ring_topology, id_ring);
             const auto& virt =
-                    detail::get_device_with_max_rank<ccl_virtual_gpu_comm, topology_type>(
+                    detail::get_device_with_max_rank<ccl_virtual_gpu_comm, type(), topology_type>(
                                         next_thread_ring_topology, id_ring);
 
             if (next_rank != std::min({std::get<0>(real), std::get<0>(virt)}))
@@ -1392,15 +1472,22 @@ bool allied_process_group_ring_topology::build_specific_colored(std::ostream& ou
                 continue;
             }
 
-            out << "next thread: " << next_thread_id << ", min rank candidates: "
-                << std::get<0>(real) << ", " << std::get<0>(virt) << std::endl;
+            {
+                std::stringstream ss;
+                ss << "next thread: " << next_thread_id << ", min rank candidates: "
+                    << std::get<0>(real) << ", " << std::get<0>(virt) << std::endl;
+
+                const std::string str = ss.str();
+                LOG_DEBUG(str);
+                out << str;
+            }
 
             find_in_current_process = true;
             out << "Lock ring for threads (" << current_thread_idx << " <-> " << next_thread_id << ")" << std::endl;
             if (next_rank == std::get<0>(real))
             {
                 auto locker =
-                    detail::add_concurrent_locker_device<ccl_gpu_comm, topology_type>(next_rank,
+                    detail::add_concurrent_locker_device<ccl_gpu_comm, type(), topology_type>(next_rank,
                                                                                        0,
                                                                                        real,
                                                                                        devices,indexed_devices_for_current_thread);
@@ -1411,7 +1498,7 @@ bool allied_process_group_ring_topology::build_specific_colored(std::ostream& ou
             else if (next_rank == std::get<0>(virt))
             {
                 auto locker =
-                    detail::add_concurrent_locker_device<ccl_virtual_gpu_comm, topology_type>(next_rank,
+                    detail::add_concurrent_locker_device<ccl_virtual_gpu_comm, type(), topology_type>(next_rank,
                                                                                                0,
                                                                                                virt,
                                                                                                devices,indexed_devices_for_current_thread);
@@ -1429,10 +1516,11 @@ bool allied_process_group_ring_topology::build_specific_colored(std::ostream& ou
             }
         }
 
-        if (find_in_current_process)
+        /*-S-
+        if (!find_in_current_process)
         {
             abort();
-        }
+        }*/
         (void)find_in_current_process;
         /*//if not find in process local threads - use IPC to find
         if (!find_in_current_process and !ipc_comms.empty())
@@ -1451,7 +1539,7 @@ bool allied_process_group_ring_topology::build_specific_colored(std::ostream& ou
                 }
                 find = true;
                 out << "Lock IPC ring for threads (" << current_thread_idx << " <-> xxx\")" << std::endl;
-                const auto& comm_addr = ipc_it->second->template get_comm_data<topology_type>();
+                const auto& comm_addr = ipc_it->second->template get_comm_data<type(), topology_type>();
                 curr_locker_map.insert({comm_addr.rank, ipc_it->second});
                 out << "Added locker for thread idx: " << current_thread_idx  <<":\n" << ipc_it->second->to_string() << std::endl;
             }
@@ -1465,8 +1553,8 @@ bool allied_process_group_ring_topology::build_specific_colored(std::ostream& ou
             //upgrade left gpu device to IPC SOURCE type
             if (!ipc_comms.empty()/ *has another IPC Device* / and current_thread_idx == 0 / * left comm is IPC comm for last process* / )
             {
-                const auto& real = detail::get_device_with_max_rank<ccl_gpu_comm, topology_type>(*indexed_devices_for_current_thread, id_ring);
-                const auto& virt = detail::get_device_with_max_rank<ccl_virtual_gpu_comm, topology_type>(*indexed_devices_for_current_thread, id_ring);
+                const auto& real = detail::get_device_with_max_rank<ccl_gpu_comm, type(), topology_type>(*indexed_devices_for_current_thread, id_ring);
+                const auto& virt = detail::get_device_with_max_rank<ccl_virtual_gpu_comm, type(), topology_type>(*indexed_devices_for_current_thread, id_ring);
                 size_t left_ipc_source_rank = std::min({std::get<0>(real), std::get<0>(virt)});
                 out << "Upgrade thread id: " << current_thread_idx
                     << " GPU by rank: " << left_ipc_source_rank
@@ -1475,7 +1563,7 @@ bool allied_process_group_ring_topology::build_specific_colored(std::ostream& ou
                 {
                     auto locker =
                             detail::add_ipc_source_locker_device<ccl_gpu_comm,
-                                                                  topology_type>(next_rank,
+                                                                  type(), topology_type>(next_rank,
                                                                                  0,
                                                                                  real,
                                                                                  devices,
@@ -1488,7 +1576,7 @@ bool allied_process_group_ring_topology::build_specific_colored(std::ostream& ou
                 {
                     auto locker =
                             detail::add_ipc_source_locker_device<ccl_virtual_gpu_comm,
-                                                                  topology_type>(next_rank,
+                                                                  type(), topology_type>(next_rank,
                                                                                  0,
                                                                                  virt,
                                                                                  devices,
@@ -1501,9 +1589,31 @@ bool allied_process_group_ring_topology::build_specific_colored(std::ostream& ou
         }
         */
     }
+
+
+    {
+        //print topology
+        for(size_t current_thread_idx = 0; current_thread_idx < ctx_per_thread_data.size(); current_thread_idx++)
+        {
+            const auto& indexed_devices_for_current_thread =
+                        context.get_process_topology<topology_type>(process_index,
+                                                                    current_thread_idx).get_topology()->get_device_storage();
+
+            detail::printer<type(), topology_type> p;
+            ccl_tuple_for_each(indexed_devices_for_current_thread, p);
+            std::stringstream ss;
+            ss << "Builder result for devices in thread idx ("
+                << current_thread_idx << "/" << ctx_per_thread_data.size() << "):\n"
+                << p.to_string() << std::endl;
+            const std::string& str = ss.str();
+            LOG_DEBUG(str);
+            out << str;
+        }
+    }
     return true;
 }
 
+#if 0
 bool allied_process_group_ring_topology::build_specific(std::ostream& out,
                                                         const ccl::process_device_indices_type& per_thread_device_indices,
                                                         const detail::plain_graph_list& graph_list)
@@ -1602,9 +1712,34 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
             ++per_thread_it)
         {
             size_t thread_id = per_thread_it->first;        //first
-            auto& out_indexed_devices =
-                    context.get_process_topology<topology_type>(process_index,
-                                                            thread_id)->get_device_storage(); //just second
+            /** Initialize empty context**/
+            std::shared_ptr<device_community<topology_type>> out_indexed_devices;
+            if (graph_list.size() == 1) {
+                if (context.get_process_topology<topology_type>(process_index, thread_id)
+                        .closed_rings.empty()) {
+                    context.get_process_topology<topology_type>(process_index, thread_id)
+                        .set_topology(
+                            std::make_shared<device_community<topology_type>>(topology_comm_addr));
+                }
+
+                out_indexed_devices =
+                    context.get_process_topology<topology_type>(process_index, thread_id)
+                        .get_topology(ring_index);
+            }
+            else {
+                if (context.get_process_topology<topology_type>(process_index, thread_id)
+                        .torn_apart_rings.empty()) {
+                    context.get_process_topology<topology_type>(process_index, thread_id)
+                        .set_additiona_topology(
+                            std::make_shared<device_community<topology_type>>(topology_comm_addr));
+                }
+
+                out_indexed_devices =
+                    context.get_process_topology<topology_type>(process_index, thread_id)
+                        .get_additiona_topology(ring_index);
+            }
+
+
 
             out << "\nStart indexer for graph num: " << graph_num << ", thread: " << thread_id << std::endl;
             std::shared_ptr<specific_plain_device_storage> non_indexed_plain_devices =
@@ -1623,7 +1758,7 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
 
             ccl_tuple_for_each(*non_indexed_plain_devices, rank_builder);
 
-            detail::printer<topology_type> p;
+            detail::printer<type(), topology_type> p;
             ccl_tuple_for_each(out_indexed_devices, p);
             out << "Indexer result for devices in thread idx ("
                 << thread_id << "/" << ctx_per_thread_data.size() << "):\n"
@@ -1641,7 +1776,7 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
 
         //allocate IPC devices pool with rank from unassigned IDs
         detail::ipc_devices_pool tmp_ipc_comms =
-                        detail::create_ipc_gpu_comms<topology_type>(assigned_ids, id_ring, devices,
+                        detail::create_ipc_gpu_comms<type(), topology_type>(assigned_ids, id_ring, devices,
                                                                      device_cluster_size,
                                                                      device_cluster_rank_offset);
         out << "Created Tmp IPC devices: " << tmp_ipc_comms.size()
@@ -1667,18 +1802,18 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
             // find max rank in current thread device list
             auto& indexed_devices_for_current_thread =
                     context.get_process_topology<topology_type>(process_index,
-                                                                current_thread_idx)->get_device_storage();
+                                                                current_thread_idx).get_topology()->get_device_storage();
             const auto& curr_real =
-                    detail::get_device_with_min_rank<ccl_gpu_comm, topology_type>(
+                    detail::get_device_with_min_rank<ccl_gpu_comm, type(), topology_type>(
                                                     indexed_devices_for_current_thread, id_ring);
             const auto& curr_virt =
-                    detail::get_device_with_min_rank<ccl_virtual_gpu_comm, topology_type>(
+                    detail::get_device_with_min_rank<ccl_virtual_gpu_comm, type(), topology_type>(
                                                     indexed_devices_for_current_thread, id_ring);
             const auto& curr_scale_real =
-                    detail::get_device_with_min_rank<ccl_numa_proxy<ccl_gpu_comm>, topology_type>(
+                    detail::get_device_with_min_rank<ccl_numa_proxy<ccl_gpu_comm>, type(), topology_type>(
                                                     indexed_devices_for_current_thread, id_ring);
             const auto& curr_scale_virt =
-                    detail::get_device_with_min_rank<ccl_numa_proxy<ccl_virtual_gpu_comm>, topology_type>(
+                    detail::get_device_with_min_rank<ccl_numa_proxy<ccl_virtual_gpu_comm>, type(), topology_type>(
                                                     indexed_devices_for_current_thread, id_ring);
 
             size_t tg_max_rank = std::max({std::get<0>(curr_real), std::get<0>(curr_virt),
@@ -1707,16 +1842,16 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
                         context.get_process_topology<topology_type>(process_index,
                                                                     next_thread_id)->get_device_storage();
                 const auto& real =
-                        detail::get_device_with_max_rank<ccl_gpu_comm, topology_type>(
+                        detail::get_device_with_max_rank<ccl_gpu_comm, type(), topology_type>(
                                                             next_thread_ring_topology, id_ring);
                 const auto& virt =
-                        detail::get_device_with_max_rank<ccl_virtual_gpu_comm, topology_type>(
+                        detail::get_device_with_max_rank<ccl_virtual_gpu_comm, type(), topology_type>(
                                                             next_thread_ring_topology, id_ring);
                 const auto& scale_real =
-                        detail::get_device_with_max_rank<ccl_numa_proxy<ccl_gpu_comm>, topology_type>(
+                        detail::get_device_with_max_rank<ccl_numa_proxy<ccl_gpu_comm>, type(), topology_type>(
                                                             next_thread_ring_topology, id_ring);
                 const auto& scale_virt =
-                        detail::get_device_with_max_rank<ccl_numa_proxy<ccl_virtual_gpu_comm>, topology_type>(
+                        detail::get_device_with_max_rank<ccl_numa_proxy<ccl_virtual_gpu_comm>, type(), topology_type>(
                                                             next_thread_ring_topology, id_ring);
                 if (next_rank != std::min({std::get<0>(real), std::get<0>(virt),
                                            std::get<0>(scale_real), std::get<0>(scale_virt)}))
@@ -1736,7 +1871,7 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
                 if (next_rank == std::get<0>(real))
                 {
                     auto locker =
-                        detail::add_concurrent_locker_device<ccl_gpu_comm, topology_type>(next_rank,
+                        detail::add_concurrent_locker_device<ccl_gpu_comm, type(), topology_type>(next_rank,
                                                                                        0,
                                                                                        real,
                                                                                        devices,indexed_devices_for_current_thread);
@@ -1747,7 +1882,7 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
                 else if (next_rank == std::get<0>(virt))
                 {
                     auto locker =
-                        detail::add_concurrent_locker_device<ccl_virtual_gpu_comm, topology_type>(next_rank,
+                        detail::add_concurrent_locker_device<ccl_virtual_gpu_comm, type(), topology_type>(next_rank,
                                                                                                0,
                                                                                                virt,
                                                                                                devices,indexed_devices_for_current_thread);
@@ -1790,7 +1925,7 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
                     std::cerr << "Cannot find IPC deice by rank: " << next_rank << "\nPrevious log:\n" << ss.str() <<"\nAbort Program" << std::endl;
                     abort();
                 }
-                const auto& comm_addr = ipc_it->second->template get_comm_data<topology_type>();
+                const auto& comm_addr = ipc_it->second->template get_comm_data<type(), topology_type>();
                 curr_locker_map.insert({comm_addr.rank, ipc_it->second});
                 out << "Added locker for thread idx: " << current_thread_idx  <<":\n" << ipc_it->second->to_string() << std::endl;
             }
@@ -1798,8 +1933,8 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
             //upgrade left gpu device to IPC SOURCE type
             if (!ipc_comms.empty() /*has another IPC Device*/ and current_thread_idx == 0 /* left comm is IPC comm for last process*/ )
             {
-                const auto& real = detail::get_device_with_max_rank<ccl_gpu_comm, topology_type>(indexed_devices_for_current_thread, id_ring);
-                const auto& virt = detail::get_device_with_max_rank<ccl_virtual_gpu_comm, topology_type>(indexed_devices_for_current_thread, id_ring);
+                const auto& real = detail::get_device_with_max_rank<ccl_gpu_comm, type(), topology_type>(indexed_devices_for_current_thread, id_ring);
+                const auto& virt = detail::get_device_with_max_rank<ccl_virtual_gpu_comm, type(), topology_type>(indexed_devices_for_current_thread, id_ring);
 
                 size_t left_ipc_source_rank = std::min({std::get<0>(real), std::get<0>(virt)});
                 out << "Upgrade thread id: " << current_thread_idx
@@ -1810,7 +1945,7 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
                 {
                     auto locker =
                                 detail::add_ipc_source_locker_device<ccl_gpu_comm,
-                                                                    topology_type>(next_rank,
+                                                                    type(), topology_type>(next_rank,
                                                                                    0,
                                                                                    real,
                                                                                    devices,indexed_devices_for_current_thread);
@@ -1822,7 +1957,7 @@ bool allied_process_group_ring_topology::build_specific(std::ostream& out,
                 {
                     auto locker =
                                 detail::add_ipc_source_locker_device<ccl_virtual_gpu_comm,
-                                                                  topology_type>(next_rank,
+                                                                  type(), topology_type>(next_rank,
                                                                                  0,
                                                                                  virt,
                                                                                  devices,indexed_devices_for_current_thread);
@@ -1941,9 +2076,34 @@ bool allied_process_group_ring_topology::build_specific_scale_up(std::ostream& o
              ++per_thread_it)
         {
             size_t thread_id = per_thread_it->first;        //first
-            auto& out_indexed_devices =
-                    context.get_process_topology<topology_type>(process_index,
-                                                            thread_id)->get_device_storage(); //just second
+
+            /** Initialize empty context**/
+            std::shared_ptr<device_community<topology_type>> out_indexed_devices;
+            if (graph_list.size() == 1) {
+                if (context.get_process_topology<topology_type>(process_index, thread_id)
+                        .closed_rings.empty()) {
+                    context.get_process_topology<topology_type>(process_index, thread_id)
+                        .set_topology(
+                            std::make_shared<device_community<topology_type>>(topology_comm_addr));
+                }
+
+                out_indexed_devices =
+                    context.get_process_topology<topology_type>(process_index, thread_id)
+                        .get_topology(ring_index);
+            }
+            else {
+                if (context.get_process_topology<topology_type>(process_index, thread_id)
+                        .torn_apart_rings.empty()) {
+                    context.get_process_topology<topology_type>(process_index, thread_id)
+                        .set_additiona_topology(
+                            std::make_shared<device_community<topology_type>>(topology_comm_addr));
+                }
+
+                out_indexed_devices =
+                    context.get_process_topology<topology_type>(process_index, thread_id)
+                        .get_additiona_topology(ring_index);
+            }
+
 
             out << "\nStart indexer for graph num: " << graph_num << ", thread: " << thread_id << std::endl;
             std::shared_ptr<specific_plain_device_storage> non_indexed_plain_devices =
@@ -1951,16 +2111,17 @@ bool allied_process_group_ring_topology::build_specific_scale_up(std::ostream& o
 
             //allocate IPC devices pool(if needed)
             detail::cluster_ipc_devices_pool ipc_comms =
-                    detail::create_filtered_ipc_destination_gpu_comms<topology_type>(
+                    detail::create_filtered_ipc_destination_gpu_comms<type(), topology_type>(
                                             id_ring,
                                             ipc_device_indices,
                                             process_index,
                                             process_count,
+                                            context,
                                             devices,
                                             *non_indexed_plain_devices);
 
             auto rank_builder =
-                    create_device_functor<detail::smart_ring_indexer<topology_type>>(
+                    create_device_functor<detail::smart_ring_indexer<type(), topology_type, process_group_context>>(
                                             id_ring,
                                             process_index,
                                             process_count,
@@ -1968,7 +2129,8 @@ bool allied_process_group_ring_topology::build_specific_scale_up(std::ostream& o
                                             devices,
                                             out_indexed_devices,
                                             ipc_device_indices,
-                                            ccl::process_device_indices_type{});
+                                            ccl::process_device_indices_type{},
+                                            context);
 
             // use graph ids to enumerate thread plain list `thread_gpu_comms` into `out_indexed_devices`
            /* auto rank_builder =
@@ -1983,7 +2145,7 @@ bool allied_process_group_ring_topology::build_specific_scale_up(std::ostream& o
 */
             ccl_tuple_for_each(*non_indexed_plain_devices, rank_builder);
 
-            detail::printer<topology_type> p;
+            detail::printer<type(), topology_type> p;
             ccl_tuple_for_each(out_indexed_devices, p);
             out << "Indexer result for devices in thread idx ("
                 << thread_id << "/" << ctx_per_thread_data.size() << "):\n"
@@ -1999,7 +2161,7 @@ bool allied_process_group_ring_topology::build_specific_scale_up(std::ostream& o
 
     //allocate IPC devices pool with rank from unassigned IDs
     detail::cluster_ipc_devices_pool ipc_comms =
-                    detail::create_ipc_gpu_comms<topology_type>(graph_list, process_index, devices,
+                    detail::create_ipc_gpu_comms<type(), topology_type>(graph_list, process_index, devices,
                                                                  device_cluster_size,
                                                                  device_cluster_rank_offset);
     out << "Created IPC devices for processes: " << ipc_comms.size() << ", for cluster_size: " << device_cluster_size
@@ -2024,18 +2186,18 @@ bool allied_process_group_ring_topology::build_specific_scale_up(std::ostream& o
             // find max rank in current thread device list
             auto& indexed_devices_for_current_thread =
                     context.get_process_topology<topology_type>(process_index,
-                                                                current_thread_idx)->get_device_storage();
+                                                                current_thread_idx).get_topology()->get_device_storage();
             const auto& curr_real =
-                    detail::get_device_with_min_rank<ccl_gpu_comm, topology_type>(
+                    detail::get_device_with_min_rank<ccl_gpu_comm, type(), topology_type>(
                                                     indexed_devices_for_current_thread, id_ring);
             const auto& curr_virt =
-                    detail::get_device_with_min_rank<ccl_virtual_gpu_comm, topology_type>(
+                    detail::get_device_with_min_rank<ccl_virtual_gpu_comm, type(), topology_type>(
                                                     indexed_devices_for_current_thread, id_ring);
             const auto& curr_scale_real =
-                    detail::get_device_with_min_rank<ccl_numa_proxy<ccl_gpu_comm>, topology_type>(
+                    detail::get_device_with_min_rank<ccl_numa_proxy<ccl_gpu_comm>, type(), topology_type>(
                                                     indexed_devices_for_current_thread, id_ring);
             const auto& curr_scale_virt =
-                    detail::get_device_with_min_rank<ccl_numa_proxy<ccl_virtual_gpu_comm>, topology_type>(
+                    detail::get_device_with_min_rank<ccl_numa_proxy<ccl_virtual_gpu_comm>, type(), topology_type>(
                                                     indexed_devices_for_current_thread, id_ring);
 
             size_t tg_max_rank = std::max({std::get<0>(curr_real), std::get<0>(curr_virt),
@@ -2064,16 +2226,16 @@ bool allied_process_group_ring_topology::build_specific_scale_up(std::ostream& o
                         context.get_process_topology<topology_type>(process_index,
                                                                     next_thread_id)->get_device_storage();
                 const auto& real =
-                        detail::get_device_with_max_rank<ccl_gpu_comm, topology_type>(
+                        detail::get_device_with_max_rank<ccl_gpu_comm, type(), topology_type>(
                                                             next_thread_ring_topology, id_ring);
                 const auto& virt =
-                        detail::get_device_with_max_rank<ccl_virtual_gpu_comm, topology_type>(
+                        detail::get_device_with_max_rank<ccl_virtual_gpu_comm, type(), topology_type>(
                                                             next_thread_ring_topology, id_ring);
                 const auto& scale_real =
-                        detail::get_device_with_max_rank<ccl_numa_proxy<ccl_gpu_comm>, topology_type>(
+                        detail::get_device_with_max_rank<ccl_numa_proxy<ccl_gpu_comm>, type(), topology_type>(
                                                             next_thread_ring_topology, id_ring);
                 const auto& scale_virt =
-                        detail::get_device_with_max_rank<ccl_numa_proxy<ccl_virtual_gpu_comm>, topology_type>(
+                        detail::get_device_with_max_rank<ccl_numa_proxy<ccl_virtual_gpu_comm>, type(), topology_type>(
                                                             next_thread_ring_topology, id_ring);
                 if (next_rank != std::min({std::get<0>(real), std::get<0>(virt),
                                            std::get<0>(scale_real), std::get<0>(scale_virt)}))
@@ -2093,7 +2255,7 @@ bool allied_process_group_ring_topology::build_specific_scale_up(std::ostream& o
                 if (next_rank == std::get<0>(real))
                 {
                     auto locker =
-                        detail::add_concurrent_locker_device<ccl_gpu_comm, topology_type>(next_rank,
+                        detail::add_concurrent_locker_device<ccl_gpu_comm, type(), topology_type>(next_rank,
                                                                                        0,
                                                                                        real,
                                                                                        devices,indexed_devices_for_current_thread);
@@ -2104,7 +2266,7 @@ bool allied_process_group_ring_topology::build_specific_scale_up(std::ostream& o
                 else if (next_rank == std::get<0>(virt))
                 {
                     auto locker =
-                        detail::add_concurrent_locker_device<ccl_virtual_gpu_comm, topology_type>(next_rank,
+                        detail::add_concurrent_locker_device<ccl_virtual_gpu_comm, type(), topology_type>(next_rank,
                                                                                                0,
                                                                                                virt,
                                                                                                devices,indexed_devices_for_current_thread);
@@ -2150,7 +2312,7 @@ bool allied_process_group_ring_topology::build_specific_scale_up(std::ostream& o
                     }
                     find = true;
                     out << "Lock IPC ring for threads (" << current_thread_idx << " <-> xxx\")" << std::endl;
-                    const auto& comm_addr = ipc_it->second->template get_comm_data<topology_type>();
+                    const auto& comm_addr = ipc_it->second->template get_comm_data<type(), topology_type>();
                     curr_locker_map.insert({comm_addr.rank, ipc_it->second});
                     out << "Added locker for thread idx: " << current_thread_idx  <<":\n" << ipc_it->second->to_string() << std::endl;
                 }
@@ -2166,8 +2328,8 @@ bool allied_process_group_ring_topology::build_specific_scale_up(std::ostream& o
                 //upgrade left gpu device to IPC SOURCE type
                 if ( current_thread_idx == 0 /* left comm is IPC comm for last process*/ )
                 {
-                    const auto& real = detail::get_device_with_max_rank<ccl_gpu_comm, topology_type>(indexed_devices_for_current_thread, id_ring);
-                    const auto& virt = detail::get_device_with_max_rank<ccl_virtual_gpu_comm, topology_type>(indexed_devices_for_current_thread, id_ring);
+                    const auto& real = detail::get_device_with_max_rank<ccl_gpu_comm, type(), topology_type>(indexed_devices_for_current_thread, id_ring);
+                    const auto& virt = detail::get_device_with_max_rank<ccl_virtual_gpu_comm, type(), topology_type>(indexed_devices_for_current_thread, id_ring);
 
                     size_t left_ipc_source_rank = std::min({std::get<0>(real), std::get<0>(virt)});
                     out << "Upgrade thread id: " << current_thread_idx
@@ -2178,7 +2340,7 @@ bool allied_process_group_ring_topology::build_specific_scale_up(std::ostream& o
                     {
                         auto locker =
                                     detail::add_ipc_source_locker_device<ccl_gpu_comm,
-                                                                        topology_type>(next_rank,
+                                                                        type(), topology_type>(next_rank,
                                                                                    0,
                                                                                    real,
                                                                                    devices,indexed_devices_for_current_thread);
@@ -2190,7 +2352,7 @@ bool allied_process_group_ring_topology::build_specific_scale_up(std::ostream& o
                     {
                         auto locker =
                                 detail::add_ipc_source_locker_device<ccl_virtual_gpu_comm,
-                                                                  topology_type>(next_rank,
+                                                                  type(), topology_type>(next_rank,
                                                                                  0,
                                                                                  virt,
                                                                                  devices,indexed_devices_for_current_thread);
@@ -2260,6 +2422,5 @@ detail::global_sorted_plain_graphs
 
     return global_graph_list;
 }
-
-}
 #endif
+}

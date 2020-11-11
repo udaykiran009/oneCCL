@@ -26,7 +26,7 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
 
     // test case data
     const size_t buffer_size = 512 * 4;
-    const size_t num_thread = 4;
+    const int num_thread = 4;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
     ze_device_mem_alloc_desc_t mem_descr{

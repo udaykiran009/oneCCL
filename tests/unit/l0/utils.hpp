@@ -62,7 +62,6 @@ public:
     }
 };
 
-std::shared_ptr<native::ccl_context> ctx;
 template <typename T>
 inline void str_to_array(const char* input, std::vector<T>& output, char delimiter) {
     if (!input) {
@@ -97,7 +96,7 @@ inline void str_to_array(const char* input, std::vector<std::string>& output, ch
     }
 }
 
-int readFromSocket(int socket, unsigned char* buffer, size_t size) {
+inline int readFromSocket(int socket, unsigned char* buffer, size_t size) {
     size_t bytesRead = 0;
     int result;
     while (bytesRead < size) {
@@ -111,7 +110,7 @@ int readFromSocket(int socket, unsigned char* buffer, size_t size) {
     return 0;
 }
 
-int writeToSocket(int socket, unsigned char* buffer, size_t size) {
+inline int writeToSocket(int socket, unsigned char* buffer, size_t size) {
     size_t bytesWritten = 0;
     int result;
     while (bytesWritten < size) {
@@ -125,7 +124,7 @@ int writeToSocket(int socket, unsigned char* buffer, size_t size) {
     return 0;
 }
 
-std::vector<uint8_t> load_binary_file(const std::string& source_path) {
+inline std::vector<uint8_t> load_binary_file(const std::string& source_path) {
     std::ifstream stream(source_path, std::ios::in | std::ios::binary);
 
     std::vector<uint8_t> binary_file;
@@ -382,19 +381,19 @@ struct ipc_server_handles_storage {
     }
 
     template <class... Handles>
-    void create_ipcs(size_t thread_idx, size_t threads_count, Handles*... h) {
+    void create_ipcs(std::shared_ptr<native::ccl_context> ctx, size_t thread_idx, size_t threads_count, Handles*... h) {
         std::array<native::ccl_device::device_memory<T>*, sizeof...(h)> memory_handles{ h... };
 
         ipc_handles_container& ipc_cont = per_thread_storage[thread_idx];
 
-        std::transform(memory_handles.begin(),
-                       memory_handles.end(),
-                       std::back_inserter(ipc_cont),
-                       [](native::ccl_device::device_memory<T>* memory_handle) {
-                           auto device_ptr = memory_handle->get_owner().lock();
-                           return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle,
-                                                                              ctx);
-                       });
+        std::transform(
+            memory_handles.begin(),
+            memory_handles.end(),
+            std::back_inserter(ipc_cont),
+            [ctx](native::ccl_device::device_memory<T>* memory_handle) {
+                auto device_ptr = memory_handle->get_owner().lock();
+                return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle, ctx);
+            });
     }
 
     std::vector<uint8_t> serialize_storage(size_t thread_idx) {
@@ -432,9 +431,10 @@ struct ipc_client_handles_storage {
 
     std::map<size_t, ipc_client_handles_container> per_thread_storage;
 
-    size_t deserialize(const std::vector<uint8_t>& received_raw_handles,
+    size_t deserialize(std::shared_ptr<native::ccl_context> ctx, const std::vector<uint8_t>& received_raw_handles,
                        size_t expected_handles,
-                       native::ccl_device_platform& global_platform) {
+                       native::ccl_device_platform& global_platform,
+                       std::shared_ptr<native::ccl_device_platform> pl) {
         using namespace native;
 
         size_t restored_handles = 0;
@@ -449,7 +449,7 @@ struct ipc_client_handles_storage {
             try {
                 auto recv_ipc_handle = ccl_device::device_ipc_memory_handle::deserialize<
                     ccl_device::device_ipc_memory_handle>(
-                    &recv_data_start, recv_data_size, global_platform);
+                    &recv_data_start, recv_data_size, ctx, pl);
 
                 std::shared_ptr<ccl_device> owner_device = recv_ipc_handle->get_owner().lock();
                 if (!owner_device) {
@@ -466,8 +466,8 @@ struct ipc_client_handles_storage {
                     throw std::runtime_error("Cannot find ipc device in global driver");
                 }
 
-                per_thread_storage[thread_id].emplace_back(owner_device->restore_shared_ipc_memory(
-                    std::move(recv_ipc_handle), std::move(ctx)));
+                per_thread_storage[thread_id].emplace_back(
+                    owner_device->restore_shared_ipc_memory(std::move(recv_ipc_handle), ctx));
                 restored_handles++;
             }
             catch (const std::exception& ex) {

@@ -26,7 +26,7 @@ int gpu_topology_type = 1; //0 - between devices in single thread
 #ifdef CCL_ENABLE_SYCL
 template <class processing_type>
 void user_thread_idx(size_t thread_idx,
-                     const std::vector<std::pair<size_t, cl::sycl::device>>& devices,
+                     const std::vector<std::pair<int, cl::sycl::device>>& devices,
                      cl::sycl::context ctx,
                      int total_devices_in_cluster,
                      std::shared_ptr<ccl::kvs_interface> kvs_instance) {
@@ -143,7 +143,7 @@ void user_thread_idx(size_t thread_idx,
 #else //CCL_ENABLE_SYCL
 template <class processing_type>
 void user_thread_idx(size_t thread_idx,
-                     std::vector<std::pair<size_t, ccl::device_index_type>> ranked_device_indices,
+                     std::vector<std::pair<int, ccl::device_index_type>> ranked_device_indices,
                      std::shared_ptr<::native::ccl_context> ctx,
                      int total_devices_in_cluster,
                      std::shared_ptr<ccl::kvs_interface> kvs) {
@@ -416,7 +416,7 @@ int main(int argc, char** argv) {
         std::vector<device_type> devices;
         std::tie(thread_id, devices) = *thread_affinity_it;
 
-        std::vector<std::pair<size_t, device_type>> ranked_devices;
+        std::vector<std::pair<int, device_type>> ranked_devices;
         ranked_devices.reserve(devices.size());
         std::transform(devices.begin(),
                        devices.end(),

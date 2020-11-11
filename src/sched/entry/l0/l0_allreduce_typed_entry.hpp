@@ -4,13 +4,13 @@
 #include <atomic>
 
 #include "sched/entry/l0/l0_entry.hpp"
+#include "common/comm/l0/context/scaling_ctx/ipc_ctx_impl.hpp"
 
 // TODO: These global variables are not really needed anymore by allreduce entry, but they
 // still used by others, so once the other entries are refactored we can remove these.
 //TODO L0 Workaround
 static std::mutex global_mutex;
 static std::atomic<size_t> exec_count{};
-static thread_local size_t cur_index = 0;
 static std::atomic<size_t> wait_count{};
 static std::set<std::thread::id> registered_thread;
 
@@ -161,7 +161,7 @@ public:
         return class_name();
     }
 
-    std::vector<ccl_device::device_ipc_memory_handle> get_ipc_data() {
+    std::vector<ccl_device::device_ipc_memory_handle> get_ipc_data() override {
         ccl_device& owned_device = parent_communicator->get_device();
 
         //TODO

@@ -12,7 +12,6 @@
 #include "common/comm/l0/context/device_group_ctx.hpp"
 #include "common/comm/l0/context/thread_group_ctx.hpp"
 #include "common/comm/l0/context/process_group_ctx.hpp"
-#include "common/comm/l0/topology/ring_topology.hpp"
 
 #undef protected
 #undef private

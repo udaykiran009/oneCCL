@@ -21,7 +21,7 @@ TYPED_TEST(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
 
     // test case data
     const size_t buffer_size = 512;
-    const size_t num_thread = 5;
+    const int num_thread = 5;
     constexpr size_t mem_group_count = 1; //3;
     constexpr size_t flag_group_count = 3;
 
@@ -49,7 +49,7 @@ TYPED_TEST(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
     // allocate device memory
     auto dev_it = driver.devices.begin();
     ccl_device& device = *dev_it->second;
-    size_t root = 2;
+    int root = 2;
 
     for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         try {

@@ -9,11 +9,14 @@ namespace native {
 
 template <TEMPLATE_DECL_ARG>
 template <ccl::device_topology_type class_id, class device_t>
-void numa_ctx<TEMPLATE_DEF_ARG>::register_observer_impl(observer_t<device_t>* observer_ptr) {
+void numa_ctx<TEMPLATE_DEF_ARG>::register_observer_impl(size_t rank_addr, observer_t<device_t>* observer_ptr) {
     observer::container_t<observer_t<device_t>>& container =
         scaling_ctx_base_t::template get_types_container<observer_t<device_t>, class_id>(
             observables);
     container.insert(observer_ptr);
+
+
+    throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + " - not implemented");
 }
 
 template <TEMPLATE_DECL_ARG>

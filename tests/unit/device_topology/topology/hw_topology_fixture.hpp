@@ -1,11 +1,11 @@
 #pragma once
-#include "../fixture.hpp"
-
-#include "../stubs/stub_platform.hpp"
-#include "../stubs/stub_context.hpp"
-
 #define private public
 #define protected public
+#include "common_fixture.hpp"
+
+#include "stubs/stub_platform.hpp"
+#include "stubs/stub_context.hpp"
+
 #include <map>
 
 #include "oneapi/ccl/config.h"

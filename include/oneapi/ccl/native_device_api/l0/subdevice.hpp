@@ -49,7 +49,7 @@ struct ccl_subdevice : public ccl_device {
                      size_t expected_size) const override;
     static std::weak_ptr<ccl_subdevice> deserialize(const uint8_t** data,
                                                     size_t& size,
-                                                    ccl_device_platform& platform);
+                                                    std::shared_ptr<ccl_device_platform>& out_platform);
 
 private:
     ccl_subdevice(handle_t h,

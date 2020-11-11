@@ -51,7 +51,8 @@ public:
     size_t serialize(std::vector<uint8_t>& out, size_t from_pos, const helpers&... args) const;
 
     template <class type, class... helpers>
-    static std::shared_ptr<type> deserialize(const uint8_t** data, size_t& size, helpers&... args);
+    static std::shared_ptr<type> deserialize(const uint8_t** data, size_t& size,
+                                             std::shared_ptr<cl_context> ctx, helpers&... args);
 
 protected:
     cl_base(handle_t h, owner_ptr_t parent, context_ptr_t ctx);

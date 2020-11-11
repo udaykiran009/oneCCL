@@ -1,5 +1,5 @@
 #include "base.hpp"
-#include "topology/hw_topology_test.hpp"
+#include "ipc_test.hpp"
 
 int main(int ac, char* av[]) {
     set_test_device_indices(getenv("L0_CLUSTER_AFFINITY_MASK"));

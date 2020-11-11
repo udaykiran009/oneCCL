@@ -7,6 +7,7 @@
 #include "common/comm/l0/context/process_group_ctx.hpp"
 #include "common/comm/l0/scheduler/allied_process_group_scheduler.hpp"
 #include "common/event/impls/gpu_event.hpp"
+#include "common/comm/l0/communicator/process_group/process_communicator_utils.hpp"
 
 #include "sched/entry/l0/l0_allreduce_typed_entry.hpp"
 
@@ -99,6 +100,27 @@ ccl::event process_ring_communicator::allreduce_impl(const buffer_type* send_buf
 
     using community_t = typename device_community_container<class_id>::element_type;
     community_t community = device_community_impl.get_topology(ring_index);
+
+    communication_process_device_expander<buffer_type, group_id, class_id,
+                                         l0_allreduce_typed_entry> expander;
+    ccl_tuple_for_each_args(communication_device, expander,
+                            ctx, community,
+                            process_id,
+                            thread_id,
+                            this->get_native_context(),
+                            send_entry_buffer,
+                            recv_entry_buffer,
+                            count,
+                            reduction,
+                            stream);
+    //if sched is not ready - send NULL
+    if (expander.schedule) {
+        LOG_DEBUG("Device group finalized");
+    }
+    return std::unique_ptr<ccl::event_impl>(
+        new ccl::gpu_shared_event_impl(std::move(expander.schedule)));
+
+/*
 
     const auto& in_process_gpu_storage = community->get_devices<ccl_gpu_comm>();
     const auto& virtual_process_gpu_storage = community->get_devices<ccl_virtual_gpu_comm>();
@@ -210,7 +232,9 @@ ccl::event process_ring_communicator::allreduce_impl(const buffer_type* send_buf
     if (schedule) {
         LOG_DEBUG("Device group finalized");
     }
-    return std::unique_ptr<ccl::event_impl>(new ccl::gpu_shared_event_impl(std::move(schedule)));
+    return std::unique_ptr<ccl::event_impl>(
+        new ccl::gpu_shared_event_impl(std::move(schedule)));
+    */
 }
 
 template <class buffer_type>

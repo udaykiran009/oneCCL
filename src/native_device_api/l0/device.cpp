@@ -425,10 +425,19 @@ CCL_API ccl_device::handle_t ccl_device::get_assoc_device_handle(const void* ptr
     assert(driver && "Driver must exist!");
     ze_memory_allocation_properties_t mem_prop;
     ze_device_handle_t alloc_device_handle{};
-    // TODO: empty
-    ze_context_handle_t ctx_tmp = nullptr;
 
-    ze_result_t result = zeMemGetAllocProperties(ctx_tmp, ptr, &mem_prop, &alloc_device_handle);
+    if(!ctx) {
+
+        auto& contexts_storage = driver->get_driver_contexts()->get_context_storage(driver);
+        auto acc = contexts_storage.access();
+        if (acc.get().empty())
+            throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
+                                    " - no default driver in context map");
+        ctx = *acc.get().begin();
+    }
+
+    ze_result_t result =
+        zeMemGetAllocProperties(ctx->get(), ptr, &mem_prop, &alloc_device_handle);
     if (result != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("Cannot zeMemGetAllocProperties: ") +
                                  native::to_string(result));
@@ -436,15 +445,12 @@ CCL_API ccl_device::handle_t ccl_device::get_assoc_device_handle(const void* ptr
     return alloc_device_handle;
 }
 
-CCL_API void ccl_device::device_free_memory(void* mem_handle, std::shared_ptr<ccl_context> ctx) {
+CCL_API void ccl_device::device_free_memory(void* mem_handle, ze_context_handle_t& ctx) {
     if (!mem_handle) {
         return;
     }
-    if (!ctx) {
-        ctx = get_default_context();
-    }
 
-    if (zeMemFree(ctx->get(), mem_handle) != ZE_RESULT_SUCCESS) {
+    if (zeMemFree(ctx, mem_handle) != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("cannot release memory"));
     }
 }
@@ -531,7 +537,9 @@ CCL_API ccl_device::device_ipc_memory ccl_device::get_ipc_memory(
     if (ret != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("cannot get open ipc mem handle from: ") +
                                  native::to_string(ipc_handle->handle) +
-                                 ", error: " + native::to_string(ret));
+                                 "\n" + to_string() +
+                                 "\nCtx: " + ctx->to_string() +
+                                 "\nerror: " + native::to_string(ret));
     }
 
     assert(ipc_memory.pointer && "opened ipc memory handle is nullptr");
@@ -572,13 +580,8 @@ CCL_API std::shared_ptr<ccl_device::device_ipc_memory> ccl_device::restore_share
 }
 
 void CCL_API ccl_device::on_delete(ip_memory_elem_t& ipc_mem, ze_context_handle_t& ctx) {
-    // if(!ctx) {
-    //     ctx = std::shared_ptr<ccl_context>(get_owner().lock()->context->map_context.begin()->second.front().lock());
-    // }
 
-    // TODO: empty
-    ze_context_handle_t ctx_tmp = nullptr;
-    ze_result_t ret = zeMemCloseIpcHandle(ctx_tmp, ipc_mem.pointer);
+    ze_result_t ret = zeMemCloseIpcHandle(ctx, ipc_mem.pointer);
     if (ret != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("cannot close ipc mem handle, error: ") +
                                  native::to_string(ret));
@@ -749,9 +752,9 @@ size_t ccl_device::serialize(std::vector<uint8_t>& out,
 
 std::weak_ptr<ccl_device> ccl_device::deserialize(const uint8_t** data,
                                                   size_t& size,
-                                                  ccl_device_platform& platform) {
+                                                  std::shared_ptr<ccl_device_platform>& out_platform) {
     //restore driver
-    auto driver = ccl_device_driver::deserialize(data, size, platform).lock();
+    auto driver = ccl_device_driver::deserialize(data, size, out_platform).lock();
     if (!driver) {
         throw std::runtime_error("cannot deserialize ccl_device, because owner is nullptr");
     }

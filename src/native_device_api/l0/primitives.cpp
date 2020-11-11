@@ -1,3 +1,8 @@
+#include <linux/limits.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #include <algorithm>
 #include <cstring>
 #include <sstream>
@@ -5,6 +10,10 @@
 #include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 #include "oneapi/ccl/native_device_api/l0/device.hpp"
 #include "oneapi/ccl/native_device_api/l0/context.hpp"
+#include "oneapi/ccl/native_device_api/l0/platform.hpp"
+
+#include <sys/syscall.h>
+#include <unistd.h>
 
 namespace native {
 namespace detail {
@@ -86,6 +95,57 @@ std::string get_build_log_string(const ze_module_build_log_handle_t& build_log) 
     return std::string(build_log_c_string.begin(), build_log_c_string.end());
 }
 
+
+void relink_ipc_descriptor_impl(void* handle_ptr, size_t handle_ptr_bytes,
+                                const std::shared_ptr<ccl_device_platform>& received_process_platform,
+                                const std::shared_ptr<ccl_device_platform>& send_process_platform) {
+    if (!handle_ptr or handle_ptr_bytes == 0)
+    {
+        return;
+    }
+
+    pid_t* pid_ptr = reinterpret_cast<pid_t*>(handle_ptr);
+    if (send_process_platform->get_pid() == received_process_platform->get_pid())
+    {
+        //in the same process, nothing to do
+        return;
+    }
+/*
+    int fd = syscall(pidfd_getfd, send_process_platform->get_pid(), *pid_ptr, 0);
+    if (fd == -1)
+    {
+        std::stringstream ss;
+        ss << __PRETTY_FUNCTION__ << " - cannot relint received IPC handle: " << handle_ptr << ". Error: " << strerror(errno);
+        throw std::runtime_error(ss.str());
+    }
+
+    //relink FDs
+    *pid_ptr = fd;
+*/
+    char buf[PATH_MAX];
+    snprintf(buf, PATH_MAX, "/proc/%d/fd/%d", send_process_platform->get_pid(), *pid_ptr);
+    int fd = open(buf, O_CLOEXEC | O_DIRECT /*| O_DSYNC| O_SYNC */| O_RDWR , S_IRWXU);
+    if (fd == -1) {
+        std::stringstream ss;
+        ss << __PRETTY_FUNCTION__ << " - cannot open received IPC handle: " << handle_ptr << " by path: "
+           << buf << ". Error: " << strerror(errno);
+        throw std::runtime_error(ss.str());
+    }
+/*
+    int dup_fd = dup(fd);
+    if (dup_fd == -1) {
+        std::stringstream ss;
+        ss << __PRETTY_FUNCTION__ << " - cannot duplicate received IPC handle: " << handle_ptr << " by path: "
+           << buf << ". Error: " << strerror(errno);
+        throw std::runtime_error(ss.str());
+    }
+*/
+    //relink FDs
+    *pid_ptr = fd;
+
+}
+
+
 bool command_queue_desc_comparator::operator()(const ze_command_queue_desc_t& lhs,
                                                const ze_command_queue_desc_t& rhs) const {
     return memcmp(&lhs, &rhs, sizeof(rhs)) < 0;
@@ -95,4 +155,8 @@ bool command_list_desc_comparator::operator()(const ze_command_list_desc_t& lhs,
                                               const ze_command_list_desc_t& rhs) const {
     return memcmp(&lhs, &rhs, sizeof(rhs)) < 0;
 }
+
+
+
+
 } // namespace native

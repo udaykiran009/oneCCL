@@ -1,12 +1,4 @@
 #include "common/comm/host_communicator/host_communicator.hpp"
-#include "oneapi/ccl/types.hpp"
-#include "oneapi/ccl/type_traits.hpp"
-#include "oneapi/ccl/types_policy.hpp"
-#include "oneapi/ccl/coll_attr_ids.hpp"
-#include "oneapi/ccl/coll_attr_ids_traits.hpp"
-#include "oneapi/ccl/coll_attr.hpp"
-
-#include "oneapi/ccl/event.hpp"
 #include "common/global/global.hpp"
 
 #ifdef MULTI_GPU_SUPPORT

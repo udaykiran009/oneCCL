@@ -15,7 +15,7 @@
 //#include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
 
 namespace native {
-uint32_t get_driver_properties(ccl_device_driver::handle_t handle) {
+ccl_device_driver::driver_index_type get_driver_properties(ccl_device_driver::handle_t handle) {
     ze_driver_properties_t driver_properties{};
     ze_result_t ret = zeDriverGetProperties(handle, &driver_properties);
     if (ret != ZE_RESULT_SUCCESS) {
@@ -29,6 +29,11 @@ uint32_t get_driver_properties(ccl_device_driver::handle_t handle) {
 ccl_device_driver::context_storage_type ccl_device_driver::get_driver_contexts() {
     return get_ctx().lock();
 }
+
+ccl_device_driver::context_storage_type ccl_device_driver::get_driver_contexts() const {
+    return get_ctx().lock();
+}
+
 
 ccl_device_driver::indexed_driver_handles ccl_device_driver::get_handles(
     const ccl::device_indices_type& requested_driver_indexes /* = indices()*/) {
@@ -64,7 +69,7 @@ ccl_device_driver::indexed_driver_handles ccl_device_driver::get_handles(
 
 CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
     handle_t h,
-    uint32_t id,
+    driver_index_type id,
     owner_ptr_t&& platform,
     const ccl::device_mask_t& rank_device_affinity) {
     auto ctx = platform.lock()->get_platform_contexts();
@@ -85,7 +90,7 @@ CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
 
 CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
     handle_t h,
-    uint32_t id,
+    driver_index_type id,
     owner_ptr_t&& platform,
     const ccl::device_indices_type& rank_device_affinity /* = ccl::device_indices_type()*/) {
     auto ctx = platform.lock()->get_platform_contexts();
@@ -130,11 +135,18 @@ CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
 }
 
 CCL_API ccl_device_driver::ccl_device_driver(ccl_device_driver::handle_t h,
-                                             uint32_t id,
+                                             driver_index_type id,
                                              owner_ptr_t&& platform,
                                              std::weak_ptr<ccl_context_holder>&& ctx)
         : base(h, std::move(platform), std::move(ctx)),
-          driver_id(id) {}
+          driver_id(id) {
+            ipc_prop.stype = ZE_STRUCTURE_TYPE_DRIVER_IPC_PROPERTIES;
+            ze_result_t ret = zeDriverGetIpcProperties(handle, &ipc_prop);
+            if (ret != ZE_RESULT_SUCCESS) {
+                throw std::runtime_error(std::string("zeDriverGetIpcProperties, error: ") +
+                                        native::to_string(ret));
+            }
+        }
 
 CCL_API
 ze_driver_properties_t ccl_device_driver::get_properties() const {
@@ -199,7 +211,7 @@ CCL_API ccl::device_mask_t ccl_device_driver::create_device_mask(
     return ccl::device_mask_t(hex_digit);
 }
 
-CCL_API uint32_t ccl_device_driver::get_driver_id() const noexcept {
+CCL_API ccl_device_driver::driver_index_type ccl_device_driver::get_driver_id() const noexcept {
     return driver_id;
 }
 
@@ -276,13 +288,20 @@ std::string CCL_API ccl_device_driver::to_string(const std::string& prefix) cons
 
 std::weak_ptr<ccl_device_driver> ccl_device_driver::deserialize(const uint8_t** data,
                                                                 size_t& size,
-                                                                ccl_device_platform& platform) {
-    constexpr size_t expected_bytes = sizeof(size_t);
+                                                                std::shared_ptr<ccl_device_platform>& out_platform) {
+
+    //restore platform
+    auto platform = ccl_device_platform::deserialize(data, size, out_platform).lock();
+    if (!platform) {
+        throw std::runtime_error("cannot deserialize ccl_device_driver, because owner is nullptr");
+    }
+
+    constexpr size_t expected_bytes = sizeof(driver_index_type);
     if (!*data or size < expected_bytes) {
         throw std::runtime_error("cannot deserialize ccl_device_driver, not enough data");
     }
 
-    size_t recovered_index = *(reinterpret_cast<const size_t*>(*data));
+    size_t recovered_index = *(reinterpret_cast<const driver_index_type*>(*data));
     size -= expected_bytes;
     *data += expected_bytes;
 
@@ -290,7 +309,7 @@ std::weak_ptr<ccl_device_driver> ccl_device_driver::deserialize(const uint8_t** 
     assert(recovered_index == 0 && "Only one instance of driver is supported!");
 
     //find device with requested handle
-    auto driver_ptr = platform.get_driver(recovered_index);
+    auto driver_ptr = platform->get_driver(recovered_index);
     if (!driver_ptr) {
         throw std::runtime_error(std::string(__FUNCTION__) +
                                  " - invalid driver index: " + std::to_string(recovered_index));
@@ -301,20 +320,30 @@ std::weak_ptr<ccl_device_driver> ccl_device_driver::deserialize(const uint8_t** 
 size_t ccl_device_driver::serialize(std::vector<uint8_t>& out,
                                     size_t from_pos,
                                     size_t expected_size) const {
-    constexpr size_t expected_driver_bytes = sizeof(size_t);
+    // check parent existence
+    const auto platform = get_owner().lock();
+    if (!platform) {
+        throw std::runtime_error("cannot serialize ccl_driver without owner");
+    }
 
-    //prepare continuous vector
-    out.resize(from_pos + expected_size + expected_driver_bytes);
+    constexpr size_t expected_driver_bytes = sizeof(driver_index_type);  // driver index
 
-    //append to the end
-    uint8_t* data_start = out.data() + from_pos;
+    size_t serialized_bytes = platform->serialize(
+        out, from_pos, expected_driver_bytes + expected_size); //resize vector inside
+
+    // serialize from position
+    uint8_t* data_start = out.data() + from_pos + serialized_bytes;
 
     //TODO only one driver instance supported
-    assert(get_owner().lock()->get_drivers().size() == 1 &&
-           "Platform supports only one instance of the driver");
-    *(reinterpret_cast<size_t*>(data_start)) = (size_t)0;
+    assert(platform->get_drivers().size() == 1 &&
+           "Platform supports only one instance of the driver by 0 index");
 
-    return expected_driver_bytes;
+    //serialize driver index
+    *(reinterpret_cast<driver_index_type*>(data_start)) = get_driver_id();
+    serialized_bytes += expected_driver_bytes;
+
+    return serialized_bytes;
+
 }
 
 std::ostream& operator<<(std::ostream& out, const ccl_device_driver& node) {

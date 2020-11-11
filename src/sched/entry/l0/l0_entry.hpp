@@ -14,6 +14,9 @@
 #include "common/comm/l0/modules_connector.hpp"
 #include "common/global/global.hpp"
 #include "common/stream/stream.hpp"
+
+#include "common/comm/l0/context/scaling_ctx/ipc_session_key.hpp"
+
 //TODO L0 Workaround
 #include <unistd.h>
 static std::mutex global_fence_mutex;
@@ -110,6 +113,9 @@ public:
     using kernel_main_typed =
         typename gpu_comm::template gpu_kernel_t<type_op, group_id, class_id, native_type>;
     // using kernel_ipc_typed = ring_allreduce_ipc<native_type>;
+    using kernel_ipc_typed =
+        typename ccl_ipc_gpu_comm::template gpu_kernel_t<type_op, group_id, class_id, native_type>;
+
 
     template <class elem_t>
     using device_memory = memory<elem_t, ccl_device, ccl_context>;
@@ -256,6 +262,11 @@ public:
         return get_fence_impl().get();
     }
 
+    //USE GPU cache binding
+    virtual std::vector<ccl_device::device_ipc_memory_handle> get_ipc_data() = 0;
+    virtual native::ipc_session_key get_ipc_session_key() const {
+        return native::ipc_session_key {this};
+    }
 protected:
     virtual bool finalize_entry() = 0;
     virtual void dump_detail(std::stringstream &str) const override {
@@ -340,6 +351,7 @@ protected:
     create_kernel_router_for_rank(executor &exec,
                                   int next_rank,
                                   specific_indexed_device_storage &group_devices) {
+
         std::unique_ptr<base_connector_interface<kernel_main_typed>> kernel_router;
         while (!kernel_router) {
             //Gather data from in-process GPU
@@ -353,6 +365,21 @@ protected:
                 gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
 
             //communicate with real device
+            kernel_router.reset(
+                new kernel_connector<kernel_main_typed, executor, kernel_main_typed>(
+                    exec, right_main_func));
+        }
+
+        while (!kernel_router) {
+            //Virtual GPU
+            auto &map_devices = std::get<ccl_virtual_gpu_comm::type_idx()>(group_devices);
+            auto it = map_devices.find(next_rank);
+            if (it == map_devices.end()) {
+                break; // not ready yet!
+            }
+            std::shared_ptr<ccl_virtual_gpu_comm> gpu = it->second;
+            kernel_main_typed &right_main_func =
+                gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
             kernel_router.reset(
                 new kernel_connector<kernel_main_typed, executor, kernel_main_typed>(
                     exec, right_main_func));
@@ -392,7 +419,7 @@ protected:
             if (it == map_devices.end()) {
                 break; // not ready yet!
             }
-            std::shared_ptr<ccl_thread_comm<ccl_virtual_gpu_comm>> gpu = it->second;
+            std::shared_ptr<thread_group_comm_device> gpu = it->second;
             /*
             std::shared_ptr<thread_group_comm_device> gpu = map_devices.find(next_rank);
             if(gpu == nullptr)
@@ -407,58 +434,66 @@ protected:
                 new kernel_connector<kernel_main_typed, executor, kernel_main_typed>(
                     exec, right_main_func));
         }
-        /*
+
         while(!kernel_router)
         {
-            //ipc-source GPU
-            using thread_group_comm_device = ccl_ipc_source_gpu_comm<ccl_gpu_comm>;
-            native::indexed_device_container<thread_group_comm_device>& map_devices = std::get<thread_group_comm_device::type_idx()>(group_devices);
+            //ipc-source GPU REAL
+            using ipc_src_comm_device = ccl_ipc_source_gpu_comm<ccl_gpu_comm>;
+            native::indexed_device_container<ipc_src_comm_device>& map_devices =
+                                    std::get<ipc_src_comm_device::type_idx()>(group_devices);
             auto it = map_devices.find(next_rank);
             if(it == map_devices.end())
             {
                 break; // not ready yet!
             }
-            std::shared_ptr<ccl_ipc_source_gpu_comm<ccl_gpu_comm>> gpu = it->second;
-            kernel_main_typed &right_main_func = gpu->get_gpu_kernel<type(), native_type>();
-
-            //communicate with real device from another thread
-            kernel_router.reset(new router<kernel_main_typed,
-                                           executor,
-                                           kernel_main_typed>(exec, right_main_func));
-        }
-
-        while(!kernel_router)
-        {
-            //concurrent GPU
-            using thread_group_comm_device = ccl_ipc_source_gpu_comm<ccl_virtual_gpu_comm>;
-            native::indexed_device_container<thread_group_comm_device>& map_devices = std::get<thread_group_comm_device::type_idx()>(group_devices);
-            auto it = map_devices.find(next_rank);
-            if(it == map_devices.end())
-            {
-                break; // not ready yet!
-            }
-            std::shared_ptr<ccl_ipc_source_gpu_comm<ccl_virtual_gpu_comm>> gpu = it->second;
-            kernel_main_typed &right_main_func = gpu->get_gpu_kernel<type(), native_type>();
-
-            //communicate with virtual device from another thread
-            kernel_router.reset(new router<kernel_main_typed,
-                                           executor,
-                                           kernel_main_typed>(exec, right_main_func));
-        }
-*/
-        while (!kernel_router) {
-            //Virtual GPU
-            auto &map_devices = std::get<ccl_virtual_gpu_comm::type_idx()>(group_devices);
-            auto it = map_devices.find(next_rank);
-            if (it == map_devices.end()) {
-                break; // not ready yet!
-            }
-            std::shared_ptr<ccl_virtual_gpu_comm> gpu = it->second;
+            std::shared_ptr<ipc_src_comm_device> gpu = it->second;
             kernel_main_typed &right_main_func =
                 gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
-            kernel_router.reset(
-                new kernel_connector<kernel_main_typed, executor, kernel_main_typed>(
-                    exec, right_main_func));
+
+            //communicate with real device from another thread
+            kernel_router.reset(new kernel_connector<kernel_main_typed,
+                                           executor,
+                                           kernel_main_typed>(exec, right_main_func));
+        }
+
+        while(!kernel_router)
+        {
+             //ipc-source GPU VIRTUAL
+            using ipc_src_comm_device = ccl_ipc_source_gpu_comm<ccl_virtual_gpu_comm>;
+            native::indexed_device_container<ipc_src_comm_device>& map_devices = std::get<ipc_src_comm_device::type_idx()>(group_devices);
+            auto it = map_devices.find(next_rank);
+            if(it == map_devices.end())
+            {
+                break; // not ready yet!
+            }
+            std::shared_ptr<ipc_src_comm_device> gpu = it->second;
+            kernel_main_typed &right_main_func =
+                gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
+
+            //communicate with virtual device from another thread
+            kernel_router.reset(new kernel_connector<kernel_main_typed,
+                                           executor,
+                                           kernel_main_typed>(exec, right_main_func));
+        }
+
+
+        while(!kernel_router)
+        {
+             //ipc-source GPU VIRTUAL
+            native::indexed_device_container<ccl_ipc_gpu_comm>& map_devices = std::get<ccl_ipc_gpu_comm::type_idx()>(group_devices);
+            auto it = map_devices.find(next_rank);
+            if(it == map_devices.end())
+            {
+                break; // not ready yet!
+            }
+            std::shared_ptr<ccl_ipc_gpu_comm> gpu = it->second;
+            kernel_ipc_typed &right_main_func =
+                gpu->get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
+
+            //communicate with virtual device from another thread
+            kernel_router.reset(new kernel_connector<kernel_main_typed,
+                                           executor,
+                                           kernel_ipc_typed>(exec, right_main_func));
         }
 
         // TODO: check for launching ipc kernel
