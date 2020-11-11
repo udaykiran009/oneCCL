@@ -929,10 +929,16 @@ static int PMII_Connect_to_pm(char* hostname, int portnum) {
             case EISCONN: /*  (already connected) */ break;
 
             case ETIMEDOUT: /* timed out */
+                if (q_wait)
+                    close(fd);
                 PMIU_printf(1, "connect failed with timeout\n");
                 return PMI_FAIL;
 
-            default: PMIU_printf(1, "connect failed with errno %d\n", errno); return PMI_FAIL;
+            default:
+                if (q_wait)
+                    close(fd);
+                PMIU_printf(1, "connect failed with errno %d\n", errno);
+                return PMI_FAIL;
         }
     }
 
@@ -1157,6 +1163,7 @@ static int PMII_singinit(void) {
         PMIU_printf(
             1, "  for which process manager support was required, e.g. spawn or universe_size.\n");
         PMIU_printf(1, "  But the necessary mpiexec is not in your path.\n");
+
         return PMI_FAIL;
     }
     else {
@@ -1166,7 +1173,8 @@ static int PMII_singinit(void) {
 
         /* Allow one connection back from the created mpiexec program */
         PMI_fd = accept_one_connection(singinit_listen_sock);
-        if (PMI_fd < 0) {
+        if (PMI_fd < 0){
+            close(singinit_listen_sock);
             PMIU_printf(1, "Failed to establish singleton init connection\n");
             return PMI_FAIL;
         }
@@ -1228,6 +1236,10 @@ static int PMII_singinit(void) {
         PMIU_printf(PMI_debug_init, "Done with singinit handshake\n");
     }
     return PMI_SUCCESS;
+
+err:
+   close(singinit_listen_sock);
+   return PMI_FAIL;
 }
 
 /* Promote PMI to a fully initialized version if it was started as
