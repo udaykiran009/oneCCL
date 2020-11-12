@@ -187,10 +187,18 @@ ccl_device::ccl_device(handle_t h,
                        owner_ptr_t&& parent,
                        std::weak_ptr<ccl_context_holder>&& ctx,
                        std::false_type)
-        : base(h, std::move(parent), std::move(ctx)) {}
+        : base(h, std::move(parent), std::move(ctx)),
+          device_properties(),
+          memory_properties(),
+          memory_access_properties(),
+          compute_properties() {}
 
 ccl_device::ccl_device(handle_t h, owner_ptr_t&& parent, std::weak_ptr<ccl_context_holder>&& ctx)
-        : base(h, std::move(parent), std::move(ctx)) {
+        : base(h, std::move(parent), std::move(ctx)),
+          device_properties(),
+          memory_properties(),
+          memory_access_properties(),
+          compute_properties() {
     initialize_device_data();
 }
 
