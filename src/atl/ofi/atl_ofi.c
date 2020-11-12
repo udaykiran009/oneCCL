@@ -1532,8 +1532,14 @@ static atl_status_t atl_ofi_init(int* argc,
     if (!ofi_ctx)
         return ATL_STATUS_FAILURE;
 
-    if (atl_ofi_adjust_env(ofi_ctx, *attr) != ATL_STATUS_SUCCESS)
+    ret = atl_ofi_adjust_env(ofi_ctx, *attr);
+    if (ret != ATL_STATUS_SUCCESS) {
+        ATL_OFI_PRINT("atl_ofi_adjust_env error");
+        free(ofi_ctx->prov_env_copy);
+        ofi_ctx->prov_env_copy = NULL;
+        free(ofi_ctx);
         return ATL_STATUS_FAILURE;
+    }
 
     atl_ctx_t* ctx = &(ofi_ctx->ctx);
 
@@ -1637,6 +1643,7 @@ static atl_status_t atl_ofi_init(int* argc,
                 ATL_OFI_PRINT("ptrace_scope > 0, disable shm provider");
                 attr->enable_shm = 0;
             }
+            fclose(file);
         }
     }
 
@@ -1891,7 +1898,8 @@ err:
         fi_freeinfo(prov_hints);
     }
 
-    atl_ofi_finalize(ctx);
+    if (ctx != NULL)
+        atl_ofi_finalize(ctx);
 
     return RET2ATL(ret);
 }

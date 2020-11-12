@@ -53,12 +53,12 @@ public:
         native::supported_device_modules<ipc_dst_device_coll_module>& ipc_modules) = 0;
 
 protected:
-    size_t source_device_rank;
+    size_t source_device_rank{};
     raw_data_t source_ipc_raw_data;
     origin_ipc_memory_container source_ipc_memory_storage;
     recovered_handles_storage data_to_recover;
 
-    size_t send_tag;
+    size_t send_tag{};
     std::atomic<bool> finished;
 };
 
