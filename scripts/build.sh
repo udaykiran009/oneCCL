@@ -103,7 +103,7 @@ set_default_values()
     ENABLE_BUILD_CPU="no"
     ENABLE_BUILD_GPU="no"
     ENABLE_INSTALL="no"
-    MAKE_JOB_COUNT=4
+    MAKE_JOB_COUNT=16
 }
 #==============================================================================
 #                                Functions

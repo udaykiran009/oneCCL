@@ -269,9 +269,16 @@ run()
         bench_backend_list="host"
         example_selector_list="cpu host default"
     else
-        dir_list="cpu common sycl benchmark"
-        bench_backend_list="host sycl"
-        example_selector_list="cpu host gpu default"
+        if [[ ${SCOPE} = "pr" ]]
+        then
+            dir_list="common benchmark"
+            bench_backend_list="sycl"
+            example_selector_list="host gpu"
+        else
+            dir_list="cpu common sycl benchmark"
+            bench_backend_list="host sycl"
+            example_selector_list="cpu host gpu default"
+        fi
     fi
 
     echo "dir_list =" $dir_list "; example_selector_list =" $example_selector_list
@@ -482,11 +489,12 @@ echo_log()
 print_help()
 {
     echo_log "Usage:"
-    echo_log "    ./${BASENAME}.sh <options>"
+    echo_log "    ./${BASENAME}.sh <options> <scope>"
     echo_log "Example:"
     echo_log "    ./${BASENAME}.sh "
     echo_log "    ./${BASENAME}.sh cpu"
     echo_log "    ./${BASENAME}.sh gpu"
+    echo_log "    ./${BASENAME}.sh gpu pr"
     echo_log ""
     echo_log "Available knobs:"
     echo_log "C_COMPILER = clang|icc|gcc|<full path to compiler>, default is clang"
@@ -494,6 +502,8 @@ print_help()
     echo_log ""
     echo_log "<options>:"
     echo_log "    -h Print help information"
+    echo_log "    cpu|gpu mode"
+    echo_log "    pr reduces scope till minimal pre-merge scope"
     echo_log ""
 }
 
@@ -511,6 +521,7 @@ else
 fi
 echo "MODE: $MODE "
 
+
 case $MODE in
 "cpu" )
     if [[ -z "${C_COMPILER}" ]] && [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]
@@ -525,7 +536,6 @@ case $MODE in
     else
         CXX_COMPILER=g++
     fi
-    shift
     ;;
 "-h" )
     print_help
@@ -533,18 +543,26 @@ case $MODE in
     ;;
 "gpu"|* )
     check_clang
-    if [ -z "${C_COMPILER}"]
+    if [ -z "${C_COMPILER}" ]
     then
         C_COMPILER=clang
     fi
-    if [ -z "${CXX_COMPILER}"]
+    if [ -z "${CXX_COMPILER}" ]
     then
         CXX_COMPILER=dpcpp
         COMPUTE_RUNTIME="dpcpp"
     fi
-    shift
     ;;
 esac
+
+if [[ ! -z ${2} ]]
+then
+    SCOPE=${2}
+    if [[ ${SCOPE} -ne "pr" ]]
+    then
+        print_help
+    fi
+fi
 
 create_work_dir
 build
