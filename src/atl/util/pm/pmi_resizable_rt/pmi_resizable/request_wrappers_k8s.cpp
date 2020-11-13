@@ -301,16 +301,19 @@ size_t request_k8s_kvs_init() {
 size_t request_k8s_kvs_get_master(const char* local_host_ip, char* main_host_ip, char* port_str) {
     char** kvs_values = NULL;
     char** kvs_keys = NULL;
+    int values_count = 0;
 
     request_k8s_set_val(ccl_kvs_ip, my_hostname, local_host_ip);
     request_k8s_set_val(ccl_kvs_port, my_hostname, port_str);
 
     if (!request_k8s_get_count_names(master_addr)) {
-        request_k8s_get_keys_values_by_name(ccl_kvs_ip, &kvs_keys, &kvs_values);
+        values_count = request_k8s_get_keys_values_by_name(ccl_kvs_ip, &kvs_keys, &kvs_values);
         if (strstr(kvs_keys[0], my_hostname)) {
             request_k8s_set_val(req_kvs_ip, my_hostname, local_host_ip);
             while (!request_k8s_get_count_names(master_addr)) {
-                if (request_k8s_get_keys_values_by_name(req_kvs_ip, &kvs_keys, &kvs_values) > 1) {
+                values_count =
+                    request_k8s_get_keys_values_by_name(req_kvs_ip, &kvs_keys, &kvs_values);
+                if (values_count > 1) {
                     if (!strstr(kvs_keys[0], my_hostname)) {
                         break;
                     }
@@ -322,13 +325,24 @@ size_t request_k8s_kvs_get_master(const char* local_host_ip, char* main_host_ip,
             }
             request_k8s_remove_name_key(req_kvs_ip, my_hostname);
         }
+        if (kvs_keys != NULL) {
+            for (int i = 0; i < values_count; i++) {
+                free(kvs_keys[i]);
+            }
+            free(kvs_keys);
+        }
+        if (kvs_values != NULL) {
+            for (int i = 0; i < values_count; i++) {
+                free(kvs_values[i]);
+            }
+            free(kvs_values);
+        }
     }
     while (!request_k8s_get_count_names(master_addr)) {
         sleep(1);
     }
     request_k8s_get_val_by_name_key(master_addr, KVS_IP, main_host_ip);
     request_k8s_get_val_by_name_key(master_addr, KVS_PORT, port_str);
-
     return 0;
 }
 

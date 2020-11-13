@@ -276,7 +276,7 @@ void pmi_resizable_simple::assign_thread_idx_and_fill_ranks_per_thread_map() {
         }
         kvs_get_value(RANKS_PER_THREAD, std::to_string(rank_count).c_str(), val_storage);
 
-        ranks_per_thread = atoi(val_storage);
+        ranks_per_thread = safe_strtol(val_storage, NULL, 10);
         ranks_per_thread_map.push_back(ranks_per_thread);
         rank_count += ranks_per_thread;
     }

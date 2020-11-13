@@ -1626,12 +1626,10 @@ static atl_status_t atl_ofi_init(int* argc,
                     ATL_OFI_PRINT("error getting value from ptrace_scope");
                     scope = 1;
                 }
-                else {
-                    fret = fclose(file);
-                    if (fret) {
-                        ATL_OFI_PRINT("error closing ptrace_scope file");
-                        scope = 1;
-                    }
+                fret = fclose(file);
+                if (fret) {
+                    ATL_OFI_PRINT("error closing ptrace_scope file");
+                    scope = 1;
                 }
             }
 
@@ -1643,7 +1641,6 @@ static atl_status_t atl_ofi_init(int* argc,
                 ATL_OFI_PRINT("ptrace_scope > 0, disable shm provider");
                 attr->enable_shm = 0;
             }
-            fclose(file);
         }
     }
 

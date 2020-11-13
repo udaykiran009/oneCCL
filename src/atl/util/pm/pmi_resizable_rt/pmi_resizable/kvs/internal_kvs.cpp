@@ -269,8 +269,8 @@ void kvs_keys_values_clean(char*** kvs_keys, char*** kvs_values, int count) {
     }
     free(*kvs_keys);
     free(*kvs_values);
-    kvs_keys = NULL;
-    kvs_values = NULL;
+    *kvs_keys = NULL;
+    *kvs_values = NULL;
 }
 
 void* kvs_server_init(void* args) {
