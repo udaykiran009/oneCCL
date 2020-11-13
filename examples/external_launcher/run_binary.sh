@@ -13,17 +13,17 @@ print_help()
     echo_log "    ./${BASENAME}.sh [options]"
     echo_log ""
     echo_log "<options>:"
-    echo_log "    -cv  Path to oneCCL variables script"
-    echo_log "    -mv  Path to IMPI variables script"
     echo_log "    -s   Total number of ranks"
     echo_log "    -r   Rank"
     echo_log "    -ls  Local number of ranks"
     echo_log "    -lr  Local rank"
-    echo_log "    -f   Log file"
-    echo_log "    -e   Store file"
+    echo_log "    -cv  Path to oneCCL variables script"
+    echo_log "    -mv  Path to IMPI variables script"
+    echo_log "    -lf  Log file"
+    echo_log "    -sf  Store file"
     echo_log ""
     echo_log "Example:"
-    echo_log "    ./${BASENAME}.sh -cv <vars_dir>/vars.sh -mv <vars_dir>/vars.sh -s 4 -r 0 -ls 2 -lr 0 -f <log_file_path> -e <store_file>"
+    echo_log "    ./${BASENAME}.sh -s 4 -r 0 -ls 2 -lr 0 -cv <ccl_vars> -mv <mpi_vars> -lf <log_file> -sf <store_file>"
     echo_log ""
 }
 
@@ -41,14 +41,6 @@ parse_arguments()
     while [ $# -ne 0 ]
     do
         case $1 in
-            "-cv"|"--ccl_vars")
-                CCL_VARS=$2
-                read_count=$((read_count+1))
-                ;;
-            "-mv"|"--mpi_vars")
-                MPI_VARS=$2
-                read_count=$((read_count+1))
-                ;;
             "-s"|"--size")
                 SIZE=$2
                 read_count=$((read_count+1))
@@ -65,11 +57,19 @@ parse_arguments()
                 LOCAL_RANK=$2
                 read_count=$((read_count+1))
                 ;;
-             "-f"|"--log_file")
+            "-cv"|"--ccl_vars")
+                CCL_VARS=$2
+                read_count=$((read_count+1))
+                ;;
+            "-mv"|"--mpi_vars")
+                MPI_VARS=$2
+                read_count=$((read_count+1))
+                ;;
+            "-lf"|"--log_file")
                 LOG_FILE=$2
                 read_count=$((read_count+1))
                 ;;
-            "-e"|"--store_file")
+            "-sf"|"--store_file")
                 STORE_FILE=$2
                 read_count=$((read_count+1))
                 ;;
@@ -95,12 +95,12 @@ parse_arguments()
     echo_log "-----------------------------------------------------------"
     echo_log "PARAMETERS"
     echo_log "-----------------------------------------------------------"
-    echo_log "CCL_VARS   = ${CCL_VARS}"
-    echo_log "MPI_VARS   = ${MPI_VARS}"
     echo_log "SIZE       = ${SIZE}"
     echo_log "RANK       = ${RANK}"
     echo_log "LOCAL_SIZE = ${LOCAL_SIZE}"
     echo_log "LOCAL_RANK = ${LOCAL_RANK}"
+    echo_log "CCL_VARS   = ${CCL_VARS}"
+    echo_log "MPI_VARS   = ${MPI_VARS}"
     echo_log "LOG_FILE   = ${LOG_FILE}"
     echo_log "STORE_FILE = ${STORE_FILE}"
     echo_log "-----------------------------------------------------------"

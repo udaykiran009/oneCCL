@@ -4,7 +4,7 @@
 #include "store.hpp"
 
 #define ITER_COUNT   10
-#define REINIT_COUNT 10
+#define REINIT_COUNT 5
 
 void run_collective(const char* cmd_name,
                     const std::vector<float>& send_buf,

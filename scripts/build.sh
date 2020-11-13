@@ -884,6 +884,11 @@ add_copyrights()
         ed `realpath ${CUR_FILE}` < ${COPYRIGHT_INTEL_C} >/dev/null 2>&1
     done
 
+    for CUR_FILE in `find ${PACKAGE_ENG_DIR}/examples/ \( -name "*.sh" \) -type f`
+    do
+        ed `realpath ${CUR_FILE}` < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
+    done
+
     for CUR_FILE in `find ${PACKAGE_ENG_DIR}/examples/ \( -name "CMakeLists.txt" \) -type f`
     do
         ed `realpath ${CUR_FILE}` < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1

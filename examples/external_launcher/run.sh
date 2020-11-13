@@ -10,6 +10,11 @@ echo_log()
 
 print_help()
 {
+    echo_log ""
+    echo_log "This example demonstrates launching of processes and creation of CCL communicator"
+    echo_log "without regular mpirun launcher. KVS address is exchanged between processes using file system."
+    echo_log "During execution KVS and communicator will be created and destroyed multiple times."
+    echo_log ""
     echo_log "Usage:"
     echo_log "    ./${BASENAME}.sh [options]"
     echo_log ""
@@ -27,7 +32,6 @@ parse_arguments()
 {
     if [ $# -ne 6 ];
     then
-        echo_log "ERROR: unexpected number of options"
         print_help
         exit 1
     fi
@@ -160,7 +164,10 @@ run_binary()
             rank=$((host_idx * local_size + i))
             log_file="${dir}/${host}_${rank}.out"
             log_files=("${log_files[@]}" "${log_file}")
-            cmd="$dir/run_binary.sh -cv ${VARS} -mv ${IMPI_PATH}/env/vars.sh -s ${SIZE} -r ${rank} -ls ${local_size} -lr ${i} -f ${log_file} -e ${store_file}"
+
+            cmd="$dir/run_binary.sh -s ${SIZE} -r ${rank} -ls ${local_size} -lr ${i}"
+            cmd="${cmd} -cv ${VARS} -mv ${IMPI_PATH}/env/vars.sh -lf ${log_file} -sf ${store_file}"
+
             timeout -k $((TIMEOUT))s $((TIMEOUT))s ssh ${host} $cmd&
         done
         host_idx=$((host_idx + 1))
