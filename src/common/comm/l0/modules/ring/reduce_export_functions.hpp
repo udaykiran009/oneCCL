@@ -9,13 +9,13 @@ struct ring_reduce_kernel
               arg<main_kernel_args::args_start_index, size_t>,
               arg<main_kernel_args::args_start_index + 1, native_type*>,
               arg<main_kernel_args::args_start_index + 2, native_type*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 3, native_type*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 4, int*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 5, int*>,
+              thread_exchangable_arg<main_kernel_args::args_start_index + 3, native_type*>,
+              thread_exchangable_arg<main_kernel_args::args_start_index + 4, int*>,
+              thread_exchangable_arg<main_kernel_args::args_start_index + 5, int*>,
               arg<main_kernel_args::args_start_index + 6, int*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 7, native_type*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 8, int*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 9, int*>,
+              thread_exchangable_arg<main_kernel_args::args_start_index + 7, native_type*>,
+              thread_exchangable_arg<main_kernel_args::args_start_index + 8, int*>,
+              thread_exchangable_arg<main_kernel_args::args_start_index + 9, int*>,
               arg<main_kernel_args::args_start_index + 10, size_t>> {
     using processing_type = native_type;
 
@@ -36,13 +36,15 @@ struct ring_reduce_kernel
     using recv_buf_arg_type = typename recv_buf_arg::arg_type;
 
     using tmp_recv_buf_arg =
-        thread_safe_arg<main_kernel_args::args_start_index + 3, processing_type*>;
+        thread_exchangable_arg<main_kernel_args::args_start_index + 3, processing_type*>;
     using tmp_recv_buf_arg_type = typename tmp_recv_buf_arg::arg_type;
 
-    using income_data_flag_arg = thread_safe_arg<main_kernel_args::args_start_index + 4, int*>;
+    using income_data_flag_arg =
+        thread_exchangable_arg<main_kernel_args::args_start_index + 4, int*>;
     using income_data_flag_arg_type = typename income_data_flag_arg::arg_type;
 
-    using ready_to_recv_flag_arg = thread_safe_arg<main_kernel_args::args_start_index + 5, int*>;
+    using ready_to_recv_flag_arg =
+        thread_exchangable_arg<main_kernel_args::args_start_index + 5, int*>;
     using ready_to_recv_flag_arg_type = typename ready_to_recv_flag_arg::arg_type;
 
     using local_barrier_flag_arg = arg<main_kernel_args::args_start_index + 6, int*>;
@@ -50,18 +52,18 @@ struct ring_reduce_kernel
 
     //right
     using right_tmp_recv_buf_arg =
-        thread_safe_arg<main_kernel_args::args_start_index + 7, processing_type*>;
+        thread_exchangable_arg<main_kernel_args::args_start_index + 7, processing_type*>;
     using right_tmp_recv_buf_arg_type = typename right_tmp_recv_buf_arg::arg_type;
 
     /*  using right_recv_buf_arg =                  thread_safe_arg<main_kernel_args::args_start_index + 8, void *>;
     using right_recv_buf_arg_type =             typename right_recv_buf_arg::arg_type;
 */
     using right_income_data_flag_arg =
-        thread_safe_arg<main_kernel_args::args_start_index + 8, int*>;
+        thread_exchangable_arg<main_kernel_args::args_start_index + 8, int*>;
     using right_income_data_flag_arg_type = typename right_income_data_flag_arg::arg_type;
 
     using right_ready_to_recv_flag_arg =
-        thread_safe_arg<main_kernel_args::args_start_index + 9, int*>;
+        thread_exchangable_arg<main_kernel_args::args_start_index + 9, int*>;
     using right_ready_to_recv_flag_arg_type = typename right_ready_to_recv_flag_arg::arg_type;
 
     using root_arg = arg<main_kernel_args::args_start_index + 10, size_t>;

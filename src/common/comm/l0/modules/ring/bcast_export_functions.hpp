@@ -7,13 +7,13 @@ struct ring_bcast_kernel
         : public execution_kernel<
               ring_bcast_kernel<native_type>,
               arg<main_kernel_args::args_start_index, size_t>,
-              thread_safe_arg<main_kernel_args::args_start_index + 1, native_type*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 2, int*>,
+              thread_exchangable_arg<main_kernel_args::args_start_index + 1, native_type*>,
+              thread_exchangable_arg<main_kernel_args::args_start_index + 2, int*>,
               thread_safe_arg<main_kernel_args::args_start_index + 3, int*>,
               arg<main_kernel_args::args_start_index + 4, int*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 5, native_type*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 6, int*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 7, int*>,
+              thread_exchangable_arg<main_kernel_args::args_start_index + 5, native_type*>,
+              thread_exchangable_arg<main_kernel_args::args_start_index + 6, int*>,
+              thread_exchangable_arg<main_kernel_args::args_start_index + 7, int*>,
               arg<main_kernel_args::args_start_index + 8, size_t>> {
     using processing_type = native_type;
 
@@ -30,7 +30,8 @@ struct ring_bcast_kernel
     using common_entry_buf_arg = buf_arg;
     using buf_arg_type = typename buf_arg::arg_type;
 
-    using income_data_flag_arg = thread_safe_arg<main_kernel_args::args_start_index + 2, int*>;
+    using income_data_flag_arg =
+        thread_exchangable_arg<main_kernel_args::args_start_index + 2, int*>;
     using income_data_flag_arg_type = typename income_data_flag_arg::arg_type;
 
     using ready_to_recv_flag_arg = thread_safe_arg<main_kernel_args::args_start_index + 3, int*>;
@@ -40,15 +41,16 @@ struct ring_bcast_kernel
     using local_barrier_flag_arg_type = typename local_barrier_flag_arg::arg_type;
 
     //right
-    using right_buf_arg = thread_safe_arg<main_kernel_args::args_start_index + 5, processing_type*>;
+    using right_buf_arg =
+        thread_exchangable_arg<main_kernel_args::args_start_index + 5, processing_type*>;
     using right_buf_arg_type = typename right_buf_arg::arg_type;
 
     using right_income_data_flag_arg =
-        thread_safe_arg<main_kernel_args::args_start_index + 6, int*>;
+        thread_exchangable_arg<main_kernel_args::args_start_index + 6, int*>;
     using right_income_data_flag_arg_type = typename right_income_data_flag_arg::arg_type;
 
     using right_ready_to_recv_flag_arg =
-        thread_safe_arg<main_kernel_args::args_start_index + 7, int*>;
+        thread_exchangable_arg<main_kernel_args::args_start_index + 7, int*>;
     using right_ready_to_recv_flag_arg_type = typename right_ready_to_recv_flag_arg::arg_type;
 
     using root_arg = arg<main_kernel_args::args_start_index + 8, size_t>;

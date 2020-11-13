@@ -40,6 +40,7 @@ public:
     using base::kernel_router;
     using base::get_ctx;
     using base::alloc_memory_wrap;
+    using base::get_local_kernel;
     using kernel_main_typed = ring_allreduce_kernel<native_type>;
     using kernel_ipc_typed = ring_allreduce_ipc<native_type>;
 
@@ -56,13 +57,6 @@ public:
 
     static constexpr ccl_coll_type type() noexcept {
         return ccl_coll_allreduce;
-    }
-
-    kernel_main_typed& get_local_kernel() noexcept {
-        return parent_communicator->template get_gpu_kernel<base::type(),
-                                                            topology,
-                                                            ccl::device_topology_type::ring,
-                                                            native_type>();
     }
 
     l0_allreduce_typed_entry() = delete;
@@ -174,45 +168,6 @@ public:
     }
 
 protected:
-    // TODO: move all the handling that doesn't depend on entry's specific
-    // parameters to base entry
-    bool finalize_entry() override {
-        kernel_main_typed& main_entry_function = get_local_kernel();
-
-        if (this->get_state() == gpu_entry_state::wait_for_entry) {
-            if (!(*kernel_router)(main_entry_function)) {
-                // Parameters are not ready yet, will try again later
-                return false;
-            }
-        }
-
-        ENTRY_LOG_TRACE("Try to finalize");
-
-        auto&& cmd_list = parent_communicator->get_cmd_list(get_ctx());
-        cmd_list.append_kernel(main_entry_function.handle, &launch_args);
-
-        ENTRY_LOG_DEBUG("Append kernel successfully: ",
-                        main_entry_function.to_string(),
-                        " in list: ",
-                        cmd_list.get());
-
-        assert(this->get_state() != gpu_entry_state::wait_for_completion);
-
-        if (topology == ccl::group_split_type::cluster) {
-            // TODO: implement process communicator case
-            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
-                                 "TODO: implement process communicator case");
-        }
-        else {
-            // TODO: how to ensure that fence update is thread safe?
-            cmd_list.close_and_execute(get_ctx(), this->get_fence());
-        }
-
-        ENTRY_LOG_INFO("List closed:", cmd_list.get(), ", go to submit entry");
-        this->set_state(gpu_entry_state::wait_for_completion);
-        return true;
-    }
-
     void dump_detail(std::stringstream& str) const override {
         base::dump_detail(str);
     }

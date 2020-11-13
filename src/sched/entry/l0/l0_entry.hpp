@@ -157,6 +157,11 @@ public:
         fence = get_fence();
     }
 
+    kernel_main_typed &get_local_kernel() noexcept {
+        return parent_communicator
+            ->template get_gpu_kernel<type(), get_topology(), get_topology_class(), native_type>();
+    }
+
     virtual ~base_gpu_entry() {}
 
     virtual void start() override {
@@ -268,7 +273,43 @@ public:
     }
 
 protected:
-    virtual bool finalize_entry() = 0;
+    bool finalize_entry() {
+        kernel_main_typed &main_entry_function = get_local_kernel();
+
+        if (this->get_state() == gpu_entry_state::wait_for_entry) {
+            if (!(*kernel_router)(main_entry_function)) {
+                // Parameters are not ready yet, will try again later
+                return false;
+            }
+        }
+
+        ENTRY_LOG_TRACE("Try to finalize");
+
+        auto &&cmd_list = parent_communicator->get_cmd_list(get_ctx());
+        cmd_list.append_kernel(main_entry_function.handle, &launch_args);
+
+        ENTRY_LOG_DEBUG("Append kernel successfully: ",
+                        main_entry_function.to_string(),
+                        " in list: ",
+                        cmd_list.get());
+
+        assert(this->get_state() != gpu_entry_state::wait_for_completion);
+
+        if (get_topology() == ccl::group_split_type::cluster) {
+            // TODO: implement process communicator case
+            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
+                                 "TODO: implement process communicator case");
+        }
+        else {
+            // TODO: how to ensure that fence update is thread safe?
+            cmd_list.close_and_execute(get_ctx(), this->get_fence());
+        }
+
+        ENTRY_LOG_INFO("List closed:", cmd_list.get(), ", go to submit entry");
+        this->set_state(gpu_entry_state::wait_for_completion);
+        return true;
+    }
+
     virtual void dump_detail(std::stringstream &str) const override {
         ccl_logger::format(str, "{", name(), ", addr: ", comm_addr.to_string(), "}");
     }

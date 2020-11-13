@@ -29,6 +29,7 @@ public:
     using base::launch_args;
     using base::kernel_router;
     using base::get_ctx;
+    using base::get_local_kernel;
     using kernel_main_typed = ring_reduce_kernel<native_type>;
     using kernel_ipc_typed = ring_reduce_ipc<native_type>;
 
@@ -122,24 +123,15 @@ public:
                         wait_count.load(),
                         ", ListClosedEpoch: ",
                         list_closed_epoch_id);
+
+        // Once we filled our local parameters, we go wait for another entry to set its
+        // parameters so we can use them
+        this->set_state(gpu_entry_state::created);
     }
 
     ~l0_reduce_typed_entry() {
-        /* std::stringstream ss;
-        ss << "native_type: " << std::endl;
-        std::vector<native_type> mem_get(temp_buffer.count());
-        std::copy(temp_buffer.handle, temp_buffer.handle + temp_buffer.count(), mem_get.begin());
-        std::copy(mem_get.begin(), mem_get.end(), std::ostream_iterator<native_type>(ss, ","));
-        ss << std::endl;
-
-        ss << "income_data_flag: "  << std::endl;
-        ss << *(income_data_flag.handle) << std::endl;
-
-        ss << "ready_to_recv_flag: "  << std::endl;
-        ss << *(ready_to_recv_flag.handle) << std::endl;
-
-        LOG_INFO("Kernel results: ", ss.str());
-        */
+        // TODO: remove the memory once the entry is destroyed if it's not cleared automatically
+        // TODO: should we destroy handles here?
     }
 
     void start() override {
@@ -148,12 +140,7 @@ public:
         //Create base primitives
         base::start();
 
-        //ccl_device &device = parent_communicator->get_device();
-        kernel_main_typed& main_entry_function =
-            parent_communicator->template get_gpu_kernel<base::type(),
-                                                         topology,
-                                                         ccl::device_topology_type::ring,
-                                                         native_type>();
+        auto& main_entry_function = get_local_kernel();
 
         auto recv_buf_ptr = reinterpret_cast<native_type*>(recv_buf_typed_entry.get_ptr());
         //create implementation specified primitives
@@ -173,21 +160,9 @@ public:
                 root_typed_entry,
                 cnt_entry);
 
-        /* TRY To APPEND Kernel HERE!!! Not in update
-         *
-         * ze_result_t result = zeCommandListAppendLaunchKernel(exec_cmd_list->handle, main_entry_function.handle, &launch_args, nullptr, 0, nullptr);
-        if(result != ZE_RESULT_SUCCESS)
-        {
-            LOG_ERROR("zeCommandListAppendLaunchKernel failed, error: ", to_string(result));
-            throw std::runtime_error("zeCommandListAppendLaunchKernel failed");
-        }
-
-        / * result = zeCommandListClose(exec_cmd_list->handle);
-        if(result != ZE_RESULT_SUCCESS)
-        {
-            LOG_ERROR("zeCommandListClose failed, error: ", to_string(result));
-            throw std::runtime_error("zeCommandListClose failed");
-        }*/
+        // Once we filled our local parameters, we go wait for another entry to set its
+        // parameters so we can use them
+        this->set_state(gpu_entry_state::wait_for_entry);
 
         //make sure, that kernel ready for launch
         this->submit_for_execution();
@@ -211,144 +186,11 @@ public:
     }
 
 protected:
-    bool finalize_entry() override {
-        ENTRY_LOG_TRACE("Try to finalize");
-        ccl_device& device = parent_communicator->get_device();
-
-        kernel_main_typed& main_entry_function =
-            parent_communicator->template get_gpu_kernel<base::type(),
-                                                         topology,
-                                                         ccl::device_topology_type::ring,
-                                                         native_type>();
-        if (!(*kernel_router)(main_entry_function)) {
-            return false;
-        }
-
-        auto& cmd_list = device.get_cmd_list(get_ctx());
-        ze_result_t result;
-        //TODO L0 Workaround
-        if (!is_kernel_added) {
-            std::unique_lock<std::mutex> lock(global_mutex);
-            exec_count++;
-
-            kernel_bind_epoch_id = exec_count;
-
-            //L0 Workaround launch kernel require critical section
-            result = zeCommandListAppendLaunchKernel(
-                cmd_list.get(), main_entry_function.handle, &launch_args, nullptr, 0, nullptr);
-            if (result != ZE_RESULT_SUCCESS) {
-                LOG_ERROR("zeCommandListAppendLaunchKernel failed, error: ", to_string(result));
-                throw std::runtime_error("zeCommandListAppendLaunchKernel failed");
-            }
-            is_kernel_added = true;
-
-            ENTRY_LOG_DEBUG("Append kernel successfully: ",
-                            main_entry_function.to_string(),
-                            " in list: ",
-                            cmd_list.get());
-        }
-
-        while (exec_count < registered_thread.size()) {
-            ENTRY_LOG_TRACE("waiting thread counts, exec_cont: ", exec_count);
-        }
-
-        //TODO L0 workaround
-        ENTRY_LOG_INFO("Check L0 Workaround: WaitCount: ",
-                       wait_count,
-                       ", ExecCount: ",
-                       exec_count,
-                       ", CurIndex: ",
-                       kernel_bind_epoch_id);
-
-        if (kernel_bind_epoch_id % wait_count ==
-            0 /*std::is_same<gpu_comm_impl, ccl_gpu_comm>::value*/) {
-            if (topology == ccl::group_split_type::cluster) {
-                // TODO: implement process communicator case
-                throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
-                                     "TODO: implement process communicator case");
-                // auto c = ccl::detail::environment::instance().create_communicator();
-                // if (c.rank() == 0) {
-                // LOG_INFO("L0 Workaround: one device close list!!!",
-                //          "WaitCount: ",
-                //          wait_count,
-                //          ", ExecCount: ",
-                //          exec_count,
-                //          ", CurIndex: ",
-                //          cur_index);
-                // result = zeCommandListClose(device.get_cmd_list().get());
-                // if (result != ZE_RESULT_SUCCESS) {
-                //     LOG_ERROR("zeCommandListClose failed, error: ",
-                //               native::to_string(result));
-                //     throw std::runtime_error("zeCommandListClose failed");
-                // }
-                // }
-            }
-            else {
-                ENTRY_LOG_INFO("L0 Workaround: one device close list!!!\n",
-                               "WaitCount: ",
-                               wait_count,
-                               ", ExecCount: ",
-                               exec_count,
-                               ", CurIndex: ",
-                               kernel_bind_epoch_id);
-
-                {
-                    std::unique_lock<std::mutex> lock(global_mutex);
-                    result = zeCommandListClose(cmd_list.get());
-                    if (result != ZE_RESULT_SUCCESS) {
-                        LOG_ERROR("zeCommandListClose failed, error: ", native::to_string(result));
-                        throw std::runtime_error("zeCommandListClose failed");
-                    }
-
-                    auto queue_prop = ccl_device::get_default_queue_desc();
-                    auto& cmd_queue = device.get_cmd_queue(queue_prop, get_ctx());
-                    ENTRY_LOG_INFO("Execute list:",
-                                   cmd_list.get(),
-                                   ", queue: ",
-                                   cmd_queue.get(),
-                                   ", go to submit entry");
-                    ze_result_t ret = zeCommandQueueExecuteCommandLists(
-                        cmd_queue.get(), 1, cmd_list.get_ptr(), this->fence);
-                    if (ret != ZE_RESULT_SUCCESS) {
-                        throw ccl::exception(std::string("cannot execute command list, error: ") +
-                                             std::to_string(ret));
-                    }
-
-                    ret = zeFenceQueryStatus(this->fence);
-                    ENTRY_LOG_DEBUG("Fence query status: ",
-                                    native::to_string(ret),
-                                    ", queue: ",
-                                    cmd_queue.get());
-                }
-            }
-
-            list_closed_epoch.fetch_add(1);
-            ENTRY_LOG_INFO("List closed:", cmd_list.get(), ", go to submit entry");
-            return true;
-        }
-        else if (kernel_bind_epoch_id > wait_count ||
-                 list_closed_epoch.load() != list_closed_epoch_id /* epoch changed */) {
-            ENTRY_LOG_INFO("L0 Workaround: one device should close list before!!! ",
-                           "WaitCount: ",
-                           wait_count,
-                           ", ExecCount: ",
-                           exec_count,
-                           ", CurIndex: ",
-                           kernel_bind_epoch_id);
-            ENTRY_LOG_INFO(
-                "Dirfferent entry closed the list:", cmd_list.get(), ", go to submit entry");
-            return true;
-        }
-        return false;
-    }
-
     void dump_detail(std::stringstream& str) const override {
         base::dump_detail(str);
     }
 
 private:
-    bool is_kernel_added = false; //TODO L0 workaround - one dev close list
-
     ccl_device::device_memory<native_type> temp_buffer;
     ccl_device::device_memory<income_data_flag_gpu_type> income_data_flag;
     ccl_device::device_memory<ready_to_recv_flag_gpu_type> ready_to_recv_flag;
@@ -367,17 +209,6 @@ public:
                                             typename kernel_main_typed::income_data_flag_arg,
                                             typename kernel_main_typed::ready_to_recv_flag_arg>();
         if (is_right_kernel_ready) {
-            if (is_kernel_added) {
-                LOG_DEBUG("entry: ",
-                          class_name(),
-                          ", rank: ",
-                          comm_addr.to_string(),
-                          ". Function: ",
-                          main_entry_function.to_string(),
-                          " - binded already");
-                return true;
-            }
-
             //TODO do not get arguments sequencially - use array version instead
             typename kernel_main_typed::tmp_recv_buf_arg::return_t right_tmp_recv_buf_arg =
                 right_kernel.template get_arg<typename kernel_main_typed::tmp_recv_buf_arg>();
@@ -438,17 +269,6 @@ public:
                                             typename kernel_ipc_typed::income_data_flag_arg,
                                             typename kernel_ipc_typed::ready_to_recv_flag_arg>();
         if (is_right_kernel_ready) {
-            if (is_kernel_added) {
-                LOG_DEBUG("entry: ",
-                          class_name(),
-                          ", rank: ",
-                          comm_addr.to_string(),
-                          ". Function: ",
-                          main_entry_function.to_string(),
-                          " - binded already");
-                return true;
-            }
-
             //TODO do not get arguments sequencially - use array version instead
             typename kernel_main_typed::tmp_recv_buf_arg::return_t right_tmp_recv_buf_arg =
                 right_kernel.template get_arg<typename kernel_ipc_typed::tmp_recv_buf_arg>();
