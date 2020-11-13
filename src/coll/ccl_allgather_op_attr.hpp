@@ -13,7 +13,6 @@ public:
     ccl_allgatherv_attr_impl_t(
         const typename detail::ccl_api_type_attr_traits<operation_attr_id,
                                                         operation_attr_id::version>::type& version);
-    ccl_allgatherv_attr_impl_t(const ccl_allgatherv_attr_impl_t& src);
 
 private:
 };

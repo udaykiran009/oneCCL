@@ -32,6 +32,8 @@ public:
             : base(other.device, other.cmd_list),
               comm{ other.comm } {}
 
+    cmd_list_proxy& operator=(const cmd_list_proxy& other) = delete;
+
     void append_kernel(ze_kernel_handle_t handle, ze_group_count_t* launch_args);
     bool close_and_execute(std::shared_ptr<ccl_context> ctx, ze_fence_handle_t fence);
     void reset();
@@ -52,6 +54,7 @@ public:
               comm{ comm } {}
 
     fence_proxy(const fence_proxy& other) : base{ other.device, other.fence }, comm{ other.comm } {}
+    fence_proxy& operator=(const fence_proxy& other) = delete;
 
     void reset();
 

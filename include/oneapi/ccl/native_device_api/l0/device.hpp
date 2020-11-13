@@ -52,6 +52,7 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
 
     ccl_device(handle_t h, owner_ptr_t&& parent, std::weak_ptr<ccl_context_holder>&& ctx);
     ccl_device(const ccl_device& src) = delete;
+    ccl_device& operator=(const ccl_device& src) = delete;
     virtual ~ccl_device();
 
     static const ze_command_queue_desc_t& get_default_queue_desc();

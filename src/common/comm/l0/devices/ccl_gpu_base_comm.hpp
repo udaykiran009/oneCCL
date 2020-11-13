@@ -44,6 +44,8 @@ public:
             : device{ other.device },
               cmd_list{ other.cmd_list } {}
 
+    cmd_list_proxy_base& operator=(const cmd_list_proxy_base& other) = delete;
+
     ze_command_list_handle_t get();
     ze_command_list_handle_t* get_ptr();
 
@@ -65,6 +67,8 @@ public:
     fence_proxy_base(const fence_proxy_base& other)
             : device{ other.device },
               fence{ other.fence } {}
+
+    fence_proxy_base& operator=(const fence_proxy_base& other) = delete;
 
     ze_fence_handle_t get() const;
 

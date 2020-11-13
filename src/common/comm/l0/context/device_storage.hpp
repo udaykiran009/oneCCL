@@ -68,6 +68,7 @@ struct device_storage {
                 : lock(mutex),
                   inner_data(storage) {}
         accessor(accessor&& src) = default;
+        accessor& operator=(accessor&& src) = delete;
 
         specific_indexed_device_storage& get() {
             return inner_data;
