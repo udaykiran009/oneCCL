@@ -814,7 +814,7 @@ static atl_status_t atl_ofi_try_to_drain_cq_err(struct fid_cq* cq) {
 }
 
 static int atl_ofi_try_to_drain_cq(struct fid_cq* cq) {
-    int ret, i;
+    int ret = -FI_EAGAIN, i;
     double time = 0;
     clock_t start, end;
     struct fi_cq_tagged_entry entries[ATL_OFI_CQ_BUNCH_SIZE];
