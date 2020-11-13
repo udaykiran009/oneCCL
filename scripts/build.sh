@@ -103,7 +103,9 @@ set_default_values()
     ENABLE_BUILD_CPU="no"
     ENABLE_BUILD_GPU="no"
     ENABLE_INSTALL="no"
-    MAKE_JOB_COUNT=16
+    CORE_COUNT=$(( $(lscpu | grep "^Socket(s):" | awk '{print $2}' ) * $(lscpu | grep "^Core(s) per socket:" | awk '{print $4}') ))
+	# 4 because of nuc has 4 core only
+    MAKE_JOB_COUNT=$(( CORE_COUNT / 3 > 4 ? CORE_COUNT / 3 : 4 ))
 }
 #==============================================================================
 #                                Functions

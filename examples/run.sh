@@ -558,7 +558,8 @@ esac
 if [[ ! -z ${2} ]]
 then
     SCOPE=${2}
-    if [[ ${SCOPE} -ne "pr" ]]
+    echo "SCOPE:" $SCOPE
+    if [[ ${SCOPE} != "pr" ]]
     then
         print_help
     fi
