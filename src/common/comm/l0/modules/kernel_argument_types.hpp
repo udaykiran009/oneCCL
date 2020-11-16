@@ -39,6 +39,10 @@ template <size_t pos, class type, class options = options::empty>
 using thread_exchangable_arg =
     kernel_arg<pos, arg_access_policy_atomic_reset<pos, type, false>, options>;
 
+// external argument using uncached flag and reset policy
+template <size_t pos, class type, class options = options::uncached>
+using external_arg = kernel_arg<pos, arg_access_policy_atomic_reset<pos, type, false>, options>;
+
 // default, single threaded access argument
 template <size_t pos, class type, class options = options::empty>
 using arg = kernel_arg<pos, arg_access_policy_default<pos, type>, options>;

@@ -13,10 +13,10 @@ struct ring_allgatherv_kernel
               thread_exchangable_arg<main_kernel_args::args_start_index + 4,
                                      native_type*>, // recv_buf
               arg<main_kernel_args::args_start_index + 5, native_type*>, // right_output_buffer
-              thread_exchangable_arg<main_kernel_args::args_start_index + 6,
-                                     int*>, // left_wrote_to_me_flag
-              thread_exchangable_arg<main_kernel_args::args_start_index + 7,
-                                     int*>, // i_ready_to_receive_flag
+              external_arg<main_kernel_args::args_start_index + 6,
+                           int*>, // left_wrote_to_me_flag
+              external_arg<main_kernel_args::args_start_index + 7,
+                           int*>, // i_ready_to_receive_flag
               thread_exchangable_arg<main_kernel_args::args_start_index + 8,
                                      int*>, // i_send_to_right_flag
               thread_exchangable_arg<main_kernel_args::args_start_index + 9,
@@ -56,13 +56,11 @@ struct ring_allgatherv_kernel
     using right_output_buf_arg_type = typename right_output_buf_arg::arg_type;
 
     // left_wrote_to_me_flag
-    using income_data_flag_arg =
-        thread_exchangable_arg<main_kernel_args::args_start_index + 6, int*>;
+    using income_data_flag_arg = external_arg<main_kernel_args::args_start_index + 6, int*>;
     using income_data_flag_arg_type = typename income_data_flag_arg::arg_type;
 
     // i_ready_to_receive_flag
-    using ready_to_recv_flag_arg =
-        thread_exchangable_arg<main_kernel_args::args_start_index + 7, int*>;
+    using ready_to_recv_flag_arg = external_arg<main_kernel_args::args_start_index + 7, int*>;
     using ready_to_recv_flag_arg_type = typename ready_to_recv_flag_arg::arg_type;
 
     // i_send_to_right_flag

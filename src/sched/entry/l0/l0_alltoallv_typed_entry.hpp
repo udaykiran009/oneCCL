@@ -76,27 +76,28 @@ public:
                    send_buf,
                    ccl::native_type_info<native_type>::dtype,
                    device_stream),
-              temp_buffer(parent_communicator->get_device().template alloc_memory<native_type>(
-                  512,
-                  sizeof(native_type),
-                  get_ctx())),
+              temp_buffer(
+                  this->template alloc_memory_wrap(typename kernel_main_typed::tmp_recv_buf_arg{},
+                                                   parent_communicator,
+                                                   512,
+                                                   get_ctx())),
               // left_wrote_to_me_flag
-              income_data_flag(parent_communicator->get_device()
-                                   .template alloc_memory<income_data_flag_gpu_type>(
-                                       1,
-                                       sizeof(income_data_flag_gpu_type),
-                                       get_ctx())),
+              income_data_flag(this->template alloc_memory_wrap(
+                  typename kernel_main_typed::income_data_flag_arg{},
+                  parent_communicator,
+                  1,
+                  get_ctx())),
               // ready_to_recv_flag_arg
-              ready_to_recv_flag(parent_communicator->get_device()
-                                     .template alloc_memory<ready_to_recv_flag_gpu_type>(
-                                         1,
-                                         sizeof(ready_to_recv_flag_gpu_type),
-                                         get_ctx())),
-              proxy_size_flag_entry(
-                  parent_communicator->get_device().template alloc_memory<proxy_size_flag_gpu_type>(
-                      1,
-                      sizeof(proxy_size_flag_gpu_type),
-                      get_ctx())),
+              ready_to_recv_flag(this->template alloc_memory_wrap(
+                  typename kernel_main_typed::ready_to_recv_flag_arg{},
+                  parent_communicator,
+                  1,
+                  get_ctx())),
+              proxy_size_flag_entry(this->template alloc_memory_wrap(
+                  typename kernel_main_typed::proxy_size_flag_arg{},
+                  parent_communicator,
+                  1,
+                  get_ctx())),
               recv_counts_buf(parent_communicator->get_device()
                                   .template alloc_memory<recv_counts_typed_entry_type>(
                                       512,

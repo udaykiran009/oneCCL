@@ -8,8 +8,8 @@ struct ring_bcast_kernel
               ring_bcast_kernel<native_type>,
               arg<main_kernel_args::args_start_index, size_t>,
               thread_exchangable_arg<main_kernel_args::args_start_index + 1, native_type*>,
-              thread_exchangable_arg<main_kernel_args::args_start_index + 2, int*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 3, int*>,
+              external_arg<main_kernel_args::args_start_index + 2, int*>,
+              external_arg<main_kernel_args::args_start_index + 3, int*>,
               arg<main_kernel_args::args_start_index + 4, int*>,
               thread_exchangable_arg<main_kernel_args::args_start_index + 5, native_type*>,
               thread_exchangable_arg<main_kernel_args::args_start_index + 6, int*>,
@@ -30,11 +30,10 @@ struct ring_bcast_kernel
     using common_entry_buf_arg = buf_arg;
     using buf_arg_type = typename buf_arg::arg_type;
 
-    using income_data_flag_arg =
-        thread_exchangable_arg<main_kernel_args::args_start_index + 2, int*>;
+    using income_data_flag_arg = external_arg<main_kernel_args::args_start_index + 2, int*>;
     using income_data_flag_arg_type = typename income_data_flag_arg::arg_type;
 
-    using ready_to_recv_flag_arg = thread_safe_arg<main_kernel_args::args_start_index + 3, int*>;
+    using ready_to_recv_flag_arg = external_arg<main_kernel_args::args_start_index + 3, int*>;
     using ready_to_recv_flag_arg_type = typename ready_to_recv_flag_arg::arg_type;
 
     using local_barrier_flag_arg = arg<main_kernel_args::args_start_index + 4, int*>;

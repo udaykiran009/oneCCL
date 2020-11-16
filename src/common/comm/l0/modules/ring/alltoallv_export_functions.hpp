@@ -12,16 +12,16 @@ struct ring_alltoallv_kernel
               arg<main_kernel_args::args_start_index + 3, size_t*>, // recv_elem_offsets_buf
               arg<main_kernel_args::args_start_index + 4, native_type*>, // send_buf
               arg<main_kernel_args::args_start_index + 5, native_type*>, // recv_buf
-              thread_exchangable_arg<main_kernel_args::args_start_index + 6,
-                                     native_type*>, // tmp_buffer
+              external_arg<main_kernel_args::args_start_index + 6,
+                           native_type*>, // tmp_buffer
               thread_exchangable_arg<main_kernel_args::args_start_index + 7,
                                      native_type*>, // right_temp_buffer
-              thread_exchangable_arg<main_kernel_args::args_start_index + 8,
-                                     int*>, // left_wrote_to_me_flag
-              thread_exchangable_arg<main_kernel_args::args_start_index + 9,
-                                     int*>, // i_ready_to_receive_flag
-              thread_exchangable_arg<main_kernel_args::args_start_index + 10,
-                                     int*>, // proxy_size_flag
+              external_arg<main_kernel_args::args_start_index + 8,
+                           int*>, // left_wrote_to_me_flag
+              external_arg<main_kernel_args::args_start_index + 9,
+                           int*>, // i_ready_to_receive_flag
+              external_arg<main_kernel_args::args_start_index + 10,
+                           int*>, // proxy_size_flag
               thread_exchangable_arg<main_kernel_args::args_start_index + 11,
                                      int*>, // i_send_to_right_flag
               thread_exchangable_arg<main_kernel_args::args_start_index + 12,
@@ -62,8 +62,7 @@ struct ring_alltoallv_kernel
     using recv_buf_arg_type = typename recv_buf_arg::arg_type;
 
     // tmp_buffer
-    using tmp_recv_buf_arg =
-        thread_exchangable_arg<main_kernel_args::args_start_index + 6, processing_type*>;
+    using tmp_recv_buf_arg = external_arg<main_kernel_args::args_start_index + 6, processing_type*>;
     using tmp_recv_buf_arg_type = typename tmp_recv_buf_arg::arg_type;
 
     // right_temp_buffer
@@ -72,18 +71,15 @@ struct ring_alltoallv_kernel
     using right_tmp_recv_buf_arg_type = typename right_tmp_recv_buf_arg::arg_type;
 
     // left_wrote_to_me_flag
-    using income_data_flag_arg =
-        thread_exchangable_arg<main_kernel_args::args_start_index + 8, int*>;
+    using income_data_flag_arg = external_arg<main_kernel_args::args_start_index + 8, int*>;
     using income_data_flag_arg_type = typename income_data_flag_arg::arg_type;
 
     // i_ready_to_receive_flag
-    using ready_to_recv_flag_arg =
-        thread_exchangable_arg<main_kernel_args::args_start_index + 9, int*>;
+    using ready_to_recv_flag_arg = external_arg<main_kernel_args::args_start_index + 9, int*>;
     using ready_to_recv_flag_arg_type = typename ready_to_recv_flag_arg::arg_type;
 
     // proxy_size_flag
-    using proxy_size_flag_arg =
-        thread_exchangable_arg<main_kernel_args::args_start_index + 10, int*>;
+    using proxy_size_flag_arg = external_arg<main_kernel_args::args_start_index + 10, int*>;
     using proxy_size_flag_arg_type = typename proxy_size_flag_arg::arg_type;
 
     // i_send_to_right_flag
