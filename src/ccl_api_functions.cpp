@@ -81,6 +81,9 @@ void register_gpu_module(std::string kernel_dir_path) {
     // register_gpu_module_source(kernel_path.c_str(),
     //                            ccl::device_topology_type::a2a,
     //                            ccl_coll_reduce);
+    kernel_path = kernel_dir_path + "ring_reduce_scatter.spv";
+    register_gpu_module_source(
+        kernel_path.c_str(), ccl::device_topology_type::ring, ccl_coll_reduce_scatter);
 }
 #endif //MULTI_GPU_SUPPORT
 

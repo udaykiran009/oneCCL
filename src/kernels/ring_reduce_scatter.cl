@@ -346,3 +346,46 @@ DEFINE_KERNELS_WITH_OP(add)
 DEFINE_KERNELS_WITH_OP(mult)
 DEFINE_KERNELS_WITH_OP(min)
 DEFINE_KERNELS_WITH_OP(max)
+
+// numa
+// TODO: vecsize
+#define DEFINE_KERNEL_NUMA(Name, T, Op, OpName) \
+    __kernel void reduce_scatter_execution_numa_##Name##_##OpName( \
+        int my_rank, \
+        int comm_size, \
+        size_t elems_count, /* recv_count */ \
+        const __global T* input_buffer, \
+        __global T* output_buffer, \
+\
+        __global T* tmp_buffer, \
+        __global volatile int* left_wrote_to_me_flag, \
+        __global volatile int* i_ready_to_receive_flag, \
+\
+        __global volatile int* local_barrier_flag, \
+\
+        __global T* right_output_buffer, \
+        __global T* right_temp_buffer, \
+\
+        __global volatile int* i_send_to_right_flag, \
+        __global volatile int* right_ready_to_recv_flag) { \
+        return; \
+    }
+
+DEFINE_KERNEL_NUMA(int8, char4, __add_char4, add)
+DEFINE_KERNEL_NUMA(uint8, uchar4, __add_uchar4, add)
+
+DEFINE_KERNEL_NUMA(int16, short4, __add_short4, add)
+DEFINE_KERNEL_NUMA(uint16, ushort4, __add_ushort4, add)
+
+DEFINE_KERNEL_NUMA(int32, int4, __add_int4, add)
+DEFINE_KERNEL_NUMA(uint32, uint4, __add_uint4, add)
+
+DEFINE_KERNEL_NUMA(int64, long4, __add_long4, add)
+DEFINE_KERNEL_NUMA(uint64, ulong4, __add_ulong4, add)
+
+// TODO: implement support for missing types
+DEFINE_KERNEL_NUMA(float16, float16, __add_float16, add)
+DEFINE_KERNEL_NUMA(float32, float4, __add_float4, add)
+DEFINE_KERNEL_NUMA(float64, double4, __add_double4, add)
+
+DEFINE_KERNEL_NUMA(bfloat16, ushort, __add_ushort, add)

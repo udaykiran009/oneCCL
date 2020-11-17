@@ -244,7 +244,7 @@ TYPED_TEST(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single
                 }
                 out << std::endl;
 
-                // bindleft_wrote_2_me_flag, ready_for_receive_flag, local_barrier_flag
+                // bind left_wrote_2_me_flag, ready_for_receive_flag, local_barrier_flag
                 i = 0;
                 std::array<int, flag_group_count * 2> flag_offset{ 6, 7, 8, 11, 12, -1 };
                 //UT_ASSERT(flag_offset.size() == flag_handles.size(), "flag_offset != flag_handles");

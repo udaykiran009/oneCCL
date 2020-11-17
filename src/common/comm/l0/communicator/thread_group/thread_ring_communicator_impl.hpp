@@ -490,9 +490,62 @@ ccl::event thread_device_group_ring_communicator::reduce_scatter_impl(
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    using namespace native;
+
+    static constexpr ccl::group_split_type group_id = base_t::topology_type();
+    static constexpr ccl::device_topology_type class_id = base_t::topology_class();
+
+    if (!is_ready()) {
+        throw ccl::exception(std::string(
+            "Device communicator for group_id: " + ::to_string(group_id) +
+            " is not ready yet. Not all сommunicators are created in group. Please create them before usage"));
+    }
+
+    int comm_rank = rank();
+    size_t ring_index = 0;
+    LOG_DEBUG("communicator for device idx: ",
+              get_device_path(),
+              ", rank idx: ",
+              comm_rank,
+              ", ring_index :",
+              ring_index);
+
+    //TODO make const!
+    ccl_buffer send_entry_buffer(const_cast<buffer_type**>(&send_buf),
+                                 recv_count * sizeof(buffer_type),
+                                 0,
+                                 ccl_buffer_type::INDIRECT);
+    ccl_buffer recv_entry_buffer(
+        &recv_buf, recv_count * sizeof(buffer_type), 0, ccl_buffer_type::INDIRECT);
+
+    using community_t = typename device_community_container<class_id>::element_type;
+    community_t community = device_community_impl.get_topology(ring_index);
+
+    communication_thread_device_expander<buffer_type,
+                                         group_id,
+                                         class_id,
+                                         l0_reduce_scatter_typed_entry>
+        expander;
+    ccl_tuple_for_each_args(communication_device,
+                            expander,
+                            ctx,
+                            community,
+                            thread_id,
+                            this->get_native_context(),
+                            send_entry_buffer,
+                            recv_entry_buffer,
+                            recv_count,
+                            reduction,
+                            stream);
+    //if sched is not ready - send NULL
+    if (expander.schedule) {
+        LOG_DEBUG("Device group finalized");
+    }
+
+    return std::unique_ptr<ccl::event_impl>(
+        new ccl::gpu_shared_event_impl(std::move(expander.schedule)));
 }
+
 template <class buffer_type>
 ccl::event thread_device_group_ring_communicator::reduce_scatter_impl(
     const buffer_type& send_buf,

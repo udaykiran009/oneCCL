@@ -16,6 +16,7 @@
 #include "common/comm/l0/modules/ring/alltoallv_entry_module.hpp"
 #include "common/comm/l0/modules/ring/bcast_entry_module.hpp"
 #include "common/comm/l0/modules/ring/reduce_entry_module.hpp"
+#include "common/comm/l0/modules/ring/reduce_scatter_entry_module.hpp"
 
 #include "common/comm/l0/modules/a2a/allreduce_module.hpp"
 #include "common/comm/l0/modules/supported_modules.hpp"

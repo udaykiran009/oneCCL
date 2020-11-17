@@ -274,10 +274,20 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
         std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs));
         std::shared_ptr<atl_wrapper> atl = std::shared_ptr<atl_wrapper>(
             new atl_wrapper(cluster_devices_size, { rank }, kvs_wrapper));
+
+        ccl::comm_split_attr attr = preview::create_comm_split_attr(
+            ccl::attr_val<ccl::comm_split_attr_id::group>(ccl::group_split_type::undetermined));
+
         ccl::communicator_interface_ptr impl =
             ccl::communicator_interface::create_communicator_impl(
-                device, context, rank, cluster_devices_size, attr, preview::create_comm_split_attr(),
-                atl, ccl::group_split_type::undetermined);
+                device,
+                context,
+                rank,
+                cluster_devices_size,
+                attr,
+                preview::create_comm_split_attr(),
+                atl,
+                ccl::group_split_type::undetermined);
 
         //TODO use gpu_comm_attr to automatically visit()
         //auto single_dev_comm = std::dynamic_pointer_cast<single_device_communicator>(impl);
@@ -307,7 +317,6 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
         [](const typename vector_class<pair_class<int, DeviceType>>::value_type& val) {
             return val.second;
         });
-
     if ()
     auto ret = thread_group->create_communicators_group(local_thread_devices);
     return ret;
