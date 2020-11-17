@@ -284,7 +284,6 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
                 context,
                 rank,
                 cluster_devices_size,
-                attr,
                 preview::create_comm_split_attr(),
                 atl,
                 ccl::group_split_type::undetermined);
