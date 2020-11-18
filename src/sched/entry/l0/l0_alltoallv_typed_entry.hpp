@@ -153,34 +153,7 @@ public:
             l0_alltoallv_typed_entry<native_type, gpu_comm_impl, topology>>(
             *this, next_rank, available_devices);
 
-        //TODO L0 workaround
-        //if(std::is_same<gpu_comm_impl::type_idx() ==, ccl_gpu_comm>::value)
-        if (gpu_comm_impl::type_idx() == ccl_gpu_comm::type_idx()) {
-            wait_count = reinterpret_cast<ccl_gpu_comm*>(parent_communicator.get())
-                             ->get_virtual_gpu_count() +
-                         1 /*+ own*/;
-        }
-        else if (gpu_comm_impl::type_idx() == ccl_ipc_source_gpu_comm<ccl_gpu_comm>::type_idx()) {
-            wait_count =
-                reinterpret_cast<ccl_ipc_source_gpu_comm<ccl_gpu_comm>*>(parent_communicator.get())
-                    ->get_impl()
-                    .get_virtual_gpu_count() +
-                1 /*+ own*/;
-        }
-        {
-            std::unique_lock<std::mutex> lock(global_mutex);
-            registered_thread.insert(std::this_thread::get_id());
-        }
-
-        //remember list_closed event index
-        list_closed_epoch_id = list_closed_epoch.load();
-
-        ENTRY_LOG_DEBUG("Created, next_rank:",
-                        next_rank,
-                        " ,WaitCount: ",
-                        wait_count.load(),
-                        ", ListClosedEpoch: ",
-                        list_closed_epoch_id);
+        ENTRY_LOG_DEBUG("Init phase of current entry for ext_rank:", next_rank);
 
         // Once we filled our local parameters, we go wait for another entry to set its
         // parameters so we can use them
@@ -377,8 +350,5 @@ public:
         }*/
         return is_right_kernel_ready;
     }
-
-    size_t list_closed_epoch_id = 0;
-    size_t kernel_bind_epoch_id = 0;
 };
 } // namespace native

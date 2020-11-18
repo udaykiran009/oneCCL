@@ -6,16 +6,6 @@
 #include "sched/entry/l0/l0_entry.hpp"
 #include "common/comm/l0/context/scaling_ctx/ipc_ctx_impl.hpp"
 
-// TODO: These global variables are not really needed anymore by allreduce entry, but they
-// still used by others, so once the other entries are refactored we can remove these.
-//TODO L0 Workaround
-static std::mutex global_mutex;
-static std::atomic<size_t> exec_count{};
-static std::atomic<size_t> wait_count{};
-static std::set<std::thread::id> registered_thread;
-
-static std::atomic<size_t> list_closed_epoch{};
-
 namespace native {
 template <class native_type, class gpu_comm_impl, ccl::group_split_type topology>
 class l0_allreduce_typed_entry : public base_gpu_entry<native_type,
@@ -106,7 +96,7 @@ public:
             l0_allreduce_typed_entry<native_type, gpu_comm_impl, topology>>(
             *this, next_rank, available_devices);
 
-        ENTRY_LOG_DEBUG("Created, next_rank:", next_rank);
+        ENTRY_LOG_DEBUG("Init phase of current entry for ext_rank:", next_rank);
 
         this->set_state(gpu_entry_state::created);
     }
