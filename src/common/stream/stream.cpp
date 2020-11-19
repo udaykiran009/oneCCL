@@ -3,7 +3,6 @@
 #include "common/stream/stream.hpp"
 #include "common/stream/stream_provider_dispatcher_impl.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
-#include "unified_context_impl.hpp"
 
 ccl_stream::ccl_stream(stream_type type,
                        stream_native_t& stream,

@@ -12,16 +12,15 @@
 #include "oneapi/ccl/native_device_api/l0/context.hpp"
 #include "oneapi/ccl/native_device_api/l0/platform.hpp"
 
-#include <sys/syscall.h>
-#include <unistd.h>
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 
 namespace native {
 namespace detail {
-CCL_API void copy_memory_to_device_sync_unsafe(void* dst,
-                                               const void* src,
-                                               size_t size,
-                                               std::weak_ptr<ccl_device> device_weak,
-                                               std::shared_ptr<ccl_context> ctx) {
+CCL_BE_API void copy_memory_to_device_sync_unsafe(void* dst,
+                                                  const void* src,
+                                                  size_t size,
+                                                  std::weak_ptr<ccl_device> device_weak,
+                                                  std::shared_ptr<ccl_context> ctx) {
     //TODO: NOT THREAD-SAFE!!!
     std::shared_ptr<ccl_device> device = device_weak.lock();
     if (!device) {
@@ -93,54 +92,6 @@ std::string get_build_log_string(const ze_module_build_log_handle_t& build_log) 
         throw std::runtime_error("xeModuleBuildLogGetString failed: " + to_string(result));
     }
     return std::string(build_log_c_string.begin(), build_log_c_string.end());
-}
-
-void relink_ipc_descriptor_impl(
-    void* handle_ptr,
-    size_t handle_ptr_bytes,
-    const std::shared_ptr<ccl_device_platform>& received_process_platform,
-    const std::shared_ptr<ccl_device_platform>& send_process_platform) {
-    if (!handle_ptr or handle_ptr_bytes == 0) {
-        return;
-    }
-
-    pid_t* pid_ptr = reinterpret_cast<pid_t*>(handle_ptr);
-    if (send_process_platform->get_pid() == received_process_platform->get_pid()) {
-        //in the same process, nothing to do
-        return;
-    }
-    /*
-    int fd = syscall(pidfd_getfd, send_process_platform->get_pid(), *pid_ptr, 0);
-    if (fd == -1)
-    {
-        std::stringstream ss;
-        ss << __PRETTY_FUNCTION__ << " - cannot relint received IPC handle: " << handle_ptr << ". Error: " << strerror(errno);
-        throw std::runtime_error(ss.str());
-    }
-
-    //relink FDs
-    *pid_ptr = fd;
-*/
-    char buf[PATH_MAX];
-    snprintf(buf, PATH_MAX, "/proc/%d/fd/%d", send_process_platform->get_pid(), *pid_ptr);
-    int fd = open(buf, O_CLOEXEC | O_DIRECT /*| O_DSYNC| O_SYNC */ | O_RDWR, S_IRWXU);
-    if (fd == -1) {
-        std::stringstream ss;
-        ss << __PRETTY_FUNCTION__ << " - cannot open received IPC handle: " << handle_ptr
-           << " by path: " << buf << ". Error: " << strerror(errno);
-        throw std::runtime_error(ss.str());
-    }
-    /*
-    int dup_fd = dup(fd);
-    if (dup_fd == -1) {
-        std::stringstream ss;
-        ss << __PRETTY_FUNCTION__ << " - cannot duplicate received IPC handle: " << handle_ptr << " by path: "
-           << buf << ". Error: " << strerror(errno);
-        throw std::runtime_error(ss.str());
-    }
-*/
-    //relink FDs
-    *pid_ptr = fd;
 }
 
 bool command_queue_desc_comparator::operator()(const ze_command_queue_desc_t& lhs,

@@ -7,6 +7,7 @@
 #include "oneapi/ccl/native_device_api/l0/subdevice.hpp"
 #include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 namespace native {
 
 uint32_t get_subdevice_properties_from_handle(ccl_device::handle_t handle) {
@@ -23,7 +24,7 @@ uint32_t get_subdevice_properties_from_handle(ccl_device::handle_t handle) {
     return device_properties.subdeviceId;
 }
 
-CCL_API
+CCL_BE_API
 std::shared_ptr<ccl_subdevice> ccl_subdevice::create(handle_t handle,
                                                      owner_ptr_t&& device,
                                                      base::owner_ptr_t&& driver) {
@@ -33,7 +34,7 @@ std::shared_ptr<ccl_subdevice> ccl_subdevice::create(handle_t handle,
     return subdevice;
 }
 
-CCL_API
+CCL_BE_API
 ccl_subdevice::indexed_handles ccl_subdevice::get_handles(
     const ccl_device& device,
     const ccl::device_indices_type& requested_indices) {
@@ -94,7 +95,7 @@ void ccl_subdevice::initialize_subdevice_data() {
     }
 }
 
-CCL_API
+CCL_BE_API
 ccl_subdevice::ccl_subdevice(handle_t h,
                              owner_ptr_t&& device,
                              base::owner_ptr_t&& driver,
@@ -103,7 +104,7 @@ ccl_subdevice::ccl_subdevice(handle_t h,
         : base(h, std::move(driver), std::move(ctx), std::false_type{}),
           parent_device(std::move(device)) {}
 
-CCL_API
+CCL_BE_API
 ccl_subdevice::ccl_subdevice(handle_t h,
                              owner_ptr_t&& device,
                              base::owner_ptr_t&& driver,
@@ -114,7 +115,7 @@ ccl_subdevice::ccl_subdevice(handle_t h,
     initialize_subdevice_data();
 }
 
-CCL_API
+CCL_BE_API
 ccl_subdevice::~ccl_subdevice() {
     //TODO think about orphant device
 
@@ -127,19 +128,19 @@ ccl_subdevice::~ccl_subdevice() {
     }
 }
 
-CCL_API
+CCL_BE_API
 bool ccl_subdevice::is_subdevice() const noexcept {
     return true;
 }
 
-CCL_API
-ccl::index_type CCL_API ccl_subdevice::get_device_id() const {
+CCL_BE_API
+ccl::index_type CCL_BE_API ccl_subdevice::get_device_id() const {
     assert((device_properties.flags & ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE) && "Must be subdevice");
     return device_properties.subdeviceId;
 }
 
-CCL_API
-ccl::device_index_type CCL_API ccl_subdevice::get_device_path() const {
+CCL_BE_API
+ccl::device_index_type CCL_BE_API ccl_subdevice::get_device_path() const {
     const auto device = parent_device.lock();
     if (!device) {
         throw std::runtime_error("cannot get get_device_path() because ccl_subdevice has no owner");
@@ -150,7 +151,7 @@ ccl::device_index_type CCL_API ccl_subdevice::get_device_path() const {
     return suddevice_path;
 }
 
-CCL_API
+CCL_BE_API
 std::string ccl_subdevice::to_string(const std::string& prefix) const {
     std::stringstream ss;
     ss << prefix << "SubdDevice: " << handle << std::endl;
@@ -158,7 +159,7 @@ std::string ccl_subdevice::to_string(const std::string& prefix) const {
     return ss.str();
 }
 
-CCL_API
+CCL_BE_API
 size_t ccl_subdevice::serialize(std::vector<uint8_t>& out,
                                 size_t from_pos,
                                 size_t expected_size) const {
@@ -180,7 +181,7 @@ size_t ccl_subdevice::serialize(std::vector<uint8_t>& out,
     return serialized_bytes;
 }
 
-CCL_API
+CCL_BE_API
 std::weak_ptr<ccl_subdevice> ccl_subdevice::deserialize(
     const uint8_t** data,
     size_t& size,
@@ -220,7 +221,7 @@ std::weak_ptr<ccl_subdevice> ccl_subdevice::deserialize(
     return it->second;
 }
 
-CCL_API
+CCL_BE_API
 std::ostream& operator<<(std::ostream& out, const ccl_subdevice& node) {
     out << "SubDevice: " << node.handle << "\n"
         << "parent device: "

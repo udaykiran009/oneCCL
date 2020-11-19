@@ -5,6 +5,8 @@
 #include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 #include "oneapi/ccl/native_device_api/l0/platform.hpp"
 
+#include "oneapi/ccl/native_device_api/export_api.hpp"
+
 #ifndef gettid
 #include <sys/syscall.h>
 #include <sys/types.h>
@@ -20,16 +22,16 @@ struct once_init {
     std::shared_ptr<ccl_device_platform> platform_impl;
 };
 
-CCL_API ccl_device_platform::driver_ptr get_driver(size_t index) {
+CCL_BE_API ccl_device_platform::driver_ptr get_driver(size_t index) {
     return get_platform().get_driver(index);
 }
 
-CCL_API ccl_device_platform& get_platform() {
+CCL_BE_API ccl_device_platform& get_platform() {
     static once_init init;
     return *init.platform_impl;
 }
 
-CCL_API std::shared_ptr<ccl_device_platform> ccl_device_platform::create(
+CCL_BE_API std::shared_ptr<ccl_device_platform> ccl_device_platform::create(
     const ccl::device_indices_type& indices /* = device_indices_per_driver()*/) {
     std::shared_ptr<ccl_device_platform> platform(
         new ccl_device_platform(indices.size() /*platform ID by devices count*/));
@@ -37,14 +39,14 @@ CCL_API std::shared_ptr<ccl_device_platform> ccl_device_platform::create(
     return platform;
 }
 /*
-CCL_API std::shared_ptr<ccl_device_platform> ccl_device_platform::create(const device_affinity_per_driver& affinities)
+CCL_BE_API std::shared_ptr<ccl_device_platform> ccl_device_platform::create(const device_affinity_per_driver& affinities)
 {
     std::shared_ptr<ccl_device_platform> platform(new ccl_device_platform);
     platform->init_drivers(affinities);
     return platform;
 }
 */
-CCL_API ccl_device_platform::ccl_device_platform(platform_id_type platform_id) {
+CCL_BE_API ccl_device_platform::ccl_device_platform(platform_id_type platform_id) {
     // initialize Level-Zero driver
     ze_result_t ret = zeInit(ZE_INIT_FLAG_GPU_ONLY);
     if (ret != ZE_RESULT_SUCCESS) {
@@ -57,7 +59,7 @@ CCL_API ccl_device_platform::ccl_device_platform(platform_id_type platform_id) {
     pid = getpid();
 }
 /*
-CCL_API void ccl_device_platform::init_drivers(const device_affinity_per_driver& driver_device_affinities)
+CCL_BE_API void ccl_device_platform::init_drivers(const device_affinity_per_driver& driver_device_affinities)
 {
     //collect driver indices
     ccl::device_mask_t driver_indices;
@@ -83,7 +85,7 @@ CCL_API void ccl_device_platform::init_drivers(const device_affinity_per_driver&
     }
 }
 */
-CCL_API void ccl_device_platform::init_drivers(
+CCL_BE_API void ccl_device_platform::init_drivers(
     const ccl::device_indices_type& driver_device_affinities /* = device_indices_per_driver()*/) {
     /* TODO - do we need that?
 
@@ -149,26 +151,26 @@ CCL_API void ccl_device_platform::init_drivers(
     }
 }
 
-CCL_API
+CCL_BE_API
 ccl_device_platform::context_storage_type ccl_device_platform::get_platform_contexts() {
     return context;
 }
 
-std::shared_ptr<ccl_context> ccl_device_platform::create_context(
+CCL_BE_API std::shared_ptr<ccl_context> ccl_device_platform::create_context(
     std::shared_ptr<ccl_device_driver> driver) {
     return driver->create_context();
 }
 
-void CCL_API ccl_device_platform::on_delete(ze_driver_handle_t& sub_device_handle,
-                                            ze_context_handle_t& context) {
+void CCL_BE_API ccl_device_platform::on_delete(ze_driver_handle_t& sub_device_handle,
+                                               ze_context_handle_t& context) {
     // status = zeContextDestroy(context);
     // assert(status == ZE_RESULT_SUCCESS);
 }
 
-void CCL_API ccl_device_platform::on_delete(ze_context_handle_t& handle,
-                                            ze_context_handle_t& context) {}
+void CCL_BE_API ccl_device_platform::on_delete(ze_context_handle_t& handle,
+                                               ze_context_handle_t& context) {}
 
-CCL_API ccl_device_platform::const_driver_ptr ccl_device_platform::get_driver(
+CCL_BE_API ccl_device_platform::const_driver_ptr ccl_device_platform::get_driver(
     ccl::index_type index) const {
     auto it = drivers.find(index);
     if (it == drivers.end()) {
@@ -178,7 +180,7 @@ CCL_API ccl_device_platform::const_driver_ptr ccl_device_platform::get_driver(
     return it->second;
 }
 
-CCL_API ccl_device_platform::driver_ptr ccl_device_platform::get_driver(ccl::index_type index) {
+CCL_BE_API ccl_device_platform::driver_ptr ccl_device_platform::get_driver(ccl::index_type index) {
     auto it = drivers.find(index);
     if (it == drivers.end()) {
         throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
@@ -187,18 +189,18 @@ CCL_API ccl_device_platform::driver_ptr ccl_device_platform::get_driver(ccl::ind
     return it->second;
 }
 
-CCL_API const ccl_device_platform::driver_storage_type& ccl_device_platform::get_drivers()
+CCL_BE_API const ccl_device_platform::driver_storage_type& ccl_device_platform::get_drivers()
     const noexcept {
     return drivers;
 }
 
-CCL_API ccl_device_driver::device_ptr ccl_device_platform::get_device(
+CCL_BE_API ccl_device_driver::device_ptr ccl_device_platform::get_device(
     const ccl::device_index_type& path) {
     return std::const_pointer_cast<ccl_device>(
         static_cast<const ccl_device_platform*>(this)->get_device(path));
 }
 
-CCL_API ccl_device_driver::const_device_ptr ccl_device_platform::get_device(
+CCL_BE_API ccl_device_driver::const_device_ptr ccl_device_platform::get_device(
     const ccl::device_index_type& path) const {
     ccl::index_type driver_idx = std::get<ccl::device_index_enum::driver_index_id>(path);
     auto it = drivers.find(driver_idx);
@@ -211,7 +213,7 @@ CCL_API ccl_device_driver::const_device_ptr ccl_device_platform::get_device(
     return it->second->get_device(path);
 }
 
-std::string CCL_API ccl_device_platform::to_string() const {
+std::string CCL_BE_API ccl_device_platform::to_string() const {
     std::stringstream out;
     out << "Platform:\n{\n";
     std::string driver_prefix = "\t";
@@ -253,15 +255,16 @@ detail::adjacency_matrix ccl_device_platform::calculate_device_access_metric(
     return result;
 }
 
-CCL_API std::shared_ptr<ccl_device_platform> ccl_device_platform::clone(platform_id_type id,
-                                                                        pid_t foreign_pid) const {
+CCL_BE_API std::shared_ptr<ccl_device_platform> ccl_device_platform::clone(
+    platform_id_type id,
+    pid_t foreign_pid) const {
     //TODO make swallow copy
     std::shared_ptr<ccl_device_platform> ret(new ccl_device_platform(id));
     ret->pid = foreign_pid;
     return ret;
 }
 
-CCL_API std::weak_ptr<ccl_device_platform> ccl_device_platform::deserialize(
+CCL_BE_API std::weak_ptr<ccl_device_platform> ccl_device_platform::deserialize(
     const uint8_t** data,
     size_t& size,
     std::shared_ptr<ccl_device_platform>& out_platform) {
@@ -287,9 +290,9 @@ CCL_API std::weak_ptr<ccl_device_platform> ccl_device_platform::deserialize(
     return global_platform.get_ptr();
 }
 
-CCL_API size_t ccl_device_platform::serialize(std::vector<uint8_t>& out,
-                                              size_t from_pos,
-                                              size_t expected_size) const {
+CCL_BE_API size_t ccl_device_platform::serialize(std::vector<uint8_t>& out,
+                                                 size_t from_pos,
+                                                 size_t expected_size) const {
     pid_t src_process_tid = gettid();
     constexpr size_t expected_platform_bytes =
         sizeof(pid) + sizeof(src_process_tid) + sizeof(platform_id_type);
@@ -306,11 +309,11 @@ CCL_API size_t ccl_device_platform::serialize(std::vector<uint8_t>& out,
     return expected_platform_bytes;
 }
 
-CCL_API ccl_device_platform::platform_id_type ccl_device_platform::get_id() const noexcept {
+CCL_BE_API ccl_device_platform::platform_id_type ccl_device_platform::get_id() const noexcept {
     return id;
 }
 
-CCL_API pid_t ccl_device_platform::get_pid() const noexcept {
+CCL_BE_API pid_t ccl_device_platform::get_pid() const noexcept {
     return pid;
 }
 

@@ -1,7 +1,6 @@
 #include "common/comm/compiler_comm_interface_dispatcher.hpp"
 
 #include "common/comm/comm_interface.hpp"
-#include "unified_device_impl.hpp"
 
 #include "oneapi/ccl/types_policy.hpp"
 #include "oneapi/ccl/comm_split_attr_ids.hpp"
@@ -15,6 +14,7 @@
 #include "comm_split_attr_impl.hpp"
 
 #include "common/global/global.hpp"
+//#include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
 #ifdef MULTI_GPU_SUPPORT
 #include "common/comm/l0/communicator/device_group/device_ring_communicator.hpp"
 #include "common/comm/l0/communicator/device_group/device_a2a_communicator.hpp"

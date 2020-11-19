@@ -56,12 +56,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include)
-include_directories(${PROJECT_SOURCE_DIR}/../../examples/include)
-include_directories(${I_MPI_ROOT}/include/)
-include_directories(${CCL_ROOT}/include/${CCL_CONFIGURATION})
-link_directories(${I_MPI_ROOT}/lib/release_mt)
-link_directories(${I_MPI_ROOT}/libfabric/lib)
-link_directories(${CCL_ROOT}/lib/${CCL_CONFIGURATION})
+include_directories(${PROJECT_SOURCE_DIR}/../../examples/include
+                    ${PROJECT_SOURCE_DIR}/include
+                    ${I_MPI_ROOT}/include/
+                    ${CCL_ROOT}/include/${CCL_CONFIGURATION})
+
+link_directories(${I_MPI_ROOT}/lib/release_mt
+                 ${I_MPI_ROOT}/libfabric/lib
+                 ${CCL_ROOT}/lib/${CCL_CONFIGURATION})
 
 if (COMPUTE_RUNTIME)
     activate_compute_runtime("${CCL_ROOT}/lib;${PROJECT_SOURCE_DIR}/../../cmake" ${COMPUTE_RUNTIME})

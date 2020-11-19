@@ -13,7 +13,7 @@
 #include <numeric>
 
 #include "base.hpp"
-#include "base_utils.hpp"
+#include "internal_utils.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
 #define COUNT     512 //(10*1024*1024)
@@ -356,7 +356,7 @@ int main(int argc, char** argv) {
                 for (auto device_vendor_id : device_group_affinity) {
                     devices_for_mpi_rank[thread_index].push_back(
 #ifdef CCL_ENABLE_SYCL
-                        ccl::create_from_index(device_vendor_id).device);
+                        utils::create_device_from_index(device_vendor_id).device);
 #else
                         device_vendor_id);
 #endif

@@ -44,10 +44,4 @@ API_CLASS_TYPE_INFO(typename unified_device_type::ccl_native_t)
 API_CLASS_TYPE_INFO(typename unified_context_type::ccl_native_t);
 API_CLASS_TYPE_INFO(typename unified_stream_type::ccl_native_t);
 API_CLASS_TYPE_INFO(typename unified_event_type::ccl_native_t);
-
-//TMP - matching device index into native device object
-template <class... Args>
-unified_device_type create_from_index(Args&&... args) {
-    return unified_device_type(std::forward<Args>(args)...);
-}
 } // namespace ccl

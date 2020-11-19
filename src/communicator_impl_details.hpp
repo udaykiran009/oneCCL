@@ -161,7 +161,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
                        std::inserter(converted_device_map, converted_device_map.end()),
                        [](const typename map_class<int, ccl::device_index_type>::value_type& val) {
                            return std::make_pair(val.first,
-                                                 ccl::create_from_index(val.second).get());
+                                                 ccl::unified_device_type{ val.second }.get());
                        });
         return create_communicators_selector(cluster_devices_size,
                                              converted_device_map,

@@ -12,6 +12,8 @@
 #include "oneapi/ccl/native_device_api/l0/driver.hpp"
 #include "oneapi/ccl/native_device_api/l0/platform.hpp"
 
+#include "oneapi/ccl/native_device_api/export_api.hpp"
+
 //#include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
 
 namespace native {
@@ -26,11 +28,11 @@ ccl_device_driver::driver_index_type get_driver_properties(ccl_device_driver::ha
     return 0;
 }
 
-ccl_device_driver::context_storage_type ccl_device_driver::get_driver_contexts() {
+CCL_BE_API ccl_device_driver::context_storage_type ccl_device_driver::get_driver_contexts() {
     return get_ctx().lock();
 }
 
-ccl_device_driver::context_storage_type ccl_device_driver::get_driver_contexts() const {
+CCL_BE_API ccl_device_driver::context_storage_type ccl_device_driver::get_driver_contexts() const {
     return get_ctx().lock();
 }
 
@@ -66,7 +68,7 @@ ccl_device_driver::indexed_driver_handles ccl_device_driver::get_handles(
     return ret;
 }
 
-CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
+CCL_BE_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
     handle_t h,
     driver_index_type id,
     owner_ptr_t&& platform,
@@ -87,7 +89,7 @@ CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
     return driver;
 }
 
-CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
+CCL_BE_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
     handle_t h,
     driver_index_type id,
     owner_ptr_t&& platform,
@@ -133,10 +135,10 @@ CCL_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
     return driver;
 }
 
-CCL_API ccl_device_driver::ccl_device_driver(ccl_device_driver::handle_t h,
-                                             driver_index_type id,
-                                             owner_ptr_t&& platform,
-                                             std::weak_ptr<ccl_context_holder>&& ctx)
+CCL_BE_API ccl_device_driver::ccl_device_driver(ccl_device_driver::handle_t h,
+                                                driver_index_type id,
+                                                owner_ptr_t&& platform,
+                                                std::weak_ptr<ccl_context_holder>&& ctx)
         : base(h, std::move(platform), std::move(ctx)),
           driver_id(id) {
     ipc_prop.stype = ZE_STRUCTURE_TYPE_DRIVER_IPC_PROPERTIES;
@@ -147,7 +149,7 @@ CCL_API ccl_device_driver::ccl_device_driver(ccl_device_driver::handle_t h,
     }
 }
 
-CCL_API
+CCL_BE_API
 ze_driver_properties_t ccl_device_driver::get_properties() const {
     ze_driver_properties_t driver_properties{};
     ze_result_t ret = zeDriverGetProperties(handle, &driver_properties);
@@ -158,18 +160,18 @@ ze_driver_properties_t ccl_device_driver::get_properties() const {
     return driver_properties;
 }
 
-CCL_API
+CCL_BE_API
 const ccl_device_driver::devices_storage_type& ccl_device_driver::get_devices() const noexcept {
     return devices;
 }
 
-CCL_API ccl_device_driver::device_ptr ccl_device_driver::get_device(
+CCL_BE_API ccl_device_driver::device_ptr ccl_device_driver::get_device(
     const ccl::device_index_type& path) {
     return std::const_pointer_cast<ccl_device>(
         static_cast<const ccl_device_driver*>(this)->get_device(path));
 }
 
-CCL_API ccl_device_driver::const_device_ptr ccl_device_driver::get_device(
+CCL_BE_API ccl_device_driver::const_device_ptr ccl_device_driver::get_device(
     const ccl::device_index_type& path) const {
     ccl::index_type driver_idx = std::get<ccl::device_index_enum::driver_index_id>(path);
     if (driver_idx != get_driver_id()) {
@@ -197,7 +199,7 @@ CCL_API ccl_device_driver::const_device_ptr ccl_device_driver::get_device(
     return found_device_ptr->get_subdevice(path);
 }
 
-CCL_API ccl::device_mask_t ccl_device_driver::create_device_mask(
+CCL_BE_API ccl::device_mask_t ccl_device_driver::create_device_mask(
     const std::string& str_mask,
     std::ios_base::fmtflags flag /* = std::ios_base::hex*/) {
     std::stringstream ss;
@@ -210,11 +212,11 @@ CCL_API ccl::device_mask_t ccl_device_driver::create_device_mask(
     return ccl::device_mask_t(hex_digit);
 }
 
-CCL_API ccl_device_driver::driver_index_type ccl_device_driver::get_driver_id() const noexcept {
+CCL_BE_API ccl_device_driver::driver_index_type ccl_device_driver::get_driver_id() const noexcept {
     return driver_id;
 }
 
-CCL_API ccl::device_indices_type ccl_device_driver::get_device_indices(
+CCL_BE_API ccl::device_indices_type ccl_device_driver::get_device_indices(
     const ccl::device_mask_t& mask) {
     ccl::device_indices_type ret;
     std::cerr << __PRETTY_FUNCTION__ << " NOT IMPLEMENTED" << std::endl;
@@ -231,7 +233,7 @@ CCL_API ccl::device_indices_type ccl_device_driver::get_device_indices(
     return ret;
 }
 
-CCL_API ccl::device_mask_t ccl_device_driver::get_device_mask(
+CCL_BE_API ccl::device_mask_t ccl_device_driver::get_device_mask(
     const ccl::device_indices_type& device_idx) {
     ccl::device_mask_t ret;
     std::cerr << __PRETTY_FUNCTION__ << " NOT IMPLEMENTED" << std::endl;
@@ -245,7 +247,7 @@ CCL_API ccl::device_mask_t ccl_device_driver::get_device_mask(
     return ret;
 }
 
-CCL_API std::shared_ptr<ccl_context> ccl_device_driver::create_context() {
+CCL_BE_API std::shared_ptr<ccl_context> ccl_device_driver::create_context() {
     ze_result_t status = ZE_RESULT_SUCCESS;
     ze_context_handle_t context;
     ze_context_desc_t context_desc = { ZE_STRUCTURE_TYPE_CONTEXT_DESC, nullptr, 0 };
@@ -259,7 +261,7 @@ CCL_API std::shared_ptr<ccl_context> ccl_device_driver::create_context() {
     return create_context_from_handle(context);
 }
 
-CCL_API std::shared_ptr<ccl_context> ccl_device_driver::create_context_from_handle(
+CCL_BE_API std::shared_ptr<ccl_context> ccl_device_driver::create_context_from_handle(
     ccl_context::handle_t h) {
     auto platform = get_owner();
     auto ctx_holder = get_ctx().lock();
@@ -267,13 +269,13 @@ CCL_API std::shared_ptr<ccl_context> ccl_device_driver::create_context_from_hand
     return ctx_holder->emplace(this, std::make_shared<ccl_context>(h, std::move(platform)));
 }
 
-void CCL_API ccl_device_driver::on_delete(ze_device_handle_t& sub_device_handle,
-                                          ze_context_handle_t& context) {
+void CCL_BE_API ccl_device_driver::on_delete(ze_device_handle_t& sub_device_handle,
+                                             ze_context_handle_t& context) {
     // status = zeContextDestroy(context);
     // assert(status == ZE_RESULT_SUCCESS);
 }
 
-std::string CCL_API ccl_device_driver::to_string(const std::string& prefix) const {
+std::string CCL_BE_API ccl_device_driver::to_string(const std::string& prefix) const {
     std::stringstream out;
     out << prefix << "Driver:\n" << prefix << "{\n";
     std::string device_prefix = prefix + "\t";
@@ -285,7 +287,7 @@ std::string CCL_API ccl_device_driver::to_string(const std::string& prefix) cons
     return out.str();
 }
 
-std::weak_ptr<ccl_device_driver> ccl_device_driver::deserialize(
+CCL_BE_API std::weak_ptr<ccl_device_driver> ccl_device_driver::deserialize(
     const uint8_t** data,
     size_t& size,
     std::shared_ptr<ccl_device_platform>& out_platform) {
@@ -316,9 +318,9 @@ std::weak_ptr<ccl_device_driver> ccl_device_driver::deserialize(
     return driver_ptr;
 }
 
-size_t ccl_device_driver::serialize(std::vector<uint8_t>& out,
-                                    size_t from_pos,
-                                    size_t expected_size) const {
+CCL_BE_API size_t ccl_device_driver::serialize(std::vector<uint8_t>& out,
+                                               size_t from_pos,
+                                               size_t expected_size) const {
     // check parent existence
     const auto platform = get_owner().lock();
     if (!platform) {

@@ -9,6 +9,8 @@
 #include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 #include "oneapi/ccl/native_device_api/l0/utils.hpp"
 
+#include "oneapi/ccl/native_device_api/export_api.hpp"
+
 namespace native {
 
 uint32_t get_device_properties_from_handle(ccl_device::handle_t handle) {
@@ -39,7 +41,7 @@ detail::cross_device_rating property_p2p_rating_calculator(const native::ccl_dev
     }
 }
 
-CCL_API
+CCL_BE_API
 std::shared_ptr<ccl_device> ccl_device::create(
     handle_t handle,
     owner_ptr_t&& driver,
@@ -87,7 +89,7 @@ std::shared_ptr<ccl_device> ccl_device::create(
     return device;
 }
 
-CCL_API
+CCL_BE_API
 ccl_device::indexed_handles ccl_device::get_handles(
     const ccl_device_driver& driver,
     const ccl::device_indices_type& requested_device_indexes /* = indices()*/) {
@@ -202,26 +204,26 @@ ccl_device::ccl_device(handle_t h, owner_ptr_t&& parent, std::weak_ptr<ccl_conte
     initialize_device_data();
 }
 
-CCL_API ccl_device::~ccl_device() {
+CCL_BE_API ccl_device::~ccl_device() {
     cmd_queus.clear();
     sub_devices.clear();
 }
 
-CCL_API ccl_device::sub_devices_container_type& ccl_device::get_subdevices() {
+CCL_BE_API ccl_device::sub_devices_container_type& ccl_device::get_subdevices() {
     return const_cast<sub_devices_container_type&>(
         static_cast<const ccl_device*>(this)->get_subdevices());
 }
 
-CCL_API const ccl_device::sub_devices_container_type& ccl_device::get_subdevices() const {
+CCL_BE_API const ccl_device::sub_devices_container_type& ccl_device::get_subdevices() const {
     return sub_devices;
 }
 
-CCL_API ccl_device::subdevice_ptr ccl_device::get_subdevice(const ccl::device_index_type& path) {
+CCL_BE_API ccl_device::subdevice_ptr ccl_device::get_subdevice(const ccl::device_index_type& path) {
     return std::const_pointer_cast<ccl_subdevice>(
         static_cast<const ccl_device*>(this)->get_subdevice(path));
 }
 
-CCL_API ccl_device::const_subdevice_ptr ccl_device::get_subdevice(
+CCL_BE_API ccl_device::const_subdevice_ptr ccl_device::get_subdevice(
     const ccl::device_index_type& path) const {
     const auto driver = get_owner().lock();
     if (!driver) {
@@ -264,21 +266,21 @@ CCL_API ccl_device::const_subdevice_ptr ccl_device::get_subdevice(
     return it->second;
 }
 
-CCL_API const ze_device_properties_t& ccl_device::get_device_properties() const {
+CCL_BE_API const ze_device_properties_t& ccl_device::get_device_properties() const {
     return device_properties;
 }
 
-CCL_API bool ccl_device::is_subdevice() const noexcept {
+CCL_BE_API bool ccl_device::is_subdevice() const noexcept {
     return false;
 }
 
-CCL_API ccl::index_type ccl_device::get_device_id() const {
+CCL_BE_API ccl::index_type ccl_device::get_device_id() const {
     assert(!(device_properties.flags & ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE) &&
            "Must NOT be subdevice");
     return get_device_properties().deviceId;
 }
 
-CCL_API ccl::device_index_type ccl_device::get_device_path() const {
+CCL_BE_API ccl::device_index_type ccl_device::get_device_path() const {
     const auto driver = get_owner().lock();
     if (!driver) {
         throw std::runtime_error("cannot get get_device_path() because ccl_device has no owner");
@@ -289,7 +291,7 @@ CCL_API ccl::device_index_type ccl_device::get_device_path() const {
     return device_path;
 }
 
-CCL_API ze_device_p2p_properties_t
+CCL_BE_API ze_device_p2p_properties_t
 ccl_device::get_p2p_properties(const ccl_device& remote_device) const {
     ze_device_p2p_properties_t pP2PProperties = { .stype = ZE_STRUCTURE_TYPE_DEVICE_P2P_PROPERTIES,
                                                   .pNext = nullptr };
@@ -301,7 +303,7 @@ ccl_device::get_p2p_properties(const ccl_device& remote_device) const {
     return pP2PProperties;
 }
 
-CCL_API const ze_command_queue_desc_t& ccl_device::get_default_queue_desc() {
+CCL_BE_API const ze_command_queue_desc_t& ccl_device::get_default_queue_desc() {
     static ze_command_queue_desc_t common{
         .stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
         .pNext = NULL,
@@ -314,7 +316,7 @@ CCL_API const ze_command_queue_desc_t& ccl_device::get_default_queue_desc() {
     return common;
 }
 
-CCL_API const ze_command_list_desc_t& ccl_device::get_default_list_desc() {
+CCL_BE_API const ze_command_list_desc_t& ccl_device::get_default_list_desc() {
     static ze_command_list_desc_t common{
         .stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC,
         .pNext = NULL,
@@ -324,7 +326,7 @@ CCL_API const ze_command_list_desc_t& ccl_device::get_default_list_desc() {
     return common;
 }
 
-CCL_API const ze_device_mem_alloc_desc_t& ccl_device::get_default_mem_alloc_desc() {
+CCL_BE_API const ze_device_mem_alloc_desc_t& ccl_device::get_default_mem_alloc_desc() {
     static ze_device_mem_alloc_desc_t common{
         .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
         .pNext = NULL,
@@ -334,7 +336,7 @@ CCL_API const ze_device_mem_alloc_desc_t& ccl_device::get_default_mem_alloc_desc
     return common;
 }
 
-CCL_API const ze_host_mem_alloc_desc_t& ccl_device::get_default_host_alloc_desc() {
+CCL_BE_API const ze_host_mem_alloc_desc_t& ccl_device::get_default_host_alloc_desc() {
     static const ze_host_mem_alloc_desc_t common{
         .stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC,
         .pNext = NULL,
@@ -343,7 +345,7 @@ CCL_API const ze_host_mem_alloc_desc_t& ccl_device::get_default_host_alloc_desc(
     return common;
 }
 
-CCL_API ccl_device::device_queue ccl_device::create_cmd_queue(
+CCL_BE_API ccl_device::device_queue ccl_device::create_cmd_queue(
     std::shared_ptr<ccl_context> ctx,
     const ze_command_queue_desc_t& properties /* = get_default_queue_desc()*/) {
     if (!ctx) {
@@ -359,8 +361,8 @@ CCL_API ccl_device::device_queue ccl_device::create_cmd_queue(
     return device_queue(hCommandQueue, get_ptr(), ctx);
 }
 
-CCL_API ccl_device::device_queue_fence& ccl_device::get_fence(const device_queue& queue,
-                                                              std::shared_ptr<ccl_context> ctx) {
+CCL_BE_API ccl_device::device_queue_fence& ccl_device::get_fence(const device_queue& queue,
+                                                                 std::shared_ptr<ccl_context> ctx) {
     //TODO not optimal
     std::unique_lock<std::mutex> lock(queue_mutex);
     auto fence_it = queue_fences.find(queue.handle);
@@ -383,11 +385,11 @@ CCL_API ccl_device::device_queue_fence& ccl_device::get_fence(const device_queue
     return fence_it->second;
 }
 
-CCL_API void* ccl_device::device_alloc_memory(size_t bytes_count,
-                                              size_t alignment,
-                                              const ze_device_mem_alloc_desc_t& mem_descr,
-                                              const ze_host_mem_alloc_desc_t& host_descr,
-                                              std::shared_ptr<ccl_context> ctx) {
+CCL_BE_API void* ccl_device::device_alloc_memory(size_t bytes_count,
+                                                 size_t alignment,
+                                                 const ze_device_mem_alloc_desc_t& mem_descr,
+                                                 const ze_host_mem_alloc_desc_t& host_descr,
+                                                 std::shared_ptr<ccl_context> ctx) {
     void* out_ptr = nullptr;
     if (!ctx) {
         ctx = get_default_context();
@@ -406,11 +408,11 @@ CCL_API void* ccl_device::device_alloc_memory(size_t bytes_count,
     return out_ptr;
 }
 
-CCL_API void* ccl_device::device_alloc_shared_memory(size_t bytes_count,
-                                                     size_t alignment,
-                                                     const ze_host_mem_alloc_desc_t& host_desc,
-                                                     const ze_device_mem_alloc_desc_t& mem_descr,
-                                                     std::shared_ptr<ccl_context> ctx) {
+CCL_BE_API void* ccl_device::device_alloc_shared_memory(size_t bytes_count,
+                                                        size_t alignment,
+                                                        const ze_host_mem_alloc_desc_t& host_desc,
+                                                        const ze_device_mem_alloc_desc_t& mem_descr,
+                                                        std::shared_ptr<ccl_context> ctx) {
     void* out_ptr = nullptr;
     if (!ctx) {
         ctx = get_default_context();
@@ -427,9 +429,10 @@ CCL_API void* ccl_device::device_alloc_shared_memory(size_t bytes_count,
     return out_ptr;
 }
 
-CCL_API ccl_device::handle_t ccl_device::get_assoc_device_handle(const void* ptr,
-                                                                 const ccl_device_driver* driver,
-                                                                 std::shared_ptr<ccl_context> ctx) {
+CCL_BE_API ccl_device::handle_t ccl_device::get_assoc_device_handle(
+    const void* ptr,
+    const ccl_device_driver* driver,
+    std::shared_ptr<ccl_context> ctx) {
     assert(driver && "Driver must exist!");
     ze_memory_allocation_properties_t mem_prop;
     ze_device_handle_t alloc_device_handle{};
@@ -451,7 +454,7 @@ CCL_API ccl_device::handle_t ccl_device::get_assoc_device_handle(const void* ptr
     return alloc_device_handle;
 }
 
-CCL_API void ccl_device::device_free_memory(void* mem_handle, ze_context_handle_t& ctx) {
+CCL_BE_API void ccl_device::device_free_memory(void* mem_handle, ze_context_handle_t& ctx) {
     if (!mem_handle) {
         return;
     }
@@ -461,7 +464,7 @@ CCL_API void ccl_device::device_free_memory(void* mem_handle, ze_context_handle_
     }
 }
 
-CCL_API ccl_device::device_ipc_memory_handle ccl_device::create_ipc_memory_handle(
+CCL_BE_API ccl_device::device_ipc_memory_handle ccl_device::create_ipc_memory_handle(
     void* device_mem_ptr,
     std::shared_ptr<ccl_context> ctx) {
     ze_ipc_mem_handle_t ipc_handle;
@@ -478,7 +481,7 @@ CCL_API ccl_device::device_ipc_memory_handle ccl_device::create_ipc_memory_handl
     return device_ipc_memory_handle(ipc_handle, get_ptr(), ctx);
 }
 
-CCL_API std::shared_ptr<ccl_device::device_ipc_memory_handle>
+CCL_BE_API std::shared_ptr<ccl_device::device_ipc_memory_handle>
 ccl_device::create_shared_ipc_memory_handle(void* device_mem_ptr,
                                             std::shared_ptr<ccl_context> ctx) {
     ze_ipc_mem_handle_t ipc_handle;
@@ -505,7 +508,8 @@ ccl_device::create_shared_ipc_memory_handle(void* device_mem_ptr,
         .first->second;
 }
 
-void CCL_API ccl_device::on_delete(ze_ipc_mem_handle_t& ipc_mem_handle, ze_context_handle_t& ctx) {
+void CCL_BE_API ccl_device::on_delete(ze_ipc_mem_handle_t& ipc_mem_handle,
+                                      ze_context_handle_t& ctx) {
     /*
     //No need to destroy ipc handle on parent process?
 
@@ -524,7 +528,7 @@ void CCL_API ccl_device::on_delete(ze_ipc_mem_handle_t& ipc_mem_handle, ze_conte
     }
 }
 
-CCL_API ccl_device::device_ipc_memory ccl_device::get_ipc_memory(
+CCL_BE_API ccl_device::device_ipc_memory ccl_device::get_ipc_memory(
     std::shared_ptr<device_ipc_memory_handle>&& ipc_handle,
     std::shared_ptr<ccl_context> ctx) {
     assert(ipc_handle->get_owner().lock().get() == this && "IPC handle doesn't belong to device: ");
@@ -556,7 +560,7 @@ CCL_API ccl_device::device_ipc_memory ccl_device::get_ipc_memory(
     return device_ipc_memory(ipc_memory, get_ptr(), ctx);
 }
 
-CCL_API std::shared_ptr<ccl_device::device_ipc_memory> ccl_device::restore_shared_ipc_memory(
+CCL_BE_API std::shared_ptr<ccl_device::device_ipc_memory> ccl_device::restore_shared_ipc_memory(
     std::shared_ptr<device_ipc_memory_handle>&& ipc_handle,
     std::shared_ptr<ccl_context> ctx) {
     assert(ipc_handle->get_owner().lock().get() == this && "IPC handle doesn't belong to device: ");
@@ -584,7 +588,7 @@ CCL_API std::shared_ptr<ccl_device::device_ipc_memory> ccl_device::restore_share
     return std::shared_ptr<device_ipc_memory>(new device_ipc_memory(ipc_memory, get_ptr(), ctx));
 }
 
-void CCL_API ccl_device::on_delete(ip_memory_elem_t& ipc_mem, ze_context_handle_t& ctx) {
+void CCL_BE_API ccl_device::on_delete(ip_memory_elem_t& ipc_mem, ze_context_handle_t& ctx) {
     ze_result_t ret = zeMemCloseIpcHandle(ctx, ipc_mem.pointer);
     if (ret != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("cannot close ipc mem handle, error: ") +
@@ -592,7 +596,7 @@ void CCL_API ccl_device::on_delete(ip_memory_elem_t& ipc_mem, ze_context_handle_
     }
 }
 
-CCL_API ccl_device::device_queue& ccl_device::get_cmd_queue(
+CCL_BE_API ccl_device::device_queue& ccl_device::get_cmd_queue(
     const ze_command_queue_desc_t& properties,
     std::shared_ptr<ccl_context> ctx) {
     std::unique_lock<std::mutex> lock(queue_mutex);
@@ -603,12 +607,12 @@ CCL_API ccl_device::device_queue& ccl_device::get_cmd_queue(
     return it->second;
 }
 
-CCL_API
+CCL_BE_API
 ccl_device::context_storage_type ccl_device::get_contexts() {
     return get_ctx().lock();
 }
 
-CCL_API
+CCL_BE_API
 std::shared_ptr<ccl_context> ccl_device::get_default_context() {
     auto ctx_holder = get_contexts();
     auto driver = get_owner().lock();
@@ -623,7 +627,7 @@ std::shared_ptr<ccl_context> ccl_device::get_default_context() {
     return ctx;
 }
 
-ccl_device::device_cmd_list CCL_API
+ccl_device::device_cmd_list CCL_BE_API
 ccl_device::create_cmd_list(std::shared_ptr<ccl_context> ctx,
                             const ze_command_list_desc_t& properties) {
     // Create a command queue
@@ -640,7 +644,7 @@ ccl_device::create_cmd_list(std::shared_ptr<ccl_context> ctx,
     return device_cmd_list(hCommandList, get_ptr(), ctx);
 }
 
-CCL_API ccl_device::device_cmd_list& ccl_device::get_cmd_list(
+CCL_BE_API ccl_device::device_cmd_list& ccl_device::get_cmd_list(
     std::shared_ptr<ccl_context> ctx,
     const ze_command_list_desc_t& properties /* = get_default_list_desc()*/) {
     std::unique_lock<std::mutex> lock(list_mutex);
@@ -651,9 +655,10 @@ CCL_API ccl_device::device_cmd_list& ccl_device::get_cmd_list(
     return it->second;
 }
 
-CCL_API ccl_device::device_module_ptr ccl_device::create_module(const ze_module_desc_t& descr,
-                                                                size_t hash,
-                                                                std::shared_ptr<ccl_context> ctx) {
+CCL_BE_API ccl_device::device_module_ptr ccl_device::create_module(
+    const ze_module_desc_t& descr,
+    size_t hash,
+    std::shared_ptr<ccl_context> ctx) {
     auto it = modules.find(hash);
     if (it != modules.end()) {
         return it->second;
@@ -687,7 +692,7 @@ CCL_API ccl_device::device_module_ptr ccl_device::create_module(const ze_module_
     return module_ptr;
 }
 
-void CCL_API ccl_device::on_delete(ze_command_queue_handle_t& handle, ze_context_handle_t& ctx) {
+void CCL_BE_API ccl_device::on_delete(ze_command_queue_handle_t& handle, ze_context_handle_t& ctx) {
     //todo not thread safe
     ze_result_t ret = zeCommandQueueDestroy(handle);
     if (ret != ZE_RESULT_SUCCESS) {
@@ -697,7 +702,7 @@ void CCL_API ccl_device::on_delete(ze_command_queue_handle_t& handle, ze_context
 
     //TODO remove from map
 }
-void CCL_API ccl_device::on_delete(ze_command_list_handle_t& handle, ze_context_handle_t& ctx) {
+void CCL_BE_API ccl_device::on_delete(ze_command_list_handle_t& handle, ze_context_handle_t& ctx) {
     //todo not thread safe
     ze_result_t ret = zeCommandListDestroy(handle);
     if (ret != ZE_RESULT_SUCCESS) {
@@ -707,8 +712,8 @@ void CCL_API ccl_device::on_delete(ze_command_list_handle_t& handle, ze_context_
     //TODO remove from map: cmd_lists;
 }
 
-void CCL_API ccl_device::on_delete(ze_device_handle_t& sub_device_handle,
-                                   ze_context_handle_t& ctx) {
+void CCL_BE_API ccl_device::on_delete(ze_device_handle_t& sub_device_handle,
+                                      ze_context_handle_t& ctx) {
     auto& subdevices = get_subdevices();
     auto it = std::find_if(
         subdevices.begin(),
@@ -725,7 +730,7 @@ void CCL_API ccl_device::on_delete(ze_device_handle_t& sub_device_handle,
     subdevices.erase(it);
 }
 
-void CCL_API ccl_device::on_delete(ze_module_handle_t& module_handle, ze_context_handle_t& ctx) {
+void CCL_BE_API ccl_device::on_delete(ze_module_handle_t& module_handle, ze_context_handle_t& ctx) {
     ze_result_t ret = zeModuleDestroy(module_handle);
     if (ret != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("cannot destroy module handle, error: ") +
@@ -733,9 +738,9 @@ void CCL_API ccl_device::on_delete(ze_module_handle_t& module_handle, ze_context
     }
 }
 
-size_t ccl_device::serialize(std::vector<uint8_t>& out,
-                             size_t from_pos,
-                             size_t expected_size) const {
+CCL_BE_API size_t ccl_device::serialize(std::vector<uint8_t>& out,
+                                        size_t from_pos,
+                                        size_t expected_size) const {
     // check parent existence
     const auto driver = get_owner().lock();
     if (!driver) {
@@ -754,7 +759,7 @@ size_t ccl_device::serialize(std::vector<uint8_t>& out,
     return serialized_bytes;
 }
 
-std::weak_ptr<ccl_device> ccl_device::deserialize(
+CCL_BE_API std::weak_ptr<ccl_device> ccl_device::deserialize(
     const uint8_t** data,
     size_t& size,
     std::shared_ptr<ccl_device_platform>& out_platform) {
@@ -787,7 +792,7 @@ std::weak_ptr<ccl_device> ccl_device::deserialize(
     return device_ptr;
 }
 
-std::string CCL_API ccl_device::to_string(const std::string& prefix) const {
+std::string CCL_BE_API ccl_device::to_string(const std::string& prefix) const {
     std::stringstream ss;
     ss << prefix << "Device: " << handle << std::endl;
     ss << prefix << "[\n";

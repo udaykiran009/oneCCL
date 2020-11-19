@@ -13,7 +13,7 @@
 #include <numeric>
 
 #include "base.hpp"
-#include "base_utils.hpp"
+#include "internal_utils.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
 #define COUNT     512 //(10*1024*1024)

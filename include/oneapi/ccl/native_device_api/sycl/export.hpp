@@ -1,5 +1,8 @@
 #pragma once
+
 #include "oneapi/ccl/types.hpp"
+
+#define CCL_BE_API /*CCL_HELPER_DLL_EXPORT*/
 
 #define CL_BACKEND_TYPE ccl::cl_backend_type::dpcpp_sycl
 #include <CL/sycl.hpp>

@@ -5,25 +5,28 @@
 #include "oneapi/ccl/native_device_api/l0/driver.hpp"
 #include "oneapi/ccl/native_device_api/l0/platform.hpp"
 
+#include "oneapi/ccl/native_device_api/export_api.hpp"
+
 namespace native {
 
 ccl_context::ccl_context(handle_t h, owner_ptr_t&& platform)
         : base(h, std::move(platform), std::weak_ptr<ccl_context>{}) {}
 
-std::string ccl_context::to_string() const {
+CCL_BE_API std::string ccl_context::to_string() const {
     std::stringstream ss;
     ss << handle;
     return ss.str();
 }
 
 // Thread safe array
-context_array_t::context_array_accessor context_array_t::access() {
+CCL_BE_API context_array_t::context_array_accessor context_array_t::access() {
     return context_array_accessor(m, contexts);
 }
 
-context_array_t::const_context_array_accessor context_array_t::access() const {
+CCL_BE_API context_array_t::const_context_array_accessor context_array_t::access() const {
     return const_context_array_accessor(m, contexts);
 }
+
 // Thread safe context storage holder
 ze_context_handle_t ccl_context_holder::get() {
     return nullptr;
@@ -39,13 +42,13 @@ std::shared_ptr<ccl_context> ccl_context_holder::emplace(ccl_device_driver* key,
     return acc.get().back();
 }
 
-context_array_t& ccl_context_holder::get_context_storage(ccl_device_driver* driver) {
+CCL_BE_API context_array_t& ccl_context_holder::get_context_storage(ccl_device_driver* driver) {
     std::unique_lock<std::mutex> lock(m); //TODO use shared lock with upgrade concept
     context_array_t& cont = drivers_context[driver];
     return cont;
 }
 
-const context_array_t& ccl_context_holder::get_context_storage(
+CCL_BE_API const context_array_t& ccl_context_holder::get_context_storage(
     const ccl_device_driver* driver) const {
     std::unique_lock<std::mutex> lock(m); //TODO use simple shared lock
     auto it = drivers_context.find(driver);

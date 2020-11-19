@@ -1,10 +1,11 @@
 #include <algorithm>
 #include <sstream>
 
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "oneapi/ccl/native_device_api/l0/base_impl.hpp"
 
 namespace native {
-std::string CCL_API to_string(const ze_result_t result) {
+std::string CCL_BE_API to_string(const ze_result_t result) {
     switch (result) {
         case ZE_RESULT_SUCCESS: return "ZE_RESULT_SUCCESS";
         case ZE_RESULT_NOT_READY: return "ZE_RESULT_NOT_READY";
@@ -30,7 +31,7 @@ std::string CCL_API to_string(const ze_result_t result) {
     return "";
 }
 
-std::string CCL_API to_string(ze_device_type_t type) {
+std::string CCL_BE_API to_string(ze_device_type_t type) {
     switch (type) {
         case ZE_DEVICE_TYPE_GPU: return "ZE_DEVICE_TYPE_GPU";
         case ZE_DEVICE_TYPE_FPGA: return "ZE_DEVICE_TYPE_FPGA";
@@ -42,7 +43,7 @@ std::string CCL_API to_string(ze_device_type_t type) {
     return "";
 }
 
-std::string CCL_API to_string(ze_memory_type_t type) {
+std::string CCL_BE_API to_string(ze_memory_type_t type) {
     switch (type) {
         case ZE_MEMORY_TYPE_UNKNOWN: return "ZE_MEMORY_TYPE_UNKNOWN";
         case ZE_MEMORY_TYPE_HOST: return "ZE_MEMORY_TYPE_HOST";
@@ -56,7 +57,7 @@ std::string CCL_API to_string(ze_memory_type_t type) {
     return "";
 }
 
-std::string to_string(ze_memory_access_cap_flags_t cap) {
+std::string CCL_BE_API to_string(ze_memory_access_cap_flags_t cap) {
     std::string ret;
     if (cap & ZE_MEMORY_ACCESS_CAP_FLAG_RW) {
         ret += "ZE_MEMORY_ACCESS_CAP_FLAG_RW";
@@ -76,8 +77,8 @@ std::string to_string(ze_memory_access_cap_flags_t cap) {
     return ret;
 }
 
-std::string CCL_API to_string(const ze_device_properties_t& device_properties,
-                              const std::string& prefix) {
+std::string CCL_BE_API to_string(const ze_device_properties_t& device_properties,
+                                 const std::string& prefix) {
     std::stringstream ss;
     ss << prefix << "name: " << device_properties.name << prefix
        << "type: " << native::to_string(device_properties.type) << prefix
@@ -103,8 +104,8 @@ std::string CCL_API to_string(const ze_device_properties_t& device_properties,
     return ss.str();
 }
 
-std::string CCL_API to_string(const ze_device_memory_properties_t& device_mem_properties,
-                              const std::string& prefix) {
+std::string CCL_BE_API to_string(const ze_device_memory_properties_t& device_mem_properties,
+                                 const std::string& prefix) {
     std::stringstream ss;
     ss << prefix << "maxClockRate: " << device_mem_properties.maxClockRate << prefix
        << "maxlBusWidth: " << device_mem_properties.maxBusWidth << prefix
@@ -112,8 +113,8 @@ std::string CCL_API to_string(const ze_device_memory_properties_t& device_mem_pr
     return ss.str();
 }
 
-std::string CCL_API to_string(const ze_device_memory_access_properties_t& mem_access_prop,
-                              const std::string& prefix) {
+std::string CCL_BE_API to_string(const ze_device_memory_access_properties_t& mem_access_prop,
+                                 const std::string& prefix) {
     std::stringstream ss;
     ss << prefix
        << "hostAllocCapabilities: " << native::to_string(mem_access_prop.hostAllocCapabilities)
@@ -128,8 +129,8 @@ std::string CCL_API to_string(const ze_device_memory_access_properties_t& mem_ac
     return ss.str();
 }
 
-std::string CCL_API to_string(const ze_device_compute_properties_t& compute_properties,
-                              const std::string& prefix) {
+std::string CCL_BE_API to_string(const ze_device_compute_properties_t& compute_properties,
+                                 const std::string& prefix) {
     std::stringstream ss;
     ss << prefix << "maxTotalGroupSize: " << compute_properties.maxTotalGroupSize << prefix
        << "maxGroupSizeX: " << compute_properties.maxGroupSizeX << prefix
@@ -147,14 +148,14 @@ std::string CCL_API to_string(const ze_device_compute_properties_t& compute_prop
     return ss.str();
 }
 
-std::string CCL_API to_string(const ze_memory_allocation_properties_t& prop) {
+std::string CCL_BE_API to_string(const ze_memory_allocation_properties_t& prop) {
     std::stringstream ss;
     ss << "type: " << to_string(prop.type) << ", id: " << prop.id
        << ", page size: " << prop.pageSize;
     return ss.str();
 }
 
-std::string CCL_API to_string(const ze_device_mem_alloc_desc_t& mem_descr) {
+std::string CCL_BE_API to_string(const ze_device_mem_alloc_desc_t& mem_descr) {
     std::stringstream ss;
     std::string flag;
 
@@ -176,13 +177,13 @@ std::string CCL_API to_string(const ze_device_mem_alloc_desc_t& mem_descr) {
 }
 
 // TODO L0: need to_string() for supported flags printing
-std::string CCL_API to_string(const ze_device_p2p_properties_t& properties) {
+std::string CCL_BE_API to_string(const ze_device_p2p_properties_t& properties) {
     std::stringstream ss;
     ss << "type: " << to_string(properties.stype) << "supported flags: " << (bool)properties.flags;
     return ss.str();
 }
 
-std::string CCL_API to_string(const ze_ipc_mem_handle_t& handle) {
+std::string CCL_BE_API to_string(const ze_ipc_mem_handle_t& handle) {
     std::stringstream ss;
     std::copy(
         handle.data, handle.data + ZE_MAX_IPC_HANDLE_SIZE, std::ostream_iterator<int>(ss, ", "));
