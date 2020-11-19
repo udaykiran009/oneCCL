@@ -131,7 +131,7 @@ static char singinit_kvsname[256];
 
 /******************************** Group functions *************************/
 
-int PMI_API PMI_Init(int* spawned) {
+int PMI_Init(int* spawned) {
     char* p;
     int notset = 1;
     int rc;
@@ -239,7 +239,7 @@ int PMI_API PMI_Init(int* spawned) {
     return PMI_SUCCESS;
 }
 
-int PMI_API PMI_Initialized(int* initialized) {
+int PMI_Initialized(int* initialized) {
     /* Turn this into a logical value (1 or 0) .  This allows us
        to use PMI_initialized to distinguish between initialized with
        an PMI service (e.g., via mpiexec) and the singleton init, 
@@ -248,7 +248,7 @@ int PMI_API PMI_Initialized(int* initialized) {
     return PMI_SUCCESS;
 }
 
-int PMI_API PMI_Get_size(int* size) {
+int PMI_Get_size(int* size) {
     if (PMI_initialized)
         *size = PMI_size;
     else
@@ -256,7 +256,7 @@ int PMI_API PMI_Get_size(int* size) {
     return PMI_SUCCESS;
 }
 
-int PMI_API PMI_Get_rank(int* rank) {
+int PMI_Get_rank(int* rank) {
     if (PMI_initialized)
         *rank = PMI_rank;
     else
@@ -270,7 +270,7 @@ int PMI_API PMI_Get_rank(int* rank) {
  * we first need to connect to the process manager and acquire the 
  * needed information.
  */
-int PMI_API PMI_Get_universe_size(int* size) {
+int PMI_Get_universe_size(int* size) {
     int err;
     char size_c[PMIU_MAXLINE];
 
@@ -313,7 +313,7 @@ int PMI_Get_appnum(int* appnum) {
     return PMI_SUCCESS;
 }
 
-int PMI_API PMI_Barrier(void) {
+int PMI_Barrier(void) {
     int err = PMI_SUCCESS;
 
     if (PMI_initialized > SINGLETON_INIT_BUT_NO_PM) {
@@ -324,7 +324,7 @@ int PMI_API PMI_Barrier(void) {
 }
 
 /* Inform the process manager that we're in finalize */
-int PMI_API PMI_Finalize(void) {
+int PMI_Finalize(void) {
     int err = PMI_SUCCESS;
 
     if (PMI_initialized > SINGLETON_INIT_BUT_NO_PM) {
@@ -336,7 +336,7 @@ int PMI_API PMI_Finalize(void) {
     return err;
 }
 
-int PMI_API PMI_Abort(int exit_code, const char error_msg[]) {
+int PMI_Abort(int exit_code, const char error_msg[]) {
     char buf[PMIU_MAXLINE];
 
     /* include exit_code in the abort command */
@@ -355,7 +355,7 @@ int PMI_API PMI_Abort(int exit_code, const char error_msg[]) {
   truncated because it is larger than length */
 /* FIXME: My name should be cached rather than re-acquired, as it is
    unchanging (after singleton init) */
-int PMI_API PMI_KVS_Get_my_name(char kvsname[], int length) {
+int PMI_KVS_Get_my_name(char kvsname[], int length) {
     int err;
 
     if (PMI_initialized == SINGLETON_INIT_BUT_NO_PM) {
@@ -372,28 +372,28 @@ int PMI_API PMI_KVS_Get_my_name(char kvsname[], int length) {
     return err;
 }
 
-int PMI_API PMI_KVS_Get_name_length_max(int* maxlen) {
+int PMI_KVS_Get_name_length_max(int* maxlen) {
     if (maxlen == NULL)
         return PMI_ERR_INVALID_ARG;
     *maxlen = PMI_kvsname_max;
     return PMI_SUCCESS;
 }
 
-int PMI_API PMI_KVS_Get_key_length_max(int* maxlen) {
+int PMI_KVS_Get_key_length_max(int* maxlen) {
     if (maxlen == NULL)
         return PMI_ERR_INVALID_ARG;
     *maxlen = PMI_keylen_max;
     return PMI_SUCCESS;
 }
 
-int PMI_API PMI_KVS_Get_value_length_max(int* maxlen) {
+int PMI_KVS_Get_value_length_max(int* maxlen) {
     if (maxlen == NULL)
         return PMI_ERR_INVALID_ARG;
     *maxlen = PMI_vallen_max;
     return PMI_SUCCESS;
 }
 
-int PMI_API PMI_KVS_Put(const char kvsname[], const char key[], const char value[]) {
+int PMI_KVS_Put(const char kvsname[], const char key[], const char value[]) {
     char buf[PMIU_MAXLINE];
     int err = PMI_SUCCESS;
     int rc;
@@ -420,14 +420,14 @@ int PMI_API PMI_KVS_Put(const char kvsname[], const char key[], const char value
     return err;
 }
 
-int PMI_API PMI_KVS_Commit(const char kvsname[] ATTRIBUTE((unused))) {
+int PMI_KVS_Commit(const char kvsname[] ATTRIBUTE((unused))) {
     /* no-op in this implementation */
     return PMI_SUCCESS;
 }
 
 /*FIXME: need to return an error if the value returned is truncated
   because it is larger than length */
-int PMI_API PMI_KVS_Get(const char kvsname[], const char key[], char value[], int length) {
+int PMI_KVS_Get(const char kvsname[], const char key[], char value[], int length) {
     char buf[PMIU_MAXLINE];
     int err = PMI_SUCCESS;
     int rc;
@@ -461,7 +461,7 @@ int PMI_API PMI_KVS_Get(const char kvsname[], const char key[], char value[], in
 
 /*************************** Name Publishing functions **********************/
 
-int PMI_API PMI_Publish_name(const char service_name[], const char port[]) {
+int PMI_Publish_name(const char service_name[], const char port[]) {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int err;
 
@@ -487,7 +487,7 @@ int PMI_API PMI_Publish_name(const char service_name[], const char port[]) {
     return PMI_SUCCESS;
 }
 
-int PMI_API PMI_Unpublish_name(const char service_name[]) {
+int PMI_Unpublish_name(const char service_name[]) {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int err = PMI_SUCCESS;
 
@@ -512,7 +512,7 @@ int PMI_API PMI_Unpublish_name(const char service_name[]) {
     return PMI_SUCCESS;
 }
 
-int PMI_API PMI_Lookup_name(const char service_name[], char port[]) {
+int PMI_Lookup_name(const char service_name[], char port[]) {
     char buf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     int err;
 
@@ -540,15 +540,15 @@ int PMI_API PMI_Lookup_name(const char service_name[], char port[]) {
 
 /************************** Process Creation functions **********************/
 
-int PMI_API PMI_Spawn_multiple(int count,
-                               const char* cmds[],
-                               const char** argvs[],
-                               const int maxprocs[],
-                               const int info_keyval_sizes[],
-                               const PMI_keyval_t* info_keyval_vectors[],
-                               int preput_keyval_size,
-                               const PMI_keyval_t preput_keyval_vector[],
-                               int errors[]) {
+int PMI_Spawn_multiple(int count,
+                       const char* cmds[],
+                       const char** argvs[],
+                       const int maxprocs[],
+                       const int info_keyval_sizes[],
+                       const PMI_keyval_t* info_keyval_vectors[],
+                       int preput_keyval_size,
+                       const PMI_keyval_t preput_keyval_vector[],
+                       int errors[]) {
     int i, rc, argcnt, spawncnt, total_num_processes, num_errcodes_found;
     char buf[PMIU_MAXLINE], tempbuf[PMIU_MAXLINE], cmd[PMIU_MAXLINE];
     char *lead, *lag;
