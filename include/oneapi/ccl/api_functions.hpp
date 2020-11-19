@@ -17,7 +17,7 @@ namespace v1 {
 
 /**
  * \ingroup init
- * \brief Creates an attribute object, which may used to control init operation
+ * \brief Creates an attribute object that may be used to control the init operation
  * @return an attribute object
  */
 template <class... attr_val_type>
@@ -47,7 +47,7 @@ library_version get_library_version();
 
 /**
  * \ingroup datatype
- * \brief Creates an attribute object, which may used to register custom datatype
+ * \brief Creates an attribute object that may be used to register custom datatype
  * @return an attribute object
  */
 template <class... attr_val_type>
@@ -214,7 +214,7 @@ stream create_stream();
 
 /**
  * \ingroup communicator
- * \brief Creates an attribute object, which may used to control create communicator operation
+ * \brief Creates an attribute object that may be used to control the create_communicator operation
  * @return an attribute object
  */
 template <class... attr_val_type>
@@ -228,7 +228,7 @@ namespace preview {
 
 /**
  * \ingroup communicator
- * \brief Creates an attribute object, which may used to control split communicator operation
+ * \brief Creates an attribute object that may be used to control the split_communicator operation
  * @return an attribute object
  */
 template <class... attr_val_type>
@@ -263,6 +263,7 @@ vector_class<communicator> create_communicators(
 }
 
 /*!
+ * \ingroup communicator
  * \overload
  */
 template <class DeviceType, class ContextType>
@@ -275,6 +276,7 @@ vector_class<communicator> create_communicators(int size,
 }
 
 /*!
+ * \ingroup communicator
  * \overload
  */
 template <class DeviceType, class ContextType>
@@ -298,6 +300,7 @@ communicator create_communicator(int size,
 }
 
 /*!
+ * \ingroup communicator
  * \overload
  */
 communicator create_communicator(int size,
@@ -330,6 +333,7 @@ vector_class<communicator> create_communicators(int size,
 }
 
 /*!
+ * \ingroup communicator
  * \overload
  */
 communicator create_communicator(int size,
@@ -370,7 +374,7 @@ namespace v1 {
 
 /**
  * \ingroup operation
- * \brief Creates an attribute object, which may used to customize communication operation
+ * \brief Creates an attribute object that may be used to customize communication operation
  * @return an attribute object
  */
 template <class coll_attribute_type, class... attr_val_type>
