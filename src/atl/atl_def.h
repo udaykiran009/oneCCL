@@ -26,8 +26,9 @@
  * Dynamically loaded transports must export the following entry point.
  * This is invoked by the ATL framework when the transport library is loaded.
  */
-#define ATL_EXT_INI \
-    __attribute__((visibility("default"))) atl_status_t atl_ini(atl_transport_t* atl_transport)
+
+ #define ATL_EXT_INI \
+    atl_status_t atl_ini(atl_transport_t* atl_transport)
 
 #define ATL_OFI_INI ATL_EXT_INI
 #define ATL_MPI_INI ATL_EXT_INI
