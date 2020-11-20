@@ -32,6 +32,75 @@ std::string to_string(const ccl::device_index_type& device_id) {
     return ss.str();
 }
 
+ccl::device_index_type from_string(const std::string& device_id_str) {
+    std::string::size_type from_pos = device_id_str.find('[');
+    if (from_pos == std::string::npos) {
+        throw std::invalid_argument(std::string("Cannot get ccl::device_index_type from input: ") +
+                                    device_id_str + ". Index should be decorated by \"[...]\"");
+    }
+
+    if (device_id_str.size() == 1) {
+        throw std::invalid_argument(
+            std::string("Cannot get ccl::device_index_type from input, too less string: ") +
+            device_id_str);
+    }
+    from_pos++;
+
+    ccl::device_index_type path(
+        ccl::unused_index_value, ccl::unused_index_value, ccl::unused_index_value);
+
+    size_t cur_index = 0;
+    do {
+        std::string::size_type to_pos = device_id_str.find(':', from_pos);
+        std::string::size_type count =
+            (to_pos != std::string::npos ? to_pos - from_pos : std::string::npos);
+        std::string index_string(device_id_str, from_pos, count);
+        switch (cur_index) {
+            case ccl::device_index_enum::driver_index_id: {
+                auto index = std::atoll(index_string.c_str());
+                if (index < 0) {
+                    throw std::invalid_argument(
+                        std::string("Cannot get ccl::device_index_type from input, "
+                                    "driver index invalid: ") +
+                        device_id_str);
+                }
+                std::get<ccl::device_index_enum::driver_index_id>(path) = index;
+                break;
+            }
+            case ccl::device_index_enum::device_index_id: {
+                auto index = std::atoll(index_string.c_str());
+                if (index < 0) {
+                    throw std::invalid_argument(
+                        std::string("Cannot get ccl::device_index_type from input, "
+                                    "device index invalid: ") +
+                        device_id_str);
+                }
+                std::get<ccl::device_index_enum::device_index_id>(path) = index;
+                break;
+            }
+            case ccl::device_index_enum::subdevice_index_id: {
+                auto index = std::atoll(index_string.c_str());
+                std::get<ccl::device_index_enum::subdevice_index_id>(path) =
+                    index < 0 ? ccl::unused_index_value : index;
+                break;
+            }
+            default:
+                throw std::invalid_argument(
+                    std::string("Cannot get ccl::device_index_type from input, "
+                                "unsupported format: ") +
+                    device_id_str);
+        }
+
+        cur_index++;
+        if (device_id_str.size() > to_pos) {
+            to_pos++;
+        }
+        from_pos = to_pos;
+    } while (from_pos < device_id_str.size());
+
+    return path;
+}
+
 #ifdef MULTI_GPU_SUPPORT
 template <>
 void str_to_mset(const char* input, std::multiset<ccl::device_index_type>& output, char delimiter) {
@@ -48,7 +117,7 @@ void str_to_mset(const char* input, std::multiset<ccl::device_index_type>& outpu
     std::stringstream ss(processes_input);
 
     while (ss >> processes_input) {
-        output.insert(ccl::from_string(processes_input));
+        output.insert(utils::from_string(processes_input));
     }
 }
 

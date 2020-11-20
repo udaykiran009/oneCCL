@@ -21,7 +21,6 @@ std::string to_string(const bfloat16& v) {
 //     return ss.str();
 // }
 
-/* CCL_API */
 std::string to_string(const device_index_type& device_id) {
     std::stringstream ss;
     ss << "[" << std::get<ccl::device_index_enum::driver_index_id>(device_id) << ":"
@@ -39,7 +38,6 @@ std::string to_string(const device_index_type& device_id) {
     return ss.str();
 }
 
-CCL_API
 device_index_type from_string(const std::string& device_id_str) {
     std::string::size_type from_pos = device_id_str.find('[');
     if (from_pos == std::string::npos) {
@@ -108,7 +106,6 @@ device_index_type from_string(const std::string& device_id_str) {
     return path;
 }
 
-CCL_API
 std::string to_string(const device_indices_type& device_indices) {
     std::string str;
     constexpr const char separator[] = ", ";
@@ -127,7 +124,6 @@ std::string to_string(const device_indices_type& device_indices) {
     return str;
 }
 
-CCL_API
 std::string to_string(const process_device_indices_type& indices) {
     std::stringstream ss;
     for (const auto& process : indices) {
@@ -136,7 +132,6 @@ std::string to_string(const process_device_indices_type& indices) {
     return ss.str();
 }
 
-CCL_API
 std::string to_string(const cluster_device_indices_type& indices) {
     std::stringstream ss;
     for (const auto& host : indices) {
