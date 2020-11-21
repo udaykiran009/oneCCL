@@ -57,18 +57,11 @@ cmake .. -DCMAKE_C_COMPILER=your_c_compiler -DCMAKE_CXX_COMPILER=your_cxx_compil
 ```
 
 ### Specify `SYCL` cross-platform abstraction level
-If your CXX compiler requires SYCL, it is possible to specify it (CodePlay ComputeCpp and DPC++ are available for now).
+If your CXX compiler requires SYCL, it is possible to specify it (DPC++ is supported for now).
 Modify `cmake` command as follows:
 
 ```
-cmake .. -DCMAKE_C_COMPILER=your_c_compiler -DCMAKE_CXX_COMPILER=compute++ -DCOMPUTE_RUNTIME=computecpp
 cmake .. -DCMAKE_C_COMPILER=your_c_compiler -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_RUNTIME=dpcpp
-```
-
-OpenCL search location path hint can be specified by using standard environment ``OPENCLROOT`` additionally:
-
-```
-OPENCLROOT=your_opencl_location cmake .. -DCMAKE_C_COMPILER=your_c_compiler -DCMAKE_CXX_COMPILER=compute++ -DCOMPUTE_RUNTIME=computecpp
 ```
 
 ### Specify the build type
