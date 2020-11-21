@@ -18,6 +18,7 @@ else
 
     for filename in $(find $(git rev-parse --show-toplevel) -type f | \
         grep -v googletest | \
+        grep -v "doc"| \
         grep -v "ofi/include"| \
         grep -v "mpi/include" | \
         grep -v "scripts/copyright" | \

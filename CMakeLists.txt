@@ -102,6 +102,8 @@ if(USE_SECURITY_FLAGS)
     endif()
 endif()
 
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--version-script=${PROJECT_SOURCE_DIR}/ccl.map")
+
 if(${CMAKE_C_COMPILER_ID} STREQUAL "Intel" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
 	if (USE_CODECOV_FLAGS)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -prof-gen=srcpos -prof-src-root-cwd")

@@ -16,12 +16,12 @@ namespace ccl {
 
 namespace detail {
 
-CCL_API environment::environment() {
+environment::environment() {
     static auto result = global_data::get().init();
     CCL_CHECK_AND_THROW(result, "failed to initialize CCL");
 }
 
-CCL_API environment::~environment() {}
+environment::~environment() {}
 
 CCL_API environment& environment::instance() {
     static environment env;
@@ -89,13 +89,13 @@ size_t environment::get_datatype_size(ccl::datatype dtype) const {
 
 /******************** STREAM ********************/
 
-stream CCL_API environment::create_stream(typename unified_device_type::ccl_native_t device) {
+stream environment::create_stream(typename unified_device_type::ccl_native_t device) {
     auto version = utils::get_library_version();
     return stream{ stream_provider_dispatcher::create(device, version) };
 }
 
-stream CCL_API environment::create_stream(typename unified_device_type::ccl_native_t device,
-                                          typename unified_context_type::ccl_native_t context) {
+stream environment::create_stream(typename unified_device_type::ccl_native_t device,
+                                  typename unified_context_type::ccl_native_t context) {
     auto version = utils::get_library_version();
     return stream{ stream_provider_dispatcher::create(device, context, version) };
 }

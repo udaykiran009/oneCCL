@@ -57,6 +57,12 @@ int main() {
     auto comm = ccl::create_communicator(size, rank, kvs);
     auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
 
+    bool default_to_cache = attr.get<ccl::operation_attr_id::to_cache>();
+    if (default_to_cache) {
+        std::cout << "to_cache should be false by default" << std::endl;
+        std::terminate();
+    }
+
     MSG_LOOP(comm, std::vector<float> send_buf(msg_count, static_cast<float>(comm.rank()));
              std::vector<float> recv_buf(msg_count);
              attr.set<ccl::operation_attr_id::to_cache>(false);

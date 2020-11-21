@@ -21,7 +21,7 @@ namespace v1 {
  * @return an attribute object
  */
 template <class... attr_val_type>
-init_attr create_init_attr(attr_val_type&&... avs) {
+init_attr CCL_API create_init_attr(attr_val_type&&... avs) {
     return detail::environment::create_init_attr(std::forward<attr_val_type>(avs)...);
 }
 
@@ -30,13 +30,13 @@ init_attr create_init_attr(attr_val_type&&... avs) {
  * \brief Initializes the library. Optional for invocation.
  * @param attr optional init attributes
  */
-void init(const init_attr& attr = default_init_attr);
+void CCL_API init(const init_attr& attr = default_init_attr);
 
 /**
  * \ingroup init
  * \brief Retrieves the library version
  */
-library_version get_library_version();
+library_version CCL_API get_library_version();
 
 /******************** DATATYPE ********************/
 
@@ -51,7 +51,7 @@ library_version get_library_version();
  * @return an attribute object
  */
 template <class... attr_val_type>
-datatype_attr create_datatype_attr(attr_val_type&&... avs) {
+datatype_attr CCL_API create_datatype_attr(attr_val_type&&... avs) {
     return detail::environment::create_datatype_attr(std::forward<attr_val_type>(avs)...);
 }
 
@@ -61,14 +61,14 @@ datatype_attr create_datatype_attr(attr_val_type&&... avs) {
  * @param attr datatype attributes
  * @return datatype handle
  */
-datatype register_datatype(const datatype_attr& attr);
+datatype CCL_API register_datatype(const datatype_attr& attr);
 
 /**
  * \ingroup datatype
  * \brief Deregisters custom datatype
  * @param dtype custom datatype handle
  */
-void deregister_datatype(datatype dtype);
+void CCL_API deregister_datatype(datatype dtype);
 
 /**
  * \ingroup datatype
@@ -76,7 +76,7 @@ void deregister_datatype(datatype dtype);
  * @param dtype datatype handle
  * @return datatype size
  */
-size_t get_datatype_size(datatype dtype);
+size_t CCL_API get_datatype_size(datatype dtype);
 
 /******************** KVS ********************/
 
@@ -89,7 +89,7 @@ size_t get_datatype_size(datatype dtype);
  * \ingroup kvs
  */
 template <class... attr_val_type>
-kvs_attr create_kvs_attr(attr_val_type&&... avs) {
+kvs_attr CCL_API create_kvs_attr(attr_val_type&&... avs) {
     return detail::environment::create_kvs_attr(std::forward<attr_val_type>(avs)...);
 }
 
@@ -101,7 +101,7 @@ kvs_attr create_kvs_attr(attr_val_type&&... avs) {
  * @param attr optional kvs attributes
  * @return kvs object
  */
-shared_ptr_class<kvs> create_main_kvs(const kvs_attr& attr = default_kvs_attr);
+shared_ptr_class<kvs> CCL_API create_main_kvs(const kvs_attr& attr = default_kvs_attr);
 
 /**
  * \ingroup kvs
@@ -110,8 +110,8 @@ shared_ptr_class<kvs> create_main_kvs(const kvs_attr& attr = default_kvs_attr);
  * @param attr optional kvs attributes
  * @return kvs object
  */
-shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr,
-                                 const kvs_attr& attr = default_kvs_attr);
+shared_ptr_class<kvs> CCL_API create_kvs(const kvs::address_type& addr,
+                                         const kvs_attr& attr = default_kvs_attr);
 
 /******************** DEVICE ********************/
 
@@ -128,7 +128,7 @@ shared_ptr_class<kvs> create_kvs(const kvs::address_type& addr,
  */
 template <class native_device_type,
           class = typename std::enable_if<is_device_supported<native_device_type>()>::type>
-device create_device(native_device_type&& native_device) {
+device CCL_API create_device(native_device_type&& native_device) {
     return detail::environment::instance().create_device(
         std::forward<native_device_type>(native_device));
 }
@@ -136,7 +136,7 @@ device create_device(native_device_type&& native_device) {
 /**
  * \ingroup device
  */
-device create_device();
+device CCL_API create_device();
 
 /******************** CONTEXT ********************/
 
@@ -153,7 +153,7 @@ device create_device();
  */
 template <class native_context_type,
           class = typename std::enable_if<is_context_supported<native_context_type>()>::type>
-context create_context(native_context_type&& native_context) {
+context CCL_API create_context(native_context_type&& native_context) {
     return detail::environment::instance().create_context(
         std::forward<native_context_type>(native_context));
 }
@@ -161,7 +161,7 @@ context create_context(native_context_type&& native_context) {
 /**
  * \ingroup context
  */
-context create_context();
+context CCL_API create_context();
 
 /******************** EVENT ********************/
 
@@ -177,7 +177,7 @@ context create_context();
  * @return event object
  */
 template <class event_type, class = typename std::enable_if<is_event_supported<event_type>()>::type>
-event create_event(event_type& native_event) {
+event CCL_API create_event(event_type& native_event) {
     return detail::environment::instance().create_event(native_event);
 }
 
@@ -196,14 +196,14 @@ event create_event(event_type& native_event) {
  */
 template <class native_stream_type,
           class = typename std::enable_if<is_stream_supported<native_stream_type>()>::type>
-stream create_stream(native_stream_type& native_stream) {
+stream CCL_API create_stream(native_stream_type& native_stream) {
     return detail::environment::instance().create_stream(native_stream);
 }
 
 /**
  * \ingroup stream
  */
-stream create_stream();
+stream CCL_API create_stream();
 
 /******************** COMMUNICATOR ********************/
 
@@ -218,7 +218,7 @@ stream create_stream();
  * @return an attribute object
  */
 template <class... attr_val_type>
-comm_attr create_comm_attr(attr_val_type&&... avs) {
+comm_attr CCL_API create_comm_attr(attr_val_type&&... avs) {
     return detail::environment::create_comm_attr(std::forward<attr_val_type>(avs)...);
 }
 
@@ -232,7 +232,7 @@ namespace preview {
  * @return an attribute object
  */
 template <class... attr_val_type>
-comm_split_attr create_comm_split_attr(attr_val_type&&... avs) {
+comm_split_attr CCL_API create_comm_split_attr(attr_val_type&&... avs) {
     return detail::environment::create_comm_split_attr(std::forward<attr_val_type>(avs)...);
 }
 
@@ -253,12 +253,12 @@ namespace v1 {
  * @return vector of communicators / communicator
  */
 template <class DeviceType, class ContextType>
-vector_class<communicator> create_communicators(
-    int size,
-    const vector_class<pair_class<int, DeviceType>>& devices,
-    const ContextType& context,
-    shared_ptr_class<kvs_interface> kvs,
-    const comm_attr& attr = default_comm_attr) {
+vector_class<communicator> CCL_API
+create_communicators(int size,
+                     const vector_class<pair_class<int, DeviceType>>& devices,
+                     const ContextType& context,
+                     shared_ptr_class<kvs_interface> kvs,
+                     const comm_attr& attr = default_comm_attr) {
     return detail::environment::instance().create_communicators(size, devices, context, kvs, attr);
 }
 
@@ -267,11 +267,11 @@ vector_class<communicator> create_communicators(
  * \overload
  */
 template <class DeviceType, class ContextType>
-vector_class<communicator> create_communicators(int size,
-                                                const map_class<int, DeviceType>& devices,
-                                                const ContextType& context,
-                                                shared_ptr_class<kvs_interface> kvs,
-                                                const comm_attr& attr = default_comm_attr) {
+vector_class<communicator> CCL_API create_communicators(int size,
+                                                        const map_class<int, DeviceType>& devices,
+                                                        const ContextType& context,
+                                                        shared_ptr_class<kvs_interface> kvs,
+                                                        const comm_attr& attr = default_comm_attr) {
     return detail::environment::instance().create_communicators(size, devices, context, kvs, attr);
 }
 
@@ -280,12 +280,12 @@ vector_class<communicator> create_communicators(int size,
  * \overload
  */
 template <class DeviceType, class ContextType>
-communicator create_communicator(int size,
-                                 int rank,
-                                 DeviceType& device,
-                                 const ContextType& context,
-                                 shared_ptr_class<kvs_interface> kvs,
-                                 const comm_attr& attr = default_comm_attr) {
+communicator CCL_API create_communicator(int size,
+                                         int rank,
+                                         DeviceType& device,
+                                         const ContextType& context,
+                                         shared_ptr_class<kvs_interface> kvs,
+                                         const comm_attr& attr = default_comm_attr) {
     auto comms = detail::environment::instance().create_communicators(
         size,
         ccl::vector_class<ccl::pair_class<int, ccl::device>>{ { rank, device } },
@@ -303,10 +303,10 @@ communicator create_communicator(int size,
  * \ingroup communicator
  * \overload
  */
-communicator create_communicator(int size,
-                                 int rank,
-                                 shared_ptr_class<kvs_interface> kvs,
-                                 const comm_attr& attr = default_comm_attr);
+communicator CCL_API create_communicator(int size,
+                                         int rank,
+                                         shared_ptr_class<kvs_interface> kvs,
+                                         const comm_attr& attr = default_comm_attr);
 
 } // namespace v1
 
@@ -324,11 +324,11 @@ namespace preview {
  * @return vector of communicators / communicator
  */
 template <class DeviceType, class ContextType>
-vector_class<communicator> create_communicators(int size,
-                                                const vector_class<DeviceType>& devices,
-                                                const ContextType& context,
-                                                shared_ptr_class<kvs_interface> kvs,
-                                                const comm_attr& attr = default_comm_attr) {
+vector_class<communicator> CCL_API create_communicators(int size,
+                                                        const vector_class<DeviceType>& devices,
+                                                        const ContextType& context,
+                                                        shared_ptr_class<kvs_interface> kvs,
+                                                        const comm_attr& attr = default_comm_attr) {
     return detail::environment::instance().create_communicators(size, devices, context, kvs, attr);
 }
 
@@ -336,9 +336,9 @@ vector_class<communicator> create_communicators(int size,
  * \ingroup communicator
  * \overload
  */
-communicator create_communicator(int size,
-                                 shared_ptr_class<kvs_interface> kvs,
-                                 const comm_attr& attr = default_comm_attr);
+communicator CCL_API create_communicator(int size,
+                                         shared_ptr_class<kvs_interface> kvs,
+                                         const comm_attr& attr = default_comm_attr);
 
 /*!
  * \overload
@@ -350,7 +350,7 @@ communicator create_communicator(int size,
   * @param attr optional communicator attributes
  * @return communicator
  */
-communicator create_communicator(const comm_attr& attr = default_comm_attr);
+communicator CCL_API create_communicator(const comm_attr& attr = default_comm_attr);
 
 /**
  * \ingroup communicator
@@ -358,8 +358,8 @@ communicator create_communicator(const comm_attr& attr = default_comm_attr);
  * @param attrs split attributes for local communicators
  * @return vector of communicators
  */
-vector_class<communicator> split_communicators(
-    const vector_class<pair_class<communicator, comm_split_attr>>& attrs);
+vector_class<communicator> CCL_API
+split_communicators(const vector_class<pair_class<communicator, comm_split_attr>>& attrs);
 
 } // namespace preview
 
@@ -405,67 +405,52 @@ coll_attribute_type CCL_API create_operation_attr(attr_val_type&&... avs) {
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
  */
-event allgatherv(const void* send_buf,
-                 size_t send_count,
-                 void* recv_buf,
-                 const vector_class<size_t>& recv_counts,
-                 datatype dtype,
-                 const communicator& comm,
-                 const stream& stream,
-                 const allgatherv_attr& attr = default_allgatherv_attr,
-                 const vector_class<event>& deps = {});
+event CCL_API allgatherv(const void* send_buf,
+                         size_t send_count,
+                         void* recv_buf,
+                         const vector_class<size_t>& recv_counts,
+                         datatype dtype,
+                         const communicator& comm,
+                         const stream& stream,
+                         const allgatherv_attr& attr = default_allgatherv_attr,
+                         const vector_class<event>& deps = {});
 
 /*!
  * \overload
  */
-event allgatherv(const void* send_buf,
-                 size_t send_count,
-                 void* recv_buf,
-                 const vector_class<size_t>& recv_counts,
-                 datatype dtype,
-                 const communicator& comm,
-                 const allgatherv_attr& attr = default_allgatherv_attr,
-                 const vector_class<event>& deps = {});
+event CCL_API allgatherv(const void* send_buf,
+                         size_t send_count,
+                         void* recv_buf,
+                         const vector_class<size_t>& recv_counts,
+                         datatype dtype,
+                         const communicator& comm,
+                         const allgatherv_attr& attr = default_allgatherv_attr,
+                         const vector_class<event>& deps = {});
 
 /*!
  * \overload
  */
-event allgatherv(const void* send_buf,
-                 size_t send_count,
-                 const vector_class<void*>& recv_bufs,
-                 const vector_class<size_t>& recv_counts,
-                 datatype dtype,
-                 const communicator& comm,
-                 const stream& stream,
-                 const allgatherv_attr& attr = default_allgatherv_attr,
-                 const vector_class<event>& deps = {});
+event CCL_API allgatherv(const void* send_buf,
+                         size_t send_count,
+                         const vector_class<void*>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
+                         datatype dtype,
+                         const communicator& comm,
+                         const stream& stream,
+                         const allgatherv_attr& attr = default_allgatherv_attr,
+                         const vector_class<event>& deps = {});
 
 /*!
  * \overload
  */
-event allgatherv(const void* send_buf,
-                 size_t send_count,
-                 const vector_class<void*>& recv_bufs,
-                 const vector_class<size_t>& recv_counts,
-                 datatype dtype,
-                 const communicator& comm,
-                 const allgatherv_attr& attr = default_allgatherv_attr,
-                 const vector_class<event>& deps = {});
-
-/*!
- * \overload
- */
-/* Type safety version */
-template <class BufferType,
-          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event allgatherv(const BufferType* send_buf,
-                 size_t send_count,
-                 BufferType* recv_buf,
-                 const vector_class<size_t>& recv_counts,
-                 const communicator& comm,
-                 const stream& stream,
-                 const allgatherv_attr& attr = default_allgatherv_attr,
-                 const vector_class<event>& deps = {});
+event CCL_API allgatherv(const void* send_buf,
+                         size_t send_count,
+                         const vector_class<void*>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
+                         datatype dtype,
+                         const communicator& comm,
+                         const allgatherv_attr& attr = default_allgatherv_attr,
+                         const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -473,13 +458,14 @@ event allgatherv(const BufferType* send_buf,
 /* Type safety version */
 template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event allgatherv(const BufferType* send_buf,
-                 size_t send_count,
-                 BufferType* recv_buf,
-                 const vector_class<size_t>& recv_counts,
-                 const communicator& comm,
-                 const allgatherv_attr& attr = default_allgatherv_attr,
-                 const vector_class<event>& deps = {});
+event CCL_API allgatherv(const BufferType* send_buf,
+                         size_t send_count,
+                         BufferType* recv_buf,
+                         const vector_class<size_t>& recv_counts,
+                         const communicator& comm,
+                         const stream& stream,
+                         const allgatherv_attr& attr = default_allgatherv_attr,
+                         const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -487,14 +473,13 @@ event allgatherv(const BufferType* send_buf,
 /* Type safety version */
 template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event allgatherv(const BufferType* send_buf,
-                 size_t send_count,
-                 vector_class<BufferType*>& recv_bufs,
-                 const vector_class<size_t>& recv_counts,
-                 const communicator& comm,
-                 const stream& stream,
-                 const allgatherv_attr& attr = default_allgatherv_attr,
-                 const vector_class<event>& deps = {});
+event CCL_API allgatherv(const BufferType* send_buf,
+                         size_t send_count,
+                         BufferType* recv_buf,
+                         const vector_class<size_t>& recv_counts,
+                         const communicator& comm,
+                         const allgatherv_attr& attr = default_allgatherv_attr,
+                         const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -502,13 +487,28 @@ event allgatherv(const BufferType* send_buf,
 /* Type safety version */
 template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event allgatherv(const BufferType* send_buf,
-                 size_t send_count,
-                 vector_class<BufferType*>& recv_bufs,
-                 const vector_class<size_t>& recv_counts,
-                 const communicator& comm,
-                 const allgatherv_attr& attr = default_allgatherv_attr,
-                 const vector_class<event>& deps = {});
+event CCL_API allgatherv(const BufferType* send_buf,
+                         size_t send_count,
+                         vector_class<BufferType*>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
+                         const communicator& comm,
+                         const stream& stream,
+                         const allgatherv_attr& attr = default_allgatherv_attr,
+                         const vector_class<event>& deps = {});
+
+/*!
+ * \overload
+ */
+/* Type safety version */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event CCL_API allgatherv(const BufferType* send_buf,
+                         size_t send_count,
+                         vector_class<BufferType*>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
+                         const communicator& comm,
+                         const allgatherv_attr& attr = default_allgatherv_attr,
+                         const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -516,14 +516,14 @@ event allgatherv(const BufferType* send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event allgatherv(const BufferObjectType& send_buf,
-                 size_t send_count,
-                 BufferObjectType& recv_buf,
-                 const vector_class<size_t>& recv_counts,
-                 const communicator& comm,
-                 const stream& stream,
-                 const allgatherv_attr& attr = default_allgatherv_attr,
-                 const vector_class<event>& deps = {});
+event CCL_API allgatherv(const BufferObjectType& send_buf,
+                         size_t send_count,
+                         BufferObjectType& recv_buf,
+                         const vector_class<size_t>& recv_counts,
+                         const communicator& comm,
+                         const stream& stream,
+                         const allgatherv_attr& attr = default_allgatherv_attr,
+                         const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -531,13 +531,13 @@ event allgatherv(const BufferObjectType& send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event allgatherv(const BufferObjectType& send_buf,
-                 size_t send_count,
-                 BufferObjectType& recv_buf,
-                 const vector_class<size_t>& recv_counts,
-                 const communicator& comm,
-                 const allgatherv_attr& attr = default_allgatherv_attr,
-                 const vector_class<event>& deps = {});
+event CCL_API allgatherv(const BufferObjectType& send_buf,
+                         size_t send_count,
+                         BufferObjectType& recv_buf,
+                         const vector_class<size_t>& recv_counts,
+                         const communicator& comm,
+                         const allgatherv_attr& attr = default_allgatherv_attr,
+                         const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -545,14 +545,14 @@ event allgatherv(const BufferObjectType& send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event allgatherv(const BufferObjectType& send_buf,
-                 size_t send_count,
-                 vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
-                 const vector_class<size_t>& recv_counts,
-                 const communicator& comm,
-                 const stream& stream,
-                 const allgatherv_attr& attr = default_allgatherv_attr,
-                 const vector_class<event>& deps = {});
+event CCL_API allgatherv(const BufferObjectType& send_buf,
+                         size_t send_count,
+                         vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
+                         const communicator& comm,
+                         const stream& stream,
+                         const allgatherv_attr& attr = default_allgatherv_attr,
+                         const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -560,13 +560,13 @@ event allgatherv(const BufferObjectType& send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event allgatherv(const BufferObjectType& send_buf,
-                 size_t send_count,
-                 vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
-                 const vector_class<size_t>& recv_counts,
-                 const communicator& comm,
-                 const allgatherv_attr& attr = default_allgatherv_attr,
-                 const vector_class<event>& deps = {});
+event CCL_API allgatherv(const BufferObjectType& send_buf,
+                         size_t send_count,
+                         vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
+                         const vector_class<size_t>& recv_counts,
+                         const communicator& comm,
+                         const allgatherv_attr& attr = default_allgatherv_attr,
+                         const vector_class<event>& deps = {});
 /** @} */ // end of allgatherv
 
 /** @defgroup allreduce
@@ -588,42 +588,27 @@ event allgatherv(const BufferObjectType& send_buf,
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
  */
-event allreduce(const void* send_buf,
-                void* recv_buf,
-                size_t count,
-                datatype dtype,
-                reduction rtype,
-                const communicator& comm,
-                const stream& stream,
-                const allreduce_attr& attr = default_allreduce_attr,
-                const vector_class<event>& deps = {});
+event CCL_API allreduce(const void* send_buf,
+                        void* recv_buf,
+                        size_t count,
+                        datatype dtype,
+                        reduction rtype,
+                        const communicator& comm,
+                        const stream& stream,
+                        const allreduce_attr& attr = default_allreduce_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
  */
-event allreduce(const void* send_buf,
-                void* recv_buf,
-                size_t count,
-                datatype dtype,
-                reduction rtype,
-                const communicator& comm,
-                const allreduce_attr& attr = default_allreduce_attr,
-                const vector_class<event>& deps = {});
-
-/*!
- * \overload
- */
-/* Type safety version */
-template <class BufferType,
-          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event allreduce(const BufferType* send_buf,
-                BufferType* recv_buf,
-                size_t count,
-                reduction rtype,
-                const communicator& comm,
-                const stream& stream,
-                const allreduce_attr& attr = default_allreduce_attr,
-                const vector_class<event>& deps = {});
+event CCL_API allreduce(const void* send_buf,
+                        void* recv_buf,
+                        size_t count,
+                        datatype dtype,
+                        reduction rtype,
+                        const communicator& comm,
+                        const allreduce_attr& attr = default_allreduce_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -631,13 +616,28 @@ event allreduce(const BufferType* send_buf,
 /* Type safety version */
 template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event allreduce(const BufferType* send_buf,
-                BufferType* recv_buf,
-                size_t count,
-                reduction rtype,
-                const communicator& comm,
-                const allreduce_attr& attr = default_allreduce_attr,
-                const vector_class<event>& deps = {});
+event CCL_API allreduce(const BufferType* send_buf,
+                        BufferType* recv_buf,
+                        size_t count,
+                        reduction rtype,
+                        const communicator& comm,
+                        const stream& stream,
+                        const allreduce_attr& attr = default_allreduce_attr,
+                        const vector_class<event>& deps = {});
+
+/*!
+ * \overload
+ */
+/* Type safety version */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event CCL_API allreduce(const BufferType* send_buf,
+                        BufferType* recv_buf,
+                        size_t count,
+                        reduction rtype,
+                        const communicator& comm,
+                        const allreduce_attr& attr = default_allreduce_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -645,14 +645,14 @@ event allreduce(const BufferType* send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event allreduce(const BufferObjectType& send_buf,
-                BufferObjectType& recv_buf,
-                size_t count,
-                reduction rtype,
-                const communicator& comm,
-                const stream& stream,
-                const allreduce_attr& attr = default_allreduce_attr,
-                const vector_class<event>& deps = {});
+event CCL_API allreduce(const BufferObjectType& send_buf,
+                        BufferObjectType& recv_buf,
+                        size_t count,
+                        reduction rtype,
+                        const communicator& comm,
+                        const stream& stream,
+                        const allreduce_attr& attr = default_allreduce_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -660,13 +660,13 @@ event allreduce(const BufferObjectType& send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event allreduce(const BufferObjectType& send_buf,
-                BufferObjectType& recv_buf,
-                size_t count,
-                reduction rtype,
-                const communicator& comm,
-                const allreduce_attr& attr = default_allreduce_attr,
-                const vector_class<event>& deps = {});
+event CCL_API allreduce(const BufferObjectType& send_buf,
+                        BufferObjectType& recv_buf,
+                        size_t count,
+                        reduction rtype,
+                        const communicator& comm,
+                        const allreduce_attr& attr = default_allreduce_attr,
+                        const vector_class<event>& deps = {});
 /** @} */ // end of allreduce
 
 /** @defgroup alltoall
@@ -692,62 +692,48 @@ event allreduce(const BufferObjectType& send_buf,
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
  */
-event alltoall(const void* send_buf,
-               void* recv_buf,
-               size_t count,
-               datatype dtype,
-               const communicator& comm,
-               const stream& stream,
-               const alltoall_attr& attr = default_alltoall_attr,
-               const vector_class<event>& deps = {});
+event CCL_API alltoall(const void* send_buf,
+                       void* recv_buf,
+                       size_t count,
+                       datatype dtype,
+                       const communicator& comm,
+                       const stream& stream,
+                       const alltoall_attr& attr = default_alltoall_attr,
+                       const vector_class<event>& deps = {});
 
 /*!
  * \overload
  */
-event alltoall(const void* send_buf,
-               void* recv_buf,
-               size_t count,
-               datatype dtype,
-               const communicator& comm,
-               const alltoall_attr& attr = default_alltoall_attr,
-               const vector_class<event>& deps = {});
+event CCL_API alltoall(const void* send_buf,
+                       void* recv_buf,
+                       size_t count,
+                       datatype dtype,
+                       const communicator& comm,
+                       const alltoall_attr& attr = default_alltoall_attr,
+                       const vector_class<event>& deps = {});
 
 /*!
  * \overload
  */
-event alltoall(const vector_class<void*>& send_buf,
-               const vector_class<void*>& recv_buf,
-               size_t count,
-               datatype dtype,
-               const communicator& comm,
-               const stream& stream,
-               const alltoall_attr& attr = default_alltoall_attr,
-               const vector_class<event>& deps = {});
+event CCL_API alltoall(const vector_class<void*>& send_buf,
+                       const vector_class<void*>& recv_buf,
+                       size_t count,
+                       datatype dtype,
+                       const communicator& comm,
+                       const stream& stream,
+                       const alltoall_attr& attr = default_alltoall_attr,
+                       const vector_class<event>& deps = {});
 
 /*!
  * \overload
  */
-event alltoall(const vector_class<void*>& send_buf,
-               const vector_class<void*>& recv_buf,
-               size_t count,
-               datatype dtype,
-               const communicator& comm,
-               const alltoall_attr& attr = default_alltoall_attr,
-               const vector_class<event>& deps = {});
-
-/*!
- * \overload
- */
-/* Type safety version */
-template <class BufferType,
-          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event alltoall(const BufferType* send_buf,
-               BufferType* recv_buf,
-               size_t count,
-               const communicator& comm,
-               const stream& stream,
-               const alltoall_attr& attr = default_alltoall_attr,
-               const vector_class<event>& deps = {});
+event CCL_API alltoall(const vector_class<void*>& send_buf,
+                       const vector_class<void*>& recv_buf,
+                       size_t count,
+                       datatype dtype,
+                       const communicator& comm,
+                       const alltoall_attr& attr = default_alltoall_attr,
+                       const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -755,12 +741,13 @@ event alltoall(const BufferType* send_buf,
 /* Type safety version */
 template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event alltoall(const BufferType* send_buf,
-               BufferType* recv_buf,
-               size_t count,
-               const communicator& comm,
-               const alltoall_attr& attr = default_alltoall_attr,
-               const vector_class<event>& deps = {});
+event CCL_API alltoall(const BufferType* send_buf,
+                       BufferType* recv_buf,
+                       size_t count,
+                       const communicator& comm,
+                       const stream& stream,
+                       const alltoall_attr& attr = default_alltoall_attr,
+                       const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -768,13 +755,12 @@ event alltoall(const BufferType* send_buf,
 /* Type safety version */
 template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event alltoall(const vector_class<BufferType*>& send_buf,
-               const vector_class<BufferType*>& recv_buf,
-               size_t count,
-               const communicator& comm,
-               const stream& stream,
-               const alltoall_attr& attr = default_alltoall_attr,
-               const vector_class<event>& deps = {});
+event CCL_API alltoall(const BufferType* send_buf,
+                       BufferType* recv_buf,
+                       size_t count,
+                       const communicator& comm,
+                       const alltoall_attr& attr = default_alltoall_attr,
+                       const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -782,12 +768,26 @@ event alltoall(const vector_class<BufferType*>& send_buf,
 /* Type safety version */
 template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event alltoall(const vector_class<BufferType*>& send_buf,
-               const vector_class<BufferType*>& recv_buf,
-               size_t count,
-               const communicator& comm,
-               const alltoall_attr& attr = default_alltoall_attr,
-               const vector_class<event>& deps = {});
+event CCL_API alltoall(const vector_class<BufferType*>& send_buf,
+                       const vector_class<BufferType*>& recv_buf,
+                       size_t count,
+                       const communicator& comm,
+                       const stream& stream,
+                       const alltoall_attr& attr = default_alltoall_attr,
+                       const vector_class<event>& deps = {});
+
+/*!
+ * \overload
+ */
+/* Type safety version */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event CCL_API alltoall(const vector_class<BufferType*>& send_buf,
+                       const vector_class<BufferType*>& recv_buf,
+                       size_t count,
+                       const communicator& comm,
+                       const alltoall_attr& attr = default_alltoall_attr,
+                       const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -795,13 +795,13 @@ event alltoall(const vector_class<BufferType*>& send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event alltoall(const BufferObjectType& send_buf,
-               BufferObjectType& recv_buf,
-               size_t count,
-               const communicator& comm,
-               const stream& stream,
-               const alltoall_attr& attr = default_alltoall_attr,
-               const vector_class<event>& deps = {});
+event CCL_API alltoall(const BufferObjectType& send_buf,
+                       BufferObjectType& recv_buf,
+                       size_t count,
+                       const communicator& comm,
+                       const stream& stream,
+                       const alltoall_attr& attr = default_alltoall_attr,
+                       const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -809,12 +809,12 @@ event alltoall(const BufferObjectType& send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event alltoall(const BufferObjectType& send_buf,
-               BufferObjectType& recv_buf,
-               size_t count,
-               const communicator& comm,
-               const alltoall_attr& attr = default_alltoall_attr,
-               const vector_class<event>& deps = {});
+event CCL_API alltoall(const BufferObjectType& send_buf,
+                       BufferObjectType& recv_buf,
+                       size_t count,
+                       const communicator& comm,
+                       const alltoall_attr& attr = default_alltoall_attr,
+                       const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -822,13 +822,13 @@ event alltoall(const BufferObjectType& send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& send_buf,
-               const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
-               size_t count,
-               const communicator& comm,
-               const stream& stream,
-               const alltoall_attr& attr = default_alltoall_attr,
-               const vector_class<event>& deps = {});
+event CCL_API alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& send_buf,
+                       const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
+                       size_t count,
+                       const communicator& comm,
+                       const stream& stream,
+                       const alltoall_attr& attr = default_alltoall_attr,
+                       const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -836,12 +836,12 @@ event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& se
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& send_buf,
-               const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
-               size_t count,
-               const communicator& comm,
-               const alltoall_attr& attr = default_alltoall_attr,
-               const vector_class<event>& deps = {});
+event CCL_API alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& send_buf,
+                       const vector_class<reference_wrapper_class<BufferObjectType>>& recv_buf,
+                       size_t count,
+                       const communicator& comm,
+                       const alltoall_attr& attr = default_alltoall_attr,
+                       const vector_class<event>& deps = {});
 /** @} */ // end of alltoall
 
 /** @defgroup alltoallv
@@ -867,69 +867,54 @@ event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& se
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
  */
-event alltoallv(const void* send_buf,
-                const vector_class<size_t>& send_counts,
-                void* recv_buf,
-                const vector_class<size_t>& recv_counts,
-                datatype dtype,
-                const communicator& comm,
-                const stream& stream,
-                const alltoallv_attr& attr = default_alltoallv_attr,
-                const vector_class<event>& deps = {});
+event CCL_API alltoallv(const void* send_buf,
+                        const vector_class<size_t>& send_counts,
+                        void* recv_buf,
+                        const vector_class<size_t>& recv_counts,
+                        datatype dtype,
+                        const communicator& comm,
+                        const stream& stream,
+                        const alltoallv_attr& attr = default_alltoallv_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
  */
-event alltoallv(const void* send_buf,
-                const vector_class<size_t>& send_counts,
-                void* recv_buf,
-                const vector_class<size_t>& recv_counts,
-                datatype dtype,
-                const communicator& comm,
-                const alltoallv_attr& attr = default_alltoallv_attr,
-                const vector_class<event>& deps = {});
-
-/*!
- * \overload
- */
-/* Type safety version */
-event alltoallv(const vector_class<void*>& send_bufs,
-                const vector_class<size_t>& send_counts,
-                const vector_class<void*>& recv_bufs,
-                const vector_class<size_t>& recv_counts,
-                datatype dtype,
-                const communicator& comm,
-                const stream& stream,
-                const alltoallv_attr& attr = default_alltoallv_attr,
-                const vector_class<event>& deps = {});
+event CCL_API alltoallv(const void* send_buf,
+                        const vector_class<size_t>& send_counts,
+                        void* recv_buf,
+                        const vector_class<size_t>& recv_counts,
+                        datatype dtype,
+                        const communicator& comm,
+                        const alltoallv_attr& attr = default_alltoallv_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
  */
 /* Type safety version */
-event alltoallv(const vector_class<void*>& send_bufs,
-                const vector_class<size_t>& send_counts,
-                const vector_class<void*>& recv_bufs,
-                const vector_class<size_t>& recv_counts,
-                datatype dtype,
-                const communicator& comm,
-                const alltoallv_attr& attr = default_alltoallv_attr,
-                const vector_class<event>& deps = {});
+event CCL_API alltoallv(const vector_class<void*>& send_bufs,
+                        const vector_class<size_t>& send_counts,
+                        const vector_class<void*>& recv_bufs,
+                        const vector_class<size_t>& recv_counts,
+                        datatype dtype,
+                        const communicator& comm,
+                        const stream& stream,
+                        const alltoallv_attr& attr = default_alltoallv_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
  */
 /* Type safety version */
-template <class BufferType,
-          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event alltoallv(const BufferType* send_buf,
-                const vector_class<size_t>& send_counts,
-                BufferType* recv_buf,
-                const vector_class<size_t>& recv_counts,
-                const communicator& comm,
-                const stream& stream,
-                const alltoallv_attr& attr = default_alltoallv_attr,
-                const vector_class<event>& deps = {});
+event CCL_API alltoallv(const vector_class<void*>& send_bufs,
+                        const vector_class<size_t>& send_counts,
+                        const vector_class<void*>& recv_bufs,
+                        const vector_class<size_t>& recv_counts,
+                        datatype dtype,
+                        const communicator& comm,
+                        const alltoallv_attr& attr = default_alltoallv_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -937,13 +922,14 @@ event alltoallv(const BufferType* send_buf,
 /* Type safety version */
 template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event alltoallv(const BufferType* send_buf,
-                const vector_class<size_t>& send_counts,
-                BufferType* recv_buf,
-                const vector_class<size_t>& recv_counts,
-                const communicator& comm,
-                const alltoallv_attr& attr = default_alltoallv_attr,
-                const vector_class<event>& deps = {});
+event CCL_API alltoallv(const BufferType* send_buf,
+                        const vector_class<size_t>& send_counts,
+                        BufferType* recv_buf,
+                        const vector_class<size_t>& recv_counts,
+                        const communicator& comm,
+                        const stream& stream,
+                        const alltoallv_attr& attr = default_alltoallv_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -951,14 +937,13 @@ event alltoallv(const BufferType* send_buf,
 /* Type safety version */
 template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event alltoallv(const vector_class<BufferType*>& send_bufs,
-                const vector_class<size_t>& send_counts,
-                const vector_class<BufferType*>& recv_bufs,
-                const vector_class<size_t>& recv_counts,
-                const communicator& comm,
-                const stream& stream,
-                const alltoallv_attr& attr = default_alltoallv_attr,
-                const vector_class<event>& deps = {});
+event CCL_API alltoallv(const BufferType* send_buf,
+                        const vector_class<size_t>& send_counts,
+                        BufferType* recv_buf,
+                        const vector_class<size_t>& recv_counts,
+                        const communicator& comm,
+                        const alltoallv_attr& attr = default_alltoallv_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -966,13 +951,28 @@ event alltoallv(const vector_class<BufferType*>& send_bufs,
 /* Type safety version */
 template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event alltoallv(const vector_class<BufferType*>& send_bufs,
-                const vector_class<size_t>& send_counts,
-                const vector_class<BufferType*>& recv_bufs,
-                const vector_class<size_t>& recv_counts,
-                const communicator& comm,
-                const alltoallv_attr& attr = default_alltoallv_attr,
-                const vector_class<event>& deps = {});
+event CCL_API alltoallv(const vector_class<BufferType*>& send_bufs,
+                        const vector_class<size_t>& send_counts,
+                        const vector_class<BufferType*>& recv_bufs,
+                        const vector_class<size_t>& recv_counts,
+                        const communicator& comm,
+                        const stream& stream,
+                        const alltoallv_attr& attr = default_alltoallv_attr,
+                        const vector_class<event>& deps = {});
+
+/*!
+ * \overload
+ */
+/* Type safety version */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event CCL_API alltoallv(const vector_class<BufferType*>& send_bufs,
+                        const vector_class<size_t>& send_counts,
+                        const vector_class<BufferType*>& recv_bufs,
+                        const vector_class<size_t>& recv_counts,
+                        const communicator& comm,
+                        const alltoallv_attr& attr = default_alltoallv_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -980,14 +980,14 @@ event alltoallv(const vector_class<BufferType*>& send_bufs,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event alltoallv(const BufferObjectType& send_buf,
-                const vector_class<size_t>& send_counts,
-                BufferObjectType& recv_buf,
-                const vector_class<size_t>& recv_counts,
-                const communicator& comm,
-                const stream& stream,
-                const alltoallv_attr& attr = default_alltoallv_attr,
-                const vector_class<event>& deps = {});
+event CCL_API alltoallv(const BufferObjectType& send_buf,
+                        const vector_class<size_t>& send_counts,
+                        BufferObjectType& recv_buf,
+                        const vector_class<size_t>& recv_counts,
+                        const communicator& comm,
+                        const stream& stream,
+                        const alltoallv_attr& attr = default_alltoallv_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -995,13 +995,13 @@ event alltoallv(const BufferObjectType& send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event alltoallv(const BufferObjectType& send_buf,
-                const vector_class<size_t>& send_counts,
-                BufferObjectType& recv_buf,
-                const vector_class<size_t>& recv_counts,
-                const communicator& comm,
-                const alltoallv_attr& attr = default_alltoallv_attr,
-                const vector_class<event>& deps = {});
+event CCL_API alltoallv(const BufferObjectType& send_buf,
+                        const vector_class<size_t>& send_counts,
+                        BufferObjectType& recv_buf,
+                        const vector_class<size_t>& recv_counts,
+                        const communicator& comm,
+                        const alltoallv_attr& attr = default_alltoallv_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -1009,14 +1009,14 @@ event alltoallv(const BufferObjectType& send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& send_bufs,
-                const vector_class<size_t>& send_counts,
-                const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
-                const vector_class<size_t>& recv_counts,
-                const communicator& comm,
-                const stream& stream,
-                const alltoallv_attr& attr = default_alltoallv_attr,
-                const vector_class<event>& deps = {});
+event CCL_API alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& send_bufs,
+                        const vector_class<size_t>& send_counts,
+                        const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
+                        const vector_class<size_t>& recv_counts,
+                        const communicator& comm,
+                        const stream& stream,
+                        const alltoallv_attr& attr = default_alltoallv_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -1024,13 +1024,13 @@ event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& s
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& send_bufs,
-                const vector_class<size_t>& send_counts,
-                const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
-                const vector_class<size_t>& recv_counts,
-                const communicator& comm,
-                const alltoallv_attr& attr = default_alltoallv_attr,
-                const vector_class<event>& deps = {});
+event CCL_API alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& send_bufs,
+                        const vector_class<size_t>& send_counts,
+                        const vector_class<reference_wrapper_class<BufferObjectType>>& recv_bufs,
+                        const vector_class<size_t>& recv_counts,
+                        const communicator& comm,
+                        const alltoallv_attr& attr = default_alltoallv_attr,
+                        const vector_class<event>& deps = {});
 
 /** @} */ // end of alltoallv
 
@@ -1049,17 +1049,17 @@ event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& s
  * @return @ref ccl::event an object to track the progress of the operation
  */
 
-event barrier(const communicator& comm,
-              const stream& stream,
-              const barrier_attr& attr = default_barrier_attr,
-              const vector_class<event>& deps = {});
+event CCL_API barrier(const communicator& comm,
+                      const stream& stream,
+                      const barrier_attr& attr = default_barrier_attr,
+                      const vector_class<event>& deps = {});
 
 /*!
  * \overload
  */
-event barrier(const communicator& comm,
-              const barrier_attr& attr = default_barrier_attr,
-              const vector_class<event>& deps = {});
+event CCL_API barrier(const communicator& comm,
+                      const barrier_attr& attr = default_barrier_attr,
+                      const vector_class<event>& deps = {});
 
 /** @} */ // end of barrier
 
@@ -1082,39 +1082,25 @@ event barrier(const communicator& comm,
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
  */
-event broadcast(void* buf,
-                size_t count,
-                datatype dtype,
-                int root,
-                const communicator& comm,
-                const stream& stream,
-                const broadcast_attr& attr = default_broadcast_attr,
-                const vector_class<event>& deps = {});
+event CCL_API broadcast(void* buf,
+                        size_t count,
+                        datatype dtype,
+                        int root,
+                        const communicator& comm,
+                        const stream& stream,
+                        const broadcast_attr& attr = default_broadcast_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
  */
-event broadcast(void* buf,
-                size_t count,
-                datatype dtype,
-                int root,
-                const communicator& comm,
-                const broadcast_attr& attr = default_broadcast_attr,
-                const vector_class<event>& deps = {});
-
-/*!
- * \overload
- */
-/* Type safety version */
-template <class BufferType,
-          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event broadcast(BufferType* buf,
-                size_t count,
-                int root,
-                const communicator& comm,
-                const stream& stream,
-                const broadcast_attr& attr = default_broadcast_attr,
-                const vector_class<event>& deps = {});
+event CCL_API broadcast(void* buf,
+                        size_t count,
+                        datatype dtype,
+                        int root,
+                        const communicator& comm,
+                        const broadcast_attr& attr = default_broadcast_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -1122,12 +1108,26 @@ event broadcast(BufferType* buf,
 /* Type safety version */
 template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event broadcast(BufferType* buf,
-                size_t count,
-                int root,
-                const communicator& comm,
-                const broadcast_attr& attr = default_broadcast_attr,
-                const vector_class<event>& deps = {});
+event CCL_API broadcast(BufferType* buf,
+                        size_t count,
+                        int root,
+                        const communicator& comm,
+                        const stream& stream,
+                        const broadcast_attr& attr = default_broadcast_attr,
+                        const vector_class<event>& deps = {});
+
+/*!
+ * \overload
+ */
+/* Type safety version */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event CCL_API broadcast(BufferType* buf,
+                        size_t count,
+                        int root,
+                        const communicator& comm,
+                        const broadcast_attr& attr = default_broadcast_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -1135,13 +1135,13 @@ event broadcast(BufferType* buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event broadcast(BufferObjectType& buf,
-                size_t count,
-                int root,
-                const communicator& comm,
-                const stream& stream,
-                const broadcast_attr& attr = default_broadcast_attr,
-                const vector_class<event>& deps = {});
+event CCL_API broadcast(BufferObjectType& buf,
+                        size_t count,
+                        int root,
+                        const communicator& comm,
+                        const stream& stream,
+                        const broadcast_attr& attr = default_broadcast_attr,
+                        const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -1149,12 +1149,12 @@ event broadcast(BufferObjectType& buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event broadcast(BufferObjectType& buf,
-                size_t count,
-                int root,
-                const communicator& comm,
-                const broadcast_attr& attr = default_broadcast_attr,
-                const vector_class<event>& deps = {});
+event CCL_API broadcast(BufferObjectType& buf,
+                        size_t count,
+                        int root,
+                        const communicator& comm,
+                        const broadcast_attr& attr = default_broadcast_attr,
+                        const vector_class<event>& deps = {});
 
 /** @} */ // end of broadcast
 
@@ -1179,45 +1179,29 @@ event broadcast(BufferObjectType& buf,
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
  */
-event reduce(const void* send_buf,
-             void* recv_buf,
-             size_t count,
-             datatype dtype,
-             reduction rtype,
-             int root,
-             const communicator& comm,
-             const stream& stream,
-             const reduce_attr& attr = default_reduce_attr,
-             const vector_class<event>& deps = {});
+event CCL_API reduce(const void* send_buf,
+                     void* recv_buf,
+                     size_t count,
+                     datatype dtype,
+                     reduction rtype,
+                     int root,
+                     const communicator& comm,
+                     const stream& stream,
+                     const reduce_attr& attr = default_reduce_attr,
+                     const vector_class<event>& deps = {});
 
 /*!
  * \overload
  */
-event reduce(const void* send_buf,
-             void* recv_buf,
-             size_t count,
-             datatype dtype,
-             reduction rtype,
-             int root,
-             const communicator& comm,
-             const reduce_attr& attr = default_reduce_attr,
-             const vector_class<event>& deps = {});
-
-/*!
- * \overload
- */
-/* Type safety version */
-template <class BufferType,
-          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event reduce(const BufferType* send_buf,
-             BufferType* recv_buf,
-             size_t count,
-             reduction rtype,
-             int root,
-             const communicator& comm,
-             const stream& stream,
-             const reduce_attr& attr = default_reduce_attr,
-             const vector_class<event>& deps = {});
+event CCL_API reduce(const void* send_buf,
+                     void* recv_buf,
+                     size_t count,
+                     datatype dtype,
+                     reduction rtype,
+                     int root,
+                     const communicator& comm,
+                     const reduce_attr& attr = default_reduce_attr,
+                     const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -1225,14 +1209,30 @@ event reduce(const BufferType* send_buf,
 /* Type safety version */
 template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event reduce(const BufferType* send_buf,
-             BufferType* recv_buf,
-             size_t count,
-             reduction rtype,
-             int root,
-             const communicator& comm,
-             const reduce_attr& attr = default_reduce_attr,
-             const vector_class<event>& deps = {});
+event CCL_API reduce(const BufferType* send_buf,
+                     BufferType* recv_buf,
+                     size_t count,
+                     reduction rtype,
+                     int root,
+                     const communicator& comm,
+                     const stream& stream,
+                     const reduce_attr& attr = default_reduce_attr,
+                     const vector_class<event>& deps = {});
+
+/*!
+ * \overload
+ */
+/* Type safety version */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event CCL_API reduce(const BufferType* send_buf,
+                     BufferType* recv_buf,
+                     size_t count,
+                     reduction rtype,
+                     int root,
+                     const communicator& comm,
+                     const reduce_attr& attr = default_reduce_attr,
+                     const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -1240,15 +1240,15 @@ event reduce(const BufferType* send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event reduce(const BufferObjectType& send_buf,
-             BufferObjectType& recv_buf,
-             size_t count,
-             reduction rtype,
-             int root,
-             const communicator& comm,
-             const stream& stream,
-             const reduce_attr& attr = default_reduce_attr,
-             const vector_class<event>& deps = {});
+event CCL_API reduce(const BufferObjectType& send_buf,
+                     BufferObjectType& recv_buf,
+                     size_t count,
+                     reduction rtype,
+                     int root,
+                     const communicator& comm,
+                     const stream& stream,
+                     const reduce_attr& attr = default_reduce_attr,
+                     const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -1256,14 +1256,14 @@ event reduce(const BufferObjectType& send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event reduce(const BufferObjectType& send_buf,
-             BufferObjectType& recv_buf,
-             size_t count,
-             reduction rtype,
-             int root,
-             const communicator& comm,
-             const reduce_attr& attr = default_reduce_attr,
-             const vector_class<event>& deps = {});
+event CCL_API reduce(const BufferObjectType& send_buf,
+                     BufferObjectType& recv_buf,
+                     size_t count,
+                     reduction rtype,
+                     int root,
+                     const communicator& comm,
+                     const reduce_attr& attr = default_reduce_attr,
+                     const vector_class<event>& deps = {});
 
 /** @} */ // end of reduce
 
@@ -1286,42 +1286,27 @@ event reduce(const BufferObjectType& send_buf,
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
  */
-event reduce_scatter(const void* send_buf,
-                     void* recv_buf,
-                     size_t recv_count,
-                     datatype dtype,
-                     reduction rtype,
-                     const communicator& comm,
-                     const stream& stream,
-                     const reduce_scatter_attr& attr = default_reduce_scatter_attr,
-                     const vector_class<event>& deps = {});
+event CCL_API reduce_scatter(const void* send_buf,
+                             void* recv_buf,
+                             size_t recv_count,
+                             datatype dtype,
+                             reduction rtype,
+                             const communicator& comm,
+                             const stream& stream,
+                             const reduce_scatter_attr& attr = default_reduce_scatter_attr,
+                             const vector_class<event>& deps = {});
 
 /*!
  * \overload
  */
-event reduce_scatter(const void* send_buf,
-                     void* recv_buf,
-                     size_t recv_count,
-                     datatype dtype,
-                     reduction rtype,
-                     const communicator& comm,
-                     const reduce_scatter_attr& attr = default_reduce_scatter_attr,
-                     const vector_class<event>& deps = {});
-
-/*!
- * \overload
- */
-/* Type safety version */
-template <class BufferType,
-          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event reduce_scatter(const BufferType* send_buf,
-                     BufferType* recv_buf,
-                     size_t recv_count,
-                     reduction rtype,
-                     const communicator& comm,
-                     const stream& stream,
-                     const reduce_scatter_attr& attr = default_reduce_scatter_attr,
-                     const vector_class<event>& deps = {});
+event CCL_API reduce_scatter(const void* send_buf,
+                             void* recv_buf,
+                             size_t recv_count,
+                             datatype dtype,
+                             reduction rtype,
+                             const communicator& comm,
+                             const reduce_scatter_attr& attr = default_reduce_scatter_attr,
+                             const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -1329,13 +1314,28 @@ event reduce_scatter(const BufferType* send_buf,
 /* Type safety version */
 template <class BufferType,
           class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
-event reduce_scatter(const BufferType* send_buf,
-                     BufferType* recv_buf,
-                     size_t recv_count,
-                     reduction rtype,
-                     const communicator& comm,
-                     const reduce_scatter_attr& attr = default_reduce_scatter_attr,
-                     const vector_class<event>& deps = {});
+event CCL_API reduce_scatter(const BufferType* send_buf,
+                             BufferType* recv_buf,
+                             size_t recv_count,
+                             reduction rtype,
+                             const communicator& comm,
+                             const stream& stream,
+                             const reduce_scatter_attr& attr = default_reduce_scatter_attr,
+                             const vector_class<event>& deps = {});
+
+/*!
+ * \overload
+ */
+/* Type safety version */
+template <class BufferType,
+          class = typename std::enable_if<is_native_type_supported<BufferType>(), event>::type>
+event CCL_API reduce_scatter(const BufferType* send_buf,
+                             BufferType* recv_buf,
+                             size_t recv_count,
+                             reduction rtype,
+                             const communicator& comm,
+                             const reduce_scatter_attr& attr = default_reduce_scatter_attr,
+                             const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -1343,14 +1343,14 @@ event reduce_scatter(const BufferType* send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event reduce_scatter(const BufferObjectType& send_buf,
-                     BufferObjectType& recv_buf,
-                     size_t recv_count,
-                     reduction rtype,
-                     const communicator& comm,
-                     const stream& stream,
-                     const reduce_scatter_attr& attr = default_reduce_scatter_attr,
-                     const vector_class<event>& deps = {});
+event CCL_API reduce_scatter(const BufferObjectType& send_buf,
+                             BufferObjectType& recv_buf,
+                             size_t recv_count,
+                             reduction rtype,
+                             const communicator& comm,
+                             const stream& stream,
+                             const reduce_scatter_attr& attr = default_reduce_scatter_attr,
+                             const vector_class<event>& deps = {});
 
 /*!
  * \overload
@@ -1358,13 +1358,13 @@ event reduce_scatter(const BufferObjectType& send_buf,
 /* Type safety version */
 template <class BufferObjectType,
           class = typename std::enable_if<is_class_supported<BufferObjectType>(), event>::type>
-event reduce_scatter(const BufferObjectType& send_buf,
-                     BufferObjectType& recv_buf,
-                     size_t recv_count,
-                     reduction rtype,
-                     const communicator& comm,
-                     const reduce_scatter_attr& attr = default_reduce_scatter_attr,
-                     const vector_class<event>& deps = {});
+event CCL_API reduce_scatter(const BufferObjectType& send_buf,
+                             BufferObjectType& recv_buf,
+                             size_t recv_count,
+                             reduction rtype,
+                             const communicator& comm,
+                             const reduce_scatter_attr& attr = default_reduce_scatter_attr,
+                             const vector_class<event>& deps = {});
 
 /** @} */ // end of reduce_scatter
 } // namespace v1
@@ -1397,64 +1397,41 @@ namespace preview {
  * @param deps an optional vector of the events that the operation should depend on
  * @return @ref ccl::event an object to track the progress of the operation
  */
-ccl::event sparse_allreduce(
-    const void* send_ind_buf,
-    size_t send_ind_count,
-    const void* send_val_buf,
-    size_t send_val_count,
-    void* recv_ind_buf,
-    size_t recv_ind_count,
-    void* recv_val_buf,
-    size_t recv_val_count,
-    ccl::datatype ind_dtype,
-    ccl::datatype val_dtype,
-    ccl::reduction rtype,
-    const ccl::communicator& comm,
-    const ccl::stream& stream,
-    const ccl::sparse_allreduce_attr& attr = ccl::default_sparse_allreduce_attr,
-    const ccl::vector_class<ccl::event>& deps = {});
+ccl::event CCL_API
+sparse_allreduce(const void* send_ind_buf,
+                 size_t send_ind_count,
+                 const void* send_val_buf,
+                 size_t send_val_count,
+                 void* recv_ind_buf,
+                 size_t recv_ind_count,
+                 void* recv_val_buf,
+                 size_t recv_val_count,
+                 ccl::datatype ind_dtype,
+                 ccl::datatype val_dtype,
+                 ccl::reduction rtype,
+                 const ccl::communicator& comm,
+                 const ccl::stream& stream,
+                 const ccl::sparse_allreduce_attr& attr = ccl::default_sparse_allreduce_attr,
+                 const ccl::vector_class<ccl::event>& deps = {});
 
 /*!
  * \overload
  */
-ccl::event sparse_allreduce(
-    const void* send_ind_buf,
-    size_t send_ind_count,
-    const void* send_val_buf,
-    size_t send_val_count,
-    void* recv_ind_buf,
-    size_t recv_ind_count,
-    void* recv_val_buf,
-    size_t recv_val_count,
-    ccl::datatype ind_dtype,
-    ccl::datatype val_dtype,
-    ccl::reduction rtype,
-    const ccl::communicator& comm,
-    const ccl::sparse_allreduce_attr& attr = ccl::default_sparse_allreduce_attr,
-    const ccl::vector_class<ccl::event>& deps = {});
-
-/*!
- * \overload
- */
-/* Type safety version */
-template <class IndexBufferType,
-          class ValueBufferType,
-          class = typename std::enable_if<ccl::is_native_type_supported<ValueBufferType>(),
-                                          ccl::event>::type>
-ccl::event sparse_allreduce(
-    const IndexBufferType* send_ind_buf,
-    size_t send_ind_count,
-    const ValueBufferType* send_val_buf,
-    size_t send_val_count,
-    IndexBufferType* recv_ind_buf,
-    size_t recv_ind_count,
-    ValueBufferType* recv_val_buf,
-    size_t recv_val_count,
-    ccl::reduction rtype,
-    const ccl::communicator& comm,
-    const ccl::stream& stream,
-    const ccl::sparse_allreduce_attr& attr = ccl::default_sparse_allreduce_attr,
-    const ccl::vector_class<ccl::event>& deps = {});
+ccl::event CCL_API
+sparse_allreduce(const void* send_ind_buf,
+                 size_t send_ind_count,
+                 const void* send_val_buf,
+                 size_t send_val_count,
+                 void* recv_ind_buf,
+                 size_t recv_ind_count,
+                 void* recv_val_buf,
+                 size_t recv_val_count,
+                 ccl::datatype ind_dtype,
+                 ccl::datatype val_dtype,
+                 ccl::reduction rtype,
+                 const ccl::communicator& comm,
+                 const ccl::sparse_allreduce_attr& attr = ccl::default_sparse_allreduce_attr,
+                 const ccl::vector_class<ccl::event>& deps = {});
 
 /*!
  * \overload
@@ -1464,19 +1441,42 @@ template <class IndexBufferType,
           class ValueBufferType,
           class = typename std::enable_if<ccl::is_native_type_supported<ValueBufferType>(),
                                           ccl::event>::type>
-ccl::event sparse_allreduce(
-    const IndexBufferType* send_ind_buf,
-    size_t send_ind_count,
-    const ValueBufferType* send_val_buf,
-    size_t send_val_count,
-    IndexBufferType* recv_ind_buf,
-    size_t recv_ind_count,
-    ValueBufferType* recv_val_buf,
-    size_t recv_val_count,
-    ccl::reduction rtype,
-    const ccl::communicator& comm,
-    const ccl::sparse_allreduce_attr& attr = ccl::default_sparse_allreduce_attr,
-    const ccl::vector_class<ccl::event>& deps = {});
+ccl::event CCL_API
+sparse_allreduce(const IndexBufferType* send_ind_buf,
+                 size_t send_ind_count,
+                 const ValueBufferType* send_val_buf,
+                 size_t send_val_count,
+                 IndexBufferType* recv_ind_buf,
+                 size_t recv_ind_count,
+                 ValueBufferType* recv_val_buf,
+                 size_t recv_val_count,
+                 ccl::reduction rtype,
+                 const ccl::communicator& comm,
+                 const ccl::stream& stream,
+                 const ccl::sparse_allreduce_attr& attr = ccl::default_sparse_allreduce_attr,
+                 const ccl::vector_class<ccl::event>& deps = {});
+
+/*!
+ * \overload
+ */
+/* Type safety version */
+template <class IndexBufferType,
+          class ValueBufferType,
+          class = typename std::enable_if<ccl::is_native_type_supported<ValueBufferType>(),
+                                          ccl::event>::type>
+ccl::event CCL_API
+sparse_allreduce(const IndexBufferType* send_ind_buf,
+                 size_t send_ind_count,
+                 const ValueBufferType* send_val_buf,
+                 size_t send_val_count,
+                 IndexBufferType* recv_ind_buf,
+                 size_t recv_ind_count,
+                 ValueBufferType* recv_val_buf,
+                 size_t recv_val_count,
+                 ccl::reduction rtype,
+                 const ccl::communicator& comm,
+                 const ccl::sparse_allreduce_attr& attr = ccl::default_sparse_allreduce_attr,
+                 const ccl::vector_class<ccl::event>& deps = {});
 
 /** @} */ // end of sparse_allreduce
 } // namespace preview

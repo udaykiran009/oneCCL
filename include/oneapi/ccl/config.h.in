@@ -1,5 +1,8 @@
 #pragma once
 
+#define CCL_FORCEINLINE   inline __attribute__((always_inline))
+#define CCL_FORCENOINLINE __attribute__((noinline))
+
 /* All symbols shall be internal unless marked as CCL_API */
 #ifdef __linux__
 #   if __GNUC__ >= 4
