@@ -276,14 +276,13 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
             new atl_wrapper(cluster_devices_size, { rank }, kvs_wrapper));
 
         ccl::communicator_interface_ptr impl =
-            ccl::communicator_interface::create_communicator_impl(
-                device,
-                context,
-                rank,
-                cluster_devices_size,
-                preview::create_comm_split_attr(),
-                atl,
-                ccl::group_split_type::undetermined);
+            ccl::communicator_interface::create_communicator_impl(device,
+                                                                  context,
+                                                                  rank,
+                                                                  cluster_devices_size,
+                                                                  preview::create_comm_split_attr(),
+                                                                  atl,
+                                                                  ccl::group_split_type::single);
 
         //TODO use gpu_comm_attr to automatically visit()
         //auto single_dev_comm = std::dynamic_pointer_cast<single_device_communicator>(impl);
