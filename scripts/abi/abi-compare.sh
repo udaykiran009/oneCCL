@@ -112,7 +112,7 @@ export_symbols()
         exit $EXIT_FAILURE
     fi
 
-    (nm -D $in_file | grep -P '^\S+\s+T\b' | cut -d " " -f 3- > $out_file)
+    (nm --dynamic --defined-only --extern-only $in_file | cut -d " " -f 3- > $out_file)
 }
 
 run()
