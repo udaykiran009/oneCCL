@@ -275,6 +275,13 @@ post_build()
     cp ${ICC_BUNDLE_ROOT}/compiler/lib/intel64/libirc.a ./
     cp ${ICC_BUNDLE_ROOT}/compiler/lib/intel64/libsvml.a ./
     cp ${WORKSPACE}/build/_install/lib/libccl.a ./
+
+    if [ "${ENABLE_CODECOV}" = "yes" ]
+    then
+        cp ${ICC_BUNDLE_ROOT}/compiler/lib/intel64/libipgo.a ./
+        ar x libipgo.a
+    fi
+
     ar x libccl.a
     ar x libirc.a
     ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
