@@ -1,6 +1,8 @@
 #ifndef LP_H
 #define LP_H
 
+#define CCL_GPU_BF16_TRUNCATE
+
 #ifdef CCL_GPU_BF16_TRUNCATE
 
 float __bf16_to_fp32(ushort V) {
