@@ -198,7 +198,7 @@ set_environment()
     else
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
-            SYCL_BUNDLE_ROOT="/p/pdsd/scratch/jenkins/artefacts/ccl-nightly/last/inteloneapi/compiler/latest/linux/"
+            SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/last/compiler/latest/linux/"
             echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
         fi
         source ${SYCL_BUNDLE_ROOT}/../../../setvars.sh
@@ -259,7 +259,7 @@ set_impi_environment()
     if [ -z "${IMPI_PATH}" ]
     then
         echo "WARNING: IMPI_PATH isn't set, last oneAPI pack will be used."
-        export IMPI_PATH=/p/pdsd/scratch/Uploads/IMPI/linux/functional_testing/impi/2021.1-beta09/
+        export IMPI_PATH=/p/pdsd/scratch/Uploads/CCL_oneAPI/mpi_oneapi/last/mpi/latest/
     fi
     source ${IMPI_PATH}/env/vars.sh -i_mpi_library_kind=release_mt
 }
