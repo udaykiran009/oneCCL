@@ -112,7 +112,7 @@ export_symbols()
         exit $EXIT_FAILURE
     fi
 
-    (nm --dynamic --defined-only --extern-only $in_file | cut -d " " -f 3- > $out_file)
+    (nm --dynamic --defined-only --extern-only $in_file | grep 3ccl2v | cut -d " " -f 3- > $out_file)
 }
 
 run()
