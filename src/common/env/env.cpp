@@ -333,11 +333,13 @@ int env_data::env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_cou
     size_t affinity_size = local_proc_count * workers_per_process;
     worker_affinity.assign(affinity_size, 0);
 
-    if (affinity_to_parse && strcmp(affinity_to_parse, "auto") == 0) {
+    if (affinity_to_parse && strcmp(affinity_to_parse, "auto") == 0 &&
+        std::getenv(I_MPI_AVAILABLE_CORES_ENV)) {
         return env_2_worker_affinity_auto(local_proc_idx, workers_per_process);
     }
 
-    if (!affinity_to_parse || strlen(affinity_to_parse) == 0) {
+    if (!affinity_to_parse || strlen(affinity_to_parse) == 0 ||
+        ((strcmp(affinity_to_parse, "auto") == 0) && !std::getenv(I_MPI_AVAILABLE_CORES_ENV))) {
         /* generate default affinity */
         proccessor_count = sysconf(_SC_NPROCESSORS_ONLN);
         for (w_idx = 0; w_idx < affinity_size; w_idx++) {
