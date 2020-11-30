@@ -268,7 +268,7 @@ TYPED_TEST(ring_allreduce_single_device_multi_tile_fixture,
                 }
                 out << std::endl;
 
-                // bindleft_wrote_2_me_flag, read_for_receive_flag, local_barrier_flag
+                // bind left_wrote_2_me_flag, read_for_receive_flag, local_barrier_flag
                 i = 0;
                 std::array<int, 6> flag_offset{ 6, 7, 8, 10, 11, -1 };
                 UT_ASSERT(flag_offset.size() == flag_handles.size(),

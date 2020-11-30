@@ -31,7 +31,7 @@ protected:
         create_global_platform();
         local_affinity = global_affinities.at(0);
         create_local_platform();
-        create_module_descr("kernels/ring_allreduce.spv");
+        create_module_descr("kernels/ring_reduce.spv");
     }
 
     void TearDown() override {}
@@ -52,7 +52,7 @@ protected:
         const auto second_node_affinity = global_affinities.at(1);
         local_affinity.insert(second_node_affinity.begin(), second_node_affinity.end());
         create_local_platform();
-        create_module_descr("kernels/ring_allreduce.spv");
+        create_module_descr("kernels/ring_reduce.spv");
     }
 
     void TearDown() override {}
