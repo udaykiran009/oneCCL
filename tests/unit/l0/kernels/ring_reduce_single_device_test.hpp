@@ -5,16 +5,16 @@
 
 #include "reduce_fixture.hpp"
 
-DEFINE_KERNEL_TYPES_FOR_OP(reduce, add);
-DEFINE_KERNEL_TYPES_FOR_OP(reduce, mult);
-DEFINE_KERNEL_TYPES_FOR_OP(reduce, min);
-DEFINE_KERNEL_TYPES_FOR_OP(reduce, max);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce, add);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce, mult);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce, min);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce, max);
 
 namespace ring_single_device_case {
 
 namespace ring_reduce_case {}
 
-TYPED_TEST_CASE(ring_reduce_single_device_fixture, TestTypesAndOps);
+TYPED_TEST_CASE(ring_reduce_single_device_fixture, TestTypesAndOpsAllreduce);
 
 TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
     using namespace native;

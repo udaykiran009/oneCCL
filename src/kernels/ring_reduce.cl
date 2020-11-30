@@ -1,4 +1,5 @@
 #include "common_helpers.h"
+#include "lp.h"
 
 #pragma OPENCL EXTENSION cl_intel_subgroups : enable
 #pragma OPENCL EXTENSION cl_khr_subgroups : enable
@@ -224,11 +225,37 @@
         return max(lhs, rhs); \
     }
 
+#define DEFINE_BF16ADD_OP(T) \
+    T __add_##T(T lhs, T rhs) { \
+        return __fp32_to_bf16(__bf16_to_fp32(lhs) + __bf16_to_fp32(rhs)); \
+    }
+
+#define DEFINE_BF16MULT_OP(T) \
+    T __mult_##T(T lhs, T rhs) { \
+        return __fp32_to_bf16(__bf16_to_fp32(lhs) * __bf16_to_fp32(rhs)); \
+    }
+
+#define DEFINE_BF16MIN_OP(T) \
+    T __min_##T(T lhs, T rhs) { \
+        return __fp32_to_bf16(min(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs))); \
+    }
+
+#define DEFINE_BF16MAX_OP(T) \
+    T __max_##T(T lhs, T rhs) { \
+        return __fp32_to_bf16(max(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs))); \
+    }
+
 #define DEFINE_OPS(T) \
     DEFINE_ADD_OP(T) \
     DEFINE_MULT_OP(T) \
     DEFINE_MIN_OP(T) \
     DEFINE_MAX_OP(T)
+
+#define DEFINE_BF16OPS(T) \
+    DEFINE_BF16ADD_OP(T) \
+    DEFINE_BF16MULT_OP(T) \
+    DEFINE_BF16MIN_OP(T) \
+    DEFINE_BF16MAX_OP(T)
 
 // Define Op function for each supported type(use vector types for some of them as required by the kernel)
 DEFINE_OPS(char4)
@@ -245,8 +272,8 @@ DEFINE_OPS(ulong4)
 
 DEFINE_OPS(float4)
 DEFINE_OPS(double4)
-// Uses integer ops for now since bfloat16 is aliased to ushort for now
-DEFINE_OPS(bfloat16)
+
+DEFINE_BF16OPS(ushort)
 // TODO: Enable when half is supported
 DEFINE_OPS(float16)
 
@@ -255,6 +282,11 @@ DEFINE_KERNELS_WITH_OP(add)
 DEFINE_KERNELS_WITH_OP(mult)
 DEFINE_KERNELS_WITH_OP(min)
 DEFINE_KERNELS_WITH_OP(max)
+
+DEFINE_KERNELS_WITH_BF16OP(add)
+DEFINE_KERNELS_WITH_BF16OP(mult)
+DEFINE_KERNELS_WITH_BF16OP(min)
+DEFINE_KERNELS_WITH_BF16OP(max)
 
 // numa
 // TODO: vecsize
