@@ -90,8 +90,10 @@ then
 fi
 
 # global variable for several use places
+# See: MLSL-675.
 supported_kernels_colls="allgatherv,allreduce,alltoallv,bcast,reduce"
-
+kernel_colls_with_dtypes="allreduce,reduce,allgatherv"
+kernels_dtypes_list="int8,int32,float32"
 run_benchmark()
 {
     echo "================ENVIRONMENT=================="
@@ -172,8 +174,8 @@ run_benchmark()
        [ "$transport" == "ofi" ] &&       \
        [ "$runtime" == "level_zero" ] &&  \
        [ "$loop" == "regular" ] &&        \
-       [ "$coll" == ${supported_kernels_colls} ] && \
-       [ "$dtype" == "float32" ] &&       \
+       [[ "$coll" == ${supported_kernels_colls} || "$coll" == ${kernel_colls_with_dtypes} ]] && \
+       [[ "$dtype" == "float32" || "$dtype" == ${kernels_dtypes_list} ]] &&       \
        [ "$reduction" == "sum" ]
     then
         echo "set flag use_kernel"
@@ -386,6 +388,7 @@ run()
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular allreduce ${dtype_list} ${reduction_list}
                             ccl_extra_env="${ccl_runtime_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernels_colls} float32 sum
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${kernel_colls_with_dtypes} ${kernels_dtypes_list} sum
                         done
                     done
                 elif [ "$dir_name" == "sycl" ];
