@@ -2,7 +2,7 @@
 
 #include "../base_fixture.hpp"
 
-template <class T>
+template <class DType>
 class ring_reduce_scatter_single_device_fixture : public common_fixture {
 protected:
     ring_reduce_scatter_single_device_fixture()

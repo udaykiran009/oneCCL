@@ -29,6 +29,7 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
     const int num_thread = 4;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
+
     ze_device_mem_alloc_desc_t mem_descr{
         .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
         .pNext = NULL,
@@ -171,6 +172,8 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
         .flags = 0,
     };
     desc.pKernelName = allreduce_param_traits<native_type, op_type>::kernel_name;
+    this->output << "KERNEL_NAME: " << desc.pKernelName << std::endl;
+
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;

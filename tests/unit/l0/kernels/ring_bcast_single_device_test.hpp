@@ -66,28 +66,19 @@ TYPED_TEST(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
             //allocate flags & memory
             // memory
             auto mem_buf = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
-            // auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            // auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
-            // auto temp_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type));
+
             if (thread_idx == root) {
-                // mem_send.enqueue_write_sync(send_values);
                 mem_buf.enqueue_write_sync(send_values);
             }
             else {
-                // mem_send.enqueue_write_sync(recv_values);
                 mem_buf.enqueue_write_sync(recv_values);
             }
-            // mem_recv.enqueue_write_sync(recv_values);
-            // temp_recv.enqueue_write_sync(recv_values);
 
             /* fill array in specific order
              * Left: l_send, l_recv, l_tmp_recv, r_tmp_recv
              * Right: r_send, r_recv, r_tmp_recv, l_tmp_recv
              */
             memory_storage.register_shared_data(thread_idx, num_thread, std::move(mem_buf));
-            // std::move(mem_send),
-            // std::move(mem_recv),
-            // std::move(temp_recv));
 
             // flags
             auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
@@ -127,6 +118,8 @@ TYPED_TEST(ring_bcast_single_device_fixture, ring_bcast_single_device_mt) {
         .flags = 0,
     };
     desc.pKernelName = bcast_param_traits<native_type>::kernel_name;
+    this->output << "KERNEL_NAME: " << desc.pKernelName << std::endl;
+
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;

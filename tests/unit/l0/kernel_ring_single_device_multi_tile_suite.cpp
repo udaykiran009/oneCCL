@@ -1,6 +1,8 @@
 #include "base.hpp"
 #include "fixture.hpp"
-#include "kernels/ring_allreduce_single_device_multi_tile_test.hpp"
+#include "kernels/multi_tile/ring_allreduce_single_device_multi_tile_test.hpp"
+#include "kernels/multi_tile/ring_bcast_single_device_multi_tile_test.hpp"
+#include "kernels/multi_tile/ring_reduce_single_device_multi_tile_test.hpp"
 
 int main(int ac, char* av[]) {
     set_test_device_indices(getenv("L0_CLUSTER_AFFINITY_MASK"));
@@ -11,7 +13,15 @@ int main(int ac, char* av[]) {
 
     using namespace ring_single_device_multi_tile_case;
     {
-        Test_ring_allreduce_single_device_multi_tile t;
+        TypedTest_ring_allreduce_single_device_multi_tile t;
+        t.start();
+    }
+    {
+        TypedTest_ring_bcast_single_device_multi_tile t;
+        t.start();
+    }
+    {
+        TypedTest_ring_bcast_single_device_multi_tile t;
         t.start();
     }
     return 0;

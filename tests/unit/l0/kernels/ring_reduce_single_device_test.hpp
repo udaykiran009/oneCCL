@@ -45,8 +45,6 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
               "Count: %" << driver.devices.size() << ", bits: " << this->local_affinity.size()
                          << "Device count is not equal to affinity mask!");
 
-    std::vector<size_t> thread_indices;
-
     // device memory stencil data
     // Fill the data in the following order:
     // 0: 1 4 6 ...
@@ -70,7 +68,6 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
     int root = 2;
 
     for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-        thread_indices.push_back(thread_idx);
         try {
             //initialize communication params
             int rank_idx = thread_idx;
@@ -140,7 +137,8 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
         .flags = 0,
     };
     desc.pKernelName = reduce_param_traits<native_type, op_type>::kernel_name;
-    std::cout << "KERNEL_NAMEL: " << desc.pKernelName << std::endl;
+    this->output << "KERNEL_NAME: " << desc.pKernelName << std::endl;
+
     std::map<size_t, ze_kernel_handle_t> thread_kernels;
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
@@ -267,7 +265,7 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
                 }
                 out << std::endl;
 
-                // bindleft_wrote_2_me_flag, read_for_receive_flag, local_barrier_flag
+                // bind left_wrote_2_me_flag, read_for_receive_flag, local_barrier_flag
                 i = 0;
                 std::array<int, flag_group_count * 2> flag_offset{ 6, 7, 8, 10, 11, -1 };
                 //UT_ASSERT(flag_offset.size() == flag_handles.size(), "flag_offset != flag_handles");

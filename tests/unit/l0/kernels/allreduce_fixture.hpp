@@ -2,7 +2,7 @@
 
 #include "../base_fixture.hpp"
 
-template <class T>
+template <class DType>
 class ring_allreduce_single_device_fixture : public common_fixture {
 protected:
     ring_allreduce_single_device_fixture()
@@ -37,6 +37,7 @@ protected:
     void TearDown() override {}
 };
 
+template <class DType>
 class ring_allreduce_single_device_multi_tile_fixture : public common_fixture {
 protected:
     ring_allreduce_single_device_multi_tile_fixture()
