@@ -2,8 +2,6 @@
 
 #include "common_fixture.hpp"
 
-#include "lp.hpp"
-
 #ifdef STANDALONE_UT
 namespace ccl {
 template <class type>
@@ -17,6 +15,8 @@ struct native_type_info {
 #endif
 
 using bfloat16 = ccl::bfloat16;
+using ccl::fp32_to_bf16;
+using ccl::bf16_to_fp32;
 
 namespace ccl {
 namespace v1 {
