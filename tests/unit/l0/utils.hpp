@@ -13,6 +13,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <memory>
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -152,6 +153,75 @@ typename Container::mapped_type& find_storage_val(Container& storage, int thread
                                  std::to_string(thread_idx));
     }
     return storage.find(thread_idx)->second;
+}
+
+template <class Arr_t, class Type>
+ze_result_t zeKernelSetArgumentValueWrap(ze_kernel_handle_t kernel, Arr_t& offset, Type& handle) {
+    return zeKernelSetArgumentValue(kernel, offset, sizeof(handle), &handle);
+}
+
+template <class Arr_t, class Type>
+ze_result_t zeKernelSetArgumentValueWrap(ze_kernel_handle_t kernel,
+                                         Arr_t& offset,
+                                         native::ccl_device::device_memory<Type>* handle) {
+    auto ptr = handle->get_ptr();
+    return zeKernelSetArgumentValue(kernel, offset, sizeof(*ptr), ptr);
+}
+
+template <class Arr, class Container>
+void bind_kernel_args(ze_kernel_handle_t kernel,
+                      const size_t thread_idx,
+                      std::stringstream& out,
+                      Arr& offsets,
+                      Container& handles) {
+    int i = 0;
+#ifdef STANDALONE_UT
+    UT_ASSERT(offsets.size() == handles.size(),
+              "  offsets != handles"
+                  << "\nLog:\n"
+                  << out.str());
+#endif
+
+    for (auto& handle : handles) {
+        if (i >= offsets.size()) {
+            break; //only own+right is needed
+        }
+        if (offsets[i] == -1) {
+            i++;
+            continue; //skip this argument
+        }
+
+        ze_result_t result = zeKernelSetArgumentValueWrap(kernel, offsets[i], handle);
+        if (result != ZE_RESULT_SUCCESS) {
+            throw std::runtime_error(
+                std::string("Cannot zeKernelSetArgumentValue memory at mem_offset: ") +
+                std::to_string(offsets[i]) + " index\nError: " + native::to_string(result));
+        }
+        i++;
+    }
+}
+
+void queue_sync_processing(native::ccl_device::device_cmd_list& list,
+                           native::ccl_device::device_queue& queue) {
+    ze_result_t ret = ZE_RESULT_SUCCESS;
+
+    ret = zeCommandListClose(list.handle);
+    if (ret != ZE_RESULT_SUCCESS) {
+        throw std::runtime_error(std::string("cannot zeCommandListClose, error: ") +
+                                 std::to_string(ret));
+    }
+
+    ret = zeCommandQueueExecuteCommandLists(queue.handle, 1, &list.handle, nullptr);
+    if (ret != ZE_RESULT_SUCCESS) {
+        throw std::runtime_error(std::string("cannot zeCommandQueueExecuteCommandLists, error: ") +
+                                 std::to_string(ret));
+    }
+
+    ret = zeCommandQueueSynchronize(queue.handle, std::numeric_limits<uint32_t>::max());
+    if (ret != ZE_RESULT_SUCCESS) {
+        throw std::runtime_error(std::string("cannot zeCommandQueueSynchronize, error: ") +
+                                 std::to_string(ret));
+    }
 }
 
 template <class T>
