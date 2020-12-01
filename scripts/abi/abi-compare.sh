@@ -112,7 +112,7 @@ export_symbols()
         exit $EXIT_FAILURE
     fi
 
-    (nm --dynamic --defined-only --extern-only $in_file | grep 3ccl2v | cut -d " " -f 3- > $out_file)
+    (nm --dynamic --defined-only --extern-only $in_file | grep 3ccl | cut -d " " -f 3- > $out_file)
 }
 
 run()
@@ -153,7 +153,7 @@ run()
         echo "FAILED"
         exit $EXIT_TEST_FAILED
     else
-        echo "PASSED"
+        echo "OK"
         exit $EXIT_TEST_PASSED
     fi
 }
