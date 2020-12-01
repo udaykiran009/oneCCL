@@ -5,12 +5,17 @@ exec | tee ./main_ouput.txt
 
 BASENAME=`basename $0 .sh`
 
-function create_work_dir()
+set_example_work_dir()
 {
-    if [ -z ${EXAMPLE_WORK_DIR} ]
+    SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
+    export EXAMPLE_WORK_DIR=${SCRIPT_DIR}/build
+}
+
+create_work_dir()
+{
+    if [[ -z "${EXAMPLE_WORK_DIR}" ]]
     then
-        SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
-        export EXAMPLE_WORK_DIR=${SCRIPT_DIR}/build
+        set_example_work_dir
         rm -r ${EXAMPLE_WORK_DIR}
         mkdir -p ${EXAMPLE_WORK_DIR}
     fi
@@ -29,7 +34,7 @@ declare -i total_fails=0
 declare -i total_skipped=0
 declare -i log_idx=0
 
-function check_test()
+check_test()
 {
     local test_log=$1
     local test_file=$2
@@ -67,27 +72,30 @@ check_clang()
     fi
 }
 
-which mpiexec
-MPI_INSTALL_CHECK=$?
-if [ "$MPI_INSTALL_CHECK" != "0" ]
-then
-    echo "Error: IMPI wasn't found"
-    exit 1
-fi
+check_environment()
+{
+    which mpiexec
+    MPI_INSTALL_CHECK=$?
+    if [ "$MPI_INSTALL_CHECK" != "0" ]
+    then
+        echo "Error: IMPI wasn't found"
+        exit 1
+    fi
 
-MPI_INSTALL_CHECK_2=`echo $I_MPI_ROOT`
-if [ "$MPI_INSTALL_CHECK_2" == "" ]
-then
-    echo "Error: I_MPI_ROOT wasn't found"
-    exit 1
-fi
+    MPI_INSTALL_CHECK_2=`echo $I_MPI_ROOT`
+    if [ "$MPI_INSTALL_CHECK_2" == "" ]
+    then
+        echo "Error: I_MPI_ROOT wasn't found"
+        exit 1
+    fi
 
-CCL_INSTALL_CHECK=`echo $CCL_ROOT`
-if [ "$CCL_INSTALL_CHECK" == "" ]
-then
-    echo "Error: CCL_ROOT wasn't found"
-    exit 1
-fi
+    CCL_INSTALL_CHECK=`echo $CCL_ROOT`
+    if [ "$CCL_INSTALL_CHECK" == "" ]
+    then
+        echo "Error: CCL_ROOT wasn't found"
+        exit 1
+    fi
+}
 
 # global variable for several use places
 # See: MLSL-675.
@@ -520,83 +528,135 @@ echo_log()
 
 print_help()
 {
-    echo_log "Usage:"
-    echo_log "    ./${BASENAME}.sh <options> <scope>"
-    echo_log "Example:"
-    echo_log "    ./${BASENAME}.sh "
-    echo_log "    ./${BASENAME}.sh cpu"
-    echo_log "    ./${BASENAME}.sh gpu"
-    echo_log "    ./${BASENAME}.sh gpu pr"
+    echo_log "Usage: ${BASENAME}.sh <options>"
+    echo_log "  --mode mode             cpu|gpu mode"
+    echo_log "  --scope scope           pr reduces scope till minimal pre-merge scope"
+    echo_log "  --build-only            build only"
+    echo_log "  --help                  print help information"
+    echo_log
+    echo_log "Usage examples:"
+    echo_log "  ${BASENAME}.sh "
+    echo_log "  ${BASENAME}.sh --mode cpu"
+    echo_log "  ${BASENAME}.sh --mode gpu"
+    echo_log "  ${BASENAME}.sh --mode gpu --scope pr"
     echo_log ""
     echo_log "Available knobs:"
-    echo_log "C_COMPILER = clang|icc|gcc|<full path to compiler>, default is clang"
-    echo_log "CXX_COMPILER = clang++|icpc|g++|<full path to compiler>, default is clang++"
-    echo_log ""
-    echo_log "<options>:"
-    echo_log "    -h Print help information"
-    echo_log "    cpu|gpu mode"
-    echo_log "    pr reduces scope till minimal pre-merge scope"
+    echo_log "  C_COMPILER = clang|icc|gcc|<full path to compiler>, default is clang"
+    echo_log "  CXX_COMPILER = clang++|icpc|g++|<full path to compiler>, default is clang++"
     echo_log ""
 }
 
-if [[ ! -z ${1} ]]
-then
-    MODE=${1}
-elif [[ ! ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",dpcpp,"* ]] || [[ ! -n ${DASHBOARD_GPU_DEVICE_PRESENT} ]]
-then
-    echo "WARNING: DASHBOARD_INSTALL_TOOLS_INSTALLED variable doesn't contain 'dpcpp' or the DASHBOARD_GPU_DEVICE_PRESENT variable is missing"
-    echo "WARNING: Using cpu_icc configuration of the library"
-    source ${CCL_ROOT}/env/vars.sh --ccl-configuration=cpu_icc
-    MODE="cpu"
-else
-    MODE="gpu"
-fi
-echo "MODE: $MODE "
+parse_arguments()
+{
+    while [ $# -ne 0 ]
+    do
+        case $1 in
+            "-h" | "--help" | "-help")                  print_help ; exit 0 ;;
+            "--mode" | "-mode")                         MODE=$2 ; shift ;;
+            "gpu")                                      MODE="gpu" ;;
+            "cpu")                                      MODE="cpu" ;;
+            "pr")                                       SCOPE="pr" ;;
+            "--mode" | "-mode")                         MODE=$2 ; shift ;;
+            "--scope" | "-scope")                       SCOPE=$2 ; shift ;;
+            "--build-only" | "-build-only")             BUILD_ONLY="yes" ;;
+            "--run-only" | "-run-only")                 RUN_ONLY="yes" ;;
+            *)
+            echo "$(basename $0): ERROR: unknown option ($1)"
+            print_help
+            exit 1
+            ;;
+        esac
+        shift
+    done
 
+    echo "Parameters:"
+    [[ ! -z "$MODE" ]] && echo "MODE: $MODE"
+    [[ ! -z "$SCOPE" ]] && echo "SCOPE: $SCOPE"
+    [[ ! -z "$BUILD_ONLY" ]] && echo "BUILD_ONLY: $BUILD_ONLY"
+    [[ ! -z "$RUN_ONLY" ]] && echo "RUN_ONLY: $RUN_ONLY"
+    echo
+}
 
-case $MODE in
-"cpu" )
-    if [[ -z "${C_COMPILER}" ]] && [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]
+check_mode()
+{
+    if [[ -z ${MODE} ]]
     then
-        C_COMPILER=icc
-    else
-        C_COMPILER=gcc
+        if [[ ! ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",dpcpp,"* ]] || [[ ! -n ${DASHBOARD_GPU_DEVICE_PRESENT} ]]
+        then
+            echo "WARNING: DASHBOARD_INSTALL_TOOLS_INSTALLED variable doesn't contain 'dpcpp' or the DASHBOARD_GPU_DEVICE_PRESENT variable is missing"
+            echo "WARNING: Using cpu_icc configuration of the library"
+            source ${CCL_ROOT}/env/vars.sh --ccl-configuration=cpu_icc
+            MODE="cpu"
+        else
+            MODE="gpu"
+        fi
     fi
-    if [[ -z "${CXX_COMPILER}" ]] && [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]
-    then
-        CXX_COMPILER=icpc
-    else
-        CXX_COMPILER=g++
-    fi
-    ;;
-"-h" )
-    print_help
-    exit 0
-    ;;
-"gpu"|* )
-    check_clang
-    if [ -z "${C_COMPILER}" ]
-    then
-        C_COMPILER=clang
-    fi
-    if [ -z "${CXX_COMPILER}" ]
-    then
-        CXX_COMPILER=dpcpp
-        COMPUTE_RUNTIME="dpcpp"
-    fi
-    ;;
-esac
 
-if [[ ! -z ${2} ]]
-then
-    SCOPE=${2}
-    echo "SCOPE:" $SCOPE
-    if [[ ${SCOPE} != "pr" ]]
+    case $MODE in
+    "cpu" )
+        if [[ -z "${C_COMPILER}" ]] && [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]
+        then
+            C_COMPILER=icc
+        else
+            C_COMPILER=gcc
+        fi
+        if [[ -z "${CXX_COMPILER}" ]] && [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]
+        then
+            CXX_COMPILER=icpc
+        else
+            CXX_COMPILER=g++
+        fi
+        ;;
+    "gpu"|* )
+        check_clang
+        if [ -z "${C_COMPILER}" ]
+        then
+            C_COMPILER=clang
+        fi
+        if [ -z "${CXX_COMPILER}" ]
+        then
+            CXX_COMPILER=dpcpp
+            COMPUTE_RUNTIME="dpcpp"
+        fi
+        ;;
+    esac
+}
+
+check_scope()
+{
+    if [[ ! -z ${SCOPE} ]] && [[ ${SCOPE} != "pr" ]]
     then
+        echo "Unsupported scope: $SCOPE"
         print_help
+        exit 1
+    fi
+}
+
+parse_arguments $@
+check_environment
+check_mode
+
+if [[ ${RUN_ONLY} != "yes" ]]
+then
+    check_scope
+    create_work_dir
+    if [[ -z ${BUILD_ONLY} ]] || [[ ${BUILD_ONLY} == "no" ]]
+    then
+        build
+    else
+        build
+        exit 0
     fi
 fi
 
-create_work_dir
-build
-run
+if [[ -z ${BUILD_ONLY} ]] || [[ ${BUILD_ONLY} == "no" ]]
+then
+    if [[ -z ${RUN_ONLY} ]] || [[ ${RUN_ONLY} == "no" ]]
+    then
+        run
+    else
+        set_example_work_dir
+        run
+        exit 0
+    fi
+fi
