@@ -302,15 +302,26 @@ run()
 
     if [[ ${MODE} = "cpu" ]]
     then
-        dir_list="cpu common benchmark external_launcher"
-        bench_backend_list="host"
-        example_selector_list="cpu host default"
+        if [[ ${SCOPE} = "abi" ]]
+        then
+            dir_list="cpu common external_launcher"
+            bench_backend_list="host"
+            example_selector_list="cpu"
+        else
+            dir_list="cpu common benchmark external_launcher"
+            bench_backend_list="host"
+            example_selector_list="cpu host default"
+        fi
     else
         if [[ ${SCOPE} = "pr" ]]
         then
             dir_list="common benchmark"
             bench_backend_list="sycl"
-            example_selector_list="host gpu"
+            example_selector_list="host gpu"x
+        elif [[ ${SCOPE} = "abi" ]]; then
+            dir_list="cpu common sycl"
+            bench_backend_list="host sycl"
+            example_selector_list="cpu gpu"
         else
             dir_list="cpu common sycl benchmark"
             bench_backend_list="host sycl"
@@ -321,6 +332,12 @@ run()
     echo "dir_list =" $dir_list "; example_selector_list =" $example_selector_list
     for dir_name in $dir_list
     do
+        if [ ! -d "$(pwd)/${dir_name}" ]
+        then
+            echo "Directory $(pwd)/${dir_name} not found"
+            continue
+        fi
+
         cd $dir_name
         pwd
         for transport in "ofi" "mpi";
@@ -624,11 +641,16 @@ check_mode()
 
 check_scope()
 {
-    if [[ ! -z ${SCOPE} ]] && [[ ${SCOPE} != "pr" ]]
+    if [[ ! -z ${SCOPE} ]]
     then
-        echo "Unsupported scope: $SCOPE"
-        print_help
-        exit 1
+        case $SCOPE in
+            "pr" | "abi") ;;
+            *)
+            echo "Unsupported scope: $SCOPE"
+            print_help
+            exit 1
+            ;;
+        esac
     fi
 }
 
