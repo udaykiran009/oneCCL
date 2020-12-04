@@ -317,7 +317,7 @@ run()
         then
             dir_list="common benchmark"
             bench_backend_list="sycl"
-            example_selector_list="host gpu"x
+            example_selector_list="host gpu"
         elif [[ ${SCOPE} = "abi" ]]; then
             dir_list="cpu common sycl"
             bench_backend_list="host sycl"
