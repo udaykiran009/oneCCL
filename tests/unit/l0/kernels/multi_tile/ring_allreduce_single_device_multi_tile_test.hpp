@@ -9,7 +9,7 @@ DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, max);
 
 namespace ring_single_device_multi_tile_case {
 
-TYPED_TEST_CASE(ring_allreduce_single_device_multi_tile_fixture, TestTypesAndOpsAllreduce);
+TYPED_TEST_CASE(ring_allreduce_single_device_multi_tile_fixture, TestTypesAndOpsReduction);
 TYPED_TEST(ring_allreduce_single_device_multi_tile_fixture,
            ring_allreduce_single_device_multi_tile) {
     using namespace native;

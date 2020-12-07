@@ -15,7 +15,7 @@ namespace ring_single_device_case {
 
 namespace ring_allreduce_case {}
 
-TYPED_TEST_CASE(ring_allreduce_single_device_fixture, TestTypesAndOpsAllreduce);
+TYPED_TEST_CASE(ring_allreduce_single_device_fixture, TestTypesAndOpsReduction);
 
 TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt) {
     using namespace native;

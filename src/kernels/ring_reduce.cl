@@ -3,7 +3,7 @@
 
 #pragma OPENCL EXTENSION cl_intel_subgroups : enable
 #pragma OPENCL EXTENSION cl_khr_subgroups : enable
-
+//#define KERNEL_DEBUG
 #ifdef KERNEL_DEBUG
 
 #define LOG_INPUT_DATA_START(kern_id) printf("Kernel %zu, wait income data \n", kern_id)
@@ -203,7 +203,9 @@
     DEFINE_KERNEL(float16, float16, 1, __##OpName##_##float16, OpName) \
     DEFINE_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName) \
     DEFINE_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName) \
-    DEFINE_KERNEL(bfloat16, ushort, 1, __##OpName##_##bfloat16, OpName)
+
+#define DEFINE_KERNELS_WITH_BF16OP(OpName) \
+    DEFINE_KERNEL(bfloat16, ushort, 1, __##OpName##_##ushort, OpName)
 
 #define DEFINE_ADD_OP(T) \
     T __add_##T(T lhs, T rhs) { \

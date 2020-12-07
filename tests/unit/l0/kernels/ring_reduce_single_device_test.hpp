@@ -14,7 +14,7 @@ namespace ring_single_device_case {
 
 namespace ring_reduce_case {}
 
-TYPED_TEST_CASE(ring_reduce_single_device_fixture, TestTypesAndOpsAllreduce);
+TYPED_TEST_CASE(ring_reduce_single_device_fixture, TestTypesAndOpsReduction);
 
 TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
     using namespace native;
@@ -34,6 +34,7 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
     handles_storage<native_type> memory_storage(mem_group_count * num_thread);
     handles_storage<int> flags_storage(flag_group_count * num_thread);
     std::map<int, std::vector<int>> comm_param_storage;
+    handles_storage<native_type> host_results_storage(mem_group_count * num_thread);
 
     // check global driver
     auto drv_it = this->local_platform->drivers.find(0);
@@ -52,15 +53,18 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
     // i.e. on each iteration different thread has min and max value
     // This allows to better test min/max ops.
     std::map<size_t, std::vector<native_type>> send_values;
+    std::map<size_t, std::vector<native_type>> recv_values;
+    std::map<size_t, std::vector<native_type>> calc_values;
     for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         size_t mult = 0;
         for (size_t idx = 1; idx <= buffer_size; ++idx, ++mult) {
-            send_values[thread_idx].push_back(
-                static_cast<native_type>(idx * ((thread_idx + mult) % num_thread + 1)));
+            send_values[thread_idx].push_back(static_cast<native_type>(idx * ((thread_idx + mult) % num_thread + 1)));
+            recv_values[thread_idx].push_back(static_cast<native_type>(0));
+            calc_values[thread_idx].push_back(static_cast<native_type>(0));
         }
     }
     //std::iota(send_values.begin(), send_values.end(), 1);
-    std::vector<native_type> recv_values(buffer_size, 0);
+    //std::vector<native_type> recv_values(buffer_size, 0);
 
     // allocate device memory
     auto dev_it = driver.devices.begin();
@@ -86,9 +90,9 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
             auto temp_recv = device.alloc_memory<native_type>(
                 buffer_size / num_thread, sizeof(native_type), ctx);
             mem_send.enqueue_write_sync(send_values[thread_idx]);
-            mem_recv.enqueue_write_sync(recv_values);
-            temp_recv.enqueue_write_sync(recv_values.begin(),
-                                         recv_values.begin() + buffer_size / num_thread);
+            mem_recv.enqueue_write_sync(recv_values[thread_idx]);
+            temp_recv.enqueue_write_sync(recv_values[thread_idx].begin(),
+                                         recv_values[thread_idx].begin() + buffer_size / num_thread);
 
             /* fill array in specific order
              * Left: l_send, l_recv, l_tmp_recv, r_tmp_recv
@@ -270,50 +274,62 @@ TYPED_TEST(ring_reduce_single_device_fixture, ring_reduce_single_device_mt) {
         index++;
     }
 
-    size_t corr_val = 0;
-    try {
-        for (auto& idx_kernel : thread_kernels) {
-            size_t thread_idx = idx_kernel.first;
-            auto lambda = [&corr_val](const int root,
-                                      size_t thread_idx,
-                                      size_t num_thread,
-                                      native_type value) -> bool {
-                if (root == static_cast<int>(thread_idx)) {
-                    corr_val++;
-                    constexpr auto op = op_type{};
+    // Copy device buffers back to host...
+    for (auto& idx_kernel : thread_kernels) {
+      size_t thread_idx = idx_kernel.first;
+      auto& mem_handles = memory_storage.per_thread_storage.find(thread_idx)->second;
+      size_t mem_idx = 1; // Recv memory
+      size_t i = 0;
+      for (auto iter_mem = mem_handles.begin(); iter_mem != mem_handles.end(); iter_mem++, i++) {
+          if (i != mem_idx) {
+              continue;
+          }
+          const auto* data = *iter_mem;
+          auto it = std::find_if(memory_storage.allocated_storage.begin(),
+                                 memory_storage.allocated_storage.end(),
+                                 [data](const native::ccl_device::device_memory<native_type>& wrapper) {
+                                     return wrapper.handle == data;
+                                 });
 
-                    native_type totalVal = op.init();
-                    for (size_t i = 0; i < num_thread; ++i) {
-                        auto val = corr_val * (i % num_thread + 1);
-                        totalVal = op(totalVal, static_cast<native_type>(val));
-                    }
-
-                    if (!(value == totalVal)) {
-                        return false;
-                    }
-                }
-                else {
-                    if (value != native_type(0)) {
-                        corr_val = 0;
-                        return false;
-                    }
-                }
-                return true;
-            };
-
-            memory_storage.check_results(thread_idx, out, 1, lambda, root, thread_idx, num_thread);
-        }
+          recv_values[thread_idx] = it->enqueue_read_sync();
+      }
     }
-    catch (check_on_exception& ex) {
+
+    // Compute output buffers in the same order as within the OCl kernel i.e. farthest rank -> right_rank -> right_right_rank -> ... -> root_rank ...
+    size_t thread_idx_offset = (root + 1)%num_thread;
+    size_t thread_idx;
+    constexpr auto op = op_type{};
+    for (size_t buffer_idx = 0; buffer_idx < buffer_size; ++buffer_idx) {
+      native_type total_val = op.init();
+      for (size_t thread_ctr = 0; thread_ctr < num_thread; ++thread_ctr) {
+          thread_idx = (thread_ctr + thread_idx_offset)%num_thread;
+          native_type temp_send_values = send_values[thread_idx][buffer_idx];
+          total_val = op(total_val, temp_send_values);
+      }
+      calc_values[root][buffer_idx] = total_val;
+    }
+
+    // Check results against host...
+    try {
+      for (size_t thread_ctr = 0; thread_ctr < num_thread; ++thread_ctr) {
+        for (size_t buffer_idx = 0; buffer_idx < buffer_size; ++buffer_idx) {
+          if (recv_values[thread_idx][buffer_idx] != calc_values[thread_idx][buffer_idx]) {
+            throw comparison_exception(to_string(thread_idx), to_string(buffer_idx), to_string(recv_values[thread_idx][buffer_idx]), to_string(calc_values[thread_idx][buffer_idx]));
+          }
+        }
+      }
+    } catch (comparison_exception& ex) {
         out << "Check results: \n";
         //printout
         out << "Send memory:" << std::endl;
         memory_storage.dump_by_index(out, 0 /*send_mem*/);
-        out << "\nRecv memory:" << std::endl;
+        out << std::endl;
+        out << "Recv memory:" << std::endl;
         memory_storage.dump_by_index(out, 1 /*recv_mem*/);
+        out << std::endl;
 
         std::stringstream ss;
-        ss << ex.what() << ", But expected: " << corr_val << std::endl;
+        ss << ex.what() << std::endl;
         UT_ASSERT(false, ss.str());
     }
 }
