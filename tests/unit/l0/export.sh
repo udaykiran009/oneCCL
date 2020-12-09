@@ -24,7 +24,7 @@ function show_help()
             \t\tIn order to change the paths, please, modify these variables in the script:\n\
             \t\tINCLUDE_PATH_TO_LEVEL_ZERO, LIB_PATH_TO_LEVEL_ZERO\n\n\n\
             \tIMPORTANT: launch this script from 'mlsl2/tests/unit/l0/' in case of grabbing data\n\
-            \tSee some exaples to launch:\n\
+            \tSee some examples to launch:\n\
             \t\t 1. export.sh -cs dst_dir, export.sh -cm dst_dir, export.sh -s dst_dir and etc.\n\
             \t\t 2. export.sh -csp dst_dir - compile single_device_suite and pack it into archive\n\
             \n\
@@ -128,8 +128,10 @@ function export_test_common()
 {
     declare -a SourceArray=("${SCRIPT_DIR}/base.hpp"
                             "${SCRIPT_DIR}/utils.hpp"
+                            "${SCRIPT_DIR}/lp.hpp"
                             "${SCRIPT_DIR}/fixture.hpp"
                             "${SCRIPT_DIR}/base_fixture.hpp"
+                            "${SCRIPT_DIR}/common_fixture.hpp"
                             "${SCRIPT_DIR}/kernel_storage.hpp"
                             )
     cp "${PROJECT_DIR}/src/ccl_utils.cpp" "${export_dir}/native_device_api/l0/"
@@ -140,11 +142,14 @@ function export_test_common()
 
 function copy_all_stuff()
 {
-    printf "#define CCL_PRODUCT_FULL 0\n#define CCL_API\n#define MULTI_GPU_SUPPORT" > "${export_dir}/oneapi/ccl/config.h"
+    printf "#define CCL_PRODUCT_FULL 0\n#define CCL_BE_API\n#define CCL_API\n#define CCL_GPU_BF16_TRUNCATE\n#define MULTI_GPU_SUPPORT\n" \
+                                                                                                    > "${export_dir}/oneapi/ccl/config.h"
     mkdir -p "${export_dir}/kernels"
     declare -a TestSuite=("${SCRIPT_DIR}/kernels/*_test.hpp"
                           "${SCRIPT_DIR}/kernels/*_fixture.hpp")
     copy_files  "kernels" ${TestSuite[@]}
+
+    cp -r "${SCRIPT_DIR}/kernels/multi_tile" "${export_dir}/kernels"
 
     find "${PROJECT_DIR}/src/kernels/" -type f -name "*.cl" \
           -o -name "*.spv" \
@@ -155,7 +160,7 @@ function compile()
 {
     cd ${export_dir}
     echo "Compiling..."
-    # Note: -W -w disable g++ warnings
+    # Note add: '-W -w' to disable g++ warnings
      output=$(g++ -g -DMULTI_GPU_SUPPORT=1 -DSTANDALONE_UT -DUT_DEBUG -I${INCLUDE_PATH_TO_LEVEL_ZERO} \
     -I./ -Ioneapi -Ioneapi/ccl native_device_api/l0/*.cpp -L${LIB_PATH_TO_LEVEL_ZERO} -lze_loader \
     -L/usr/lib/ -lpthread  -pthread \

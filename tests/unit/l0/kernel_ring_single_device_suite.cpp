@@ -14,7 +14,7 @@ int main(int ac, char* av[]) {
     return RUN_ALL_TESTS();
 #else
 
-    // using namespace ring_single_device_case;
+    using namespace ring_single_device_case;
     // {
     //     TypedTest_ring_allgatherv_single_device_mt t;
     //     t.start();

@@ -171,16 +171,9 @@ ze_result_t zeKernelSetArgumentValueWrap(ze_kernel_handle_t kernel,
 template <class Arr, class Container>
 void bind_kernel_args(ze_kernel_handle_t kernel,
                       const size_t thread_idx,
-                      std::stringstream& out,
                       Arr& offsets,
                       Container& handles) {
     int i = 0;
-#ifdef STANDALONE_UT
-    UT_ASSERT(offsets.size() == handles.size(),
-              "  offsets != handles"
-                  << "\nLog:\n"
-                  << out.str());
-#endif
 
     for (auto& handle : handles) {
         if (i >= offsets.size()) {
