@@ -3,7 +3,7 @@
 
 #pragma OPENCL EXTENSION cl_intel_subgroups : enable
 #pragma OPENCL EXTENSION cl_khr_subgroups : enable
-//#define KERNEL_DEBUG
+
 #ifdef KERNEL_DEBUG
 
 #define LOG_INPUT_DATA_START(kern_id) printf("Kernel %zu, wait income data \n", kern_id)
