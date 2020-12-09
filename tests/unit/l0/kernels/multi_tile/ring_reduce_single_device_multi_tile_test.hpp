@@ -236,19 +236,20 @@ TYPED_TEST(ring_reduce_single_device_multi_tile_fixture, ring_reduce_single_devi
                     << "comm_offset" << std::endl;
                 // bind rank, size, buffer_size
                 std::array<int, 4> comm_offset{ 0, 1, 2, 12 };
-                bind_kernel_args(kernel, thread_idx, out, comm_offset, comm_handles);
+                UT_ASSERT(comm_offset.size() == comm_handles.size(), "comm_offset != comm_handles");
+                bind_kernel_args(kernel, thread_idx, comm_offset, comm_handles);
 
                 out << "thread_idx: " << thread_idx << " - "
                     << "mem_offset" << std::endl;
                 // bind l_send, l_recv, l_tmp, , , r_tmp
                 std::array<int, mem_group_count * 2> mem_offset{ 3, 4, 5, -1, -1, 9 };
-                bind_kernel_args(kernel, thread_idx, out, mem_offset, mem_handles);
+                bind_kernel_args(kernel, thread_idx, mem_offset, mem_handles);
 
                 out << "thread_idx: " << thread_idx << " - "
                     << "flag_offset" << std::endl;
                 // bind left_wrote_2_me_flag, read_for_receive_flag, local_barrier_flag
                 std::array<int, flag_group_count * 2> flag_offset{ 6, 7, 8, 10, 11, -1 };
-                bind_kernel_args(kernel, thread_idx, out, flag_offset, flag_handles);
+                bind_kernel_args(kernel, thread_idx, flag_offset, flag_handles);
 
                 {
                     ze_result_t ret = ZE_RESULT_SUCCESS;
