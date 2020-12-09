@@ -202,7 +202,7 @@
     /* TODO: implement support for missing types*/ \
     DEFINE_KERNEL(float16, float16, 1, __##OpName##_##float16, OpName) \
     DEFINE_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName) \
-    DEFINE_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName) \
+    DEFINE_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName)
 
 #define DEFINE_KERNELS_WITH_BF16OP(OpName) \
     DEFINE_KERNEL(bfloat16, ushort, 1, __##OpName##_##ushort, OpName)

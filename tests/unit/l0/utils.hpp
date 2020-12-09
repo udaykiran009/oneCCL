@@ -71,7 +71,8 @@ public:
                          const std::string& buffer_idx,
                          const std::string& kernel_val,
                          const std::string& host_val)
-            : m_msg("Invalid data - thread_idx: " + thread_idx + "; buffer_idx: " + buffer_idx + " -- kernel val: " + kernel_val + "; host_val: " + host_val) {}
+            : m_msg("Invalid data - thread_idx: " + thread_idx + "; buffer_idx: " + buffer_idx +
+                    " -- kernel val: " + kernel_val + "; host_val: " + host_val) {}
 
     virtual const char* what() const throw() {
         return m_msg.c_str();
@@ -359,10 +360,10 @@ struct handles_storage {
                 }
                 //size_t buffer_size = it->count();
                 std::vector<T> tmp = it->enqueue_read_sync();
-                for (int i = 0; i < tmp.size()-1; ++i) {
-                  out << i << ": " << tmp[i] << "; ";
+                for (int i = 0; i < tmp.size() - 1; ++i) {
+                    out << i << ": " << tmp[i] << "; ";
                 }
-                out << tmp.size()-1 << ": " << tmp[tmp.size()-1] << ";" << std::endl;
+                out << tmp.size() - 1 << ": " << tmp[tmp.size() - 1] << ";" << std::endl;
                 out << "\n\n" << std::endl;
             }
         }

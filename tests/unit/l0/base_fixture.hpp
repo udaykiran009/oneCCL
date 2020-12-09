@@ -162,41 +162,27 @@ struct my_max<bfloat16> {
     DEFINE_KERNEL_TYPES_FOR_OP(COLL, OP) \
     DEFINE_KERNEL_TYPE_FOR_OP(bfloat16, bfloat16, COLL, OP)
 
-using TestTypes = ::testing::Types<
-    int8_t,
-    uint8_t,
-    int16_t,
-    uint16_t,
-    int32_t,
-    uint32_t,
-    int64_t,
-    uint64_t,
-    float,
-    double
-    >;
+using TestTypes = ::testing::
+    Types<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double>;
 
 #define DEFINE_PAIR(T, Op) std::pair<T, Op>
 
 #define DEFINE_TYPE(T) \
-    DEFINE_PAIR(T, my_add<T>), \
-    DEFINE_PAIR(T, my_mult<T>), \
-    DEFINE_PAIR(T, my_min<T>), \
-    DEFINE_PAIR(T, my_max<T>)
+    DEFINE_PAIR(T, my_add<T>), DEFINE_PAIR(T, my_mult<T>), DEFINE_PAIR(T, my_min<T>), \
+        DEFINE_PAIR(T, my_max<T>)
 
 // Note: don't use float with mult op as the rounding error gets
 // noticeable quite fast
-using TestTypesAndOps = ::testing::Types<
-    DEFINE_PAIR(int8_t, my_add<int8_t>),
-    //DEFINE_PAIR(uint8_t, my_mult<uint8_t>),
-    DEFINE_PAIR(int16_t, my_min<int16_t>),
-    //DEFINE_PAIR(uint16_t, my_max<uint16_t>),
-    //DEFINE_PAIR(int32_t, my_add<int32_t>),
-    DEFINE_PAIR(uint32_t, my_mult<uint32_t>),
-    //DEFINE_PAIR(int64_t, my_min<int64_t>),
-    //DEFINE_PAIR(uint64_t, my_max<uint64_t>),
-    DEFINE_PAIR(float, my_max<float>),
-    DEFINE_PAIR(double, my_min<double>)
-    >;
+using TestTypesAndOps = ::testing::Types<DEFINE_PAIR(int8_t, my_add<int8_t>),
+                                         //DEFINE_PAIR(uint8_t, my_mult<uint8_t>),
+                                         DEFINE_PAIR(int16_t, my_min<int16_t>),
+                                         //DEFINE_PAIR(uint16_t, my_max<uint16_t>),
+                                         //DEFINE_PAIR(int32_t, my_add<int32_t>),
+                                         DEFINE_PAIR(uint32_t, my_mult<uint32_t>),
+                                         //DEFINE_PAIR(int64_t, my_min<int64_t>),
+                                         //DEFINE_PAIR(uint64_t, my_max<uint64_t>),
+                                         DEFINE_PAIR(float, my_max<float>),
+                                         DEFINE_PAIR(double, my_min<double>)>;
 
 /* BF16 in kernels is supported for allreduce & reduce only... */
 using TestTypesAndOpsReduction = ::testing::Types<
@@ -211,5 +197,4 @@ using TestTypesAndOpsReduction = ::testing::Types<
     //DEFINE_PAIR(float, my_add<float>),
     DEFINE_PAIR(double, my_min<double>),
     DEFINE_PAIR(bfloat16, my_add<bfloat16>),
-    DEFINE_PAIR(bfloat16, my_max<bfloat16>)
-    >;
+    DEFINE_PAIR(bfloat16, my_max<bfloat16>)>;

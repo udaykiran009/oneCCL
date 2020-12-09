@@ -70,18 +70,18 @@ struct bfloat16 {
 
     friend bfloat16 fp32_to_bf16(float val) {
         // Host-side conversion with RNE rounding - call routines from bf16.hpp
-        void *fp32_val_ptr = reinterpret_cast<void *>(&val);
+        void* fp32_val_ptr = reinterpret_cast<void*>(&val);
         bfloat16 res(0);
-        void *bf16_res_ptr = reinterpret_cast<void *>(&res.data);
+        void* bf16_res_ptr = reinterpret_cast<void*>(&res.data);
         ccl_convert_fp32_to_bf16_arrays(fp32_val_ptr, bf16_res_ptr, 1);
         return res;
     }
 
     friend float bf16_to_fp32(bfloat16 val) {
         // Host-side conversion - call routines from bf16.hpp
-        void *bf16_val_ptr = reinterpret_cast<void *>(&val.data);
+        void* bf16_val_ptr = reinterpret_cast<void*>(&val.data);
         float res = 0.0;
-        float *fp32_res_ptr = &res;
+        float* fp32_res_ptr = &res;
         ccl_convert_bf16_to_fp32_arrays(bf16_val_ptr, fp32_res_ptr, 1);
         return res;
     }
