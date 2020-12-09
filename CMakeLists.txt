@@ -220,7 +220,6 @@ if (CCL_BF16_COMPILER)
     endif()
 endif()
 
-add_definitions(-DCCL_GPU_BF16_TRUNCATE)
 set(CCL_GPU_BF16_TRUNCATE ON)
 
 set(CCL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
