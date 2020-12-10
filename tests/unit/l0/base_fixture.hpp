@@ -15,8 +15,6 @@ struct native_type_info {
 #endif
 
 using bfloat16 = ccl::bfloat16;
-using ccl::fp32_to_bf16;
-using ccl::bf16_to_fp32;
 
 #define DECLARE_KERNEL_TYPE(COLL) \
     template <class T> \
