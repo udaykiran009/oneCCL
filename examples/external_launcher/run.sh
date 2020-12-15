@@ -89,10 +89,14 @@ parse_arguments()
     elif [[ $VARS == *"vars.sh"* ]];
     then
         echo "Use oneAPI CCL variables script"
-        if [ -z "${IMPI_PATH}" ];
+        if [ -z "${I_MPI_ROOT}" ];
         then
-            echo_log "ERROR: set IMPI_PATH"
-            exit 1
+            echo_log "ERROR: I_MPI_ROOT was not set"
+            if [ -z "${IMPI_PATH}" ];
+            then
+                echo_log "ERROR: IMPI_PATH was not set"
+                exit 1
+            fi
         fi
     else
         echo_log "ERROR: unknown CCL variables script"
@@ -166,7 +170,13 @@ run_binary()
             log_files=("${log_files[@]}" "${log_file}")
 
             cmd="$dir/run_binary.sh -s ${SIZE} -r ${rank} -ls ${local_size} -lr ${i}"
-            cmd="${cmd} -cv ${VARS} -mv ${IMPI_PATH}/env/vars.sh -lf ${log_file} -sf ${store_file}"
+            cmd="${cmd} -cv ${VARS} -lf ${log_file} -sf ${store_file}"
+            if [[ -z ${I_MPI_ROOT} ]]
+            then
+                cmd="${cmd} -mv ${IMPI_PATH}/env/vars.sh"
+            else
+                cmd="${cmd} -mv ${I_MPI_ROOT}/env/vars.sh"
+            fi
 
             timeout -k $((TIMEOUT))s $((TIMEOUT))s ssh ${host} $cmd&
         done

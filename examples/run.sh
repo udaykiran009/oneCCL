@@ -304,11 +304,11 @@ run()
     then
         if [[ ${SCOPE} = "abi" ]]
         then
-            dir_list="cpu common external_launcher"
+            dir_list="external_launcher cpu common"
             bench_backend_list="host"
             example_selector_list="cpu"
         else
-            dir_list="cpu common benchmark external_launcher"
+            dir_list="external_launcher cpu common benchmark"
             bench_backend_list="host"
             example_selector_list="cpu host default"
         fi
@@ -461,22 +461,24 @@ run()
 
                     if [ -z "${I_MPI_HYDRA_HOST_FILE}" ];
                     then
-                        echo "Error: I_MPI_HYDRA_HOST_FILE was not set."
-                        exit 1
-                    else
-                        ccl_hosts=`echo $I_MPI_HYDRA_HOST_FILE`
-                        ccl_world_size=4
-                        ccl_vars="${CCL_ROOT}/env/setvars.sh"
-                        if [ ! -f "$ccl_vars" ];
-                        then
-                            # not a standalone version
-                            ccl_vars="${CCL_ROOT}/env/vars.sh"
-                        fi
-
-                        test_log="$EXAMPLE_WORK_DIR/$dir_name/log.txt"
-                        ${EXAMPLE_WORK_DIR}/${dir_name}/run.sh -v $ccl_vars -h $ccl_hosts -s $ccl_world_size 2>&1 | tee ${test_log}
-                        check_test ${test_log} "external_launcher"
+                        echo "WARNING: I_MPI_HYDRA_HOST_FILE was not set."    
+                        echo $(hostname) > ${SCRIPT_DIR}/${dir_name}/hostfile
+                        export I_MPI_HYDRA_HOST_FILE=${SCRIPT_DIR}/${dir_name}/hostfile
                     fi
+
+                    ccl_hosts=`echo $I_MPI_HYDRA_HOST_FILE`
+                    ccl_world_size=4
+                    ccl_vars="${CCL_ROOT}/env/setvars.sh"
+                    if [ ! -f "$ccl_vars" ];
+                    then
+                        # not a standalone version
+                        ccl_vars="${CCL_ROOT}/env/vars.sh"
+                    fi
+
+                    test_log="$EXAMPLE_WORK_DIR/$dir_name/log.txt"
+                    ${EXAMPLE_WORK_DIR}/${dir_name}/run.sh -v $ccl_vars -h $ccl_hosts -s $ccl_world_size 2>&1 | tee ${test_log}
+                    check_test ${test_log} "external_launcher"
+
                 else
                     if [[ "${example}" == *"communicator"* ]]
                     then
