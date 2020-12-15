@@ -5,16 +5,16 @@
 
 #include "reduce_scatter_fixture.hpp"
 
-DEFINE_KERNEL_TYPES_FOR_OP(reduce_scatter, add);
-DEFINE_KERNEL_TYPES_FOR_OP(reduce_scatter, mult);
-DEFINE_KERNEL_TYPES_FOR_OP(reduce_scatter, min);
-DEFINE_KERNEL_TYPES_FOR_OP(reduce_scatter, max);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce_scatter, add);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce_scatter, mult);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce_scatter, min);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce_scatter, max);
 
 namespace ring_single_device_case {
 
 namespace ring_reduce_scatter_case {}
 
-TYPED_TEST_CASE(ring_reduce_scatter_single_device_fixture, TestTypesAndOps);
+TYPED_TEST_CASE(ring_reduce_scatter_single_device_fixture, TestTypesAndOpsReduction);
 
 TYPED_TEST(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single_device_mt) {
     using namespace native;
@@ -47,9 +47,23 @@ TYPED_TEST(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single
                          << "Device count is not equal to affinity mask!");
 
     // device memory stencil data
-    std::vector<native_type> send_values(send_buffer_size);
-    std::iota(send_values.begin(), send_values.end(), 1);
-    std::vector<native_type> recv_values(send_buffer_size, 0);
+    // std::vector<native_type> send_values(send_buffer_size);
+    // std::iota(send_values.begin(), send_values.end(), 1);
+    // std::vector<native_type> recv_values(send_buffer_size, 0);
+    std::map<size_t, std::vector<native_type>> send_values;
+    std::map<size_t, std::vector<native_type>> recv_values;
+    std::map<size_t, std::vector<native_type>> calc_values;
+    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+        size_t mult = 0;
+        for (size_t idx = 1; idx <= send_buffer_size; ++idx, ++mult) {
+            send_values[thread_idx].push_back(
+                static_cast<native_type>(idx * ((thread_idx + mult) % num_thread + 1)));
+            calc_values[thread_idx].push_back(static_cast<native_type>(0));
+        }
+        for (size_t idx = 1; idx <= send_buffer_size; ++idx, ++mult) {
+            recv_values[thread_idx].push_back(static_cast<native_type>(0));
+        }
+    }
 
     // allocate device memory
     auto dev_it = driver.devices.begin();
@@ -75,11 +89,11 @@ TYPED_TEST(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single
             auto temp_recv =
                 device.alloc_memory<native_type>(2 * recv_buffer_size, sizeof(native_type), ctx);
 
-            mem_send.enqueue_write_sync(send_values);
-            mem_recv.enqueue_write_sync(recv_values.begin(),
-                                        recv_values.begin() + recv_buffer_size);
-            temp_recv.enqueue_write_sync(recv_values.begin(),
-                                         recv_values.begin() + 2 * recv_buffer_size);
+            mem_send.enqueue_write_sync(send_values[thread_idx]);
+            mem_recv.enqueue_write_sync(recv_values[thread_idx].begin(),
+                                        recv_values[thread_idx].begin() + recv_buffer_size);
+            temp_recv.enqueue_write_sync(recv_values[thread_idx].begin(),
+                                         recv_values[thread_idx].begin() + 2 * recv_buffer_size);
 
             /* fill array in specific order
              * Left: l_send, l_recv, l_tmp_recv, r_tmp_recv
@@ -256,43 +270,96 @@ TYPED_TEST(ring_reduce_scatter_single_device_fixture, ring_reduce_scatter_single
         index++;
     }
 
-    size_t corr_val = 0;
-    try {
-        for (auto& idx_kernel : thread_kernels) {
-            size_t thread_idx = idx_kernel.first;
+    // Copy device buffers back to host...
+    for (auto& idx_kernel : thread_kernels) {
+        size_t thread_idx = idx_kernel.first;
+        auto& mem_handles = memory_storage.per_thread_storage.find(thread_idx)->second;
+        size_t mem_idx = 1; // Recv memory
+        size_t i = 0;
+        for (auto iter_mem = mem_handles.begin(); iter_mem != mem_handles.end(); iter_mem++, i++) {
+            if (i != mem_idx) {
+                continue;
+            }
+            const auto* data = *iter_mem;
+            auto it =
+                std::find_if(memory_storage.allocated_storage.begin(),
+                             memory_storage.allocated_storage.end(),
+                             [data](const native::ccl_device::device_memory<native_type>& wrapper) {
+                                 return wrapper.handle == data;
+                             });
 
-            auto lambda = [&corr_val](
-                              size_t thread_idx, size_t num_thread, native_type value) -> bool {
-                corr_val++;
-
-                constexpr auto op = op_type{};
-
-                native_type totalVal = op.init();
-                for (size_t i = 0; i < num_thread; ++i) {
-                    totalVal = op(totalVal, static_cast<native_type>(corr_val));
-                }
-
-                if (!(value == totalVal)) {
-                    return false;
-                }
-
-                return true;
-            };
-
-            memory_storage.check_results(
-                thread_idx, out, 1 /*recv_mem*/, lambda, thread_idx, num_thread);
+            recv_values[thread_idx] = it->enqueue_read_sync();
         }
     }
-    catch (check_on_exception& ex) {
+
+    // Compute output buffers in the same order as within the OCl kernel i.e. do ring reduce-scatter on host...
+    size_t segment_offset_idx, right_thread_idx, buffer_offset;
+    size_t segment_size = send_buffer_size / num_thread;
+    native_type nbr_send_value, send_value, temp_calc_value;
+    constexpr auto op = op_type{};
+    // For each thread, populate the calc_values of the right neighbor
+    for (size_t thread_idx = 0; thread_idx < num_thread; ++thread_idx) {
+        right_thread_idx = (thread_idx + 1) % num_thread;
+        for (size_t segment_idx = 0; segment_idx < send_buffer_size; ++segment_idx) {
+            calc_values[right_thread_idx][segment_idx] = send_values[thread_idx][segment_idx];
+        }
+    }
+    // Now do ring reduce-scatter
+    for (size_t phase_idx = 1; phase_idx < num_thread; ++phase_idx) {
+        for (size_t thread_idx = 0; thread_idx < num_thread; ++thread_idx) {
+            right_thread_idx = (thread_idx + 1) % num_thread;
+            segment_offset_idx = (thread_idx - phase_idx + num_thread) % num_thread;
+            buffer_offset = segment_offset_idx * segment_size;
+            for (size_t segment_idx = 0; segment_idx < segment_size; ++segment_idx) {
+                nbr_send_value = calc_values[thread_idx][buffer_offset + segment_idx];
+                send_value = send_values[thread_idx][buffer_offset + segment_idx];
+                temp_calc_value = op(nbr_send_value, send_value);
+                calc_values[right_thread_idx][buffer_offset + segment_idx] = temp_calc_value;
+            }
+        }
+    }
+
+    // Check results against host...
+    try {
+        size_t segment_offset;
+        for (size_t thread_idx = 0; thread_idx < num_thread; ++thread_idx) {
+            segment_offset = thread_idx * segment_size;
+            for (size_t segment_idx = 0; segment_idx < segment_size; ++segment_idx) {
+                if (recv_values[thread_idx][segment_idx] !=
+                    calc_values[thread_idx][segment_offset + segment_idx]) {
+                    throw comparison_exception(
+                        to_string(thread_idx),
+                        to_string(segment_idx),
+                        to_string(recv_values[thread_idx][segment_idx]),
+                        to_string(calc_values[thread_idx][segment_offset + segment_idx]));
+                }
+            }
+        }
+    }
+    catch (comparison_exception& ex) {
         out << "Check results: \n";
         //printout
         out << "Send memory:" << std::endl;
         memory_storage.dump_by_index(out, 0 /*send_mem*/);
-        out << "\nRecv memory:" << std::endl;
+        out << std::endl;
+        out << "Recv memory:" << std::endl;
         memory_storage.dump_by_index(out, 1 /*recv_mem*/);
+        out << std::endl;
+        out << "Exp memory: " << std::endl;
+        size_t segment_size = send_buffer_size / num_thread, segment_offset;
+        for (size_t thread_idx = 0; thread_idx < num_thread; ++thread_idx) {
+            out << "Thread: " << thread_idx << ", handle: " << std::endl;
+            segment_offset = segment_size * thread_idx;
+            for (size_t segment_idx = 0; segment_idx < segment_size; ++segment_idx) {
+                out << segment_offset + segment_idx << ": "
+                    << calc_values[thread_idx][segment_offset + segment_idx] << "; ";
+            }
+            out << std::endl << std::endl << std::endl;
+        }
+        out << std::endl;
 
         std::stringstream ss;
-        ss << ex.what() << ", But expected: " << corr_val << std::endl;
+        ss << ex.what() << std::endl;
         UT_ASSERT(false, ss.str());
     }
 }
