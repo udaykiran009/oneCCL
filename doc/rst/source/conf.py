@@ -17,12 +17,12 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'oneCCL Documentation (Beta)'
+project = 'oneCCL Documentation'
 copyright = '2019–2020'
 author = 'Intel'
 
 # The full version, including alpha/beta/rc tags
-release = '2.0'
+release = '2021'
 
 rst_prolog = """
 .. |product_full| replace:: Intel\ |reg|\  oneAPI Collective Communications Library
