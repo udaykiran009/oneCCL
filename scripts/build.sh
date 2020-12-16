@@ -104,7 +104,7 @@ set_default_values()
     ENABLE_BUILD_GPU="no"
     ENABLE_INSTALL="no"
     CORE_COUNT=$(( $(lscpu | grep "^Socket(s):" | awk '{print $2}' ) * $(lscpu | grep "^Core(s) per socket:" | awk '{print $4}') ))
-	# 4 because of nuc has 4 core only
+    # 4 because of nuc has 4 core only
     MAKE_JOB_COUNT=$(( CORE_COUNT / 3 > 4 ? CORE_COUNT / 3 : 4 ))
 }
 #==============================================================================
@@ -204,70 +204,66 @@ check_icc_path()
     fi
     source ${ICC_BUNDLE_ROOT}/bin/compilervars.sh intel64
 }
-define_cpu_compiler()
+define_compiler()
 {
-    if [ -z "${compiler}" ]
+    if [ -z "${compute_backend}" ]
     then
         compiler="intel"
+    elif [ "${compute_backend}" == "dpcpp_level_zero" ]
+    then
+        compiler="clang"
     fi
-    if [ "${compiler}" = "gnu" ]
+
+    if [ "${compiler}" == "gnu" ]
     then
         check_gcc_path
-        C_COMPILER_CPU=${GNU_BUNDLE_ROOT}/gcc
-        CXX_COMPILER_CPU=${GNU_BUNDLE_ROOT}/g++
+        C_COMPILER=${GNU_BUNDLE_ROOT}/gcc
+        CXX_COMPILER=${GNU_BUNDLE_ROOT}/g++
     elif [ "${compiler}" = "intel" ]
     then
         check_icc_path
-        C_COMPILER_CPU=${ICC_BUNDLE_ROOT}/bin/intel64/icc
-        CXX_COMPILER_CPU=${ICC_BUNDLE_ROOT}/bin/intel64/icpc
+        C_COMPILER=${ICC_BUNDLE_ROOT}/bin/intel64/icc
+        CXX_COMPILER=${ICC_BUNDLE_ROOT}/bin/intel64/icpc
     elif [ "${compiler}" = "clang" ]
     then
         check_clang_path
-        C_COMPILER_CPU=${SYCL_BUNDLE_ROOT}/bin/clang
-        CXX_COMPILER_CPU=${SYCL_BUNDLE_ROOT}/bin/dpcpp
+        C_COMPILER=${SYCL_BUNDLE_ROOT}/bin/clang
+        CXX_COMPILER=${SYCL_BUNDLE_ROOT}/bin/dpcpp
     fi
 }
-define_gpu_compiler()
-{
-    check_clang_path
-    C_COMPILER_GPU=${SYCL_BUNDLE_ROOT}/bin/clang
-    CXX_COMPILER_GPU=${SYCL_BUNDLE_ROOT}/bin/dpcpp
-}
 
-build_cpu()
+build()
 {
-    define_cpu_compiler
+    define_compiler
     export I_MPI_ROOT=$IMPI_DIR
-    if [ -z ${BUILD_FOLDER} ]
+
+    if [ -z "${compute_backend}" ]
+    then
+        BUILD_FOLDER="build"
+    elif [ "${compute_backend}" == "dpcpp_level_zero" ]
+    then
+        BUILD_FOLDER="build_gpu"
+    fi
+
+    if [ -z "${BUILD_FOLDER}" ]
     then
         BUILD_FOLDER="build"
     fi
+    echo "compute_backend =" ${compute_backend}
+    echo "compiler =" ${compiler}
+    echo "BUILD_FOLDER =" ${BUILD_FOLDER}
     log mkdir ${WORKSPACE}/${BUILD_FOLDER} && cd ${WORKSPACE}/${BUILD_FOLDER} && echo ${PWD}
     log cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-    -DCMAKE_C_COMPILER="${C_COMPILER_CPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_CPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
-    -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}" \
+    -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
+    -DCOMPUTE_BACKEND="${compute_backend}" -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}" \
 
     log make -j$MAKE_JOB_COUNT VERBOSE=1 install
-    CheckCommandExitCode $? "cpu build failed"
-}
-
-build_gpu()
-{
-    define_gpu_compiler
-    export I_MPI_ROOT=$IMPI_DIR
-    rm -rf ${WORKSPACE}/build_gpu
-    log mkdir ${WORKSPACE}/build_gpu && cd ${WORKSPACE}/build_gpu && echo ${PWD}
-    log cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-    -DCMAKE_C_COMPILER="${C_COMPILER_GPU}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER_GPU}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
-    -DCOMPUTE_RUNTIME="dpcpp" -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}" \
-
-    log make -j$MAKE_JOB_COUNT VERBOSE=1 install
-    CheckCommandExitCode $? "gpu build failed"
+    CheckCommandExitCode $? "build failed"
 }
 
 post_build()
 {
-    define_cpu_compiler
+    define_compiler
     rm -rf ${TMP_DIR}/lib
     mkdir -p ${TMP_DIR}/lib
     cd ${TMP_DIR}/lib
@@ -287,11 +283,11 @@ post_build()
     ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
         svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
         svml_i_div4_core_y8la.o
-	if [ ! -z "${LIBFABRIC_INSTALL_DIR}" ]
+    if [ ! -z "${LIBFABRIC_INSTALL_DIR}" ]
     then
         LDFLAGS="-L${LIBFABRIC_INSTALL_DIR}/lib/"
-	fi
-	LDFLAGS=" ${LD_FLAGS} -Wl,-rpath,../../../../mpi/latest/lib/release_mt/"
+    fi
+    LDFLAGS=" ${LD_FLAGS} -Wl,-rpath,../../../../mpi/latest/lib/release_mt/"
 
     gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack \
         -Wl,--version-script=${WORKSPACE}/ccl.map -std=gnu99 -Wall -Werror \
@@ -763,11 +759,11 @@ run_build_cpu()
     if [ "${ENABLE_BUILD_CPU}" = "yes" ]
     then
         echo_log_separator
-        echo_log "#\t\t\tBuilding cpu..."
+        echo_log "#\t\t\tBuilding host..."
         echo_log_separator
-        build_cpu
+        build
         echo_log_separator
-        echo_log "#\t\t\tBuilding cpu... DONE"
+        echo_log "#\t\t\tBuilding host... DONE"
         echo_log_separator
     fi
 }
@@ -776,11 +772,15 @@ run_build_gpu()
     if [ "${ENABLE_BUILD_GPU}" = "yes" ]
     then
         echo_log_separator
-        echo_log "#\t\t\tBuilding gpu..."
+        echo_log "#\t\t\tBuilding dpcpp_level_zero..."
         echo_log_separator
-        build_gpu
+        if [ -z "${compute_backend}" ]
+        then        
+        compute_backend="dpcpp_level_zero"
+        fi
+        build
         echo_log_separator
-        echo_log "#\t\t\tBuilding gpu... DONE"
+        echo_log "#\t\t\tBuilding dpcpp_level_zero... DONE"
         echo_log_separator
     fi
 }

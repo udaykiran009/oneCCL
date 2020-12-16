@@ -130,33 +130,26 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(TRY_ENABLE_SYCL_L0 ON)
 
-if (COMPUTE_RUNTIME)
-    activate_compute_runtime("${CMAKE_CURRENT_LIST_DIR}/cmake" ${COMPUTE_RUNTIME})
-    if (NOT COMPUTE_RUNTIME_TARGET_NAME)
-        message(FATAL_ERROR "Failed to find requested compute runtime: ${COMPUTE_RUNTIME}")
+if (COMPUTE_BACKEND)
+    activate_compute_backend("${CMAKE_CURRENT_LIST_DIR}/cmake" ${COMPUTE_BACKEND})
+    if (NOT COMPUTE_BACKEND_TARGET_NAME)
+        message(FATAL_ERROR "Failed to find requested compute runtime: ${COMPUTE_BACKEND}")
     endif()
-    message(STATUS "COMPUTE_RUNTIME_TARGET_NAME: ${COMPUTE_RUNTIME_TARGET_NAME}")
-    if (${CCL_ENABLE_SYCL_V} STREQUAL 1)
-        option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
-        message(STATUS "Enable CCL SYCL runtime")
-        if (${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL")
-            set (CCL_ENABLE_SYCL_CHECK_CONTRACT "#if defined(__cplusplus)\n#if !defined(__clang__) || __clang_major__ < 9 || !defined(SYCL_LANGUAGE_VERSION)\n#error This version of CCL configured only for oneAPI DPC++ Compiler\n#endif\n#endif")
-            execute_process(COMMAND dpcpp -v
-                OUTPUT_VARIABLE DPCPP_VERSION
-                ERROR_VARIABLE DPCPP_VERSION
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-                ERROR_STRIP_TRAILING_WHITESPACE
-            )
-            message(STATUS "DPC++ compiler version:\n" "${DPCPP_VERSION}")
-        else(${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Codeplay::ComputeCpp")
-            set (CCL_ENABLE_SYCL_CHECK_CONTRACT "#if defined(__cplusplus)\n#if !defined(__clang__) || __clang_major__ < 6\n#error This version of CCL configured only for oneAPI DPC++ Compiler\n#endif\n#endif")
-        endif()
-    endif()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_RUNTIME_FLAGS}")
-    if ((${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "Intel::SYCL") AND
-        ${CCL_ENABLE_SYCL_L0} STREQUAL 1)
-        set(MULTI_GPU_SUPPORT ON)
-    elseif(${COMPUTE_RUNTIME_TARGET_NAME} STREQUAL "ze_loader")
+    message(STATUS "COMPUTE_BACKEND_TARGET_NAME: ${COMPUTE_BACKEND_TARGET_NAME}")
+
+	if (${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL" OR ${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL_level_zero")
+		option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
+		message(STATUS "Enable CCL SYCL runtime")
+		execute_process(COMMAND dpcpp -v
+			OUTPUT_VARIABLE DPCPP_VERSION
+			ERROR_VARIABLE DPCPP_VERSION
+			OUTPUT_STRIP_TRAILING_WHITESPACE
+			ERROR_STRIP_TRAILING_WHITESPACE
+		)
+		message(STATUS "DPC++ compiler version:\n" "${DPCPP_VERSION}")
+	endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_BACKEND_FLAGS}")
+    if (${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL_level_zero" OR ${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "ze_loader")
         set(MULTI_GPU_SUPPORT ON)
     endif()
     if (MULTI_GPU_SUPPORT)

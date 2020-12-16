@@ -217,8 +217,8 @@ target_compile_definitions(ccl-objects PRIVATE PT_LOCK_SPIN=1)
 target_compile_definitions(ccl-objects PRIVATE ATL_TRANSPORT_DL_DIR=\"${CCL_BUILD_DIR}\")
 target_include_directories(ccl-objects PRIVATE ${CCL_INC_DIRS})
 
-if(COMPUTE_RUNTIME_TARGET_NAME)
-    target_include_directories(ccl-objects PRIVATE $<TARGET_PROPERTY:${COMPUTE_RUNTIME_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
+if(COMPUTE_BACKEND_TARGET_NAME)
+    target_include_directories(ccl-objects PRIVATE $<TARGET_PROPERTY:${COMPUTE_BACKEND_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
 endif()
 
 # add library search directory
@@ -229,7 +229,7 @@ add_library(ccl SHARED $<TARGET_OBJECTS:ccl-objects>)
 target_include_directories(ccl PUBLIC ${CCL_INC_DIRS})
 # link with release_mt libmpi.so for oneAPI Base toolkit
 set_target_properties(ccl PROPERTIES LINK_FLAGS "-Wl,-rpath,../../../../mpi/latest/lib/release_mt/")
-target_link_libraries(ccl PUBLIC dl pthread ${EXTERNAL_LIBS} ${COMPUTE_RUNTIME_TARGET_NAME} fabric mpi)
+target_link_libraries(ccl PUBLIC dl pthread ${EXTERNAL_LIBS} ${COMPUTE_BACKEND_TARGET_NAME} fabric mpi)
 if (NOT LIB_SO_VERSION AND NOT LIB_MAJOR_VERSION)
         set_target_properties(ccl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
 else()
@@ -238,9 +238,10 @@ endif()
 install(TARGETS ccl LIBRARY DESTINATION ${CCL_INSTALL_LIB})
 install(FILES
     "../cmake/FindOpenCL.cmake"
-    "../cmake/FindL0.cmake"
+    "../cmake/Findlevel_zero.cmake"
     "../cmake/FindSYCL.cmake"
     "../cmake/FindIntelSYCL.cmake"
+    "../cmake/FindIntelSYCL_level_zero.cmake"
     "../cmake/FindComputeCpp.cmake"
     DESTINATION ${CCL_INSTALL_LIB})
 
@@ -254,11 +255,11 @@ install(TARGETS ccl-static ARCHIVE DESTINATION ${CCL_INSTALL_LIB} OPTIONAL)
 if(MULTI_GPU_SUPPORT)
     message("Turn on L0 multi-gpu unit tests")
     add_library(ccl-ut-static STATIC $<TARGET_OBJECTS:ccl-objects>)
-    target_link_libraries(ccl-ut-static PUBLIC dl pthread ${EXTERNAL_LIBS} ${COMPUTE_RUNTIME_TARGET_NAME} fabric mpi)
+    target_link_libraries(ccl-ut-static PUBLIC dl pthread ${EXTERNAL_LIBS} ${COMPUTE_BACKEND_TARGET_NAME} fabric mpi)
     set_target_properties(ccl-ut-static PROPERTIES COMPILE_FLAGS "-fvisibility=default -DUNIT_TESTS")
     set_target_properties(ccl-ut-static PROPERTIES OUTPUT_NAME cclut)
     set_target_properties(ccl-ut-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
-    set_target_properties(ccl-ut-static PROPERTIES INTERFACE_INCLUDE_DIRECTORIES  $<TARGET_PROPERTY:${COMPUTE_RUNTIME_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
+    set_target_properties(ccl-ut-static PROPERTIES INTERFACE_INCLUDE_DIRECTORIES  $<TARGET_PROPERTY:${COMPUTE_BACKEND_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
 endif(MULTI_GPU_SUPPORT)
 
 #headers installation

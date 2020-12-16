@@ -59,6 +59,6 @@ foreach(src ${sources})
     add_executable(${executable} ${src})
     add_dependencies(${executable} ${DEPENDENCIES})
     target_link_libraries(${executable} PUBLIC ${ADD_LIBS} ccl-ut-static
-                                               ${COMPUTE_RUNTIME_TARGET_NAME}
+                                               ${COMPUTE_BACKEND_TARGET_NAME}
                                                dl mpi fabric)
 endforeach()

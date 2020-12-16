@@ -268,14 +268,14 @@ build()
     # please use line below for manual testing by run.sh
     # cp ${EXAMPLE_WORK_DIR}/../../ccl_oneapi/CMakeLists.txt ${EXAMPLE_WORK_DIR}/../
     echo "Building"
-    if [ -z "${COMPUTE_RUNTIME}" ]
+    if [ -z "${COMPUTE_BACKEND}" ]
     then
         cmake .. -DCMAKE_C_COMPILER=${C_COMPILER} \
                  -DCMAKE_CXX_COMPILER=${CXX_COMPILER} 2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
     else
         cmake .. -DCMAKE_C_COMPILER=${C_COMPILER} \
                  -DCMAKE_CXX_COMPILER=${CXX_COMPILER} \
-                 -DCOMPUTE_RUNTIME=${COMPUTE_RUNTIME}  2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
+                 -DCOMPUTE_RUNTIME=${COMPUTE_BACKEND}  2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
     fi
     make -j 2>&1 | tee -a ${EXAMPLE_WORK_DIR}/build_output.log
     error_count=`grep -E -i -c 'error|abort|fail'  ${EXAMPLE_WORK_DIR}/build_output.log` > /dev/null 2>&1
@@ -635,7 +635,7 @@ check_mode()
         if [ -z "${CXX_COMPILER}" ]
         then
             CXX_COMPILER=dpcpp
-            COMPUTE_RUNTIME="dpcpp"
+            COMPUTE_BACKEND="dpcpp"
         fi
         ;;
     esac

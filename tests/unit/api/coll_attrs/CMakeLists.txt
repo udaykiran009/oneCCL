@@ -43,15 +43,15 @@ foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)
     add_executable(${executable} ${src} ${dependencies_sources})
     add_dependencies(${executable} gtest)
-    if(COMPUTE_RUNTIME)
+    if (COMPUTE_BACKEND)
         target_include_directories(${executable} PRIVATE
-                                                $<TARGET_PROPERTY:${COMPUTE_RUNTIME_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
+                                                $<TARGET_PROPERTY:${COMPUTE_BACKEND_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
         set_target_properties(${executable} PROPERTIES
                                                 INTERFACE_INCLUDE_DIRECTORIES
-                                                $<TARGET_PROPERTY:${COMPUTE_RUNTIME_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
+                                                $<TARGET_PROPERTY:${COMPUTE_BACKEND_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
 
-        target_link_libraries(${executable} PUBLIC ${COMPUTE_RUNTIME_TARGET_NAME})
-    endif(COMPUTE_RUNTIME)
+        target_link_libraries(${executable} PUBLIC ${COMPUTE_BACKEND_TARGET_NAME})
+    endif(COMPUTE_BACKEND)
 
     target_link_libraries(${executable} PUBLIC rt)
     target_link_libraries(${executable} PUBLIC m)

@@ -532,7 +532,7 @@ run_unit_tests(){
    
     echo -e "Compiling unit tests"
     build_output=$(cmake -DMULTI_GPU_SUPPORT=1 -DCMAKE_C_COMPILER=clang \
-                   -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_RUNTIME=dpcpp ..  \
+                   -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_BACKEND=dpcpp_level_zero ..  \
                    && make -j8 && make install 2>&1)
     if [[ $? != 0 ]]; then
         # There was an error, display the error in $output

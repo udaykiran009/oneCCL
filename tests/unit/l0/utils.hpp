@@ -191,7 +191,7 @@ void bind_kernel_args(ze_kernel_handle_t kernel,
                       const size_t thread_idx,
                       Arr& offsets,
                       Container& handles) {
-    int i = 0;
+    size_t i = 0;
 
     for (auto& handle : handles) {
         if (i >= offsets.size()) {
@@ -362,7 +362,7 @@ struct handles_storage {
                 }
                 //size_t buffer_size = it->count();
                 std::vector<T> tmp = it->enqueue_read_sync();
-                for (int i = 0; i < tmp.size() - 1; ++i) {
+                for (size_t i = 0; i < tmp.size() - 1; ++i) {
                     out << i << ": " << tmp[i] << "; ";
                 }
                 out << tmp.size() - 1 << ": " << tmp[tmp.size() - 1] << ";" << std::endl;

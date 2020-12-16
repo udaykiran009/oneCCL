@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #===============================================================================
+# Prioritize L0_ROOT
 file(GLOB sycl_headers "lib/clang/*/include")
 
 list(APPEND dpcpp_root_hints
@@ -24,6 +25,14 @@ if(dpcpp_root_hints)
 else()
     message("DPCPP_ROOT prefix path hint is not defiend")
 endif()
+
+find_package(level_zero REQUIRED)
+set(COMPUTE_RUNTIME_NAME ze_loader)
+
+if (NOT COMPUTE_RUNTIME_NAME)
+    message("Not OpenCL or L0")
+endif()
+
 
 include(CheckCXXCompilerFlag)
 include(FindPackageHandleStandardArgs)
@@ -42,7 +51,7 @@ find_path(INTEL_SYCL_INCLUDE_DIRS
     PATH_SUFFIXES
         include
         include/sycl
-        "${sycl_headers}"
+		"${sycl_headers}"
     NO_DEFAULT_PATH)
 
 find_library(INTEL_SYCL_LIBRARIES
@@ -53,21 +62,26 @@ find_library(INTEL_SYCL_LIBRARIES
     PATH_SUFFIXES lib
     NO_DEFAULT_PATH)
 
-find_package_handle_standard_args(IntelSYCL
-    FOUND_VAR IntelSYCL_FOUND
+find_package_handle_standard_args(IntelSYCL_level_zero
+    FOUND_VAR IntelSYCL_level_zero_FOUND
     REQUIRED_VARS
         INTEL_SYCL_LIBRARIES
         INTEL_SYCL_INCLUDE_DIRS
         INTEL_SYCL_SUPPORTED)
 
-if(IntelSYCL_FOUND AND NOT TARGET Intel::SYCL)
-    add_library(Intel::SYCL UNKNOWN IMPORTED)
+if(IntelSYCL_level_zero_FOUND AND NOT TARGET Intel::SYCL_level_zero)
+	get_target_property(LEVEL_ZERO_INCLUDE_DIRECTORIES ze_loader INTERFACE_INCLUDE_DIRECTORIES)
+
+    add_library(Intel::SYCL_level_zero UNKNOWN IMPORTED)
+	list(APPEND SYCL_LEVEL_ZERO_INCLUDE_DIRS "${LEVEL_ZERO_INCLUDE_DIRECTORIES}")
+	list(APPEND SYCL_LEVEL_ZERO_INCLUDE_DIRS "${INTEL_SYCL_INCLUDE_DIRS}")
+
     set(imp_libs
         $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:-fsycl>
         ${COMPUTE_RUNTIME_NAME})
-    set_target_properties(Intel::SYCL PROPERTIES
+    set_target_properties(Intel::SYCL_level_zero PROPERTIES
         INTERFACE_LINK_LIBRARIES "${imp_libs}"
-        INTERFACE_INCLUDE_DIRECTORIES "${INTEL_SYCL_INCLUDE_DIRS}"
+        INTERFACE_INCLUDE_DIRECTORIES "${SYCL_LEVEL_ZERO_INCLUDE_DIRS}"
         IMPORTED_LOCATION "${INTEL_SYCL_LIBRARIES}")
     set(INTEL_SYCL_FLAGS "-fsycl")
     mark_as_advanced(
