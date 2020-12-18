@@ -17,8 +17,7 @@ Explicit setup
 
 To set affinity explicitly, pass ID of the cores to be bound to to  the ``CCL_WORKER_AFFINITY`` environment variable. 
 
-Example
-+++++++
+.. rubric:: Example
 
 In the example below, |product_short| creates 4 threads and pins them to cores with numbers 3, 4, 5, and 6, respectively:
 ::
@@ -33,8 +32,7 @@ Automatic setup
 
 To set affinity automatically, set ``CCL_WORKER_AFFINITY`` to ``auto``. 
 
-Example
-+++++++
+.. rubric:: Example
 
 In the example below, |product_short| creates four threads and pins them to the last four cores available for the process launched:
 ::

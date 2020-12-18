@@ -123,9 +123,9 @@ Build details
 
 #. Use ``clang++`` compiler to build the sample:
 
-    ::
+   ::
 
-        clang++ -I${CCL_ROOT}/include -L${CCL_ROOT}/lib/ -lsycl -lccl -o sample sample.cpp
+      clang++ -I${CCL_ROOT}/include -L${CCL_ROOT}/lib/ -lsycl -lccl -o sample sample.cpp
 
 
 Run the sample

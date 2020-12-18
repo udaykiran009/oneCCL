@@ -31,8 +31,7 @@ Where:
 |product_short| internally fills algorithm selection table with sensible defaults. User input complements the selection table. 
 To see the actual table values set ``CCL_LOG_LEVEL=1``.
 
-Example
-+++++++
+.. rubric:: Example
 
 :: 
 
@@ -100,7 +99,7 @@ Available algorithms for each collective operation (``<algo_name>``):
    * - ``recursive_doubling``
      - Recursive doubling algorithm
    * - ``2d``
-     - 2-dimensional algorithm (reduce_scatter + allreduce + allgather)
+     - Two-dimensional algorithm (reduce_scatter + allreduce + allgather)
 
 
 ``ALLTOALL`` algorithms
@@ -390,7 +389,7 @@ CCL_ATL_TRANSPORT
    * - ``mpi``
      - MPI transport (**default**).
    * - ``ofi``
-     - OFI (libfaric) transport.
+     - OFI (Libfabric\*) transport.
 
 **Description**
 

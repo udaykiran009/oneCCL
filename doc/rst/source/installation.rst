@@ -56,7 +56,7 @@ Custom Installation
 
 You can customize CLI-based installation (for example, specify directory, compiler, and build type):
 
-* To speciify **installation directory**, modify the ``cmake`` command:
+* To specify **installation directory**, modify the ``cmake`` command:
 
   ::
 
