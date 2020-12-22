@@ -94,8 +94,8 @@ stream_provider_dispatcher::stream_native_t stream_provider_dispatcher::get_nati
 }
 
 #ifdef CCL_ENABLE_SYCL
-stream_provider_dispatcher::stream_native_t stream_provider_dispatcher::get_native_stream(
-    size_t idx) const {
+stream_provider_dispatcher::stream_native_t* stream_provider_dispatcher::get_native_stream(
+    size_t idx) {
     if (creation_is_postponed) {
         throw ccl::exception("native stream is not set");
     }
@@ -104,7 +104,7 @@ stream_provider_dispatcher::stream_native_t stream_provider_dispatcher::get_nati
         throw ccl::exception("unexpected stream idx");
     }
 
-    return native_streams[idx];
+    return &(native_streams[idx]);
 }
 #endif /* CCL_ENABLE_SYCL */
 

@@ -86,6 +86,13 @@
 #error "this compiler is not supported"
 #endif
 
+#define CCL_MALLOC_WRAPPER(size, name) \
+    ({ \
+        void* ptr = CCL_MEMALIGN_IMPL(size, (size < TWO_MB) ? CACHELINE_SIZE : TWO_MB); \
+        CCL_THROW_IF_NOT(ptr, "CCL cannot allocate bytes: ", size, ", out of memory, ", name); \
+        ptr; \
+    })
+
 #define CCL_MEMALIGN_WRAPPER(size, align, name) \
     ({ \
         void* ptr = CCL_MEMALIGN_IMPL(size, align); \
@@ -107,7 +114,7 @@
         ptr; \
     })
 
-#define CCL_MALLOC(size, name)          CCL_MEMALIGN_WRAPPER(size, CACHELINE_SIZE, name)
+#define CCL_MALLOC(size, name)          CCL_MALLOC_WRAPPER(size, name)
 #define CCL_MEMALIGN(size, align, name) CCL_MEMALIGN_WRAPPER(size, align, name)
 #define CCL_CALLOC(size, name)          CCL_CALLOC_WRAPPER(size, CACHELINE_SIZE, name)
 #define CCL_REALLOC(old_ptr, old_size, new_size, align, name) \

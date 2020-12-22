@@ -535,5 +535,7 @@ int main(int argc, char* argv[]) {
         default: ASSERT(0, "unknown loop %d", options.loop); break;
     }
 
+    transport.reset_comms();
+
     return 0;
 }

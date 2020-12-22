@@ -395,18 +395,26 @@ run()
 
                             for loop in "regular" "unordered"
                             do
-                                if [ "$transport" == "mpi" ] && [ "$loop" == "unordered" ];
+                                if [ "$loop" == "unordered" ]
                                 then
-                                    continue
+                                    if [ "$transport" == "mpi" ] || [ "$runtime" == "opencl" ];
+                                    then
+                                        continue
+                                    fi
                                 fi
+
                                 ccl_extra_env="CCL_PRIORITY=lifo ${ccl_runtime_env}"
                                 run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${loop} ${coll_list}
                                 ccl_extra_env="CCL_WORKER_OFFLOAD=0 ${ccl_runtime_env}"
                                 run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${loop} ${coll_list}
                             done
 
-                            ccl_extra_env="CCL_FUSION=1 ${ccl_runtime_env}"
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular allreduce
+                            if [ "$runtime" != "opencl" ];
+                            then
+                                # TODO: fix issue with OCL host usm, ticket to be filled
+                                ccl_extra_env="CCL_FUSION=1 ${ccl_runtime_env}"
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular allreduce
+                            fi
 
                             ccl_extra_env="CCL_LOG_LEVEL=2 ${ccl_runtime_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${coll_list}
