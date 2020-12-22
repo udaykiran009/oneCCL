@@ -1,9 +1,11 @@
 #pragma once
+
 #include <stddef.h>
 #include <stdint.h>
 #include <memory>
 
 #include "atl_def.h"
+#include "common/log/log.hpp"
 #include "util/pm/pm_rt.h"
 
 /*

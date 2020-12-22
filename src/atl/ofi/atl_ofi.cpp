@@ -46,10 +46,11 @@ atl_status_t atl_ofi::atl_update(std::unique_ptr<ipmi>& pmi) {
     coord = &(ctx->coord);
 
     if (ofi_ctx->prov_count == 1 && ofi_ctx->provs[0].is_shm) {
-        ATL_OFI_ASSERT(coord->global_count == coord->local_count,
-                       "unexpected coord after update: global_count %d, local_count %d",
-                       coord->global_count,
-                       coord->local_count);
+        CCL_THROW_IF_NOT(coord->global_count == coord->local_count,
+                         "unexpected coord after update: global_count ",
+                         coord->global_count,
+                         ", local_count ",
+                         coord->local_count);
         /* TODO: recreate providers */
     }
     atl_ofi_print_coord(coord);

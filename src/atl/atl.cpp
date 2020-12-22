@@ -5,7 +5,6 @@
 #include <dlfcn.h>
 
 #include "atl/atl.h"
-#include "common/log/log.hpp"
 
 #define LIB_SUFFIX     ".so"
 #define ATL_LIB_PREFIX "libccl_atl_"

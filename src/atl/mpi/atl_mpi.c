@@ -20,42 +20,6 @@ extern "C" {
 #define EP_IDX_MAX_STR_LEN 4
 #define EP_IDX_KEY         "ep_idx"
 
-#define ATL_MPI_PRINT(s, ...) \
-    do { \
-        pid_t tid = gettid(); \
-        char hoststr[32]; \
-        gethostname(hoststr, sizeof(hoststr)); \
-        fprintf(stdout, \
-                "(%d): %s: @ %s:%d:%s() " s "\n", \
-                tid, \
-                hoststr, \
-                FILENAME, \
-                __LINE__, \
-                __func__, \
-                ##__VA_ARGS__); \
-        fflush(stdout); \
-    } while (0)
-
-#define ATL_MPI_ASSERT(cond, ...) \
-    do { \
-        if (!(cond)) { \
-            ATL_MPI_PRINT("ASSERT failed, cond: " #cond " " __VA_ARGS__); \
-            exit(0); \
-        } \
-    } while (0)
-
-#define ATL_MPI_PRINT_ROOT(s, ...) \
-    if (coord->global_idx == 0) \
-        ATL_MPI_PRINT(s, ##__VA_ARGS__);
-
-#ifdef ENABLE_DEBUG
-#define ATL_MPI_DEBUG_PRINT(s, ...)      ATL_MPI_PRINT(s, ##__VA_ARGS__)
-#define ATL_MPI_DEBUG_PRINT_ROOT(s, ...) ATL_MPI_PRINT_ROOT(s, ##__VA_ARGS__)
-#else
-#define ATL_MPI_DEBUG_PRINT(s, ...)
-#define ATL_MPI_DEBUG_PRINT_ROOT(s, ...)
-#endif
-
 #define RET2ATL(ret) (ret != MPI_SUCCESS) ? ATL_STATUS_FAILURE : ATL_STATUS_SUCCESS
 
 typedef enum { ATL_MPI_LIB_NONE, ATL_MPI_LIB_IMPI } atl_mpi_lib_type_t;
@@ -144,8 +108,8 @@ typedef struct {
 
 #define MPI_BFLOAT16 \
     ({ \
-        ATL_MPI_ASSERT(global_data.bf16.dtype != MPI_DATATYPE_NULL, \
-                       "unsupported datatype: ATL_DTYPE_BF16"); \
+        CCL_THROW_IF_NOT(global_data.bf16.dtype != MPI_DATATYPE_NULL, \
+                         "unsupported datatype: ATL_DTYPE_BF16"); \
         global_data.bf16.dtype; \
     })
 
@@ -158,12 +122,14 @@ static inline void atl_mpi_check_op_params(void* in_buf,
                                            MPI_Datatype* datatype,
                                            const char* caller_func_name) {
     (void)datatype;
-    ATL_MPI_ASSERT(in_buf && inout_buf && length,
-                   "%s requested, bad arguments: %p, %p, %p",
-                   caller_func_name,
-                   in_buf,
-                   inout_buf,
-                   length);
+    CCL_THROW_IF_NOT(in_buf && inout_buf && length,
+                     caller_func_name,
+                     " requested, bad arguments: ",
+                     in_buf,
+                     " ",
+                     inout_buf,
+                     " ",
+                     length);
 }
 
 static void INLINE_TARGET_ATTRIBUTE_ALL atl_mpi_bf16_base_op(void* in,
@@ -221,7 +187,7 @@ static void atl_mpi_print_error(int error) {
     }
     str_error[result_len - 1] = '\0';
 
-    ATL_MPI_PRINT("MPI error: %s(%d)", str_error, error);
+    ccl_logger::format(std::cout, "MPI error: %s (%d)", str_error, error);
 }
 #endif /* ATL_MPI_BF16 */
 
@@ -240,21 +206,21 @@ static int atl_mpi_bf16_init() {
     global_data.bf16.impl_type = ccl_bf16_get_impl_type();
 
     if (global_data.bf16.impl_type == ccl_bf16_none) {
-        ATL_MPI_DEBUG_PRINT("%s: success - BF16 is not supported on current arch", __FUNCTION__);
+        LOG_INFO("BF16 is not supported on current arch");
         return RET2ATL(ret);
     }
 
     // create custom MPI BF16 dtype
     ret = MPI_Type_contiguous(2, MPI_BYTE, &global_data.bf16.dtype);
     if (ret != MPI_SUCCESS) {
-        ATL_MPI_DEBUG_PRINT("cannot create MPI BF16 dtype");
+        LOG_ERROR("cannot create MPI BF16 dtype");
         atl_mpi_print_error(ret);
         return RET2ATL(ret);
     }
 
     ret = MPI_Type_commit(&global_data.bf16.dtype);
     if (ret != MPI_SUCCESS) {
-        ATL_MPI_DEBUG_PRINT("cannot commit MPI BF16 type");
+        LOG_ERROR("cannot commit MPI BF16 type");
         atl_mpi_print_error(ret);
         return RET2ATL(ret);
     }
@@ -262,7 +228,7 @@ static int atl_mpi_bf16_init() {
     // create custom MPI BF16 summation op
     ret = MPI_Op_create(&atl_mpi_bf16_sum_op, 1, &global_data.bf16.sum_op);
     if (ret != MPI_SUCCESS) {
-        ATL_MPI_DEBUG_PRINT("cannot create MPI BF16 sum op");
+        LOG_ERROR("cannot create MPI BF16 sum op");
         atl_mpi_print_error(ret);
         return RET2ATL(ret);
     }
@@ -270,7 +236,7 @@ static int atl_mpi_bf16_init() {
     // create custom MPI BF16 production op
     ret = MPI_Op_create(&atl_mpi_bf16_prod_op, 1, &global_data.bf16.prod_op);
     if (ret != MPI_SUCCESS) {
-        ATL_MPI_DEBUG_PRINT("cannot create MPI BF16 prod op");
+        LOG_ERROR("cannot create MPI BF16 prod op");
         atl_mpi_print_error(ret);
         return RET2ATL(ret);
     }
@@ -278,7 +244,7 @@ static int atl_mpi_bf16_init() {
     // create custom MPI BF16 min op
     ret = MPI_Op_create(&atl_mpi_bf16_min_op, 1, &global_data.bf16.min_op);
     if (ret != MPI_SUCCESS) {
-        ATL_MPI_DEBUG_PRINT("cannot create MPI BF16 min op");
+        LOG_ERROR("cannot create MPI BF16 min op");
         atl_mpi_print_error(ret);
         return RET2ATL(ret);
     }
@@ -286,7 +252,7 @@ static int atl_mpi_bf16_init() {
     // create custom MPI BF16 max op
     ret = MPI_Op_create(&atl_mpi_bf16_max_op, 1, &global_data.bf16.max_op);
     if (ret != MPI_SUCCESS) {
-        ATL_MPI_DEBUG_PRINT("cannot create MPI BF16 max op");
+        LOG_ERROR("cannot create MPI BF16 max op");
         atl_mpi_print_error(ret);
         return RET2ATL(ret);
     }
@@ -377,8 +343,7 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
     int ret = MPI_Get_library_version(mpi_version, &mpi_version_len);
     if ((ret != MPI_SUCCESS) || (mpi_version_len < 0) ||
         (mpi_version_len > MPI_MAX_LIBRARY_VERSION_STRING)) {
-        ATL_MPI_PRINT(
-            "can't retrieve MPI version, mpi_version_len %d, ret %d", mpi_version_len, ret);
+        LOG_INFO("can't retrieve MPI version, mpi_version_len ", mpi_version_len, ", ret", ret);
         return ATL_MPI_LIB_NONE;
     }
 
@@ -386,40 +351,43 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
     while (strlen(mpi_version) && isspace(mpi_version[strlen(mpi_version) - 1]))
         mpi_version[strlen(mpi_version) - 1] = '\0';
 
-    ATL_MPI_DEBUG_PRINT("\nMPI version:\n%s\n", mpi_version);
+    LOG_INFO("\nMPI version: ", mpi_version);
 
     for (i = 0; i < MPI_LIB_INFO_MAX_COUNT; i++) {
         atl_mpi_lib_info_t* info = &(mpi_lib_infos[i]);
 
-        ATL_MPI_ASSERT(info->version_prefix_1, "empty version_prefix_1");
-        ATL_MPI_ASSERT(info->min_version_value >= 0, "unexpected minimal version");
+        CCL_THROW_IF_NOT(info->version_prefix_1, "empty version_prefix_1");
+        CCL_THROW_IF_NOT(info->min_version_value >= 0, "unexpected minimal version");
 
         const char* version_substr = NULL;
         if ((version_substr = strstr(mpi_version, info->version_prefix_1))) {
             version_substr += strlen(info->version_prefix_1);
-            ATL_MPI_DEBUG_PRINT("\nversion_substr:\n%s\n", version_substr);
+            LOG_DEBUG("version_substr: ", version_substr);
 
             if (info->version_prefix_2) {
                 version_substr = strstr(version_substr, info->version_prefix_2);
                 if (!version_substr) {
-                    ATL_MPI_DEBUG_PRINT("can't find version_prefix_2 %s\n", info->version_prefix_2);
+                    LOG_DEBUG("can't find version_prefix_2 ", info->version_prefix_2);
                     continue;
                 }
                 version_substr += strlen(info->version_prefix_2);
-                ATL_MPI_DEBUG_PRINT("\nversion_substr:\n%s\n", version_substr);
+                LOG_DEBUG("version_substr: ", version_substr);
             }
 
             int version_value = (version_substr) ? atoi(version_substr) : -1;
-            ATL_MPI_DEBUG_PRINT("\nMPI numerical version:\n%d\n", version_value);
+            LOG_DEBUG("MPI numerical version: ", version_value);
 
             if (version_value < info->min_version_value) {
-                ATL_MPI_PRINT("\n\nWARNING !!!\n\n"
-                              "Loaded MPI doesn't match with expected version, "
-                              "consider to switch to %s %s%d (min) %s\n",
-                              info->version_prefix_1,
-                              (info->version_prefix_2 ? info->version_prefix_2 : ""),
-                              info->min_version_value,
-                              (info->kind_value ? info->kind_value : ""));
+                LOG_INFO("\nWARNING !!!\n"
+                         "Loaded MPI doesn't match with expected version, "
+                         "consider to switch to ",
+                         info->version_prefix_1,
+                         " ",
+                         (info->version_prefix_2 ? info->version_prefix_2 : ""),
+                         info->min_version_value,
+                         " (min) ",
+                         (info->kind_value ? info->kind_value : ""),
+                         "\n");
                 continue;
             }
             else if (info->kind_prefix && info->kind_value) {
@@ -432,34 +400,43 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
                            (kind_substr < (mpi_version + mpi_version_len)))
                         kind_substr++;
 
-                    ATL_MPI_DEBUG_PRINT("\nkind_substr:\n%s\n", kind_substr);
+                    LOG_DEBUG("kind_substr: ", kind_substr);
 
                     if (strncmp(kind_substr, info->kind_value, strlen(info->kind_value))) {
-                        ATL_MPI_PRINT("\n\nWARNING !!!\n\n"
-                                      "Loaded MPI version (%d) "
-                                      "is higher or equal to minimal expected version (%d) "
-                                      "but kind (%s) doesn't match with expected kind (%s), "
-                                      "consider to switch to %s %s%d (min version) %s\n",
-                                      version_value,
-                                      info->min_version_value,
-                                      kind_substr,
-                                      info->kind_value,
-                                      info->version_prefix_1,
-                                      (info->version_prefix_2 ? info->version_prefix_2 : ""),
-                                      info->min_version_value,
-                                      (info->kind_value ? info->kind_value : ""));
+                        LOG_INFO("\nWARNING !!!\n"
+                                 "Loaded MPI version (",
+                                 version_value,
+                                 ") ",
+                                 "is higher or equal to minimal expected version (",
+                                 info->min_version_value,
+                                 ") ",
+                                 "but kind (",
+                                 kind_substr,
+                                 ") doesn't match with expected kind (",
+                                 info->kind_value,
+                                 "), "
+                                 "consider to switch to ",
+                                 info->version_prefix_1,
+                                 " ",
+                                 (info->version_prefix_2 ? info->version_prefix_2 : ""),
+                                 info->min_version_value,
+                                 " (min version) ",
+                                 (info->kind_value ? info->kind_value : ""),
+                                 "\n");
                         continue;
                     }
                 }
 
                 final_info = info;
-                ATL_MPI_DEBUG_PRINT(
-                    "set lib_type = %s because "
-                    "version (%d) is higher or equal to minimal expected version (%d) "
-                    "and kind matches with expected kind",
-                    info->name,
-                    version_value,
-                    info->min_version_value);
+                LOG_INFO("set lib_type = ",
+                         info->name,
+                         " because "
+                         "version (",
+                         version_value,
+                         ") is higher or equal to minimal expected version (",
+                         info->min_version_value,
+                         ") "
+                         "and kind matches with expected kind");
                 break;
             }
         }
@@ -474,19 +451,18 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
 
             if (!strcmp(lib_type_env, info->name)) {
                 final_info = info;
-                ATL_MPI_DEBUG_PRINT("set lib_type = %s because it is requested explicitly",
-                                    lib_type_env);
+                LOG_DEBUG("set lib_type = ", lib_type_env, " because it is requested explicitly");
                 break;
             }
         }
     }
 
     if (final_info) {
-        ATL_MPI_DEBUG_PRINT("use lib_type = %s", final_info->name);
+        LOG_DEBUG("use lib_type = ", final_info->name);
         lib_type = final_info->type;
     }
     else {
-        ATL_MPI_DEBUG_PRINT("use lib_type none");
+        LOG_DEBUG("use lib_type none");
         lib_type = ATL_MPI_LIB_NONE;
     }
 
@@ -560,10 +536,10 @@ static atl_status_t atl_mpi_finalize(atl_ctx_t* ctx) {
             ret = MPI_Finalize();
         }
         else
-            ATL_MPI_DEBUG_PRINT("MPI_Init has been called externally, skip MPI_Finalize");
+            LOG_INFO("MPI_Init has been called externally, skip MPI_Finalize");
     }
     else
-        ATL_MPI_DEBUG_PRINT("MPI_Finalize has been already called");
+        LOG_INFO("MPI_Finalize has been already called");
 
     free(eps);
     free(mpi_ctx);
@@ -592,33 +568,6 @@ static atl_status_t atl_mpi_ep_send(atl_ep_t* ep,
     int ret = MPI_Isend(
         buf, len, MPI_CHAR, dst_proc_idx, (int)tag, mpi_ep->mpi_comm, &mpi_req->native_req);
 
-#if 0
-//#ifdef ENABLE_DEBUG
-    if (global_data.mpi_lib_type != ATL_MPI_LIB_NONE)
-    {
-        MPI_Info info_out;
-        char buf[MPI_MAX_INFO_VAL];
-        int flag;
-        MPI_Comm_get_info(mpi_ep->mpi_comm, &info_out);
-        MPI_Info_get(info_out, EP_IDX_KEY, MPI_MAX_INFO_VAL, buf, &flag);
-
-        if (!flag)
-        {
-            ATL_MPI_PRINT("unexpected ep_idx_key %s", EP_IDX_KEY);
-            return ATL_STATUS_FAILURE;
-        }
-
-        if (ep->idx != atoi(buf))
-        {
-            ATL_MPI_PRINT("unexpected ep_idx: expected %zu, got %d\n", ep->idx, atoi(buf));
-        }
-
-        ATL_MPI_DEBUG_PRINT("len %zu, comm_key %s, comm %p", len, buf, &(mpi_ep->mpi_comm));
-
-        MPI_Info_free(&info_out);
-    }
-#endif
-
     return RET2ATL(ret);
 }
 
@@ -634,33 +583,6 @@ static atl_status_t atl_mpi_ep_recv(atl_ep_t* ep,
 
     int ret = MPI_Irecv(
         buf, len, MPI_CHAR, src_proc_idx, (int)tag, mpi_ep->mpi_comm, &mpi_req->native_req);
-
-#if 0
-//#ifdef ENABLE_DEBUG
-    if (global_data.mpi_lib_type != ATL_MPI_LIB_NONE)
-    {
-        MPI_Info info_out;
-        char buf[MPI_MAX_INFO_VAL];
-        int flag;
-        MPI_Comm_get_info(mpi_ep->mpi_comm, &info_out);
-        MPI_Info_get(info_out, EP_IDX_KEY, MPI_MAX_INFO_VAL, buf, &flag);
-
-        if (!flag)
-        {
-            ATL_MPI_PRINT("unexpected ep_idx_key %s", EP_IDX_KEY);
-            return ATL_STATUS_FAILURE;
-        }
-
-        if (ep->idx != atoi(buf))
-        {
-            ATL_MPI_PRINT("unexpected ep_idx: expected %zu, got %d\n", ep->idx, atoi(buf));
-        }
-
-        ATL_MPI_DEBUG_PRINT("len %zu, comm_key %s, comm %p", len, buf, &(mpi_ep->mpi_comm));
-
-        MPI_Info_free(&info_out);
-    }
-#endif
 
     return RET2ATL(ret);
 }
@@ -776,17 +698,16 @@ static atl_status_t atl_mpi_ep_allreduce(atl_ep_t* ep,
 
         if (!flag)
         {
-            ATL_MPI_PRINT("unexpected ep_idx_key %s", EP_IDX_KEY);
+            LOG_ERROR("unexpected ep_idx_key ", EP_IDX_KEY);
             return ATL_STATUS_FAILURE;
         }
 
-        int mpi_ep_idx = ep->idx;
-        if (global_data.extra_ep) mpi_ep_idx += global_data.extra_ep;
+        if (ep->idx != atoi(buf))
+        {
+            LOG_ERROR("unexpected ep_idx: expected ", ep->idx, ", got ", atoi(buf));
+        }
 
-        ATL_MPI_ASSERT(mpi_ep_idx == atoi(buf), "unexpected ep_idx: expected %d, got %d\n", mpi_ep_idx, atoi(buf));
-
-        ATL_MPI_DEBUG_PRINT("count %zu, atl_ep_idx %zu, mpi_ep_idx %d, comm_key %s, comm %p",
-            count, ep->idx, mpi_ep_idx, buf, &(mpi_ep->mpi_comm));
+        LOG_DEBUG("len ", len, ", comm_key ", buf, ", comm ", (void*)(&(mpi_ep->mpi_comm)));
 
         MPI_Info_free(&info_out);
     }
@@ -1058,7 +979,7 @@ static inline atl_status_t atl_mpi_ep_poll(atl_ep_t* ep) {
 }
 
 static atl_status_t atl_mpi_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t* req) {
-    ATL_MPI_ASSERT(is_completed);
+    CCL_THROW_IF_NOT(is_completed);
 
     atl_status_t status = ATL_STATUS_SUCCESS;
 
@@ -1145,7 +1066,7 @@ static atl_status_t atl_mpi_ep_init(atl_mpi_ctx_t* mpi_ctx, size_t idx, atl_ep_t
 
     MPI_Info_free(&info);
 
-    ATL_MPI_DEBUG_PRINT("idx %zu, mpi_ep_idx_str %s", idx, mpi_ep_idx_str);
+    LOG_DEBUG("idx ", idx, ", mpi_ep_idx_str ", mpi_ep_idx_str);
 
     *ep = &mpi_ep->ep;
     (*ep)->idx = idx;
@@ -1167,12 +1088,13 @@ static atl_status_t atl_mpi_init(int* argc,
                                  atl_attr_t* attr,
                                  atl_ctx_t** out_ctx,
                                  const char* main_addr) {
-    ATL_MPI_ASSERT(
-        (sizeof(atl_mpi_req_t) <= sizeof(atl_req_t) - offsetof(atl_req_t, internal)),
-        "unexpected offset: atl_mpi_request size %zu, atl_request size %zu, expected offset %zu",
-        sizeof(atl_mpi_req_t),
-        sizeof(atl_req_t),
-        offsetof(atl_req_t, internal));
+    CCL_THROW_IF_NOT((sizeof(atl_mpi_req_t) <= sizeof(atl_req_t) - offsetof(atl_req_t, internal)),
+                     "unexpected offset: atl_mpi_request size ",
+                     sizeof(atl_mpi_req_t),
+                     ", atl_request size ",
+                     sizeof(atl_req_t),
+                     ", expected offset ",
+                     offsetof(atl_req_t, internal));
 
     int ret = MPI_SUCCESS;
     size_t i;
@@ -1201,21 +1123,23 @@ static atl_status_t atl_mpi_init(int* argc,
         global_data.is_external_init = 0;
         ret = MPI_Init_thread(argc, argv, required_thread_level, &provided_thread_level);
         if (provided_thread_level < required_thread_level) {
-            ATL_MPI_PRINT("unexpected MPI thread level: requested %d, provided %d",
-                          required_thread_level,
-                          provided_thread_level);
+            LOG_ERROR("unexpected MPI thread level: requested ",
+                      required_thread_level,
+                      ", provided ",
+                      provided_thread_level);
             goto err_init;
         }
     }
     else {
         global_data.is_external_init = 1;
-        ATL_MPI_DEBUG_PRINT("MPI was initialized externaly");
+        LOG_INFO("MPI was initialized externaly");
         MPI_Query_thread(&provided_thread_level);
         if (provided_thread_level < required_thread_level) {
-            ATL_MPI_PRINT("MPI was initialized externaly but with unexpected thread level: "
-                          "requested %d, provided %d",
-                          required_thread_level,
-                          provided_thread_level);
+            LOG_ERROR("MPI was initialized externaly but with unexpected thread level: "
+                      "requested ",
+                      required_thread_level,
+                      ", provided ",
+                      provided_thread_level);
             goto err_init;
         }
     }
@@ -1256,9 +1180,12 @@ static atl_status_t atl_mpi_init(int* argc,
     if (progress_mode_env) {
         global_data.progress_mode = (atl_progress_mode_t)atoi(progress_mode_env);
     }
-    ATL_MPI_DEBUG_PRINT_ROOT("progress_mode %d", global_data.progress_mode);
-    ATL_MPI_DEBUG_PRINT_ROOT("sync_coll %d", global_data.sync_coll);
-    ATL_MPI_DEBUG_PRINT_ROOT("extra_ep %d", global_data.extra_ep);
+
+    if (coord->global_idx == 0) {
+        LOG_INFO("progress_mode ", global_data.progress_mode);
+        LOG_INFO("sync_coll ", global_data.sync_coll);
+        LOG_INFO("extra_ep ", global_data.extra_ep);
+    }
 
     for (i = 0; i < attr->ep_count; i++) {
         ret = atl_mpi_ep_init(mpi_ctx, i, &(ctx->eps[i]));

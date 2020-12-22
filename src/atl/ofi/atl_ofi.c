@@ -50,49 +50,13 @@
         _a < _b ? _a : _b; \
     })
 
-#define ATL_OFI_PRINT(s, ...) \
-    do { \
-        pid_t tid = gettid(); \
-        char hoststr[32]; \
-        gethostname(hoststr, sizeof(hoststr)); \
-        fprintf(stdout, \
-                "(%d): %s: @ %s:%d:%s() " s "\n", \
-                tid, \
-                hoststr, \
-                FILENAME, \
-                __LINE__, \
-                __func__, \
-                ##__VA_ARGS__); \
-        fflush(stdout); \
-    } while (0)
-
-#define ATL_OFI_PRINT_ROOT(s, ...) \
-    if (coord->global_idx == 0) \
-        ATL_OFI_PRINT(s, ##__VA_ARGS__);
-
-#define ATL_OFI_ASSERT(cond, ...) \
-    do { \
-        if (!(cond)) { \
-            ATL_OFI_PRINT("ASSERT failed, cond: " #cond " " __VA_ARGS__); \
-            exit(0); \
-        } \
-    } while (0)
-
-#ifdef ENABLE_DEBUG
-#define ATL_OFI_DEBUG_PRINT(s, ...)      ATL_OFI_PRINT(s, ##__VA_ARGS__)
-#define ATL_OFI_DEBUG_PRINT_ROOT(s, ...) ATL_OFI_PRINT_ROOT(s, ##__VA_ARGS__)
-#else
-#define ATL_OFI_DEBUG_PRINT(s, ...)
-#define ATL_OFI_DEBUG_PRINT_ROOT(s, ...)
-#endif
-
 static inline atl_status_t atl_ofi_ep_poll(atl_ep_t* ep);
 
 #define ATL_OFI_CALL(func, ret_val, err_action) \
     do { \
         ret_val = func; \
         if (ret_val != FI_SUCCESS) { \
-            ATL_OFI_PRINT(#func "\n fails with ret %ld, %s", ret_val, fi_strerror(ret_val)); \
+            LOG_ERROR(#func "\n fails with ret: ", ret_val, ", strerror:", fi_strerror(-ret_val)); \
             err_action; \
         } \
     } while (0)
@@ -115,9 +79,11 @@ static inline atl_status_t atl_ofi_ep_poll(atl_ep_t* ep);
                 if (ret_val == FI_SUCCESS) \
                     break; \
                 if (ret_val != -FI_EAGAIN) { \
-                    ATL_OFI_PRINT( \
-                        #func "\n fails with ret %ld, %s", ret_val, fi_strerror(ret_val)); \
-                    ATL_OFI_ASSERT(0, "OFI function error"); \
+                    LOG_ERROR(#func "\n fails with ret: ", \
+                              ret_val, \
+                              ", strerror: ", \
+                              fi_strerror(-ret_val)); \
+                    CCL_THROW("OFI function error"); \
                     break; \
                 } \
                 (void)atl_ofi_ep_poll(ep); \
@@ -230,11 +196,15 @@ typedef struct {
 } atl_ofi_req_t;
 
 static void atl_ofi_print_coord(atl_proc_coord_t* coord) {
-    ATL_OFI_DEBUG_PRINT("coord: global [idx %d, cnt %d], local [idx %d, cnt %d]",
-                        coord->global_idx,
-                        coord->global_count,
-                        coord->local_idx,
-                        coord->local_count);
+    LOG_DEBUG("coord: global [idx ",
+              coord->global_idx,
+              ", cnt ",
+              coord->global_count,
+              "], local [idx ",
+              coord->local_idx,
+              ", cnt ",
+              coord->local_count,
+              "]");
 }
 
 static inline atl_ofi_prov_t* atl_ofi_get_prov(atl_ep_t* ep, int peer_proc_idx, size_t msg_size) {
@@ -245,9 +215,9 @@ static inline atl_ofi_prov_t* atl_ofi_get_prov(atl_ep_t* ep, int peer_proc_idx, 
         prov_idx = 0;
     }
     else {
-        ATL_OFI_ASSERT(ofi_ctx->prov_count == ATL_OFI_MAX_PROV_COUNT,
-                       "unexpected prov_count %zu",
-                       ofi_ctx->prov_count);
+        CCL_THROW_IF_NOT(ofi_ctx->prov_count == ATL_OFI_MAX_PROV_COUNT,
+                         "unexpected prov_count ",
+                         ofi_ctx->prov_count);
 
         atl_proc_coord_t* coord = &(ep->ctx->coord);
         int my_node_idx = coord->global_idx / coord->local_count;
@@ -261,11 +231,13 @@ static inline atl_ofi_prov_t* atl_ofi_get_prov(atl_ep_t* ep, int peer_proc_idx, 
     }
 
     /* TODO: add segmentation logic */
-    ATL_OFI_ASSERT(msg_size <= ofi_ctx->provs[prov_idx].max_msg_size,
-                   "msg_size (%zu) is greater than max_msg_size (%zu), prov_idx %zu",
-                   msg_size,
-                   ofi_ctx->provs[prov_idx].max_msg_size,
-                   prov_idx);
+    CCL_THROW_IF_NOT(msg_size <= ofi_ctx->provs[prov_idx].max_msg_size,
+                     "msg_size (",
+                     msg_size,
+                     ") is greater than max_msg_size (",
+                     ofi_ctx->provs[prov_idx].max_msg_size,
+                     "), prov_idx ",
+                     prov_idx);
 
     return &(ofi_ctx->provs[prov_idx]);
 }
@@ -278,7 +250,7 @@ static inline fi_addr_t atl_ofi_get_addr(atl_ctx_t* ctx,
 }
 
 static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* pmi) {
-    ATL_OFI_ASSERT(ofi_ctx, "ofi_ctx is null");
+    CCL_THROW_IF_NOT(ofi_ctx, "ofi_ctx is null");
 
     atl_proc_coord_t* coord = &(ofi_ctx->ctx.coord);
 
@@ -293,14 +265,15 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
     gethostname(my_hostname, ATL_OFI_MAX_HOSTNAME_LEN - 1);
     my_hostname_len = strlen(my_hostname);
 
-    ATL_OFI_ASSERT(my_hostname_len < ATL_OFI_MAX_HOSTNAME_LEN,
-                   "unexpected my_hostname_len %zu, expected max %zu",
-                   my_hostname_len,
-                   (size_t)(ATL_OFI_MAX_HOSTNAME_LEN));
+    CCL_THROW_IF_NOT(my_hostname_len < ATL_OFI_MAX_HOSTNAME_LEN,
+                     "unexpected my_hostname_len ",
+                     my_hostname_len,
+                     ", expected max ",
+                     (size_t)(ATL_OFI_MAX_HOSTNAME_LEN));
 
     if (ATL_OFI_MAX_HOSTNAME_LEN - my_hostname_len <= 10) {
-        ATL_OFI_PRINT(
-            "WARNING: hostname is quite long (len %zu, name %s)", my_hostname_len, my_hostname);
+        LOG_INFO(
+            "WARNING: hostname is quite long, len: ", my_hostname_len, ", name: ", my_hostname);
     }
 
     snprintf(my_hostname + my_hostname_len,
@@ -314,7 +287,7 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
                             ATL_OFI_MAX_HOSTNAME_LEN);
 
     if (ret) {
-        ATL_OFI_PRINT("pmrt_kvs_put: ret: %d", ret);
+        LOG_ERROR("pmrt_kvs_put: ret: ", ret);
         goto fn_err;
     }
 
@@ -322,7 +295,7 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
 
     all_hostnames = (char*)calloc(1, coord->global_count * ATL_OFI_MAX_HOSTNAME_LEN);
     if (!all_hostnames) {
-        ATL_OFI_PRINT("can't allocate all_hostnames");
+        LOG_ERROR("can't allocate all_hostnames");
         goto fn_err;
     }
 
@@ -332,7 +305,7 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
                                 all_hostnames + i * ATL_OFI_MAX_HOSTNAME_LEN,
                                 ATL_OFI_MAX_HOSTNAME_LEN);
         if (ret) {
-            ATL_OFI_PRINT("pmrt_kvs_get: ret: %d", ret);
+            LOG_ERROR("pmrt_kvs_get: ret: ", ret);
             goto fn_err;
         }
     }
@@ -366,7 +339,7 @@ fn_err:
 static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
                                                    size_t prov_idx,
                                                    ipmi* pmi) {
-    ATL_OFI_ASSERT(ofi_ctx, "ofi_ctx is null");
+    CCL_THROW_IF_NOT(ofi_ctx, "ofi_ctx is null");
 
     atl_ctx_t* ctx = &(ofi_ctx->ctx);
     atl_ofi_prov_t* prov = &(ofi_ctx->provs[prov_idx]);
@@ -387,36 +360,42 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
     int shm_start_idx = node_idx * local_count;
     int shm_end_idx = (node_idx + 1) * local_count;
 
-    ATL_OFI_DEBUG_PRINT("shm_start_idx %d, shm_end_idx %d", shm_start_idx, shm_end_idx);
+    LOG_DEBUG("shm_start_idx ", shm_start_idx, ", shm_end_idx ", shm_end_idx);
 
     int proc_count = prov->is_shm ? ctx->coord.local_count : ctx->coord.global_count;
 
     if (proc_count == 0)
         return ATL_STATUS_SUCCESS;
 
-    ATL_OFI_DEBUG_PRINT(
-        "name %s, is_shm %d, addr_len %zu, local_count %d, global_count %d, proc_count %d",
-        prov->info->fabric_attr->prov_name,
-        prov->is_shm,
-        prov->addr_len,
-        ctx->coord.local_count,
-        ctx->coord.global_count,
-        proc_count);
+    LOG_DEBUG("name ",
+              prov->info->fabric_attr->prov_name,
+              ", is_shm ",
+              prov->is_shm,
+              ", addr_len ",
+              prov->addr_len,
+              ", local_count ",
+              ctx->coord.local_count,
+              ", global_count ",
+              ctx->coord.global_count,
+              ", proc_count ",
+              proc_count);
 
     /* allocate OFI EP names table that will contain all published names */
     epnames_table_len = prov->addr_len * named_ep_count * proc_count;
 
     if (epnames_table_len == 0) {
-        ATL_OFI_PRINT("epnames_table_len == 0, addr_len %zu, named_ep_count %zu, proc_count %d",
-                      prov->addr_len,
-                      named_ep_count,
-                      proc_count);
+        LOG_ERROR("epnames_table_len == 0, addr_len ",
+                  prov->addr_len,
+                  ", named_ep_count ",
+                  named_ep_count,
+                  ", proc_count ",
+                  proc_count);
         return ATL_STATUS_FAILURE;
     }
 
     epnames_table = (char*)calloc(1, epnames_table_len);
     if (!epnames_table) {
-        ATL_OFI_PRINT("can't allocate epnames_table");
+        LOG_ERROR("can't allocate epnames_table");
         return ATL_STATUS_FAILURE;
     }
 
@@ -438,11 +417,14 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
                 prov->addr_len);
 
             if (ret) {
-                ATL_OFI_PRINT("kvs_get error: ret %d, proc_idx %d, ep_idx %zu, addr_idx %zu",
-                              ret,
-                              i,
-                              j,
-                              addr_idx);
+                LOG_ERROR("kvs_get error: ret ",
+                          ret,
+                          ", proc_idx ",
+                          i,
+                          ", ep_idx ",
+                          j,
+                          ", addr_idx ",
+                          addr_idx);
                 goto err_ep_names;
             }
 
@@ -450,13 +432,14 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
         }
     }
 
-    ATL_OFI_DEBUG_PRINT(
-        "kvs_get: ep_count %zu, proc_count %d, got %zu", named_ep_count, proc_count, addr_idx);
+    LOG_DEBUG(
+        "kvs_get: ep_count ", named_ep_count, ", proc_count ", proc_count, ", got ", addr_idx);
 
     if (addr_idx != named_ep_count * proc_count) {
-        ATL_OFI_PRINT("unexpected kvs_get results: expected %zu, got %zu",
-                      named_ep_count * proc_count,
-                      addr_idx);
+        LOG_ERROR("unexpected kvs_get results: expected ",
+                  named_ep_count * proc_count,
+                  ", got ",
+                  addr_idx);
 
         ret = ATL_STATUS_FAILURE;
         goto err_addr_table;
@@ -474,15 +457,18 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
     insert_count = fi_av_insert(
         prov->av, epnames_table, named_ep_count * proc_count, prov->addr_table, 0, NULL);
 
-    ATL_OFI_DEBUG_PRINT("av_insert: ep_count %zu, proc_count %d, inserted %d",
-                        named_ep_count,
-                        proc_count,
-                        insert_count);
+    LOG_DEBUG("av_insert: ep_count ",
+              named_ep_count,
+              ", proc_count ",
+              proc_count,
+              ", inserted ",
+              insert_count);
 
     if (insert_count != (int)(named_ep_count * proc_count)) {
-        ATL_OFI_PRINT("unexpected av_insert results: expected %zu, got %d",
-                      named_ep_count * proc_count,
-                      insert_count);
+        LOG_ERROR("unexpected av_insert results: expected ",
+                  named_ep_count * proc_count,
+                  " got ",
+                  insert_count);
         ret = ATL_STATUS_FAILURE;
         goto err_addr_table;
     }
@@ -491,12 +477,12 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
     }
 
     if (prov->sep) {
-        ATL_OFI_ASSERT(named_ep_count == 1, "unexpected named_ep_count %zu", named_ep_count);
+        CCL_THROW_IF_NOT(named_ep_count == 1, "unexpected named_ep_count ", named_ep_count);
 
         fi_addr_t* table;
         table = (fi_addr_t*)calloc(1, proc_count * sizeof(fi_addr_t));
         if (table == NULL) {
-            ATL_OFI_DEBUG_PRINT("Memory allocaion failed");
+            LOG_ERROR("Memory allocaion failed");
             ret = ATL_STATUS_FAILURE;
             goto err_ep_names;
         }
@@ -543,14 +529,14 @@ static atl_status_t atl_ofi_prov_ep_get_name(atl_ofi_prov_t* prov, size_t ep_idx
     ep->name.addr = calloc(1, ep->name.len);
 
     if (!(ep->name.addr)) {
-        ATL_OFI_PRINT("can't allocate addr");
+        LOG_ERROR("can't allocate addr");
         ret = ATL_STATUS_FAILURE;
         goto err_addr;
     }
 
     ret = fi_getname(&fi_ep->fid, ep->name.addr, &(ep->name.len));
     if (ret) {
-        ATL_OFI_PRINT("fi_getname error");
+        LOG_ERROR("fi_getname error");
         goto err_getname;
     }
 
@@ -583,7 +569,7 @@ static atl_status_t atl_ofi_prov_eps_connect(atl_ofi_ctx_t* ofi_ctx, size_t prov
     for (ep_idx = 0; ep_idx < ctx->ep_count; ep_idx++) {
         ret = atl_ofi_prov_ep_get_name(prov, ep_idx);
         if (ret) {
-            ATL_OFI_PRINT("atl_ofi_prov_ep_get_name error");
+            LOG_ERROR("atl_ofi_prov_ep_get_name error");
             return ATL_STATUS_FAILURE;
         }
     }
@@ -596,7 +582,7 @@ static atl_status_t atl_ofi_prov_eps_connect(atl_ofi_ctx_t* ofi_ctx, size_t prov
                                 ep->name.addr,
                                 ep->name.len);
         if (ret) {
-            ATL_OFI_PRINT("pmrt_kvs_put: ret: %d", ret);
+            LOG_ERROR("pmrt_kvs_put: ret: ", ret);
             return ATL_STATUS_FAILURE;
         }
     }
@@ -658,7 +644,7 @@ static atl_status_t atl_ofi_prov_ep_handle_cq_err(atl_ofi_prov_ep_t* ep) {
 
     int ret = fi_cq_readerr(ep->cq, &err_entry, 0);
     if (ret != 1) {
-        ATL_OFI_ASSERT(0, "unable to read error from cq");
+        CCL_THROW("unable to read error from cq");
         return ATL_STATUS_FAILURE;
     }
     else {
@@ -672,10 +658,13 @@ static atl_status_t atl_ofi_prov_ep_handle_cq_err(atl_ofi_prov_ep_t* ep) {
             ofi_req->comp_state = ATL_OFI_COMP_PEEK_NOT_FOUND;
         }
         else {
-            ATL_OFI_PRINT("fi_cq_readerr: err: %d, prov_err: %s (%d)",
-                          err_entry.err,
-                          fi_cq_strerror(ep->cq, err_entry.prov_errno, err_entry.err_data, NULL, 0),
-                          err_entry.prov_errno);
+            LOG_ERROR("fi_cq_readerr: err: ",
+                      err_entry.err,
+                      ", prov_err: ",
+                      fi_cq_strerror(ep->cq, err_entry.prov_errno, err_entry.err_data, NULL, 0),
+                      "(",
+                      err_entry.prov_errno,
+                      ")");
             return ATL_STATUS_FAILURE;
         }
         return ATL_STATUS_SUCCESS;
@@ -693,9 +682,7 @@ static inline void atl_ofi_process_comps(struct fi_cq_tagged_entry* entries, ssi
             case ATL_OFI_COMP_PEEK_STARTED:
                 comp_ofi_req->comp_state = ATL_OFI_COMP_PEEK_FOUND;
                 break;
-            default:
-                ATL_OFI_ASSERT(0, "unexpected completion state %d", comp_ofi_req->comp_state);
-                break;
+            default: CCL_THROW("unexpected completion state ", comp_ofi_req->comp_state); break;
         }
 
         if (entries[idx].flags & FI_RECV) {
@@ -721,11 +708,13 @@ static int atl_ofi_wait_cancel_cq(struct fid_cq* cq) {
                 ret = fi_cq_readerr(cq, &err_entry, 0);
 
                 if (err_entry.err != FI_ECANCELED) {
-                    ATL_OFI_PRINT(
-                        "fi_cq_readerr: err: %d, prov_err: %s (%d)",
-                        err_entry.err,
-                        fi_cq_strerror(cq, err_entry.prov_errno, err_entry.err_data, NULL, 0),
-                        err_entry.prov_errno);
+                    LOG_ERROR("fi_cq_readerr: err: ",
+                              err_entry.err,
+                              ", prov_err: ",
+                              fi_cq_strerror(cq, err_entry.prov_errno, err_entry.err_data, NULL, 0),
+                              "(",
+                              err_entry.prov_errno,
+                              ")");
                     return ATL_STATUS_FAILURE;
                 }
                 return ATL_STATUS_SUCCESS;
@@ -735,7 +724,7 @@ static int atl_ofi_wait_cancel_cq(struct fid_cq* cq) {
         time += (double)(end - start) / CLOCKS_PER_SEC;
     }
 
-    ATL_OFI_PRINT("too long for cancel");
+    LOG_ERROR("too long for cancel");
 
     return ATL_STATUS_FAILURE;
 }
@@ -797,16 +786,19 @@ static atl_status_t atl_ofi_try_to_drain_cq_err(struct fid_cq* cq) {
     struct fi_cq_err_entry err_entry;
     int ret = fi_cq_readerr(cq, &err_entry, 0);
     if (ret != 1) {
-        ATL_OFI_DEBUG_PRINT("unable to fi_cq_readerr");
+        LOG_DEBUG("unable to fi_cq_readerr");
         return ATL_STATUS_FAILURE;
     }
     else {
         if (err_entry.err != FI_ENOMSG && err_entry.err != FI_ECANCELED &&
             err_entry.err != FI_ETRUNC) {
-            ATL_OFI_PRINT("fi_cq_readerr: err: %d, prov_err: %s (%d)",
-                          err_entry.err,
-                          fi_cq_strerror(cq, err_entry.prov_errno, err_entry.err_data, NULL, 0),
-                          err_entry.prov_errno);
+            LOG_ERROR("fi_cq_readerr: err: ",
+                      err_entry.err,
+                      ", prov_err: ",
+                      fi_cq_strerror(cq, err_entry.prov_errno, err_entry.err_data, NULL, 0),
+                      "(",
+                      err_entry.prov_errno,
+                      ")");
             return ATL_STATUS_FAILURE;
         }
         return ATL_STATUS_SUCCESS;
@@ -914,7 +906,7 @@ static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t&
     if (prov_env && strlen(prov_env)) {
         ofi_ctx->prov_env_copy = (char*)calloc(strlen(prov_env) + 1, sizeof(char));
         if (ofi_ctx->prov_env_copy == NULL) {
-            ATL_OFI_DEBUG_PRINT("Memory allocaion failed");
+            LOG_ERROR("Memory allocaion failed");
             return ATL_STATUS_FAILURE;
         }
         memcpy(ofi_ctx->prov_env_copy, prov_env, strlen(prov_env));
@@ -934,7 +926,7 @@ static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t&
 
             char* prov_env_copy = (char*)calloc(prov_env_copy_size, sizeof(char));
             if (prov_env_copy == NULL) {
-                ATL_OFI_DEBUG_PRINT("Memory allocaion failed");
+                LOG_ERROR("Memory allocaion failed");
                 return ATL_STATUS_FAILURE;
             }
 
@@ -945,8 +937,7 @@ static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t&
                     prov_env_copy, prov_env_copy_size, "%s,%s", prov_env, ATL_OFI_SHM_PROV_NAME);
             }
 
-            ATL_OFI_DEBUG_PRINT(
-                "modify FI_PROVIDER: old value %s, new value %s", prov_env, prov_env_copy);
+            LOG_DEBUG("modify FI_PROVIDER: old value ", prov_env, ", new value ", prov_env_copy);
 
             setenv("FI_PROVIDER", prov_env_copy, 1);
 
@@ -1178,7 +1169,7 @@ static atl_status_t atl_ofi_ep_probe(atl_ep_t* ep,
                     req->prov_ep = NULL;
                 }
                 else {
-                    ATL_OFI_ASSERT(0, "unexpected completion state %d", req->comp_state);
+                    CCL_THROW("unexpected completion state ", req->comp_state);
                 }
 
                 break;
@@ -1436,7 +1427,7 @@ static inline atl_status_t atl_ofi_ep_poll(atl_ep_t* ep) {
 }
 
 static atl_status_t atl_ofi_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t* req) {
-    ATL_OFI_ASSERT(is_completed);
+    CCL_THROW_IF_NOT(is_completed);
 
     atl_status_t status;
 
@@ -1520,12 +1511,13 @@ static atl_status_t atl_ofi_init(int* argc,
     idx = 0;
     ep_idx = 0;
 
-    ATL_OFI_ASSERT(
-        (sizeof(atl_ofi_req_t) <= sizeof(atl_req_t) - offsetof(atl_req_t, internal)),
-        "unexpected offset: atl_ofi_request size %zu, atl_request size %zu, expected offset %zu",
-        sizeof(atl_ofi_req_t),
-        sizeof(atl_req_t),
-        offsetof(atl_req_t, internal));
+    CCL_THROW_IF_NOT((sizeof(atl_ofi_req_t) <= sizeof(atl_req_t) - offsetof(atl_req_t, internal)),
+                     "unexpected offset: atl_ofi_request size ",
+                     sizeof(atl_ofi_req_t),
+                     ", atl_request size ",
+                     sizeof(atl_req_t),
+                     ", expected offset ",
+                     offsetof(atl_req_t, internal));
 
     atl_ofi_ctx_t* ofi_ctx;
     ofi_ctx = (atl_ofi_ctx_t*)calloc(1, sizeof(atl_ofi_ctx_t));
@@ -1534,7 +1526,7 @@ static atl_status_t atl_ofi_init(int* argc,
 
     ret = atl_ofi_adjust_env(ofi_ctx, *attr);
     if (ret != ATL_STATUS_SUCCESS) {
-        ATL_OFI_PRINT("atl_ofi_adjust_env error");
+        LOG_ERROR("atl_ofi_adjust_env error");
         free(ofi_ctx->prov_env_copy);
         ofi_ctx->prov_env_copy = NULL;
         free(ofi_ctx);
@@ -1555,7 +1547,7 @@ static atl_status_t atl_ofi_init(int* argc,
 
     ret = atl_ofi_get_local_proc_coord(ofi_ctx, pmi);
     if (ret) {
-        ATL_OFI_PRINT("atl_ofi_get_local_proc_coord error");
+        LOG_ERROR("atl_ofi_get_local_proc_coord error");
         goto err;
     }
 
@@ -1566,7 +1558,7 @@ static atl_status_t atl_ofi_init(int* argc,
 
     base_hints = fi_allocinfo();
     if (!base_hints) {
-        ATL_OFI_PRINT("can't alloc base_hints");
+        LOG_ERROR("can't alloc base_hints");
         goto err;
     }
 
@@ -1580,18 +1572,20 @@ static atl_status_t atl_ofi_init(int* argc,
 
     fi_version = FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION);
 
-    ATL_OFI_DEBUG_PRINT_ROOT("libfabric version: %s", fi_tostr("1" /* ignored */, FI_TYPE_VERSION));
+    if (coord->global_idx == 0)
+        LOG_INFO("libfabric version: ", fi_tostr("1" /* ignored */, FI_TYPE_VERSION));
 
     char* prov_env;
     prov_env = getenv("FI_PROVIDER");
     if (prov_env && !strcmp(prov_env, ATL_OFI_SHM_PROV_NAME)) {
-        ATL_OFI_ASSERT(
-            coord->global_count == coord->local_count,
-            "shm provider is requested as primary provider but global_count (%d) != local_count (%d)",
-            coord->global_count,
-            coord->local_count);
+        CCL_THROW_IF_NOT(coord->global_count == coord->local_count,
+                         "shm provider is requested as primary provider but global_count (",
+                         coord->global_count,
+                         ") != local_count (",
+                         coord->local_count,
+                         ")");
 
-        ATL_OFI_ASSERT(
+        CCL_THROW_IF_NOT(
             attr->enable_shm,
             "shm provider is requested through FI_PROVIDER but not requested from CCL level");
     }
@@ -1603,10 +1597,10 @@ static atl_status_t atl_ofi_init(int* argc,
         ret = fi_getinfo(fi_version, NULL, NULL, 0ULL, prov_hints, &providers);
         if (ret || !providers) {
             attr->enable_shm = 0;
-            ATL_OFI_DEBUG_PRINT("shm provider is requested but not available");
+            LOG_INFO("shm provider is requested but not available");
         }
         else {
-            ATL_OFI_DEBUG_PRINT("shm provider is requested and available");
+            LOG_INFO("shm provider is requested and available");
         }
 
         fi_freeinfo(providers);
@@ -1623,22 +1617,22 @@ static atl_status_t atl_ofi_init(int* argc,
             if (file) {
                 fret = fscanf(file, "%d", &scope);
                 if (fret != 1) {
-                    ATL_OFI_PRINT("error getting value from ptrace_scope");
+                    LOG_ERROR("error getting value from ptrace_scope");
                     scope = 1;
                 }
                 fret = fclose(file);
                 if (fret) {
-                    ATL_OFI_PRINT("error closing ptrace_scope file");
+                    LOG_ERROR("error closing ptrace_scope file");
                     scope = 1;
                 }
             }
 
             if (!file && (errno != ENOENT)) {
-                ATL_OFI_PRINT("can't open ptrace_scope file, disable shm provider");
+                LOG_ERROR("can't open ptrace_scope file, disable shm provider");
                 attr->enable_shm = 0;
             }
             else if (scope) {
-                ATL_OFI_PRINT("ptrace_scope > 0, disable shm provider");
+                LOG_ERROR("ptrace_scope > 0, disable shm provider");
                 attr->enable_shm = 0;
             }
         }
@@ -1666,11 +1660,12 @@ static atl_status_t atl_ofi_init(int* argc,
     }
 
     if (attr->enable_rma && (ofi_ctx->prov_count > 1)) {
-        ATL_OFI_PRINT_ROOT("RMA and multiple providers requested both, disable RMA");
+        LOG_INFO("RMA and multiple providers requested both, disable RMA");
         attr->enable_rma = 0;
     }
 
-    ATL_OFI_DEBUG_PRINT_ROOT("prov_count %zu", ofi_ctx->prov_count);
+    if (coord->global_idx == 0)
+        LOG_INFO("prov_count ", ofi_ctx->prov_count);
 
     for (idx = 0; idx < ofi_ctx->prov_count; idx++) {
         atl_ofi_prov_t* prov;
@@ -1691,16 +1686,18 @@ static atl_status_t atl_ofi_init(int* argc,
 
         prov_hints->fabric_attr->prov_name = (prov_name) ? strdup(prov_name) : NULL;
 
-        ATL_OFI_DEBUG_PRINT_ROOT("request provider: idx %zu, name %s, is_shm %d",
-                                 idx,
-                                 prov_hints->fabric_attr->prov_name,
-                                 prov->is_shm);
+        LOG_DEBUG("request provider: idx ",
+                  idx,
+                  ", name ",
+                  prov_hints->fabric_attr->prov_name,
+                  ", is_shm ",
+                  prov->is_shm);
 
         ret = fi_getinfo(fi_version, NULL, NULL, 0ULL, prov_hints, &providers);
 
         if (ret || !providers) {
-            ATL_OFI_PRINT(
-                "fi_getinfo erro: ret %zd, providers %p, prov_idx %zu", ret, providers, idx);
+            LOG_ERROR(
+                "fi_getinfo erro: ret ", ret, ", providers ", (void*)providers, ", prov_idx ", idx);
             goto err;
         }
 
@@ -1717,7 +1714,7 @@ static atl_status_t atl_ofi_init(int* argc,
         providers = NULL;
 
         if (attr->enable_rma) {
-            ATL_OFI_DEBUG_PRINT("try to enable RMA");
+            LOG_INFO("try to enable RMA");
             prov_hints->caps |= FI_RMA | FI_READ | FI_WRITE | FI_REMOTE_READ | FI_REMOTE_WRITE;
             prov_hints->domain_attr->mr_mode = FI_MR_UNSPEC;
             // TODO:
@@ -1728,17 +1725,17 @@ static atl_status_t atl_ofi_init(int* argc,
         if (ret || !providers) {
             if (attr->enable_rma) {
                 attr->enable_rma = 0;
-                ATL_OFI_DEBUG_PRINT("try without RMA");
+                LOG_INFO("try without RMA");
                 prov_hints->caps = FI_TAGGED;
                 prov_hints->domain_attr->mr_mode = FI_MR_UNSPEC;
                 ret = fi_getinfo(fi_version, NULL, NULL, 0ULL, prov_hints, &providers);
                 if (ret || !providers) {
-                    ATL_OFI_PRINT("fi_getinfo error (rma fallback), prov_idx %zu", idx);
+                    LOG_ERROR("fi_getinfo error (rma fallback), prov_idx ", idx);
                     goto err;
                 }
             }
             else {
-                ATL_OFI_PRINT("fi_getinfo error (main path), prov_idx %zu", idx);
+                LOG_ERROR("fi_getinfo error (main path), prov_idx ", idx);
                 goto err;
             }
         }
@@ -1748,7 +1745,7 @@ static atl_status_t atl_ofi_init(int* argc,
         struct fi_info* prov_info;
         prov_info = prov->info;
         if (!prov_info) {
-            ATL_OFI_PRINT("fi_dupinfo error");
+            LOG_ERROR("fi_dupinfo error");
             goto err;
         }
 
@@ -1761,12 +1758,14 @@ static atl_status_t atl_ofi_init(int* argc,
 
         prov->max_msg_size = prov_info->ep_attr->max_msg_size;
 
-        ATL_OFI_DEBUG_PRINT_ROOT("provider %s", prov_info->fabric_attr->prov_name);
-        ATL_OFI_DEBUG_PRINT_ROOT("mr_mode %d", prov_info->domain_attr->mr_mode);
-        ATL_OFI_DEBUG_PRINT_ROOT("threading %d", prov_info->domain_attr->threading);
-        ATL_OFI_DEBUG_PRINT_ROOT("tx_ctx_cnt %zu", prov_info->domain_attr->tx_ctx_cnt);
-        ATL_OFI_DEBUG_PRINT_ROOT("max_ep_tx_ctx %zu", prov_info->domain_attr->max_ep_tx_ctx);
-        ATL_OFI_DEBUG_PRINT_ROOT("max_msg_size %zu", prov_info->ep_attr->max_msg_size);
+        if (coord->global_idx == 0) {
+            LOG_INFO("provider ", prov_info->fabric_attr->prov_name);
+            LOG_INFO("mr_mode ", prov_info->domain_attr->mr_mode);
+            LOG_INFO("threading ", prov_info->domain_attr->threading);
+            LOG_INFO("tx_ctx_cnt ", prov_info->domain_attr->tx_ctx_cnt);
+            LOG_INFO("max_ep_tx_ctx ", prov_info->domain_attr->max_ep_tx_ctx);
+            LOG_INFO("max_msg_size ", prov_info->ep_attr->max_msg_size);
+        }
 
         ATL_OFI_CALL(fi_fabric(prov_info->fabric_attr, &prov->fabric, NULL), ret, goto err);
 
@@ -1784,14 +1783,14 @@ static atl_status_t atl_ofi_init(int* argc,
 
         prov->eps = (atl_ofi_prov_ep_t*)calloc(1, sizeof(atl_ofi_prov_ep_t) * attr->ep_count);
         if (!prov->eps) {
-            ATL_OFI_PRINT("can't allocate prov->eps");
+            LOG_ERROR("can't allocate prov->eps");
             goto err;
         }
 
         for (ep_idx = 0; ep_idx < attr->ep_count; ep_idx++) {
             ret = atl_ofi_prov_ep_init(prov, ep_idx);
             if (ret) {
-                ATL_OFI_PRINT("atl_ofi_prov_ep_init error");
+                LOG_ERROR("atl_ofi_prov_ep_init error");
                 goto err;
             }
         }
@@ -1802,7 +1801,7 @@ static atl_status_t atl_ofi_init(int* argc,
 
         ret = atl_ofi_prov_eps_connect(ofi_ctx, idx, pmi);
         if (ret) {
-            ATL_OFI_PRINT("atl_ofi_prov_eps_connect error, prov_idx %zu", idx);
+            LOG_ERROR("atl_ofi_prov_eps_connect error, prov_idx ", idx);
             goto err;
         }
 
@@ -1813,7 +1812,7 @@ static atl_status_t atl_ofi_init(int* argc,
         atl_ofi_ep_t* ofi_ep;
         ofi_ep = (atl_ofi_ep_t*)calloc(1, sizeof(atl_ofi_ep_t));
         if (!ofi_ep) {
-            ATL_OFI_PRINT("can't alloc ofi_ep, idx %zu", ep_idx);
+            LOG_ERROR("can't alloc ofi_ep, idx ", ep_idx);
             goto err;
         }
 
@@ -1864,9 +1863,11 @@ static atl_status_t atl_ofi_init(int* argc,
         ofi_ctx->progress_mode = static_cast<atl_progress_mode_t>(atoi(progress_mode_env));
     }
 
-    ATL_OFI_DEBUG_PRINT_ROOT("timeout_sec %zu", ofi_ctx->timeout_sec);
-    ATL_OFI_DEBUG_PRINT_ROOT("max_retry_count %zu", ofi_ctx->max_retry_count);
-    ATL_OFI_DEBUG_PRINT_ROOT("progress_mode %d", ofi_ctx->progress_mode);
+    if (coord->global_idx == 0) {
+        LOG_INFO("timeout_sec ", ofi_ctx->timeout_sec);
+        LOG_INFO("max_retry_count ", ofi_ctx->max_retry_count);
+        LOG_INFO("progress_mode ", ofi_ctx->progress_mode);
+    }
 
     *out_ctx = ctx;
 
@@ -1881,7 +1882,7 @@ err:
     free(ofi_ctx->prov_env_copy);
     ofi_ctx->prov_env_copy = NULL;
 
-    ATL_OFI_PRINT("can't find suitable provider");
+    LOG_ERROR("can't find suitable provider");
 
     if (providers) {
         fi_freeinfo(providers);
