@@ -86,6 +86,7 @@ typedef struct user_options_t {
     size_t min_elem_count;
     size_t max_elem_count;
     int check_values;
+    int cache_ops;
     size_t v2i_ratio;
     sycl_dev_type_t sycl_dev_type;
     sycl_mem_type_t sycl_mem_type;
@@ -105,6 +106,7 @@ typedef struct user_options_t {
         min_elem_count = DEFAULT_MIN_ELEM_COUNT;
         max_elem_count = DEFAULT_MAX_ELEM_COUNT;
         check_values = DEFAULT_CHECK_VALUES;
+        cache_ops = DEFAULT_CACHE_OPS;
         v2i_ratio = DEFAULT_V2I_RATIO;
         sycl_dev_type = DEFAULT_SYCL_DEV_TYPE;
         sycl_mem_type = DEFAULT_SYCL_MEM_TYPE;

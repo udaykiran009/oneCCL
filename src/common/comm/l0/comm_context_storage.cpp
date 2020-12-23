@@ -59,7 +59,7 @@ group_context::comm_group_t group_context::group_by_comm(std::shared_ptr<atl_wra
              atl->get_size(),
              "\n  rank:                ",
              atl->get_rank(),
-             "\n  unique id of atl:     ",
+             "\n  unique id of atl:    ",
              atl->get_id(),
              "\n")
 

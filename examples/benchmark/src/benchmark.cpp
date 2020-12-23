@@ -50,7 +50,7 @@ void do_regular(ccl::communicator& service_comm,
             reqs.reserve(colls.size() * options.buf_count);
 
             bench_attr.reduction = reduction_op;
-            bench_attr.set<ccl::operation_attr_id::to_cache>(true);
+            bench_attr.set<ccl::operation_attr_id::to_cache>((bool)options.cache_ops);
 
             std::ostringstream scolls;
             std::copy(options.coll_names.begin(),
@@ -95,22 +95,16 @@ void do_regular(ccl::communicator& service_comm,
                     for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
                         auto& coll = colls[coll_idx];
 
-                        ccl::barrier(service_comm);
-
                         double t1 = 0, t2 = 0, t = 0;
+
+                        if (options.check_values) {
+                            coll->prepare(count);
+                        }
+
+                        ccl::barrier(service_comm);
 
                         for (size_t iter_idx = 0; iter_idx < (iter_count + warmup_iter_count);
                              iter_idx++) {
-                            // collective is configured to handle only
-                            // options.buf_count many buffers/executions 'at once'.
-                            // -> check cannot combine executions over iterations
-                            // -> wait and check and must be in this loop nest
-                            if (options.check_values) {
-                                coll->prepare(count);
-                            }
-
-                            ccl::barrier(service_comm);
-
                             t1 = when();
 
                             for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
@@ -132,11 +126,12 @@ void do_regular(ccl::communicator& service_comm,
                             if (iter_idx >= warmup_iter_count) {
                                 t += (t2 - t1);
                             }
-
-                            if (options.check_values) {
-                                coll->finalize(count);
-                            }
                         }
+
+                        if (options.check_values) {
+                            coll->finalize(count);
+                        }
+
                         coll_timers[coll_idx] += t;
                     }
 
@@ -191,7 +186,7 @@ void do_unordered(ccl::communicator& service_comm,
 
             PRINT_BY_ROOT(service_comm, "do unordered test");
             bench_attr.reduction = reduction_op;
-            bench_attr.set<ccl::operation_attr_id::to_cache>(true);
+            bench_attr.set<ccl::operation_attr_id::to_cache>((bool)options.cache_ops);
 
             for (size_t count = options.min_elem_count; count <= options.max_elem_count;
                  count *= 2) {
@@ -534,8 +529,6 @@ int main(int argc, char* argv[]) {
         }
         default: ASSERT(0, "unknown loop %d", options.loop); break;
     }
-
-    transport.reset_comms();
 
     return 0;
 }

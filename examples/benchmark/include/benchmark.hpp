@@ -35,10 +35,11 @@ void print_help_usage(const char* app) {
           "\t[-e,--loop <execution loop>]: %s\n"
           "\t[-i,--iters <iteration count>]: %d\n"
           "\t[-w,--warmup_iters <warm up iteration count>]: %d\n"
-          "\t[-p,--buf_count <number of parallel operations within single collective>]: %d\n"
+          "\t[-n,--buf_count <number of parallel operations within single collective>]: %d\n"
           "\t[-f,--min_elem_count <minimum number of elements for single collective>]: %d\n"
           "\t[-t,--max_elem_count <maximum number of elements for single collective>]: %d\n"
           "\t[-c,--check <check result correctness>]: %d\n"
+          "\t[-p,--cache <use persistent operations>]: %d\n"
           "\t[-a,--sycl_dev_type <sycl device type>]: %s\n"
           "\t[-m,--sycl_mem_type <sycl memory type>]: %s\n"
           "\t[-u,--sycl_usm_type <sycl usm type>]: %s\n"
@@ -59,6 +60,7 @@ void print_help_usage(const char* app) {
           DEFAULT_MIN_ELEM_COUNT,
           DEFAULT_MAX_ELEM_COUNT,
           DEFAULT_CHECK_VALUES,
+          DEFAULT_CACHE_OPS,
           sycl_dev_names[DEFAULT_SYCL_DEV_TYPE].c_str(),
           sycl_mem_names[DEFAULT_SYCL_MEM_TYPE].c_str(),
           sycl_usm_names[DEFAULT_SYCL_USM_TYPE].c_str(),
@@ -295,17 +297,18 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
     int ch;
     int errors = 0;
 
-    const char* const short_options = "b:e:i:w:p:f:t:c:v:o:a:m:u:k:l:d:r:h";
+    const char* const short_options = "b:e:i:w:n:f:t:c:p:v:o:a:m:u:k:l:d:r:h";
 
     struct option getopt_options[] = {
         { "backend", required_argument, 0, 'b' },
         { "loop", required_argument, 0, 'e' },
         { "iters", required_argument, 0, 'i' },
         { "warmup_iters", required_argument, 0, 'w' },
-        { "buf_count", required_argument, 0, 'p' },
+        { "buf_count", required_argument, 0, 'n' },
         { "min_elem_count", required_argument, 0, 'f' },
         { "max_elem_count", required_argument, 0, 't' },
         { "check", required_argument, 0, 'c' },
+        { "cache", required_argument, 0, 'p' },
         { "v2i_ratio", required_argument, 0, 'v' },
         { "sycl_dev_type", required_argument, 0, 'a' },
         { "sycl_mem_type", required_argument, 0, 'm' },
@@ -335,10 +338,11 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
                 break;
             case 'i': options.iters = atoll(optarg); break;
             case 'w': options.warmup_iters = atoll(optarg); break;
-            case 'p': options.buf_count = atoll(optarg); break;
+            case 'n': options.buf_count = atoll(optarg); break;
             case 'f': options.min_elem_count = atoll(optarg); break;
             case 't': options.max_elem_count = atoll(optarg); break;
             case 'c': options.check_values = atoi(optarg); break;
+            case 'p': options.cache_ops = atoi(optarg); break;
             case 'v': options.v2i_ratio = atoll(optarg); break;
             case 'a':
                 if (set_sycl_dev_type(optarg, options.sycl_dev_type)) {
@@ -444,6 +448,7 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   "\n  min_elem_count: %zu"
                   "\n  max_elem_count: %zu"
                   "\n  check:          %d"
+                  "\n  cache:          %d"
                   "\n  v2i_ratio:      %zu"
                   "\n  sycl_dev_type:  %s"
                   "\n  sycl_mem_type:  %s"
@@ -460,6 +465,7 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   options.min_elem_count,
                   options.max_elem_count,
                   options.check_values,
+                  options.cache_ops,
                   options.v2i_ratio,
                   sycl_dev_type_str.c_str(),
                   sycl_mem_type_str.c_str(),

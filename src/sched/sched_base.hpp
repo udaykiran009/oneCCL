@@ -43,7 +43,7 @@ struct ccl_sched_buffer_handler {
 struct ccl_sched_sycl_buffer_handler : public ccl_sched_buffer_handler {
     const sycl::context ctx;
 
-    ccl_sched_sycl_buffer_handler(ccl_buffer buffer, size_t size, sycl::context ctx)
+    ccl_sched_sycl_buffer_handler(ccl_buffer buffer, size_t size, const sycl::context& ctx)
             : ccl_sched_buffer_handler(buffer, size),
               ctx(ctx) {}
 };
@@ -75,13 +75,15 @@ struct ccl_sched_base {
     size_t get_priority() const;
 
     ccl_buffer alloc_buffer(size_t bytes);
+
 #ifdef CCL_ENABLE_SYCL
-    ccl_buffer alloc_sycl_buffer(size_t bytes, const sycl::context& ctx);
+    ccl_buffer alloc_sycl_buffer(size_t bytes);
 #endif /* CCL_ENABLE_SYCL */
+
+    void free_buffers();
 
     ccl_buffer update_buffer(ccl_buffer buffer, size_t new_size);
     ccl_buffer find_and_realloc_buffer(void* buffer, size_t new_size, size_t expected_size = 0);
-    void free_buffers();
 
     void add_memory_region(atl_mr_t* mr);
 

@@ -91,7 +91,7 @@ ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes) {
     CCL_THROW_IF_NOT(bytes > 0, "incorrect buffer size: ", bytes);
 
     ccl_buffer buffer =
-        ccl_buffer(CCL_MALLOC(bytes, "sched_buffer"), bytes, 0, ccl_buffer_type::DIRECT);
+        ccl_buffer(CCL_CALLOC(bytes, "sched_buffer"), bytes, 0, ccl_buffer_type::DIRECT);
     memory.buf_list.emplace_back(buffer, bytes);
     CCL_THROW_IF_NOT(buffer.get_ptr(), "null ptr");
 
@@ -100,19 +100,47 @@ ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes) {
 }
 
 #ifdef CCL_ENABLE_SYCL
-ccl_buffer ccl_sched_base::alloc_sycl_buffer(size_t bytes, const sycl::context& ctx) {
+
+ccl_buffer ccl_sched_base::alloc_sycl_buffer(size_t bytes) {
     LOG_DEBUG("try to allocate usm host buffer size: ", bytes);
     CCL_THROW_IF_NOT(bytes > 0, "incorrect buffer size: ", bytes);
 
-    ccl_buffer buffer =
-        ccl_buffer(aligned_alloc_host(64, bytes, ctx), bytes, 0, ccl_buffer_type::DIRECT);
-    memory.sycl_buf_list.emplace_back(buffer, bytes, ctx);
+    ccl_buffer buffer;
+    if (coll_attr.to_cache) {
+        CCL_ASSERT(coll_param.stream);
+        sycl::context ctx = coll_param.stream->get_native_stream().get_context();
+        buffer = ccl_buffer(aligned_alloc_host(64, bytes, ctx), bytes, 0, ccl_buffer_type::DIRECT);
+        memory.sycl_buf_list.emplace_back(buffer, bytes, ctx);
+        LOG_DEBUG(
+            "allocated host usm buffer ptr: ", buffer.get_ptr(), ", size: ", buffer.get_size());
+    }
+    else {
+        buffer = alloc_buffer(bytes);
+    }
+
     CCL_THROW_IF_NOT(buffer.get_ptr(), "null ptr");
 
-    LOG_INFO("allocated host usm buffer ptr: ", buffer.get_ptr(), ", size: ", buffer.get_size());
     return buffer;
 }
 #endif /* CCL_ENABLE_SYCL */
+
+void ccl_sched_base::free_buffers() {
+    std::list<ccl_sched_buffer_handler>::iterator it;
+    for (it = memory.buf_list.begin(); it != memory.buf_list.end(); it++) {
+        LOG_DEBUG("free ", it->buffer.get_ptr());
+        CCL_FREE(it->buffer.get_ptr());
+    }
+    memory.buf_list.clear();
+
+#ifdef CCL_ENABLE_SYCL
+    std::list<ccl_sched_sycl_buffer_handler>::iterator sycl_it;
+    for (sycl_it = memory.sycl_buf_list.begin(); sycl_it != memory.sycl_buf_list.end(); sycl_it++) {
+        LOG_DEBUG("free host usm ", sycl_it->buffer.get_ptr());
+        free(sycl_it->buffer.get_ptr(), sycl_it->ctx);
+    }
+    memory.sycl_buf_list.clear();
+#endif /* CCL_ENABLE_SYCL */
+}
 
 ccl_buffer ccl_sched_base::update_buffer(ccl_buffer buffer, size_t new_size) {
     LOG_DEBUG("update pointer data size: ",
@@ -204,24 +232,6 @@ ccl_buffer ccl_sched_base::find_and_realloc_buffer(void* in_ptr,
     return ccl_buffer();
 }
 
-void ccl_sched_base::free_buffers() {
-    std::list<ccl_sched_buffer_handler>::iterator it;
-    for (it = memory.buf_list.begin(); it != memory.buf_list.end(); it++) {
-        LOG_DEBUG("free ", it->buffer.get_ptr());
-        CCL_FREE(it->buffer.get_ptr());
-    }
-    memory.buf_list.clear();
-
-#ifdef CCL_ENABLE_SYCL
-    std::list<ccl_sched_sycl_buffer_handler>::iterator sycl_it;
-    for (sycl_it = memory.sycl_buf_list.begin(); sycl_it != memory.sycl_buf_list.end(); sycl_it++) {
-        LOG_INFO("free host usm ", sycl_it->buffer.get_ptr());
-        free(sycl_it->buffer.get_ptr(), sycl_it->ctx);
-    }
-    memory.sycl_buf_list.clear();
-#endif /* CCL_ENABLE_SYCL */
-}
-
 void ccl_sched_base::add_memory_region(atl_mr_t* mr) {
     CCL_THROW_IF_NOT(mr);
     memory.mr_list.emplace_back(mr);
@@ -245,33 +255,28 @@ void ccl_sched_base::alloc_buffers_for_sycl_copy() {
 
     size_t idx, send_count = 0, recv_count = 0;
 
-    sycl::context ctx = param.stream->get_native_stream().get_context();
-
     switch (param.ctype) {
         case ccl_coll_allgatherv:
             param.sycl_send_buf = static_cast<ccl_sycl_buffer_t*>((void*)param.send_buf);
             param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t*>(param.recv_buf);
-            param.send_buf =
-                alloc_sycl_buffer(param.send_count * param.dtype.size(), ctx).get_ptr();
+            param.send_buf = alloc_sycl_buffer(param.send_count * param.dtype.size()).get_ptr();
             for (idx = 0; idx < param.comm->size(); idx++)
                 recv_count += param.recv_counts[idx];
-            param.recv_buf = alloc_sycl_buffer(recv_count * param.dtype.size(), ctx).get_ptr();
+            param.recv_buf = alloc_sycl_buffer(recv_count * param.dtype.size()).get_ptr();
             break;
         case ccl_coll_allreduce:
             param.sycl_send_buf = static_cast<ccl_sycl_buffer_t*>((void*)param.send_buf);
             param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t*>(param.recv_buf);
-            param.send_buf = alloc_sycl_buffer(param.count * param.dtype.size(), ctx).get_ptr();
-            param.recv_buf = alloc_sycl_buffer(param.count * param.dtype.size(), ctx).get_ptr();
+            param.send_buf = alloc_sycl_buffer(param.count * param.dtype.size()).get_ptr();
+            param.recv_buf = alloc_sycl_buffer(param.count * param.dtype.size()).get_ptr();
             break;
         case ccl_coll_alltoall:
             param.sycl_send_buf = static_cast<ccl_sycl_buffer_t*>((void*)param.send_buf);
             param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t*>(param.recv_buf);
             param.send_buf =
-                alloc_sycl_buffer(param.count * param.dtype.size() * param.comm->size(), ctx)
-                    .get_ptr();
+                alloc_sycl_buffer(param.count * param.dtype.size() * param.comm->size()).get_ptr();
             param.recv_buf =
-                alloc_sycl_buffer(param.count * param.dtype.size() * param.comm->size(), ctx)
-                    .get_ptr();
+                alloc_sycl_buffer(param.count * param.dtype.size() * param.comm->size()).get_ptr();
             break;
         case ccl_coll_alltoallv:
             param.sycl_send_buf = static_cast<ccl_sycl_buffer_t*>((void*)param.send_buf);
@@ -280,19 +285,19 @@ void ccl_sched_base::alloc_buffers_for_sycl_copy() {
                 send_count += param.send_counts[idx];
                 recv_count += param.recv_counts[idx];
             }
-            param.send_buf = alloc_sycl_buffer(send_count * param.dtype.size(), ctx).get_ptr();
-            param.recv_buf = alloc_sycl_buffer(recv_count * param.dtype.size(), ctx).get_ptr();
+            param.send_buf = alloc_sycl_buffer(send_count * param.dtype.size()).get_ptr();
+            param.recv_buf = alloc_sycl_buffer(recv_count * param.dtype.size()).get_ptr();
             break;
         case ccl_coll_bcast:
             param.sycl_buf = static_cast<ccl_sycl_buffer_t*>(param.buf);
-            param.buf = alloc_sycl_buffer(param.count * param.dtype.size(), ctx).get_ptr();
+            param.buf = alloc_sycl_buffer(param.count * param.dtype.size()).get_ptr();
             break;
         case ccl_coll_reduce:
             param.sycl_send_buf = static_cast<ccl_sycl_buffer_t*>((void*)(param.send_buf));
-            param.send_buf = alloc_sycl_buffer(param.count * param.dtype.size(), ctx).get_ptr();
+            param.send_buf = alloc_sycl_buffer(param.count * param.dtype.size()).get_ptr();
             if (param.comm->rank() == param.root) {
                 param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t*>(param.recv_buf);
-                param.recv_buf = alloc_sycl_buffer(param.count * param.dtype.size(), ctx).get_ptr();
+                param.recv_buf = alloc_sycl_buffer(param.count * param.dtype.size()).get_ptr();
             }
             else {
                 param.recv_buf = nullptr;
@@ -302,9 +307,8 @@ void ccl_sched_base::alloc_buffers_for_sycl_copy() {
             param.sycl_send_buf = static_cast<ccl_sycl_buffer_t*>((void*)param.send_buf);
             param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t*>(param.recv_buf);
             param.send_buf =
-                alloc_sycl_buffer(param.count * param.comm->size() * param.dtype.size(), ctx)
-                    .get_ptr();
-            param.recv_buf = alloc_sycl_buffer(param.count * param.dtype.size(), ctx).get_ptr();
+                alloc_sycl_buffer(param.count * param.comm->size() * param.dtype.size()).get_ptr();
+            param.recv_buf = alloc_sycl_buffer(param.count * param.dtype.size()).get_ptr();
             break;
         case ccl_coll_sparse_allreduce:
             CCL_FATAL("SYCL stream is not supported for sparse_allreduce yet");

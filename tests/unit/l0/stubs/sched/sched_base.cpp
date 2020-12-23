@@ -24,9 +24,11 @@ ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes) {
     return {};
 }
 
-ccl_buffer ccl_sched_base::alloc_sycl_buffer(size_t bytes, sycl::context& ctx) {
+ccl_buffer ccl_sched_base::alloc_sycl_buffer(size_t bytes) {
     return {};
 }
+
+void ccl_sched_base::free_buffers() {}
 
 ccl_buffer ccl_sched_base::update_buffer(ccl_buffer buffer, size_t new_size) {
     return {};
@@ -38,11 +40,9 @@ ccl_buffer ccl_sched_base::find_and_realloc_buffer(void* in_ptr,
     return ccl_buffer();
 }
 
-void ccl_sched_base::free_buffers() {}
-
 void ccl_sched_base::add_memory_region(atl_mr_t* mr) {}
 
-void ccl_sched_base::alloc_buffers_for_sycl_copy(const ccl_coll_param& param) {}
+void ccl_sched_base::alloc_buffers_for_sycl_copy() {}
 
 void ccl_sched_base::update_id() {}
 
