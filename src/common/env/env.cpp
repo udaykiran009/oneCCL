@@ -23,6 +23,11 @@ std::map<ccl_atl_transport, std::string> env_data::atl_transport_names = {
     std::make_pair(ccl_atl_mpi, "mpi")
 };
 
+std::map<ccl_staging_buffer, std::string> env_data::staging_buffer_names = {
+    std::make_pair(ccl_staging_regular, "regular"),
+    std::make_pair(ccl_staging_usm, "usm")
+};
+
 env_data::env_data()
         : was_printed(false),
 
@@ -54,6 +59,7 @@ env_data::env_data()
           cache_key_type(ccl_cache_key_match_id),
           enable_cache_flush(1),
           enable_strict_order(0),
+          staging_buffer(ccl_staging_usm),
 
           chunk_count(1),
           min_chunk_size(65536),
@@ -126,6 +132,7 @@ void env_data::parse() {
     env_2_enum(CCL_CACHE_KEY, ccl_sched_key::key_type_names, cache_key_type);
     env_2_type(CCL_CACHE_FLUSH, enable_cache_flush);
     env_2_type(CCL_STRICT_ORDER, enable_strict_order);
+    env_2_enum(CCL_STAGING_BUFFER, staging_buffer_names, staging_buffer);
 
     env_2_type(CCL_CHUNK_COUNT, chunk_count);
     CCL_THROW_IF_NOT(chunk_count >= 1, "incorrect ", CCL_CHUNK_COUNT, " ", chunk_count);
@@ -244,6 +251,7 @@ void env_data::print() {
     LOG_INFO(CCL_CACHE_KEY, ": ", str_by_enum(ccl_sched_key::key_type_names, cache_key_type));
     LOG_INFO(CCL_CACHE_FLUSH, ": ", enable_cache_flush);
     LOG_INFO(CCL_STRICT_ORDER, ": ", enable_strict_order);
+    LOG_INFO(CCL_STAGING_BUFFER, ": ", str_by_enum(staging_buffer_names, staging_buffer));
 
     LOG_INFO(CCL_CHUNK_COUNT, ": ", chunk_count);
     LOG_INFO(CCL_MIN_CHUNK_SIZE, ": ", min_chunk_size);

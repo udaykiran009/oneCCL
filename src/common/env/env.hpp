@@ -51,6 +51,7 @@ constexpr const char* CCL_BCAST_PART_COUNT = "CCL_BCAST_PART_COUNT";
 constexpr const char* CCL_CACHE_KEY = "CCL_CACHE_KEY";
 constexpr const char* CCL_CACHE_FLUSH = "CCL_CACHE_FLUSH";
 constexpr const char* CCL_STRICT_ORDER = "CCL_STRICT_ORDER";
+constexpr const char* CCL_STAGING_BUFFER = "CCL_STAGING_BUFFER";
 
 constexpr const char* CCL_CHUNK_COUNT = "CCL_CHUNK_COUNT";
 constexpr const char* CCL_MIN_CHUNK_SIZE = "CCL_MIN_CHUNK_SIZE";
@@ -82,6 +83,13 @@ enum ccl_atl_transport {
     ccl_atl_mpi,
 
     ccl_atl_last_value
+};
+
+enum ccl_staging_buffer {
+    ccl_staging_regular,
+    ccl_staging_usm,
+
+    ccl_staging_last_value
 };
 
 namespace ccl {
@@ -147,6 +155,7 @@ public:
     ccl_cache_key_type cache_key_type;
     int enable_cache_flush;
     int enable_strict_order;
+    ccl_staging_buffer staging_buffer;
 
     size_t chunk_count;
     size_t min_chunk_size;
@@ -214,6 +223,7 @@ public:
 
     static std::map<ccl_priority_mode, std::string> priority_mode_names;
     static std::map<ccl_atl_transport, std::string> atl_transport_names;
+    static std::map<ccl_staging_buffer, std::string> staging_buffer_names;
 
     int env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_count);
     void env_2_atl_transport();

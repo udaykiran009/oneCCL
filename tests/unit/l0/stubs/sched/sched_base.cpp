@@ -24,7 +24,7 @@ ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes) {
     return {};
 }
 
-ccl_buffer ccl_sched_base::alloc_sycl_buffer(size_t bytes) {
+ccl_buffer ccl_sched_base::alloc_staging_buffer(size_t bytes) {
     return {};
 }
 

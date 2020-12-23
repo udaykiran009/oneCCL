@@ -77,7 +77,7 @@ struct ccl_sched_base {
     ccl_buffer alloc_buffer(size_t bytes);
 
 #ifdef CCL_ENABLE_SYCL
-    ccl_buffer alloc_sycl_buffer(size_t bytes);
+    ccl_buffer alloc_staging_buffer(size_t bytes);
 #endif /* CCL_ENABLE_SYCL */
 
     void free_buffers();
