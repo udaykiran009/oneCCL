@@ -350,8 +350,8 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
     int insert_count;
 
     size_t addr_idx = 0;
-    char* epnames_table;
-    size_t epnames_table_len;
+    char* ep_names_table;
+    size_t ep_names_table_len;
 
     size_t named_ep_count = (prov->sep ? 1 : ctx->ep_count);
 
@@ -381,10 +381,10 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
               proc_count);
 
     /* allocate OFI EP names table that will contain all published names */
-    epnames_table_len = prov->addr_len * named_ep_count * proc_count;
+    ep_names_table_len = prov->addr_len * named_ep_count * proc_count;
 
-    if (epnames_table_len == 0) {
-        LOG_ERROR("epnames_table_len == 0, addr_len ",
+    if (ep_names_table_len == 0) {
+        LOG_ERROR("ep_names_table_len == 0, addr_len ",
                   prov->addr_len,
                   ", named_ep_count ",
                   named_ep_count,
@@ -393,8 +393,8 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
         return ATL_STATUS_FAILURE;
     }
 
-    epnames_table = (char*)calloc(1, epnames_table_len);
-    if (!epnames_table) {
+    ep_names_table = (char*)calloc(1, ep_names_table_len);
+    if (!ep_names_table) {
         LOG_ERROR("can't allocate epnames_table");
         return ATL_STATUS_FAILURE;
     }
@@ -413,7 +413,7 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
             ret = pmi->pmrt_kvs_get(
                 (char*)ATL_OFI_FI_ADDR_PM_KEY,
                 i * ATL_OFI_PMI_PROC_MULTIPLIER + prov_idx * ATL_OFI_PMI_PROV_MULTIPLIER + j,
-                epnames_table + addr_idx * prov->addr_len,
+                ep_names_table + addr_idx * prov->addr_len,
                 prov->addr_len);
 
             if (ret) {
@@ -455,7 +455,7 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
 
     /* insert all the EP names into the AV */
     insert_count = fi_av_insert(
-        prov->av, epnames_table, named_ep_count * proc_count, prov->addr_table, 0, NULL);
+        prov->av, ep_names_table, named_ep_count * proc_count, prov->addr_table, 0, NULL);
 
     LOG_DEBUG("av_insert: ep_count ",
               named_ep_count,
@@ -477,14 +477,17 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
     }
 
     if (prov->sep) {
-        CCL_THROW_IF_NOT(named_ep_count == 1, "unexpected named_ep_count ", named_ep_count);
+        if (named_ep_count != 1) {
+            LOG_ERROR("unexpected named_ep_count ", named_ep_count);
+            goto err_addr_table;
+        }
 
         fi_addr_t* table;
         table = (fi_addr_t*)calloc(1, proc_count * sizeof(fi_addr_t));
         if (table == NULL) {
-            LOG_ERROR("Memory allocaion failed");
+            LOG_ERROR("memory allocaion failed");
             ret = ATL_STATUS_FAILURE;
-            goto err_ep_names;
+            goto err_addr_table;
         }
         memcpy(table, prov->addr_table, proc_count * sizeof(fi_addr_t));
 
@@ -498,7 +501,7 @@ static atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
     }
 
     /* normal end of execution */
-    free(epnames_table);
+    free(ep_names_table);
     return ret;
 
     /* abnormal end of execution */
@@ -506,7 +509,7 @@ err_addr_table:
     free(prov->addr_table);
 
 err_ep_names:
-    free(epnames_table);
+    free(ep_names_table);
     return ret;
 }
 
@@ -883,7 +886,9 @@ static void atl_ofi_reset(atl_ctx_t* ctx) {
 
 static atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
     setenv("FI_PSM2_DELAY", "0", 0);
+    setenv("FI_PSM2_TIMEOUT", "0", 0);
     setenv("FI_PSM2_LOCK_LEVEL", "1", 0);
+    setenv("FI_PSM2_NAME_SERVER", "0", 0);
     setenv("HFI_NO_CPUAFFINITY", "1", 0);
     setenv("PSM2_MULTI_EP", "1", 0);
 
@@ -906,7 +911,7 @@ static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t&
     if (prov_env && strlen(prov_env)) {
         ofi_ctx->prov_env_copy = (char*)calloc(strlen(prov_env) + 1, sizeof(char));
         if (ofi_ctx->prov_env_copy == NULL) {
-            LOG_ERROR("Memory allocaion failed");
+            LOG_ERROR("memory allocaion failed");
             return ATL_STATUS_FAILURE;
         }
         memcpy(ofi_ctx->prov_env_copy, prov_env, strlen(prov_env));
@@ -926,7 +931,7 @@ static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t&
 
             char* prov_env_copy = (char*)calloc(prov_env_copy_size, sizeof(char));
             if (prov_env_copy == NULL) {
-                LOG_ERROR("Memory allocaion failed");
+                LOG_ERROR("memory allocaion failed");
                 return ATL_STATUS_FAILURE;
             }
 
@@ -1578,16 +1583,20 @@ static atl_status_t atl_ofi_init(int* argc,
     char* prov_env;
     prov_env = getenv("FI_PROVIDER");
     if (prov_env && !strcmp(prov_env, ATL_OFI_SHM_PROV_NAME)) {
-        CCL_THROW_IF_NOT(coord->global_count == coord->local_count,
-                         "shm provider is requested as primary provider but global_count (",
-                         coord->global_count,
-                         ") != local_count (",
-                         coord->local_count,
-                         ")");
+        if (coord->global_count != coord->local_count) {
+            LOG_ERROR("shm provider is requested as primary provider but global_count (",
+                      coord->global_count,
+                      ") != local_count (",
+                      coord->local_count,
+                      ")");
+            goto err;
+        }
 
-        CCL_THROW_IF_NOT(
-            attr->enable_shm,
-            "shm provider is requested through FI_PROVIDER but not requested from CCL level");
+        if (!attr->enable_shm) {
+            LOG_ERROR(
+                "shm provider is requested through FI_PROVIDER but not requested from CCL level");
+            goto err;
+        }
     }
     atl_ofi_print_coord(coord);
 
@@ -1676,15 +1685,15 @@ static atl_status_t atl_ofi_init(int* argc,
         char* prov_name = NULL;
 
         if (prov->is_shm)
-            prov_name = (char*)ATL_OFI_SHM_PROV_NAME;
+            prov_name = strdup(ATL_OFI_SHM_PROV_NAME);
         else {
             if (ofi_ctx->prov_env_copy && !strstr(ofi_ctx->prov_env_copy, ","))
-                prov_name = ofi_ctx->prov_env_copy;
+                prov_name = strdup(ofi_ctx->prov_env_copy);
             else
                 prov_name = NULL;
         }
 
-        prov_hints->fabric_attr->prov_name = (prov_name) ? strdup(prov_name) : NULL;
+        prov_hints->fabric_attr->prov_name = prov_name;
 
         LOG_DEBUG("request provider: idx ",
                   idx,
@@ -1806,6 +1815,7 @@ static atl_status_t atl_ofi_init(int* argc,
         }
 
         fi_freeinfo(prov_hints);
+        prov_hints = NULL;
     }
 
     for (ep_idx = 0; ep_idx < attr->ep_count; ep_idx++) {
@@ -1872,6 +1882,7 @@ static atl_status_t atl_ofi_init(int* argc,
     *out_ctx = ctx;
 
     fi_freeinfo(base_hints);
+    base_hints = NULL;
 
     free(ofi_ctx->prov_env_copy);
     ofi_ctx->prov_env_copy = NULL;

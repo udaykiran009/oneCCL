@@ -252,6 +252,14 @@ void ccl_executor::do_work() {
 size_t ccl_executor::get_worker_count() const {
     return workers.size();
 }
+
+void ccl_executor::update_wait_condition(size_t idx,
+                                         ccl_base_thread::wait_data::update_type type,
+                                         size_t delta) {
+    CCL_THROW_IF_NOT(idx < workers.size(), "unexpected worker idx ", idx);
+    workers[idx]->update_wait_condition(type, delta);
+}
+
 void ccl_executor::set_local_coord() {
     /* CCL specific variables */
     /* TODO: add auto-detection */

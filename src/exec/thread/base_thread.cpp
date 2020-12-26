@@ -37,6 +37,11 @@ ccl::status ccl_base_thread::stop() {
 
     should_stop = true;
 
+    if (ccl::global_data::env().worker_wait) {
+        std::unique_lock<std::mutex> lock(wait.mtx);
+        wait.var.notify_one();
+    }
+
     while (started.load(std::memory_order_relaxed)) {
         ccl_yield(ccl::global_data::env().yield_type);
     }

@@ -99,9 +99,10 @@ check_environment()
 
 # global variable for several use places
 # See: MLSL-675.
-supported_kernels_colls="allgatherv,allreduce,alltoallv,bcast,reduce"
-kernel_colls_with_dtypes="allreduce,reduce,allgatherv"
-kernels_dtypes_list="int8,int32,float32"
+supported_kernel_colls="allgatherv,allreduce,alltoallv,bcast,reduce"
+supported_kernel_colls_with_dtypes="allreduce,reduce,allgatherv"
+supported_kernel_dtypes="int8,int32,float32"
+
 run_benchmark()
 {
     echo "================ENVIRONMENT=================="
@@ -174,20 +175,20 @@ run_benchmark()
         options="${options} --reduction ${reduction}"
     fi
 
-    use_kernel=0
-    # these conditions check for benchmark  with kernel
+    use_kernels=0
+    # these conditions check for benchmark with kernels
     # coll are all there except alltoall,reduce_scatter
     if [ "$example" == "benchmark" ] &&   \
        [ "$backend" == "sycl" ] &&        \
        [ "$transport" == "ofi" ] &&       \
        [ "$runtime" == "level_zero" ] &&  \
        [ "$loop" == "regular" ] &&        \
-       [[ "$coll" == ${supported_kernels_colls} || "$coll" == ${kernel_colls_with_dtypes} ]] && \
-       [[ "$dtype" == "float32" || "$dtype" == ${kernels_dtypes_list} ]] &&       \
+       [[ "$coll" == ${supported_kernel_colls} || "$coll" == ${supported_kernel_colls_with_dtypes} ]] && \
+       [[ "$dtype" == "float32" || "$dtype" == ${supported_kernel_dtypes} ]] &&       \
        [ "$reduction" == "sum" ]
     then
-        echo "set flag use_kernel"
-        use_kernel=1
+        echo "set flag use_kernels"
+        use_kernels=1
     fi
 
     for usm in $usm_list;
@@ -227,11 +228,12 @@ run_benchmark()
                 check_test ${log_2_test_log} ${example}
             fi
         fi
-        if [ $use_kernel -eq 1 ]
+        if [ $use_kernels -eq 1 ]
         then
-            echo "Launched benchmark with the kernels:"
+            echo "Running benchmark with the kernels support:"
             final_options="${options} -n 1 -k 4 -f 256 -t 512"
             cmd=`echo $ccl_extra_env CCL_COLL_KERNELS_PATH=../../../../src/kernels CCL_KVS_GET_TIMEOUT=10 ./$example ${final_options}`
+            echo "Running: $cmd"
             eval $cmd 2>&1 | tee ${test_log}
             check_test ${test_log} ${example}
         fi
@@ -408,7 +410,11 @@ run()
 
                                 ccl_extra_env="CCL_PRIORITY=lifo ${ccl_runtime_env}"
                                 run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${loop} ${coll_list}
+
                                 ccl_extra_env="CCL_WORKER_OFFLOAD=0 ${ccl_runtime_env}"
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${loop} ${coll_list}
+
+                                ccl_extra_env="CCL_WORKER_WAIT=0 ${ccl_runtime_env}"
                                 run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${loop} ${coll_list}
                             done
 
@@ -422,9 +428,11 @@ run()
                             ccl_extra_env="CCL_LOG_LEVEL=2 ${ccl_runtime_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${coll_list}
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular allreduce ${dtype_list} ${reduction_list}
+
+                            # group of test scenarios for comm kernels
                             ccl_extra_env="${ccl_runtime_env}"
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernels_colls} float32 sum
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${kernel_colls_with_dtypes} ${kernels_dtypes_list} sum
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernel_colls} float32 sum
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernel_colls_with_dtypes} ${supported_kernel_dtypes} sum
                         done
                     done
                 elif [ "$dir_name" == "sycl" ];

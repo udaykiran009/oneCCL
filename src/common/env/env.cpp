@@ -36,6 +36,7 @@ env_data::env_data()
 
           worker_count(1),
           worker_offload(1),
+          worker_wait(1),
 
           atl_transport(ccl_atl_mpi),
           enable_shm(0),
@@ -85,6 +86,7 @@ void env_data::parse() {
     env_2_type(CCL_WORKER_COUNT, worker_count);
     CCL_THROW_IF_NOT(worker_count >= 1, "incorrect ", CCL_WORKER_COUNT, " ", worker_count);
     env_2_type(CCL_WORKER_OFFLOAD, worker_offload);
+    env_2_type(CCL_WORKER_WAIT, worker_wait);
 
     env_2_atl_transport();
     env_2_type(CCL_ATL_SHM, enable_shm);
@@ -163,6 +165,12 @@ void env_data::parse() {
         default_resizable <= 2, "incorrect ", CCL_DEFAULT_RESIZABLE, " ", default_resizable);
 
     env_2_type(CCL_COLL_KERNELS_PATH, kernel_path);
+
+    if (!worker_offload || enable_fusion)
+        worker_wait = 0;
+
+    if (worker_wait)
+        spin_count = 1000;
 }
 
 void env_data::print() {
@@ -195,6 +203,7 @@ void env_data::print() {
 
     LOG_INFO(CCL_WORKER_COUNT, ": ", worker_count);
     LOG_INFO(CCL_WORKER_OFFLOAD, ": ", worker_offload);
+    LOG_INFO(CCL_WORKER_WAIT, ": ", worker_wait);
     for (size_t w_idx = 0; w_idx < worker_affinity.size(); w_idx++) {
         LOG_INFO(CCL_WORKER_AFFINITY, ": worker: ", w_idx, ", processor: ", worker_affinity[w_idx]);
     }

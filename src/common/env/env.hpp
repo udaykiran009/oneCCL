@@ -16,8 +16,9 @@ constexpr const char* CCL_LOG_LEVEL = "CCL_LOG_LEVEL";
 constexpr const char* CCL_SCHED_DUMP = "CCL_SCHED_DUMP";
 
 constexpr const char* CCL_WORKER_COUNT = "CCL_WORKER_COUNT";
-constexpr const char* CCL_WORKER_AFFINITY = "CCL_WORKER_AFFINITY";
 constexpr const char* CCL_WORKER_OFFLOAD = "CCL_WORKER_OFFLOAD";
+constexpr const char* CCL_WORKER_WAIT = "CCL_WORKER_WAIT";
+constexpr const char* CCL_WORKER_AFFINITY = "CCL_WORKER_AFFINITY";
 constexpr const char* I_MPI_AVAILABLE_CORES_ENV = "I_MPI_PIN_INFO";
 
 constexpr const char* CCL_ATL_TRANSPORT = "CCL_ATL_TRANSPORT";
@@ -117,6 +118,7 @@ public:
 
     size_t worker_count;
     int worker_offload;
+    int worker_wait;
     std::vector<size_t> worker_affinity;
 
     ccl_atl_transport atl_transport;

@@ -56,6 +56,9 @@ public:
 
     void start_workers();
     size_t get_worker_count() const;
+    void update_wait_condition(size_t idx,
+                               ccl_base_thread::wait_data::update_type type,
+                               size_t delta);
 
     // TODO: Rework to support listener
     //    ccl::status create_listener(ccl_resize_fn_t resize_func);
