@@ -189,6 +189,7 @@ set(CCL_SRC
     common/log/log.cpp
     common/event/impls/host_event.cpp
     common/event/impls/native_event.cpp
+    common/framework/framework.cpp
     common/request/request.cpp
     common/utils/spinlock.cpp
     common/utils/version.cpp

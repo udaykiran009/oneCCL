@@ -175,6 +175,8 @@ public:
         write_stream(ss, std::forward<T>(first), std::forward<Tpackage>(others)...);
     }
 
+    static void write_backtrace(std::ostream& str);
+
 private:
     static ccl_log_level level;
 
@@ -209,8 +211,6 @@ private:
     }
 
     static void write_prefix(std::ostream& str);
-
-    static void write_backtrace(std::ostream& str);
 };
 
 extern ccl_logger logger;

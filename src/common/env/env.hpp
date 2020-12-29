@@ -2,6 +2,7 @@
 
 #include "oneapi/ccl/types.hpp"
 #include "coll/coll.hpp"
+#include "common/framework/framework.hpp"
 #include "common/utils/utils.hpp"
 #include "common/utils/yield.hpp"
 #include "sched/cache/cache.hpp"
@@ -14,6 +15,8 @@ constexpr const ssize_t CCL_ENV_SIZET_NOT_SPECIFIED = -1;
 
 constexpr const char* CCL_LOG_LEVEL = "CCL_LOG_LEVEL";
 constexpr const char* CCL_SCHED_DUMP = "CCL_SCHED_DUMP";
+
+constexpr const char* CCL_FRAMEWORK = "CCL_FRAMEWORK";
 
 constexpr const char* CCL_WORKER_COUNT = "CCL_WORKER_COUNT";
 constexpr const char* CCL_WORKER_OFFLOAD = "CCL_WORKER_OFFLOAD";
@@ -115,6 +118,8 @@ public:
 
     int log_level;
     int sched_dump;
+
+    ccl_framework_type fw_type;
 
     size_t worker_count;
     int worker_offload;

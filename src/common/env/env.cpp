@@ -1,3 +1,4 @@
+#include <dlfcn.h>
 #include <iterator>
 #include <sstream>
 #include <unistd.h>
@@ -33,6 +34,8 @@ env_data::env_data()
 
           log_level(static_cast<int>(ccl_log_level::ERROR)),
           sched_dump(0),
+
+          fw_type(ccl_framework_none),
 
           worker_count(1),
           worker_offload(1),
@@ -83,6 +86,29 @@ void env_data::parse() {
     ccl_logger::set_log_level(static_cast<ccl_log_level>(log_level));
     env_2_type(CCL_SCHED_DUMP, sched_dump);
 
+    if (fw_type == ccl_framework_none) {
+        /* try to automatically detect framework */
+        void* handle = dlopen(NULL, RTLD_GLOBAL | RTLD_NOW);
+        if (handle) {
+            horovod_init_function =
+                (ccl_horovod_init_function)dlsym(handle, horovod_init_function_name);
+            dlclose(handle);
+        }
+
+        if (horovod_init_function) {
+            LOG_INFO("found horovod_init function");
+            fw_type = ccl_framework_horovod;
+        }
+    }
+    env_2_enum(CCL_FRAMEWORK, ccl_framework_type_names, fw_type);
+
+    if (fw_type == ccl_framework_horovod) {
+        worker_wait = 1;
+        sync_coll = 1;
+        extra_ep = 1;
+        yield_type = ccl_yield_sched_yield;
+    }
+
     env_2_type(CCL_WORKER_COUNT, worker_count);
     CCL_THROW_IF_NOT(worker_count >= 1, "incorrect ", CCL_WORKER_COUNT, " ", worker_count);
     env_2_type(CCL_WORKER_OFFLOAD, worker_offload);
@@ -125,6 +151,12 @@ void env_data::parse() {
                          fusion_count_threshold);
     }
 
+    if (!worker_offload || enable_fusion)
+        worker_wait = 0;
+
+    if (worker_wait)
+        spin_count = 1000;
+
     env_2_type(CCL_RMA, enable_rma);
     env_2_enum(CCL_PRIORITY, priority_mode_names, priority_mode);
     env_2_type(CCL_SPIN_COUNT, spin_count);
@@ -165,12 +197,6 @@ void env_data::parse() {
         default_resizable <= 2, "incorrect ", CCL_DEFAULT_RESIZABLE, " ", default_resizable);
 
     env_2_type(CCL_COLL_KERNELS_PATH, kernel_path);
-
-    if (!worker_offload || enable_fusion)
-        worker_wait = 0;
-
-    if (worker_wait)
-        spin_count = 1000;
 }
 
 void env_data::print() {
@@ -200,6 +226,8 @@ void env_data::print() {
 
     LOG_INFO(CCL_LOG_LEVEL, ": ", log_level);
     LOG_INFO(CCL_SCHED_DUMP, ": ", sched_dump);
+
+    LOG_INFO(CCL_FRAMEWORK, ": ", str_by_enum(ccl_framework_type_names, fw_type));
 
     LOG_INFO(CCL_WORKER_COUNT, ": ", worker_count);
     LOG_INFO(CCL_WORKER_OFFLOAD, ": ", worker_offload);
