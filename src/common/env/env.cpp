@@ -199,7 +199,7 @@ void env_data::parse() {
     env_2_type(CCL_COLL_KERNELS_PATH, kernel_path);
 }
 
-void env_data::print() {
+void env_data::print(int rank) {
     std::lock_guard<ccl_spinlock> lock{ print_guard };
 
     if (was_printed)
@@ -207,34 +207,36 @@ void env_data::print() {
     else
         was_printed = true;
 
-#ifdef ENABLE_DEBUG
-    const char* build_mode = "debug";
-#else
-    const char* build_mode = "release";
-#endif
-    LOG_INFO("build mode : ", build_mode);
+    auto& global_data = ccl::global_data::get();
 
-    auto version = utils::get_library_version();
+    auto local_proc_idx = global_data.executor->get_local_proc_idx();
+    auto local_proc_count = global_data.executor->get_local_proc_count();
 
-    LOG_INFO("version : ", version.full);
+    if (rank < (int)local_proc_count) {
+        for (size_t w_idx = 0; w_idx < worker_count; w_idx++) {
+            LOG_INFO(CCL_WORKER_AFFINITY,
+                     ": local process [",
+                     local_proc_idx,
+                     ":",
+                     local_proc_count,
+                     "]: worker: ",
+                     w_idx,
+                     ", core: ",
+                     worker_affinity[local_proc_idx * worker_count + w_idx]);
+        }
+    }
 
-    char* ccl_root = getenv("CCL_ROOT");
-    LOG_INFO("CCL_ROOT : ", (ccl_root) ? ccl_root : CCL_ENV_STR_NOT_SPECIFIED);
+    if (rank != 0)
+        return;
 
-    char* impi_root = getenv("I_MPI_ROOT");
-    LOG_INFO("I_MPI_ROOT : ", (impi_root) ? impi_root : CCL_ENV_STR_NOT_SPECIFIED);
+    LOG_INFO(CCL_WORKER_COUNT, ": ", worker_count);
+    LOG_INFO(CCL_WORKER_OFFLOAD, ": ", worker_offload);
+    LOG_INFO(CCL_WORKER_WAIT, ": ", worker_wait);
 
     LOG_INFO(CCL_LOG_LEVEL, ": ", log_level);
     LOG_INFO(CCL_SCHED_DUMP, ": ", sched_dump);
 
     LOG_INFO(CCL_FRAMEWORK, ": ", str_by_enum(ccl_framework_type_names, fw_type));
-
-    LOG_INFO(CCL_WORKER_COUNT, ": ", worker_count);
-    LOG_INFO(CCL_WORKER_OFFLOAD, ": ", worker_offload);
-    LOG_INFO(CCL_WORKER_WAIT, ": ", worker_wait);
-    for (size_t w_idx = 0; w_idx < worker_affinity.size(); w_idx++) {
-        LOG_INFO(CCL_WORKER_AFFINITY, ": worker: ", w_idx, ", processor: ", worker_affinity[w_idx]);
-    }
 
     LOG_INFO(CCL_ATL_TRANSPORT, ": ", str_by_enum(atl_transport_names, atl_transport));
     LOG_INFO(CCL_ATL_SHM, ": ", enable_shm);
@@ -315,23 +317,38 @@ void env_data::print() {
              ": ",
              (kernel_path.length()) ? kernel_path : CCL_ENV_STR_NOT_SPECIFIED);
 
-    auto& global_data = ccl::global_data::get();
-    global_data.algorithm_selector->print();
-
     auto bf16_impl_type = global_data.bf16_impl_type;
 
     if (bf16_impl_type != ccl_bf16_none) {
-        LOG_INFO("\n\nBF16 is enabled through ",
-                 (bf16_impl_type == ccl_bf16_avx512bf) ? "AVX512-BF" : "AVX512-F",
-                 "\n");
+        LOG_INFO("BF16: enabled through ",
+                 (bf16_impl_type == ccl_bf16_avx512bf) ? "AVX512-BF" : "AVX512-F");
     }
     else {
 #ifdef CCL_BF16_COMPILER
-        LOG_INFO("\n\nBF16 is disabled on HW level\n");
+        LOG_INFO("BF16: disabled on HW level");
 #else
-        LOG_INFO("\n\nBF16 is disabled on compiler level\n");
+        LOG_INFO("BF16: disabled on compiler level");
 #endif
     }
+
+#ifdef ENABLE_DEBUG
+    const char* build_mode = "debug";
+#else
+    const char* build_mode = "release";
+#endif
+    LOG_INFO("build mode: ", build_mode);
+
+    auto version = utils::get_library_version();
+
+    LOG_INFO("version: ", version.full);
+
+    char* ccl_root = getenv("CCL_ROOT");
+    LOG_INFO("CCL_ROOT: ", (ccl_root) ? ccl_root : CCL_ENV_STR_NOT_SPECIFIED);
+
+    char* impi_root = getenv("I_MPI_ROOT");
+    LOG_INFO("I_MPI_ROOT: ", (impi_root) ? impi_root : CCL_ENV_STR_NOT_SPECIFIED);
+
+    global_data.algorithm_selector->print();
 }
 
 void env_data::set_internal_env() {
@@ -378,27 +395,25 @@ int env_data::env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_cou
     size_t affinity_size = local_proc_count * workers_per_process;
     worker_affinity.assign(affinity_size, 0);
 
-    if (affinity_to_parse && strcmp(affinity_to_parse, "auto") == 0 &&
-        std::getenv(I_MPI_AVAILABLE_CORES_ENV)) {
-        return env_2_worker_affinity_auto(local_proc_idx, workers_per_process);
-    }
-
-    if (!affinity_to_parse || strlen(affinity_to_parse) == 0 ||
-        ((strcmp(affinity_to_parse, "auto") == 0) && !std::getenv(I_MPI_AVAILABLE_CORES_ENV))) {
-        /* generate default affinity */
-        proccessor_count = sysconf(_SC_NPROCESSORS_ONLN);
-        for (w_idx = 0; w_idx < affinity_size; w_idx++) {
-            if (w_idx < proccessor_count) {
-                worker_affinity[w_idx] = proccessor_count - w_idx - 1;
-            }
-            else {
-                worker_affinity[w_idx] = worker_affinity[w_idx % proccessor_count];
-            }
+    if (!affinity_to_parse || (strlen(affinity_to_parse) == 0) ||
+        (strcmp(affinity_to_parse, "auto") == 0)) {
+        if (std::getenv(I_MPI_AVAILABLE_CORES_ENV)) {
+            /* generate auto affinity based on IMPI process pinning */
+            return env_2_worker_affinity_auto(local_proc_idx, workers_per_process);
         }
-
-        read_env = 1;
-        CCL_FREE(affinity_copy);
-        return read_env;
+        else {
+            /* generate auto affinity as last N cores */
+            proccessor_count = sysconf(_SC_NPROCESSORS_ONLN);
+            for (w_idx = 0; w_idx < affinity_size; w_idx++) {
+                if (w_idx < proccessor_count) {
+                    worker_affinity[w_idx] = proccessor_count - w_idx - 1;
+                }
+                else {
+                    worker_affinity[w_idx] = worker_affinity[w_idx % proccessor_count];
+                }
+            }
+            return 1;
+        }
     }
 
     /* create copy of original buffer because it will be modified in strsep */
@@ -434,7 +449,7 @@ int env_data::env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_cou
     }
     if (read_count < affinity_size) {
         LOG_ERROR(
-            "unexpected number of processors (specify 1 logical processor per 1 progress thread), affinity string ",
+            "unexpected number of processors (specify 1 logical processor per 1 worker thread), affinity string ",
             affinity_to_parse);
         read_env = 0;
         CCL_FREE(affinity_copy);

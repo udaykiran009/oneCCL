@@ -206,7 +206,7 @@ static int atl_mpi_bf16_init() {
     global_data.bf16.impl_type = ccl_bf16_get_impl_type();
 
     if (global_data.bf16.impl_type == ccl_bf16_none) {
-        LOG_INFO("BF16 is not supported on current arch");
+        LOG_DEBUG("BF16 is not supported on current arch");
         return RET2ATL(ret);
     }
 
@@ -343,7 +343,7 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
     int ret = MPI_Get_library_version(mpi_version, &mpi_version_len);
     if ((ret != MPI_SUCCESS) || (mpi_version_len < 0) ||
         (mpi_version_len > MPI_MAX_LIBRARY_VERSION_STRING)) {
-        LOG_INFO("can't retrieve MPI version, mpi_version_len ", mpi_version_len, ", ret", ret);
+        LOG_DEBUG("can't retrieve MPI version, mpi_version_len ", mpi_version_len, ", ret", ret);
         return ATL_MPI_LIB_NONE;
     }
 
@@ -351,7 +351,7 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
     while (strlen(mpi_version) && isspace(mpi_version[strlen(mpi_version) - 1]))
         mpi_version[strlen(mpi_version) - 1] = '\0';
 
-    LOG_INFO("\nMPI version: ", mpi_version);
+    LOG_DEBUG("\nMPI version: ", mpi_version);
 
     for (i = 0; i < MPI_LIB_INFO_MAX_COUNT; i++) {
         atl_mpi_lib_info_t* info = &(mpi_lib_infos[i]);
@@ -428,15 +428,15 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
                 }
 
                 final_info = info;
-                LOG_INFO("set lib_type = ",
-                         info->name,
-                         " because "
-                         "version (",
-                         version_value,
-                         ") is higher or equal to minimal expected version (",
-                         info->min_version_value,
-                         ") "
-                         "and kind matches with expected kind");
+                LOG_DEBUG("set lib_type = ",
+                          info->name,
+                          " because "
+                          "version (",
+                          version_value,
+                          ") is higher or equal to minimal expected version (",
+                          info->min_version_value,
+                          ") "
+                          "and kind matches with expected kind");
                 break;
             }
         }
@@ -469,7 +469,7 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
     return lib_type;
 }
 
-atl_status_t atl_mpi_set_env(const atl_attr_t& attr) {
+atl_status_t atl_mpi_set_impi_env(const atl_attr_t& attr) {
     char mpi_ep_count_str[EP_IDX_MAX_STR_LEN] = { 0 };
 
     /* we have endpoints on MPI and ATL levels */
@@ -499,9 +499,24 @@ atl_status_t atl_mpi_set_env(const atl_attr_t& attr) {
     return ATL_STATUS_SUCCESS;
 }
 
+atl_status_t atl_mpi_set_env(const atl_attr_t& attr) {
+    atl_mpi_set_impi_env(attr);
+
+    int is_mpi_inited = 0;
+    MPI_Initialized(&is_mpi_inited);
+    if (is_mpi_inited) {
+        LOG_INFO("MPI was initialized externaly, CCL/MPI specific enviroment is ignored");
+    }
+    else {
+        LOG_DEBUG("set CCL/MPI specific enviroment");
+    }
+
+    return ATL_STATUS_SUCCESS;
+}
+
 atl_status_t atl_mpi_set_lib_environment(const atl_attr_t& attr) {
     if (global_data.mpi_lib_type == ATL_MPI_LIB_IMPI) {
-        atl_mpi_set_env(attr);
+        atl_mpi_set_impi_env(attr);
     }
     return ATL_STATUS_SUCCESS;
 }
@@ -536,10 +551,10 @@ static atl_status_t atl_mpi_finalize(atl_ctx_t* ctx) {
             ret = MPI_Finalize();
         }
         else
-            LOG_INFO("MPI_Init has been called externally, skip MPI_Finalize");
+            LOG_DEBUG("MPI_Init has been called externally, skip MPI_Finalize");
     }
     else
-        LOG_INFO("MPI_Finalize has been already called");
+        LOG_DEBUG("MPI_Finalize has been already called");
 
     free(eps);
     free(mpi_ctx);
@@ -1132,7 +1147,7 @@ static atl_status_t atl_mpi_init(int* argc,
     }
     else {
         global_data.is_external_init = 1;
-        LOG_INFO("MPI was initialized externaly");
+        LOG_DEBUG("MPI was initialized externaly");
         MPI_Query_thread(&provided_thread_level);
         if (provided_thread_level < required_thread_level) {
             LOG_ERROR("MPI was initialized externaly but with unexpected thread level: "

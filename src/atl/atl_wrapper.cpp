@@ -120,7 +120,7 @@ atl_wrapper::atl_wrapper(int total_rank_count,
     init_transport();
 }
 void atl_wrapper::init_transport() {
-    LOG_INFO("init ATL, requested ep_count ", attr.ep_count);
+    LOG_DEBUG("init ATL, requested ep_count ", attr.ep_count);
     static std::mutex memory_mutex;
     {
         std::lock_guard<std::mutex> lock(memory_mutex);

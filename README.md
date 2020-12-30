@@ -40,6 +40,7 @@ You can also do the following during installation:
 - [Build with address sanitizer](#build-with-address-sanitizer)
 
 ### Specify installation directory
+
 Modify `cmake` command as follows:
 
 ```
@@ -50,6 +51,7 @@ If no `-DCMAKE_INSTALL_PREFIX` is specified, oneCCL will be installed into `_ins
 build directory, for example, `ccl/build/_install`.
 
 ### Specify the compiler
+
 Modify `cmake` command as follows:
 
 ```
@@ -57,6 +59,7 @@ cmake .. -DCMAKE_C_COMPILER=your_c_compiler -DCMAKE_CXX_COMPILER=your_cxx_compil
 ```
 
 ### Specify `SYCL` cross-platform abstraction level
+
 If your CXX compiler requires SYCL, it is possible to specify it (DPC++ is supported for now).
 Modify `cmake` command as follows:
 
@@ -65,6 +68,7 @@ cmake .. -DCMAKE_C_COMPILER=your_c_compiler -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE
 ```
 
 ### Specify the build type
+
 Modify `cmake` command as follows:
 
 ```
@@ -72,6 +76,7 @@ cmake .. -DCMAKE_BUILD_TYPE=[Debug|Release|RelWithDebInfo|MinSizeRel]
 ```
 
 ### Enable `make` verbose output
+
 To see all parameters used by `make` during compilation
 and linkage, modify `make` command as follows:
 
@@ -79,42 +84,23 @@ and linkage, modify `make` command as follows:
 make -j VERBOSE=1
 ```
 
-### Build with address sanitizer
-Modify `cmake` command as follows:
-```
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DWITH_ASAN=true
-```
-*Note:* address sanitizer only works in Debug build
-
-Make sure that `libasan.so` exists.
 
 ## Usage
 
 ### Launching Example Application
+
 Use the command:
 ```bash
 $ source <install_dir>/env/setvars.sh
-$ cd <install_dir>/examples
-$ mpirun -n 2 ./benchmark/benchmark
+$ mpirun -n 2 <install_dir>/examples/benchmark/benchmark
 ```
 ### Setting workers affinity
-There are two ways to set worker threads affinity: [explicitly](#setting-affinity-explicitly) and [automatically](#setting-affinity-automatically).
 
-#### Setting affinity explicitly
-1. Set the `CCL_WORKER_COUNT` environment variable with the desired number of worker threads.
-2. Set the `CCL_WORKER_AFFINITY` environment variable with the IDs of cores to be bound to.
+There are two ways to set worker threads (workers) affinity: [automatically](#setting-affinity-automatically) and [explicitly](#setting-affinity-explicitly).
 
-Example:
-```
-export CCL_WORKER_COUNT=4
-export CCL_WORKER_AFFINITY=3,4,5,6
-```
-With the variables above, oneCCL will create four threads and pin them to the cores with the IDs of 3, 4, 5, and 6 respectively.
+#### Automatic setup
 
-#### Setting affinity automatically
-*NOTE:* automatic pinning only works if an application has been launched using `mpirun` that is provided by oneCCL distribution package.
-
-1. Set the `CCL_WORKER_COUNT` environment variable with the desired number of worker threads.
+1. Set the `CCL_WORKER_COUNT` environment variable with the desired number of workers per process.
 2. Set the `CCL_WORKER_AFFINITY` environment variable with the value `auto`.
 
 Example:
@@ -122,9 +108,24 @@ Example:
 export CCL_WORKER_COUNT=4
 export CCL_WORKER_AFFINITY=auto
 ```
-With the variables above, oneCCL will create four threads and pin them to the last four cores available for the launched process.
+With the variables above, oneCCL will create four workers per process and the pinning will depend from process launcher.
 
-The exact IDs of CPU cores depend on the parameters passed to `mpirun`.
+If an application has been launched using `mpirun` that is provided by oneCCL distribution package then workers will be automatically pinned to the last four cores available for the launched process. The exact IDs of CPU cores can be controlled by `mpirun` parameters.
+
+Otherwise, workers will be automatically pinned to the last four cores available on the node.
+
+#### Explicit setup
+
+1. Set the `CCL_WORKER_COUNT` environment variable with the desired number of workers per process.
+2. Set the `CCL_WORKER_AFFINITY` environment variable with the IDs of cores to pin local workers.
+
+Example:
+```
+export CCL_WORKER_COUNT=4
+export CCL_WORKER_AFFINITY=3,4,5,6
+```
+With the variables above, oneCCL will create four workers per process and pin them to the cores with the IDs of 3, 4, 5, and 6 respectively.
+
 
 ## FAQ
 

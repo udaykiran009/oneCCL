@@ -110,7 +110,7 @@ public:
     env_data& operator=(env_data&&) = delete;
 
     void parse();
-    void print();
+    void print(int rank);
     void set_internal_env();
 
     bool was_printed;

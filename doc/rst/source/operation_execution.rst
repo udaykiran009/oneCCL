@@ -8,36 +8,32 @@ Communication operations are executed by CCL worker threads (workers). The numbe
 
 Workers affinity is controlled by :ref:`CCL_WORKER_AFFINITY`.
 
-By setting workers affinity you can specify which CPU cores are used to host CCL workers. The general rule of thumb is to use different CPU cores for compute (e.g. by specifying ``KMP_AFFINITY``) and for communication.
+By setting workers affinity you can specify which CPU cores are used by CCL workers. The general rule of thumb is to use different CPU cores for compute (e.g. by specifying ``KMP_AFFINITY``) and for CCL communication.
 
-There are two ways to set workers affinity: explicit and automatic.
-
-Explicit setup
-##############
-
-To set affinity explicitly, pass ID of the cores to be bound to to  the ``CCL_WORKER_AFFINITY`` environment variable. 
-
-.. rubric:: Example
-
-In the example below, |product_short| creates 4 threads and pins them to cores with numbers 3, 4, 5, and 6, respectively:
-::
-
-   export CCL_WORKER_COUNT=4
-   export CCL_WORKER_AFFINITY=3,4,5,6
+There are two ways to set workers affinity: automatic and explicit.
 
 Automatic setup
 ###############
 
-.. note:: Automatic pinning only works if application is launched using ``mpirun`` provided by the |product_short| distribution package.
-
-To set affinity automatically, set ``CCL_WORKER_AFFINITY`` to ``auto``. 
+To set affinity automatically, set ``CCL_WORKER_AFFINITY`` to ``auto``.
 
 .. rubric:: Example
 
-In the example below, |product_short| creates four threads and pins them to the last four cores available for the process launched:
+In the example below, |product_short| creates four workers per process and pins them to the last four cores available for the process (available if ``mpirun`` launcher from |product_short| package is used, the exact IDs of CPU cores depend on the parameters passed to ``mpirun``) or to the last four cores on the node.
 ::
 
    export CCL_WORKER_COUNT=4
    export CCL_WORKER_AFFINITY=auto
 
-.. note:: The exact IDs of CPU cores depend on the parameters passed to ``mpirun``.
+Explicit setup
+##############
+
+To set affinity explicitly for all local workers, pass ID of the cores to the ``CCL_WORKER_AFFINITY`` environment variable. 
+
+.. rubric:: Example
+
+In the example below, |product_short| creates 4 workers per process and pins them to cores with numbers 3, 4, 5, and 6, respectively:
+::
+
+   export CCL_WORKER_COUNT=4
+   export CCL_WORKER_AFFINITY=3,4,5,6

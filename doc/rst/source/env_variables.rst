@@ -494,10 +494,13 @@ CCL_WORKER_AFFINITY
    
    * - <proclist> 
      - Description
-   * - ``n1,n2,..``
-     - Affinity is explicitly specified by a user.
    * - ``auto``
-     - Workers are pinned to K last cores of pin domain, where K is ``CCL_WORKER_COUNT`` (**default**). 
+     - Workers are automatically pinned to last cores of pin domain.
+       Pin domain depends from process laucher.
+       If ``mpirun`` from |product_short| package is used then pin domain is MPI process pin domain.
+       Otherwise, pin domain is all cores on the node.
+   * - ``n1,n2,..``
+     - Affinity is explicitly specified for all local workers.
 
 **Description**
 

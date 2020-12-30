@@ -212,7 +212,7 @@ void ccl_worker::update_wait_condition(ccl_base_thread::wait_data::update_type t
     if (delta == 0)
         return;
 
-    LOG_DEBUG("type %d, delta %zu", type, delta);
+    LOG_DEBUG("type ", type, ", delta ", delta);
 
     if (ccl::global_data::env().worker_wait == 0)
         return;
@@ -230,11 +230,11 @@ void ccl_worker::update_wait_condition(ccl_base_thread::wait_data::update_type t
         wait.value -= delta;
     }
 
-    LOG_DEBUG("type %d, delta %zu, new value %zu", type, delta, wait.value);
+    LOG_DEBUG("type ", type, ", delta ", delta, ", new value ", wait.value);
 }
 
 bool ccl_worker::check_wait_condition(size_t iter) {
-    if (ccl::global_data::env().worker_wait) {
+    if (ccl::global_data::env().worker_wait && (wait.value == 0)) {
         std::unique_lock<std::mutex> lock(wait.mtx);
         wait.var.wait(lock, [this] {
             bool cond = ((wait.value == 0) && (check_stop_condition(0) == false));
@@ -281,7 +281,7 @@ static void* ccl_worker_func(void* args) {
 
     auto worker_idx = worker->get_idx();
 
-    LOG_INFO("worker_idx ", worker_idx);
+    LOG_DEBUG("worker_idx ", worker_idx);
 
     size_t iter = 0;
     size_t processed_count = 0;
