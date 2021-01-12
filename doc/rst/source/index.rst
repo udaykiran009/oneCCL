@@ -65,5 +65,4 @@ Contents:
    :hidden: 
    :caption: Notices and Disclaimers
 
-   legal.rst   
-   optimization_notice.rst   
+   legal.rst
