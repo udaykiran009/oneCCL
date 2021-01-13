@@ -108,6 +108,21 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
     }
 
     template <class elem_t>
+    device_memory_ptr<elem_t> alloc_memory_ptr(
+        size_t count,
+        size_t alignment,
+        std::shared_ptr<ccl_context> ctx,
+        const ze_device_mem_alloc_desc_t& mem_descr = get_default_mem_alloc_desc(),
+        const ze_host_mem_alloc_desc_t& host_descr = get_default_host_alloc_desc()) {
+        return std::make_shared<device_memory<elem_t>>(
+            reinterpret_cast<elem_t*>(
+                device_alloc_memory(count * sizeof(elem_t), alignment, mem_descr, host_descr, ctx)),
+            count,
+            get_ptr(),
+            ctx);
+    }
+
+    template <class elem_t>
     device_memory_ptr<elem_t> alloc_shared_memory(
         size_t count,
         size_t alignment,
@@ -142,6 +157,9 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
     device_cmd_list create_cmd_list(
         std::shared_ptr<ccl_context> ctx,
         const ze_command_list_desc_t& properties = get_default_list_desc());
+    device_cmd_list create_immediate_cmd_list(
+        std::shared_ptr<ccl_context> ctx,
+        const ze_command_queue_desc_t& properties = get_default_queue_desc());
     device_cmd_list& get_cmd_list(
         std::shared_ptr<ccl_context> ctx,
         const ze_command_list_desc_t& properties = get_default_list_desc());

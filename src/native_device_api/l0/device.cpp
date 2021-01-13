@@ -630,7 +630,7 @@ std::shared_ptr<ccl_context> ccl_device::get_default_context() {
 ccl_device::device_cmd_list CCL_BE_API
 ccl_device::create_cmd_list(std::shared_ptr<ccl_context> ctx,
                             const ze_command_list_desc_t& properties) {
-    // Create a command queue
+    // Create a command list
     if (!ctx) {
         ctx = get_default_context();
     }
@@ -639,6 +639,24 @@ ccl_device::create_cmd_list(std::shared_ptr<ccl_context> ctx,
     ze_result_t ret = zeCommandListCreate(ctx->get(), handle, &properties, &hCommandList);
     if (ret != ZE_RESULT_SUCCESS) {
         throw std::runtime_error(std::string("cannot allocate command list, error: ") +
+                                 native::to_string(ret));
+    }
+
+    return device_cmd_list(hCommandList, get_ptr(), ctx);
+}
+
+ccl_device::device_cmd_list CCL_BE_API
+ccl_device::create_immediate_cmd_list(std::shared_ptr<ccl_context> ctx,
+                                      const ze_command_queue_desc_t& properties) {
+    // Create an immediate command list
+    if (!ctx) {
+        ctx = get_default_context();
+    }
+
+    ze_command_list_handle_t hCommandList;
+    ze_result_t ret = zeCommandListCreateImmediate(ctx->get(), handle, &properties, &hCommandList);
+    if (ret != ZE_RESULT_SUCCESS) {
+        throw std::runtime_error(std::string("cannot allocate immediate command list, error: ") +
                                  native::to_string(ret));
     }
     return device_cmd_list(hCommandList, get_ptr(), ctx);

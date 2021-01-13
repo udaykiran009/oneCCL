@@ -16,11 +16,11 @@
 
 namespace native {
 namespace detail {
-CCL_BE_API void copy_memory_to_device_sync_unsafe(void* dst,
-                                                  const void* src,
-                                                  size_t size,
-                                                  std::weak_ptr<ccl_device> device_weak,
-                                                  std::shared_ptr<ccl_context> ctx) {
+CCL_BE_API void copy_memory_sync_unsafe(void* dst,
+                                        const void* src,
+                                        size_t size,
+                                        std::weak_ptr<ccl_device> device_weak,
+                                        std::shared_ptr<ccl_context> ctx) {
     //TODO: NOT THREAD-SAFE!!!
     std::shared_ptr<ccl_device> device = device_weak.lock();
     if (!device) {
@@ -75,6 +75,16 @@ CCL_BE_API void copy_memory_to_device_sync_unsafe(void* dst,
         throw std::runtime_error(std::string("Cannot reset queue, error: ") + std::to_string(ret));
     }
 }
+
+CCL_BE_API void copy_memory_sync_unsafe(void* dst,
+                                        const void* src,
+                                        size_t size,
+                                        std::weak_ptr<ccl_context> ctx_weak,
+                                        std::shared_ptr<ccl_context> ctx) {
+    // host copy
+    memcpy(dst, src, size);
+}
+
 } // namespace detail
 
 std::string get_build_log_string(const ze_module_build_log_handle_t& build_log) {

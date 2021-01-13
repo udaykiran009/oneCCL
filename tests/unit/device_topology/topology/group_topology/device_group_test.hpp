@@ -256,13 +256,20 @@ TEST_F(router_fixture, device_group_multiple_real_virtual_topology_test) {
                                          ccl::device_index_type(0, 3, ccl::unused_index_value) });
         UT_ASSERT(res == true, descr);
 
-        res = top.build(ss,
-                        tg_comm->thread_device_group_ctx[thread_index]->context_addr,
-                        get_device_affinity(thread_index),
-                        matrix);
-        UT_ASSERT(res, "Cannot build topology: " << ss.str());
+        try {
+            res = top.build(ss,
+                            tg_comm->thread_device_group_ctx[thread_index]->context_addr,
+                            get_device_affinity(thread_index),
+                            matrix);
+            output << ss.str() << std::endl;
+        }
+        catch (const std::exception& ex) {
+            output << ss.str() << std::endl;
+            res = false;
+            descr += std::string("\nfailed with exception: ") + ex.what();
+        }
 
-        output << ss.str() << std::endl;
+        UT_ASSERT(res, "Cannot build topology: " << descr);
 
         //Check topology
         std::tie(res, descr) = check_topology<topology>(
@@ -346,11 +353,17 @@ TEST_F(router_fixture, device_group_two_inaccessible_group_scaleup_test) {
 
         bool res;
         std::string descr;
-        res = top.build(ss, comm_addr, get_device_affinity(thread_index), matrix);
-        output << ss.str() << std::endl;
-        if (!res) {
-            UT_ASSERT(res, "Cannot build topology: " << ss.str());
+        try {
+            res = top.build(ss, comm_addr, get_device_affinity(thread_index), matrix);
+            output << ss.str() << std::endl;
         }
+        catch (const std::exception& ex) {
+            output << ss.str() << std::endl;
+            res = false;
+            descr += std::string("\nfailed with exception: ") + ex.what();
+        }
+
+        UT_ASSERT(res, "Cannot build topology: " << descr);
 
         //Check topology
         std::tie(res, descr) = check_topology<topology>(
@@ -423,11 +436,17 @@ TEST_F(router_fixture, device_group_two_inaccessible_devices_topology_test) {
 
             bool res;
             std::string descr;
-            res = top.build(ss, comm_addr, get_device_affinity(thread_index), matrix);
-            output << ss.str() << std::endl;
-            if (!res) {
-                UT_ASSERT(res, "Cannot build topology: " << ss.str());
+            try {
+                res = top.build(ss, comm_addr, get_device_affinity(thread_index), matrix);
+                output << ss.str() << std::endl;
             }
+            catch (const std::exception& ex) {
+                output << ss.str() << std::endl;
+                res = false;
+                descr += std::string("\nfailed with exception: ") + ex.what();
+            }
+
+            UT_ASSERT(res, "Cannot build topology: " << descr);
 
             //Check topology
             std::tie(res, descr) = check_topology<topology>(
@@ -517,11 +536,17 @@ TEST_F(router_fixture, device_group_two_inaccessible_asym_groups_topology_test) 
 
             bool res;
             std::string descr;
-            res = top.build(ss, comm_addr, get_device_affinity(thread_index), matrix);
-            output << ss.str() << std::endl;
-            if (!res) {
-                UT_ASSERT(res, "Cannot build topology: " << ss.str());
+            try {
+                res = top.build(ss, comm_addr, get_device_affinity(thread_index), matrix);
+                output << ss.str() << std::endl;
             }
+            catch (const std::exception& ex) {
+                output << ss.str() << std::endl;
+                res = false;
+                descr += std::string("\nfailed with exception: ") + ex.what();
+            }
+
+            UT_ASSERT(res, "Cannot build topology: " << descr);
 
             //Check topology
             std::tie(res, descr) = check_topology<topology>(
@@ -596,11 +621,17 @@ TEST_F(router_fixture, device_group_two_inaccessible_real_virtual_groups_topolog
 
             bool res;
             std::string descr;
-            res = top.build(ss, comm_addr, get_device_affinity(thread_index), matrix);
-            output << ss.str() << std::endl;
-            if (!res) {
-                UT_ASSERT(res, "Cannot build topology: " << ss.str());
+            try {
+                res = top.build(ss, comm_addr, get_device_affinity(thread_index), matrix);
+                output << ss.str() << std::endl;
             }
+            catch (const std::exception& ex) {
+                output << ss.str() << std::endl;
+                res = false;
+                descr += std::string("\nfailed with exception: ") + ex.what();
+            }
+
+            UT_ASSERT(res, "Cannot build topology: " << descr);
 
             //Check topology
             std::tie(res, descr) = check_topology<topology>(

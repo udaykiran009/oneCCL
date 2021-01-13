@@ -161,7 +161,7 @@ bool process_group_context::sync_barrier(const ccl::device_indices_type& thread_
     scheduler_impl.reset(new allied_process_group_scheduler(
         process_count, comm_addr.thread_count, ccl_communicator, *gpu_device_storage));
 
-    // initialize scaling contexts
+    // initialize observer contexts
     LOG_INFO("Sync communicator barrier");
     ccl_communicator->barrier({}, ccl::default_barrier_attr);
 

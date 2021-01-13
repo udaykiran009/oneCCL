@@ -15,13 +15,13 @@ public:
                                            ccl::device_topology_type::ring,
                                            ccl::gpu_communicator_traits>;
 
-    using communication_devices_t = native::device_variant_t<native::ccl_gpu_comm,
-                                                             native::ccl_virtual_gpu_comm,
-                                                             native::ccl_ipc_source_gpu_comm<native::ccl_gpu_comm>,
-                                                             native::ccl_ipc_source_gpu_comm<native::ccl_virtual_gpu_comm>
-                                                             /*, TODO disabled t now
-                                                             native::ccl_numa_proxy<native::ccl_gpu_comm>,
-                                                             native::ccl_numa_proxy<native::ccl_virtual_gpu_comm>*/>;
+    using communication_devices_t =
+        native::device_variant_t<native::ccl_gpu_comm,
+                                 native::ccl_virtual_gpu_comm,
+                                 native::ccl_ipc_source_gpu_comm<native::ccl_gpu_comm>,
+                                 native::ccl_ipc_source_gpu_comm<native::ccl_virtual_gpu_comm>,
+                                 native::ccl_numa_proxy<native::ccl_gpu_comm>,
+                                 native::ccl_numa_proxy<native::ccl_virtual_gpu_comm>>;
     using coll_request_t = ccl::event;
 
     process_ring_communicator(ccl::unified_device_type&& device,

@@ -4,7 +4,7 @@
 #include <ze_api.h>
 
 #include "oneapi/ccl/native_device_api/l0/base.hpp"
-#include "oneapi/ccl/native_device_api/l0/context.hpp"
+
 namespace native {
 
 struct ccl_device_platform;

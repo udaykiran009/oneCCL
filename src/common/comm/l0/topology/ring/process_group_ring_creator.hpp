@@ -19,12 +19,12 @@ private:
     ccl::context_comm_addr ctx_comm_addr;
 
 public:
-    static constexpr ccl::group_split_type type() {
-        return ccl::group_split_type::cluster;
-    }
-
     static constexpr const char* name() {
         return "process_group_ring_creator";
+    }
+
+    static constexpr ccl::group_split_type group_id() {
+        return ccl::group_split_type::cluster;
     }
 
     allied_process_group_ring_topology(size_t process_idx,
@@ -49,17 +49,6 @@ public:
         std::ostream& out,
         const ccl::process_device_indices_type& node_device_indices,
         detail::p2p_rating_function ping = default_property_p2p_rating_calculator);
-    bool build(std::ostream& out,
-               const ccl::process_aggregated_device_mask_t& per_thread_device_masks,
-               const std::vector<ccl::device_mask_t>& ipc_device_indices,
-               const detail::adjacency_matrix& matrix,
-               detail::p2p_rating_function ping = default_property_p2p_rating_calculator);
-
-    bool build(std::ostream& out,
-               const ccl::process_device_indices_type& per_thread_device_indices,
-               const std::vector<ccl::device_indices_type>& ipc_device_indices,
-               const detail::adjacency_matrix& matrix,
-               detail::p2p_rating_function ping = default_property_p2p_rating_calculator);
 
     bool build_all(std::ostream& out,
                    const ccl::process_device_indices_type& per_thread_device_indices,
@@ -67,29 +56,25 @@ public:
                    detail::p2p_rating_function ping = default_property_p2p_rating_calculator);
 
 private:
-    bool build_specific(std::ostream& out,
-                        const ccl::process_device_indices_type& per_thread_device_indices,
-                        const detail::plain_graph& graph);
-    /*
-    bool build_specific(std::ostream& out,
-                        const ccl::process_device_indices_type& per_thread_device_indices,
-                        const detail::plain_graph_list& graph_list);
-    bool build_specific(std::ostream& out,
-                        const ccl::process_device_indices_type& per_thread_device_indices,
-                        const ccl::device_indices_type& scaleout_device_indices,
-                        const detail::plain_graph_list& graph_list);
-*/
     bool build_specific_colored(std::ostream& out,
                                 const ccl::process_device_indices_type& per_thread_device_indices,
                                 const ccl::process_device_indices_type& ipc_device_indices,
                                 detail::colored_plain_graph& graph,
                                 const std::map<size_t, size_t>& process_device_rank_offset);
-    /*
+
     bool build_specific_scale_up(std::ostream& out,
-                        const ccl::process_device_indices_type& per_thread_device_indices,
-                        const ccl::process_device_indices_type& ipc_device_indices,
-                        detail::colored_plain_graph_list& graph_list,
-                        const std::map<size_t, size_t>& process_device_rank_offset);
+                                 const ccl::process_device_indices_type& per_thread_device_indices,
+                                 const ccl::process_device_indices_type& ipc_device_indices,
+                                 detail::colored_plain_graph_list& graph_list,
+                                 const std::map<size_t, size_t>& process_device_rank_offset);
+
+    bool build_specific_scale_out_only(
+        std::ostream& out,
+        const ccl::process_device_indices_type& per_thread_device_indices,
+        const ccl::process_device_indices_type& scaleout_device_indices,
+        detail::colored_plain_graph_list& graph_list,
+        const std::map<size_t, size_t>& process_device_rank_offset);
+    /*
     bool build_specific_scale_up_out(std::ostream& out,
                         const ccl::process_device_indices_type& per_thread_device_indices,
                         const ccl::process_device_indices_type& scaleout_device_indices,

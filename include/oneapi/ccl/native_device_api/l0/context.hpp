@@ -21,13 +21,47 @@ struct ccl_context : public cl_base<ze_context_handle_t, ccl_device_platform, cc
     using base::context_t;
     using base::context_ptr_t;
 
+    template <class elem_t>
+    using host_memory = memory<elem_t, ccl_context, ccl_context>;
+
+    template <class elem_t>
+    using host_memory_ptr = std::shared_ptr<host_memory<elem_t>>;
+
     ccl_context(handle_t h, owner_ptr_t&& platform);
+
+    static const ze_host_mem_alloc_desc_t& get_default_host_alloc_desc();
+
+    // primitives creation
+    template <class elem_t>
+    host_memory_ptr<elem_t> alloc_memory(
+        size_t count,
+        size_t alignment,
+        const ze_host_mem_alloc_desc_t& host_descr = get_default_host_alloc_desc()) {
+        return std::make_shared<host_memory<elem_t>>(
+            reinterpret_cast<elem_t*>(
+                host_alloc_memory(count * sizeof(elem_t), alignment, host_descr)),
+            count,
+            get_ptr(),
+            get_ptr());
+    }
 
     std::shared_ptr<ccl_context> get_ptr() {
         return this->shared_from_this();
     }
 
     std::string to_string() const;
+
+    template <class elem_t>
+    void on_delete(elem_t* mem_handle, ze_context_handle_t& ctx) {
+        host_free_memory(static_cast<void*>(mem_handle));
+    }
+
+private:
+    void* host_alloc_memory(size_t bytes_count,
+                            size_t alignment,
+                            const ze_host_mem_alloc_desc_t& host_desc);
+
+    void host_free_memory(void* mem_handle);
 };
 
 class context_array_t {

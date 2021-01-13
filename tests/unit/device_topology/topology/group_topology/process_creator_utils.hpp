@@ -6,6 +6,251 @@
 
 namespace topology_suite {
 
+TEST_F(router_fixture, simple_merge_2_processes_test) {
+    using namespace native;
+    using namespace native::detail;
+
+    {
+        stub::make_stub_devices({ ccl::device_index_type(0, 0, ccl::unused_index_value),
+                                  ccl::device_index_type(0, 1, ccl::unused_index_value),
+                                  ccl::device_index_type(0, 2, ccl::unused_index_value) });
+
+        size_t process_index = 1;
+        size_t terminator_index = 2;
+        process_creator_params params = prepare_process_params(process_index, {}, {});
+
+        allied_process_group_ring_topology top(process_index,
+                                               params.thread_ids.size(),
+                                               *pg_comm,
+                                               *pg_comm->gpu_device_storage,
+                                               params.cluster_device_rank_offset,
+                                               params.cluster_device_size);
+
+        pg_comm->cluster_gpu_indices = { {
+            router_fixture::ut_cluster_name(),
+            {
+                { 0,
+                  { ccl::device_index_type(0, 0, ccl::unused_index_value),
+                    ccl::device_index_type(0, 0, ccl::unused_index_value),
+                    ccl::device_index_type(0, 0, ccl::unused_index_value) } },
+                { process_index,
+                  { ccl::device_index_type(0, 1, ccl::unused_index_value),
+                    ccl::device_index_type(0, 1, ccl::unused_index_value),
+                    ccl::device_index_type(0, 1, ccl::unused_index_value) } },
+            },
+        } };
+
+        size_t proces_num =
+            pg_comm->cluster_gpu_indices[std::string(router_fixture::ut_cluster_name())].size();
+        global_sorted_colored_plain_graphs my_colored_rings{
+            { 0,
+              { {
+                  { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                  { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                  { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+              } } },
+            { process_index,
+              { {
+                  { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                  { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                  { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+              } } },
+        };
+        std::stringstream ss;
+        global_colored_plain_graphs merged_cluster_graphs(proces_num);
+        for (size_t pr_index = 0; pr_index < proces_num; pr_index++) {
+            global_colored_plain_graphs local_merged_cluster_graphs =
+                top.merge_allied_nodes_in_colored_plain_graphs(
+                    ss,
+                    pg_comm->cluster_gpu_indices,
+                    pr_index,
+                    proces_num,
+                    my_colored_rings,
+                    [](const native::ccl_device &lhs, const native::ccl_device &rhs) -> size_t {
+                        return 1;
+                    });
+            merged_cluster_graphs[pr_index] = local_merged_cluster_graphs[pr_index];
+        }
+
+        {
+            global_colored_plain_graphs to_check{
+                { 0,
+                  { { { terminator_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      { terminator_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      { terminator_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+
+                      { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+
+                      { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      { process_index,
+                        ccl::device_index_type(0, 1, ccl::unused_index_value) } } } },
+                { process_index,
+                  { {
+                      { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      { terminator_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      { terminator_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      { terminator_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                  } } },
+            };
+            if (merged_cluster_graphs != to_check) {
+                abort();
+                UT_ASSERT(false, "Invalid cluster data after merge");
+            }
+        }
+
+        global_sorted_colored_plain_graphs final_global_merged_cluster_graphs;
+        for (size_t pr_index = 0; pr_index < proces_num; pr_index++) {
+            colored_plain_graph_list local_final_rings =
+                top.resize_merged_colored_graphs_for_process(
+                    pr_index, proces_num, merged_cluster_graphs, my_colored_rings[pr_index], ss);
+            final_global_merged_cluster_graphs[pr_index] = local_final_rings;
+        }
+
+        {
+            global_sorted_colored_plain_graphs to_check{
+                { 0,
+                  { { { terminator_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      { terminator_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      { terminator_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+
+                      { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+
+                      { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      { process_index,
+                        ccl::device_index_type(0, 1, ccl::unused_index_value) } } } },
+                { process_index,
+                  { {
+                      { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      { 0, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      { process_index, ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      { terminator_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      { terminator_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      { terminator_index, ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                  } } },
+            };
+            if (final_global_merged_cluster_graphs != to_check) {
+                abort();
+                UT_ASSERT(false, "Invalid final_global_merged_cluster_graphs data");
+            }
+        }
+
+        std::map<size_t, ccl::process_device_indices_type> scaleout_devices;
+        for (size_t pr_index = 0; pr_index < proces_num; pr_index++) {
+            scaleout_devices[pr_index] = top.create_scaleout_devices_in_colored_graphs_for_process(
+                pr_index, proces_num, final_global_merged_cluster_graphs, my_colored_rings, ss);
+            UT_ASSERT(scaleout_devices[pr_index].empty(), "No scaleup devices failed");
+        }
+
+        std::map<size_t, ccl::process_device_indices_type> ipc_devices;
+        for (size_t pr_index = 0; pr_index < proces_num; pr_index++) {
+            auto ret = top.create_ipc_devices_in_colored_graphs_for_process(
+                pr_index, proces_num, final_global_merged_cluster_graphs, my_colored_rings, ss);
+
+            ipc_devices[pr_index] = ret;
+            UT_ASSERT(!ipc_devices[pr_index].empty(), "Not empty ipc devices failed");
+        }
+        {
+            std::map<size_t, ccl::process_device_indices_type> to_check{
+                { 0,
+                  {
+                      {
+                          2,
+                          { ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      },
+                      { 1, { ccl::device_index_type(0, 1, ccl::unused_index_value) } },
+                  } },
+                { 1,
+                  {
+                      {
+                          0,
+                          { ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      },
+                      { 2, { ccl::device_index_type(0, 0, ccl::unused_index_value) } },
+                  } },
+            };
+            if (ipc_devices != to_check) {
+                abort();
+                UT_ASSERT(false, "Invalid ipc_devices data after merge");
+            }
+        }
+
+        /**/
+        std::map<size_t, ccl::process_device_indices_type> ipc_src;
+        std::map<size_t, ccl::process_device_indices_type> ipc_dst;
+        for (size_t pr_index = 0; pr_index < proces_num; pr_index++) {
+            const colored_plain_graph_list &local_rings =
+                final_global_merged_cluster_graphs[pr_index];
+            for (const colored_plain_graph &graph : local_rings) {
+                ccl::process_device_indices_type ipc_src_local;
+                ccl::process_device_indices_type ipc_dst_local;
+
+                const auto &ipc_per_proc = ipc_devices[pr_index];
+                native::detail::separate_ipc_devices(
+                    ipc_per_proc, pr_index, proces_num, graph, ipc_src_local, ipc_dst_local);
+
+                ipc_src[pr_index] = ipc_src_local;
+                ipc_dst[pr_index] = ipc_dst_local;
+            }
+        }
+        {
+            std::map<size_t, ccl::process_device_indices_type> to_check_src{
+                { 0,
+                  {
+                      {
+                          0,
+                          { ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      },
+                  } },
+                { 1,
+                  {
+                      {
+                          1,
+                          { ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      },
+                  } },
+            };
+            std::map<size_t, ccl::process_device_indices_type> to_check_dst{
+                { 0,
+                  {
+                      {
+                          1,
+                          { ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                      },
+                  } },
+                { 1,
+                  {
+                      {
+                          2,
+                          { ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                      },
+                  } },
+            };
+            if (ipc_src != to_check_src) {
+                abort();
+                UT_ASSERT(false, "Invalid ipc_src data");
+            }
+            if (ipc_dst != to_check_dst) {
+                abort();
+                UT_ASSERT(false, "Invalid ipc_dst data");
+            }
+        }
+    }
+}
+
 TEST_F(router_fixture, simple_merge_test) {
     using namespace native;
     using namespace native::detail;
@@ -200,8 +445,10 @@ TEST_F(router_fixture, simple_merge_test) {
 
         std::map<size_t, ccl::process_device_indices_type> ipc_devices;
         for (size_t pr_index = 0; pr_index < proces_num; pr_index++) {
-            ipc_devices[pr_index] = top.create_ipc_devices_in_colored_graphs_for_process(
+            auto ret = top.create_ipc_devices_in_colored_graphs_for_process(
                 pr_index, proces_num, final_global_merged_cluster_graphs, my_colored_rings, ss);
+
+            ipc_devices[pr_index] = ret;
             UT_ASSERT(!ipc_devices[pr_index].empty(), "Not empty ipc devices failed");
         }
         {
@@ -209,10 +456,10 @@ TEST_F(router_fixture, simple_merge_test) {
                 { 0,
                   {
                       {
-                          1,
-                          { ccl::device_index_type(0, 1, ccl::unused_index_value) },
+                          3,
+                          { ccl::device_index_type(0, 2, ccl::unused_index_value) },
                       },
-                      { 2, { ccl::device_index_type(0, 2, ccl::unused_index_value) } },
+                      { 1, { ccl::device_index_type(0, 1, ccl::unused_index_value) } },
                   } },
                 { 1,
                   {
@@ -224,11 +471,11 @@ TEST_F(router_fixture, simple_merge_test) {
                   } },
                 { 2,
                   {
+                      { 1, { ccl::device_index_type(0, 1, ccl::unused_index_value) } },
                       {
-                          0,
+                          3,
                           { ccl::device_index_type(0, 0, ccl::unused_index_value) },
                       },
-                      { 1, { ccl::device_index_type(0, 1, ccl::unused_index_value) } },
                   } }
             };
             if (ipc_devices != to_check) {
@@ -247,12 +494,9 @@ TEST_F(router_fixture, simple_merge_test) {
                 ccl::process_device_indices_type ipc_src_local;
                 ccl::process_device_indices_type ipc_dst_local;
 
-                native::detail::separate_ipc_devices(ipc_devices[pr_index],
-                                                     pr_index,
-                                                     proces_num,
-                                                     graph,
-                                                     ipc_src_local,
-                                                     ipc_dst_local);
+                const auto &ipc_per_proc = ipc_devices[pr_index];
+                native::detail::separate_ipc_devices(
+                    ipc_per_proc, pr_index, proces_num, graph, ipc_src_local, ipc_dst_local);
 
                 ipc_src[pr_index] = ipc_src_local;
                 ipc_dst[pr_index] = ipc_dst_local;
@@ -542,10 +786,10 @@ TEST_F(router_fixture, simple_multithreaded_merge_test) {
                 { 0,
                   {
                       {
-                          1,
-                          { ccl::device_index_type(0, 2, ccl::unused_index_value) },
+                          3,
+                          { ccl::device_index_type(0, 5, ccl::unused_index_value) },
                       },
-                      { 2, { ccl::device_index_type(0, 5, ccl::unused_index_value) } },
+                      { 1, { ccl::device_index_type(0, 2, ccl::unused_index_value) } },
                   } },
                 { 1,
                   {
@@ -558,10 +802,10 @@ TEST_F(router_fixture, simple_multithreaded_merge_test) {
                 { 2,
                   {
                       {
-                          0,
-                          { ccl::device_index_type(0, 0, ccl::unused_index_value) },
+                          1,
+                          { ccl::device_index_type(0, 3, ccl::unused_index_value) },
                       },
-                      { 1, { ccl::device_index_type(0, 3, ccl::unused_index_value) } },
+                      { 3, { ccl::device_index_type(0, 0, ccl::unused_index_value) } },
                   } }
             };
             if (ipc_devices != to_check) {
@@ -1610,13 +1854,13 @@ TEST_F(router_fixture, symmetric_scaleout_multithreaded_merge_test) {
             std::map<size_t, ccl::process_device_indices_type> to_check{
                 { 0,
                   {
+                      { 4,
+                        {
+                            ccl::device_index_type(0, 7, ccl::unused_index_value),
+                        } },
                       { process_index,
                         {
                             ccl::device_index_type(0, 2, ccl::unused_index_value),
-                        } },
-                      { 3,
-                        {
-                            ccl::device_index_type(0, 7, ccl::unused_index_value),
                         } },
                   } },
                 { process_index,
@@ -1625,8 +1869,8 @@ TEST_F(router_fixture, symmetric_scaleout_multithreaded_merge_test) {
                   } },
                 { 2, { { 3, { ccl::device_index_type(0, 6, ccl::unused_index_value) } } } },
                 { 3,
-                  { { 0, { ccl::device_index_type(0, 0, ccl::unused_index_value) } },
-                    { 2, { ccl::device_index_type(0, 5, ccl::unused_index_value) } } } }
+                  { { 2, { ccl::device_index_type(0, 5, ccl::unused_index_value) } },
+                    { 4, { ccl::device_index_type(0, 0, ccl::unused_index_value) } } } }
             };
             if (ipc_devices != to_check) {
                 abort();

@@ -1,10 +1,13 @@
 #pragma once
-#include <tuple>
 #include <memory>
 #include <stdexcept>
-#include <vector>
+#include <thread>
+#include <tuple>
 #include <type_traits>
+#include <vector>
+
 #include "common/comm/l0/devices/proxy_observer.hpp"
+#include "common/comm/l0/context/base_ctx_actor.hpp"
 
 namespace native {
 
@@ -13,14 +16,23 @@ class ccl_gpu_scaleup_proxy;
 
 namespace observer {
 
+template <class device_t, class actor_t>
+using device_thread_map = std::map<device_t*, std::unique_ptr<actor_t>>;
+
 template <class device_t>
 using proxy_observer_ptr = typename std::add_pointer<device_t>::type;
 
 template <class device_t>
 using container_t = std::set<proxy_observer_ptr<device_t>>;
 
+template <class... device_t>
+using container_tuple_t = std::tuple<container_t<device_t>...>;
+
 template <class device_t>
 using indexed_container_t = std::map<size_t /* rank */, proxy_observer_ptr<device_t>>;
+
+template <class... device_t>
+using indexed_container_tuple_t = std::tuple<indexed_container_t<device_t>...>;
 
 // Static interface used to register proxy_observers
 template <class ctx_impl_t, class... proxy_observer_device_t>
@@ -31,11 +43,10 @@ public:
     using device_types_t = std::tuple<proxy_observer_device_t...>;
 
     template <ccl::device_topology_type class_id>
-    struct observables_types : std::tuple<container_t<proxy_observer_device_t>...> {};
+    struct observables_types : container_tuple_t<proxy_observer_device_t...> {};
 
     template <ccl::device_topology_type class_id>
-    struct indexed_observables_types : std::tuple<indexed_container_t<proxy_observer_device_t>...> {
-    };
+    struct indexed_observables_types : indexed_container_tuple_t<proxy_observer_device_t...> {};
 
     template <ccl::device_topology_type... class_id>
     using observable_topologies = std::tuple<observables_types<class_id>...>;
@@ -148,5 +159,31 @@ public:
         return get_container<observer_device_t>(get_types<specific_type>(tops));
     }
 };
+
+namespace detail {
+
+struct actor_visitor {
+    template <class device_t, class actor_t>
+    void operator()(device_thread_map<device_t, actor_t>& actors, actor_t* subscriber) {
+        for (auto& a : actors) {
+            a.second->subscribe_on(subscriber);
+        }
+    }
+};
+
+template <class message_type, class mailbox_message_type>
+struct actor_publisher {
+    template <class device_t, class... message_args>
+    void operator()(
+        device_thread_map<device_t, subscribed_actor<message_type, mailbox_message_type>>& actors,
+        size_t topic_tag,
+        size_t publisher_id,
+        message_args&&... args) {
+        for (auto& a : actors) {
+            a.second->put_message(publisher_id, topic_tag, std::forward<message_args>(args)...);
+        }
+    }
+};
+} // namespace detail
 } // namespace observer
 } // namespace native

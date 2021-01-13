@@ -40,14 +40,22 @@ public:
 
     template <ccl_coll_type module_type,
               ccl::group_split_type group_id,
-              ccl::device_topology_type class_id,
-              class native_data_type>
-    gpu_kernel_t<module_type, group_id, class_id, native_data_type>& get_gpu_kernel() {
+              ccl::device_topology_type class_id>
+    gpu_module_t<module_type, group_id, class_id>& get_gpu_module() {
         auto& ptr =
             base::template get_gpu_module_unsafe<module_type, group_id, class_id, gpu_module_t>(
                 registered_modules);
         assert(ptr);
-        return ptr->template get_main_function<native_data_type>();
+        return *ptr;
+    }
+
+    template <ccl_coll_type module_type,
+              ccl::group_split_type group_id,
+              ccl::device_topology_type class_id,
+              class native_data_type>
+    gpu_kernel_t<module_type, group_id, class_id, native_data_type>& get_gpu_kernel() {
+        auto& ptr = get_gpu_module<module_type, group_id, class_id>();
+        return ptr.template get_main_function<native_data_type>();
     }
 
     template <class native_data_type,

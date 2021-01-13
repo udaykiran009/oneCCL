@@ -201,6 +201,11 @@ void ipc_ctx<TEMPLATE_DEF_ARG>::listener(ccl_ipc_gpu_comm* listener_device) {
             LOG_INFO("Got connection on device: ", listener_device->to_string());
             incoming_connection = std::move(incoming);
         }
+
+        if (stop.load()) {
+            LOG_INFO("Stop requested at serving connection stage");
+            return;
+        }
     }
 
     // processing incoming data from connected clients

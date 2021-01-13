@@ -14,8 +14,6 @@ void scale_up_ctx<TEMPLATE_DEF_ARG>::register_observer_impl(size_t rank_addr,
         scaling_ctx_base_t::template get_types_container<observer_t<device_t>, topology_type>(
             observables);
     container.insert(observer_ptr);
-
-    throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + " - not implemented");
 }
 
 template <TEMPLATE_DECL_ARG>

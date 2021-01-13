@@ -90,8 +90,12 @@ struct ring_allreduce_numa_kernel
               thread_safe_arg<main_kernel_args::args_start_index + 8, int*>,
               thread_safe_arg<main_kernel_args::args_start_index + 9, int*>,
 
-              thread_safe_arg<main_kernel_args::args_start_index + 10, native_type*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 11, int*>> {
+              // numa-specific args
+              permanent_arg<main_kernel_args::args_start_index + 10, native_type*>,
+              permanent_arg<main_kernel_args::args_start_index + 11, uint64_t*>,
+              permanent_arg<main_kernel_args::args_start_index + 12, uint64_t*>,
+              permanent_arg<main_kernel_args::args_start_index + 13, native_type*>,
+              permanent_arg<main_kernel_args::args_start_index + 14, uint64_t*>> {
     using processing_type = native_type;
 
     static constexpr const char* specific_name() {
@@ -103,6 +107,7 @@ struct ring_allreduce_numa_kernel
     using send_buf_size_arg_type = typename send_buf_size_arg::arg_type;
 
     using send_buf_arg = arg<main_kernel_args::args_start_index + 1, processing_type*>;
+    using common_entry_buf_arg = send_buf_arg;
     using send_buf_arg_type = typename send_buf_arg::arg_type;
 
     using recv_buf_arg = arg<main_kernel_args::args_start_index + 2, processing_type*>;
@@ -139,11 +144,23 @@ struct ring_allreduce_numa_kernel
 
     // event data
     using event_prod_chunk_mem_arg =
-        thread_safe_arg<main_kernel_args::args_start_index + 10, native_type*>;
+        permanent_arg<main_kernel_args::args_start_index + 10, native_type*>;
     using event_prod_chunk_mem_arg_type = typename event_prod_chunk_mem_arg::arg_type;
 
-    using event_prod_bytes_arg = thread_safe_arg<main_kernel_args::args_start_index + 11, int*>;
+    using event_prod_bytes_arg = permanent_arg<main_kernel_args::args_start_index + 11, uint64_t*>;
     using event_prod_bytes_arg_type = typename event_prod_bytes_arg::arg_type;
+
+    using event_consumed_bytes_offset_arg =
+        permanent_arg<main_kernel_args::args_start_index + 12, uint64_t*>;
+    using event_consumed_bytes_offset_arg_type = typename event_consumed_bytes_offset_arg::arg_type;
+
+    using event_consumed_chunk_mem_arg =
+        permanent_arg<main_kernel_args::args_start_index + 13, native_type*>;
+    using event_consumed_chunk_mem_arg_type = typename event_consumed_chunk_mem_arg::arg_type;
+
+    using event_consumed_bytes_arg =
+        permanent_arg<main_kernel_args::args_start_index + 14, uint64_t*>;
+    using event_consumed_bytes_arg_type = typename event_consumed_bytes_arg::arg_type;
 
     using base = execution_kernel<ring_allreduce_numa_kernel<native_type>,
                                   send_buf_size_arg,
@@ -157,7 +174,10 @@ struct ring_allreduce_numa_kernel
                                   right_income_data_flag_arg,
                                   right_ready_to_recv_flag_arg,
                                   event_prod_chunk_mem_arg,
-                                  event_prod_bytes_arg>;
+                                  event_prod_bytes_arg,
+                                  event_consumed_bytes_offset_arg,
+                                  event_consumed_chunk_mem_arg,
+                                  event_consumed_bytes_arg>;
 };
 
 template <class native_type>

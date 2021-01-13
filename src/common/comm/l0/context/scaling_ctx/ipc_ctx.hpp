@@ -58,6 +58,10 @@ public:
     ~ipc_ctx() {
         stop.store(true);
         delivery_condition.notify_all();
+
+        for (auto& thread : listener_thread_map) {
+            thread.second->join();
+        }
     }
 
     void initialize_ctx(std::shared_ptr<ccl::host_communicator> communicator);

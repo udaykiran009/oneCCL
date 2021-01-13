@@ -69,6 +69,9 @@ list (APPEND EXTENSIONS_SRC
                     common/comm/l0/context/scaling_ctx/ipc_ctx_utils.cpp
                     common/comm/l0/context/scaling_ctx/ipc_session_key.cpp
 
+                    common/comm/l0/context/scaling_ctx/observer_ctx_session.cpp
+                    common/comm/l0/context/scaling_ctx/observer_session_key.cpp
+
                     common/comm/l0/gpu_comm_attr.cpp
                     common/comm/l0/modules/base_entry_module.cpp
                     common/comm/l0/modules/modules_source_data.cpp)
@@ -209,7 +212,7 @@ message(STATUS "oneCCL lib LIBFABRIC_LIB_DIR: ${LIBFABRIC_LIB_DIR}")
 message(STATUS "oneCCL lib LIBFABRIC_INCLUDE_DIR: ${LIBFABRIC_INCLUDE_DIR}")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -ftemplate-backtrace-limit=0")
 
 #special library that holds objects only
 add_library(ccl-objects OBJECT ${CCL_SRC})

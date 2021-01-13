@@ -352,36 +352,24 @@ inline bool cluster_group_device_creator::build_impl(
                     continue;
                 }
 
-                auto proxy_virt =
-                    detail::add_numa_proxy_device<ccl_virtual_gpu_comm, group_id(), class_id>(
-                        *non_indexed_plain_devices, last_in_graph_index, context, devices_factory);
-                if (proxy_virt) {
-                    created_cpu_context_indices.insert(last_in_graph_index);
-                    out << "added proxy virtual device: " << proxy_virt->to_string()
-                        << ", by idx: " << last_in_graph_index << std::endl;
+                size_t inserted_device_type_index = detail::role_mod::inject_numa_device<
+                    group_id(),
+                    class_id,
+                    process_group_context,
+                    ccl_virtual_gpu_comm, /* `virtual` is better candiate*/
+                    ccl_gpu_comm>(
+                    *non_indexed_plain_devices, last_in_graph_index, context, devices_factory);
+                if (inserted_device_type_index == std::numeric_limits<size_t>::max()) {
+                    assert(false && "Unsupported device type in topology creation");
+                    std::ostringstream ss;
+                    ss << out.rdbuf();
+                    throw std::runtime_error(
+                        std::string("Unsupported device type in topology creation. Log:\n") +
+                        ss.str());
                 }
-                else {
-                    auto proxy_real =
-                        detail::add_numa_proxy_device<ccl_gpu_comm, group_id(), class_id>(
-                            *non_indexed_plain_devices,
-                            last_in_graph_index,
-                            context,
-                            devices_factory);
-                    if (proxy_real) {
-                        created_cpu_context_indices.insert(last_in_graph_index);
-                        out << "added proxy real device: " << proxy_real->to_string()
-                            << ", by idx: " << last_in_graph_index << std::endl;
-                    }
-                    else {
-                        assert(false && "Unsupported device type in torn-apart ring creation");
-                        std::ostringstream ss;
-                        ss << out.rdbuf();
-                        throw std::runtime_error(
-                            std::string(
-                                "Unsupported device type in torn-apart ring creation. Log:\n") +
-                            ss.str());
-                    }
-                }
+                out << "Inject numa device by order: " << inserted_device_type_index
+                    << "\nby idx: " << last_in_graph_index << std::endl;
+                created_cpu_context_indices.insert(last_in_graph_index);
             }
         }
     }
@@ -624,7 +612,7 @@ inline bool cluster_group_device_creator::build_impl(
                     auto& out_indexed_devices = community->get_device_storage();
 
                     size_t inserted_device_type_index =
-                        detail::inject_ipc_src_device<group_id(),
+                        detail::role_mod::inject_ipc_src_device<group_id(),
                                                        class_id,
                                                        process_group_context,
                                                        ccl_gpu_comm,
@@ -669,15 +657,15 @@ inline bool cluster_group_device_creator::build_impl(
 
                     auto& out_indexed_devices = community->get_device_storage();
 
-                    size_t inserted_device_type_index =
-                        detail::inject_scaleup_device<group_id(),
-                                                      class_id,
-                                                      process_group_context,
-                                                      ccl_gpu_comm,
-                                                      ccl_virtual_gpu_comm,
-                                                      ccl_numa_proxy<ccl_gpu_comm>,
-                                                      ccl_numa_proxy<ccl_virtual_gpu_comm>>(
-                            out_indexed_devices, idx.index, context, devices_factory);
+                    size_t inserted_device_type_index = detail::role_mod::inject_scaleup_device<
+                        group_id(),
+                        class_id,
+                        process_group_context,
+                        ccl_gpu_comm,
+                        ccl_virtual_gpu_comm,
+                        ccl_numa_proxy<ccl_gpu_comm>,
+                        ccl_numa_proxy<ccl_virtual_gpu_comm>>(
+                        out_indexed_devices, idx.index, context, devices_factory);
                     if (inserted_device_type_index != std::numeric_limits<size_t>::max()) {
                         out << "Inject scaleUp device by order: " << inserted_device_type_index
                             << "\nby idx: " << idx.to_string() << std::endl;
@@ -711,7 +699,7 @@ inline bool cluster_group_device_creator::build_impl(
 
                     auto& out_indexed_devices = community->get_device_storage();
 
-                    size_t inserted_device_type_index = detail::inject_scaleout_device<
+                    size_t inserted_device_type_index = detail::role_mod::inject_scaleout_device<
                         group_id(),
                         class_id,
                         process_group_context,

@@ -12,6 +12,37 @@ namespace native {
 ccl_context::ccl_context(handle_t h, owner_ptr_t&& platform)
         : base(h, std::move(platform), std::weak_ptr<ccl_context>{}) {}
 
+CCL_BE_API const ze_host_mem_alloc_desc_t& ccl_context::get_default_host_alloc_desc() {
+    static const ze_host_mem_alloc_desc_t common{
+        .stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC,
+        .pNext = NULL,
+        .flags = 0,
+    };
+    return common;
+}
+
+CCL_BE_API void* ccl_context::host_alloc_memory(size_t bytes_count,
+                                                size_t alignment,
+                                                const ze_host_mem_alloc_desc_t& host_descr) {
+    void* out_ptr = nullptr;
+    ze_result_t ret = zeMemAllocHost(handle, &host_descr, bytes_count, alignment, &out_ptr);
+    if (ret != ZE_RESULT_SUCCESS) {
+        throw std::runtime_error(std::string("cannot allocate host memory, error: ") +
+                                 std::to_string(ret));
+    }
+    return out_ptr;
+}
+
+CCL_BE_API void ccl_context::host_free_memory(void* mem_handle) {
+    if (!mem_handle) {
+        return;
+    }
+
+    if (zeMemFree(handle, mem_handle) != ZE_RESULT_SUCCESS) {
+        throw std::runtime_error(std::string("cannot release host memory"));
+    }
+}
+
 CCL_BE_API std::string ccl_context::to_string() const {
     std::stringstream ss;
     ss << handle;

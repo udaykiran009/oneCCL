@@ -251,8 +251,14 @@ std::pair<bool, std::string> check_ring_multiple_topologies(
             break;
         }
 
+        if (sequencial_values.size() < thread_id) {
+            res = false;
+            descr += std::string("Not enough sequencial data for thread: ") +
+                     std::to_string(thread_id) + " - fix your unit tests";
+        }
+
         std::tie(tmp, str_tmp) =
-            check_topology<topology, class_id>(devices_ptr, sequencial_values[thread_id]);
+            check_topology<topology, class_id>(devices_ptr, sequencial_values.at(thread_id));
         if (!tmp) {
             res = false;
 

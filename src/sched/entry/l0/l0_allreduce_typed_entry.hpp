@@ -33,6 +33,7 @@ public:
     using base::get_local_kernel;
     using kernel_main_typed = ring_allreduce_kernel<native_type>;
     using kernel_ipc_typed = ring_allreduce_ipc<native_type>;
+    using kernel_main_numa_typed = ring_allreduce_numa_kernel<native_type>;
 
     using income_data_flag_gpu_type =
         typename std::remove_pointer<typename kernel_main_typed::income_data_flag_arg_type>::type;
@@ -157,6 +158,18 @@ public:
         return ret;
     }
 
+    observer::invoke_params<type(), native_type> get_numa_data() override {
+        observer::producer_description in_params{
+            .world_rank = comm_addr.rank, //TODO unused
+            .world_size = comm_addr.size, //TODO unused
+            .staged_buffer_elem_count = cnt_entry,
+            .context = get_ctx(),
+            .device = parent_communicator->get_device(),
+            .immediate_list = parent_communicator->get_device().create_immediate_cmd_list(get_ctx())
+        };
+        return observer::invoke_params<type(), native_type>{ std::move(in_params) };
+    }
+
 protected:
     void dump_detail(std::stringstream& str) const override {
         base::dump_detail(str);
@@ -172,6 +185,63 @@ private:
     size_t cnt_entry;
 
 public:
+    template <class left_kernel_main_typed, class right_kernel_main_typed>
+    bool execute(left_kernel_main_typed& main_entry_function,
+                 right_kernel_main_typed& right_kernel) {
+        //Check argument binding in kernels for next rank
+        bool is_right_kernel_ready =
+            right_kernel
+                .template test_args<typename right_kernel_main_typed::tmp_recv_buf_arg,
+                                    typename right_kernel_main_typed::income_data_flag_arg,
+                                    typename right_kernel_main_typed::ready_to_recv_flag_arg>();
+        if (is_right_kernel_ready) {
+            // Once we're sure that the parameters ready read them from the right kernel
+            // Note: we not only read the parameters but also reset their 'ready' flag
+            // (since we're using a dedicated policy)  meaning that they must be stored in order
+            // to be read again.
+            // This is a protection to a case of multiple kernel launches(i.e. the collective is ran multiple times)
+            // where we might read not up-to-date values from the previous run.
+            //TODO do not get arguments sequencially - use array version instead
+            typename right_kernel_main_typed::tmp_recv_buf_arg::return_t right_tmp_recv_buf_arg =
+                right_kernel.template get_arg<typename right_kernel_main_typed::tmp_recv_buf_arg>();
+            typename right_kernel_main_typed::income_data_flag_arg::return_t
+                right_income_data_flag_arg =
+                    right_kernel
+                        .template get_arg<typename right_kernel_main_typed::income_data_flag_arg>();
+            typename right_kernel_main_typed::ready_to_recv_flag_arg::return_t
+                right_ready_to_recv_flag_arg = right_kernel.template get_arg<
+                    typename right_kernel_main_typed::ready_to_recv_flag_arg>();
+
+            ENTRY_LOG_DEBUG("Bind final arguments for kernel: ", left_kernel_main_typed::name());
+            ENTRY_LOG_DEBUG("Args: \n{ ",
+                            right_tmp_recv_buf_arg.first,
+                            ", ",
+                            right_tmp_recv_buf_arg.second,
+                            "}\n",
+                            "{ ",
+                            right_income_data_flag_arg.first,
+                            ", ",
+                            right_income_data_flag_arg.second,
+                            "}\n",
+                            "{ ",
+                            right_ready_to_recv_flag_arg.first,
+                            ", ",
+                            right_ready_to_recv_flag_arg.second,
+                            "}\n");
+
+            //TODO register argument for current device kernel: use array-version
+            main_entry_function
+                .template set_args<typename left_kernel_main_typed::right_tmp_recv_buf_arg,
+                                   typename left_kernel_main_typed::right_income_data_flag_arg,
+                                   typename left_kernel_main_typed::right_ready_to_recv_flag_arg>(
+                    right_tmp_recv_buf_arg.second,
+                    right_income_data_flag_arg.second,
+                    right_ready_to_recv_flag_arg.second);
+            ENTRY_LOG_DEBUG("Final Function: ", main_entry_function.to_string());
+        }
+        return is_right_kernel_ready;
+    }
+
     bool execute(kernel_main_typed& main_entry_function, kernel_main_typed& right_kernel) {
         //Check argument binding in kernels for next rank
         bool is_right_kernel_ready =

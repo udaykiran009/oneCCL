@@ -60,6 +60,18 @@ struct real_gpu_typed_module : private gpu_module_base {
         return ccl_tuple_get<kernel<native_data_type>>(kernel_main_functions);
     }
 
+    template <class native_data_type>
+    kernel_numa<native_data_type>& get_numa_main_function() {
+        return const_cast<kernel_numa<native_data_type>&>(
+            static_cast<const real_gpu_typed_module*>(this)
+                ->get_numa_main_function<native_data_type>());
+    }
+
+    template <class native_data_type>
+    const kernel_numa<native_data_type>& get_numa_main_function() const {
+        return ccl_tuple_get<kernel_numa<native_data_type>>(kernel_numa_functions);
+    }
+
     ~real_gpu_typed_module() {
         LOG_DEBUG("Real gpu module destroyed: ",
                   ccl_coll_type_to_str(type),
@@ -172,6 +184,18 @@ struct virtual_gpu_typed_module : private gpu_module_base {
     template <class native_data_type>
     const kernel<native_data_type>& get_main_function() const {
         return ccl_tuple_get<kernel<native_data_type>>(kernel_main_functions);
+    }
+
+    template <class native_data_type>
+    kernel_numa<native_data_type>& get_numa_main_function() {
+        return const_cast<kernel_numa<native_data_type>&>(
+            static_cast<const virtual_gpu_typed_module*>(this)
+                ->get_numa_main_function<native_data_type>());
+    }
+
+    template <class native_data_type>
+    const kernel_numa<native_data_type>& get_numa_main_function() const {
+        return ccl_tuple_get<kernel_numa<native_data_type>>(kernel_numa_functions);
     }
 
     std::shared_ptr<real_referenced_module> real_module_ref;
