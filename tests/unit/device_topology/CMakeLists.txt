@@ -14,7 +14,7 @@ if (COMPUTE_BACKEND)
         message(STATUS "Enable CCL SYCL runtime")
     endif()
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_RUNTIME_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_BACKEND_FLAGS}")
     add_definitions(${DEFINITIONS})
 
     if ((${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "ze_loader")

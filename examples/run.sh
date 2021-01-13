@@ -277,7 +277,7 @@ build()
     else
         cmake .. -DCMAKE_C_COMPILER=${C_COMPILER} \
                  -DCMAKE_CXX_COMPILER=${CXX_COMPILER} \
-                 -DCOMPUTE_RUNTIME=${COMPUTE_BACKEND}  2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
+                 -DCOMPUTE_BACKEND=${COMPUTE_BACKEND}  2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
     fi
     make -j 2>&1 | tee -a ${EXAMPLE_WORK_DIR}/build_output.log
     error_count=`grep -E -i -c 'error|abort|fail'  ${EXAMPLE_WORK_DIR}/build_output.log` > /dev/null 2>&1

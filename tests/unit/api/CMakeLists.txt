@@ -16,7 +16,7 @@ if (COMPUTE_BACKEND)
         option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
         message(STATUS "Enable CCL SYCL runtime")
     endif()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_RUNTIME_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_BACKEND_FLAGS}")
     add_definitions(${DEFINITIONS})
     if ((${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL") AND
         ${CCL_ENABLE_SYCL_L0} STREQUAL 1)

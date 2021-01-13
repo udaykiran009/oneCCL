@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 2.8)
 if (DEFINED ENV{CCL_CONFIGURATION})
     set(CCL_CONFIGURATION "$ENV{CCL_CONFIGURATION}")
     if(${CCL_CONFIGURATION} STREQUAL "cpu_gpu_dpcpp")
-        set(COMPUTE_RUNTIME_TARGET_NAME "sycl")
+        set(COMPUTE_BACKEND_TARGET_NAME "sycl")
     endif()
 endif()
 

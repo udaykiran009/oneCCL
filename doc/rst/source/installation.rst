@@ -70,11 +70,11 @@ You can customize CLI-based installation (for example, specify directory, compil
 
      cmake .. -DCMAKE_C_COMPILER=<c_compiler> -DCMAKE_CXX_COMPILER=<cxx_compiler>
 
-  To enable ``SYCL`` devices communication support specify ``SYCL`` compiler and set ``-DCOMPUTE_RUNTIME`` (DPC++ supported only):
+  To enable ``SYCL`` devices communication support specify ``SYCL`` compiler and set ``-DCOMPUTE_BACKEND`` (DPC++ supported only):
 
   ::
 
-     cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_RUNTIME=dpcpp
+     cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_BACKEND=dpcpp
 
 * To specify the **build type**, modify the ``cmake`` command:
 

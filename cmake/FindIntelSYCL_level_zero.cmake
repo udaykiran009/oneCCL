@@ -27,9 +27,9 @@ else()
 endif()
 
 find_package(level_zero REQUIRED)
-set(COMPUTE_RUNTIME_NAME ze_loader)
+set(COMPUTE_BACKEND_NAME ze_loader)
 
-if (NOT COMPUTE_RUNTIME_NAME)
+if (NOT COMPUTE_BACKEND_NAME)
     message("Not OpenCL or L0")
 endif()
 
@@ -78,7 +78,7 @@ if(IntelSYCL_level_zero_FOUND AND NOT TARGET Intel::SYCL_level_zero)
 
     set(imp_libs
         $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:-fsycl>
-        ${COMPUTE_RUNTIME_NAME})
+        ${COMPUTE_BACKEND_NAME})
     set_target_properties(Intel::SYCL_level_zero PROPERTIES
         INTERFACE_LINK_LIBRARIES "${imp_libs}"
         INTERFACE_INCLUDE_DIRECTORIES "${SYCL_LEVEL_ZERO_INCLUDE_DIRS}"

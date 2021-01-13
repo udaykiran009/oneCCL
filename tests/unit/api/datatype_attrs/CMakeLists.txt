@@ -18,7 +18,7 @@ include(${PROJECT_SOURCE_DIR}/cmake/helpers.cmake)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 if (COMPUTE_BACKEND)
     activate_compute_backend("${PROJECT_SOURCE_DIR}/cmake" ${COMPUTE_BACKEND})
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_RUNTIME_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_BACKEND_FLAGS}")
     add_definitions(${DEFINITIONS})
 endif()
 

@@ -64,7 +64,7 @@ if(IntelSYCL_FOUND AND NOT TARGET Intel::SYCL)
     add_library(Intel::SYCL UNKNOWN IMPORTED)
     set(imp_libs
         $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:-fsycl>
-        ${COMPUTE_RUNTIME_NAME})
+        ${COMPUTE_BACKEND_NAME})
     set_target_properties(Intel::SYCL PROPERTIES
         INTERFACE_LINK_LIBRARIES "${imp_libs}"
         INTERFACE_INCLUDE_DIRECTORIES "${INTEL_SYCL_INCLUDE_DIRS}"
