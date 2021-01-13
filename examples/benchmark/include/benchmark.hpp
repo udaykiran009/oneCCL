@@ -7,6 +7,7 @@
 #include <functional>
 #include <iostream>
 #include <iterator>
+#include <numeric>
 #include <map>
 #include <math.h>
 #include <stdexcept>

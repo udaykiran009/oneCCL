@@ -7,6 +7,7 @@
 #include <mpi.h>
 #include <set>
 #include <string>
+#include <numeric>
 
 #include "base.hpp"
 #include "base_utils.hpp"
