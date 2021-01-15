@@ -389,10 +389,10 @@ run()
 
                             if [ "$runtime" == "opencl" ];
                             then
-                                ccl_runtime_env="SYCL_BE=PI_OPENCL ${ccl_runtime_env}"
+                                ccl_runtime_env="SYCL_DEVICE_FILTER=opencl:*:0 ${ccl_runtime_env}"
                             elif [ "$runtime" == "level_zero" ];
                             then
-                                ccl_runtime_env="SYCL_BE=PI_LEVEL_ZERO ${ccl_runtime_env}"
+                                ccl_runtime_env="SYCL_DEVICE_FILTER=level_zero:*:0 ${ccl_runtime_env}"
                             fi
 
                             ccl_extra_env="${ccl_runtime_env}"
@@ -464,10 +464,10 @@ run()
 
                             if [ "$selector" == "gpu" ];
                             then
-                                ccl_extra_env="SYCL_BE=PI_LEVEL_ZERO ${ccl_transport_env}"
+                                ccl_extra_env="SYCL_DEVICE_FILTER=level_zero:*:0 ${ccl_transport_env}"
                                 run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} "${selector} ${usm}"
                             fi
-                            ccl_extra_env="SYCL_BE=PI_OPENCL ${ccl_transport_env}"
+                            ccl_extra_env="SYCL_DEVICE_FILTER=opencl:*:0 ${ccl_transport_env}"
                             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} "${selector} ${usm}"
                         done
                     done

@@ -61,18 +61,19 @@ std::string get_preferred_gpu_platform_name() {
     std::string backend;
     std::string result;
 
-    if (getenv("SYCL_BE") == nullptr) {
+    if (getenv("SYCL_DEVICE_FILTER") == nullptr) {
         backend = "OpenCL";
     }
-    else if (getenv("SYCL_BE") != nullptr) {
-        if (std::strcmp(getenv("SYCL_BE"), "PI_LEVEL_ZERO") == 0) {
+    else if (getenv("SYCL_DEVICE_FILTER") != nullptr) {
+        if (std::strstr(getenv("SYCL_DEVICE_FILTER"), "level_zero") != NULL) {
             backend = "Level-Zero";
         }
-        else if (std::strcmp(getenv("SYCL_BE"), "PI_OPENCL") == 0) {
+        else if (std::strstr(getenv("SYCL_DEVICE_FILTER"), "opencl") != NULL) {
             backend = "OpenCL";
         }
         else {
-            throw std::runtime_error("invalid backend: " + std::string(getenv("SYCL_BE")));
+            throw std::runtime_error("invalid backend: " +
+                                     std::string(getenv("SYCL_DEVICE_FILTER")));
         }
     }
 
