@@ -80,9 +80,18 @@ LIBCCL_SONAME="libccl.so.${LIBCCL_MAJOR_VERSION}"
 #==============================================================================
 #                                Defaults
 #==============================================================================
+set_build_type()
+{
+    if [ "${ENABLE_DEBUG_BUILD}" == "yes" ]
+    then
+        BUILD_TYPE="Debug"
+    else
+        BUILD_TYPE="Release"
+    fi
+}
+
 set_default_values()
 {
-
     ENABLE_PACK="no"
     if [ -z "${ENABLE_PRE_DROP}" ]
     then
@@ -92,12 +101,6 @@ set_default_values()
     then
         ENABLE_NIGHTLY_DROP="false"
     fi
-    if [ "${ENABLE_DEBUG_BUILD}" == "yes" ]
-    then
-        BUILD_TYPE="Debug"
-    else
-        BUILD_TYPE="Release"
-    fi
     ENABLE_VERBOSE="yes"
     ENABLE_SILENT_INSTALLATION="no"
     ENABLE_BUILD_CPU="no"
@@ -106,6 +109,7 @@ set_default_values()
     CORE_COUNT=$(( $(lscpu | grep "^Socket(s):" | awk '{print $2}' ) * $(lscpu | grep "^Core(s) per socket:" | awk '{print $4}') ))
     # 4 because of nuc has 4 core only
     MAKE_JOB_COUNT=$(( CORE_COUNT / 3 > 4 ? CORE_COUNT / 3 : 4 ))
+    set_build_type
 }
 #==============================================================================
 #                                Functions
@@ -733,7 +737,7 @@ parse_arguments()
     echo_log "-----------------------------------------------------------"
 
     TIMESTAMP_START=`date +%s`
-
+    set_build_type
 }
 
 #==============================================================================
@@ -970,8 +974,8 @@ run_swf_pre_drop()
 #                              MAIN
 #==============================================================================
 set_default_values
-echo "BUILD_TYPE=" $BUILD_TYPE
 parse_arguments $@
+echo "BUILD_TYPE=" $BUILD_TYPE
 preparing_files
 run_build_cpu
 run_build_gpu
