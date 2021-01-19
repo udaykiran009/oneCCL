@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BASENAME=`basename $0 .sh`
-TIMEOUT=240
+TIMEOUT=600
 
 echo_log()
 {
@@ -160,17 +160,24 @@ run_binary()
     fi
 
     host_idx=0
+
+    if [ "$1" == "kvs_ip_port" ]
+    then
+        main_ip=`ssh ${hostlist[0]} hostname -I | awk '{print $1}'`
+        main_ip="KVS_IP=""$main_ip"
+    fi
+
     for host in "${hostlist[@]}"
     do
         echo "start ranks on host: $host"
         for ((i = 0; i < $local_size ; i++ ));
         do
             rank=$((host_idx * local_size + i))
-            log_file="${dir}/${host}_${rank}.out"
+            log_file="${dir}/${host}_${rank}_${1}.out"
             log_files=("${log_files[@]}" "${log_file}")
 
             cmd="$dir/run_binary.sh -s ${SIZE} -r ${rank} -ls ${local_size} -lr ${i}"
-            cmd="${cmd} -cv ${VARS} -lf ${log_file} -sf ${store_file}"
+            cmd="${main_ip} ${cmd} -cv ${VARS} -lf ${log_file} -sf ${store_file}"
             if [[ -z ${I_MPI_ROOT} ]]
             then
                 cmd="${cmd} -mv ${IMPI_PATH}/env/vars.sh"
@@ -213,17 +220,24 @@ run()
     PUR='\033[0;35m'
     NC='\033[0m'
 
-    echo -e "${PUR}START EXAMPLE${NC}"
-    exec_time=`date +%s`
+    # TODO: add external_launcher after MLSL-650
+    # tests="store kvs_ip_port"
+    tests="kvs_ip_port"
 
-    run_binary
+    for test in $tests
+    do
+        echo -e "${PUR}START EXAMPLE${NC}"
+        exec_time=`date +%s`
 
-    exec_time="$((`date +%s`-$exec_time))"
-    if [ "$exec_time" -ge "$TIMEOUT" ];
-    then
-         echo -e "${RED}FAILED: Timeout ($exec_time > $TIMEOUT)${NC}"
-         exit 1
-    fi
+        run_binary $test
+
+        exec_time="$((`date +%s`-$exec_time))"
+        if [ "$exec_time" -ge "$TIMEOUT" ];
+        then
+             echo -e "${RED}FAILED: Timeout ($exec_time > $TIMEOUT)${NC}"
+             exit 1
+        fi
+    done
 }
 
 parse_arguments $@

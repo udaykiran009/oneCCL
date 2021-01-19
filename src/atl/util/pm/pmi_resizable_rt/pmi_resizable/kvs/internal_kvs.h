@@ -29,6 +29,13 @@ public:
 
     ~internal_kvs() override;
 
+    void set_server_address(const std::string& server_addr) {
+        server_address = server_addr;
+    }
+
 private:
+    size_t init_main_server_by_env(void);
+    size_t init_main_server_address(const char* main_addr);
     bool is_inited{ false };
+    std::string server_address{};
 };

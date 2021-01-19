@@ -11,14 +11,25 @@ namespace ccl {
 
 class kvs_impl {
 public:
-    kvs_impl() {
+    kvs_impl(const kvs_attr& attr) {
         inter_kvs = std::shared_ptr<internal_kvs>(new internal_kvs());
+        if (attr.is_valid<ccl::kvs_attr_id::ip_port>()) {
+            std::string server_address = attr.get<ccl::kvs_attr_id::ip_port>();
+            inter_kvs->set_server_address(server_address);
+        }
+
         inter_kvs->kvs_main_server_address_reserve(addr.data());
         inter_kvs->kvs_init(addr.data());
     }
 
-    kvs_impl(const kvs::address_type& addr) : addr(addr) {
+    kvs_impl(const kvs::address_type& addr, const kvs_attr& attr) : addr(addr) {
         inter_kvs = std::shared_ptr<internal_kvs>(new internal_kvs());
+
+        if (attr.is_valid<ccl::kvs_attr_id::ip_port>()) {
+            std::string server_address = attr.get<ccl::kvs_attr_id::ip_port>();
+            inter_kvs->set_server_address(server_address);
+        }
+
         inter_kvs->kvs_init(addr.data());
     }
 
@@ -72,7 +83,7 @@ void CCL_API kvs::set(const string_class& key, const vector_class<char>& data) {
 }
 
 CCL_API kvs::kvs(const kvs::address_type& addr, const kvs_attr& attr) {
-    pimpl = std::unique_ptr<kvs_impl>(new kvs_impl(addr));
+    pimpl = std::unique_ptr<kvs_impl>(new kvs_impl(addr, attr));
 }
 
 CCL_API const kvs_impl& kvs::get_impl() {
@@ -80,7 +91,7 @@ CCL_API const kvs_impl& kvs::get_impl() {
 }
 
 CCL_API kvs::kvs(const kvs_attr& attr) {
-    pimpl = std::unique_ptr<kvs_impl>(new kvs_impl());
+    pimpl = std::unique_ptr<kvs_impl>(new kvs_impl(attr));
 }
 
 CCL_API kvs::~kvs() {}

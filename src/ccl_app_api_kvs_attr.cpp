@@ -48,6 +48,11 @@ CCL_API kvs_attr& kvs_attr::operator=(kvs_attr&& src) {
 }
 
 API_FORCE_INSTANTIATION(kvs_attr,
+                        kvs_attr_id::ip_port,
+                        ccl::string,
+                        detail::ccl_api_type_attr_traits)
+
+API_FORCE_INSTANTIATION(kvs_attr,
                         kvs_attr_id::version,
                         ccl::library_version,
                         detail::ccl_api_type_attr_traits)

@@ -552,11 +552,11 @@ size_t init_main_server_by_k8s(void) {
     return 0;
 }
 
-size_t init_main_server_by_env(void) {
-    char* tmp_host_ip;
+size_t internal_kvs::init_main_server_by_env(void) {
     char* port = NULL;
 
-    tmp_host_ip = getenv(CCL_KVS_IP_PORT_ENV);
+    const char* tmp_host_ip =
+        (!server_address.empty()) ? server_address.c_str() : getenv(CCL_KVS_IP_PORT_ENV);
 
     if (tmp_host_ip == NULL) {
         printf("specify %s\n", CCL_KVS_IP_PORT_ENV);
@@ -669,6 +669,10 @@ int fill_local_host_ip() {
 
 size_t internal_kvs::kvs_main_server_address_reserve(char* main_address) {
     char* additional_local_host_ips;
+
+    if (!server_address.empty())
+        return 0;
+
     if (fill_local_host_ip() < 0) {
         perror("reserve_main_address: failed to get local host IP");
         exit(EXIT_FAILURE);
@@ -715,7 +719,7 @@ size_t internal_kvs::kvs_main_server_address_reserve(char* main_address) {
     return 0;
 }
 
-size_t init_main_server_address(const char* main_addr) {
+size_t internal_kvs::init_main_server_address(const char* main_addr) {
     char* ip_getting_type = getenv(CCL_KVS_IP_EXCHANGE_ENV);
     char* additional_local_host_ips;
 
@@ -747,11 +751,16 @@ size_t init_main_server_address(const char* main_addr) {
         }
     }
 
-    if (main_addr != NULL) {
+    if (server_address.empty()) {
+        if (main_addr != NULL) {
+            ip_getting_mode = IGT_ENV;
+            if (server_listen_sock == 0)
+                init_main_server_by_string(main_addr);
+            return 0;
+        }
+    }
+    else {
         ip_getting_mode = IGT_ENV;
-        if (server_listen_sock == 0)
-            init_main_server_by_string(main_addr);
-        return 0;
     }
 
     local_server_address.sin_family = AF_INET;

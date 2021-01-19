@@ -304,9 +304,7 @@ run()
 
     if [[ ${MODE} = "cpu" ]]
     then
-        common_dir_list="cpu common"
-        # TODO: add external_launcher after MLSL-650
-        # common_dir_list="external_launcher cpu common"
+        common_dir_list="external_launcher cpu common"
         if [[ ${SCOPE} = "abi" ]]
         then
             dir_list=${common_dir_list}
