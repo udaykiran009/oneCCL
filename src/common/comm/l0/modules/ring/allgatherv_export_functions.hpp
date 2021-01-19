@@ -2,17 +2,19 @@
 #include "common/comm/l0/modules/kernel_functions.hpp"
 
 namespace native {
-template <class native_type>
+template <class kernel_params>
 struct ring_allgatherv_kernel
         : public execution_kernel<
-              ring_allgatherv_kernel<native_type>,
+              ring_allgatherv_kernel<kernel_params>,
               arg<main_kernel_args::args_start_index, size_t>, // elems_count
               arg<main_kernel_args::args_start_index + 1, size_t*>, // recv_elem_counts_buf
               arg<main_kernel_args::args_start_index + 2, size_t*>, // recv_elem_offsets_buf
-              arg<main_kernel_args::args_start_index + 3, native_type*>, // send_buf
+              arg<main_kernel_args::args_start_index + 3,
+                  typename kernel_params::native_type*>, // send_buf
               thread_exchangable_arg<main_kernel_args::args_start_index + 4,
-                                     native_type*>, // recv_buf
-              arg<main_kernel_args::args_start_index + 5, native_type*>, // right_output_buffer
+                                     typename kernel_params::native_type*>, // recv_buf
+              arg<main_kernel_args::args_start_index + 5,
+                  typename kernel_params::native_type*>, // right_output_buffer
               external_arg<main_kernel_args::args_start_index + 6,
                            int*>, // left_wrote_to_me_flag
               external_arg<main_kernel_args::args_start_index + 7,
@@ -22,7 +24,7 @@ struct ring_allgatherv_kernel
               thread_exchangable_arg<main_kernel_args::args_start_index + 9,
                                      int*>> // right_ready_to_recv_flag
 {
-    using processing_type = native_type;
+    using processing_type = typename kernel_params::native_type;
 
     static constexpr const char* specific_name() {
         return "allgatherv_execution";
@@ -73,7 +75,7 @@ struct ring_allgatherv_kernel
         thread_exchangable_arg<main_kernel_args::args_start_index + 9, int*>;
     using right_ready_to_recv_flag_arg_type = typename right_ready_to_recv_flag_arg::arg_type;
 
-    using base = execution_kernel<ring_allgatherv_kernel<native_type>,
+    using base = execution_kernel<ring_allgatherv_kernel<kernel_params>,
                                   send_buf_size_arg,
                                   recv_elem_counts_buf_arg,
                                   recv_elem_offsets_buf_arg,
@@ -87,17 +89,19 @@ struct ring_allgatherv_kernel
 };
 
 // IMPORTANT: the params order is default, see *algatherv*.cl for that
-template <class native_type>
+template <class kernel_params>
 struct ring_allgatherv_numa_kernel
         : public execution_kernel<
-              ring_allgatherv_numa_kernel<native_type>,
+              ring_allgatherv_numa_kernel<kernel_params>,
               arg<main_kernel_args::args_start_index, size_t>, // elems_count
               arg<main_kernel_args::args_start_index + 1, size_t*>, // recv_elem_counts_buf
               arg<main_kernel_args::args_start_index + 2, size_t*>, // recv_elem_offsets_buf
-              arg<main_kernel_args::args_start_index + 3, native_type*>, // send_buf
-              arg<main_kernel_args::args_start_index + 4, native_type*>, // recv_buf
+              arg<main_kernel_args::args_start_index + 3,
+                  typename kernel_params::native_type*>, // send_buf
+              arg<main_kernel_args::args_start_index + 4,
+                  typename kernel_params::native_type*>, // recv_buf
               thread_safe_arg<main_kernel_args::args_start_index + 5,
-                              native_type*>, // right_output_buffer
+                              typename kernel_params::native_type*>, // right_output_buffer
               thread_safe_arg<main_kernel_args::args_start_index + 6,
                               int*>, // left_wrote_to_me_flag
               thread_safe_arg<main_kernel_args::args_start_index + 7,
@@ -106,7 +110,7 @@ struct ring_allgatherv_numa_kernel
               thread_safe_arg<main_kernel_args::args_start_index + 9,
                               int*>> // right_ready_to_recv_flag>
 {
-    using processing_type = native_type;
+    using processing_type = typename kernel_params::native_type;
 
     static constexpr const char* specific_name() {
         return "allgatherv_execution_numa";
@@ -157,7 +161,7 @@ struct ring_allgatherv_numa_kernel
         thread_safe_arg<main_kernel_args::args_start_index + 9, int*>;
     using right_ready_to_recv_flag_arg_type = typename right_ready_to_recv_flag_arg::arg_type;
 
-    using base = execution_kernel<ring_allgatherv_numa_kernel<native_type>,
+    using base = execution_kernel<ring_allgatherv_numa_kernel<kernel_params>,
                                   send_buf_size_arg,
                                   recv_elem_counts_buf_arg,
                                   recv_elem_offsets_buf_arg,
@@ -170,17 +174,19 @@ struct ring_allgatherv_numa_kernel
                                   right_ready_to_recv_flag_arg>;
 };
 
-template <class native_type>
+template <class kernel_params>
 struct ring_allgatherv_ipc
         : public ipc_kernel<
-              ring_allgatherv_ipc<native_type>,
+              ring_allgatherv_ipc<kernel_params>,
               arg<main_kernel_args::args_start_index, size_t>, // elems_count
               arg<main_kernel_args::args_start_index + 1, size_t*>, // recv_elem_counts_buf
               arg<main_kernel_args::args_start_index + 2, size_t*>, // recv_elem_offsets_buf
-              arg<main_kernel_args::args_start_index + 3, native_type*>, // send_buf
-              arg<main_kernel_args::args_start_index + 4, native_type*>, // recv_buf
+              arg<main_kernel_args::args_start_index + 3,
+                  typename kernel_params::native_type*>, // send_buf
+              arg<main_kernel_args::args_start_index + 4,
+                  typename kernel_params::native_type*>, // recv_buf
               thread_safe_arg<main_kernel_args::args_start_index + 5,
-                              native_type*>, // right_output_buffer
+                              typename kernel_params::native_type*>, // right_output_buffer
               thread_safe_arg<main_kernel_args::args_start_index + 6,
                               int*>, // left_wrote_to_me_flag
               thread_safe_arg<main_kernel_args::args_start_index + 7,
@@ -189,7 +195,7 @@ struct ring_allgatherv_ipc
               thread_safe_arg<main_kernel_args::args_start_index + 9,
                               int*>> // right_ready_to_recv_flag
 {
-    using processing_type = native_type;
+    using processing_type = typename kernel_params::native_type;
 
     static constexpr const char* specific_name() {
         return "ring_allgatherv_ipc";
@@ -240,7 +246,7 @@ struct ring_allgatherv_ipc
         thread_safe_arg<main_kernel_args::args_start_index + 9, int*>;
     using right_ready_to_recv_flag_arg_type = typename right_ready_to_recv_flag_arg::arg_type;
 
-    using base = execution_kernel<ring_allgatherv_ipc<native_type>,
+    using base = execution_kernel<ring_allgatherv_ipc<kernel_params>,
                                   send_buf_size_arg,
                                   recv_elem_counts_buf_arg,
                                   recv_elem_offsets_buf_arg,

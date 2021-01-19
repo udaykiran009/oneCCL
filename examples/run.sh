@@ -101,6 +101,7 @@ check_environment()
 # See: MLSL-675.
 supported_kernel_colls="allgatherv,allreduce,alltoallv,bcast,reduce"
 supported_kernel_colls_with_dtypes="allreduce,reduce,allgatherv"
+kernel_colls_with_reductions="allreduce,reduce"
 supported_kernel_dtypes="int8,int32,float32"
 
 run_benchmark()
@@ -431,6 +432,8 @@ run()
                             ccl_extra_env="${ccl_runtime_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernel_colls} float32 sum
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernel_colls_with_dtypes} ${supported_kernel_dtypes} sum
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${kernel_colls_with_reductions} ${supported_kernel_dtypes} sum,max
+
                         done
                     done
                 elif [ "$dir_name" == "sycl" ];

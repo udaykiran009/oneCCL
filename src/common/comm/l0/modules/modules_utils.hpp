@@ -40,7 +40,8 @@ struct kernel_entry_initializer<
     void operator()(typed_kernel& kernel) {
         kernel.handle =
             functor(std::string(typed_kernel::name()) + "_" +
-                    ccl::native_type_info<typename typed_kernel::processing_type>::name() + "_add");
+                    ccl::native_type_info<typename typed_kernel::processing_type>::name() + "_" +
+                    reduction_to_str(typed_kernel::param_t::red_type));
     }
 
 private:

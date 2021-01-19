@@ -7,8 +7,8 @@
 #include "common/comm/l0/context/scaling_ctx/ipc_ctx_impl.hpp"
 
 namespace native {
-template <class native_type, class gpu_comm_impl, ccl::group_split_type topology>
-class l0_allreduce_typed_entry : public base_gpu_entry<native_type,
+template <class kernel_params, class gpu_comm_impl, ccl::group_split_type topology>
+class l0_allreduce_typed_entry : public base_gpu_entry<kernel_params,
                                                        gpu_comm_impl,
                                                        topology,
                                                        ccl::device_topology_type::ring,
@@ -17,7 +17,7 @@ public:
     friend class ccl_gpu_comm;
     friend class ccl_virtual_gpu_comm;
 
-    using base = base_gpu_entry<native_type,
+    using base = base_gpu_entry<kernel_params,
                                 gpu_comm_impl,
                                 topology,
                                 ccl::device_topology_type::ring,
@@ -31,9 +31,9 @@ public:
     using base::get_ctx;
     using base::alloc_memory_wrap;
     using base::get_local_kernel;
-    using kernel_main_typed = ring_allreduce_kernel<native_type>;
-    using kernel_ipc_typed = ring_allreduce_ipc<native_type>;
-    using kernel_main_numa_typed = ring_allreduce_numa_kernel<native_type>;
+    using kernel_main_typed = ring_allreduce_kernel<kernel_params>;
+    using kernel_ipc_typed = ring_allreduce_ipc<kernel_params>;
+    using kernel_main_numa_typed = ring_allreduce_numa_kernel<kernel_params>;
 
     using income_data_flag_gpu_type =
         typename std::remove_pointer<typename kernel_main_typed::income_data_flag_arg_type>::type;
@@ -65,7 +65,7 @@ public:
                    comm,
                    in_ctx,
                    send_buf,
-                   ccl::native_type_info<native_type>::dtype,
+                   ccl::native_type_info<typename kernel_params::native_type>::dtype,
                    device_stream),
 
               temp_buffer(
@@ -94,7 +94,7 @@ public:
 
         int next_rank = (comm_addr.rank + 1) % comm_addr.size;
         kernel_router = base::template create_kernel_router_for_rank<
-            l0_allreduce_typed_entry<native_type, gpu_comm_impl, topology>>(
+            l0_allreduce_typed_entry<kernel_params, gpu_comm_impl, topology>>(
             *this, next_rank, available_devices);
 
         ENTRY_LOG_DEBUG("Init phase of current entry for ext_rank:", next_rank);
@@ -116,7 +116,8 @@ public:
         auto& main_entry_function = get_local_kernel();
 
         // TODO: try to remove indirect buffer
-        auto recv_buf_ptr = reinterpret_cast<native_type*>(recv_buf_typed_entry.get_ptr());
+        auto recv_buf_ptr =
+            reinterpret_cast<typename kernel_params::native_type*>(recv_buf_typed_entry.get_ptr());
 
         //create implementation specified primitives
         main_entry_function
@@ -158,7 +159,7 @@ public:
         return ret;
     }
 
-    observer::invoke_params<type(), native_type> get_numa_data() override {
+    observer::invoke_params<type(), kernel_params> get_numa_data() override {
         observer::producer_description in_params{
             .world_rank = comm_addr.rank, //TODO unused
             .world_size = comm_addr.size, //TODO unused
@@ -167,7 +168,7 @@ public:
             .device = parent_communicator->get_device(),
             .immediate_list = parent_communicator->get_device().create_immediate_cmd_list(get_ctx())
         };
-        return observer::invoke_params<type(), native_type>{ std::move(in_params) };
+        return observer::invoke_params<type(), kernel_params>{ std::move(in_params) };
     }
 
 protected:
@@ -176,7 +177,7 @@ protected:
     }
 
 private:
-    ccl_device::device_memory<native_type> temp_buffer;
+    ccl_device::device_memory<typename kernel_params::native_type> temp_buffer;
     ccl_device::device_memory<income_data_flag_gpu_type> income_data_flag;
     ccl_device::device_memory<ready_to_recv_flag_gpu_type> ready_to_recv_flag;
     ccl_device::device_memory<local_barrier_flag_gpu_type> local_barrier_flag;

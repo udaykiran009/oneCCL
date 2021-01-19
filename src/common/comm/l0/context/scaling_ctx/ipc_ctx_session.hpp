@@ -67,7 +67,7 @@ using shared_session_ptr = std::shared_ptr<session>;
 /* High level session
  * Contains collective communication data
  */
-template <ccl_coll_type coll_type, class native_data_type, ccl::device_topology_type class_id>
+template <ccl_coll_type coll_type, class kernel_params, ccl::device_topology_type class_id>
 struct typed_ipc_session : public session {
     typed_ipc_session(origin_ipc_memory_container&& ipc_src_memory_handles,
                       size_t source_ipc_device_rank)
@@ -82,7 +82,7 @@ struct typed_ipc_session : public session {
         assert(module_ptr);
 
         // get appropriate kernel
-        auto& kernel = module_ptr->template get_main_function<native_data_type>();
+        auto& kernel = module_ptr->template get_main_function<kernel_params>();
         using kernel_t = typename std::decay<decltype(kernel)>::type;
 
         // get recovered ipc handles
@@ -123,7 +123,7 @@ struct session_table {
                                             ipc_invoke_params_type&& params,
                                             size_t source_device_rank) {
         using specific_session = typed_ipc_session<ipc_invoke_params_type::get_coll_type(),
-                                                   typename ipc_invoke_params_type::native_t,
+                                                   typename ipc_invoke_params_type::kernel_params_t,
                                                    class_id>;
         auto sess =
             std::make_shared<specific_session>(std::move(params.handles), source_device_rank);

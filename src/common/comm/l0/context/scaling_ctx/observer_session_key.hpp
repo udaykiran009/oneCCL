@@ -89,9 +89,9 @@ struct context_description {
     }
 };
 
-template <ccl_coll_type type, class native_data_type>
+template <ccl_coll_type type, class kernel_params>
 struct invoke_params {
-    using native_t = native_data_type;
+    using kernel_params_t = kernel_params;
 
     static constexpr ccl_coll_type get_coll_type() {
         return type;
@@ -102,7 +102,8 @@ struct invoke_params {
               out_params(),
               valid(false) {}
 
-    void set_out_params(const context_description<type, native_t>& src) {
+    void set_out_params(
+        const context_description<type, typename kernel_params_t::native_type>& src) {
         out_params = src;
         valid = true;
     }
@@ -119,7 +120,7 @@ struct invoke_params {
         return in_params;
     }
 
-    const context_description<type, native_t>& get_ctx_params() const {
+    const context_description<type, typename kernel_params_t::native_type>& get_ctx_params() const {
         if (!is_valid()) {
             throw std::runtime_error("observer invocation params are not ready");
         }
@@ -128,7 +129,7 @@ struct invoke_params {
 
 private:
     producer_description in_params;
-    context_description<type, native_t> out_params;
+    context_description<type, typename kernel_params_t::native_type> out_params;
     bool valid;
 };
 

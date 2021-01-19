@@ -2,21 +2,25 @@
 #include "common/comm/l0/modules/kernel_functions.hpp"
 
 namespace native {
-template <class native_type>
+
+template <class kernel_params>
 struct a2a_allreduce_kernel
         : public execution_kernel<
-              a2a_allreduce_kernel<native_type>,
+              a2a_allreduce_kernel<kernel_params>,
               arg<main_kernel_args::args_start_index, size_t>,
-              arg<main_kernel_args::args_start_index + 1, native_type*>,
-              arg<main_kernel_args::args_start_index + 2, native_type*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 3, native_type*>,
+              arg<main_kernel_args::args_start_index + 1, typename kernel_params::native_type*>,
+              arg<main_kernel_args::args_start_index + 2, typename kernel_params::native_type*>,
+              thread_safe_arg<main_kernel_args::args_start_index + 3,
+                              typename kernel_params::native_type*>,
               thread_safe_arg<main_kernel_args::args_start_index + 4, int*>,
               thread_safe_arg<main_kernel_args::args_start_index + 5, int*>,
               arg<main_kernel_args::args_start_index + 6, int*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 7, native_type*>,
+              thread_safe_arg<main_kernel_args::args_start_index + 7,
+                              typename kernel_params::native_type*>,
               thread_safe_arg<main_kernel_args::args_start_index + 8, int*>,
               thread_safe_arg<main_kernel_args::args_start_index + 9, int*>> {
-    using processing_type = native_type;
+    using param_t = kernel_params;
+    using processing_type = typename kernel_params::native_type;
 
     static constexpr const char* specific_name() {
         return "allreduce_execution";
@@ -61,7 +65,7 @@ struct a2a_allreduce_kernel
         thread_safe_arg<main_kernel_args::args_start_index + 9, int*>;
     using right_ready_to_recv_flag_arg_type = typename right_ready_to_recv_flag_arg::arg_type;
 
-    using base = execution_kernel<ring_allreduce_kernel<native_type>,
+    using base = execution_kernel<ring_allreduce_kernel<kernel_params>,
                                   send_buf_size_arg,
                                   send_buf_arg,
                                   recv_buf_arg,
@@ -74,24 +78,27 @@ struct a2a_allreduce_kernel
                                   right_ready_to_recv_flag_arg>;
 };
 
-template <class native_type>
+template <class kernel_params>
 struct a2a_allreduce_numa_kernel
         : public execution_kernel<
-              a2a_allreduce_numa_kernel<native_type>,
+              a2a_allreduce_numa_kernel<kernel_params>,
               arg<main_kernel_args::args_start_index, size_t>,
-              arg<main_kernel_args::args_start_index + 1, native_type*>,
-              arg<main_kernel_args::args_start_index + 2, native_type*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 3, native_type*>,
+              arg<main_kernel_args::args_start_index + 1, typename kernel_params::native_type*>,
+              arg<main_kernel_args::args_start_index + 2, typename kernel_params::native_type*>,
+              thread_safe_arg<main_kernel_args::args_start_index + 3,
+                              typename kernel_params::native_type*>,
               thread_safe_arg<main_kernel_args::args_start_index + 4, int*>,
               thread_safe_arg<main_kernel_args::args_start_index + 5, int*>,
               arg<main_kernel_args::args_start_index + 6, int*>,
-              thread_safe_arg<main_kernel_args::args_start_index + 7, native_type*>,
+              thread_safe_arg<main_kernel_args::args_start_index + 7,
+                              typename kernel_params::native_type*>,
               thread_safe_arg<main_kernel_args::args_start_index + 8, int*>,
               thread_safe_arg<main_kernel_args::args_start_index + 9, int*>,
-
-              thread_safe_arg<main_kernel_args::args_start_index + 10, native_type*>,
+              thread_safe_arg<main_kernel_args::args_start_index + 10,
+                              typename kernel_params::native_type*>,
               thread_safe_arg<main_kernel_args::args_start_index + 11, int*>> {
-    using processing_type = native_type;
+    using param_t = kernel_params;
+    using processing_type = typename kernel_params::native_type;
 
     static constexpr const char* specific_name() {
         return "allreduce_execution_numa";
@@ -138,13 +145,13 @@ struct a2a_allreduce_numa_kernel
 
     // event data
     using event_prod_chunk_mem_arg =
-        thread_safe_arg<main_kernel_args::args_start_index + 10, native_type*>;
+        thread_safe_arg<main_kernel_args::args_start_index + 10, processing_type*>;
     using event_prod_chunk_mem_arg_type = typename event_prod_chunk_mem_arg::arg_type;
 
     using event_prod_bytes_arg = thread_safe_arg<main_kernel_args::args_start_index + 11, int*>;
     using event_prod_bytes_arg_type = typename event_prod_bytes_arg::arg_type;
 
-    using base = execution_kernel<a2a_allreduce_numa_kernel<native_type>,
+    using base = execution_kernel<a2a_allreduce_numa_kernel<kernel_params>,
                                   send_buf_size_arg,
                                   send_buf_arg,
                                   recv_buf_arg,
@@ -159,36 +166,39 @@ struct a2a_allreduce_numa_kernel
                                   event_prod_bytes_arg>;
 };
 
-template <class native_type>
+template <class kernel_params>
 struct a2a_allreduce_ipc
-        : public ipc_kernel<a2a_allreduce_ipc<native_type>,
+        : public ipc_kernel<a2a_allreduce_ipc<kernel_params>,
                             stub_arg<main_kernel_args::args_start_index>,
                             stub_arg<main_kernel_args::args_start_index + 1>,
                             stub_arg<main_kernel_args::args_start_index + 2>,
-                            thread_safe_arg<main_kernel_args::args_start_index + 3, native_type*>,
+                            thread_safe_arg<main_kernel_args::args_start_index + 3,
+                                            typename kernel_params::native_type*>,
                             thread_safe_arg<main_kernel_args::args_start_index + 4, int*>,
                             thread_safe_arg<main_kernel_args::args_start_index + 5, int*>,
                             stub_arg<main_kernel_args::args_start_index + 6>,
                             stub_arg<main_kernel_args::args_start_index + 7>,
                             stub_arg<main_kernel_args::args_start_index + 8>,
                             stub_arg<main_kernel_args::args_start_index + 9>> {
-    using processing_type = native_type;
+    using param_t = kernel_params;
+    using processing_type = typename kernel_params::native_type;
 
     static constexpr const char* specific_name() {
         return "a2a_allreduce_ipc";
     }
 
-    using tmp_recv_buf_arg = typename ring_allreduce_kernel<native_type>::tmp_recv_buf_arg;
+    using tmp_recv_buf_arg = typename ring_allreduce_kernel<kernel_params>::tmp_recv_buf_arg;
     using tmp_recv_buf_arg_type = typename tmp_recv_buf_arg::arg_type;
 
-    using income_data_flag_arg = typename ring_allreduce_kernel<native_type>::income_data_flag_arg;
+    using income_data_flag_arg =
+        typename ring_allreduce_kernel<kernel_params>::income_data_flag_arg;
     using income_data_flag_arg_type = typename income_data_flag_arg::arg_type;
 
     using ready_to_recv_flag_arg =
-        typename ring_allreduce_kernel<native_type>::ready_to_recv_flag_arg;
+        typename ring_allreduce_kernel<kernel_params>::ready_to_recv_flag_arg;
     using ready_to_recv_flag_arg_type = typename ready_to_recv_flag_arg::arg_type;
 
-    using base = execution_kernel<a2a_allreduce_ipc<native_type>,
+    using base = execution_kernel<a2a_allreduce_ipc<kernel_params>,
                                   stub_arg<main_kernel_args::args_start_index>,
                                   stub_arg<main_kernel_args::args_start_index + 1>,
                                   stub_arg<main_kernel_args::args_start_index + 2>,

@@ -104,23 +104,19 @@ ccl::event device_group_ring_communicator::allreduce_impl(
     using community_t = typename device_community_container<class_id>::element_type;
     community_t community = device_community_impl.get_topology(ring_index);
 
-    communication_device_expander<buffer_type, group_id, class_id, native::l0_allreduce_typed_entry>
-        expander;
-    ccl_tuple_for_each_args(communication_device,
-                            expander,
-                            ctx,
-                            community,
-                            this->get_native_context(),
-                            send_entry_buffer,
-                            recv_entry_buffer,
-                            count,
-                            reduction,
-                            stream);
-    //if sched is not ready - send NULL
-    if (expander.schedule) {
-        LOG_DEBUG("Device group finalized");
-    }
-    return std::unique_ptr<ccl::event_impl>(new ccl::gpu_event_impl(std::move(expander.schedule)));
+    return do_collective_op_reductions<buffer_type,
+                                       group_id,
+                                       class_id,
+                                       native::l0_allreduce_typed_entry>(reduction,
+                                                                         communication_device,
+                                                                         ctx,
+                                                                         community,
+                                                                         this->get_native_context(),
+                                                                         send_entry_buffer,
+                                                                         recv_entry_buffer,
+                                                                         count,
+                                                                         reduction,
+                                                                         stream);
 }
 
 template <class buffer_type>

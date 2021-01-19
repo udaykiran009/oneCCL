@@ -1,4 +1,5 @@
 #pragma once
+#include "common/utils/enums.hpp"
 
 #define CCL_COLL_LIST \
     ccl_coll_allgatherv, ccl_coll_allreduce, ccl_coll_alltoall, ccl_coll_alltoallv, \
@@ -123,4 +124,24 @@ inline const char* ccl_coll_type_to_str(ccl_coll_type type) {
         default: return "unknown";
     }
     return "unknown";
+}
+
+enum ccl_coll_reduction {
+    add,
+    mult,
+    min,
+    max,
+    //custom, TODO: make support of custom reduction in *.cl
+
+    last_value
+};
+
+#define REDUCE_TYPES \
+    ccl_coll_reduction::add, ccl_coll_reduction::mult, ccl_coll_reduction::min, \
+        ccl_coll_reduction::max /*, ccl_coll_reduction::custom*/
+
+using ccl_coll_reductions = utils::enum_to_str<static_cast<int>(ccl_coll_reduction::last_value)>;
+inline const std::string reduction_to_str(ccl_coll_reduction reduction_type) {
+    return ccl_coll_reductions({ "add", "mult", "min", "max" })
+        .choose(reduction_type, "INVALID_VALUE");
 }

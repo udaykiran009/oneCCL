@@ -291,8 +291,7 @@ DEFINE_KERNELS_WITH_BF16OP(min)
 DEFINE_KERNELS_WITH_BF16OP(max)
 
 // numa
-// TODO: vecsize
-#define DEFINE_KERNEL_NUMA(Name, T, Op, OpName) \
+#define DEFINE_NUMA_KERNEL(Name, T, VecSize, Op, OpName) \
     __kernel void reduce_execution_numa_##Name##_##OpName( \
         int my_rank, \
         int comm_size, /*1*/ \
@@ -313,21 +312,26 @@ DEFINE_KERNELS_WITH_BF16OP(max)
         return; \
     }
 
-DEFINE_KERNEL_NUMA(int8, char4, __add_char4, add)
-DEFINE_KERNEL_NUMA(uint8, uchar4, __add_uchar4, add)
+#define DEFINE_NUMA_KERNELS_WITH_OP(OpName) \
+    DEFINE_NUMA_KERNEL(int8, char4, 4, __##OpName##_##char4, OpName) \
+    DEFINE_NUMA_KERNEL(uint8, uchar4, 4, __##OpName##_##uchar4, OpName) \
+\
+    DEFINE_NUMA_KERNEL(int16, short4, 4, __##OpName##_##short4, OpName) \
+    DEFINE_NUMA_KERNEL(uint16, ushort4, 4, __##OpName##_##ushort4, OpName) \
+\
+    DEFINE_NUMA_KERNEL(int32, int4, 4, __##OpName##_##int4, OpName) \
+    DEFINE_NUMA_KERNEL(uint32, uint4, 4, __##OpName##_##uint4, OpName) \
+\
+    DEFINE_NUMA_KERNEL(int64, long4, 4, __##OpName##_##long4, OpName) \
+    DEFINE_NUMA_KERNEL(uint64, ulong4, 4, __##OpName##_##ulong4, OpName) \
+\
+    /* TODO: implement support for missing types*/ \
+    DEFINE_NUMA_KERNEL(float16, float16, 1, __##OpName##_##float16, OpName) \
+    DEFINE_NUMA_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName) \
+    DEFINE_NUMA_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName) \
+    DEFINE_NUMA_KERNEL(bfloat16, ushort, 1, __##OpName##_##bfloat16, OpName)
 
-DEFINE_KERNEL_NUMA(int16, short4, __add_short4, add)
-DEFINE_KERNEL_NUMA(uint16, ushort4, __add_ushort4, add)
-
-DEFINE_KERNEL_NUMA(int32, int4, __add_int4, add)
-DEFINE_KERNEL_NUMA(uint32, uint4, __add_uint4, add)
-
-DEFINE_KERNEL_NUMA(int64, long4, __add_long4, add)
-DEFINE_KERNEL_NUMA(uint64, ulong4, __add_ulong4, add)
-
-// TODO: implement support for missing types
-DEFINE_KERNEL_NUMA(float16, float16, __add_float16, add)
-DEFINE_KERNEL_NUMA(float32, float4, __add_float4, add)
-DEFINE_KERNEL_NUMA(float64, double4, __add_double4, add)
-
-DEFINE_KERNEL_NUMA(bfloat16, ushort, __add_ushort, add)
+DEFINE_NUMA_KERNELS_WITH_OP(add)
+DEFINE_NUMA_KERNELS_WITH_OP(mult)
+DEFINE_NUMA_KERNELS_WITH_OP(min)
+DEFINE_NUMA_KERNELS_WITH_OP(max)

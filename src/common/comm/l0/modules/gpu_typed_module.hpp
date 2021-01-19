@@ -1,27 +1,135 @@
 #pragma once
+#include <type_traits>
 #include <memory>
 #include "common/comm/l0/modules/base_entry_module.hpp"
 #include "common/comm/l0/modules/modules_utils.hpp"
+#include "common/comm/l0/communicator/base_communicator.hpp"
 
 namespace native {
 
+// The get_kernel_type is a DEFAULT template class of kernels, which DON'T use reduction.
+template <
+    ccl_coll_type type,
+    template <typename>
+    class kernel_function_impl, // template function with a varidaic template parametr
+    template <typename>
+    class kernel_numa_function_impl, // template function of NUMA with a varidaic template parametr
+    typename = void>
+struct get_kernel_type {
+    // Template for ONE kernel, reduction is add by default
+    template <class native_data_type, ccl_coll_reduction red_type = ccl_coll_reduction::add>
+    using kernel = kernel_function_impl<kernel_params_default<native_data_type>>;
+
+    // Template for SEVERAL kernels for SEVERAL(variadic) data types, which is based on 'using kernel'.
+    // Reduction is add by default
+    template <class... native_data_types>
+    using kernels = std::tuple<kernel<native_data_types>...>;
+
+    // the same approach as above, but for NUMA using
+    template <class native_data_type, ccl_coll_reduction red_type = ccl_coll_reduction::add>
+    using kernel_numa = kernel_numa_function_impl<kernel_params_default<native_data_type>>;
+
+    template <class... native_data_types>
+    using kernels_numa = std::tuple<kernel_numa<native_data_types>...>;
+
+    template <class kernel_params>
+    using get_kernel = kernel<typename kernel_params::native_type>;
+
+    template <class kernel_params>
+    using get_kernel_numa = kernel_numa<typename kernel_params::native_type>;
+};
+
+// The get_kernel_type is a SPECIALIZATION template class of kernels, which USE template reduction type.
+template <
+    ccl_coll_type type,
+    template <typename>
+    class kernel_function_impl, // template function with a varidaic template parametr
+    template <typename>
+    class kernel_numa_function_impl> // template function of NUMA with a varidaic template parametr
+// SPECIALIZATION for allreduce, reduce, reduce_scatter
+struct get_kernel_type<
+    type,
+    kernel_function_impl,
+    kernel_numa_function_impl,
+    typename std::enable_if<type == ccl_coll_allreduce || type == ccl_coll_reduce ||
+                            type == ccl_coll_reduce_scatter>::type> {
+    // Template for ONE kernel, reduction is given by user
+    template <class native_data_type, ccl_coll_reduction red_type>
+    using kernel = kernel_function_impl<kernel_params_traits<native_data_type, red_type>>;
+
+    // Variadic template kernel is consists of ONE(template) data type and SEVERAL(variadic) reductions, which is based on 'using kernel'.
+    // Reductions are given by user. The template is instantiated into tuple ONLY for reductions.
+    template <class native_data_type, ccl_coll_reduction... reductions>
+    using kernel_impl = std::tuple<kernel<native_data_type, reductions>...>;
+
+    // Variadic template for SEVERAL kernels for SEVERAL(variadic) data types and ONE reduction.
+    // std::tuple_cat makes a concatenation of all(reductions, data types) tuples in one.
+    // This reception provided us the ONE tuple of all combinations of data types, reductions:
+    // Exmaple(1): std::tuple T1('allreduce_execution_int8_add','allreduce_execution_int8_max' ..//and so on);
+    // if we don't apply this reception, example(2):
+    // std::tuple T1('allreduce_execution_int8_add','allreduce_execution_int16_add' ..//and so on);
+    // std::tuple T2('allreduce_execution_int8_max','allreduce_execution_int16_max' ..//and so on);
+    // We don't want to iterate over two tuples, having one external and inner for_each().
+    // Applying example (1), it is enough to have one for_each, iterating over one universal tuple.
+    template <class... native_data_types>
+    using kernels =
+        decltype(std::tuple_cat(std::declval<kernel_impl<native_data_types, REDUCE_TYPES>&&>()...));
+
+    template <class native_data_type, ccl_coll_reduction red_type>
+    using kernel_numa = kernel_numa_function_impl<kernel_params_traits<native_data_type, red_type>>;
+
+    template <class native_data_type, ccl_coll_reduction... reductions>
+    using kernel_numa_impl = std::tuple<kernel_numa<native_data_type, reductions>...>;
+
+    template <class... native_data_types>
+    using kernels_numa = decltype(
+        std::tuple_cat(std::declval<kernel_numa_impl<native_data_types, REDUCE_TYPES>&&>()...));
+
+    template <class kernel_params>
+    using get_kernel = kernel<typename kernel_params::native_type, kernel_params::red_type>;
+
+    template <class kernel_params>
+    using get_kernel_numa =
+        kernel_numa<typename kernel_params::native_type, kernel_params::red_type>;
+};
+
+// default or specialization get_kernel_type is applied to real_gpu_typed_module, ipc_gpu_typed_module, virtual_gpu_typed_module.
 template <ccl_coll_type type,
           template <typename>
           class kernel_function_impl,
           template <typename>
           class kernel_numa_function_impl>
 struct real_gpu_typed_module : private gpu_module_base {
-    template <class native_data_type>
-    using kernel = kernel_function_impl<native_data_type>;
+    // Here applying get_kernel_type, where chosing between default or specialization get_kernel_type is based on 'type'
+    template <class native_data_type, ccl_coll_reduction red_type = ccl_coll_reduction::add>
+    using kernel = typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+        template kernel<native_data_type, red_type>;
 
     template <class... native_data_types>
-    using kernels = std::tuple<kernel<native_data_types>...>;
+    using kernels =
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template kernels<native_data_types...>;
 
-    template <class native_data_type>
-    using kernel_numa = kernel_numa_function_impl<native_data_type>;
+    // the same as above
+    template <class native_data_type, ccl_coll_reduction reductions = ccl_coll_reduction::add>
+    using kernel_numa =
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template kernel_numa<native_data_type, reductions>;
 
     template <class... native_data_types>
-    using kernels_numa = std::tuple<kernel_numa<native_data_types>...>;
+    using kernels_numa =
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template kernels_numa<native_data_types...>;
+
+    template <class kernel_params>
+    using get_kernel =
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template get_kernel<kernel_params>;
+
+    template <class kernel_params>
+    using get_kernel_numa =
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template get_kernel_numa<kernel_params>;
 
     using handle = gpu_module_base::handle;
 
@@ -49,27 +157,27 @@ struct real_gpu_typed_module : private gpu_module_base {
         return module;
     }
 
-    template <class native_data_type>
-    kernel<native_data_type>& get_main_function() {
-        return const_cast<kernel<native_data_type>&>(
-            static_cast<const real_gpu_typed_module*>(this)->get_main_function<native_data_type>());
+    template <class kernel_params>
+    get_kernel<kernel_params>& get_main_function() {
+        return const_cast<get_kernel<kernel_params>&>(
+            static_cast<const real_gpu_typed_module*>(this)->get_main_function<kernel_params>());
     }
 
-    template <class native_data_type>
-    const kernel<native_data_type>& get_main_function() const {
-        return ccl_tuple_get<kernel<native_data_type>>(kernel_main_functions);
+    template <class kernel_params>
+    const get_kernel<kernel_params>& get_main_function() const {
+        return ccl_tuple_get<get_kernel<kernel_params>>(kernel_main_functions);
     }
 
-    template <class native_data_type>
-    kernel_numa<native_data_type>& get_numa_main_function() {
-        return const_cast<kernel_numa<native_data_type>&>(
+    template <class kernel_params>
+    get_kernel_numa<kernel_params>& get_numa_main_function() {
+        return const_cast<get_kernel_numa<kernel_params>&>(
             static_cast<const real_gpu_typed_module*>(this)
-                ->get_numa_main_function<native_data_type>());
+                ->get_numa_main_function<kernel_params>());
     }
 
-    template <class native_data_type>
-    const kernel_numa<native_data_type>& get_numa_main_function() const {
-        return ccl_tuple_get<kernel_numa<native_data_type>>(kernel_numa_functions);
+    template <class kernel_params>
+    const get_kernel_numa<kernel_params>& get_numa_main_function() const {
+        return ccl_tuple_get<get_kernel_numa<kernel_params>>(kernel_numa_functions);
     }
 
     ~real_gpu_typed_module() {
@@ -84,23 +192,41 @@ protected:
     kernels_numa<SUPPORTED_KERNEL_NATIVE_DATA_TYPES> kernel_numa_functions;
 };
 
+//2) virtual ipc_gpu_typed_module
 template <ccl_coll_type type,
           template <typename>
           class kernel_function_impl,
           template <typename>
           class kernel_numa_function_impl>
 struct ipc_gpu_typed_module : private gpu_module_base {
-    template <class native_data_type>
-    using kernel = kernel_function_impl<native_data_type>;
+    template <class native_data_type, ccl_coll_reduction red_type = ccl_coll_reduction::add>
+    using kernel = typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+        template kernel<native_data_type, red_type>;
 
     template <class... native_data_types>
-    using kernels = std::tuple<kernel<native_data_types>...>;
+    using kernels =
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template kernels<native_data_types...>;
 
-    template <class native_data_type>
-    using kernel_numa = kernel_numa_function_impl<native_data_type>;
+    template <class native_data_type, ccl_coll_reduction reductions = ccl_coll_reduction::add>
+    using kernel_numa =
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template kernel_numa<native_data_type, reductions>;
 
     template <class... native_data_types>
-    using kernels_numa = std::tuple<kernel_numa<native_data_types>...>;
+    using kernels_numa =
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template kernels_numa<native_data_types...>;
+
+    template <class kernel_params>
+    using get_kernel =
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template get_kernel<kernel_params>;
+
+    template <class kernel_params>
+    using get_kernel_numa =
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template get_kernel_numa<kernel_params>;
 
     using handle = gpu_module_base::handle;
 
@@ -114,16 +240,17 @@ struct ipc_gpu_typed_module : private gpu_module_base {
         LOG_DEBUG("No need to import functions");
     }
 
-    template <class native_data_type>
-    kernel<native_data_type>& get_main_function() {
-        return const_cast<kernel<native_data_type>&>(
-            static_cast<const ipc_gpu_typed_module*>(this)->get_main_function<native_data_type>());
+    template <class kernel_params>
+    get_kernel<kernel_params>& get_main_function() {
+        return const_cast<get_kernel<kernel_params>&>(
+            static_cast<const ipc_gpu_typed_module*>(this)->get_main_function<kernel_params>());
     }
 
-    template <class native_data_type>
-    const kernel<native_data_type>& get_main_function() const {
-        return ccl_tuple_get<kernel<native_data_type>>(kernel_main_functions);
+    template <class kernel_params>
+    const get_kernel<kernel_params>& get_main_function() const {
+        return ccl_tuple_get<get_kernel<kernel_params>>(kernel_main_functions);
     }
+
     ~ipc_gpu_typed_module() = default;
 
 protected:
@@ -137,23 +264,38 @@ template <ccl_coll_type type,
           template <typename>
           class kernel_numa_function_impl>
 struct virtual_gpu_typed_module : private gpu_module_base {
+    // TODO: use real_referenced_module to reduce given params
     using real_referenced_module =
         real_gpu_typed_module<type, kernel_function_impl, kernel_numa_function_impl>;
 
-    template <class native_data_type>
-    using kernel =
-        typename real_referenced_module::template kernel<native_data_type>; //The same as real
+    template <class native_data_type, ccl_coll_reduction red_type = ccl_coll_reduction::add>
+    using kernel = typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+        template kernel<native_data_type, red_type>;
 
     template <class... native_data_types>
-    using kernels = std::tuple<kernel<native_data_types>...>;
+    using kernels =
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template kernels<native_data_types...>;
 
-    template <class native_data_type>
+    template <class native_data_type, ccl_coll_reduction reductions = ccl_coll_reduction::add>
     using kernel_numa =
-        typename real_referenced_module::template kernel_numa<native_data_type>; //The same as real
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template kernel_numa<native_data_type, reductions>;
 
     template <class... native_data_types>
-    using kernels_numa = std::tuple<kernel_numa<native_data_types>...>;
+    using kernels_numa =
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template kernels_numa<native_data_types...>;
 
+    template <class kernel_params>
+    using get_kernel =
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template get_kernel<kernel_params>;
+
+    template <class kernel_params>
+    using get_kernel_numa =
+        typename get_kernel_type<type, kernel_function_impl, kernel_numa_function_impl>::
+            template get_kernel_numa<kernel_params>;
     using handle = typename real_referenced_module::handle;
 
     virtual_gpu_typed_module(std::shared_ptr<real_referenced_module> real_module)
@@ -174,28 +316,27 @@ struct virtual_gpu_typed_module : private gpu_module_base {
         LOG_DEBUG("Linked functions count: ", functions.size());
     }
 
-    template <class native_data_type>
-    kernel<native_data_type>& get_main_function() {
-        return const_cast<kernel<native_data_type>&>(
+    template <class kernel_params>
+    get_kernel<kernel_params>& get_main_function() {
+        return const_cast<get_kernel<kernel_params>&>(
+            static_cast<const virtual_gpu_typed_module*>(this)->get_main_function<kernel_params>());
+    }
+
+    template <class kernel_params>
+    const get_kernel<kernel_params>& get_main_function() const {
+        return ccl_tuple_get<get_kernel<kernel_params>>(kernel_main_functions);
+    }
+
+    template <class kernel_params>
+    get_kernel_numa<kernel_params>& get_numa_main_function() {
+        return const_cast<get_kernel_numa<kernel_params>&>(
             static_cast<const virtual_gpu_typed_module*>(this)
-                ->get_main_function<native_data_type>());
+                ->get_numa_main_function<kernel_params>());
     }
 
-    template <class native_data_type>
-    const kernel<native_data_type>& get_main_function() const {
-        return ccl_tuple_get<kernel<native_data_type>>(kernel_main_functions);
-    }
-
-    template <class native_data_type>
-    kernel_numa<native_data_type>& get_numa_main_function() {
-        return const_cast<kernel_numa<native_data_type>&>(
-            static_cast<const virtual_gpu_typed_module*>(this)
-                ->get_numa_main_function<native_data_type>());
-    }
-
-    template <class native_data_type>
-    const kernel_numa<native_data_type>& get_numa_main_function() const {
-        return ccl_tuple_get<kernel_numa<native_data_type>>(kernel_numa_functions);
+    template <class kernel_params>
+    const get_kernel_numa<kernel_params>& get_numa_main_function() const {
+        return ccl_tuple_get<get_kernel_numa<kernel_params>>(kernel_numa_functions);
     }
 
     std::shared_ptr<real_referenced_module> real_module_ref;
@@ -235,8 +376,8 @@ protected:
 \
         module_type<coll_type, topology, mode>(handle module_handle) : base(module_handle) {} \
     }
-/*
 
+/*
 #define DEFINE_SPECIFIC_GPU_MODULE_CLASS(module_type, base_module_type, export_function, export_numa_function)     \
 template<ccl_coll_type type, ccl::group_split_type topology>                                   \
 using module_type = base_module_type<type, topology, export_function, export_numa_function>;

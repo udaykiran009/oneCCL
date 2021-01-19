@@ -90,25 +90,19 @@ ccl::event thread_device_group_ring_communicator::allgatherv_impl(
     using community_t = typename device_community_container<class_id>::element_type;
     community_t community = device_community_impl.get_topology(ring_index);
 
-    communication_thread_device_expander<buffer_type, group_id, class_id, l0_allgatherv_typed_entry>
-        expander;
-    ccl_tuple_for_each_args(communication_device,
-                            expander,
-                            ctx,
-                            community,
-                            thread_id,
-                            this->get_native_context(),
-                            send_entry_buffer,
-                            send_count,
-                            recv_entry_buffer,
-                            recv_counts.data(),
-                            stream);
-    //if sched is not ready - send NULL
-    if (expander.schedule) {
-        LOG_DEBUG("Device group finalized");
-    }
-    return std::unique_ptr<ccl::event_impl>(
-        new ccl::gpu_shared_event_impl(std::move(expander.schedule)));
+    return do_collective_op<kernel_params_default<buffer_type>,
+                            group_id,
+                            class_id,
+                            l0_allgatherv_typed_entry>(communication_device,
+                                                       ctx,
+                                                       community,
+                                                       thread_id,
+                                                       this->get_native_context(),
+                                                       send_entry_buffer,
+                                                       send_count,
+                                                       recv_entry_buffer,
+                                                       recv_counts.data(),
+                                                       stream);
 }
 
 /* allreduce */
@@ -152,25 +146,18 @@ ccl::event thread_device_group_ring_communicator::allreduce_impl(
     using community_t = typename device_community_container<class_id>::element_type;
     community_t community = device_community_impl.get_topology(ring_index);
 
-    communication_thread_device_expander<buffer_type, group_id, class_id, l0_allreduce_typed_entry>
-        expander;
-    ccl_tuple_for_each_args(communication_device,
-                            expander,
-                            ctx,
-                            community,
-                            thread_id,
-                            this->get_native_context(),
-                            send_entry_buffer,
-                            recv_entry_buffer,
-                            count,
-                            reduction,
-                            stream);
-    //if sched is not ready - send NULL
-    if (expander.schedule) {
-        LOG_DEBUG("Device group finalized");
-    }
-    return std::unique_ptr<ccl::event_impl>(
-        new ccl::gpu_shared_event_impl(std::move(expander.schedule)));
+    return do_collective_op_reductions<buffer_type, group_id, class_id, l0_allreduce_typed_entry>(
+        reduction,
+        communication_device,
+        ctx,
+        community,
+        thread_id,
+        this->get_native_context(),
+        send_entry_buffer,
+        recv_entry_buffer,
+        count,
+        reduction,
+        stream);
 }
 
 template <class buffer_type>
@@ -312,25 +299,19 @@ ccl::event thread_device_group_ring_communicator::alltoallv_impl(
     using community_t = typename device_community_container<class_id>::element_type;
     community_t community = device_community_impl.get_topology(ring_index);
 
-    communication_thread_device_expander<buffer_type, group_id, class_id, l0_alltoallv_typed_entry>
-        expander;
-    ccl_tuple_for_each_args(communication_device,
-                            expander,
-                            ctx,
-                            community,
-                            thread_id,
-                            this->get_native_context(),
-                            send_entry_buffer,
-                            send_counts.data(),
-                            recv_entry_buffer,
-                            recv_counts.data(),
-                            stream);
-    //if sched is not ready - send NULL
-    if (expander.schedule) {
-        LOG_DEBUG("Device group finalized");
-    }
-    return std::unique_ptr<ccl::event_impl>(
-        new ccl::gpu_shared_event_impl(std::move(expander.schedule)));
+    return do_collective_op<kernel_params_default<buffer_type>,
+                            group_id,
+                            class_id,
+                            l0_alltoallv_typed_entry>(communication_device,
+                                                      ctx,
+                                                      community,
+                                                      thread_id,
+                                                      this->get_native_context(),
+                                                      send_entry_buffer,
+                                                      send_counts.data(),
+                                                      recv_entry_buffer,
+                                                      recv_counts.data(),
+                                                      stream);
 }
 
 /* bcast */
@@ -368,25 +349,18 @@ ccl::event thread_device_group_ring_communicator::broadcast_impl(
     using community_t = typename device_community_container<class_id>::element_type;
     community_t community = device_community_impl.get_topology(ring_index);
 
-    communication_thread_device_expander<buffer_type, group_id, class_id, l0_bcast_typed_entry>
-        expander;
-    ccl_tuple_for_each_args(communication_device,
-                            expander,
-                            ctx,
-                            community,
-                            thread_id,
-                            this->get_native_context(),
-                            entry_buffer,
-                            count,
-                            root,
-                            stream);
-    //if sched is not ready - send NULL
-    if (expander.schedule) {
-        LOG_DEBUG("Device group finalized");
-    }
-
-    return std::unique_ptr<ccl::event_impl>(
-        new ccl::gpu_shared_event_impl(std::move(expander.schedule)));
+    return do_collective_op<kernel_params_default<buffer_type>,
+                            group_id,
+                            class_id,
+                            l0_bcast_typed_entry>(communication_device,
+                                                  ctx,
+                                                  community,
+                                                  thread_id,
+                                                  this->get_native_context(),
+                                                  entry_buffer,
+                                                  count,
+                                                  root,
+                                                  stream);
 }
 
 template <class buffer_type>
@@ -443,27 +417,19 @@ ccl::event thread_device_group_ring_communicator::reduce_impl(
     using community_t = typename device_community_container<class_id>::element_type;
     community_t community = device_community_impl.get_topology(ring_index);
 
-    communication_thread_device_expander<buffer_type, group_id, class_id, l0_reduce_typed_entry>
-        expander;
-    ccl_tuple_for_each_args(communication_device,
-                            expander,
-                            ctx,
-                            community,
-                            thread_id,
-                            this->get_native_context(),
-                            send_entry_buffer,
-                            recv_entry_buffer,
-                            count,
-                            reduction,
-                            root,
-                            stream);
-    //if sched is not ready - send NULL
-    if (expander.schedule) {
-        LOG_DEBUG("Device group finalized");
-    }
-
-    return std::unique_ptr<ccl::event_impl>(
-        new ccl::gpu_shared_event_impl(std::move(expander.schedule)));
+    return do_collective_op_reductions<buffer_type, group_id, class_id, l0_reduce_typed_entry>(
+        reduction,
+        communication_device,
+        ctx,
+        community,
+        thread_id,
+        this->get_native_context(),
+        send_entry_buffer,
+        recv_entry_buffer,
+        count,
+        reduction,
+        root,
+        stream);
 }
 
 template <class buffer_type>
@@ -521,29 +487,20 @@ ccl::event thread_device_group_ring_communicator::reduce_scatter_impl(
     using community_t = typename device_community_container<class_id>::element_type;
     community_t community = device_community_impl.get_topology(ring_index);
 
-    communication_thread_device_expander<buffer_type,
-                                         group_id,
-                                         class_id,
-                                         l0_reduce_scatter_typed_entry>
-        expander;
-    ccl_tuple_for_each_args(communication_device,
-                            expander,
-                            ctx,
-                            community,
-                            thread_id,
-                            this->get_native_context(),
-                            send_entry_buffer,
-                            recv_entry_buffer,
-                            recv_count,
-                            reduction,
-                            stream);
-    //if sched is not ready - send NULL
-    if (expander.schedule) {
-        LOG_DEBUG("Device group finalized");
-    }
-
-    return std::unique_ptr<ccl::event_impl>(
-        new ccl::gpu_shared_event_impl(std::move(expander.schedule)));
+    return do_collective_op_reductions<buffer_type,
+                                       group_id,
+                                       class_id,
+                                       l0_reduce_scatter_typed_entry>(reduction,
+                                                                      communication_device,
+                                                                      ctx,
+                                                                      community,
+                                                                      thread_id,
+                                                                      this->get_native_context(),
+                                                                      send_entry_buffer,
+                                                                      recv_entry_buffer,
+                                                                      recv_count,
+                                                                      reduction,
+                                                                      stream);
 }
 
 template <class buffer_type>

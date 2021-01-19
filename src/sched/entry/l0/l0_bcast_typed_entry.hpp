@@ -6,8 +6,8 @@
 //TODO L0 Workaround
 
 namespace native {
-template <class native_type, class gpu_comm_impl, ccl::group_split_type topology>
-class l0_bcast_typed_entry : public base_gpu_entry<native_type,
+template <class kernel_params, class gpu_comm_impl, ccl::group_split_type topology>
+class l0_bcast_typed_entry : public base_gpu_entry<kernel_params,
                                                    gpu_comm_impl,
                                                    topology,
                                                    ccl::device_topology_type::ring,
@@ -16,7 +16,7 @@ public:
     friend class ccl_gpu_comm;
     friend class ccl_virtual_gpu_comm;
 
-    using base = base_gpu_entry<native_type,
+    using base = base_gpu_entry<kernel_params,
                                 gpu_comm_impl,
                                 topology,
                                 ccl::device_topology_type::ring,
@@ -29,8 +29,8 @@ public:
     using base::kernel_router;
     using base::get_ctx;
     using base::get_local_kernel;
-    using kernel_main_typed = ring_bcast_kernel<native_type>;
-    using kernel_ipc_typed = ring_bcast_ipc<native_type>;
+    using kernel_main_typed = ring_bcast_kernel<kernel_params>;
+    using kernel_ipc_typed = ring_bcast_ipc<kernel_params>;
 
     using income_data_flag_gpu_type =
         typename std::remove_pointer<typename kernel_main_typed::income_data_flag_arg_type>::type;
@@ -60,7 +60,7 @@ public:
                    comm,
                    in_ctx,
                    buf,
-                   ccl::native_type_info<native_type>::dtype,
+                   ccl::native_type_info<typename kernel_params::native_type>::dtype,
                    device_stream),
 
               income_data_flag(this->template alloc_memory_wrap(
@@ -83,7 +83,7 @@ public:
 
         int next_rank = (comm_addr.rank + 1) % comm_addr.size;
         kernel_router = base::template create_kernel_router_for_rank<
-            l0_bcast_typed_entry<native_type, gpu_comm_impl, topology>>(
+            l0_bcast_typed_entry<kernel_params, gpu_comm_impl, topology>>(
             *this, next_rank, available_devices);
 
         ENTRY_LOG_DEBUG("Init phase of current entry for ext_rank:", next_rank);

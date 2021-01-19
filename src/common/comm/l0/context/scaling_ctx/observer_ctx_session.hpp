@@ -55,7 +55,7 @@ using shared_session_ptr = std::shared_ptr<session>;
 /* High level session
  * Contains collective communication data
  */
-template <ccl_coll_type coll_type, class native_data_type, ccl::device_topology_type class_id>
+template <ccl_coll_type coll_type, class kernel_params, ccl::device_topology_type class_id>
 struct typed_session : public session {
     typed_session(producer_description& in_param,
                   size_t observer_domain_index,
@@ -67,22 +67,22 @@ struct typed_session : public session {
                     in_param.device);
     }
 
-    const context_description<coll_type, native_data_type>& get_context_description() const {
+    const context_description<coll_type, typename kernel_params::native_type>&
+    get_context_description() const {
         return params;
     }
 
     void prepare(size_t observer_domain_index,
                  size_t observer_domain_count,
                  void* type_erased_param) override {
-        auto* out_param =
-            static_cast<invoke_params<coll_type, native_data_type>*>(type_erased_param);
+        auto* out_param = static_cast<invoke_params<coll_type, kernel_params>*>(type_erased_param);
         params.reset_staged_counters(observer_domain_index, observer_domain_count);
 
         out_param->set_out_params(params);
     }
 
 private:
-    context_description<coll_type, native_data_type> params;
+    context_description<coll_type, typename kernel_params::native_type> params;
 };
 
 // session owner
@@ -96,7 +96,7 @@ struct session_table {
                                             size_t observer_domain_index,
                                             size_t observer_domain_count) {
         using specific_session = typed_session<invoke_params_type::get_coll_type(),
-                                               typename invoke_params_type::native_t,
+                                               typename invoke_params_type::kernel_params_t,
                                                class_id>;
         auto sess = std::make_shared<specific_session>(
             params.get_producer_params(), observer_domain_index, observer_domain_count);

@@ -8,9 +8,9 @@
 
 namespace native {
 
-template <ccl_coll_type type, class native_data_type>
+template <ccl_coll_type type, class kernel_params>
 struct ipc_invoke_params {
-    using native_t = native_data_type;
+    using kernel_params_t = kernel_params;
 
     ipc_invoke_params(std::vector<ccl_device::device_ipc_memory_handle>&& h)
             : handles(std::move(h)) {}

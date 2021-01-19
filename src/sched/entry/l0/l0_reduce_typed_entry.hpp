@@ -7,8 +7,8 @@
 //TODO L0 Workaround
 
 namespace native {
-template <class native_type, class gpu_comm_impl, ccl::group_split_type topology>
-class l0_reduce_typed_entry : public base_gpu_entry<native_type,
+template <class kernel_params, class gpu_comm_impl, ccl::group_split_type topology>
+class l0_reduce_typed_entry : public base_gpu_entry<kernel_params,
                                                     gpu_comm_impl,
                                                     topology,
                                                     ccl::device_topology_type::ring,
@@ -17,7 +17,7 @@ public:
     friend class ccl_gpu_comm;
     friend class ccl_virtual_gpu_comm;
 
-    using base = base_gpu_entry<native_type,
+    using base = base_gpu_entry<kernel_params,
                                 gpu_comm_impl,
                                 topology,
                                 ccl::device_topology_type::ring,
@@ -30,8 +30,8 @@ public:
     using base::kernel_router;
     using base::get_ctx;
     using base::get_local_kernel;
-    using kernel_main_typed = ring_reduce_kernel<native_type>;
-    using kernel_ipc_typed = ring_reduce_ipc<native_type>;
+    using kernel_main_typed = ring_reduce_kernel<kernel_params>;
+    using kernel_ipc_typed = ring_reduce_ipc<kernel_params>;
 
     using income_data_flag_gpu_type =
         typename std::remove_pointer<typename kernel_main_typed::income_data_flag_arg_type>::type;
@@ -63,7 +63,7 @@ public:
                    comm,
                    in_ctx,
                    send_buf,
-                   ccl::native_type_info<native_type>::dtype,
+                   ccl::native_type_info<typename kernel_params::native_type>::dtype,
                    device_stream),
 
               temp_buffer(
@@ -93,7 +93,7 @@ public:
 
         int next_rank = (comm_addr.rank + 1) % comm_addr.size;
         kernel_router = base::template create_kernel_router_for_rank<
-            l0_reduce_typed_entry<native_type, gpu_comm_impl, topology>>(
+            l0_reduce_typed_entry<kernel_params, gpu_comm_impl, topology>>(
             *this, next_rank, available_devices);
 
         ENTRY_LOG_DEBUG("Init phase of current entry for ext_rank:", next_rank);
@@ -116,7 +116,8 @@ public:
 
         auto& main_entry_function = get_local_kernel();
 
-        auto recv_buf_ptr = reinterpret_cast<native_type*>(recv_buf_typed_entry.get_ptr());
+        auto recv_buf_ptr =
+            reinterpret_cast<typename kernel_params::native_type*>(recv_buf_typed_entry.get_ptr());
         //create implementation specified primitives
         main_entry_function
             .template set_args<typename kernel_main_typed::tmp_recv_buf_arg,
@@ -165,7 +166,7 @@ protected:
     }
 
 private:
-    ccl_device::device_memory<native_type> temp_buffer;
+    ccl_device::device_memory<typename kernel_params::native_type> temp_buffer;
     ccl_device::device_memory<income_data_flag_gpu_type> income_data_flag;
     ccl_device::device_memory<ready_to_recv_flag_gpu_type> ready_to_recv_flag;
     ccl_device::device_memory<local_barrier_flag_gpu_type> local_barrier_flag;

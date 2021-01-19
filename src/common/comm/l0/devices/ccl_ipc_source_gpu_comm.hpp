@@ -38,9 +38,9 @@ public:
     template <ccl_coll_type algo_type,
               ccl::group_split_type group,
               ccl::device_topology_type mode,
-              class native_data_type>
+              class kernel_params>
     using gpu_kernel_t =
-        typename gpu_module_t<algo_type, group, mode>::template kernel<native_data_type>;
+        typename gpu_module_t<algo_type, group, mode>::template get_kernel<kernel_params>;
 
     static constexpr const char* name_impl() {
         return "SOURCE_IPC_GPU";
@@ -118,18 +118,17 @@ public:
     template <ccl_coll_type module_type,
               ccl::group_split_type group_id,
               ccl::device_topology_type class_id,
-              class native_data_type>
-    gpu_kernel_t<module_type, group_id, class_id, native_data_type>& get_gpu_kernel() {
+              class kernel_params>
+    gpu_kernel_t<module_type, group_id, class_id, kernel_params>& get_gpu_kernel() {
         return inprocess_gpu_comm
-            .template get_gpu_kernel<module_type, group_id, class_id, native_data_type>();
+            .template get_gpu_kernel<module_type, group_id, class_id, kernel_params>();
     }
 
-    template <class native_data_type,
+    template <class kernel_params,
               ccl::group_split_type group_id,
               ccl::device_topology_type class_id,
               class gpu_entry>
-
-    gpu_kernel_t<gpu_entry::type(), group_id, class_id, native_data_type>& register_entry(
+    gpu_kernel_t<gpu_entry::type(), group_id, class_id, kernel_params>& register_entry(
         gpu_entry& entry) {
         static_assert(group_id == ccl::group_split_type::cluster,
                       "ccl_ipc_source_gpu_comm available for ccl::group_split_type::cluster only");
@@ -137,11 +136,11 @@ public:
             base::template get_comm_data<group_id, class_id>();
         LOG_DEBUG("entry: ", gpu_entry::class_name(), " registered on: ", comm_addr.to_string());
 
-        auto& main_func = get_gpu_kernel<gpu_entry::type(), group_id, class_id, native_data_type>();
+        auto& main_func = get_gpu_kernel<gpu_entry::type(), group_id, class_id, kernel_params>();
         main_func.set_rank(comm_addr.rank);
         main_func.set_size(comm_addr.size);
 
-        ipc_invoke_params<gpu_entry::type(), native_data_type> params(entry.get_ipc_data());
+        ipc_invoke_params<gpu_entry::type(), kernel_params> params(entry.get_ipc_data());
         this->template invoke<group_id, class_id>(entry.get_ipc_session_key(), std::move(params));
 
         return main_func;

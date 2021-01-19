@@ -2,20 +2,22 @@
 #include "common/comm/l0/modules/kernel_functions.hpp"
 
 namespace native {
-template <class native_type>
+template <class kernel_params>
 struct ring_alltoallv_kernel
         : public execution_kernel<
-              ring_alltoallv_kernel<native_type>,
+              ring_alltoallv_kernel<kernel_params>,
               arg<main_kernel_args::args_start_index, size_t*>, // send_elem_counts
               arg<main_kernel_args::args_start_index + 1, size_t*>, // send_elem_offsets
               arg<main_kernel_args::args_start_index + 2, size_t*>, // recv_elem_counts_buf
               arg<main_kernel_args::args_start_index + 3, size_t*>, // recv_elem_offsets_buf
-              arg<main_kernel_args::args_start_index + 4, native_type*>, // send_buf
-              arg<main_kernel_args::args_start_index + 5, native_type*>, // recv_buf
+              arg<main_kernel_args::args_start_index + 4,
+                  typename kernel_params::native_type*>, // send_buf
+              arg<main_kernel_args::args_start_index + 5,
+                  typename kernel_params::native_type*>, // recv_buf
               external_arg<main_kernel_args::args_start_index + 6,
-                           native_type*>, // tmp_buffer
+                           typename kernel_params::native_type*>, // tmp_buffer
               thread_exchangable_arg<main_kernel_args::args_start_index + 7,
-                                     native_type*>, // right_temp_buffer
+                                     typename kernel_params::native_type*>, // right_temp_buffer
               external_arg<main_kernel_args::args_start_index + 8,
                            int*>, // left_wrote_to_me_flag
               external_arg<main_kernel_args::args_start_index + 9,
@@ -29,7 +31,7 @@ struct ring_alltoallv_kernel
               thread_exchangable_arg<main_kernel_args::args_start_index + 13,
                                      int*>> // right_proxy_size_flag
 {
-    using processing_type = native_type;
+    using processing_type = typename kernel_params::native_type;
 
     static constexpr const char* specific_name() {
         return "alltoallv_execution";
@@ -97,7 +99,7 @@ struct ring_alltoallv_kernel
         thread_exchangable_arg<main_kernel_args::args_start_index + 13, int*>;
     using right_proxy_size_flag_type = typename right_proxy_size_flag_arg::arg_type;
 
-    using base = execution_kernel<ring_alltoallv_kernel<native_type>,
+    using base = execution_kernel<ring_alltoallv_kernel<kernel_params>,
                                   send_buf_size_arg, // 0 send_elem_counts
                                   send_elem_offsets_buf_arg, // 1 send_elem_offsets
                                   recv_elem_counts_buf_arg, // 2 recv_elem_counts
@@ -115,19 +117,22 @@ struct ring_alltoallv_kernel
 };
 
 // IMPORTANT: the params order is default, see *altoallv*.cl for that
-template <class native_type>
+template <class kernel_params>
 struct ring_alltoallv_numa_kernel
         : public execution_kernel<
-              ring_alltoallv_numa_kernel<native_type>,
+              ring_alltoallv_numa_kernel<kernel_params>,
               arg<main_kernel_args::args_start_index, size_t*>, // send_elem_counts
               arg<main_kernel_args::args_start_index + 1, size_t*>, // send_elem_offsets
               arg<main_kernel_args::args_start_index + 2, size_t*>, // recv_elem_counts_buf
               arg<main_kernel_args::args_start_index + 3, size_t*>, // recv_elem_offsets_buf
-              arg<main_kernel_args::args_start_index + 4, native_type*>, // send_buf
-              arg<main_kernel_args::args_start_index + 5, native_type*>, // recv_buf
-              thread_safe_arg<main_kernel_args::args_start_index + 6, native_type*>, // tmp_buffer
+              arg<main_kernel_args::args_start_index + 4,
+                  typename kernel_params::native_type*>, // send_buf
+              arg<main_kernel_args::args_start_index + 5,
+                  typename kernel_params::native_type*>, // recv_buf
+              thread_safe_arg<main_kernel_args::args_start_index + 6,
+                              typename kernel_params::native_type*>, // tmp_buffer
               thread_safe_arg<main_kernel_args::args_start_index + 7,
-                              native_type*>, // right_temp_buffer
+                              typename kernel_params::native_type*>, // right_temp_buffer
               thread_safe_arg<main_kernel_args::args_start_index + 8,
                               int*>, // left_wrote_to_me_flag
               thread_safe_arg<main_kernel_args::args_start_index + 9,
@@ -140,7 +145,7 @@ struct ring_alltoallv_numa_kernel
               thread_safe_arg<main_kernel_args::args_start_index + 13,
                               int*>> // right_proxy_size_flag
 {
-    using processing_type = native_type;
+    using processing_type = typename kernel_params::native_type;
 
     static constexpr const char* specific_name() {
         return "alltoallv_execution_numa";
@@ -209,7 +214,7 @@ struct ring_alltoallv_numa_kernel
         thread_safe_arg<main_kernel_args::args_start_index + 13, int*>;
     using right_proxy_size_flag_type = typename right_proxy_size_flag_arg::arg_type;
 
-    using base = execution_kernel<ring_alltoallv_numa_kernel<native_type>,
+    using base = execution_kernel<ring_alltoallv_numa_kernel<kernel_params>,
                                   send_buf_size_arg, // 0 send_elem_counts
                                   send_elem_offsets_buf_arg, // 1 send_elem_offsets
                                   recv_elem_counts_buf_arg, // 2 recv_elem_counts
@@ -226,19 +231,22 @@ struct ring_alltoallv_numa_kernel
                                   right_proxy_size_flag_arg>; // 13 right_proxy_size_flag
 };
 
-template <class native_type>
+template <class kernel_params>
 struct ring_alltoallv_ipc
         : public ipc_kernel<
-              ring_alltoallv_ipc<native_type>,
+              ring_alltoallv_ipc<kernel_params>,
               arg<main_kernel_args::args_start_index, size_t*>, // send_elem_counts
               arg<main_kernel_args::args_start_index + 1, size_t*>, // send_elem_offsets
               arg<main_kernel_args::args_start_index + 2, size_t*>, // recv_elem_counts_buf
               arg<main_kernel_args::args_start_index + 3, size_t*>, // recv_elem_offsets_buf
-              arg<main_kernel_args::args_start_index + 4, native_type*>, // send_buf
-              arg<main_kernel_args::args_start_index + 5, native_type*>, // recv_buf
-              thread_safe_arg<main_kernel_args::args_start_index + 6, native_type*>, // tmp_buffer
+              arg<main_kernel_args::args_start_index + 4,
+                  typename kernel_params::native_type*>, // send_buf
+              arg<main_kernel_args::args_start_index + 5,
+                  typename kernel_params::native_type*>, // recv_buf
+              thread_safe_arg<main_kernel_args::args_start_index + 6,
+                              typename kernel_params::native_type*>, // tmp_buffer
               thread_safe_arg<main_kernel_args::args_start_index + 7,
-                              native_type*>, // right_temp_buffer
+                              typename kernel_params::native_type*>, // right_temp_buffer
               thread_safe_arg<main_kernel_args::args_start_index + 8,
                               int*>, // left_wrote_to_me_flag
               thread_safe_arg<main_kernel_args::args_start_index + 9,
@@ -251,7 +259,7 @@ struct ring_alltoallv_ipc
               thread_safe_arg<main_kernel_args::args_start_index + 13,
                               int*>> // right_proxy_size_flag
 {
-    using processing_type = native_type;
+    using processing_type = typename kernel_params::native_type;
 
     static constexpr const char* specific_name() {
         return "ring_alltoallv_ipc";
@@ -320,7 +328,7 @@ struct ring_alltoallv_ipc
         thread_safe_arg<main_kernel_args::args_start_index + 13, int*>;
     using right_proxy_size_flag_type = typename right_proxy_size_flag_arg::arg_type;
 
-    using base = execution_kernel<ring_alltoallv_ipc<native_type>,
+    using base = execution_kernel<ring_alltoallv_ipc<kernel_params>,
                                   send_buf_size_arg, // 0 send_elem_counts
                                   send_elem_offsets_buf_arg, // 1 send_elem_offsets
                                   recv_elem_counts_buf_arg, // 2 recv_elem_counts
