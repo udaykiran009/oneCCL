@@ -1,4 +1,5 @@
 #pragma once
+
 #include "common/comm/l0/communicator/thread_group/thread_ring_communicator.hpp"
 #include "common/comm/l0/communicator/typed_base_communicator_impl.hpp"
 

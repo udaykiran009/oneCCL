@@ -331,6 +331,19 @@ void env_data::print(int rank) {
 #endif
     }
 
+    auto fp16_impl_type = global_data.fp16_impl_type;
+
+    if (fp16_impl_type != ccl_fp16_none) {
+        LOG_INFO("FP16: enabled through AVX512-F");
+    }
+    else {
+#ifdef CCL_FP16_COMPILER
+        LOG_INFO("FP16: disabled on HW level");
+#else
+        LOG_INFO("FP16: disabled on compiler level");
+#endif
+    }
+
 #ifdef ENABLE_DEBUG
     const char* build_mode = "debug";
 #else

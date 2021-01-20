@@ -8,10 +8,6 @@
 
 namespace ccl {
 
-#define SUPPORTED_KERNEL_NATIVE_DATA_TYPES \
-    int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double, \
-        ccl::bfloat16
-
 template <class native_stream>
 constexpr bool is_stream_supported() {
     return api_type_info</*typename std::remove_pointer<typename std::remove_cv<*/

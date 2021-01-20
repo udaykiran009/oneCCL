@@ -1,5 +1,3 @@
-#define TEST_CCL_ALLGATHERV
-
 #define COLL_NAME "CCL_ALLGATHERV"
 
 #include "base_impl.hpp"
@@ -12,11 +10,10 @@ public:
 
     int check(typed_test_param<T>& param) {
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
-            for (size_t elem_idx = 0; elem_idx < param.process_count; elem_idx++) {
-                for (size_t recv_count_idx = 0; recv_count_idx < recv_counts[elem_idx];
-                     recv_count_idx++) {
-                    size_t idx = offsets[elem_idx] + recv_count_idx;
-                    T expected = static_cast<T>(elem_idx + recv_count_idx);
+            for (int rank = 0; rank < param.comm_size; rank++) {
+                for (size_t elem_idx = 0; elem_idx < recv_counts[rank]; elem_idx++) {
+                    size_t idx = offsets[rank] + elem_idx;
+                    T expected = static_cast<T>(rank + buf_idx);
                     if (base_test<T>::check_error(param, expected, buf_idx, idx)) {
                         return TEST_FAILURE;
                     }
@@ -27,76 +24,59 @@ public:
     }
 
     void alloc_buffers(typed_test_param<T>& param) {
-        base_test<T>::alloc_buffers(param);
-        recv_counts.resize(param.process_count);
-        offsets.resize(param.process_count);
-        offsets[0] = 0;
+        recv_counts.resize(param.comm_size);
+        offsets.resize(param.comm_size);
         recv_counts[0] = param.elem_count;
+        offsets[0] = 0;
+
+        for (int rank = 1; rank < param.comm_size; rank++) {
+            recv_counts[rank] =
+                ((int)param.elem_count > rank) ? param.elem_count - rank : param.elem_count;
+            offsets[rank] = recv_counts[rank - 1] + offsets[rank - 1];
+        }
 
         if (param.test_conf.place_type == PT_OOP) {
-            for (size_t elem_idx = 0; elem_idx < param.buffer_count; elem_idx++) {
-                /* each buffer is different size */
-                param.recv_buf[elem_idx].resize(param.elem_count * param.process_count);
-                if (param.test_conf.datatype == DT_BFLOAT16) {
-                    param.recv_buf_bf16[elem_idx].resize(param.elem_count * param.process_count);
+            size_t total_recv_count = std::accumulate(recv_counts.begin(), recv_counts.end(), 0);
+            for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
+                param.recv_buf[buf_idx].resize(total_recv_count);
+                if (is_lp_datatype(param.test_conf.datatype)) {
+                    param.recv_buf_lp[buf_idx].resize(total_recv_count);
                 }
             }
         }
     }
 
-    void fill_buffers(typed_test_param<T>& param) {
-        for (size_t proc_idx = 1; proc_idx < param.process_count; proc_idx++) {
-            recv_counts[proc_idx] =
-                (param.elem_count > proc_idx) ? param.elem_count - proc_idx : param.elem_count;
-            offsets[proc_idx] = recv_counts[proc_idx - 1] + offsets[proc_idx - 1];
-        }
-
+    void fill_send_buffers(typed_test_param<T>& param) {
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
-            for (size_t elem_idx = 0; elem_idx < param.process_count; elem_idx++) {
-                for (size_t recv_count_idx = 0; recv_count_idx < recv_counts[elem_idx];
-                     recv_count_idx++) {
-                    param.send_buf[buf_idx][offsets[elem_idx] + recv_count_idx] =
-                        param.process_idx + elem_idx + recv_count_idx;
-                    if (param.test_conf.place_type == PT_OOP) {
-                        param.recv_buf[buf_idx][offsets[elem_idx] + recv_count_idx] =
-                            static_cast<T>(SOME_VALUE);
-                        if (param.test_conf.datatype == DT_BFLOAT16) {
-                            param.recv_buf_bf16[buf_idx][offsets[elem_idx] + recv_count_idx] =
-                                static_cast<short>(SOME_VALUE);
-                        }
-                    }
-                }
-            }
-
-            /* in case of in-place i-th process already has result in i-th block of send buffer */
-            if (param.test_conf.place_type != PT_OOP) {
-                param.recv_buf[buf_idx] = param.send_buf[buf_idx];
-                for (size_t recv_count_idx = 0; recv_count_idx < recv_counts[param.process_idx];
-                     recv_count_idx++) {
-                    param.send_buf[buf_idx][offsets[param.process_idx] + recv_count_idx] =
-                        param.process_idx + recv_count_idx;
-                }
+            for (size_t elem_idx = 0; elem_idx < recv_counts[param.comm_rank]; elem_idx++) {
+                param.send_buf[buf_idx][elem_idx] = param.comm_rank + buf_idx;
             }
         }
+    }
 
-        if (param.test_conf.place_type != PT_OOP) {
-            param.recv_buf = param.send_buf;
+    void fill_recv_buffers(typed_test_param<T>& param) {
+        if (param.test_conf.place_type != PT_IN)
+            return;
+
+        /* in case of in-place i-th rank already has result in i-th block of send buffer */
+        for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
+            for (size_t elem_idx = 0; elem_idx < recv_counts[param.comm_rank]; elem_idx++) {
+                param.recv_buf[buf_idx][offsets[param.comm_rank] + elem_idx] =
+                    param.comm_rank + buf_idx;
+            }
         }
     }
 
     size_t get_recv_buf_size(typed_test_param<T>& param) {
-        return param.elem_count * param.process_count;
+        return param.elem_count * param.comm_size;
     }
 
     void run_derived(typed_test_param<T>& param) {
         void* send_buf;
         void* recv_buf;
-        size_t count = recv_counts[param.process_idx];
 
         const ccl_test_conf& test_conf = param.get_conf();
-
         auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
-
         ccl::datatype datatype = get_ccl_lib_datatype(test_conf);
 
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
@@ -108,7 +88,7 @@ public:
 
             param.reqs[buf_idx] =
                 ccl::allgatherv((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
-                                count,
+                                recv_counts[param.comm_rank],
                                 recv_buf,
                                 recv_counts,
                                 datatype,

@@ -1,4 +1,5 @@
 #pragma once
+
 #include <type_traits>
 #include <memory>
 #include "common/comm/l0/modules/base_entry_module.hpp"
@@ -6,6 +7,10 @@
 #include "common/comm/l0/communicator/base_communicator.hpp"
 
 namespace native {
+
+#define SUPPORTED_KERNEL_NATIVE_DATA_TYPES \
+    int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, ccl::float16, float, \
+        double, ccl::bfloat16
 
 // The get_kernel_type is a DEFAULT template class of kernels, which DON'T use reduction.
 template <

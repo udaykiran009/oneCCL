@@ -56,8 +56,10 @@ ccl::event thread_device_group_ring_communicator::allgatherv_impl(
     const ccl::stream::impl_value_t& stream,
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl::event req;
+    allgather_visitor_t::visit(
+        req, dtype, send_buf, send_count, recv_buf, recv_counts, stream, attr, deps);
+    return req;
 }
 ccl::event thread_device_group_ring_communicator::allgatherv_impl(
     const void* send_buf,
@@ -83,8 +85,10 @@ ccl::event thread_device_group_ring_communicator::allreduce_impl(
     const ccl::stream::impl_value_t& stream,
     const ccl::allreduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl::event req;
+    allreduce_visitor_t::visit(
+        req, dtype, send_buf, recv_buf, count, reduction, stream, attr, deps);
+    return req;
 }
 
 /* alltoall */
@@ -96,8 +100,9 @@ ccl::event thread_device_group_ring_communicator::alltoall_impl(
     const ccl::stream::impl_value_t& stream,
     const ccl::alltoall_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl::event req;
+    alltoall_visitor_t::visit(req, dtype, send_buf, recv_buf, count, stream, attr, deps);
+    return req;
 }
 ccl::event thread_device_group_ring_communicator::alltoall_impl(
     const ccl::vector_class<void*>& send_buf,
@@ -121,8 +126,10 @@ ccl::event thread_device_group_ring_communicator::alltoallv_impl(
     const ccl::stream::impl_value_t& stream,
     const ccl::alltoallv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl::event req;
+    alltoallv_visitor_t::visit(
+        req, dtype, send_buf, send_counts, recv_buf, recv_counts, stream, attr, deps);
+    return req;
 }
 ccl::event thread_device_group_ring_communicator::alltoallv_impl(
     const ccl::vector_class<void*>& send_buf,
@@ -147,8 +154,9 @@ ccl::event thread_device_group_ring_communicator::broadcast_impl(
     const ccl::stream::impl_value_t& stream,
     const ccl::broadcast_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl::event req;
+    broadcast_visitor_t::visit(req, dtype, buf, count, root, stream, attr, deps);
+    return req;
 }
 
 /* reduce */
@@ -162,8 +170,10 @@ ccl::event thread_device_group_ring_communicator::reduce_impl(
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl::event req;
+    reduce_visitor_t::visit(
+        req, dtype, send_buf, recv_buf, count, reduction, root, stream, attr, deps);
+    return req;
 }
 
 /* reduce_scatter */
@@ -176,8 +186,10 @@ ccl::event thread_device_group_ring_communicator::reduce_scatter_impl(
     const ccl::stream::impl_value_t& stream,
     const ccl::reduce_scatter_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl::event req;
+    reduce_scatter_visitor_t::visit(
+        req, dtype, send_buf, recv_buf, recv_count, reduction, stream, attr, deps);
+    return req;
 }
 
 /* sparse_allreduce */

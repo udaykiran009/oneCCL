@@ -15,7 +15,7 @@
  
  */
 
-#define BF16_PRECISION 0.00781250 /* 2^-7 = 0.00781250 */
+#define BF16_PRECISION 0.00781250 /* 2^-7 */
 
 void convert_fp32_to_bf16_arrays(void*, void*, int);
 void convert_bf16_to_fp32_arrays(void*, float*, int);

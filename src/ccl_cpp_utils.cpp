@@ -10,16 +10,12 @@ std::ostream& operator<<(std::ostream& out, const ccl::device_index_type& index)
 namespace ccl {
 
 std::string to_string(const bfloat16& v) {
-    std::stringstream ss;
-    ss << "bf16::data " << v.data;
-    return ss.str();
+    return std::to_string(v.get_data());
 }
 
-// std::string to_string(const float16& v) {
-//     std::stringstream ss;
-//     ss << "fp16::data " << v.data;
-//     return ss.str();
-// }
+std::string to_string(const float16& v) {
+    return std::to_string(v.get_data());
+}
 
 std::string to_string(const device_index_type& device_id) {
     std::stringstream ss;

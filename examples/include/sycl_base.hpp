@@ -5,6 +5,7 @@
 #include <iostream>
 #include <map>
 #include <mpi.h>
+#include <numeric>
 #include <set>
 #include <string>
 #include <numeric>

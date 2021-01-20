@@ -149,8 +149,6 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
     CCL_THROW_IF_NOT(param.ctype == ccl_coll_allgatherv || !(attr.vector_buf),
                      "vector buffer is supported for allgatherv only");
 
-    CCL_THROW_IF_NOT(param.dtype.idx() != ccl::datatype::float16, "FP16 is unsupported yet");
-
     if (param.ctype == ccl_coll_sparse_allreduce) {
         CCL_THROW_IF_NOT(
             ccl::global_data::env().sparse_allreduce_algo_raw != "mask" || !(attr.reduction_fn),
@@ -162,6 +160,10 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
                   reinterpret_cast<uintptr_t>(attr.sparse_allreduce_alloc_fn)),
             "sparse_allreduce requires completion callback only or allocation callback only");
     }
+
+    CCL_THROW_IF_NOT((param.dtype.idx() != ccl::datatype::float16) ||
+                         (ccl::global_data::get().fp16_impl_type != ccl_fp16_none),
+                     "FP16 datatype is requested but not supported");
 
     CCL_THROW_IF_NOT((param.dtype.idx() != ccl::datatype::bfloat16) ||
                          (ccl::global_data::get().bf16_impl_type != ccl_bf16_none),

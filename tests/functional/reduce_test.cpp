@@ -1,5 +1,3 @@
-#define TEST_CCL_REDUCE
-
 #define COLL_NAME "CCL_REDUCE"
 
 #include "base_impl.hpp"
@@ -8,38 +6,14 @@ template <typename T>
 class reduce_test : public base_test<T> {
 public:
     int check(typed_test_param<T>& param) {
-        if (param.process_idx != ROOT_PROCESS_IDX)
+        if (param.comm_rank != ROOT_RANK)
             return TEST_SUCCESS;
 
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
             for (size_t elem_idx = 0; elem_idx < param.elem_count; elem_idx++) {
-                if (param.test_conf.reduction == RT_SUM) {
-                    T expected = ((param.process_count * (param.process_count - 1) / 2) +
-                                  ((elem_idx + buf_idx) * param.process_count));
-                    if (base_test<T>::check_error(param, expected, buf_idx, elem_idx))
-                        return TEST_FAILURE;
-                }
-
-                if (param.test_conf.reduction == RT_MAX) {
-                    T expected = get_expected_max<T>(elem_idx, buf_idx, param.process_count);
-                    if (base_test<T>::check_error(param, expected, buf_idx, elem_idx))
-                        return TEST_FAILURE;
-                }
-
-                if (param.test_conf.reduction == RT_MIN) {
-                    T expected = get_expected_min<T>(elem_idx, buf_idx, param.process_count);
-                    if (base_test<T>::check_error(param, expected, buf_idx, elem_idx))
-                        return TEST_FAILURE;
-                }
-
-                if (param.test_conf.reduction == RT_PROD) {
-                    T expected = 1;
-                    for (size_t proc_idx = 0; proc_idx < param.process_count; proc_idx++) {
-                        expected *= elem_idx + buf_idx + proc_idx;
-                    }
-                    if (base_test<T>::check_error(param, expected, buf_idx, elem_idx))
-                        return TEST_FAILURE;
-                }
+                T expected = base_test<T>::calculate_reduce_value(param, buf_idx, elem_idx);
+                if (base_test<T>::check_error(param, expected, buf_idx, elem_idx))
+                    return TEST_FAILURE;
             }
         }
         return TEST_SUCCESS;
@@ -52,12 +26,9 @@ public:
     void run_derived(typed_test_param<T>& param) {
         void* send_buf;
         void* recv_buf;
-        size_t count = param.elem_count;
 
         const ccl_test_conf& test_conf = param.get_conf();
-
         auto attr = ccl::create_operation_attr<ccl::reduce_attr>();
-
         ccl::reduction reduction = get_ccl_lib_reduction(test_conf);
         ccl::datatype datatype = get_ccl_lib_datatype(test_conf);
 
@@ -70,10 +41,10 @@ public:
 
             param.reqs[buf_idx] = ccl::reduce((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
                                               recv_buf,
-                                              count,
+                                              param.elem_count,
                                               datatype,
                                               reduction,
-                                              ROOT_PROCESS_IDX,
+                                              ROOT_RANK,
                                               GlobalData::instance().comms[0],
                                               attr);
         }

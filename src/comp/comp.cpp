@@ -1,6 +1,7 @@
 #include "oneapi/ccl/types.hpp"
 #include "comp/bf16/bf16.hpp"
 #include "comp/comp.hpp"
+#include "comp/fp16/fp16.hpp"
 #include "common/log/log.hpp"
 #include "common/global/global.hpp"
 #include "common/utils/enums.hpp"
@@ -68,7 +69,11 @@ ccl::status ccl_comp_reduce(const void* in_buf,
         case ccl::datatype::uint32: CCL_REDUCE(uint32_t); break;
         case ccl::datatype::int64: CCL_REDUCE(int64_t); break;
         case ccl::datatype::uint64: CCL_REDUCE(uint64_t); break;
-        case ccl::datatype::float16: CCL_FATAL("FP16 is unsupported yet"); break;
+        case ccl::datatype::float16:
+            if (ccl::global_data::get().fp16_impl_type == ccl_fp16_none)
+                CCL_FATAL("CCL doesn't support reductions in FP16 on this CPU");
+            ccl_fp16_reduce(in_buf, in_count, inout_buf, out_count, reduction);
+            break;
         case ccl::datatype::float32: CCL_REDUCE(float); break;
         case ccl::datatype::float64: CCL_REDUCE(double); break;
         case ccl::datatype::bfloat16:

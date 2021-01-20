@@ -154,6 +154,8 @@ set(CCL_SRC
     comp/bf16/bf16.cpp
     comp/bf16/bf16_intrisics.cpp
     comp/comp.cpp
+    comp/fp16/fp16.cpp
+    comp/fp16/fp16_intrisics.cpp
     sched/sched.cpp
     sched/extra_sched.cpp
     sched/master_sched.cpp
@@ -212,7 +214,7 @@ message(STATUS "oneCCL lib LIBFABRIC_LIB_DIR: ${LIBFABRIC_LIB_DIR}")
 message(STATUS "oneCCL lib LIBFABRIC_INCLUDE_DIR: ${LIBFABRIC_INCLUDE_DIR}")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -ftemplate-backtrace-limit=0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 #special library that holds objects only
 add_library(ccl-objects OBJECT ${CCL_SRC})

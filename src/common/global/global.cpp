@@ -83,6 +83,7 @@ void global_data::init_resize_independent_objects() {
     algorithm_selector->init();
 
     bf16_impl_type = ccl_bf16_get_impl_type();
+    fp16_impl_type = ccl_fp16_get_impl_type();
 }
 
 void global_data::reset_resize_dependent_objects() {

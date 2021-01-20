@@ -10,6 +10,7 @@
 #include <numeric>
 #include <map>
 #include <math.h>
+#include <numeric>
 #include <stdexcept>
 #include <stdio.h>
 #include <sys/time.h>
@@ -165,7 +166,7 @@ int set_sycl_dev_type(const std::string& option_value, sycl_dev_type_t& dev) {
 int set_sycl_mem_type(const std::string& option_value, sycl_mem_type_t& mem) {
     std::string option_name = "sycl_mem_type";
     std::set<std::string> supported_option_values{ sycl_mem_names[SYCL_MEM_USM],
-                                                   sycl_mem_names[SYCL_MEM_BUF] };
+                                                   /*sycl_mem_names[SYCL_MEM_BUF]*/ };
 
     if (check_supported_options(option_name, option_value, supported_option_values))
         return -1;

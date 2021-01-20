@@ -303,7 +303,6 @@ detail::global_sorted_plain_graphs allied_process_group_ring_topology::collect_c
     size_t send_count = my_serialized_graph.size();
     std::vector<size_t> receive_process_graph_sizes(comm->size());
 
-    //std::vector<ccl::host_communicator::coll_request_t> requests;
     out << "Ask graph lists sizes by process index: " << process_index
         << ", serialized size: " << send_count << std::endl;
     ccl::stream::impl_value_t empty_stream{};

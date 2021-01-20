@@ -2,12 +2,15 @@
 
 #include <stdint.h>
 
+#ifdef CCL_BF16_COMPILER
+#include <immintrin.h>
+#endif
+
 typedef enum { ccl_bf16_none = 0, ccl_bf16_avx512f, ccl_bf16_avx512bf } ccl_bf16_impl_type;
 
 __attribute__((__always_inline__)) inline ccl_bf16_impl_type ccl_bf16_get_impl_type() {
 #ifdef CCL_BF16_COMPILER
     int is_avx512f_enabled = 0;
-
     uint32_t reg[4];
 
     /* baseline AVX512 capabilities used for CCL/BF16 implementation */

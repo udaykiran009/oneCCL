@@ -444,10 +444,14 @@ void create_all_colls(bench_init_attr& init_attr, user_options_t& options, coll_
             create_colls<int64_t>(init_attr, options, colls);
         else if (dtype == dtype_names[ccl::datatype::uint64])
             create_colls<uint64_t>(init_attr, options, colls);
+        else if (dtype == dtype_names[ccl::datatype::float16])
+            create_colls<ccl::float16>(init_attr, options, colls);
         else if (dtype == dtype_names[ccl::datatype::float32])
             create_colls<float>(init_attr, options, colls);
         else if (dtype == dtype_names[ccl::datatype::float64])
             create_colls<double>(init_attr, options, colls);
+        else if (dtype == dtype_names[ccl::datatype::bfloat16])
+            create_colls<ccl::bfloat16>(init_attr, options, colls);
         else
             ASSERT(0, "unexpected datatype %s", dtype.c_str());
     }

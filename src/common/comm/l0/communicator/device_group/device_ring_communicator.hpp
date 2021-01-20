@@ -21,7 +21,6 @@ public:
                                                              /*, TODO disabled t now
                                                              native::ccl_numa_proxy<native::ccl_gpu_comm>,
                                                              native::ccl_numa_proxy<native::ccl_virtual_gpu_comm>*/>;
-    using coll_request_t = ccl::event;
 
     device_group_ring_communicator(ccl::unified_device_type&& device,
                                    ccl::unified_context_type&& ctx,

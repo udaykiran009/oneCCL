@@ -49,13 +49,13 @@ namespace v1 {
 
 std::ostream& operator<<(std::ostream& out, const bfloat16& v) {
     //out << bf16_to_fp32(v);
-    out << bf16_to_fp32(v) << "|" << v.data;
+    out << bf16_to_fp32(v) << "|" << v.get_data();
     return out;
 }
 
 std::string to_string(const bfloat16& v) {
     std::stringstream ss;
-    ss << bf16_to_fp32(v) << "|" << v.data;
+    ss << bf16_to_fp32(v) << "|" << v.get_data();
     return ss.str();
 }
 } // namespace v1

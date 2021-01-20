@@ -23,10 +23,10 @@ void ccl_bf16_reduce(const void* in_buf,
 
     ccl_bf16_reduction_func_ptr op = nullptr;
     switch (reduction_op) {
-        case ccl::reduction::sum: op = &sum_wrap; break;
-        case ccl::reduction::prod: op = &prod_wrap; break;
-        case ccl::reduction::min: op = &min_wrap; break;
-        case ccl::reduction::max: op = &max_wrap; break;
+        case ccl::reduction::sum: op = &bf16_sum_wrap; break;
+        case ccl::reduction::prod: op = &bf16_prod_wrap; break;
+        case ccl::reduction::min: op = &bf16_min_wrap; break;
+        case ccl::reduction::max: op = &bf16_max_wrap; break;
         default: CCL_FATAL("unexpected value ", utils::enum_to_underlying(reduction_op));
     }
 
@@ -52,21 +52,21 @@ void ccl_convert_bf16_to_fp32(const void* src, void* dst) {
         _mm512_bslli_epi128(_mm512_cvtepu16_epi32(_mm256_loadu_si256((__m256i const*)src)), 2));
 }
 
-void ccl_convert_fp32_to_bf16_arrays(void* send_buf, void* send_buf_bf16, size_t count) {
+void ccl_convert_fp32_to_bf16_arrays(void* fp32_buf, void* bf16_buf, size_t count) {
     int int_val = 0, int_val_shifted = 0;
-    float* send_buf_float = (float*)send_buf;
+    float* fp32_buf_float = (float*)fp32_buf;
     size_t limit = (count / CCL_FLOATS_IN_M512) * CCL_FLOATS_IN_M512;
 
     for (size_t i = 0; i < limit; i += CCL_FLOATS_IN_M512) {
-        ccl_convert_fp32_to_bf16(send_buf_float + i, ((unsigned char*)send_buf_bf16) + (2 * i));
+        ccl_convert_fp32_to_bf16(fp32_buf_float + i, ((unsigned char*)bf16_buf) + (2 * i));
     }
 
     /* proceed remaining float's in buffer */
     for (size_t i = limit; i < count; i++) {
-        /* iterate over send_buf_bf16 */
-        int* send_bfp_tail = (int*)(((char*)send_buf_bf16) + (2 * i));
+        /* iterate over bf16_buf */
+        int* send_bfp_tail = (int*)(((char*)bf16_buf) + (2 * i));
         /* copy float (4 bytes) data as is to int variable, */
-        memcpy(&int_val, &send_buf_float[i], 4);
+        memcpy(&int_val, &fp32_buf_float[i], 4);
         /* then perform shift and */
         int_val_shifted = int_val >> CCL_BF16_SHIFT;
         /* save pointer to result */
@@ -74,24 +74,24 @@ void ccl_convert_fp32_to_bf16_arrays(void* send_buf, void* send_buf_bf16, size_t
     }
 }
 
-void ccl_convert_bf16_to_fp32_arrays(void* recv_buf_bf16, float* recv_buf, size_t count) {
+void ccl_convert_bf16_to_fp32_arrays(void* bf16_buf, float* fp32_buf, size_t count) {
     int int_val = 0, int_val_shifted = 0;
     size_t limit = (count / CCL_FLOATS_IN_M512) * CCL_FLOATS_IN_M512;
 
     for (size_t i = 0; i < limit; i += CCL_FLOATS_IN_M512) {
-        ccl_convert_bf16_to_fp32((char*)recv_buf_bf16 + (2 * i), recv_buf + i);
+        ccl_convert_bf16_to_fp32((char*)bf16_buf + (2 * i), fp32_buf + i);
     }
 
     /* proceed remaining bf16's in buffer */
     for (size_t i = limit; i < count; i++) {
-        /* iterate over recv_buf_bf16 */
-        int* recv_bfp_tail = (int*)((char*)recv_buf_bf16 + (2 * i));
+        /* iterate over bf16_buf */
+        int* recv_bfp_tail = (int*)((char*)bf16_buf + (2 * i));
         /* copy bf16 data as is to int variable, */
         memcpy(&int_val, recv_bfp_tail, 4);
         /* then perform shift and */
         int_val_shifted = int_val << CCL_BF16_SHIFT;
         /* copy result to output */
-        memcpy((recv_buf + i), &int_val_shifted, 4);
+        memcpy((fp32_buf + i), &int_val_shifted, 4);
     }
 }
 
@@ -105,11 +105,11 @@ void ccl_bf16_reduce(const void* in_buf,
     CCL_FATAL("BF16 reduction is requested but CCL was compiled w/o BF16 support");
 }
 
-void ccl_convert_fp32_to_bf16_arrays(void* send_buf, void* send_buf_bf16, size_t count) {
+void ccl_convert_fp32_to_bf16_arrays(void* fp32_buf, void* bf16_buf, size_t count) {
     CCL_FATAL("BF16 reduction is requested but CCL was compiled w/o BF16 support");
 }
 
-void ccl_convert_bf16_to_fp32_arrays(void* recv_buf_bf16, float* recv_buf, size_t count) {
+void ccl_convert_bf16_to_fp32_arrays(void* bf16_buf, float* fp32_buf, size_t count) {
     CCL_FATAL("BF16 reduction is requested but CCL was compiled w/o BF16 support");
 }
 

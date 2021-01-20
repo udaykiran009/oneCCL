@@ -1,82 +1,37 @@
-#include <map>
-#include <vector>
+#include "conf.hpp"
+#include "lp.hpp"
 
-#define POST_AND_PRE_INCREMENTS(EnumName, LAST_ELEM) \
-    EnumName& operator++(EnumName& orig) { \
-        if (orig != LAST_ELEM) \
-            orig = static_cast<EnumName>(orig + 1); \
-        return orig; \
-    } \
-    EnumName operator++(EnumName& orig, int) { \
-        EnumName rVal = orig; \
-        ++orig; \
-        return rVal; \
-    }
+std::vector<ccl_test_conf> test_params;
 
-#define GET_ELEMENT_BEFORE_LAST(EnumName, LAST_ELEM) \
-    EnumName& operator++(EnumName& orig) { \
-        if (orig != LAST_ELEM) \
-            orig = static_cast<EnumName>(orig + 1); \
-        return orig; \
-    } \
-    EnumName operator++(EnumName& orig, int) { \
-        EnumName rVal = orig; \
-        ++orig; \
-        return rVal; \
-    }
-
-#define SOME_VALUE (0xdeadbeef)
-
-#define ROOT_PROCESS_IDX (0)
-
-typedef enum { PT_OOP = 0, PT_IN = 1, PT_LAST } ccl_place_type;
 ccl_place_type first_ccl_place_type = PT_OOP;
 ccl_place_type last_ccl_place_type = PT_LAST;
-
 std::map<int, const char*> ccl_place_type_str = { { PT_OOP, "PT_OOP" }, { PT_IN, "PT_IN" } };
 
-typedef enum { ST_SMALL = 0, ST_MEDIUM = 1, ST_LARGE = 2, ST_LAST } ccl_size_type;
 ccl_size_type first_ccl_size_type = ST_SMALL;
-ccl_size_type last_ccl_size_type = ST_LAST;
-
+ccl_size_type last_ccl_size_type = ST_MEDIUM;
 std::map<int, const char*> ccl_size_type_str = { { ST_SMALL, "ST_SMALL" },
                                                  { ST_MEDIUM, "ST_MEDIUM" },
                                                  { ST_LARGE, "ST_LARGE" } };
-
-std::map<int, size_t> ccl_size_type_values = { { ST_SMALL, 16 },
+std::map<int, size_t> ccl_size_type_values = { { ST_SMALL, 17 },
                                                { ST_MEDIUM, 32769 },
                                                { ST_LARGE, 524288 } };
 
-typedef enum { BC_SMALL = 0, BC_MEDIUM = 1, BC_LARGE = 2, BC_LAST } ccl_buffer_count;
 ccl_buffer_count first_ccl_buffer_count = BC_SMALL;
-ccl_buffer_count last_ccl_buffer_count = BC_LAST;
-
+ccl_buffer_count last_ccl_buffer_count = BC_MEDIUM;
 std::map<int, const char*> ccl_buffer_count_str = { { BC_SMALL, "BC_SMALL" },
                                                     { BC_MEDIUM, "BC_MEDIUM" },
                                                     { BC_LARGE, "BC_LARGE" } };
-
 std::map<int, size_t> ccl_buffer_count_values = { { BC_SMALL, 1 },
                                                   { BC_MEDIUM, 2 },
-                                                  { BC_LARGE, 4 } };
+                                                  { BC_LARGE, 8 } };
 
-typedef enum { CMPT_WAIT = 0, CMPT_TEST = 1, CMPT_LAST } ccl_completion_type;
 ccl_completion_type first_ccl_completion_type = CMPT_WAIT;
 ccl_completion_type last_ccl_completion_type = CMPT_LAST;
-
 std::map<int, const char*> ccl_completion_type_str = { { CMPT_WAIT, "CMPT_WAIT" },
                                                        { CMPT_TEST, "CMPT_TEST" } };
 
-typedef enum {
-    PTYPE_NULL = 0,
-#ifdef TEST_CCL_CUSTOM_PROLOG
-    PTYPE_T_TO_2X = 1,
-    PTYPE_T_TO_CHAR = 2,
-#endif
-    PTYPE_LAST
-} ccl_prolog_type;
 ccl_prolog_type first_ccl_prolog_type = PTYPE_NULL;
 ccl_prolog_type last_ccl_prolog_type = PTYPE_LAST;
-
 std::map<int, const char*> ccl_prolog_type_str = { { PTYPE_NULL, "PTYPE_NULL" },
 #ifdef TEST_CCL_CUSTOM_PROLOG
                                                    { PTYPE_T_TO_2X, "PTYPE_T_TO_2X" },
@@ -84,17 +39,8 @@ std::map<int, const char*> ccl_prolog_type_str = { { PTYPE_NULL, "PTYPE_NULL" },
 #endif
 };
 
-typedef enum {
-    ETYPE_NULL = 0,
-#ifdef TEST_CCL_CUSTOM_EPILOG
-    ETYPE_T_TO_2X = 1,
-    ETYPE_CHAR_TO_T = 2,
-#endif
-    ETYPE_LAST
-} ccl_epilog_type;
 ccl_epilog_type first_ccl_epilog_type = ETYPE_NULL;
 ccl_epilog_type last_ccl_epilog_type = ETYPE_LAST;
-
 std::map<int, const char*> ccl_epilog_type_str = { { ETYPE_NULL, "ETYPE_NULL" },
 #ifdef TEST_CCL_CUSTOM_EPILOG
                                                    { ETYPE_T_TO_2X, "ETYPE_T_TO_2X" },
@@ -102,126 +48,63 @@ std::map<int, const char*> ccl_epilog_type_str = { { ETYPE_NULL, "ETYPE_NULL" },
 #endif
 };
 
-typedef enum {
-    DT_INT8 = 0,
-    /*DT_UINT8,*/
-    DT_INT16,
-    /*DT_UINT16,*/
-    DT_INT32,
-    /*DT_UINT32,
-    DT_INT64,
-    DT_UINT64,
-    DT_FLOAT16,*/
-    DT_FLOAT32,
-    /*DT_FLOAT64,*/
-    DT_BFLOAT16,
-
-    DT_LAST
-} ccl_data_type;
 ccl_data_type first_ccl_data_type = DT_INT8;
 ccl_data_type last_ccl_data_type = DT_LAST;
-
 std::map<int, const char*> ccl_data_type_str = {
-    { DT_INT8, "DT_INT8" },
-    /*{ DT_UINT8, "DT_UINT8" },*/
-    { DT_INT16, "DT_INT16" },
-    /*{ DT_UINT16, "DT_UINT16" },*/
-    { DT_INT32, "DT_INT32" },
-    /*{ DT_UINT32, "DT_UINT32" },
-    { DT_INT64, "DT_INT64" },
-    { DT_UINT64, "DT_UINT64" },
-    { DT_FLOAT16, "DT_FLOAT16" },*/
-    { DT_FLOAT32, "DT_FLOAT32" },
-    /*{ DT_FLOAT64, "DT_FLOAT64" },*/
-    { DT_BFLOAT16, "DT_BFLOAT16" },
+    { DT_INT8, "DT_INT8" },       { DT_UINT8, "DT_UINT8" },     { DT_INT16, "DT_INT16" },
+    { DT_UINT16, "DT_UINT16" },   { DT_INT32, "DT_INT32" },     { DT_UINT32, "DT_UINT32" },
+    { DT_INT64, "DT_INT64" },     { DT_UINT64, "DT_UINT64" },   { DT_FLOAT16, "DT_FLOAT16" },
+    { DT_FLOAT32, "DT_FLOAT32" }, { DT_FLOAT64, "DT_FLOAT64" }, { DT_BFLOAT16, "DT_BFLOAT16" },
 };
-
 std::map<int, ccl::datatype> ccl_datatype_values = {
-    { DT_INT8, ccl::datatype::int8 },
-    /*{ DT_UINT8, ccl::datatype::uint8 },*/
-    { DT_INT16, ccl::datatype::int16 },
-    /*{ DT_UINT16, ccl::datatype::uint16 },*/
-    { DT_INT32, ccl::datatype::int32 },
-    /*{ DT_UINT32, ccl::datatype::uint32 },
-    { DT_INT64, ccl::datatype::int64 },
-    { DT_UINT64, ccl::datatype::uint64 },
-    { DT_FLOAT16, ccl::datatype::float16 },*/
-    { DT_FLOAT32, ccl::datatype::float32 },
-    /*{ DT_FLOAT64, ccl::datatype::float64 },*/
-    { DT_BFLOAT16, ccl::datatype::bfloat16 },
+    { DT_INT8, ccl::datatype::int8 },       { DT_UINT8, ccl::datatype::uint8 },
+    { DT_INT16, ccl::datatype::int16 },     { DT_UINT16, ccl::datatype::uint16 },
+    { DT_INT32, ccl::datatype::int32 },     { DT_UINT32, ccl::datatype::uint32 },
+    { DT_INT64, ccl::datatype::int64 },     { DT_UINT64, ccl::datatype::uint64 },
+    { DT_FLOAT16, ccl::datatype::float16 }, { DT_FLOAT32, ccl::datatype::float32 },
+    { DT_FLOAT64, ccl::datatype::float64 }, { DT_BFLOAT16, ccl::datatype::bfloat16 },
 };
 
-typedef enum {
-    RT_SUM = 0,
-#ifdef TEST_CCL_REDUCE
-    RT_PROD = 1,
-    RT_MIN = 2,
-    RT_MAX = 3,
-#ifdef TEST_CCL_CUSTOM_REDUCE
-    RT_CUSTOM = 4,
-    RT_CUSTOM_NULL = 5,
-#endif
-#endif
-    RT_LAST
-} ccl_reduction_type;
 ccl_reduction_type first_ccl_reduction_type = RT_SUM;
-ccl_reduction_type last_ccl_reduction_type = RT_LAST;
-
-std::map<int, const char*> ccl_reduction_type_str = {
-    { RT_SUM, "RT_SUM" },
 #ifdef TEST_CCL_REDUCE
-    { RT_PROD, "RT_PROD" },     { RT_MIN, "RT_MIN" },
-    { RT_MAX, "RT_MAX" },
+ccl_reduction_type last_ccl_reduction_type = RT_LAST;
+#else
+ccl_reduction_type last_ccl_reduction_type =
+    static_cast<ccl_reduction_type>(first_ccl_reduction_type + 1);
+#endif
+std::map<int, const char*> ccl_reduction_type_str = {
+    { RT_SUM, "RT_SUM" },       { RT_PROD, "RT_PROD" },
+    { RT_MIN, "RT_MIN" },       { RT_MAX, "RT_MAX" },
 #ifdef TEST_CCL_CUSTOM_REDUCE
     { RT_CUSTOM, "RT_CUSTOM" }, { RT_CUSTOM_NULL, "RT_CUSTOM_NULL" }
 #endif
-#endif
 };
-
 std::map<int, ccl::reduction> ccl_reduction_values = {
-    { RT_SUM, ccl::reduction::sum },
-#ifdef TEST_CCL_REDUCE
-    { RT_PROD, ccl::reduction::prod },     { RT_MIN, ccl::reduction::min },
-    { RT_MAX, ccl::reduction::max },
+    { RT_SUM, ccl::reduction::sum },       { RT_PROD, ccl::reduction::prod },
+    { RT_MIN, ccl::reduction::min },       { RT_MAX, ccl::reduction::max },
 #ifdef TEST_CCL_CUSTOM_REDUCE
     { RT_CUSTOM, ccl::reduction::custom }, { RT_CUSTOM_NULL, ccl::reduction::custom }
 #endif
-#endif
 };
 
-typedef enum { CT_CACHE_0 = 0, CT_CACHE_1 = 1, CT_LAST } ccl_cache_type;
 ccl_cache_type first_ccl_cache_type = CT_CACHE_0;
 ccl_cache_type last_ccl_cache_type = CT_LAST;
-
 std::map<int, const char*> ccl_cache_type_str = { { CT_CACHE_0, "CT_CACHE_0" },
                                                   { CT_CACHE_1, "CT_CACHE_1" } };
-
 std::map<int, int> ccl_cache_type_values = { { CT_CACHE_0, 0 }, { CT_CACHE_1, 1 } };
 
-typedef enum { SNCT_SYNC_0 = 0, SNCT_SYNC_1 = 1, SNCT_LAST } ccl_sync_type;
 ccl_sync_type first_ccl_sync_type = SNCT_SYNC_0;
 ccl_sync_type last_ccl_sync_type = SNCT_LAST;
-
 std::map<int, const char*> ccl_sync_type_str = { { SNCT_SYNC_0, "SNCT_SYNC_0" },
                                                  { SNCT_SYNC_1, "SNCT_SYNC_1" } };
-
 std::map<int, int> ccl_sync_type_values = { { SNCT_SYNC_0, 0 }, { SNCT_SYNC_1, 1 } };
 
-typedef enum {
-    ORDER_DISABLE = 0,
-    ORDER_DIRECT = 1,
-    ORDER_INDIRECT = 2,
-    ORDER_RANDOM = 3,
-    ORDER_LAST
-} ccl_order_type;
 ccl_order_type first_ccl_order_type = ORDER_DISABLE;
 ccl_order_type last_ccl_order_type = ORDER_LAST;
-
 std::map<int, const char*> ccl_order_type_str = { { ORDER_DISABLE, "ORDER_DISABLE" },
                                                   { ORDER_DIRECT, "ORDER_DIRECT" },
                                                   { ORDER_INDIRECT, "ORDER_INDIRECT" },
                                                   { ORDER_RANDOM, "ORDER_RANDOM" } };
-
 std::map<int, int> ccl_order_type_values = { { ORDER_DISABLE, 0 },
                                              { ORDER_DIRECT, 1 },
                                              { ORDER_INDIRECT, 2 },
@@ -239,21 +122,6 @@ POST_AND_PRE_INCREMENTS(ccl_buffer_count, BC_LAST);
 POST_AND_PRE_INCREMENTS(ccl_prolog_type, PTYPE_LAST);
 POST_AND_PRE_INCREMENTS(ccl_epilog_type, ETYPE_LAST);
 
-struct ccl_test_conf {
-    ccl_place_type place_type;
-    ccl_cache_type cache_type;
-    ccl_sync_type sync_type;
-    ccl_size_type size_type;
-    ccl_completion_type completion_type;
-    ccl_reduction_type reduction;
-    ccl_data_type datatype;
-    ccl_order_type complete_order_type;
-    ccl_order_type start_order_type;
-    ccl_buffer_count buffer_count;
-    ccl_prolog_type prolog_type;
-    ccl_epilog_type epilog_type;
-};
-
 size_t get_ccl_elem_count(ccl_test_conf& test_conf) {
     return ccl_size_type_values[test_conf.size_type];
 }
@@ -270,9 +138,19 @@ ccl::reduction get_ccl_lib_reduction(const ccl_test_conf& test_conf) {
     return ccl_reduction_values[test_conf.reduction];
 }
 
-#define max_test_count() \
-    (ORDER_LAST * ORDER_LAST * CMPT_LAST * SNCT_LAST * DT_LAST * ST_LAST * RT_LAST * BC_LAST * \
-     CT_LAST * PT_LAST * PTYPE_LAST * ETYPE_LAST)
+bool should_skip_datatype(ccl_data_type dt) {
+    if (dt == DT_BFLOAT16 && !is_bf16_enabled())
+        return true;
+
+    if (dt == DT_FLOAT16 && !is_fp16_enabled())
+        return true;
+
+    if (dt == DT_UINT8 || dt == DT_INT16 || dt == DT_UINT16 || dt == DT_UINT32 || dt == DT_INT64 ||
+        dt == DT_UINT64 || dt == DT_FLOAT64)
+        return true;
+
+    return false;
+}
 
 size_t calculate_test_count() {
     size_t test_count = max_test_count();
@@ -359,25 +237,6 @@ size_t calculate_test_count() {
     return test_count;
 }
 
-int is_bf16_enabled() {
-#ifdef CCL_BF16_COMPILER
-    int is_avx512f_enabled = 0;
-    uint32_t reg[4];
-
-    __asm__ __volatile__("cpuid"
-                         : "=a"(reg[0]), "=b"(reg[1]), "=c"(reg[2]), "=d"(reg[3])
-                         : "a"(7), "c"(0));
-    is_avx512f_enabled =
-        ((reg[1] & (1 << 16)) >> 16) & ((reg[1] & (1 << 30)) >> 30) & ((reg[1] & (1 << 31)) >> 31);
-
-    return (is_avx512f_enabled) ? 1 : 0;
-#else
-    return 0;
-#endif
-}
-
-std::vector<ccl_test_conf> test_params;
-
 void init_test_params() {
     test_params.resize(calculate_test_count());
 
@@ -404,7 +263,7 @@ void init_test_params() {
                             for (ccl_data_type data_type = first_ccl_data_type;
                                  data_type < last_ccl_data_type;
                                  data_type++) {
-                                if (data_type == DT_BFLOAT16 && !is_bf16_enabled())
+                                if (should_skip_datatype(data_type))
                                     continue;
 
                                 for (ccl_completion_type completion_type =
@@ -459,4 +318,45 @@ void init_test_params() {
     }
 
     test_params.resize(idx);
+}
+
+std::ostream& operator<<(std::ostream& stream, ccl_test_conf const& test_conf) {
+    return stream << "\n"
+                  << ccl_data_type_str[test_conf.datatype] << "\n"
+                  << ccl_place_type_str[test_conf.place_type] << "\n"
+                  << ccl_cache_type_str[test_conf.cache_type] << "\n"
+                  << ccl_size_type_str[test_conf.size_type] << "\n"
+                  << ccl_completion_type_str[test_conf.completion_type] << "\n"
+                  << ccl_sync_type_str[test_conf.sync_type] << "\n"
+                  << ccl_reduction_type_str[test_conf.reduction] << "\n"
+                  << ccl_order_type_str[test_conf.complete_order_type] << "\n"
+                  << ccl_order_type_str[test_conf.start_order_type] << "\n"
+                  << ccl_buffer_count_str[test_conf.buffer_count] << "\n"
+                  << ccl_prolog_type_str[test_conf.prolog_type] << "\n"
+                  << ccl_epilog_type_str[test_conf.epilog_type] << std::endl;
+}
+
+void print_err_message(char* message, std::ostream& output) {
+    ccl::communicator& comm = GlobalData::instance().comms[0];
+    int comm_size = comm.size();
+    int comm_rank = comm.rank();
+
+    size_t message_len = strlen(message);
+    std::vector<size_t> message_lens(comm_size, 0);
+    std::vector<size_t> recv_counts(comm_size, 1);
+    ccl::allgatherv(&message_len, 1, message_lens.data(), recv_counts, comm).wait();
+
+    auto total_message_len = std::accumulate(message_lens.begin(), message_lens.end(), 0);
+
+    if (total_message_len == 0) {
+        return;
+    }
+
+    std::vector<char> messages(total_message_len);
+    ccl::allgatherv(message, message_len, messages.data(), message_lens, ccl::datatype::int8, comm)
+        .wait();
+
+    if (comm_rank == 0) {
+        output << messages.data();
+    }
 }

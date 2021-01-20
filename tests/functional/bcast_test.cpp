@@ -1,6 +1,5 @@
-#define TEST_CCL_BCAST
-
-#define COLL_NAME "CCL_BCAST"
+#define COLL_NAME         "CCL_BCAST"
+#define BCAST_VALUE_COEFF 128
 
 #include "base_impl.hpp"
 
@@ -10,7 +9,7 @@ public:
     int check(typed_test_param<T>& param) {
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
             for (size_t elem_idx = 0; elem_idx < param.elem_count; elem_idx++) {
-                T expected = static_cast<T>(elem_idx);
+                T expected = static_cast<T>(elem_idx % BCAST_VALUE_COEFF);
                 if (base_test<T>::check_error(param, expected, buf_idx, elem_idx))
                     return TEST_FAILURE;
             }
@@ -18,20 +17,14 @@ public:
         return TEST_SUCCESS;
     }
 
-    void fill_buffers(typed_test_param<T>& param) {
+    void fill_recv_buffers(typed_test_param<T>& param) {
+        if (param.comm_rank != ROOT_RANK)
+            return;
+
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
             for (size_t elem_idx = 0; elem_idx < param.elem_count; elem_idx++) {
-                if (param.process_idx == ROOT_PROCESS_IDX) {
-                    param.recv_buf[buf_idx][elem_idx] = elem_idx;
-                }
-                else {
-                    param.recv_buf[buf_idx][elem_idx] = static_cast<T>(SOME_VALUE);
-                    if (param.test_conf.datatype == DT_BFLOAT16) {
-                        param.recv_buf_bf16[buf_idx][elem_idx] = static_cast<short>(SOME_VALUE);
-                    }
-                }
+                param.recv_buf[buf_idx][elem_idx] = elem_idx % BCAST_VALUE_COEFF;
             }
-            param.send_buf[buf_idx] = param.recv_buf[buf_idx];
         }
     }
 
@@ -40,23 +33,19 @@ public:
     }
 
     void run_derived(typed_test_param<T>& param) {
-        void* recv_buf;
-        size_t count = param.elem_count;
-
         const ccl_test_conf& test_conf = param.get_conf();
-
         auto attr = ccl::create_operation_attr<ccl::broadcast_attr>();
-
         ccl::datatype datatype = get_ccl_lib_datatype(test_conf);
 
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
             size_t new_idx = param.buf_indexes[buf_idx];
             param.prepare_coll_attr(attr, param.buf_indexes[buf_idx]);
-
-            recv_buf = param.get_recv_buf(new_idx);
-
-            param.reqs[buf_idx] = ccl::broadcast(
-                recv_buf, count, datatype, ROOT_PROCESS_IDX, GlobalData::instance().comms[0], attr);
+            param.reqs[buf_idx] = ccl::broadcast(param.get_recv_buf(new_idx),
+                                                 param.elem_count,
+                                                 datatype,
+                                                 ROOT_RANK,
+                                                 GlobalData::instance().comms[0],
+                                                 attr);
         }
     }
 };

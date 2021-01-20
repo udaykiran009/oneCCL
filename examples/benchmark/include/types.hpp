@@ -20,10 +20,9 @@
         } \
     } while (0)
 
-// TODO: add ccl::bfloat16
 constexpr std::initializer_list<ccl::datatype> all_dtypes = {
-    ccl::datatype::int8,    ccl::datatype::int32, ccl::datatype::float32,
-    ccl::datatype::float64, ccl::datatype::int64, ccl::datatype::uint64
+    ccl::datatype::int8,    ccl::datatype::int32,   ccl::datatype::int64,   ccl::datatype::uint64,
+    ccl::datatype::float16, ccl::datatype::float32, ccl::datatype::float64, ccl::datatype::bfloat16
 };
 
 typedef enum { BACKEND_HOST, BACKEND_SYCL } backend_type_t;
@@ -50,14 +49,15 @@ std::map<sycl_usm_type_t, std::string> sycl_usm_names = { std::make_pair(SYCL_US
                                                           std::make_pair(SYCL_USM_DEVICE,
                                                                          "device") };
 
-// TODO: add ccl::bfloat16
 std::map<ccl::datatype, std::string> dtype_names = {
     std::make_pair(ccl::datatype::int8, "int8"),
     std::make_pair(ccl::datatype::int32, "int32"),
     std::make_pair(ccl::datatype::int64, "int64"),
     std::make_pair(ccl::datatype::uint64, "uint64"),
+    std::make_pair(ccl::datatype::float16, "float16"),
     std::make_pair(ccl::datatype::float32, "float32"),
-    std::make_pair(ccl::datatype::float64, "float64")
+    std::make_pair(ccl::datatype::float64, "float64"),
+    std::make_pair(ccl::datatype::bfloat16, "bfloat16")
 };
 
 std::map<ccl::reduction, std::string> reduction_names = {
@@ -118,3 +118,33 @@ typedef struct user_options_t {
         csv_filepath = std::string(DEFAULT_CSV_FILEPATH);
     }
 } user_options_t;
+
+std::ostream& operator<<(std::ostream& out, const ccl::bfloat16& v) {
+    out << v.get_data();
+    return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const ccl::float16& v) {
+    out << v.get_data();
+    return out;
+}
+
+template <class Dtype>
+ccl::datatype get_ccl_dtype() {
+    return ccl::native_type_info<typename std::remove_pointer<Dtype>::type>::dtype;
+}
+
+template <class T>
+size_t cast_to_size_t(T v) {
+    return static_cast<size_t>(v);
+}
+
+template <>
+size_t cast_to_size_t<ccl::bfloat16>(ccl::bfloat16 v) {
+    return static_cast<size_t>(v.get_data());
+}
+
+template <>
+size_t cast_to_size_t<ccl::float16>(ccl::float16 v) {
+    return static_cast<size_t>(v.get_data());
+}

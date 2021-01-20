@@ -44,20 +44,6 @@ std::ostream& operator<<(std::ostream& os, const ccl::datatype& dt) {
     return os;
 }
 
-// CCL_API
-// std::string to_string(const bfloat16& v) {
-//     std::stringstream ss;
-//     ss << "bf16::data " << v.data;
-//     return ss.str();
-// }
-
-// CCL_API
-// std::string to_string(const float16& v) {
-//     std::stringstream ss;
-//     ss << "fp16::data " << v.data;
-//     return ss.str();
-// }
-
 ccl_datatype::ccl_datatype(ccl::datatype idx, size_t size) : m_idx(idx), m_size(size) {
     CCL_THROW_IF_NOT(m_size > 0, "unexpected datatype size ", m_size);
 }

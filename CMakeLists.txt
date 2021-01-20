@@ -215,6 +215,34 @@ endif()
 
 set(CCL_GPU_BF16_TRUNCATE ON)
 
+
+set(GCC_FP16_MIN_SUPPORTED "4.9.0")
+set(CLANG_FP16_MIN_SUPPORTED "9.0.0")
+
+if (${CMAKE_C_COMPILER_ID} STREQUAL "Intel"
+    OR (${CMAKE_C_COMPILER_ID} STREQUAL "Clang"
+        AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${CLANG_FP16_MIN_SUPPORTED})
+    OR (${CMAKE_C_COMPILER_ID} STREQUAL "GNU"
+        AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${GCC_FP16_MIN_SUPPORTED})
+    )
+    add_definitions(-DCCL_FP16_COMPILER)
+    set(CCL_FP16_COMPILER ON)
+    message(STATUS "FP16 compiler: yes")
+else()
+    set(CCL_FP16_COMPILER OFF)
+    message(STATUS "FP16 compiler: no")
+endif()
+
+if (CCL_FP16_COMPILER)
+    if ((${CMAKE_C_COMPILER_ID} STREQUAL "Clang" OR ${CMAKE_C_COMPILER_ID} STREQUAL "GNU"))
+        add_definitions(-DCCL_FP16_TARGET_ATTRIBUTES)
+        message(STATUS "FP16 target attributes: yes")
+    else()
+        message(STATUS "FP16 target attributes: no")
+    endif()
+endif()
+
+
 set(CCL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 enable_testing()

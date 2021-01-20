@@ -23,8 +23,6 @@ public:
                                                              native::ccl_numa_proxy<native::ccl_gpu_comm>,
                                                              native::ccl_numa_proxy<native::ccl_virtual_gpu_comm>*/>;
 
-    using coll_request_t = ccl::event;
-
     process_a2a_communicator(ccl::unified_device_type&& device,
                              ccl::unified_context_type&& ctx,
                              size_t thread_idx,

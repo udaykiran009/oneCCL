@@ -38,6 +38,7 @@ struct reduce_scatter_strategy_impl {
         reqs.push_back(ccl::reduce_scatter(send_buf,
                                            recv_buf,
                                            recv_count,
+                                           get_ccl_dtype<Dtype>(),
                                            bench_attr.reduction,
                                            comm,
                                            std::forward<Args>(args)...));
