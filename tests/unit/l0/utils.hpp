@@ -23,7 +23,7 @@
 #define private public
 #define protected public
 #define MULTI_GPU_SUPPORT
-//#include "oneapi/ccl/native_device_api/export_api.hpp"
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "oneapi/ccl/native_device_api/l0/declarations.hpp"
 #include "../tests/unit/l0/lp.hpp"
 

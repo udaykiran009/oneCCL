@@ -157,12 +157,11 @@ TEST_F(ipc_handles_fixture, ipc_unix_server_handles_serialize) {
                 std::vector<native_type> read_data(data_size, 0);
                 if (index == 0) //send_mem
                 {
-                    native::detail::copy_memory_to_device_sync_unsafe(
-                        read_data.data(),
-                        recovered_mem.get().pointer,
-                        data_size * sizeof(native_type),
-                        owner_device,
-                        ctx);
+                    native::detail::copy_memory_sync_unsafe(read_data.data(),
+                                                            recovered_mem.get().pointer,
+                                                            data_size * sizeof(native_type),
+                                                            owner_device,
+                                                            ctx);
 
                     std::vector<native_type> read_data_expected(data_size, *other_pid);
                     UT_ASSERT(read_data == read_data_expected,
@@ -170,12 +169,11 @@ TEST_F(ipc_handles_fixture, ipc_unix_server_handles_serialize) {
                 }
                 else //recv_mem
                 {
-                    native::detail::copy_memory_to_device_sync_unsafe(
-                        read_data.data(),
-                        recovered_mem.get().pointer,
-                        data_size * sizeof(native_type),
-                        owner_device,
-                        ctx);
+                    native::detail::copy_memory_sync_unsafe(read_data.data(),
+                                                            recovered_mem.get().pointer,
+                                                            data_size * sizeof(native_type),
+                                                            owner_device,
+                                                            ctx);
                     std::vector<native_type> read_data_expected(data_size, *my_pid);
                     UT_ASSERT(read_data == read_data_expected,
                               "Get data for send_buf is unexpected!");

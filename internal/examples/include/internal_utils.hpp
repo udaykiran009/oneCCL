@@ -250,7 +250,7 @@ ccl::process_device_indices_type extract_indices_for_threads(
 #ifdef CCL_ENABLE_SYCL
                     utils::create_device_from_index(device_vendor_id, "Level-Zero"));
 #else
-                    ::native::get_platform().get_device(device_vendor_id));
+                    ::native::ccl_device_platform::get_platform().get_device(device_vendor_id));
 #endif
             }
         }

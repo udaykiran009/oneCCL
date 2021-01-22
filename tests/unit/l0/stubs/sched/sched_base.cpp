@@ -24,9 +24,11 @@ ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes) {
     return {};
 }
 
+#ifdef CCL_ENABLE_SYCL
 ccl_buffer ccl_sched_base::alloc_staging_buffer(size_t bytes) {
     return {};
 }
+#endif
 
 void ccl_sched_base::free_buffers() {}
 

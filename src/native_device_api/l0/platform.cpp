@@ -2,10 +2,9 @@
 #include <iterator>
 #include <sstream>
 
-#include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
-#include "oneapi/ccl/native_device_api/l0/platform.hpp"
-
 #include "oneapi/ccl/native_device_api/export_api.hpp"
+#include "oneapi/ccl/native_device_api/l0/platform.hpp"
+#include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 
 #ifndef gettid
 #include <sys/syscall.h>
@@ -31,6 +30,10 @@ CCL_BE_API ccl_device_platform& get_platform() {
     return *init.platform_impl;
 }
 
+CCL_BE_API ccl_device_platform& ccl_device_platform::get_platform() {
+    return native::get_platform();
+}
+
 CCL_BE_API std::shared_ptr<ccl_device_platform> ccl_device_platform::create(
     const ccl::device_indices_type& indices /* = device_indices_per_driver()*/) {
     std::shared_ptr<ccl_device_platform> platform(
@@ -38,14 +41,7 @@ CCL_BE_API std::shared_ptr<ccl_device_platform> ccl_device_platform::create(
     platform->init_drivers(indices);
     return platform;
 }
-/*
-CCL_BE_API std::shared_ptr<ccl_device_platform> ccl_device_platform::create(const device_affinity_per_driver& affinities)
-{
-    std::shared_ptr<ccl_device_platform> platform(new ccl_device_platform);
-    platform->init_drivers(affinities);
-    return platform;
-}
-*/
+
 CCL_BE_API ccl_device_platform::ccl_device_platform(platform_id_type platform_id) {
     // initialize Level-Zero driver
     ze_result_t ret = zeInit(ZE_INIT_FLAG_GPU_ONLY);
@@ -58,64 +54,9 @@ CCL_BE_API ccl_device_platform::ccl_device_platform(platform_id_type platform_id
     id = platform_id;
     pid = getpid();
 }
-/*
-CCL_BE_API void ccl_device_platform::init_drivers(const device_affinity_per_driver& driver_device_affinities)
-{
-    //collect driver indices
-    ccl::device_mask_t driver_indices;
-    std::transform(driver_device_affinities.begin(), driver_device_affinities.end(),
-                   std::inserter(driver_indices, driver_indices.end()),
-                   [](const typename device_affinity_per_driver::value_type& pair)
-                   {
-                        return pair.first;
-                   });
 
-    auto collected_drivers_list = ccl_device_driver::get_handles(driver_indices);
-    for (const auto &val : collected_drivers_list)
-    {
-        auto affitinity_it = driver_device_affinities.find(val.first);
-        if(affitinity_it != driver_device_affinities.end())
-        {
-            drivers.emplace(val.first, ccl_device_driver::create(val.second, get_ptr(), affitinity_it->second));
-        }
-        else
-        {
-            drivers.emplace(val.first, ccl_device_driver::create(val.second, get_ptr()));
-        }
-    }
-}
-*/
 CCL_BE_API void ccl_device_platform::init_drivers(
     const ccl::device_indices_type& driver_device_affinities /* = device_indices_per_driver()*/) {
-    /* TODO - do we need that?
-
-#ifdef CCL_ENABLE_SYCL
-    if(gpu_sycl_devices.empty())
-    {
-        auto platforms = cl::sycl::platform::get_platforms();
-        for(const auto& platform : platforms)
-        {
-            if(platform.is_host())
-            {
-                continue;
-            }
-            auto devices = platform.get_devices(cl::sycl::info::device_type::gpu);
-            if (devices.empty())
-            {
-                continue;
-            }
-            gpu_sycl_devices.insert(gpu_sycl_devices.end(), devices.begin(), devices.end());
-        }
-
-        if(gpu_sycl_devices.empty())
-        {
-            std::cerr << "Cannot collect SYCL device! Exit.";
-            abort();
-        }
-    }
-#endif
-*/
-
     try {
         auto collected_drivers_list = ccl_device_driver::get_handles(driver_device_affinities);
         for (const auto& val : collected_drivers_list) {

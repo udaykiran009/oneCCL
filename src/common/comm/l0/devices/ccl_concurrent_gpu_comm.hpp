@@ -23,12 +23,15 @@ public:
     using gpu_module_t =
         typename device_t::template gpu_module_t<algo_type, group, mode>; //same as in-process GPU
 
+    template <ccl_coll_type algo_type, ccl::group_split_type group, ccl::device_topology_type mode>
+    using kernel_class_t = typename gpu_module_t<algo_type, group, mode>::main_class;
+
     template <ccl_coll_type algo_type,
               ccl::group_split_type group,
               ccl::device_topology_type mode,
               class kernel_params>
     using gpu_kernel_t =
-        typename gpu_module_t<algo_type, group, mode>::template get_kernel<kernel_params>;
+        typename kernel_class_t<algo_type, group, mode>::template kernel_t<kernel_params>;
 
     static constexpr const char* name_impl() {
         return "CONCURRENT_GPU";

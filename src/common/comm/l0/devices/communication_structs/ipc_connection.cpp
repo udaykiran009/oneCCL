@@ -2,6 +2,8 @@
 
 #include "common/log/log.hpp"
 #include "common/comm/l0/devices/communication_structs/ipc_connection.hpp"
+
+#include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "oneapi/ccl/native_device_api/l0/base_impl.hpp"
 #include "oneapi/ccl/native_device_api/l0/platform.hpp"
 #include "oneapi/ccl/native_device_api/l0/context.hpp"

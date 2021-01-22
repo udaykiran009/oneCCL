@@ -70,36 +70,40 @@ std::unique_ptr<ccl::event_impl> do_collective_op_reductions(
     Args&&... args) {
     switch (reduction) {
         case ccl::reduction::sum:
-            return do_collective_op<kernel_params_traits<buffer_type, ccl_coll_reduction::add>,
-                                    group_id,
-                                    class_id,
-                                    algorithm>(
+            return do_collective_op<
+                kernel_reduction_params_traits<buffer_type, ccl_coll_reduction::add>,
+                group_id,
+                class_id,
+                algorithm>(
                 communication_device, ctx, community, native_context, std::forward<Args>(args)...);
             break;
         case ccl::reduction::prod:
-            return do_collective_op<kernel_params_traits<buffer_type, ccl_coll_reduction::mult>,
-                                    group_id,
-                                    class_id,
-                                    algorithm>(
+            return do_collective_op<
+                kernel_reduction_params_traits<buffer_type, ccl_coll_reduction::mult>,
+                group_id,
+                class_id,
+                algorithm>(
                 communication_device, ctx, community, native_context, std::forward<Args>(args)...);
             break;
         case ccl::reduction::min:
-            return do_collective_op<kernel_params_traits<buffer_type, ccl_coll_reduction::min>,
-                                    group_id,
-                                    class_id,
-                                    algorithm>(
+            return do_collective_op<
+                kernel_reduction_params_traits<buffer_type, ccl_coll_reduction::min>,
+                group_id,
+                class_id,
+                algorithm>(
                 communication_device, ctx, community, native_context, std::forward<Args>(args)...);
             break;
         case ccl::reduction::max:
-            return do_collective_op<kernel_params_traits<buffer_type, ccl_coll_reduction::max>,
-                                    group_id,
-                                    class_id,
-                                    algorithm>(
+            return do_collective_op<
+                kernel_reduction_params_traits<buffer_type, ccl_coll_reduction::max>,
+                group_id,
+                class_id,
+                algorithm>(
                 communication_device, ctx, community, native_context, std::forward<Args>(args)...);
             break;
         // TODO: make support of custom reduction in *.cl
         // case ccl::reduction::custom:
-        //     return do_collective_op<kernel_params_traits<buffer_type, ccl_coll_reduction::custom>,
+        //     return do_collective_op<kernel_reduction_params_traits<buffer_type, ccl_coll_reduction::custom>,
         //                            group_id, class_id, algorithm>(
         //                                                      communication_device,
         //                                                      ctx,

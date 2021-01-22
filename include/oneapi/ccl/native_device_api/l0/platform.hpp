@@ -15,7 +15,6 @@ struct ccl_device_platform : std::enable_shared_from_this<ccl_device_platform> {
 
     using platform_id_type = size_t;
 
-    //void init_drivers(const device_affinity_per_driver& affinities / * = device_affinity_per_driver()* /);
     void init_drivers(const ccl::device_indices_type& indices = ccl::device_indices_type());
 
     std::shared_ptr<ccl_device_platform> get_ptr() {
@@ -39,7 +38,6 @@ struct ccl_device_platform : std::enable_shared_from_this<ccl_device_platform> {
 
     static std::shared_ptr<ccl_device_platform> create(
         const ccl::device_indices_type& indices = ccl::device_indices_type());
-    //static std::shared_ptr<ccl_device_platform> create(const device_affinity_per_driver& affinities);
 
     detail::adjacency_matrix calculate_device_access_metric(
         const ccl::device_indices_type& indices = ccl::device_indices_type(),
@@ -59,6 +57,8 @@ struct ccl_device_platform : std::enable_shared_from_this<ccl_device_platform> {
     platform_id_type get_id() const noexcept;
     pid_t get_pid() const noexcept;
 
+    static CCL_BE_API ccl_device_platform& get_platform();
+
 private:
     ccl_device_platform(platform_id_type platform_id = 0);
 
@@ -71,8 +71,7 @@ private:
     pid_t pid;
 };
 
-//extern std::shared_ptr<ccl_device_platform> global_platform;
-ccl_device_platform& get_platform();
+extern CCL_BE_API ccl_device_platform& get_platform();
 
-ccl_device_platform::driver_ptr get_driver(size_t index = 0);
+extern CCL_BE_API ccl_device_platform::driver_ptr get_driver(size_t index = 0);
 } // namespace native

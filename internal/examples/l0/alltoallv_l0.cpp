@@ -449,7 +449,7 @@ int main(int argc, char** argv) {
     //auto ctx = cl::sycl::context(devices_in_process);
     auto ctx = cl::sycl::context(*devices_in_process.begin()); //use single device
 #else
-    const auto& drivers = native::get_platform().get_drivers();
+    const auto& drivers = native::ccl_device_platform::get_platform().get_drivers();
     if (drivers.empty()) {
         std::cerr << "No drivers in L0 native paltform. Exit" << std::endl;
         return -1;

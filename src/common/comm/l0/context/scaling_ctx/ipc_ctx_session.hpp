@@ -76,13 +76,16 @@ struct typed_ipc_session : public session {
     void visit(const ccl_ipc_gpu_comm* source,
                native::supported_device_modules<ipc_dst_device_coll_module>& ipc_modules) override {
         //get appropriate module
-        auto& module_ptr = std::get<::utils::enum_to_underlying(class_id)>(
+        using module_t =
+            ipc_dst_device_coll_module<coll_type, ccl::group_split_type::cluster, class_id>;
+        std::shared_ptr<module_t>& module_ptr = std::get<::utils::enum_to_underlying(class_id)>(
             std::get<::utils::enum_to_underlying(ccl::group_split_type::cluster)>(
                 std::get<coll_type>(ipc_modules)));
         assert(module_ptr);
 
         // get appropriate kernel
-        auto& kernel = module_ptr->template get_main_function<kernel_params>();
+        auto& kernel = module_ptr->template get_class<typename module_t::main_class>()
+                           .template get<kernel_params>();
         using kernel_t = typename std::decay<decltype(kernel)>::type;
 
         // get recovered ipc handles

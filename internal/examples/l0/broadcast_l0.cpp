@@ -253,7 +253,7 @@ int main(int argc, char** argv) {
         devices_in_process.insert(
             devices_in_process.end(), thread_devices.second.begin(), thread_devices.second.end());
     }
-    const auto& drivers = native::get_platform().get_drivers();
+    const auto& drivers = native::ccl_device_platform::get_platform().get_drivers();
     if (drivers.empty()) {
         std::cerr << "No drivers in L0 native paltform. Exit" << std::endl;
         return -1;

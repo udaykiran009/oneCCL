@@ -28,7 +28,8 @@ set (dependencies_sources
             ${PROJECT_SOURCE_DIR}/src/common/comm/l0/devices/communication_structs/ipc_server.cpp
             ${PROJECT_SOURCE_DIR}/src/common/comm/l0/devices/communication_structs/ipc_client.cpp
             ${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/spinlock.cpp
-            ${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/env.cpp)
+            ${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/env.cpp
+            ${PROJECT_SOURCE_DIR}/tests/unit/l0/stubs/aux/bfp16.cpp)
 
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)

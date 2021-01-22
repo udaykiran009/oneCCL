@@ -28,12 +28,15 @@ public:
     using gpu_module_t =
         typename device_t::template gpu_module_t<algo_type, group, mode>; //same as in-process GPU
 
+    template <ccl_coll_type algo_type, ccl::group_split_type group, ccl::device_topology_type mode>
+    using kernel_class_t = typename gpu_module_t<algo_type, group, mode>::numa_class;
+
     template <ccl_coll_type algo_type,
               ccl::group_split_type group,
               ccl::device_topology_type mode,
               class kernel_params>
     using gpu_kernel_t =
-        typename gpu_module_t<algo_type, group, mode>::template get_kernel_numa<kernel_params>;
+        typename kernel_class_t<algo_type, group, mode>::template kernel_t<kernel_params>;
 
     static constexpr const char* name_impl() {
         return "NUMA_PROXY";
@@ -59,7 +62,9 @@ public:
               class kernel_params>
     gpu_kernel_t<module_type, group_id, class_id, kernel_params>& get_gpu_kernel() {
         auto& ptr = wrapped_gpu_comm.template get_gpu_module<module_type, group_id, class_id>();
-        return ptr.template get_numa_main_function<kernel_params>();
+
+        using requested_class = kernel_class_t<module_type, group_id, class_id>;
+        return ptr.template get_class<requested_class>().template get<kernel_params>();
     }
 
     template <class kernel_params,

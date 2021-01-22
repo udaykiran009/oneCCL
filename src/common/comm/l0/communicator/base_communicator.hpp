@@ -4,17 +4,7 @@
 #include "common/comm/comm_interface.hpp"
 //TODO #include "sched/gpu_sched.hpp"
 #include "common/comm/l0/comm_context_id.hpp"
-
-template <class type>
-struct kernel_params_default {
-    using native_type = type;
-};
-
-template <class native_data_type, ccl_coll_reduction reduction>
-struct kernel_params_traits : kernel_params_default<native_data_type> {
-    using typename kernel_params_default<native_data_type>::native_type;
-    static constexpr ccl_coll_reduction red_type = reduction;
-};
+#include "common/comm/l0/modules/kernel_params.hpp"
 
 struct base_communicator : public ccl::communicator_interface {
     //TODO using group_comm_storage = native::specific_indexed_device_storage;
