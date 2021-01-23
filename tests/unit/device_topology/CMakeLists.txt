@@ -92,7 +92,7 @@ list (APPEND test_stub_core_sources
              "${UPSTREAM_SOURCE_DIR}/tests/unit/l0/stubs/sched/sched_base.cpp"
              "${UPSTREAM_SOURCE_DIR}/tests/unit/l0/stubs/sched/gpu_sched.cpp"
              "${UPSTREAM_SOURCE_DIR}/tests/unit/l0/stubs/sched/gpu_concurrent_sched.cpp"
-             "${UPSTREAM_SOURCE_DIR}/tests/unit/l0/stubs/aux/bfp16.cpp"
+             "${UPSTREAM_SOURCE_DIR}/tests/unit/l0/stubs/spare/bfp16.cpp"
              )
 list( APPEND napi_wrapper_sources "${UPSTREAM_SOURCE_DIR}/src/native_device_api/empty/export.cpp")
 
