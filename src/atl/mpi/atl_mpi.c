@@ -1305,6 +1305,12 @@ static atl_status_t atl_mpi_init(int* argc,
     int is_mpi_inited = 0;
     MPI_Initialized(&is_mpi_inited);
 
+    if ((global_data.mpi_lib_type == ATL_MPI_LIB_IMPI) && !getenv("I_MPI_ROOT")) {
+        LOG_ERROR("ATL MPI uses Intel MPI but I_MPI_ROOT is not set. "
+                  "Please source release_mt version of Intel MPI (2019 or higher version).");
+        goto err_init;
+    }
+
     if (!is_mpi_inited) {
         global_data.is_external_init = 0;
         ret = MPI_Init_thread(argc, argv, required_thread_level, &provided_thread_level);

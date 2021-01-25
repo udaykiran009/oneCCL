@@ -115,7 +115,7 @@ set(CCL_SRC
     atl/util/pm/pmi_resizable_rt/pmi_resizable/request_wrappers_k8s.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/resizable_pmi.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/shift_list.cpp
-        atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.cpp
+    atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/users_kvs.cpp
     atl/util/pm/pmi_rt/pmi_simple.cpp
     atl/util/pm/pmi_rt/pmi/simple_pmi.c
@@ -219,8 +219,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 #special library that holds objects only
 add_library(ccl-objects OBJECT ${CCL_SRC})
 set_target_properties(ccl-objects PROPERTIES POSITION_INDEPENDENT_CODE 1)
-target_compile_definitions(ccl-objects PRIVATE PT_LOCK_SPIN=1)
-target_compile_definitions(ccl-objects PRIVATE ATL_TRANSPORT_DL_DIR=\"${CCL_BUILD_DIR}\")
 target_include_directories(ccl-objects PRIVATE ${CCL_INC_DIRS})
 
 if(COMPUTE_BACKEND_TARGET_NAME)
@@ -230,9 +228,11 @@ endif()
 # add library search directory
 link_directories(${PROJECT_SOURCE_DIR}/mpi/lib)
 link_directories(${LIBFABRIC_LIB_DIR})
+
 #shared library
 add_library(ccl SHARED $<TARGET_OBJECTS:ccl-objects>)
 target_include_directories(ccl PUBLIC ${CCL_INC_DIRS})
+
 # link with release_mt libmpi.so for oneAPI Base toolkit
 set_target_properties(ccl PROPERTIES LINK_FLAGS "-Wl,-rpath,../../../../mpi/latest/lib/release_mt/")
 target_link_libraries(ccl PUBLIC dl pthread ${EXTERNAL_LIBS} ${COMPUTE_BACKEND_TARGET_NAME} fabric mpi)
@@ -241,6 +241,7 @@ if (NOT LIB_SO_VERSION AND NOT LIB_MAJOR_VERSION)
 else()
         set_target_properties(ccl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CCL_BUILD_DIR} VERSION ${LIB_SO_VERSION} SOVERSION ${LIB_MAJOR_VERSION})
 endif()
+
 install(TARGETS ccl LIBRARY DESTINATION ${CCL_INSTALL_LIB})
 install(FILES
     "../cmake/FindOpenCL.cmake"
@@ -250,7 +251,6 @@ install(FILES
     "../cmake/FindIntelSYCL_level_zero.cmake"
     "../cmake/FindComputeCpp.cmake"
     DESTINATION ${CCL_INSTALL_LIB})
-
 
 #static library
 add_library(ccl-static STATIC $<TARGET_OBJECTS:ccl-objects>)

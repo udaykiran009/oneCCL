@@ -117,8 +117,6 @@ case "$ccl_configuration" in
 esac
 CCL_CONFIGURATION="${ccl_configuration}"; export CCL_CONFIGURATION
 
-CCL_ATL_TRANSPORT_PATH="${CCL_ROOT}/lib/${ccl_configuration}"; export CCL_ATL_TRANSPORT_PATH
-
 CPATH="${CCL_ROOT}/include/${ccl_configuration}${CPATH+:${CPATH}}"; export CPATH
 LIBRARY_PATH="${CCL_ROOT}/lib/${ccl_configuration}${LIBRARY_PATH+:${LIBRARY_PATH}}"; export LIBRARY_PATH
 LD_LIBRARY_PATH="${CCL_ROOT}/lib/${ccl_configuration}${LD_LIBRARY_PATH+:${LD_LIBRARY_PATH}}"; export LD_LIBRARY_PATH

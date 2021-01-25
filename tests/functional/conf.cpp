@@ -8,7 +8,7 @@ ccl_place_type last_ccl_place_type = PT_LAST;
 std::map<int, const char*> ccl_place_type_str = { { PT_OOP, "PT_OOP" }, { PT_IN, "PT_IN" } };
 
 ccl_size_type first_ccl_size_type = ST_SMALL;
-ccl_size_type last_ccl_size_type = ST_MEDIUM;
+ccl_size_type last_ccl_size_type = ST_LAST;
 std::map<int, const char*> ccl_size_type_str = { { ST_SMALL, "ST_SMALL" },
                                                  { ST_MEDIUM, "ST_MEDIUM" },
                                                  { ST_LARGE, "ST_LARGE" } };
@@ -17,13 +17,13 @@ std::map<int, size_t> ccl_size_type_values = { { ST_SMALL, 17 },
                                                { ST_LARGE, 524288 } };
 
 ccl_buffer_count first_ccl_buffer_count = BC_SMALL;
-ccl_buffer_count last_ccl_buffer_count = BC_MEDIUM;
+ccl_buffer_count last_ccl_buffer_count = BC_LAST;
 std::map<int, const char*> ccl_buffer_count_str = { { BC_SMALL, "BC_SMALL" },
                                                     { BC_MEDIUM, "BC_MEDIUM" },
                                                     { BC_LARGE, "BC_LARGE" } };
 std::map<int, size_t> ccl_buffer_count_values = { { BC_SMALL, 1 },
                                                   { BC_MEDIUM, 2 },
-                                                  { BC_LARGE, 8 } };
+                                                  { BC_LARGE, 4 } };
 
 ccl_completion_type first_ccl_completion_type = CMPT_WAIT;
 ccl_completion_type last_ccl_completion_type = CMPT_LAST;

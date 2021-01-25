@@ -79,7 +79,6 @@ fi
 WORK_DIR=$(get_script_path "${vars_script_name:-}")
 
 CCL_ROOT="$(cd "${WORK_DIR}"/../; pwd -P)"; export CCL_ROOT
-CCL_ATL_TRANSPORT_PATH="${CCL_ROOT}/lib"; export CCL_ATL_TRANSPORT_PATH
 
 CPATH="${CCL_ROOT}/include/${CPATH+:${CPATH}}"; export CPATH
 LIBRARY_PATH="${CCL_ROOT}/lib/${LIBRARY_PATH+:${LIBRARY_PATH}}"; export LIBRARY_PATH

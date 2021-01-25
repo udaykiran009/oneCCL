@@ -73,8 +73,6 @@ struct typed_test_param {
     }
 
     void print(std::ostream& output);
-    // void* get_send_buf(size_t buf_idx);
-    // void* get_recv_buf(size_t buf_idx);
 
     void* get_send_buf(size_t buf_idx) {
         if (is_lp_datatype(test_conf.datatype))
