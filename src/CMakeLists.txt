@@ -258,16 +258,6 @@ set_target_properties(ccl-static PROPERTIES OUTPUT_NAME ccl)
 set_target_properties(ccl-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
 install(TARGETS ccl-static ARCHIVE DESTINATION ${CCL_INSTALL_LIB} OPTIONAL)
 
-if(MULTI_GPU_SUPPORT)
-    message("Turn on L0 multi-gpu unit tests")
-    add_library(ccl-ut-static STATIC $<TARGET_OBJECTS:ccl-objects>)
-    target_link_libraries(ccl-ut-static PUBLIC dl pthread ${EXTERNAL_LIBS} ${COMPUTE_BACKEND_TARGET_NAME} fabric mpi)
-    set_target_properties(ccl-ut-static PROPERTIES COMPILE_FLAGS "-fvisibility=default -DUNIT_TESTS")
-    set_target_properties(ccl-ut-static PROPERTIES OUTPUT_NAME cclut)
-    set_target_properties(ccl-ut-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
-    set_target_properties(ccl-ut-static PROPERTIES INTERFACE_INCLUDE_DIRECTORIES  $<TARGET_PROPERTY:${COMPUTE_BACKEND_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
-endif(MULTI_GPU_SUPPORT)
-
 #headers installation
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
         DESTINATION ${CCL_INSTALL_INCLUDE} FILES_MATCHING REGEX ".*\\.(h|hpp)$")

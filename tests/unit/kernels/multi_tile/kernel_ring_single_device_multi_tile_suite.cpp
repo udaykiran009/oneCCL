@@ -1,11 +1,11 @@
 #include "base.hpp"
 #include "fixture.hpp"
-#include "kernels/multi_tile/ring_allreduce_single_device_multi_tile_test.hpp"
-#include "kernels/multi_tile/ring_allgatherv_single_device_multi_tile_test.hpp"
-#include "kernels/multi_tile/ring_alltoallv_single_device_multi_tile_test.hpp"
-#include "kernels/multi_tile/ring_bcast_single_device_multi_tile_test.hpp"
-#include "kernels/multi_tile/ring_reduce_single_device_multi_tile_test.hpp"
-#include "kernels/multi_tile/ring_reduce_scatter_single_device_multi_tile_test.hpp"
+#include "ring_allreduce_single_device_multi_tile_test.hpp"
+#include "ring_allgatherv_single_device_multi_tile_test.hpp"
+#include "ring_alltoallv_single_device_multi_tile_test.hpp"
+#include "ring_bcast_single_device_multi_tile_test.hpp"
+#include "ring_reduce_single_device_multi_tile_test.hpp"
+#include "ring_reduce_scatter_single_device_multi_tile_test.hpp"
 
 int main(int ac, char* av[]) {
     set_test_device_indices(getenv("L0_CLUSTER_AFFINITY_MASK"));

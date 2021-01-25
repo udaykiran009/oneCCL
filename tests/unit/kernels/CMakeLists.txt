@@ -1,0 +1,3 @@
+add_subdirectory(single_device)
+add_subdirectory(multi_tile)
+add_subdirectory(multi_device)

@@ -136,7 +136,7 @@ TEST_F(ipc_handles_fixture, ipc_unix_server_handles_serialize) {
         auto got = rx_conn->receive_ipc_memory(data_to_recv, received_rank);
         ipc_handles.swap(got);
 
-        UT_ASSERT(received_rank == *other_pid, "Received rank is invalid");
+        UT_ASSERT(static_cast<int>(received_rank) == *other_pid, "Received rank is invalid");
         size_t index = 0;
         for (auto& recv_ipc_handle : ipc_handles) {
             std::shared_ptr<ccl_device> owner_device = recv_ipc_handle->get_owner().lock();

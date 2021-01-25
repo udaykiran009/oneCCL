@@ -1,7 +1,7 @@
 #include "base.hpp"
 #include "fixture.hpp"
-#include "kernels/ring_allreduce_multi_device_test.hpp"
-#include "kernels/ring_bcast_multi_device_test.hpp"
+#include "ring_allreduce_multi_device_test.hpp"
+#include "ring_bcast_multi_device_test.hpp"
 
 int main(int ac, char* av[]) {
     set_test_device_indices(getenv("L0_CLUSTER_AFFINITY_MASK"));

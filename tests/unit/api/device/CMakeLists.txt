@@ -4,11 +4,8 @@ set (executable "device_suite")
 enable_testing()
 message ("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 
-if(API_UT)
-    set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../..")
-endif()
+set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 
-#add_subdirectory (${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/ ${PROJECT_SOURCE_DIR}/tests/units)
 include_directories(${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/include
                     ${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/src
                     ${CMAKE_CURRENT_BINARY_DIR}/..
@@ -29,7 +26,7 @@ set (dependencies_sources
 
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)
-    add_executable(${executable} $<TARGET_OBJECTS:native_cl_api_objects> ${src} ${dependencies_sources})
+    add_executable(${executable} $<TARGET_OBJECTS:napi_objects> ${src} ${dependencies_sources})
     add_dependencies(${executable} gtest)
     if (COMPUTE_BACKEND)
         target_include_directories(${executable} PRIVATE

@@ -4,18 +4,10 @@ set (executable "coll_attr_suite")
 enable_testing()
 message ("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 
-if(API_UT)
-    set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../..")
-endif()
 
+set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 
-if(API_UT)
-    add_subdirectory (${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/ ${PROJECT_SOURCE_DIR}/tests/units)
-endif()
-
-include_directories(${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/include
-                    ${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/src
-                    ${CMAKE_CURRENT_BINARY_DIR}/..
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/..
                     ${CMAKE_CURRENT_BINARY_DIR}
                     ${PROJECT_SOURCE_DIR}/include
                     ${PROJECT_SOURCE_DIR}/src

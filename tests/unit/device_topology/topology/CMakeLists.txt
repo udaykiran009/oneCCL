@@ -1,12 +1,9 @@
 set (executable "device_topology_suite")
 
-
 enable_testing()
 message ("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 
-if(MDEV_APART_UT)
-    set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../..")
-endif()
+set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
@@ -40,11 +37,13 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/common/comm/l0/devices/communication_structs/ipc_connection.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/l0/devices/communication_structs/ipc_server.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/l0/devices/communication_structs/ipc_client.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scaling_ctx/observer_ctx_session.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scaling_ctx/observer_ctx_session.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scaling_ctx/observer_session_key.cpp"
 
              "${PROJECT_SOURCE_DIR}/tests/unit/l0/stubs/modules/module_source_data.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ipc_ctx_session.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/l0/stubs/modules/base_entry_module.cpp"
-             "${PROJECT_SOURCE_DIR}/tests/unit/l0/stubs/common/context/observer_ctx_session.cpp"
              )
 
 list(APPEND dependencies_sources ${specific_sources})
