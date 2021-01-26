@@ -49,7 +49,7 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_themes/otc_tcs_sphinx_theme/readme.rst']
+exclude_patterns = []
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -69,9 +69,6 @@ html_static_path = ['_static']
 #        '_static/style.css',  # override wide tables in RTD theme
 #        ],
 #    }
-
-# html_theme = 'otc_tcs_sphinx_theme'
-# html_theme_path = ['_themes']
 
 
 import sys
