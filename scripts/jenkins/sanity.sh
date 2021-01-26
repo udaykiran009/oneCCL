@@ -520,39 +520,73 @@ run_tests()
     esac
 }
 
-run_unit_tests(){
-    echo "RUNNING UNIT TESTS"
-    #ctest -VV -C kernel_ring_single_device_suite
-    echo -e "Running unit tests"
+build_unit_tests()
+{
+    local test_type=$1
+    echo "CURRENT_WORK_DIR ${CURRENT_WORK_DIR}"
+    cd ${CURRENT_WORK_DIR}
     mkdir -p build
     cd ./build
-    
-    . /p/pdsd/scratch/jenkins/artefacts//ccl-nightly/last/inteloneapi/setvars.sh
-    . /p/pdsd/scratch/Uploads/IMPI/linux/functional_testing/impi/2021.1-beta09/env/vars.sh -i_mpi_library_kind=release_mt
-   
-    echo -e "Compiling unit tests"
-    build_output=$(cmake -DMULTI_GPU_SUPPORT=1 -DCMAKE_C_COMPILER=clang \
-                   -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_BACKEND=dpcpp_level_zero ..  \
-                   && make -j8 && make install 2>&1)
-    if [[ $? != 0 ]]; then
-        # There was an error, display the error in $output
-        echo -e "Error:\n$build_output"
-        exit 1
-    else
-        echo -e "Compiling unit tests done"
+    path="$(pwd)"
+
+    if [ "${test_type}" == "-kernels" ]
+    then
+        source /p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/last/compiler/latest/env/vars.sh intel64
+        cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCOMPUTE_BACKEND=level_zero ..
+        make -j8 kernel_ring_single_device_suite
+        cd "${path}/tests/unit/kernels/single_device"
+        ln -s ../../../../../src/kernels kernels
+        cd ${path}
+    fi
+}
+
+run_ut_ctest()
+{
+    local ut_name=$1
+    # L0_CLUSTER_AFFINITY_MASK indices are hard-coded right now for nuc07.
+    # MLSL-626 needs to be done for automatic definition indices and set them here.
+    L0_CLUSTER_AFFINITY_MASK="[0:39882],[0:39882]" ctest -VV -C $ut_name
+    retVal=$?
+    if [ $retVal -ne 0 ]; then
+        echo "Error: $ut_name is FAILED"
+        exit $retVal
+    fi
+}
+
+run_unit_tests()
+{
+    echo "RUNNING UNIT TESTS"
+
+    local test_type=$1
+    local errors=0
+
+    build_unit_tests ${test_type}
+    if [ $? -ne 0 ]; then
+        echo "Error: Building of unit kernels tests is FAILED"
+        exit $?
     fi
 
-    echo -e "Making link to ../src/kernels"
-    ln -s ../src/kernels kernels
-    echo -e "Made link"
-
-    echo -e "Running unit tests"
-    output=$(L0_CLUSTER_AFFINITY_MASK="[0:39882],[0:39882]|[0:39882],[0:39882]" \
-        ./tests/unit/l0/kernel_ring_single_device_suite | tee >&2 | grep 'FAILED')
-    if [ $? != 0 ]; then
+    case ${test_type} in
+        "-kernels")
+            for coll_kernel_ut in "ring_allgatherv_kernel_ut" "ring_allreduce_kernel_ut" \
+                                  "ring_bcast_kernel_ut" "ring_reduce_kernel_ut" \
+                                  "ring_reduce_scatter_kernel_ut"
+                                  # "alltoallv_kernel_ut" \
+            do
+                run_ut_ctest ${coll_kernel_ut}
+                if [ $? -ne 0 ]; then
+                    errors=$((errors+1))
+                fi
+            done
+        ;;
+        *)
+            echo "WARNING: kernel unit testing not started"
+            exit 1
+        ;;
+    esac
+    if [ $errors -ne 0 ]; then
         exit 1
     fi
-    echo -e "End running unit tests"
 }
 
 clean_nodes() {
@@ -604,8 +638,12 @@ do
         shift
         ;;
     "-unit_tests" )
-        run_unit_tests
-        shift
+            run_unit_tests $2
+            if [ $? -ne 0 ]; then
+                exit 1
+            else
+                exit 0
+            fi
         ;;
     "-functional_tests" )
         make_tests
