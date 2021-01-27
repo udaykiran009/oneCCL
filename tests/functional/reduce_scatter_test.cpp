@@ -1,4 +1,4 @@
-#define COLL_NAME "CCL_REDUCE_SCATTER"
+#define ALGO_SELECTION_ENV "CCL_REDUCE_SCATTER"
 
 #include "base_impl.hpp"
 
@@ -7,21 +7,15 @@ class reduce_scatter_test : public base_test<T> {
 public:
     int check(typed_test_param<T>& param) {
         size_t my_rank = GlobalData::instance().comms[0].rank();
-
         for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
             for (size_t elem_idx = 0; elem_idx < param.elem_count; elem_idx++) {
                 size_t real_elem_idx = my_rank * param.elem_count + elem_idx;
-
                 T expected = base_test<T>::calculate_reduce_value(param, buf_idx, real_elem_idx);
                 if (base_test<T>::check_error(param, expected, buf_idx, elem_idx))
                     return TEST_FAILURE;
             }
         }
         return TEST_SUCCESS;
-    }
-
-    size_t get_recv_buf_size(typed_test_param<T>& param) {
-        return param.elem_count;
     }
 
     void run_derived(typed_test_param<T>& param) {

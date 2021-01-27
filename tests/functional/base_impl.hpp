@@ -129,6 +129,7 @@ void typed_test_param<T>::swap_buffers(size_t iter) {
     if (test_dynamic_pointer && atoi(test_dynamic_pointer) == 1) {
         if (iter == 1) {
             if (comm_rank % 2) {
+                /* TODO: add additional send/recv buffers to test this mode */
                 std::vector<std::vector<T>>(send_buf.begin(), send_buf.end()).swap(send_buf);
             }
         }
@@ -162,37 +163,38 @@ int base_test<T>::check_error(typed_test_param<T>& param,
                               size_t buf_idx,
                               size_t elem_idx) {
     double max_error = 0;
-    double fp_precision = 0;
+    double precision = 0;
 
     if (param.test_conf.datatype == DT_FLOAT16) {
-        fp_precision = FP16_PRECISION;
+        precision = 2 * FP16_PRECISION;
     }
     else if (param.test_conf.datatype == DT_FLOAT32) {
-        fp_precision = FP32_PRECISION;
+        precision = FP32_PRECISION;
     }
     else if (param.test_conf.datatype == DT_FLOAT64) {
-        fp_precision = FP64_PRECISION;
+        precision = FP64_PRECISION;
     }
     else if (param.test_conf.datatype == DT_BFLOAT16) {
-        fp_precision = BF16_PRECISION;
+        precision = 2 * BF16_PRECISION;
     }
 
-    if (fp_precision) {
+    if (precision) {
         /* https://www.mcs.anl.gov/papers/P4093-0713_1.pdf */
         double log_base2 = log(param.comm_size) / log(2);
-        double g = (log_base2 * fp_precision) / (1 - (log_base2 * fp_precision));
+        double g = (log_base2 * precision) / (1 - (log_base2 * precision));
         max_error = g * expected;
     }
 
     if (fabs(max_error) < fabs((double)expected - (double)param.recv_buf[buf_idx][elem_idx])) {
-        printf(
-            "[%d] got param.recvBuf[%zu][%zu] = %0.7f, but expected = %0.7f, max_error = %0.16f\n",
-            param.comm_rank,
-            buf_idx,
-            elem_idx,
-            (double)param.recv_buf[buf_idx][elem_idx],
-            (double)expected,
-            (double)max_error);
+        printf("[%d] got param.recvBuf[%zu][%zu] = %0.7f, but expected = %0.7f, "
+               "max_error = %0.10f, precision = %0.7f\n",
+               param.comm_rank,
+               buf_idx,
+               elem_idx,
+               (double)param.recv_buf[buf_idx][elem_idx],
+               (double)expected,
+               (double)max_error,
+               precision);
         return TEST_FAILURE;
     }
 
@@ -203,22 +205,22 @@ template <typename T>
 void base_test<T>::alloc_buffers_base(typed_test_param<T>& param) {
     param.send_buf.resize(param.buffer_count);
     param.recv_buf.resize(param.buffer_count);
-    param.reqs.resize(param.buffer_count);
+    if (is_lp_datatype(param.test_conf.datatype)) {
+        param.send_buf_lp.resize(param.buffer_count);
+        param.recv_buf_lp.resize(param.buffer_count);
+    }
 
     for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
         param.send_buf[buf_idx].resize(param.elem_count * param.comm_size);
         param.recv_buf[buf_idx].resize(param.elem_count * param.comm_size);
-    }
 
-    if (is_lp_datatype(param.test_conf.datatype)) {
-        param.send_buf_lp.resize(param.buffer_count);
-        param.recv_buf_lp.resize(param.buffer_count);
-
-        for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
+        if (is_lp_datatype(param.test_conf.datatype)) {
             param.send_buf_lp[buf_idx].resize(param.elem_count * param.comm_size);
             param.recv_buf_lp[buf_idx].resize(param.elem_count * param.comm_size);
         }
     }
+
+    param.reqs.resize(param.buffer_count);
 }
 
 template <typename T>
@@ -335,7 +337,10 @@ template <typename T>
 int base_test<T>::run(typed_test_param<T>& param) {
     size_t result = 0;
 
-    SHOW_ALGO(COLL_NAME);
+    char* algo = getenv(ALGO_SELECTION_ENV);
+    if (algo)
+        std::cout << ALGO_SELECTION_ENV << " = " << algo << "\n";
+    std::cout << param.test_conf << "\n";
 
     for (size_t iter = 0; iter < ITER_COUNT; iter++) {
         try {
@@ -352,14 +357,14 @@ int base_test<T>::run(typed_test_param<T>& param) {
             param.define_start_order();
 
             if (is_lp_datatype(param.test_conf.datatype)) {
-                make_lp_prologue(param, get_recv_buf_size(param));
+                make_lp_prologue(param, param.comm_size * param.elem_count);
             }
 
             run_derived(param);
             param.complete();
 
             if (is_lp_datatype(param.test_conf.datatype)) {
-                make_lp_epilogue(param, get_recv_buf_size(param));
+                make_lp_epilogue(param, param.comm_size * param.elem_count);
             }
 
             result += check(param);

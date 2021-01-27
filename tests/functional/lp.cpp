@@ -5,7 +5,7 @@ bool is_lp_datatype(ccl_data_type dtype) {
 }
 
 int is_fp16_enabled() {
-#ifdef CCL_BF16_COMPILER
+#ifdef CCL_FP16_COMPILER
     static int is_fp16_enabled = -1;
     if (is_fp16_enabled == -1) {
         uint32_t reg[4];
@@ -15,8 +15,10 @@ int is_fp16_enabled() {
                              : "a"(7), "c"(0));
         is_fp16_enabled = ((reg[1] & (1 << 16)) >> 16);
     }
+    printf("FUNC_TESTS: FP16 compiler, is_fp16_enabled %d\n", is_fp16_enabled);
     return is_fp16_enabled;
 #else
+    printf("FUNC_TESTS: no FP16 compiler\n");
     return 0;
 #endif
 }
@@ -33,8 +35,10 @@ int is_bf16_enabled() {
         is_bf16_enabled = ((reg[1] & (1 << 16)) >> 16) & ((reg[1] & (1 << 30)) >> 30) &
                           ((reg[1] & (1 << 31)) >> 31);
     }
+    printf("FUNC_TESTS: BF16 compiler, is_bf16_enabled %d\n", is_bf16_enabled);
     return is_bf16_enabled;
 #else
+    printf("FUNC_TESTS: no BF16 compiler\n");
     return 0;
 #endif
 }

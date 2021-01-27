@@ -1,4 +1,4 @@
-#define COLL_NAME "CCL_REDUCE"
+#define ALGO_SELECTION_ENV "CCL_REDUCE"
 
 #include "base_impl.hpp"
 
@@ -17,10 +17,6 @@ public:
             }
         }
         return TEST_SUCCESS;
-    }
-
-    size_t get_recv_buf_size(typed_test_param<T>& param) {
-        return param.elem_count;
     }
 
     void run_derived(typed_test_param<T>& param) {

@@ -116,8 +116,6 @@ public:
     int run(typed_test_param<T>& param);
     virtual void run_derived(typed_test_param<T>& param) = 0;
 
-    virtual size_t get_recv_buf_size(typed_test_param<T>& param) = 0;
-
     virtual int check(typed_test_param<T>& param) = 0;
     virtual int check_error(typed_test_param<T>& param,
                             T expected,
@@ -140,14 +138,10 @@ public:
             case DT_UINT32: return run<uint32_t>(param);
             case DT_INT64: return run<int64_t>(param);
             case DT_UINT64: return run<uint64_t>(param);
-#ifdef CCL_FP16_COMPILER
             case DT_FLOAT16: return run<float>(param);
-#endif
             case DT_FLOAT32: return run<float>(param);
             case DT_FLOAT64: return run<double>(param);
-#ifdef CCL_BF16_COMPILER
             case DT_BFLOAT16: return run<float>(param);
-#endif
             default:
                 EXPECT_TRUE(false) << "Unexpected data type: " << param.datatype;
                 return TEST_FAILURE;

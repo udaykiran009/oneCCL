@@ -89,13 +89,6 @@
         } \
     } while (0)
 
-#define SHOW_ALGO(coll_name) \
-    do { \
-        char* algo_name = getenv(coll_name); \
-        if (algo_name) \
-            printf("%s  = %s\n", coll_name, algo_name); \
-    } while (0)
-
 #define RUN_METHOD_DEFINITION(ClassName) \
     template <typename T> \
     int MainTest::run(ccl_test_conf tParam) { \

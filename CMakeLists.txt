@@ -10,7 +10,7 @@ set(PROJECT_FULL_NAME "oneAPI Collective Communications Library")
 
 project(${PROJECT_NAME})
 
-include(cmake/helpers.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/helpers.cmake)
 
 check_compiler_version()
 
@@ -172,77 +172,7 @@ if(WITH_ASAN AND ${CMAKE_BUILD_TYPE_CASE_INSENSITIVE} STREQUAL "debug")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lasan")
 endif()
 
-set(GCC_BF16_MIN_SUPPORTED "4.9.0")
-set(GCC_BF16_AVX512BF_MIN_SUPPORTED "10.0.0")
-set(ICC_BF16_AVX512BF_MIN_SUPPORTED "19.1.0")
-set(CLANG_BF16_MIN_SUPPORTED "9.0.0")
-set(CLANG_BF16_AVX512BF_MIN_SUPPORTED "10.0.0")
-
-if (${CMAKE_C_COMPILER_ID} STREQUAL "Intel"
-    OR (${CMAKE_C_COMPILER_ID} STREQUAL "Clang"
-        AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${CLANG_BF16_MIN_SUPPORTED})
-    OR (${CMAKE_C_COMPILER_ID} STREQUAL "GNU"
-        AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${GCC_BF16_MIN_SUPPORTED})
-    )
-    add_definitions(-DCCL_BF16_COMPILER)
-    set(CCL_BF16_COMPILER ON)
-    message(STATUS "BF16 compiler: yes")
-else()
-    set(CCL_BF16_COMPILER OFF)
-    message(STATUS "BF16 compiler: no")
-endif()
-
-if ((${CMAKE_C_COMPILER_ID} STREQUAL "Intel"
-        AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${ICC_BF16_AVX512BF_MIN_SUPPORTED})
-    OR (${CMAKE_C_COMPILER_ID} STREQUAL "Clang"
-        AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${CLANG_BF16_AVX512BF_MIN_SUPPORTED})
-    OR (${CMAKE_C_COMPILER_ID} STREQUAL "GNU"
-        AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${GCC_BF16_AVX512BF_MIN_SUPPORTED})
-    )
-    add_definitions(-DCCL_BF16_AVX512BF_COMPILER)
-    message(STATUS "BF16 AVX512BF compiler: yes")
-else()
-    message(STATUS "BF16 AVX512BF compiler: no")
-endif()
-
-if (CCL_BF16_COMPILER)
-    if ((${CMAKE_C_COMPILER_ID} STREQUAL "Clang" OR ${CMAKE_C_COMPILER_ID} STREQUAL "GNU"))
-        add_definitions(-DCCL_BF16_TARGET_ATTRIBUTES)
-        message(STATUS "BF16 target attributes: yes")
-    else()
-        message(STATUS "BF16 target attributes: no")
-    endif()
-endif()
-
-set(CCL_GPU_BF16_TRUNCATE ON)
-
-
-set(GCC_FP16_MIN_SUPPORTED "4.9.0")
-set(CLANG_FP16_MIN_SUPPORTED "9.0.0")
-
-if (${CMAKE_C_COMPILER_ID} STREQUAL "Intel"
-    OR (${CMAKE_C_COMPILER_ID} STREQUAL "Clang"
-        AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${CLANG_FP16_MIN_SUPPORTED})
-    OR (${CMAKE_C_COMPILER_ID} STREQUAL "GNU"
-        AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS ${GCC_FP16_MIN_SUPPORTED})
-    )
-    add_definitions(-DCCL_FP16_COMPILER)
-    set(CCL_FP16_COMPILER ON)
-    message(STATUS "FP16 compiler: yes")
-else()
-    set(CCL_FP16_COMPILER OFF)
-    message(STATUS "FP16 compiler: no")
-endif()
-
-if (CCL_FP16_COMPILER)
-    if ((${CMAKE_C_COMPILER_ID} STREQUAL "Clang" OR ${CMAKE_C_COMPILER_ID} STREQUAL "GNU"))
-        add_definitions(-DCCL_FP16_TARGET_ATTRIBUTES)
-        message(STATUS "FP16 target attributes: yes")
-    else()
-        message(STATUS "FP16 target attributes: no")
-    endif()
-endif()
-
+set_lp_env()
 
 set(CCL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 

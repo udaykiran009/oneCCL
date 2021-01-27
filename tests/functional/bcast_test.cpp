@@ -1,5 +1,5 @@
-#define COLL_NAME         "CCL_BCAST"
-#define BCAST_VALUE_COEFF 128
+#define ALGO_SELECTION_ENV "CCL_BCAST"
+#define BCAST_VALUE_COEFF  128
 
 #include "base_impl.hpp"
 
@@ -26,10 +26,6 @@ public:
                 param.recv_buf[buf_idx][elem_idx] = elem_idx % BCAST_VALUE_COEFF;
             }
         }
-    }
-
-    size_t get_recv_buf_size(typed_test_param<T>& param) {
-        return param.elem_count;
     }
 
     void run_derived(typed_test_param<T>& param) {

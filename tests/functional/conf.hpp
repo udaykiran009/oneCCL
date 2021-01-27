@@ -28,7 +28,7 @@
 #define SOME_VALUE (0xdeadbeef)
 #define ROOT_RANK  (0)
 
-typedef enum { PT_OOP = 0, PT_IN = 1, PT_LAST } ccl_place_type;
+typedef enum { PT_IN = 0, PT_OOP = 1, PT_LAST } ccl_place_type;
 extern ccl_place_type first_ccl_place_type;
 extern ccl_place_type last_ccl_place_type;
 extern std::map<int, const char*> ccl_place_type_str;

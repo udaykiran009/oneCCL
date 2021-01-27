@@ -3,9 +3,13 @@
 
 std::vector<ccl_test_conf> test_params;
 
-ccl_place_type first_ccl_place_type = PT_OOP;
+ccl_place_type first_ccl_place_type = PT_IN;
+#ifdef TEST_CCL_BCAST
+ccl_place_type last_ccl_place_type = static_cast<ccl_place_type>(first_ccl_place_type + 1);
+#else
 ccl_place_type last_ccl_place_type = PT_LAST;
-std::map<int, const char*> ccl_place_type_str = { { PT_OOP, "PT_OOP" }, { PT_IN, "PT_IN" } };
+#endif
+std::map<int, const char*> ccl_place_type_str = { { PT_IN, "PT_IN" }, { PT_OOP, "PT_OOP" } };
 
 ccl_size_type first_ccl_size_type = ST_SMALL;
 ccl_size_type last_ccl_size_type = ST_LAST;
@@ -321,19 +325,22 @@ void init_test_params() {
 }
 
 std::ostream& operator<<(std::ostream& stream, ccl_test_conf const& test_conf) {
-    return stream << "\n"
-                  << ccl_data_type_str[test_conf.datatype] << "\n"
-                  << ccl_place_type_str[test_conf.place_type] << "\n"
-                  << ccl_cache_type_str[test_conf.cache_type] << "\n"
-                  << ccl_size_type_str[test_conf.size_type] << "\n"
-                  << ccl_completion_type_str[test_conf.completion_type] << "\n"
-                  << ccl_sync_type_str[test_conf.sync_type] << "\n"
-                  << ccl_reduction_type_str[test_conf.reduction] << "\n"
-                  << ccl_order_type_str[test_conf.complete_order_type] << "\n"
-                  << ccl_order_type_str[test_conf.start_order_type] << "\n"
-                  << ccl_buffer_count_str[test_conf.buffer_count] << "\n"
-                  << ccl_prolog_type_str[test_conf.prolog_type] << "\n"
-                  << ccl_epilog_type_str[test_conf.epilog_type] << std::endl;
+    std::stringstream sstream;
+    sstream << "["
+            << " " << ccl_data_type_str[test_conf.datatype] << " "
+            << ccl_place_type_str[test_conf.place_type] << " "
+            << ccl_cache_type_str[test_conf.cache_type] << " "
+            << ccl_size_type_str[test_conf.size_type] << " "
+            << ccl_sync_type_str[test_conf.sync_type] << " "
+            << ccl_reduction_type_str[test_conf.reduction] << " "
+            << ccl_order_type_str[test_conf.start_order_type] << " "
+            << ccl_order_type_str[test_conf.complete_order_type] << " "
+            << ccl_completion_type_str[test_conf.completion_type] << " "
+            << ccl_buffer_count_str[test_conf.buffer_count]
+            // << " " << ccl_prolog_type_str[test_conf.prolog_type]
+            // << " " << ccl_epilog_type_str[test_conf.epilog_type]
+            << " ]";
+    return stream << sstream.str();
 }
 
 void print_err_message(char* message, std::ostream& output) {

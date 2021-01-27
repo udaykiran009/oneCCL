@@ -1,4 +1,4 @@
-#define COLL_NAME "CCL_ALLTOALLV"
+#define ALGO_SELECTION_ENV "CCL_ALLTOALLV"
 
 #include "base_impl.hpp"
 
@@ -59,10 +59,6 @@ public:
                 param.send_buf[buf_idx][elem_idx] = param.comm_rank + buf_idx;
             }
         }
-    }
-
-    size_t get_recv_buf_size(typed_test_param<T>& param) {
-        return param.elem_count * param.comm_size;
     }
 
     void run_derived(typed_test_param<T>& param) {

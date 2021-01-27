@@ -1,6 +1,11 @@
 cmake_minimum_required (VERSION 2.8)
 file(GLOB sources "*_test.c" "*_test.cpp")
 
+if (NOT DEFINED LP_ENV_DEFINED)
+    include(${PROJECT_SOURCE_DIR}/../../cmake/helpers.cmake)
+    set_lp_env()
+endif()
+
 set(SERVICE_SRC
     conf.cpp
     lp.cpp)
@@ -68,6 +73,9 @@ foreach(src ${sources})
     add_executable(${executable} ${src} ${SERVICE_SRC})
     if (${executable} MATCHES ".*reduce.*")
         target_compile_definitions(${executable} PRIVATE TEST_CCL_REDUCE)
+    endif()
+    if (${executable} MATCHES ".*bcast.*")
+        target_compile_definitions(${executable} PRIVATE TEST_CCL_BCAST)
     endif()
     target_link_libraries(${executable} PUBLIC gtest_main)
     target_link_libraries(${executable} PUBLIC gtest)

@@ -37,31 +37,28 @@ void convert_lp_to_fp32_arrays(short* lp_buf, T* buf, size_t count, ccl_data_typ
 }
 
 template <typename T>
-void make_lp_prologue(typed_test_param<T>& param, size_t size) {
+void make_lp_prologue(typed_test_param<T>& param, size_t count) {
     ccl_data_type dtype = param.test_conf.datatype;
     for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
-        size_t new_idx = param.buf_indexes[buf_idx];
-
         if (param.test_conf.place_type == PT_IN) {
-            T* recv_buf_fp32 = param.recv_buf[new_idx].data();
-            short* recv_buf_lp = param.recv_buf_lp[new_idx].data();
-            convert_fp32_to_lp_arrays(recv_buf_fp32, recv_buf_lp, size, dtype);
+            T* recv_buf_fp32 = param.recv_buf[buf_idx].data();
+            short* recv_buf_lp = param.recv_buf_lp[buf_idx].data();
+            convert_fp32_to_lp_arrays(recv_buf_fp32, recv_buf_lp, count, dtype);
         }
         else {
-            T* send_buf_fp32 = param.send_buf[new_idx].data();
-            short* send_buf_lp = param.send_buf_lp[new_idx].data();
-            convert_fp32_to_lp_arrays(send_buf_fp32, send_buf_lp, size, dtype);
+            T* send_buf_fp32 = param.send_buf[buf_idx].data();
+            short* send_buf_lp = param.send_buf_lp[buf_idx].data();
+            convert_fp32_to_lp_arrays(send_buf_fp32, send_buf_lp, count, dtype);
         }
     }
 }
 
 template <typename T>
-void make_lp_epilogue(typed_test_param<T>& param, size_t size) {
+void make_lp_epilogue(typed_test_param<T>& param, size_t count) {
     ccl_data_type dtype = param.test_conf.datatype;
     for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
-        size_t new_idx = param.buf_indexes[buf_idx];
-        T* recv_buf_fp32 = param.recv_buf[new_idx].data();
-        short* recv_buf_lp = param.recv_buf_lp[new_idx].data();
-        convert_lp_to_fp32_arrays(recv_buf_lp, recv_buf_fp32, size, dtype);
+        T* recv_buf_fp32 = param.recv_buf[buf_idx].data();
+        short* recv_buf_lp = param.recv_buf_lp[buf_idx].data();
+        convert_lp_to_fp32_arrays(recv_buf_lp, recv_buf_fp32, count, dtype);
     }
 }
