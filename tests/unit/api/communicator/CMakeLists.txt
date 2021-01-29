@@ -1,12 +1,7 @@
 set (executable "device_communicator_suite")
 
-
 enable_testing()
 message ("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
-
-if(API_UT)
-    set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../..")
-endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
@@ -73,18 +68,6 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ccl_allreduce_2d_builder.cpp"
 )
 
-if (CCL_ENABLE_SYCL)    
-    list( APPEND native_api_dependencies_sources   
-            "${PROJECT_SOURCE_DIR}/src/native_device_api/sycl/export.cpp")    
-endif()    
-   
-if(CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)  
-    list( APPEND native_api_dependencies_sources   
-            "${PROJECT_SOURCE_DIR}/src/native_device_api/sycl_l0/export.cpp") 
-endif()    
-   
-list( APPEND native_api_dependencies_sources "${PROJECT_SOURCE_DIR}/src/native_device_api/empty/export.cpp")
-
 set(specific_sources)
 if(MULTI_GPU_SUPPORT)
     set(specific_sources
@@ -110,7 +93,7 @@ list(APPEND dependencies_sources ${specific_sources})
 
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)
-    add_executable(${executable} $<TARGET_OBJECTS:napi_objects> ${src} ${dependencies_sources} ${native_api_dependencies_sources})
+    add_executable(${executable} $<TARGET_OBJECTS:napi_objects> ${src} ${dependencies_sources})
     add_dependencies(${executable} gtest)
     if (COMPUTE_BACKEND)
         target_include_directories(${executable} PRIVATE

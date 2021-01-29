@@ -1,40 +1,73 @@
+set(UPSTREAM_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+
+include(${UPSTREAM_SOURCE_DIR}/cmake/helpers.cmake)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+
+if (COMPUTE_BACKEND)
+    activate_compute_backend("${UPSTREAM_SOURCE_DIR}/cmake" ${COMPUTE_BACKEND})
+    if (NOT COMPUTE_BACKEND_TARGET_NAME)
+        message(FATAL_ERROR "Failed to find requested compute runtime ${COMPUTE_BACKEND}")
+    endif()
+    if (${CCL_ENABLE_SYCL_V} STREQUAL 1)
+        option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
+        message(STATUS "Enable CCL SYCL runtime")
+    endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_BACKEND_FLAGS}")
+    add_definitions(${DEFINITIONS})
+    if ((${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL") AND
+        ${CCL_ENABLE_SYCL_L0} STREQUAL 1)
+        set(MULTI_GPU_SUPPORT ON)
+    elseif(${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "ze_loader")
+        set(MULTI_GPU_SUPPORT ON)
+    endif()
+    if (MULTI_GPU_SUPPORT)
+        message(STATUS "COMPUTE_BACKEND_TARGET_NAME: ${COMPUTE_BACKEND_TARGET_NAME}")
+        message(STATUS "Enable multi GPU support using L0")
+    endif()
+endif()
+
+if (MULTI_GPU_SUPPORT)
+    list( APPEND native_api_dependencies_sources
+             "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/base.cpp"
+             "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/device.cpp"
+             "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/driver.cpp"
+             "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/export.cpp"
+             "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/context.cpp"
+             "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/platform.cpp"
+             "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/subdevice.cpp"
+             "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/primitives.cpp"
+             "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/utils.cpp"
+             "${UPSTREAM_SOURCE_DIR}/src/native_device_api/interop_utils.cpp")
+endif()
+
+if (CCL_ENABLE_SYCL)
+    list( APPEND native_api_dependencies_sources
+            "${UPSTREAM_SOURCE_DIR}/src/native_device_api/sycl/export.cpp")
+endif()
+
+if(CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)
+    list( APPEND native_api_dependencies_sources
+            "${UPSTREAM_SOURCE_DIR}/src/native_device_api/sycl_l0/export.cpp")
+endif()
+
+list( APPEND native_api_dependencies_sources "${UPSTREAM_SOURCE_DIR}/src/native_device_api/empty/export.cpp")
+
+add_library(napi_objects OBJECT "${native_api_dependencies_sources}")
+
+target_include_directories(napi_objects PUBLIC
+                            ${CMAKE_CURRENT_BINARY_DIR}
+                            ${UPSTREAM_SOURCE_DIR}/include
+                            ${UPSTREAM_SOURCE_DIR}/src
+                            ${UPSTREAM_SOURCE_DIR}/src/atl)
+if (COMPUTE_BACKEND)
+    target_include_directories(napi_objects PUBLIC
+                                            $<TARGET_PROPERTY:${COMPUTE_BACKEND_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
+    set_target_properties(napi_objects PROPERTIES
+                                            INTERFACE_INCLUDE_DIRECTORIES
+                                            $<TARGET_PROPERTY:${COMPUTE_BACKEND_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
+endif(COMPUTE_BACKEND)
+
 if(MULTI_GPU_SUPPORT)
-    set(UPSTREAM_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
-    include(${UPSTREAM_SOURCE_DIR}/cmake/helpers.cmake)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-    if (COMPUTE_BACKEND)
-        activate_compute_backend("${UPSTREAM_SOURCE_DIR}/cmake" ${COMPUTE_BACKEND})
-
-        if (${CCL_ENABLE_SYCL_V} STREQUAL 1)
-            option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
-            message(STATUS "Enable CCL SYCL runtime")
-        endif()
-
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_BACKEND_FLAGS}")
-        add_definitions(${DEFINITIONS})
-
-        if ((${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "ze_loader")
-                  OR (${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL_level_zero"))
-            option(MULTI_GPU_SUPPORT "Enable multi GPU support" ON)
-            set(MULTI_GPU_SUPPORT ON)
-            activate_compute_backend("${UPSTREAM_SOURCE_DIR}/cmake" L0)
-            message ("Enable multi GPU support: ${MULTI_GPU_SUPPORT}")
-            message ("COMPUTE_BACKEND_TARGET_NAME: ${COMPUTE_BACKEND_TARGET_NAME}")
-        endif()
-    endif(COMPUTE_BACKEND)
-
-    list( APPEND napi_wrapper_sources
-                 "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/base.cpp"
-                 "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/device.cpp"
-                 "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/driver.cpp"
-                 "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/export.cpp"
-                 "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/context.cpp"
-                 "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/platform.cpp"
-                 "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/subdevice.cpp"
-                 "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/primitives.cpp"
-                 "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/utils.cpp"
-                 "${UPSTREAM_SOURCE_DIR}/src/native_device_api/interop_utils.cpp")
-
     list( APPEND api_sources
                  "${UPSTREAM_SOURCE_DIR}/src/ccl_cpp_utils.cpp"
                  "${UPSTREAM_SOURCE_DIR}/src/ccl_empty_attr.cpp"
@@ -86,7 +119,6 @@ if(MULTI_GPU_SUPPORT)
                  "${UPSTREAM_SOURCE_DIR}/tests/unit/l0/stubs/sched/gpu_concurrent_sched.cpp"
                  "${UPSTREAM_SOURCE_DIR}/tests/unit/l0/stubs/spare/bfp16.cpp"
                  )
-    list( APPEND napi_wrapper_sources "${UPSTREAM_SOURCE_DIR}/src/native_device_api/empty/export.cpp")
 
     set(CCL_MAJOR_VERSION     "0")
     set(CCL_MINOR_VERSION     "0")
@@ -95,11 +127,6 @@ if(MULTI_GPU_SUPPORT)
     string(TIMESTAMP CCL_PRODUCT_BUILD_DATE "%Y-%m-%dT %H:%M:%SZ")
     set(CCL_PRODUCT_FULL "${CCL_PRODUCT_STATUS}-${CCL_MAJOR_VERSION}.${CCL_MINOR_VERSION}.${CCL_UPDATE_VERSION} ${CCL_PRODUCT_BUILD_DATE} ${VCS_INFO}")
     configure_file(${UPSTREAM_SOURCE_DIR}/include/oneapi/ccl/config.h.in "${CMAKE_CURRENT_BINARY_DIR}/oneapi/ccl/config.h")
-
-
-
-    #add_subdirectory (${UPSTREAM_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/ ${PROJECT_SOURCE_DIR}/tests/units)
-
 
     # prepare interface library: dependencies only
     add_library(interface_library INTERFACE)
@@ -118,16 +145,12 @@ if(MULTI_GPU_SUPPORT)
     target_link_libraries(interface_library INTERFACE rt m dl pthread stdc++ gtest_main gtest)
 
     # prepare component targets
-    add_library(napi_objects OBJECT ${napi_wrapper_sources})
     add_library(api_objects OBJECT ${api_sources})
     add_library(core_objects OBJECT ${core_sources})
     add_library(test_stub_core_objects OBJECT ${test_stub_core_sources})
 
 
     if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
-        set_target_properties(napi_objects PROPERTIES INTERFACE_LINK_LIBRARIES interface_library)
-        target_include_directories(napi_objects PUBLIC $<TARGET_PROPERTY:interface_library,INTERFACE_INCLUDE_DIRECTORIES>)
-
         set_target_properties(api_objects PROPERTIES INTERFACE_LINK_LIBRARIES interface_library)
         target_include_directories(api_objects PUBLIC $<TARGET_PROPERTY:interface_library,INTERFACE_INCLUDE_DIRECTORIES>)
 
@@ -137,7 +160,6 @@ if(MULTI_GPU_SUPPORT)
         set_target_properties(test_stub_core_objects PROPERTIES INTERFACE_LINK_LIBRARIES interface_library)
         target_include_directories(test_stub_core_objects PUBLIC $<TARGET_PROPERTY:interface_library,INTERFACE_INCLUDE_DIRECTORIES>)
     else()
-        target_link_libraries(napi_objects interface_library)
         target_link_libraries(api_objects interface_library)
         target_link_libraries(core_objects interface_library)
         target_link_libraries(test_stub_core_objects interface_library)
