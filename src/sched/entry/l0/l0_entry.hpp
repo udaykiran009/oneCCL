@@ -23,7 +23,7 @@
 static std::mutex global_fence_mutex;
 
 #define ENTRY_LOG_TRACE(...) \
-    if (unlikely(logger.get_log_level() >= ccl_log_level::TRACE)) { \
+    if (unlikely(logger.get_log_level() >= ccl_log_level::trace)) { \
         do { \
             std::stringstream ss; \
             this->dump_detail(ss); \
@@ -39,7 +39,7 @@ static std::mutex global_fence_mutex;
     }
 
 #define ENTRY_LOG_DEBUG(...) \
-    if (unlikely(logger.get_log_level() >= ccl_log_level::DEBUG)) { \
+    if (unlikely(logger.get_log_level() >= ccl_log_level::debug)) { \
         do { \
             std::stringstream ss; \
             this->dump_detail(ss); \
@@ -55,7 +55,7 @@ static std::mutex global_fence_mutex;
     }
 
 #define ENTRY_LOG_INFO(...) \
-    if (unlikely(logger.get_log_level() >= ccl_log_level::INFO)) { \
+    if (unlikely(logger.get_log_level() >= ccl_log_level::info)) { \
         do { \
             std::stringstream ss; \
             this->dump_detail(ss); \
@@ -70,8 +70,24 @@ static std::mutex global_fence_mutex;
         } while (0); \
     }
 
+#define ENTRY_LOG_WARN(...) \
+    if (unlikely(logger.get_log_level() >= ccl_log_level::warn)) { \
+        do { \
+            std::stringstream ss; \
+            this->dump_detail(ss); \
+            logger.info("|WARN| ", \
+                        basedir_static(__FILE__), \
+                        ":", \
+                        __LINE__, \
+                        "  ", \
+                        ss.str(), \
+                        " - ", \
+                        ##__VA_ARGS__); \
+        } while (0); \
+    }
+
 #define ENTRY_LOG_ERROR(...) \
-    if (unlikely(logger.get_log_level() >= ccl_log_level::ERROR)) { \
+    if (unlikely(logger.get_log_level() >= ccl_log_level::error)) { \
         do { \
             std::stringstream ss; \
             this->dump_detail(ss); \

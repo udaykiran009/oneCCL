@@ -39,7 +39,7 @@ extern ccl_size_type last_ccl_size_type;
 extern std::map<int, const char*> ccl_size_type_str;
 extern std::map<int, size_t> ccl_size_type_values;
 
-typedef enum { BC_SMALL = 0, BC_MEDIUM = 1, BC_LARGE = 2, BC_LAST } ccl_buffer_count;
+typedef enum { BC_SMALL = 0, BC_LARGE = 1, BC_LAST } ccl_buffer_count;
 extern ccl_buffer_count first_ccl_buffer_count;
 extern ccl_buffer_count last_ccl_buffer_count;
 extern std::map<int, const char*> ccl_buffer_count_str;

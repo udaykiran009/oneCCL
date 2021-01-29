@@ -272,8 +272,7 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
                      (size_t)(ATL_OFI_MAX_HOSTNAME_LEN));
 
     if (ATL_OFI_MAX_HOSTNAME_LEN - my_hostname_len <= 10) {
-        LOG_INFO(
-            "WARNING: hostname is quite long, len: ", my_hostname_len, ", name: ", my_hostname);
+        LOG_WARN("hostname is quite long, len: ", my_hostname_len, ", name: ", my_hostname);
     }
 
     snprintf(my_hostname + my_hostname_len,

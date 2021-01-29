@@ -183,7 +183,7 @@ test()
     export USE_ROCM=0
     export REL_WITH_DEB_INFO=1
     export USE_CUDA=0
-    export CCL_LOG_LEVEL=1
+    export CCL_LOG_LEVEL=info
     export I_MPI_DEBUG=12
 
     export DNNL_PRIMITIVE_CACHE_CAPACITY=1024

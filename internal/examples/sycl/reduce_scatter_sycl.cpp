@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
     using namespace ::native;
 
     //Use:
-    // SYCL_BE=PI_OTHER SYCL_PI_TRACE=1 ZE_DEBUG=1  SYCL_DEVICE_WHITE_LIST="" CCL_LOG_LEVEL=1 gdb examples/level_zero/l0_thread_allreduce_cpp_test
+    // SYCL_BE=PI_OTHER SYCL_PI_TRACE=1 ZE_DEBUG=1  SYCL_DEVICE_WHITE_LIST="" CCL_LOG_LEVEL=info gdb examples/level_zero/l0_thread_allreduce_cpp_test
     // determine GPu device affinity
     /*
      * Affinity mask description:

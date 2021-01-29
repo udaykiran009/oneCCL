@@ -212,23 +212,24 @@ run_benchmark()
             eval $cmd 2>&1 | tee ${test_log}
             check_test ${test_log} ${example}
         else
-            log_2_test_log="${test_log}.2_ranks"
-            echo "output for run with CCL_LOG_LEVEL=2 and 2 ranks has been redirected to log file ${log_2_test_log}"
+            log_debug_test_log="${test_log}.2_ranks"
+            echo "output for run with CCL_LOG_LEVEL=debug and 2 ranks has been redirected to log file ${log_debug_test_log}"
             cmd=`echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_options}`
             echo "Running: $cmd"
-            eval $cmd > ${log_2_test_log} 2>&1
-            check_test ${log_2_test_log} ${example}
+            eval $cmd > ${log_debug_test_log} 2>&1
+            check_test ${log_debug_test_log} ${example}
 
             if [ "${transport}" == "ofi" ];
             then
-                log_2_test_log="${test_log}.1_rank"
-                echo "output for run with CCL_LOG_LEVEL=2 and 1 rank has been redirected to log file ${log_2_test_log}"
+                log_debug_test_log="${test_log}.1_rank"
+                echo "output for run with CCL_LOG_LEVEL=debug and 1 rank has been redirected to log file ${log_debug_test_log}"
                 cmd=`echo $ccl_extra_env mpiexec.hydra -n 1 -ppn $ppn -l ./$example ${final_options}`
                 echo "Running: $cmd"
-                eval $cmd > ${log_2_test_log} 2>&1
-                check_test ${log_2_test_log} ${example}
+                eval $cmd > ${log_debug_test_log} 2>&1
+                check_test ${log_debug_test_log} ${example}
             fi
         fi
+
         if [ $use_kernels -eq 1 ]
         then
             echo "Running benchmark with the kernels support:"
@@ -424,7 +425,7 @@ run()
                                 run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular allreduce
                             fi
 
-                            ccl_extra_env="CCL_LOG_LEVEL=2 ${ccl_runtime_env}"
+                            ccl_extra_env="CCL_LOG_LEVEL=debug ${ccl_runtime_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${coll_list}
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular allreduce ${dtype_list} ${reduction_list}
 

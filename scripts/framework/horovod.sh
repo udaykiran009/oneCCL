@@ -106,15 +106,10 @@ oneccl_config() {
     export HOROVOD_CPU_OPERATIONS=CCL
     
     # oneCCL related
-    export CCL_LOG_LEVEL=2 #{ ERROR = 0, INFO, DEBUG, TRACE };
-    export CCL_ATL_SHM=1
+    export CCL_LOG_LEVEL=info
     export CCL_ATL_TRANSPORT=mpi
-    export ATL_SYNC_COLL=1
-    export CCL_YIELD=sched_yield
-    export ATL_EXTRA_EP=1
 
     # core assignment
-    export CCL_WORKER_OFFLOAD=1
     export CCL_WORKER_COUNT=2
 
     # Get socket's info

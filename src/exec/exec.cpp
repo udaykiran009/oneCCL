@@ -288,8 +288,7 @@ void ccl_executor::set_local_coord() {
         local_proc_idx = 0;
         local_proc_count = 1;
 
-        LOG_INFO("WARNING: ",
-                 ccl_idx_env_name,
+        LOG_WARN(ccl_idx_env_name,
                  " or ",
                  ccl_count_env_name,
                  " or ",

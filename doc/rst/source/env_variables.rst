@@ -29,7 +29,7 @@ Where:
   Size is specified in bytes. Use reserved word ``max`` to specify the maximum message size.
 
 |product_short| internally fills algorithm selection table with sensible defaults. User input complements the selection table. 
-To see the actual table values set ``CCL_LOG_LEVEL=1``.
+To see the actual table values set ``CCL_LOG_LEVEL=info``.
 
 .. rubric:: Example
 
@@ -518,20 +518,17 @@ CCL_LOG_LEVEL
 **Arguments**
 
 .. list-table:: 
-   :widths: 25 50
+   :widths: 50
    :header-rows: 1
    :align: left
    
    * - <value> 
      - Description
-   * - ``0``
-     - NONE
-   * - ``1``
-     - INFO
-   * - ``2``
-     - DEBUG
-   * - ``3``
-     - TRACE
+   * - ``error``
+   * - ``warn`` (**default**)
+   * - ``info``
+   * - ``debug``
+   * - ``trace``
 
 **Description**
 

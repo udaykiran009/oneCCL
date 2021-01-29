@@ -167,15 +167,19 @@ container tokenize(const std::string& input, char delimeter) {
 }
 
 template <typename T>
-void ccl_str_to_array(const char* input, std::vector<T>& output, char delimiter) {
+void ccl_str_to_array(const char* input, std::set<char> delims, std::vector<T>& output) {
     std::stringstream ss(input);
     T temp{};
-    while (ss >> temp) {
-        output.push_back(temp);
-        if (ss.peek() == delimiter) {
+    int c;
+    bool can_parse = false;
+    do {
+        while (((c = ss.peek()) != EOF) && (delims.find(c) != delims.end())) {
             ss.ignore();
         }
-    }
+        can_parse = static_cast<bool>(ss >> temp);
+        if (can_parse)
+            output.push_back(temp);
+    } while (can_parse);
 }
 
 //TODO naite implementation, use TBB

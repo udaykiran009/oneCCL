@@ -1,14 +1,18 @@
 #pragma once
 
+#include <algorithm>
+#include <iterator>
+#include <sstream>
+#include <string>
+#include <vector>
+
 #include "oneapi/ccl/types.hpp"
 #include "coll/coll.hpp"
 #include "common/framework/framework.hpp"
+#include "common/log/log.hpp"
 #include "common/utils/utils.hpp"
 #include "common/utils/yield.hpp"
 #include "sched/cache/cache.hpp"
-
-#include <string>
-#include <vector>
 
 constexpr const char* CCL_ENV_STR_NOT_SPECIFIED = "<not specified>";
 constexpr const ssize_t CCL_ENV_SIZET_NOT_SPECIFIED = -1;
@@ -22,7 +26,9 @@ constexpr const char* CCL_WORKER_COUNT = "CCL_WORKER_COUNT";
 constexpr const char* CCL_WORKER_OFFLOAD = "CCL_WORKER_OFFLOAD";
 constexpr const char* CCL_WORKER_WAIT = "CCL_WORKER_WAIT";
 constexpr const char* CCL_WORKER_AFFINITY = "CCL_WORKER_AFFINITY";
+
 constexpr const char* I_MPI_AVAILABLE_CORES_ENV = "I_MPI_PIN_INFO";
+constexpr const char* I_MPI_AVAILABLE_CORES_DELIMS = ",x";
 
 constexpr const char* CCL_ATL_TRANSPORT = "CCL_ATL_TRANSPORT";
 constexpr const char* CCL_ATL_SHM = "CCL_ATL_SHM";
@@ -116,7 +122,7 @@ public:
     bool was_printed;
     ccl_spinlock print_guard{};
 
-    int log_level;
+    ccl_log_level log_level;
     int sched_dump;
 
     ccl_framework_type fw_type;
@@ -203,13 +209,30 @@ public:
     }
 
     template <class T>
-    static T enum_by_str(const std::map<T, std::string>& values, const std::string& str) {
-        for (const auto& val : values) {
-            if (!str.compare(val.second)) {
-                return val.first;
+    static T enum_by_str(const std::map<T, std::string>& e2s_map, std::string str) {
+        std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+        for (const auto& pair : e2s_map) {
+            if (!str.compare(pair.second)) {
+                return pair.first;
             }
         }
-        CCL_THROW("unexpected str '", str, "'");
+
+        std::vector<std::string> values;
+        std::transform(e2s_map.begin(),
+                       e2s_map.end(),
+                       std::back_inserter(values),
+                       [](const typename std::map<T, std::string>::value_type& pair) {
+                           return pair.second;
+                       });
+
+        std::string expected_values;
+        for (size_t idx = 0; idx < values.size(); idx++) {
+            expected_values += values[idx];
+            if (idx != values.size() - 1)
+                expected_values += ", ";
+        }
+
+        CCL_THROW("unexpected value: ", str, ", expected values: ", expected_values);
     }
 
     template <class T>
@@ -221,7 +244,7 @@ public:
             return it->second;
         }
         else {
-            CCL_THROW("unexpected val ", val);
+            CCL_THROW("unexpected val ", static_cast<int>(val));
             return NULL;
         }
     }

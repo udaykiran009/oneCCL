@@ -18,11 +18,11 @@ git clone -b ${LEVEL_ZERO_TESTS_BRANCH} --single-branch ${LEVEL_ZERO_TESTS_URL}
 cd level-zero-tests
 mkdir build
 cd build
-cmake -D GROUP=/perf_tests -D CMAKE_INSTALL_PREFIX=$PWD/../out/perf_tests ..
+cmake -D GROUP=/perf_tests -D CMAKE_INSTALL_PREFIX=$PWD ..
 cmake --build . --config Release --target install
-cd ${WORK_DIR}/level-zero-tests/out/perf_tests
 ./ze_bandwidth -t d2h -i 100 | tee d2h.log
 ./ze_bandwidth -t h2d -i 100 | tee h2d.log
+./ze_bandwidth -t d2d -i 100 | tee h2d.log
 ./ze_peak -t kernel_lat | tee lat.log
 
 

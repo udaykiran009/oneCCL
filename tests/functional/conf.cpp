@@ -18,16 +18,13 @@ std::map<int, const char*> ccl_size_type_str = { { ST_SMALL, "ST_SMALL" },
                                                  { ST_LARGE, "ST_LARGE" } };
 std::map<int, size_t> ccl_size_type_values = { { ST_SMALL, 17 },
                                                { ST_MEDIUM, 32769 },
-                                               { ST_LARGE, 524288 } };
+                                               { ST_LARGE, 262144 } };
 
 ccl_buffer_count first_ccl_buffer_count = BC_SMALL;
 ccl_buffer_count last_ccl_buffer_count = BC_LAST;
 std::map<int, const char*> ccl_buffer_count_str = { { BC_SMALL, "BC_SMALL" },
-                                                    { BC_MEDIUM, "BC_MEDIUM" },
                                                     { BC_LARGE, "BC_LARGE" } };
-std::map<int, size_t> ccl_buffer_count_values = { { BC_SMALL, 1 },
-                                                  { BC_MEDIUM, 2 },
-                                                  { BC_LARGE, 4 } };
+std::map<int, size_t> ccl_buffer_count_values = { { BC_SMALL, 1 }, { BC_LARGE, 3 } };
 
 ccl_completion_type first_ccl_completion_type = CMPT_WAIT;
 ccl_completion_type last_ccl_completion_type = CMPT_LAST;
@@ -149,8 +146,8 @@ bool should_skip_datatype(ccl_data_type dt) {
     if (dt == DT_FLOAT16 && !is_fp16_enabled())
         return true;
 
-    if (dt == DT_UINT8 || dt == DT_INT16 || dt == DT_UINT16 || dt == DT_UINT32 || dt == DT_INT64 ||
-        dt == DT_UINT64 || dt == DT_FLOAT64)
+    if (dt == DT_INT8 || dt == DT_UINT8 || dt == DT_INT16 || dt == DT_UINT16 || dt == DT_UINT32 ||
+        dt == DT_INT64 || dt == DT_UINT64 || dt == DT_FLOAT64)
         return true;
 
     return false;
@@ -210,7 +207,7 @@ size_t calculate_test_count() {
 
     if (test_buffer_count_enabled && atoi(test_buffer_count_enabled) == 0) {
         test_count /= last_ccl_buffer_count;
-        first_ccl_buffer_count = static_cast<ccl_buffer_count>(BC_MEDIUM);
+        first_ccl_buffer_count = static_cast<ccl_buffer_count>(BC_LARGE);
         last_ccl_buffer_count = static_cast<ccl_buffer_count>(first_ccl_buffer_count + 1);
     }
 

@@ -29,7 +29,10 @@ if (${CMAKE_BUILD_TYPE_CASE_INSENSITIVE} STREQUAL "debug")
     set(USE_SECURITY_FLAGS FALSE)
 endif()
 
+option(BUILD_EXAMPLES "Build examples" TRUE)
+option(BUILD_FT "Build functional tests" TRUE)
 option(BUILD_UT "Build unit tests" TRUE)
+
 option(USE_CODECOV_FLAGS "Calculate code coverage" FALSE)
 option(WITH_ASAN "Use address sanitizer, can only be used in Debug build" FALSE)
 
@@ -41,11 +44,13 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 #show build info
-message(STATUS "Build unit tests: ${BUILD_UT}")
 message(STATUS "Installation directory: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE_CASE_INSENSITIVE}")
 message(STATUS "C compiler : ${CMAKE_C_COMPILER}")
 message(STATUS "CXX compiler : ${CMAKE_CXX_COMPILER}")
+message(STATUS "Build examples: ${BUILD_EXAMPLES}")
+message(STATUS "Build functional tests: ${BUILD_FT}")
+message(STATUS "Build unit tests: ${BUILD_UT}")
 
 SET(MULTI_GPU_SUPPORT OFF CACHE BOOL "Enable Multi GPU extension support")
 
@@ -212,15 +217,20 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 #include other CMakeLists
 
 add_subdirectory(src)
-add_subdirectory(examples/benchmark)
-add_subdirectory(examples/common)
-add_subdirectory(examples/cpu)
-add_subdirectory(examples/external_launcher)
-if (CCL_ENABLE_SYCL)
-    add_subdirectory(examples/sycl)
+
+if (BUILD_EXAMPLES)
+    add_subdirectory(examples/benchmark)
+    add_subdirectory(examples/common)
+    add_subdirectory(examples/cpu)
+    add_subdirectory(examples/external_launcher)
+    if (CCL_ENABLE_SYCL)
+        add_subdirectory(examples/sycl)
+    endif()
 endif()
 
-add_subdirectory(tests/functional)
+if (BUILD_FT)
+    add_subdirectory(tests/functional)
+endif()
 
 if (BUILD_UT)
     add_subdirectory(tests/unit)

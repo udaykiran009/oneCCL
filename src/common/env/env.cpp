@@ -32,7 +32,7 @@ std::map<ccl_staging_buffer, std::string> env_data::staging_buffer_names = {
 env_data::env_data()
         : was_printed(false),
 
-          log_level(static_cast<int>(ccl_log_level::ERROR)),
+          log_level(ccl_log_level::warn),
           sched_dump(0),
 
           fw_type(ccl_framework_none),
@@ -82,8 +82,8 @@ env_data::env_data()
           kernel_path() {}
 
 void env_data::parse() {
-    env_2_type(CCL_LOG_LEVEL, log_level);
-    ccl_logger::set_log_level(static_cast<ccl_log_level>(log_level));
+    env_2_enum(CCL_LOG_LEVEL, ccl_logger::level_names, log_level);
+    ccl_logger::set_log_level(log_level);
     env_2_type(CCL_SCHED_DUMP, sched_dump);
 
     if (fw_type == ccl_framework_none) {
@@ -233,7 +233,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_WORKER_OFFLOAD, ": ", worker_offload);
     LOG_INFO(CCL_WORKER_WAIT, ": ", worker_wait);
 
-    LOG_INFO(CCL_LOG_LEVEL, ": ", log_level);
+    LOG_INFO(CCL_LOG_LEVEL, ": ", str_by_enum(ccl_logger::level_names, log_level));
     LOG_INFO(CCL_SCHED_DUMP, ": ", sched_dump);
 
     LOG_INFO(CCL_FRAMEWORK, ": ", str_by_enum(ccl_framework_type_names, fw_type));
@@ -375,20 +375,51 @@ int env_data::env_2_worker_affinity_auto(size_t local_proc_idx, size_t workers_p
                      "auto pinning requires ",
                      I_MPI_AVAILABLE_CORES_ENV,
                      " env variable to be set");
-    std::vector<size_t> cores;
-    ccl_str_to_array(available_cores + 1, cores, ',');
 
     LOG_DEBUG("available_cores ", available_cores);
 
-    CCL_THROW_IF_NOT(worker_count <= cores.size(),
-                     "count of workers ",
-                     worker_count,
-                     " exceeds the number of available cores ",
-                     cores.size());
+    std::set<char> delims;
+    for (char c : std::string(I_MPI_AVAILABLE_CORES_DELIMS)) {
+        delims.insert(c);
+    }
+    std::vector<size_t> cores;
+    ccl_str_to_array(available_cores, delims, cores);
 
-    size_t ccl_cores_start = cores.size() - worker_count;
-    for (size_t idx = 0; idx < worker_count; ++idx) {
-        worker_affinity[local_proc_idx * workers_per_process + idx] = cores[ccl_cores_start + idx];
+    CCL_THROW_IF_NOT(workers_per_process <= cores.size(),
+                     "failed to implicitly set workers affinity, "
+                     "the number of workers (",
+                     workers_per_process,
+                     ") exceeds the number of available cores per process (",
+                     cores.size(),
+                     "), consider increasing the number of cores per process ",
+                     "or explicitly setting of workers affinity using ",
+                     CCL_WORKER_AFFINITY);
+
+    if ((workers_per_process == cores.size()) && worker_offload) {
+        LOG_WARN("the number of workers (",
+                 workers_per_process,
+                 ") matches the number of available cores per process,"
+                 " this may lead to contention between workers and"
+                 " application threads");
+        if (!std::getenv(CCL_WORKER_OFFLOAD)) {
+            worker_offload = 0;
+            LOG_WARN("workers are disabled,"
+                     " to forcibly enable them set ",
+                     CCL_WORKER_OFFLOAD,
+                     "=1");
+        }
+        else {
+            LOG_WARN("consider increasing the number of cores per process",
+                     " or disabling workers using ",
+                     CCL_WORKER_OFFLOAD,
+                     "=0");
+        }
+    }
+
+    size_t worker_cores_start = cores.size() - workers_per_process;
+    for (size_t idx = 0; idx < workers_per_process; ++idx) {
+        worker_affinity[local_proc_idx * workers_per_process + idx] =
+            cores[worker_cores_start + idx];
     }
     return 1;
 }
@@ -397,7 +428,6 @@ int env_data::env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_cou
     CCL_THROW_IF_NOT(local_proc_count > 0);
 
     int read_env = 0;
-    size_t workers_per_process = worker_count;
     size_t w_idx, read_count = 0;
     char* affinity_copy = nullptr;
     char* affinity_to_parse = getenv(CCL_WORKER_AFFINITY);
@@ -405,14 +435,14 @@ int env_data::env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_cou
     char* tmp;
     size_t proccessor_count;
 
-    size_t affinity_size = local_proc_count * workers_per_process;
+    size_t affinity_size = local_proc_count * worker_count;
     worker_affinity.assign(affinity_size, 0);
 
     if (!affinity_to_parse || (strlen(affinity_to_parse) == 0) ||
         (strcmp(affinity_to_parse, "auto") == 0)) {
         if (std::getenv(I_MPI_AVAILABLE_CORES_ENV)) {
             /* generate auto affinity based on IMPI process pinning */
-            return env_2_worker_affinity_auto(local_proc_idx, workers_per_process);
+            return env_2_worker_affinity_auto(local_proc_idx, worker_count);
         }
         else {
             /* generate auto affinity as last N cores */
