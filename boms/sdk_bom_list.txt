@@ -2,3 +2,4 @@ l_include_sdk.txt
 l_examples_sdk.txt
 l_tags.txt
 l_lib_sdk.txt
+l_cmake_configs.txt

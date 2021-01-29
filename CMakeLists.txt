@@ -213,6 +213,16 @@ configure_file(${PROJECT_SOURCE_DIR}/include/oneapi/ccl/config.h.in "${CMAKE_CUR
 file(COPY "${CMAKE_CURRENT_BINARY_DIR}/include/oneapi/ccl/config.h" DESTINATION ${PROJECT_SOURCE_DIR}/include/oneapi/ccl)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
+#generate oneCCLConfig*.cmake
+configure_file("cmake/templates/oneCCLConfig.cmake.in"
+               "${CCL_INSTALL_LIB}/cmake/oneCCL/oneCCLConfig.cmake"
+               COPYONLY)
+
+set(PROJECT_VERSION "${CCL_MAJOR_VERSION}.${CCL_MINOR_VERSION}.${CCL_UPDATE_VERSION}")
+
+configure_file("cmake/templates/oneCCLConfigVersion.cmake.in"
+               "${CCL_INSTALL_LIB}/cmake/oneCCL/oneCCLConfigVersion.cmake"
+               @ONLY)
 
 #include other CMakeLists
 
