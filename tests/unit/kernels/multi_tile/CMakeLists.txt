@@ -27,7 +27,7 @@ foreach(src ${sources})
                                  $<TARGET_OBJECTS:test_stub_core_objects>
                                  ${src})
     add_dependencies(${executable} gtest)
-
-
+    add_test (NAME ${executable}_default CONFIGURATIONS MultiTileDefaultSuite COMMAND ${CCL_UNIT_TESTS_BUILD}/kernels/multi_tile/${executable} --gtest_output=xml:${CCL_UNIT_TESTS_BUILD}/kernels/multi_tile/${executable}_default_suite_report.junit.xml)
+    add_test (NAME ${executable}_test CONFIGURATIONS ${executable}_test COMMAND ${CCL_UNIT_TESTS_BUILD}/kernels/multi_tile/${executable} --gtest_output=xml:${CCL_UNIT_TESTS_BUILD}/kernels/multi_tile/${executable}_test_report.junit.xml)
     target_link_libraries(${executable} PUBLIC interface_library)
 endforeach()

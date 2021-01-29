@@ -520,7 +520,7 @@ run_tests()
     esac
 }
 
-build_unit_tests()
+build_ut_tests()
 {
     local test_type=$1
     echo "CURRENT_WORK_DIR ${CURRENT_WORK_DIR}"
@@ -533,7 +533,11 @@ build_unit_tests()
     then
         source /p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/last/compiler/latest/env/vars.sh intel64
         cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCOMPUTE_BACKEND=level_zero ..
-        make -j8 kernel_ring_single_device_suite
+        LIST=`make help | grep "kernel_" | grep -Po '(?<=\.\.\. ).*'`
+        echo "List to build: $LIST\n"
+        make -j8 ${LIST}
+        # TODO: When multi_tile, multi_device are ready.
+        # Resolve an issue with common link for single_device, multi_device, multi_tile
         cd "${path}/tests/unit/kernels/single_device"
         ln -s ../../../../../src/kernels kernels
         cd ${path}
@@ -542,25 +546,36 @@ build_unit_tests()
 
 run_ut_ctest()
 {
-    local ut_name=$1
+    local l0_affinity_mask=$1
+    local ut_name=$2
+
     # L0_CLUSTER_AFFINITY_MASK indices are hard-coded right now for nuc07.
     # MLSL-626 needs to be done for automatic definition indices and set them here.
-    L0_CLUSTER_AFFINITY_MASK="[0:39882],[0:39882]" ctest -VV -C $ut_name
-    retVal=$?
-    if [ $retVal -ne 0 ]; then
+    env ${l0_affinity_mask} ctest -VV -C $ut_name
+    if [ $? -ne 0 ]; then
         echo "Error: $ut_name is FAILED"
-        exit $retVal
+        exit $?
     fi
 }
 
-run_unit_tests()
+run_ut_single_device ()
+{
+    name_ut="kernel_ring_single_device_suite_test"
+    platfrom_info=$1
+    if $platfrom_info; then
+        l0_affinity_mask='L0_CLUSTER_AFFINITY_MASK="[0:39882],[0:39882]"'
+        run_ut_ctest ${l0_affinity_mask} ${name_ut}
+    fi
+}
+
+run_ut_tests()
 {
     echo "RUNNING UNIT TESTS"
 
     local test_type=$1
     local errors=0
 
-    build_unit_tests ${test_type}
+    build_ut_tests ${test_type}
     if [ $? -ne 0 ]; then
         echo "Error: Building of unit kernels tests is FAILED"
         exit $?
@@ -568,16 +583,11 @@ run_unit_tests()
 
     case ${test_type} in
         "-kernels")
-            for coll_kernel_ut in "ring_allgatherv_kernel_ut" "ring_allreduce_kernel_ut" \
-                                  "ring_bcast_kernel_ut" "ring_reduce_kernel_ut" \
-                                  "ring_reduce_scatter_kernel_ut"
-                                  # "alltoallv_kernel_ut" \
-            do
-                run_ut_ctest ${coll_kernel_ut}
-                if [ $? -ne 0 ]; then
-                    errors=$((errors+1))
-                fi
-            done
+            platform_info_table=true
+            run_ut_single_device ${platform_info_table}
+            if [ $? -ne 0 ]; then
+                errors=$((errors+1))
+            fi
         ;;
         *)
             echo "WARNING: kernel unit testing not started"
@@ -638,7 +648,7 @@ do
         shift
         ;;
     "-unit_tests" )
-            run_unit_tests $2
+            run_ut_tests $2
             if [ $? -ne 0 ]; then
                 exit 1
             else
