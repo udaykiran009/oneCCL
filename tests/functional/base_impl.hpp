@@ -56,35 +56,16 @@ bool typed_test_param<T>::complete_request(ccl::event& e) {
 }
 
 template <typename T>
-void typed_test_param<T>::define_start_order() {
-    if (test_conf.start_order_type == ORDER_DIRECT || test_conf.start_order_type == ORDER_DISABLE) {
-        std::iota(buf_indexes.begin(), buf_indexes.end(), 0);
-    }
-    else if (test_conf.start_order_type == ORDER_INDIRECT) {
-        std::iota(buf_indexes.begin(), buf_indexes.end(), 0);
+void typed_test_param<T>::define_start_order(std::default_random_engine& rand_engine) {
+    std::iota(buf_indexes.begin(), buf_indexes.end(), 0);
+    if (test_conf.start_order_type == ORDER_INDIRECT) {
         std::reverse(buf_indexes.begin(), buf_indexes.end());
     }
     else if (test_conf.start_order_type == ORDER_RANDOM) {
         char* test_unordered_coll = getenv("CCL_UNORDERED_COLL");
         if (test_unordered_coll && atoi(test_unordered_coll) == 1) {
-            size_t buf_idx;
-            srand(comm_rank * SEED_STEP);
-            for (buf_idx = 0; buf_idx < buffer_count; buf_idx++) {
-                buf_indexes[buf_idx] = buf_idx;
-            }
-            for (int idx = buffer_count; idx > 1; idx--) {
-                buf_idx = rand() % idx;
-                int tmp_idx = buf_indexes[idx - 1];
-                buf_indexes[idx - 1] = buf_indexes[buf_idx];
-                buf_indexes[buf_idx] = tmp_idx;
-            }
+            std::shuffle(buf_indexes.begin(), buf_indexes.end(), rand_engine);
         }
-        else {
-            std::iota(buf_indexes.begin(), buf_indexes.end(), 0);
-        }
-    }
-    else {
-        std::iota(buf_indexes.begin(), buf_indexes.end(), 0);
     }
 }
 
@@ -92,13 +73,11 @@ template <typename T>
 bool typed_test_param<T>::complete() {
     size_t idx, msg_idx;
     size_t completions = 0;
-    int msg_completions[buffer_count];
-    memset(msg_completions, 0, buffer_count * sizeof(int));
+    std::vector<bool> msg_completions(buffer_count, false);
 
     while (completions < buffer_count) {
         for (idx = 0; idx < buffer_count; idx++) {
-            if (test_conf.complete_order_type == ORDER_DIRECT ||
-                test_conf.complete_order_type == ORDER_DISABLE) {
+            if (test_conf.complete_order_type == ORDER_DIRECT) {
                 msg_idx = idx;
             }
             else if (test_conf.complete_order_type == ORDER_INDIRECT) {
@@ -114,24 +93,32 @@ bool typed_test_param<T>::complete() {
             if (msg_completions[msg_idx])
                 continue;
 
-            if (complete_request(reqs[msg_idx])) {
+            if (complete_request(events[msg_idx])) {
                 completions++;
-                msg_completions[msg_idx] = 1;
+                msg_completions[msg_idx] = true;
             }
         }
     }
+
+    events.clear();
+
     return TEST_SUCCESS;
 }
 
 template <typename T>
-void typed_test_param<T>::swap_buffers(size_t iter) {
+void typed_test_param<T>::change_buffer_pointers() {
     char* test_dynamic_pointer = getenv("TEST_DYNAMIC_POINTER");
     if (test_dynamic_pointer && atoi(test_dynamic_pointer) == 1) {
-        if (iter == 1) {
-            if (comm_rank % 2) {
-                /* TODO: add additional send/recv buffers to test this mode */
-                std::vector<std::vector<T>>(send_buf.begin(), send_buf.end()).swap(send_buf);
-            }
+        /*
+            create deep copy of vector with buffers and swap it with original one
+            as result buffers in updated vector will have original content
+            but in new memory locations
+        */
+        if (comm_rank % 2) {
+            std::vector<std::vector<T>>(send_buf.begin(), send_buf.end()).swap(send_buf);
+        }
+        else {
+            std::vector<std::vector<T>>(recv_buf.begin(), recv_buf.end()).swap(recv_buf);
         }
     }
 }
@@ -155,6 +142,7 @@ base_test<T>::base_test() {
     global_comm_rank = GlobalData::instance().comms[0].rank();
     global_comm_size = GlobalData::instance().comms[0].size();
     memset(err_message, '\0', ERR_MESSAGE_MAX_LEN);
+    rand_engine = std::default_random_engine{ rand_device() };
 }
 
 template <typename T>
@@ -219,8 +207,6 @@ void base_test<T>::alloc_buffers_base(typed_test_param<T>& param) {
             param.recv_buf_lp[buf_idx].resize(param.elem_count * param.comm_size);
         }
     }
-
-    param.reqs.resize(param.buffer_count);
 }
 
 template <typename T>
@@ -353,14 +339,18 @@ int base_test<T>::run(typed_test_param<T>& param) {
             fill_recv_buffers_base(param);
             fill_recv_buffers(param);
 
-            param.swap_buffers(iter);
-            param.define_start_order();
+            if (iter > 0) {
+                param.change_buffer_pointers();
+            }
+
+            param.define_start_order(rand_engine);
 
             if (is_lp_datatype(param.test_conf.datatype)) {
                 make_lp_prologue(param, param.comm_size * param.elem_count);
             }
 
             run_derived(param);
+
             param.complete();
 
             if (is_lp_datatype(param.test_conf.datatype)) {

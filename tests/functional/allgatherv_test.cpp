@@ -75,21 +75,19 @@ public:
         auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
         ccl::datatype datatype = get_ccl_lib_datatype(test_conf);
 
-        for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
-            size_t new_idx = param.buf_indexes[buf_idx];
-            param.prepare_coll_attr(attr, param.buf_indexes[buf_idx]);
+        for (auto buf_idx : param.buf_indexes) {
+            param.prepare_coll_attr(attr, buf_idx);
+            send_buf = param.get_send_buf(buf_idx);
+            recv_buf = param.get_recv_buf(buf_idx);
 
-            send_buf = param.get_send_buf(new_idx);
-            recv_buf = param.get_recv_buf(new_idx);
-
-            param.reqs[buf_idx] =
+            param.events.push_back(
                 ccl::allgatherv((test_conf.place_type == PT_IN) ? recv_buf : send_buf,
                                 recv_counts[param.comm_rank],
                                 recv_buf,
                                 recv_counts,
                                 datatype,
                                 GlobalData::instance().comms[0],
-                                attr);
+                                attr));
         }
     }
 };

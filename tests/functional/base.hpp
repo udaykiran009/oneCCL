@@ -1,13 +1,13 @@
 #pragma once
 
+#include <algorithm>
 #include <chrono>
 #include <functional>
+#include <random>
 #include <vector>
 
 #include "oneapi/ccl.hpp"
 #include "conf.hpp"
-
-#define SEED_STEP 10
 
 class GlobalData {
 public:
@@ -46,7 +46,7 @@ struct typed_test_param {
     std::vector<std::vector<short>> send_buf_lp;
     std::vector<std::vector<short>> recv_buf_lp;
 
-    std::vector<ccl::event> reqs;
+    std::vector<ccl::event> events;
     ccl::string_class match_id;
 
     typed_test_param(ccl_test_conf tconf)
@@ -63,9 +63,9 @@ struct typed_test_param {
 
     std::string create_match_id(size_t buf_idx);
     bool complete_request(ccl::event& e);
-    void define_start_order();
+    void define_start_order(std::default_random_engine& rand_engine);
     bool complete();
-    void swap_buffers(size_t iter);
+    void change_buffer_pointers();
     size_t generate_priority_value(size_t buf_idx);
 
     const ccl_test_conf& get_conf() {
@@ -95,6 +95,9 @@ public:
     int global_comm_rank;
     int global_comm_size;
     char err_message[ERR_MESSAGE_MAX_LEN]{};
+
+    std::random_device rand_device;
+    std::default_random_engine rand_engine;
 
     char* get_err_message() {
         return err_message;

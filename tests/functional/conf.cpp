@@ -24,9 +24,9 @@ ccl_buffer_count first_ccl_buffer_count = BC_SMALL;
 ccl_buffer_count last_ccl_buffer_count = BC_LAST;
 std::map<int, const char*> ccl_buffer_count_str = { { BC_SMALL, "BC_SMALL" },
                                                     { BC_LARGE, "BC_LARGE" } };
-std::map<int, size_t> ccl_buffer_count_values = { { BC_SMALL, 1 }, { BC_LARGE, 3 } };
+std::map<int, size_t> ccl_buffer_count_values = { { BC_SMALL, 1 }, { BC_LARGE, 4 } };
 
-ccl_completion_type first_ccl_completion_type = CMPT_WAIT;
+ccl_completion_type first_ccl_completion_type = CMPT_TEST; //CMPT_WAIT;
 ccl_completion_type last_ccl_completion_type = CMPT_LAST;
 std::map<int, const char*> ccl_completion_type_str = { { CMPT_WAIT, "CMPT_WAIT" },
                                                        { CMPT_TEST, "CMPT_TEST" } };
@@ -95,21 +95,19 @@ std::map<int, const char*> ccl_cache_type_str = { { CT_CACHE_0, "CT_CACHE_0" },
 std::map<int, int> ccl_cache_type_values = { { CT_CACHE_0, 0 }, { CT_CACHE_1, 1 } };
 
 ccl_sync_type first_ccl_sync_type = SNCT_SYNC_0;
-ccl_sync_type last_ccl_sync_type = SNCT_LAST;
+ccl_sync_type last_ccl_sync_type = SNCT_SYNC_1; //SNCT_LAST;
 std::map<int, const char*> ccl_sync_type_str = { { SNCT_SYNC_0, "SNCT_SYNC_0" },
                                                  { SNCT_SYNC_1, "SNCT_SYNC_1" } };
 std::map<int, int> ccl_sync_type_values = { { SNCT_SYNC_0, 0 }, { SNCT_SYNC_1, 1 } };
 
-ccl_order_type first_ccl_order_type = ORDER_DISABLE;
+ccl_order_type first_ccl_order_type = ORDER_DIRECT;
 ccl_order_type last_ccl_order_type = ORDER_LAST;
-std::map<int, const char*> ccl_order_type_str = { { ORDER_DISABLE, "ORDER_DISABLE" },
-                                                  { ORDER_DIRECT, "ORDER_DIRECT" },
+std::map<int, const char*> ccl_order_type_str = { { ORDER_DIRECT, "ORDER_DIRECT" },
                                                   { ORDER_INDIRECT, "ORDER_INDIRECT" },
                                                   { ORDER_RANDOM, "ORDER_RANDOM" } };
-std::map<int, int> ccl_order_type_values = { { ORDER_DISABLE, 0 },
-                                             { ORDER_DIRECT, 1 },
-                                             { ORDER_INDIRECT, 2 },
-                                             { ORDER_RANDOM, 3 } };
+std::map<int, int> ccl_order_type_values = { { ORDER_DIRECT, 0 },
+                                             { ORDER_INDIRECT, 1 },
+                                             { ORDER_RANDOM, 2 } };
 
 POST_AND_PRE_INCREMENTS(ccl_place_type, PT_LAST);
 POST_AND_PRE_INCREMENTS(ccl_size_type, ST_LAST);
@@ -161,6 +159,7 @@ size_t calculate_test_count() {
     char* test_reduction_enabled = getenv("CCL_TEST_REDUCTION_TYPE");
     char* test_sync_enabled = getenv("CCL_TEST_SYNC_TYPE");
     char* test_completion_enabled = getenv("CCL_TEST_COMPLETION_TYPE");
+    // TODO: rename to CCL_TEST_ORDER_TYPE in Jenkins
     char* test_order_type_enabled = getenv("CCL_TEST_PRIORITY_TYPE");
     char* test_size_type_enabled = getenv("CCL_TEST_SIZE_TYPE");
     char* test_buffer_count_enabled = getenv("CCL_TEST_BUFFER_COUNT");
@@ -183,19 +182,19 @@ size_t calculate_test_count() {
 
     if (test_sync_enabled && atoi(test_sync_enabled) == 0) {
         test_count /= last_ccl_sync_type;
-        first_ccl_sync_type = static_cast<ccl_sync_type>(SNCT_SYNC_1);
+        first_ccl_sync_type = static_cast<ccl_sync_type>(SNCT_SYNC_0);
         last_ccl_sync_type = static_cast<ccl_sync_type>(first_ccl_sync_type + 1);
     }
 
     if (test_completion_enabled && atoi(test_completion_enabled) == 0) {
         test_count /= last_ccl_completion_type;
-        first_ccl_completion_type = static_cast<ccl_completion_type>(CMPT_WAIT);
+        first_ccl_completion_type = static_cast<ccl_completion_type>(CMPT_TEST);
         last_ccl_completion_type = static_cast<ccl_completion_type>(first_ccl_completion_type + 1);
     }
 
     if (test_order_type_enabled && atoi(test_order_type_enabled) == 0) {
         test_count /= (last_ccl_order_type * last_ccl_order_type);
-        first_ccl_order_type = static_cast<ccl_order_type>(ORDER_DISABLE);
+        first_ccl_order_type = static_cast<ccl_order_type>(ORDER_DIRECT);
         last_ccl_order_type = static_cast<ccl_order_type>(first_ccl_order_type + 1);
     }
 
@@ -283,7 +282,8 @@ void init_test_params() {
                                              start_order_type++) {
                                             for (ccl_order_type complete_order_type =
                                                      first_ccl_order_type;
-                                                 complete_order_type < last_ccl_order_type;
+                                                 complete_order_type <
+                                                 (first_ccl_order_type + 1) /*last_ccl_order_type*/;
                                                  complete_order_type++) {
                                                 for (ccl_buffer_count buffer_count =
                                                          first_ccl_buffer_count;

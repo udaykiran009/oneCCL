@@ -33,15 +33,14 @@ public:
         auto attr = ccl::create_operation_attr<ccl::broadcast_attr>();
         ccl::datatype datatype = get_ccl_lib_datatype(test_conf);
 
-        for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
-            size_t new_idx = param.buf_indexes[buf_idx];
-            param.prepare_coll_attr(attr, param.buf_indexes[buf_idx]);
-            param.reqs[buf_idx] = ccl::broadcast(param.get_recv_buf(new_idx),
-                                                 param.elem_count,
-                                                 datatype,
-                                                 ROOT_RANK,
-                                                 GlobalData::instance().comms[0],
-                                                 attr);
+        for (auto buf_idx : param.buf_indexes) {
+            param.prepare_coll_attr(attr, buf_idx);
+            param.events.push_back(ccl::broadcast(param.get_recv_buf(buf_idx),
+                                                  param.elem_count,
+                                                  datatype,
+                                                  ROOT_RANK,
+                                                  GlobalData::instance().comms[0],
+                                                  attr));
         }
     }
 };

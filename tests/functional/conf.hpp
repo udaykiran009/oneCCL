@@ -123,13 +123,7 @@ extern ccl_sync_type last_ccl_sync_type;
 extern std::map<int, const char*> ccl_sync_type_str;
 extern std::map<int, int> ccl_sync_type_values;
 
-typedef enum {
-    ORDER_DISABLE = 0,
-    ORDER_DIRECT = 1,
-    ORDER_INDIRECT = 2,
-    ORDER_RANDOM = 3,
-    ORDER_LAST
-} ccl_order_type;
+typedef enum { ORDER_DIRECT = 0, ORDER_INDIRECT = 1, ORDER_RANDOM = 2, ORDER_LAST } ccl_order_type;
 extern ccl_order_type first_ccl_order_type;
 extern ccl_order_type last_ccl_order_type;
 extern std::map<int, const char*> ccl_order_type_str;
