@@ -80,8 +80,7 @@ void do_regular(ccl::communicator& service_comm,
                               "stddev[%]");
             }
 
-            for (size_t count = options.min_elem_count; count <= options.max_elem_count;
-                 count *= 2) {
+            for (auto& count : options.elem_counts) {
                 size_t iter_count =
                     get_iter_count(count * ccl::get_datatype_size(dtype), options.iters);
 
@@ -188,8 +187,7 @@ void do_unordered(ccl::communicator& service_comm,
             bench_attr.reduction = reduction_op;
             bench_attr.set<ccl::operation_attr_id::to_cache>((bool)options.cache_ops);
 
-            for (size_t count = options.min_elem_count; count <= options.max_elem_count;
-                 count *= 2) {
+            for (auto& count : options.elem_counts) {
                 try {
                     if (rank % 2) {
                         for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {

@@ -40,6 +40,7 @@ void print_help_usage(const char* app) {
           "\t[-n,--buf_count <number of parallel operations within single collective>]: %d\n"
           "\t[-f,--min_elem_count <minimum number of elements for single collective>]: %d\n"
           "\t[-t,--max_elem_count <maximum number of elements for single collective>]: %d\n"
+          "\t[-y,--elem_counts <list of element counts for single collective>]: [%d-%d]\n"
           "\t[-c,--check <check result correctness>]: %d\n"
           "\t[-p,--cache <use persistent operations>]: %d\n"
           "\t[-a,--sycl_dev_type <sycl device type>]: %s\n"
@@ -59,6 +60,8 @@ void print_help_usage(const char* app) {
           DEFAULT_ITERS,
           DEFAULT_WARMUP_ITERS,
           DEFAULT_BUF_COUNT,
+          DEFAULT_MIN_ELEM_COUNT,
+          DEFAULT_MAX_ELEM_COUNT,
           DEFAULT_MIN_ELEM_COUNT,
           DEFAULT_MAX_ELEM_COUNT,
           DEFAULT_CHECK_VALUES,
@@ -295,11 +298,60 @@ void print_timings(ccl::communicator& comm,
     ccl::barrier(comm);
 }
 
+void adjust_user_options(user_options_t& options) {
+    if (options.max_elem_count < options.min_elem_count)
+        options.max_elem_count = options.min_elem_count;
+
+    if (options.elem_counts_set) {
+        /* adjust min/max_elem_count or elem_counts */
+        if (options.min_elem_count_set) {
+            /* apply user-supplied count as limiter */
+            options.elem_counts.remove_if([&options](const size_t& count) {
+                return (count < options.min_elem_count);
+            });
+        }
+        else {
+            if (options.elem_counts.empty())
+                options.min_elem_count = 0;
+            else
+                options.min_elem_count =
+                    *(std::min_element(options.elem_counts.begin(), options.elem_counts.end()));
+        }
+        if (options.max_elem_count_set) {
+            /* apply user-supplied count as limiter */
+            options.elem_counts.remove_if([&options](const size_t& count) {
+                return (count > options.max_elem_count);
+            });
+        }
+        else {
+            if (options.elem_counts.empty())
+                options.max_elem_count = options.min_elem_count;
+            else
+                options.max_elem_count =
+                    *(std::max_element(options.elem_counts.begin(), options.elem_counts.end()));
+        }
+    }
+    else {
+        generate_counts(options.elem_counts, options.min_elem_count, options.max_elem_count);
+    }
+}
+
+bool is_valid_integer_option(const char* option) {
+    std::string str(option);
+    bool only_digits = (str.find_first_not_of("0123456789") == std::string::npos);
+    return (only_digits && atoi(option) >= 0);
+}
+
+bool is_valid_integer_option(int option) {
+    return (option >= 0);
+}
+
 int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
     int ch;
     int errors = 0;
+    std::list<int> elem_counts_int;
 
-    const char* const short_options = "b:e:i:w:n:f:t:c:p:v:o:a:m:u:k:l:d:r:h";
+    const char* const short_options = "b:e:i:w:n:f:t:c:p:v:o:a:m:u:k:l:d:r:y:h";
 
     struct option getopt_options[] = {
         { "backend", required_argument, 0, 'b' },
@@ -309,6 +361,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
         { "buf_count", required_argument, 0, 'n' },
         { "min_elem_count", required_argument, 0, 'f' },
         { "max_elem_count", required_argument, 0, 't' },
+        { "elem_counts", required_argument, 0, 'y' },
         { "check", required_argument, 0, 'c' },
         { "cache", required_argument, 0, 'p' },
         { "v2i_ratio", required_argument, 0, 'v' },
@@ -338,14 +391,57 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
                     errors++;
                 }
                 break;
-            case 'i': options.iters = atoll(optarg); break;
-            case 'w': options.warmup_iters = atoll(optarg); break;
-            case 'n': options.buf_count = atoll(optarg); break;
-            case 'f': options.min_elem_count = atoll(optarg); break;
-            case 't': options.max_elem_count = atoll(optarg); break;
+            case 'i':
+                if (is_valid_integer_option(optarg)) {
+                    options.iters = atoll(optarg);
+                }
+                else
+                    errors++;
+                break;
+            case 'w':
+                if (is_valid_integer_option(optarg)) {
+                    options.warmup_iters = atoll(optarg);
+                }
+                else
+                    errors++;
+                break;
+            case 'n':
+                if (is_valid_integer_option(optarg)) {
+                    options.buf_count = atoll(optarg);
+                }
+                else
+                    errors++;
+                break;
+            case 'f':
+                if (is_valid_integer_option(optarg)) {
+                    options.min_elem_count = atoll(optarg);
+                    options.min_elem_count_set = true;
+                }
+                else
+                    errors++;
+                break;
+            case 't':
+                if (is_valid_integer_option(optarg)) {
+                    options.max_elem_count = atoll(optarg);
+                    options.max_elem_count_set = true;
+                }
+                else
+                    errors++;
+                break;
+            case 'y':
+                elem_counts_int = tokenize<int>(optarg, ',');
+                elem_counts_int.remove_if([](const size_t& count) {
+                    return !is_valid_integer_option(count);
+                });
+                options.elem_counts = tokenize<size_t>(optarg, ',');
+                if (elem_counts_int.size() == options.elem_counts.size())
+                    options.elem_counts_set = true;
+                else
+                    errors++;
+                break;
             case 'c': options.check_values = atoi(optarg); break;
             case 'p': options.cache_ops = atoi(optarg); break;
-            case 'v': options.v2i_ratio = atoll(optarg); break;
+            /*case 'v': options.v2i_ratio = atoll(optarg); break;*/
             case 'a':
                 if (set_sycl_dev_type(optarg, options.sycl_dev_type)) {
                     PRINT("failed to parse 'sycl_dev_type' option");
@@ -364,27 +460,33 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
                     errors++;
                 }
                 break;
-            case 'k': options.ranks_per_proc = atoll(optarg); break;
-            case 'l':
-                if (strcmp("all", optarg) == 0) {
-                    options.coll_names = tokenize(ALL_COLLS_LIST, ',');
+            case 'k':
+                if (is_valid_integer_option(optarg)) {
+                    options.ranks_per_proc = atoll(optarg);
                 }
                 else
-                    options.coll_names = tokenize(optarg, ',');
+                    errors++;
+                break;
+            case 'l':
+                if (strcmp("all", optarg) == 0) {
+                    options.coll_names = tokenize<std::string>(ALL_COLLS_LIST, ',');
+                }
+                else
+                    options.coll_names = tokenize<std::string>(optarg, ',');
                 break;
             case 'd':
                 if (strcmp("all", optarg) == 0) {
-                    options.dtypes = tokenize(ALL_DTYPES_LIST, ',');
+                    options.dtypes = tokenize<std::string>(ALL_DTYPES_LIST, ',');
                 }
                 else
-                    options.dtypes = tokenize(optarg, ',');
+                    options.dtypes = tokenize<std::string>(optarg, ',');
                 break;
             case 'r':
                 if (strcmp("all", optarg) == 0) {
-                    options.reductions = tokenize(ALL_REDUCTIONS_LIST, ',');
+                    options.reductions = tokenize<std::string>(ALL_REDUCTIONS_LIST, ',');
                 }
                 else
-                    options.reductions = tokenize(optarg, ',');
+                    options.reductions = tokenize<std::string>(optarg, ',');
                 break;
             case 'o': options.csv_filepath = std::string(optarg); break;
             case 'h': return -1;
@@ -408,29 +510,45 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
         return -1;
     }
 
-    /* adjust user options */
-    if (!options.min_elem_count)
-        options.min_elem_count = 1;
-
-    if (options.max_elem_count < options.min_elem_count)
-        options.max_elem_count = options.min_elem_count;
+    adjust_user_options(options);
 
     return 0;
 }
 
 void print_user_options(const user_options_t& options, const ccl::communicator& comm) {
     std::stringstream ss;
-    ss << "colls:          ";
+    std::string elem_counts_str;
+    std::string collectives_str;
+    std::string datatypes_str;
+    std::string reductions_str;
+
+    ss.str("");
+    ss << "[";
+    std::copy(options.elem_counts.begin(),
+              options.elem_counts.end(),
+              std::ostream_iterator<size_t>(ss, " "));
+    if (*ss.str().rbegin() == ' ')
+        ss.seekp(-1, std::ios_base::end);
+    ss << "]";
+    elem_counts_str = ss.str();
+    ss.str("");
+
     std::copy(options.coll_names.begin(),
               options.coll_names.end(),
               std::ostream_iterator<std::string>(ss, " "));
-    ss << "\n  dtypes:         ";
+    collectives_str = ss.str();
+    ss.str("");
+
     std::copy(
         options.dtypes.begin(), options.dtypes.end(), std::ostream_iterator<std::string>(ss, " "));
-    ss << "\n  reductions:     ";
+    datatypes_str = ss.str();
+    ss.str("");
+
     std::copy(options.reductions.begin(),
               options.reductions.end(),
               std::ostream_iterator<std::string>(ss, " "));
+    reductions_str = ss.str();
+    ss.str("");
 
     std::string backend_str = find_str_val(backend_names, options.backend);
     std::string loop_str = find_str_val(loop_names, options.loop);
@@ -449,14 +567,17 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   "\n  buf_count:      %zu"
                   "\n  min_elem_count: %zu"
                   "\n  max_elem_count: %zu"
+                  "\n  elem_counts:    %s"
                   "\n  check:          %d"
                   "\n  cache:          %d"
-                  "\n  v2i_ratio:      %zu"
+                  /*"\n  v2i_ratio:      %zu"*/
                   "\n  sycl_dev_type:  %s"
                   "\n  sycl_mem_type:  %s"
                   "\n  sycl_usm_type:  %s"
                   "\n  ranks_per_proc: %zu"
-                  "\n  %s"
+                  "\n  collectives:    %s"
+                  "\n  datatypes:      %s"
+                  "\n  reductions:     %s"
                   "\n  csv_filepath:   %s",
                   comm.size(),
                   backend_str.c_str(),
@@ -466,13 +587,16 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   options.buf_count,
                   options.min_elem_count,
                   options.max_elem_count,
+                  elem_counts_str.c_str(),
                   options.check_values,
                   options.cache_ops,
-                  options.v2i_ratio,
+                  /*options.v2i_ratio,*/
                   sycl_dev_type_str.c_str(),
                   sycl_mem_type_str.c_str(),
                   sycl_usm_type_str.c_str(),
                   options.ranks_per_proc,
-                  ss.str().c_str(),
+                  collectives_str.c_str(),
+                  datatypes_str.c_str(),
+                  reductions_str.c_str(),
                   options.csv_filepath.c_str());
 }

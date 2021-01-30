@@ -67,14 +67,29 @@ std::map<ccl::reduction, std::string> reduction_names = {
     std::make_pair(ccl::reduction::max, "max"),
 };
 
-std::list<std::string> tokenize(const std::string& input, char delimeter) {
-    std::stringstream ss(input);
-    std::list<std::string> ret;
-    std::string value;
-    while (std::getline(ss, value, delimeter)) {
+template <typename T>
+std::list<T> tokenize(const std::string& input, char delimeter) {
+    std::istringstream ss(input);
+    std::list<T> ret;
+    std::string str;
+    while (std::getline(ss, str, delimeter)) {
+        std::stringstream converter;
+        converter << str;
+        T value;
+        converter >> value;
         ret.push_back(value);
     }
     return ret;
+}
+
+void generate_counts(std::list<size_t>& counts, size_t min_count, size_t max_count) {
+    counts.clear();
+    size_t count = 0;
+    for (count = min_count; count <= max_count; count *= 2) {
+        counts.push_back(count);
+    }
+    if (*counts.rbegin() != max_count)
+        counts.push_back(max_count);
 }
 
 typedef struct user_options_t {
@@ -85,6 +100,7 @@ typedef struct user_options_t {
     size_t buf_count;
     size_t min_elem_count;
     size_t max_elem_count;
+    std::list<size_t> elem_counts;
     int check_values;
     int cache_ops;
     size_t v2i_ratio;
@@ -97,6 +113,10 @@ typedef struct user_options_t {
     std::list<std::string> reductions;
     std::string csv_filepath;
 
+    bool min_elem_count_set;
+    bool max_elem_count_set;
+    bool elem_counts_set;
+
     user_options_t() {
         backend = DEFAULT_BACKEND;
         loop = DEFAULT_LOOP;
@@ -105,6 +125,7 @@ typedef struct user_options_t {
         buf_count = DEFAULT_BUF_COUNT;
         min_elem_count = DEFAULT_MIN_ELEM_COUNT;
         max_elem_count = DEFAULT_MAX_ELEM_COUNT;
+        generate_counts(elem_counts, min_elem_count, max_elem_count);
         check_values = DEFAULT_CHECK_VALUES;
         cache_ops = DEFAULT_CACHE_OPS;
         v2i_ratio = DEFAULT_V2I_RATIO;
@@ -112,10 +133,14 @@ typedef struct user_options_t {
         sycl_mem_type = DEFAULT_SYCL_MEM_TYPE;
         sycl_usm_type = DEFAULT_SYCL_USM_TYPE;
         ranks_per_proc = DEFAULT_RANKS_PER_PROC;
-        coll_names = tokenize(DEFAULT_COLL_LIST, ',');
-        dtypes = tokenize(DEFAULT_DTYPES_LIST, ',');
-        reductions = tokenize(DEFAULT_REDUCTIONS_LIST, ',');
+        coll_names = tokenize<std::string>(DEFAULT_COLL_LIST, ',');
+        dtypes = tokenize<std::string>(DEFAULT_DTYPES_LIST, ',');
+        reductions = tokenize<std::string>(DEFAULT_REDUCTIONS_LIST, ',');
         csv_filepath = std::string(DEFAULT_CSV_FILEPATH);
+
+        min_elem_count_set = false;
+        max_elem_count_set = false;
+        elem_counts_set = false;
     }
 } user_options_t;
 

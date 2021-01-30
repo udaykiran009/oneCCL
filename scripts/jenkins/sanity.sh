@@ -273,6 +273,31 @@ make_tests()
         -DCMAKE_CXX_COMPILER="${CXX_COMPILER}"
     make all
 }
+run_valgrind_check()
+{
+    export EXAMPLE_WORK_DIR="${CCL_ROOT}/examples/build"
+    unset I_MPI_HYDRA_HOST_FILE
+    mkdir -p ${EXAMPLE_WORK_DIR}
+    echo "EXAMPLE_WORK_DIR =" $EXAMPLE_WORK_DIR
+    set_external_env
+    cd ${EXAMPLE_WORK_DIR}
+    if [ ${node_label} == "mlsl2_test_gpu" ]
+    then
+        export FI_TCP_IFACE=eno1
+        ${CURRENT_WORK_DIR}/scripts/valgrind/valgrind.sh gpu ${valgrind_scope}
+    else
+        ${CURRENT_WORK_DIR}/scripts/valgrind/valgrind.sh cpu ${valgrind_scope}
+    fi
+    log_status_fail=${PIPESTATUS[0]}
+    if [ "$log_status_fail" -eq 0 ]
+    then
+        echo "valgrind testing ... OK"
+        exit 0
+    else
+        echo "valgrind testing ... NOK"
+        exit 1
+    fi
+}
 
 run_compatibitily_tests()
 {
@@ -660,6 +685,10 @@ do
         run_tests
         shift
         ;;
+    "-valgrind_check" )
+        run_valgrind_check
+        shift
+        ;;
     *)
         echo "WARNING: example testing not started"
         exit 0
@@ -668,4 +697,3 @@ do
     esac
 done
 clean_nodes
-
