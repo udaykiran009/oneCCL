@@ -32,7 +32,7 @@ DECLARE_OP_KERNEL_TYPE(reduce)
 DECLARE_OP_KERNEL_TYPE(reduce_scatter)
 
 template <class T>
-struct my_add {
+struct my_sum {
     T operator()(const T& lhs, const T& rhs) const {
         return lhs + rhs;
     }
@@ -43,7 +43,7 @@ struct my_add {
 };
 
 template <class T>
-struct my_mult {
+struct my_prod {
     T operator()(const T& lhs, const T& rhs) const {
         return lhs * rhs;
     }
@@ -76,7 +76,7 @@ struct my_max {
 };
 
 template <>
-struct my_add<bfloat16> {
+struct my_sum<bfloat16> {
     bfloat16 operator()(const bfloat16& lhs, const bfloat16& rhs) const {
         return fp32_to_bf16(bf16_to_fp32(lhs) + bf16_to_fp32(rhs));
     }
@@ -87,7 +87,7 @@ struct my_add<bfloat16> {
 };
 
 template <>
-struct my_mult<bfloat16> {
+struct my_prod<bfloat16> {
     bfloat16 operator()(const bfloat16& lhs, const bfloat16& rhs) const {
         return fp32_to_bf16(bf16_to_fp32(lhs) * bf16_to_fp32(rhs));
     }
@@ -166,32 +166,32 @@ using TestTypes = ::testing::
 #define DEFINE_PAIR(T, Op) std::pair<T, Op>
 
 #define DEFINE_TYPE(T) \
-    DEFINE_PAIR(T, my_add<T>), DEFINE_PAIR(T, my_mult<T>), DEFINE_PAIR(T, my_min<T>), \
+    DEFINE_PAIR(T, my_sum<T>), DEFINE_PAIR(T, my_prod<T>), DEFINE_PAIR(T, my_min<T>), \
         DEFINE_PAIR(T, my_max<T>)
 
 // Note: don't use float with mult op as the rounding error gets
 // noticeable quite fast
-using TestTypesAndOps = ::testing::Types<DEFINE_PAIR(int8_t, my_add<int8_t>),
-                                         //DEFINE_PAIR(uint8_t, my_mult<uint8_t>),
+using TestTypesAndOps = ::testing::Types<DEFINE_PAIR(int8_t, my_sum<int8_t>),
+                                         //DEFINE_PAIR(uint8_t, my_prod<uint8_t>),
                                          DEFINE_PAIR(int16_t, my_min<int16_t>),
                                          //DEFINE_PAIR(uint16_t, my_max<uint16_t>),
-                                         //DEFINE_PAIR(int32_t, my_add<int32_t>),
-                                         DEFINE_PAIR(uint32_t, my_mult<uint32_t>),
+                                         //DEFINE_PAIR(int32_t, my_sum<int32_t>),
+                                         DEFINE_PAIR(uint32_t, my_prod<uint32_t>),
                                          //DEFINE_PAIR(int64_t, my_min<int64_t>),
                                          //DEFINE_PAIR(uint64_t, my_max<uint64_t>),
                                          DEFINE_PAIR(float, my_max<float>),
                                          DEFINE_PAIR(double, my_min<double>)>;
 
 /* BF16 in kernels is supported for allreduce & reduce only... */
-using TestTypesAndOpsReduction = ::testing::Types<DEFINE_PAIR(int8_t, my_add<int8_t>),
-                                                  //DEFINE_PAIR(uint8_t, my_mult<uint8_t>),
+using TestTypesAndOpsReduction = ::testing::Types<DEFINE_PAIR(int8_t, my_sum<int8_t>),
+                                                  //DEFINE_PAIR(uint8_t, my_prod<uint8_t>),
                                                   DEFINE_PAIR(int16_t, my_min<int16_t>),
                                                   //DEFINE_PAIR(uint16_t, my_max<uint16_t>),
-                                                  //DEFINE_PAIR(int32_t, my_add<int32_t>),
-                                                  DEFINE_PAIR(uint32_t, my_mult<uint32_t>),
+                                                  //DEFINE_PAIR(int32_t, my_sum<int32_t>),
+                                                  DEFINE_PAIR(uint32_t, my_prod<uint32_t>),
                                                   //DEFINE_PAIR(int64_t, my_min<int64_t>),
                                                   //DEFINE_PAIR(uint64_t, my_max<uint64_t>),
-                                                  DEFINE_PAIR(float, my_add<float>),
+                                                  DEFINE_PAIR(float, my_sum<float>),
                                                   DEFINE_PAIR(double, my_min<double>),
-                                                  DEFINE_PAIR(bfloat16, my_add<bfloat16>),
+                                                  DEFINE_PAIR(bfloat16, my_sum<bfloat16>),
                                                   DEFINE_PAIR(bfloat16, my_max<bfloat16>)>;

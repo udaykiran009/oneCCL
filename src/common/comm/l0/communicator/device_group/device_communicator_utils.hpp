@@ -71,7 +71,7 @@ std::unique_ptr<ccl::event_impl> do_collective_op_reductions(
     switch (reduction) {
         case ccl::reduction::sum:
             return do_collective_op<
-                kernel_reduction_params_traits<buffer_type, ccl_coll_reduction::add>,
+                kernel_reduction_params_traits<buffer_type, ccl_coll_reduction::sum>,
                 group_id,
                 class_id,
                 algorithm>(
@@ -79,7 +79,7 @@ std::unique_ptr<ccl::event_impl> do_collective_op_reductions(
             break;
         case ccl::reduction::prod:
             return do_collective_op<
-                kernel_reduction_params_traits<buffer_type, ccl_coll_reduction::mult>,
+                kernel_reduction_params_traits<buffer_type, ccl_coll_reduction::prod>,
                 group_id,
                 class_id,
                 algorithm>(

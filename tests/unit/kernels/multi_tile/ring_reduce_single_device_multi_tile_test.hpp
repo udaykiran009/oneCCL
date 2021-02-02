@@ -5,8 +5,8 @@
 
 #include "reduce_fixture.hpp"
 
-DEFINE_KERNEL_TYPES_FOR_OP(reduce, add);
-DEFINE_KERNEL_TYPES_FOR_OP(reduce, mult);
+DEFINE_KERNEL_TYPES_FOR_OP(reduce, sum);
+DEFINE_KERNEL_TYPES_FOR_OP(reduce, prod);
 DEFINE_KERNEL_TYPES_FOR_OP(reduce, min);
 DEFINE_KERNEL_TYPES_FOR_OP(reduce, max);
 

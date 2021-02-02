@@ -5,8 +5,8 @@
 
 #include "reduce_scatter_fixture.hpp"
 
-DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce_scatter, add);
-DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce_scatter, mult);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce_scatter, sum);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce_scatter, prod);
 DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce_scatter, min);
 DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce_scatter, max);
 

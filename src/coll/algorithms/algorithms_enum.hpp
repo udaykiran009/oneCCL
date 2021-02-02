@@ -127,8 +127,8 @@ inline const char* ccl_coll_type_to_str(ccl_coll_type type) {
 }
 
 enum ccl_coll_reduction {
-    add,
-    mult,
+    sum,
+    prod,
     min,
     max,
     //custom, TODO: make support of custom reduction in *.cl
@@ -137,11 +137,11 @@ enum ccl_coll_reduction {
 };
 
 #define REDUCE_TYPES \
-    ccl_coll_reduction::add, ccl_coll_reduction::mult, ccl_coll_reduction::min, \
+    ccl_coll_reduction::sum, ccl_coll_reduction::prod, ccl_coll_reduction::min, \
         ccl_coll_reduction::max /*, ccl_coll_reduction::custom*/
 
 using ccl_coll_reductions = utils::enum_to_str<static_cast<int>(ccl_coll_reduction::last_value)>;
 inline const std::string reduction_to_str(ccl_coll_reduction reduction_type) {
-    return ccl_coll_reductions({ "add", "mult", "min", "max" })
+    return ccl_coll_reductions({ "sum", "prod", "min", "max" })
         .choose(reduction_type, "INVALID_VALUE");
 }

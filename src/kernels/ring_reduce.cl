@@ -207,13 +207,13 @@
 #define DEFINE_KERNELS_WITH_BF16OP(OpName) \
     DEFINE_KERNEL(bfloat16, ushort, 1, __##OpName##_##ushort, OpName)
 
-#define DEFINE_ADD_OP(T) \
-    T __add_##T(T lhs, T rhs) { \
+#define DEFINE_SUM_OP(T) \
+    T __sum_##T(T lhs, T rhs) { \
         return lhs + rhs; \
     }
 
-#define DEFINE_MULT_OP(T) \
-    T __mult_##T(T lhs, T rhs) { \
+#define DEFINE_PROD_OP(T) \
+    T __prod_##T(T lhs, T rhs) { \
         return lhs * rhs; \
     }
 
@@ -228,12 +228,12 @@
     }
 
 #define DEFINE_BF16ADD_OP(T) \
-    T __add_##T(T lhs, T rhs) { \
+    T __sum_##T(T lhs, T rhs) { \
         return __fp32_to_bf16(__bf16_to_fp32(lhs) + __bf16_to_fp32(rhs)); \
     }
 
-#define DEFINE_BF16MULT_OP(T) \
-    T __mult_##T(T lhs, T rhs) { \
+#define DEFINE_BF16PROD_OP(T) \
+    T __prod_##T(T lhs, T rhs) { \
         return __fp32_to_bf16(__bf16_to_fp32(lhs) * __bf16_to_fp32(rhs)); \
     }
 
@@ -248,14 +248,14 @@
     }
 
 #define DEFINE_OPS(T) \
-    DEFINE_ADD_OP(T) \
-    DEFINE_MULT_OP(T) \
+    DEFINE_SUM_OP(T) \
+    DEFINE_PROD_OP(T) \
     DEFINE_MIN_OP(T) \
     DEFINE_MAX_OP(T)
 
 #define DEFINE_BF16OPS(T) \
     DEFINE_BF16ADD_OP(T) \
-    DEFINE_BF16MULT_OP(T) \
+    DEFINE_BF16PROD_OP(T) \
     DEFINE_BF16MIN_OP(T) \
     DEFINE_BF16MAX_OP(T)
 
@@ -280,13 +280,13 @@ DEFINE_BF16OPS(ushort)
 DEFINE_OPS(float16)
 
 // Define the actual kernels
-DEFINE_KERNELS_WITH_OP(add)
-DEFINE_KERNELS_WITH_OP(mult)
+DEFINE_KERNELS_WITH_OP(sum)
+DEFINE_KERNELS_WITH_OP(prod)
 DEFINE_KERNELS_WITH_OP(min)
 DEFINE_KERNELS_WITH_OP(max)
 
-DEFINE_KERNELS_WITH_BF16OP(add)
-DEFINE_KERNELS_WITH_BF16OP(mult)
+DEFINE_KERNELS_WITH_BF16OP(sum)
+DEFINE_KERNELS_WITH_BF16OP(prod)
 DEFINE_KERNELS_WITH_BF16OP(min)
 DEFINE_KERNELS_WITH_BF16OP(max)
 
@@ -331,7 +331,7 @@ DEFINE_KERNELS_WITH_BF16OP(max)
     DEFINE_NUMA_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName) \
     DEFINE_NUMA_KERNEL(bfloat16, ushort, 1, __##OpName##_##bfloat16, OpName)
 
-DEFINE_NUMA_KERNELS_WITH_OP(add)
-DEFINE_NUMA_KERNELS_WITH_OP(mult)
+DEFINE_NUMA_KERNELS_WITH_OP(sum)
+DEFINE_NUMA_KERNELS_WITH_OP(prod)
 DEFINE_NUMA_KERNELS_WITH_OP(min)
 DEFINE_NUMA_KERNELS_WITH_OP(max)
