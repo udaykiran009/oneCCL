@@ -302,7 +302,7 @@ int get_left_rank(int rank, int comm_size) {
         return lhs + rhs; \
     }
 
-#define DEFINE_BF16PROD_OP(T) \
+#define DEFINE_PROD_OP(T) \
     T __prod_##T(T lhs, T rhs) { \
         return lhs * rhs; \
     }
@@ -317,12 +317,12 @@ int get_left_rank(int rank, int comm_size) {
         return max(lhs, rhs); \
     }
 
-#define DEFINE_BF16ADD_OP(T) \
+#define DEFINE_BF16SUM_OP(T) \
     T __sum_##T(T lhs, T rhs) { \
         return __fp32_to_bf16(__bf16_to_fp32(lhs) + __bf16_to_fp32(rhs)); \
     }
 
-#define DEFINE_BF16MULT_OP(T) \
+#define DEFINE_BF16PROD_OP(T) \
     T __prod_##T(T lhs, T rhs) { \
         return __fp32_to_bf16(__bf16_to_fp32(lhs) * __bf16_to_fp32(rhs)); \
     }
@@ -339,13 +339,13 @@ int get_left_rank(int rank, int comm_size) {
 
 #define DEFINE_OPS(T) \
     DEFINE_SUM_OP(T) \
-    DEFINE_BF16PROD_OP(T) \
+    DEFINE_PROD_OP(T) \
     DEFINE_MIN_OP(T) \
     DEFINE_MAX_OP(T)
 
 #define DEFINE_BF16OPS(T) \
-    DEFINE_BF16ADD_OP(T) \
-    DEFINE_BF16MULT_OP(T) \
+    DEFINE_BF16SUM_OP(T) \
+    DEFINE_BF16PROD_OP(T) \
     DEFINE_BF16MIN_OP(T) \
     DEFINE_BF16MAX_OP(T)
 

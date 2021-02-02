@@ -227,7 +227,7 @@
         return max(lhs, rhs); \
     }
 
-#define DEFINE_BF16ADD_OP(T) \
+#define DEFINE_BF16SUM_OP(T) \
     T __sum_##T(T lhs, T rhs) { \
         return __fp32_to_bf16(__bf16_to_fp32(lhs) + __bf16_to_fp32(rhs)); \
     }
@@ -254,7 +254,7 @@
     DEFINE_MAX_OP(T)
 
 #define DEFINE_BF16OPS(T) \
-    DEFINE_BF16ADD_OP(T) \
+    DEFINE_BF16SUM_OP(T) \
     DEFINE_BF16PROD_OP(T) \
     DEFINE_BF16MIN_OP(T) \
     DEFINE_BF16MAX_OP(T)
