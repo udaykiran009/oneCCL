@@ -925,6 +925,8 @@ add_copyrights()
 
     ed ${PACKAGE_ENG_DIR}/env/vars.sh < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
     ed ${PACKAGE_ENG_DIR}/modulefiles/ccl < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
+    ed ${PACKAGE_ENG_DIR}/lib/cmake/oneCCL/oneCCLConfig.cmake < ${COPYRIGHT_INTEL_C} >/dev/null 2>&1
+    ed ${PACKAGE_ENG_DIR}/lib/cmake/oneCCL/oneCCLConfigVersion.cmake < ${COPYRIGHT_INTEL_C} >/dev/null 2>&1
 
     rm -rf ${TMP_COPYRIGHT_DIR}
     echo_log_separator
