@@ -109,6 +109,7 @@ set_default_values()
     CORE_COUNT=$(( $(lscpu | grep "^Socket(s):" | awk '{print $2}' ) * $(lscpu | grep "^Core(s) per socket:" | awk '{print $4}') ))
     # 4 because of nuc has 4 core only
     MAKE_JOB_COUNT=$(( CORE_COUNT / 3 > 4 ? CORE_COUNT / 3 : 4 ))
+    CMAKE_ADDITIONAL_OPTIONS=""
     set_build_type
 }
 #==============================================================================
@@ -157,6 +158,8 @@ print_help()
     echo_log "    -job-count <num>|--job-count <num>"
     echo_log "        Specify number of parallel make threads"
     echo_log "        The value 'max' will set the maximum available number of threads"
+    echo_log "    -cmake-add-opt '-DOPT1=0 -DOPT2=0'|--cmake-add-opt '-DOPT1=0 -DOPT2=0'"
+    echo_log "        Specify additional options for cmake"
     echo_log "   ------------------------------------------------------------"
     echo_log "    -h|-H|-help|--help"
     echo_log "        Print help information"
@@ -260,7 +263,8 @@ build()
     log cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
     -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
     -DCOMPUTE_BACKEND="${compute_backend}" -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" \
-    -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}"
+    -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}" \
+    "${CMAKE_ADDITIONAL_OPTIONS}"
 
     log make -j$MAKE_JOB_COUNT VERBOSE=1 install
     CheckCommandExitCode $? "build failed"
@@ -711,6 +715,10 @@ parse_arguments()
                     shift
                 fi
                 ;;
+            "-cmake-add-opt"| "--cmake-add-opt")
+                CMAKE_ADDITIONAL_OPTIONS=$2
+                shift
+                ;;
             "-help"|"--help"|"-h"|"-H")
                 print_help
                 exit 0
@@ -735,6 +743,7 @@ parse_arguments()
     echo_log "ENABLE_PRE_DROP           = ${ENABLE_PRE_DROP}"
     echo_log "ENABLE_INSTALL            = ${ENABLE_INSTALL}"
     echo_log "MAKE_JOB_COUNT            = ${MAKE_JOB_COUNT}"
+    echo_log "CMAKE_ADDITIONAL_OPTIONS  = ${CMAKE_ADDITIONAL_OPTIONS}"
     echo_log "-----------------------------------------------------------"
 
     TIMESTAMP_START=`date +%s`
@@ -975,7 +984,7 @@ run_swf_pre_drop()
 #                              MAIN
 #==============================================================================
 set_default_values
-parse_arguments $@
+parse_arguments "$@"
 echo "BUILD_TYPE=" $BUILD_TYPE
 preparing_files
 run_build_cpu
