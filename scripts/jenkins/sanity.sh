@@ -273,6 +273,7 @@ make_tests()
         -DCMAKE_CXX_COMPILER="${CXX_COMPILER}"
     make all
 }
+
 run_valgrind_check()
 {
     export EXAMPLE_WORK_DIR="${CCL_ROOT}/examples/build"
@@ -560,7 +561,7 @@ build_ut_tests()
         cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCOMPUTE_BACKEND=level_zero ..
         LIST=`make help | grep "kernel_" | grep -Po '(?<=\.\.\. ).*'`
         echo "List to build: $LIST\n"
-        make -j8 ${LIST}
+        make -j8 ${LIST} native_api_suite
         # TODO: When multi_tile, multi_device are ready.
         # Resolve an issue with common link for single_device, multi_device, multi_tile
         cd "${path}/tests/unit/kernels/single_device"
@@ -569,13 +570,20 @@ build_ut_tests()
     fi
 }
 
+get_ut_platfrom_info()
+{
+    output=$(${CURRENT_WORK_DIR}/build/tests/unit/native_api/native_api_suite --dump_table)
+    full_table=$(echo $output | sed 's/^.* Table //' | sed 's/ EndTable.*//')
+    table_indices=$(echo $full_table | sed 's/,/\n/g')
+    ret_arr=("${table_indices[@]}")
+    echo "${ret_arr[@]}"
+}
+
 run_ut_ctest()
 {
     local l0_affinity_mask=$1
     local ut_name=$2
 
-    # L0_CLUSTER_AFFINITY_MASK indices are hard-coded right now for nuc07.
-    # MLSL-626 needs to be done for automatic definition indices and set them here.
     env ${l0_affinity_mask} ctest -VV -C $ut_name
     if [ $? -ne 0 ]; then
         echo "Error: $ut_name is FAILED"
@@ -587,8 +595,27 @@ run_ut_single_device ()
 {
     name_ut="kernel_ring_single_device_suite_test"
     platfrom_info=$1
-    if $platfrom_info; then
-        l0_affinity_mask='L0_CLUSTER_AFFINITY_MASK="[0:39882],[0:39882]"'
+
+    if [ ${#platfrom_info[@]} -ne 0 ]; then
+        l0_affinity_mask='L0_CLUSTER_AFFINITY_MASK="'${platfrom_info[0]}','${platfrom_info[0]}'"'
+        run_ut_ctest ${l0_affinity_mask} ${name_ut}
+    fi
+}
+
+run_ut_multi_tile ()
+{
+    name_ut="kernel_ring_single_device_multi_tile_suite_test"
+    platfrom_info=$1
+
+    for ((i=1;i<${#platfrom_info[@]};i++)); do
+        if [ $i -ne 1 ]; then
+            mask_str+=","
+        fi
+        mask_str+="${array[i]}"
+    done
+
+    if [ ${#platfrom_info[@]} -gt 1 ]; then
+        l0_affinity_mask='L0_CLUSTER_AFFINITY_MASK="'$mask_str'"'
         run_ut_ctest ${l0_affinity_mask} ${name_ut}
     fi
 }
@@ -606,10 +633,15 @@ run_ut_tests()
         exit $?
     fi
 
+    platfrom_info=( $(get_ut_platfrom_info) )
+
     case ${test_type} in
         "-kernels")
-            platform_info_table=true
-            run_ut_single_device ${platform_info_table}
+            run_ut_single_device ${platfrom_info}
+            if [ $? -ne 0 ]; then
+                errors=$((errors+1))
+            fi
+            run_ut_multi_tile ${platform_info}
             if [ $? -ne 0 ]; then
                 errors=$((errors+1))
             fi
