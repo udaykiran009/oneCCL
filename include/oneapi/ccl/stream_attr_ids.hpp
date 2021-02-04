@@ -23,8 +23,6 @@ enum class stream_attr_id : int {
     flags,
     mode,
     priority,
-
-    last_value
 };
 
 } // namespace v1

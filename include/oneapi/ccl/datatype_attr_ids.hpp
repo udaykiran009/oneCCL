@@ -12,8 +12,6 @@ enum class datatype_attr_id : int {
     version,
 
     size,
-
-    last_value
 };
 
 } // namespace v1

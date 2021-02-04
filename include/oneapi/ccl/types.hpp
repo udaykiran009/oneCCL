@@ -29,8 +29,6 @@ enum class reduction : int {
     min,
     max,
     custom,
-
-    last_value
 };
 
 /**
@@ -52,7 +50,7 @@ enum class datatype : int {
 
     bfloat16,
 
-    last_predefined = bfloat16
+    last_predefined CCL_DEPRECATED_ENUM_FIELD = bfloat16
 };
 
 /**
@@ -63,8 +61,6 @@ enum class cl_backend_type : int {
     dpcpp_sycl = 0x1,
     l0 = 0x2,
     dpcpp_sycl_l0 = 0x3,
-
-    last_value
 };
 
 } // namespace v1
@@ -135,8 +131,6 @@ enum class sparse_coalesce_mode : int {
     regular = 0,
     disable,
     keep_precision,
-
-    last_value
 };
 
 /* idx_buf, idx_count, idx_dtype, val_buf, val_count, val_dtype, user_context */

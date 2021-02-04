@@ -5,9 +5,12 @@
 #include "common/utils/enums.hpp"
 #include "exec/exec.hpp"
 
+
+const ccl::datatype last_predefined_dt = ccl::datatype::bfloat16;
+
 namespace ccl {
 using datatype_str_enum =
-    utils::enum_to_str<utils::enum_to_underlying(datatype::last_predefined) + 1>;
+    utils::enum_to_str<utils::enum_to_underlying(last_predefined_dt) + 1>;
 string_class to_string(const datatype& dt) {
     return datatype_str_enum({ "INT8",
                                "UINT8",
@@ -53,12 +56,12 @@ ccl_datatype_storage::ccl_datatype_storage() {
 
     using IntType = typename std::underlying_type<ccl::datatype>::type;
     custom_idx =
-        static_cast<ccl::datatype>(static_cast<IntType>(ccl::datatype::last_predefined) + 1);
+        static_cast<ccl::datatype>(static_cast<IntType>(last_predefined_dt) + 1);
 
     size_t size = 0;
     std::string name_str;
 
-    for (ccl::datatype idx = ccl::datatype::int8; idx <= ccl::datatype::last_predefined; idx++) {
+    for (ccl::datatype idx = ccl::datatype::int8; idx <= last_predefined_dt; idx++) {
         /* fill table with predefined datatypes */
         size = (idx == ccl::datatype::int8)       ? sizeof(int8_t)
                : (idx == ccl::datatype::uint8)    ? sizeof(uint8_t)
@@ -190,5 +193,5 @@ const std::string& ccl_datatype_storage::name(ccl::datatype idx) const {
 }
 
 bool ccl_datatype_storage::is_predefined_datatype(ccl::datatype idx) {
-    return (idx >= ccl::datatype::int8 && idx <= ccl::datatype::last_predefined) ? true : false;
+    return (idx >= ccl::datatype::int8 && idx <= last_predefined_dt) ? true : false;
 }
