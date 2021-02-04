@@ -91,17 +91,17 @@ set_external_env(){
     if [ ${TEST_CONFIGURATIONS} == "test:nightly" ]
     then
         echo "Nightly test scope will be started."
-        export TESTING_ENVIRONMENT="CCL_TEST_BUFFER_COUNT=0 \
-        CCL_TEST_CACHE_TYPE=1 \
-        CCL_TEST_COMPLETION_TYPE=1 \
+        export TESTING_ENVIRONMENT="\
         CCL_TEST_DATA_TYPE=1 \
+        CCL_TEST_SIZE_TYPE=1 \
+        CCL_TEST_BUF_COUNT_TYPE=1 \
         CCL_TEST_PLACE_TYPE=1 \
-        CCL_TEST_PRIORITY_TYPE=0 \
-        CCL_TEST_REDUCTION_TYPE=1 \
-        CCL_TEST_SIZE_TYPE=0 \
+        CCL_TEST_START_ORDER_TYPE=1 \
+        CCL_TEST_COMPLETE_ORDER_TYPE=0 \
+        CCL_TEST_COMPLETE_TYPE=0 \
+        CCL_TEST_CACHE_TYPE=1 \
         CCL_TEST_SYNC_TYPE=1 \
-        CCL_TEST_EPILOG_TYPE=1 \
-        CCL_TEST_PROLOG_TYPE=1" 
+        CCL_TEST_REDUCTION_TYPE=1"
     fi
     if [ -n "${TESTING_ENVIRONMENT}" ]
     then
@@ -113,36 +113,41 @@ set_external_env(){
     fi
 }
 
-enable_part_test_scope()
+enable_default_env()
 {
-    echo "Partly test scope will be started."
-    export CCL_TEST_BUFFER_COUNT=0
-    export CCL_TEST_CACHE_TYPE=0
-    export CCL_TEST_COMPLETION_TYPE=0
+    echo "Use default env"
+    export CCL_LOG_LEVEL=info
+    export I_MPI_DEBUG=12
+}
+
+enable_default_test_scope()
+{
+    echo "Use default test scope"
     export CCL_TEST_DATA_TYPE=1
-    export CCL_TEST_PLACE_TYPE=1
-    export CCL_TEST_PRIORITY_TYPE=1
-    export CCL_TEST_REDUCTION_TYPE=0
     export CCL_TEST_SIZE_TYPE=1
-    export CCL_TEST_SYNC_TYPE=1
-    export CCL_TEST_EPILOG_TYPE=1
-    export CCL_TEST_PROLOG_TYPE=1
+    export CCL_TEST_BUF_COUNT_TYPE=1
+    export CCL_TEST_PLACE_TYPE=1
+    export CCL_TEST_START_ORDER_TYPE=0
+    export CCL_TEST_COMPLETE_ORDER_TYPE=0
+    export CCL_TEST_COMPLETE_TYPE=0
+    export CCL_TEST_CACHE_TYPE=1
+    export CCL_TEST_SYNC_TYPE=0
+    export CCL_TEST_REDUCTION_TYPE=0
 }
 
 enable_unordered_coll_test_scope()
 {
-    echo "Unordered coll test scope will be started."
-    export CCL_TEST_BUFFER_COUNT=0
+    echo "Use unordered coll test scope"
+    export CCL_TEST_DATA_TYPE=0
+    export CCL_TEST_SIZE_TYPE=1
+    export CCL_TEST_BUF_COUNT_TYPE=1
+    export CCL_TEST_PLACE_TYPE=0
+    export CCL_TEST_START_ORDER_TYPE=1
+    export CCL_TEST_COMPLETE_ORDER_TYPE=1
+    export CCL_TEST_COMPLETE_TYPE=1
     export CCL_TEST_CACHE_TYPE=1
-    export CCL_TEST_COMPLETION_TYPE=1
-    export CCL_TEST_DATA_TYPE=1
-    export CCL_TEST_PLACE_TYPE=1
-    export CCL_TEST_PRIORITY_TYPE=1
-    export CCL_TEST_REDUCTION_TYPE=1
-    export CCL_TEST_SIZE_TYPE=0
     export CCL_TEST_SYNC_TYPE=0
-    export CCL_TEST_PROLOG_TYPE=0
-    export CCL_TEST_EPILOG_TYPE=0
+    export CCL_TEST_REDUCTION_TYPE=0
 }
 
 set_environment()
@@ -388,36 +393,38 @@ run_modulefile_tests()
 
 run_tests()
 {
-    enable_part_test_scope
+    enable_default_env
+    enable_default_test_scope
+
     set_external_env
+
     case "$runtime" in
            ofi )
                export CCL_ATL_TRANSPORT=ofi
-               ctest -VV -C Default
-               ctest -VV -C Custom
+               ctest -VV -C default
                ;;
            mpi )
                 export CCL_ATL_TRANSPORT=mpi
-                ctest -VV -C Default
+                ctest -VV -C default
                 ;;
            mpi_adjust )
                 export CCL_ATL_TRANSPORT=mpi
                 
                 for algo in "direct" "naive" "flat" "ring"
                 do
-                    CCL_ALLGATHERV=$algo ctest -VV -C mpi_allgatherv_$algo
+                    CCL_ALLGATHERV=$algo ctest -VV -C allgatherv_"$algo"
                 done
 
                 for algo in "direct" "rabenseifner" "starlike" "ring" "double_tree" "recursive_doubling"
                 do
                     if [ "$algo" == "ring" ];
                     then
-                        CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
+                        CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
                     elif [ "$algo" == "starlike" ];
                     then
-                        CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
+                        CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
                     fi
-                    CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_$algo
+                    CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"
                 done
 
                 for algo in "direct" "naive" "scatter" "scatter_barrier"
@@ -425,9 +432,9 @@ run_tests()
                     if [ "$algo" == "scatter_barrier" ];
                     then
                         CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
-                            CCL_ALLTOALL=$algo ctest -VV -C mpi_alltoall_"$algo"_chunked
+                            CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"_chunked
                     fi
-                    CCL_ALLTOALL=$algo ctest -VV -C mpi_alltoall_$algo
+                    CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"
                 done
 
                 for algo in "direct" "naive" "scatter" "scatter_barrier"
@@ -435,24 +442,24 @@ run_tests()
                     if [ "$algo" == "scatter_barrier" ];
                     then
                         CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
-                            CCL_ALLTOALLV=$algo ctest -VV -C mpi_alltoallv_"$algo"_chunked
+                            CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"_chunked
                     fi
-                    CCL_ALLTOALLV=$algo ctest -VV -C mpi_alltoallv_$algo
+                    CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"
                 done
 
                 for algo in "direct" "ring" "double_tree" "naive"
                 do
-                    CCL_BCAST=$algo ctest -VV -C mpi_bcast_$algo
+                    CCL_BCAST=$algo ctest -VV -C bcast_"$algo"
                 done
 
                 for algo in "direct" "rabenseifner" "tree"
                 do
-                    CCL_REDUCE=$algo ctest -VV -C mpi_reduce_$algo
+                    CCL_REDUCE=$algo ctest -VV -C reduce_"$algo"
                 done
 
                 for algo in "direct" "ring"
                 do
-                    CCL_REDUCE_SCATTER=$algo ctest -VV -C mpi_reduce_scatter_$algo
+                    CCL_REDUCE_SCATTER=$algo ctest -VV -C reduce_scatter_"$algo"
                 done
 
                ;;
@@ -462,26 +469,26 @@ run_tests()
 
                 for algo in "naive" "flat" "multi_bcast" "ring"
                 do
-                    CCL_ALLGATHERV=$algo ctest -VV -C mpi_allgatherv_$algo
+                    CCL_ALLGATHERV=$algo ctest -VV -C allgatherv_"$algo"
                 done
 
                 for algo in "rabenseifner" "starlike" "ring" "ring_rma" "double_tree" "recursive_doubling" "2d"
                 do
                     if [ "$algo" == "ring_rma" ];
                     then
-                        CCL_RMA=1 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_$algo
+                        CCL_RMA=1 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"
                     else
                         if [ "$algo" == "starlike" ];
                         then
-                            CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
+                            CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
                         elif [ "$algo" == "ring" ];
                         then
-                            CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
+                            CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
                         elif [ "$algo" == "2d" ];
                         then
-                            CCL_AR2D_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_"$algo"_chunked
+                            CCL_AR2D_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
                         fi
-                        CCL_ALLREDUCE=$algo ctest -VV -C mpi_allreduce_$algo
+                        CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"
                     fi
                 done
 
@@ -490,9 +497,9 @@ run_tests()
                     if [ "$algo" == "scatter_barrier" ];
                     then
                         CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
-                            CCL_ALLTOALL=$algo ctest -VV -C mpi_alltoall_"$algo"_chunked
+                            CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"_chunked
                     fi
-                    CCL_ALLTOALL=$algo ctest -VV -C mpi_alltoall_$algo
+                    CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"
                 done
 
                 for algo in "naive" "scatter" "scatter_barrier"
@@ -500,44 +507,42 @@ run_tests()
                     if [ "$algo" == "scatter_barrier" ];
                     then
                         CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
-                            CCL_ALLTOALLV=$algo ctest -VV -C mpi_alltoallv_"$algo"_chunked
+                            CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"_chunked
                     fi
-                    CCL_ALLTOALLV=$algo ctest -VV -C mpi_alltoallv_$algo
+                    CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"
                 done
 
                 for algo in "ring" "double_tree" "naive"
                 do
-                    CCL_BCAST=$algo ctest -VV -C mpi_bcast_$algo
+                    CCL_BCAST=$algo ctest -VV -C bcast_"$algo"
                 done
 
                 for algo in "rabenseifner" "tree" "double_tree"
                 do
-                    CCL_REDUCE=$algo ctest -VV -C mpi_reduce_$algo
+                    CCL_REDUCE=$algo ctest -VV -C reduce_"$algo"
                 done
 
                 for algo in "ring"
                 do
-                    CCL_REDUCE_SCATTER=$algo ctest -VV -C mpi_reduce_scatter_$algo
+                    CCL_REDUCE_SCATTER=$algo ctest -VV -C reduce_scatter_"$algo"
                 done
 
                ;;
             priority_mode )
-                CCL_ATL_TRANSPORT=mpi CCL_PRIORITY=lifo ctest -VV -C Default
-                CCL_ATL_TRANSPORT=mpi CCL_PRIORITY=direct ctest -VV -C Default
-                CCL_ATL_TRANSPORT=ofi CCL_PRIORITY=lifo ctest -VV -C Default
-                CCL_ATL_TRANSPORT=ofi CCL_PRIORITY=direct ctest -VV -C Default
+                CCL_ATL_TRANSPORT=ofi CCL_PRIORITY=lifo ctest -VV -C default
+                CCL_ATL_TRANSPORT=ofi CCL_PRIORITY=direct ctest -VV -C default
                ;;
             dynamic_pointer_mode )
-                CCL_ATL_TRANSPORT=mpi CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C Default
-                CCL_ATL_TRANSPORT=ofi CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C Default
+                CCL_ATL_TRANSPORT=mpi CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C default
+                CCL_ATL_TRANSPORT=ofi CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C default
                ;;
             unordered_coll_mode )
                 enable_unordered_coll_test_scope
-                CCL_ATL_TRANSPORT=ofi CCL_UNORDERED_COLL=1 ctest -VV -C Default
+                CCL_ATL_TRANSPORT=ofi CCL_UNORDERED_COLL=1 ctest -VV -C default
                ;;
             fusion_mode )
-                CCL_ATL_TRANSPORT=ofi CCL_FUSION=1 ctest -VV -C Default
-                CCL_ATL_TRANSPORT=mpi CCL_FUSION=1 ctest -VV -C Default
+                CCL_ATL_TRANSPORT=ofi CCL_FUSION=1 ctest -VV -C allreduce_fusion
+                CCL_ATL_TRANSPORT=mpi CCL_FUSION=1 ctest -VV -C allreduce_fusion
                ;;
            * )
                 echo "Please specify runtime mode: runtime=ofi|mpi|ofi_adjust|mpi_adjust|priority_mode|unordered_coll_mode|dynamic_pointer_mode|fusion_mode|"

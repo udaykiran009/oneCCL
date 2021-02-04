@@ -74,8 +74,10 @@ typedef struct bench_init_attr {
     size_t buf_count;
     size_t max_elem_count;
     size_t ranks_per_proc;
+#ifdef CCL_ENABLE_SYCL
     sycl_mem_type_t sycl_mem_type;
     sycl_usm_type_t sycl_usm_type;
+#endif
     size_t v2i_ratio;
 } bench_init_attr;
 
@@ -99,10 +101,6 @@ struct base_coll {
     };
 
     virtual void prepare(size_t elem_count) {
-        auto dtype = get_dtype();
-        if (dtype == ccl::datatype::float16 || dtype == ccl::datatype::bfloat16)
-            return;
-
         auto& transport = transport_data::instance();
         auto& comms = transport.get_comms();
         auto streams = transport.get_bench_streams();
@@ -114,10 +112,6 @@ struct base_coll {
     }
 
     virtual void finalize(size_t elem_count) {
-        auto dtype = get_dtype();
-        if (dtype == ccl::datatype::float16 || dtype == ccl::datatype::bfloat16)
-            return;
-
         auto& transport = transport_data::instance();
         auto& comms = transport.get_comms();
         auto streams = transport.get_bench_streams();
@@ -158,6 +152,7 @@ struct base_coll {
         return init_attr.max_elem_count;
     }
 
+#ifdef CCL_ENABLE_SYCL
     sycl_mem_type_t get_sycl_mem_type() const noexcept {
         return init_attr.sycl_mem_type;
     }
@@ -165,6 +160,7 @@ struct base_coll {
     sycl_usm_type_t get_sycl_usm_type() const noexcept {
         return init_attr.sycl_usm_type;
     }
+#endif
 
     size_t get_ranks_per_proc() const noexcept {
         return init_attr.ranks_per_proc;

@@ -264,8 +264,12 @@ static int atl_mpi_bf16_init() {
 
     global_data.bf16.impl_type = ccl_bf16_get_impl_type();
 
-    if (global_data.bf16.impl_type == ccl_bf16_none) {
-        LOG_DEBUG("BF16 is not supported on current arch");
+    if (global_data.bf16.impl_type == ccl_bf16_compiler_none) {
+        LOG_INFO("BF16: disabled on compiler level");
+        return RET2ATL(ret);
+    }
+    else if (global_data.bf16.impl_type == ccl_bf16_hw_none) {
+        LOG_INFO("BF16: disabled on hardware level");
         return RET2ATL(ret);
     }
 
@@ -357,8 +361,12 @@ static int atl_mpi_fp16_init() {
 
     global_data.fp16.impl_type = ccl_fp16_get_impl_type();
 
-    if (global_data.fp16.impl_type == ccl_fp16_none) {
-        LOG_DEBUG("FP16 is not supported on current arch");
+    if (global_data.fp16.impl_type == ccl_fp16_compiler_none) {
+        LOG_INFO("FP16: disabled on compiler level");
+        return RET2ATL(ret);
+    }
+    else if (global_data.fp16.impl_type == ccl_fp16_hw_none) {
+        LOG_INFO("FP16: disabled on hardware level");
         return RET2ATL(ret);
     }
 

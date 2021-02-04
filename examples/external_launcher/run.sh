@@ -142,6 +142,8 @@ cleanup_hosts()
 
 run_binary()
 {
+    kvs_mode="$1"
+
     dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
     mapfile -t hostlist < $HOSTFILE
@@ -153,19 +155,20 @@ run_binary()
     declare -a log_files=()
 
     cleanup_hosts $hostlist
-    store_file="$dir/store"
-    if [ -f $store_file ]
+
+    if [ "$kvs_mode" == "store" ]
     then
-        rm $store_file
+        kvs_param="$dir/store"
+        if [ -f $kvs_param ]
+        then
+            rm $kvs_param
+        fi
+    elif [ "$kvs_mode" == "ip_port" ]
+    then
+        kvs_param=`ssh ${hostlist[0]} hostname -I | awk '{print $1}'`
     fi
 
     host_idx=0
-
-    if [ "$1" == "kvs_ip_port" ]
-    then
-        main_ip=`ssh ${hostlist[0]} hostname -I | awk '{print $1}'`
-        main_ip="KVS_IP=""$main_ip"
-    fi
 
     for host in "${hostlist[@]}"
     do
@@ -177,7 +180,7 @@ run_binary()
             log_files=("${log_files[@]}" "${log_file}")
 
             cmd="$dir/run_binary.sh -s ${SIZE} -r ${rank} -ls ${local_size} -lr ${i}"
-            cmd="${main_ip} ${cmd} -cv ${VARS} -lf ${log_file} -sf ${store_file}"
+            cmd="${cmd} -cv ${VARS} -lf ${log_file} -km ${kvs_mode} -kp ${kvs_param}"
             if [[ -z ${I_MPI_ROOT} ]]
             then
                 cmd="${cmd} -mv ${IMPI_PATH}/env/vars.sh"
@@ -207,9 +210,13 @@ run_binary()
     done
 
     cleanup_hosts $hostlist
-    if [ -f $store_file ]
+
+    if [ "$kvs_mode" == "store" ]
     then
-        rm $store_file
+        if [ -f $kvs_param ]
+        then
+            rm $kvs_param
+        fi
     fi
 }
 
@@ -220,16 +227,15 @@ run()
     PUR='\033[0;35m'
     NC='\033[0m'
 
-    # TODO: add external_launcher after MLSL-650
-    # tests="store kvs_ip_port"
-    tests="kvs_ip_port"
+    # kvs_modes="ip_port store"
+    kvs_modes="ip_port"
 
-    for test in $tests
+    for mode in $kvs_modes
     do
         echo -e "${PUR}START EXAMPLE${NC}"
         exec_time=`date +%s`
 
-        run_binary $test
+        run_binary $mode
 
         exec_time="$((`date +%s`-$exec_time))"
         if [ "$exec_time" -ge "$TIMEOUT" ];

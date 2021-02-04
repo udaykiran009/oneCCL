@@ -70,15 +70,11 @@ ccl::status ccl_comp_reduce(const void* in_buf,
         case ccl::datatype::int64: CCL_REDUCE(int64_t); break;
         case ccl::datatype::uint64: CCL_REDUCE(uint64_t); break;
         case ccl::datatype::float16:
-            if (ccl::global_data::get().fp16_impl_type == ccl_fp16_none)
-                CCL_FATAL("CCL doesn't support reductions in FP16 on this CPU");
             ccl_fp16_reduce(in_buf, in_count, inout_buf, out_count, reduction);
             break;
         case ccl::datatype::float32: CCL_REDUCE(float); break;
         case ccl::datatype::float64: CCL_REDUCE(double); break;
         case ccl::datatype::bfloat16:
-            if (ccl::global_data::get().bf16_impl_type == ccl_bf16_none)
-                CCL_FATAL("CCL doesn't support reductions in BF16 on this CPU");
             ccl_bf16_reduce(in_buf, in_count, inout_buf, out_count, reduction);
             break;
         default: CCL_FATAL("unexpected value ", dtype.idx()); break;

@@ -6,7 +6,12 @@
 #include <immintrin.h>
 #endif
 
-typedef enum { ccl_bf16_none = 0, ccl_bf16_avx512f, ccl_bf16_avx512bf } ccl_bf16_impl_type;
+typedef enum {
+    ccl_bf16_compiler_none = 0,
+    ccl_bf16_hw_none,
+    ccl_bf16_avx512f,
+    ccl_bf16_avx512bf
+} ccl_bf16_impl_type;
 
 __attribute__((__always_inline__)) inline ccl_bf16_impl_type ccl_bf16_get_impl_type() {
 #ifdef CCL_BF16_COMPILER
@@ -39,8 +44,8 @@ __attribute__((__always_inline__)) inline ccl_bf16_impl_type ccl_bf16_get_impl_t
         if (is_avx512f_enabled)
         return ccl_bf16_avx512f;
     else
-        return ccl_bf16_none;
+        return ccl_bf16_hw_none;
 #else
-    return ccl_bf16_none;
+    return ccl_bf16_compiler_none;
 #endif
 }

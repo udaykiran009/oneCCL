@@ -91,28 +91,28 @@
 
 #define RUN_METHOD_DEFINITION(ClassName) \
     template <typename T> \
-    int MainTest::run(ccl_test_conf tParam) { \
+    int MainTest::run(test_param param) { \
         ClassName<T> className; \
-        typed_test_param<T> typed_param(tParam); \
+        test_operation<T> op(param); \
         std::ostringstream output; \
-        if (typed_param.comm_rank == 0) \
+        if (op.comm_rank == 0) \
             printf("%s", output.str().c_str()); \
-        int result = className.run(typed_param); \
+        int result = className.run(op); \
         int result_final = 0; \
         static int glob_idx = 0; \
-        auto& comm = GlobalData::instance().comms[0]; \
+        auto& comm = global_data::instance().comms[0]; \
         ccl::allreduce(&result, &result_final, 1, ccl::reduction::sum, comm).wait(); \
         if (result_final > 0) { \
             print_err_message(className.get_err_message(), output); \
-            if (typed_param.comm_rank == 0) { \
+            if (op.comm_rank == 0) { \
                 printf("%s", output.str().c_str()); \
                 if (glob_idx) { \
-                    typed_test_param<T> test_conf(test_params[glob_idx - 1]); \
-                    output << "Previous case:\n"; \
-                    test_conf.print(output); \
+                    test_operation<T> prev_op(test_params[glob_idx - 1]); \
+                    output << "Previous operation:\n"; \
+                    prev_op.print(output); \
                 } \
-                output << "Current case:\n"; \
-                typed_param.print(output); \
+                output << "Current operation:\n"; \
+                op.print(output); \
                 EXPECT_TRUE(false) << output.str(); \
             } \
             output.str(""); \
@@ -153,7 +153,7 @@
         MPI_Comm_size(MPI_COMM_WORLD, &size); \
         MPI_Comm_rank(MPI_COMM_WORLD, &rank); \
         ccl::kvs::address_type main_addr; \
-        auto& gd = GlobalData::instance(); \
+        auto& gd = global_data::instance(); \
         if (rank == 0) { \
             gd.kvs = ccl::create_main_kvs(); \
             main_addr = gd.kvs->get_address(); \
@@ -173,7 +173,7 @@
 
 #define TEST_CASES_DEFINITION(FuncName) \
     TEST_P(MainTest, FuncName) { \
-        ccl_test_conf param = GetParam(); \
+        test_param param = GetParam(); \
         EXPECT_EQ(TEST_SUCCESS, this->test(param)); \
     } \
     INSTANTIATE_TEST_CASE_P(test_params, MainTest, ::testing::ValuesIn(test_params));

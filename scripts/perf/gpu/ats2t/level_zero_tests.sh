@@ -20,9 +20,9 @@ mkdir build
 cd build
 cmake -D GROUP=/perf_tests -D CMAKE_INSTALL_PREFIX=$PWD ..
 cmake --build . --config Release --target install
-./ze_bandwidth -t d2h -i 100 | tee d2h.log
-./ze_bandwidth -t h2d -i 100 | tee h2d.log
-./ze_bandwidth -t d2d -i 100 | tee h2d.log
+./ze_bandwidth -t d2h -i 50 -se 1073741824 | tee d2h.log
+./ze_bandwidth -t h2d -i 50 -se 1073741824 | tee h2d.log
+./ze_bandwidth -t d2d -i 50 -se 3221225472 | tee h2d.log
 ./ze_peak -t kernel_lat | tee lat.log
 
 

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <stdlib.h>
 
 #include "oneapi/ccl.hpp"
@@ -7,8 +8,13 @@
 #define REINIT_COUNT             3
 #define KVS_CREATE_SUCCESS       0
 #define STORE_READ_WRITE_TIMEOUT 120
+#define BASE_PORT                10000
+#define KVS_IP_PORT_DELIMETER    "_"
 
-size_t base_port = 10000;
+enum class kvs_mode { store, ip_port };
+
+std::map<kvs_mode, std::string> kvs_mode_names = { { kvs_mode::store, "store" },
+                                                   { kvs_mode::ip_port, "ip_port" } };
 
 void run_collective(const char* cmd_name,
                     const std::vector<float>& send_buf,
@@ -44,7 +50,7 @@ void run_collective(const char* cmd_name,
 }
 
 void print_help() {
-    std::cout << "specify: [size] [rank] [store_path]" << std::endl;
+    std::cout << "specify: [size] [rank] [kvs_mode] [kvs_param]" << std::endl;
 }
 
 int create_kvs_by_store(std::shared_ptr<file_store> store,
@@ -63,7 +69,7 @@ int create_kvs_by_store(std::shared_ptr<file_store> store,
 
         start = std::chrono::system_clock::now();
         if (store->write((void*)main_addr.data(), main_addr.size()) < 0) {
-            printf("An error occurred during write attempt\n");
+            printf("error occurred during write attempt\n");
             kvs.reset();
             return -1;
         }
@@ -74,7 +80,7 @@ int create_kvs_by_store(std::shared_ptr<file_store> store,
     }
     else {
         if (store->read((void*)main_addr.data(), main_addr.size()) < 0) {
-            printf("An error occurred during read attempt\n");
+            printf("error occurred during read attempt\n");
             kvs.reset();
             return -1;
         }
@@ -93,11 +99,10 @@ int create_kvs_by_store(std::shared_ptr<file_store> store,
     return KVS_CREATE_SUCCESS;
 }
 
-int create_kvs_by_attrs(ccl::kvs_attr kvs_attr, ccl::shared_ptr_class<ccl::kvs>& kvs) {
+int create_kvs_by_attr(ccl::kvs_attr attr, ccl::shared_ptr_class<ccl::kvs>& kvs) {
     std::chrono::system_clock::duration exec_time{ 0 };
     auto start = std::chrono::system_clock::now();
-
-    kvs = ccl::create_main_kvs(kvs_attr);
+    kvs = ccl::create_main_kvs(attr);
     exec_time = std::chrono::system_clock::now() - start;
     std::cout << "main kvs create time: "
               << std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count() << ", us"
@@ -109,16 +114,51 @@ int main(int argc, char** argv) {
     const size_t elem_count = 64 * 1024;
     int ret = 0;
     int size, rank;
-    char* path;
+    kvs_mode mode;
+    char* kvs_param;
     std::shared_ptr<file_store> store;
 
-    if (argc == 4) {
+    if (argc == 5) {
         size = std::atoi(argv[1]);
         rank = std::atoi(argv[2]);
-        path = argv[3];
+
+        bool found_kvs_mode = false;
+        std::string kvs_mode_str(argv[3]);
+        std::transform(kvs_mode_str.begin(), kvs_mode_str.end(), kvs_mode_str.begin(), ::tolower);
+        for (const auto& pair : kvs_mode_names) {
+            if (!kvs_mode_str.compare(pair.second)) {
+                mode = pair.first;
+                found_kvs_mode = true;
+                break;
+            }
+        }
+
+        if (!found_kvs_mode) {
+            std::vector<std::string> values;
+            std::transform(kvs_mode_names.begin(),
+                           kvs_mode_names.end(),
+                           std::back_inserter(values),
+                           [](const typename std::map<kvs_mode, std::string>::value_type& pair) {
+                               return pair.second;
+                           });
+
+            std::string expected_values;
+            for (size_t idx = 0; idx < values.size(); idx++) {
+                expected_values += values[idx];
+                if (idx != values.size() - 1)
+                    expected_values += ", ";
+            }
+
+            std::cout << "unexpected kvs mode: " << kvs_mode_str
+                      << ", expected values: " << expected_values;
+            return -1;
+        }
+
+        kvs_param = argv[4];
 
         std::cout << "[" << rank << "] args: "
-                  << "size = " << size << ", rank = " << rank << "store path = " << path
+                  << "size = " << size << ", rank = " << rank
+                  << ", kvs mode = " << kvs_mode_names[mode] << ", kvs param = " << kvs_param
                   << std::endl;
     }
     else {
@@ -127,35 +167,36 @@ int main(int argc, char** argv) {
     }
 
     ccl::init();
-    auto kvs_attr = ccl::create_kvs_attr();
-    char* ip = getenv("KVS_IP");
+
     for (int i = 0; i < REINIT_COUNT; ++i) {
-        if (ip != nullptr) {
-            ccl::string pi_port(std::string(ip) + "_" + std::to_string(base_port));
-            kvs_attr.set<ccl::kvs_attr_id::ip_port>(pi_port);
-            base_port++;
-        }
-        std::cout << "[" << rank << "] started iter " << i << std::endl;
-
-        std::chrono::system_clock::duration exec_time{ 0 };
-
         ccl::shared_ptr_class<ccl::kvs> kvs;
 
-        if (kvs_attr.get<ccl::kvs_attr_id::ip_port>() == "") {
+        if (mode == kvs_mode::store) {
             store = std::make_shared<file_store>(
-                path, rank, std::chrono::seconds(STORE_READ_WRITE_TIMEOUT));
+                kvs_param, rank, std::chrono::seconds(STORE_READ_WRITE_TIMEOUT));
             if (create_kvs_by_store(store, rank, kvs) != KVS_CREATE_SUCCESS) {
-                std::cout << "Can't to create kvs by store" << std::endl;
+                std::cout << "can not create kvs by store" << std::endl;
+                return -1;
+            }
+        }
+        else if (mode == kvs_mode::ip_port) {
+            std::string ip_port(std::string(kvs_param) + KVS_IP_PORT_DELIMETER +
+                                std::to_string(BASE_PORT + i));
+            auto attr = ccl::create_kvs_attr();
+            attr.set<ccl::kvs_attr_id::ip_port>(ccl::string_class(ip_port));
+            if (create_kvs_by_attr(attr, kvs) != KVS_CREATE_SUCCESS) {
+                std::cout << "can not create kvs by attr" << std::endl;
                 return -1;
             }
         }
         else {
-            if (create_kvs_by_attrs(kvs_attr, kvs) != KVS_CREATE_SUCCESS) {
-                std::cout << "Can't to create kvs by attr" << std::endl;
-                return -1;
-            }
+            std::cout << "unexpected kvs mode" << std::endl;
+            return -1;
         }
 
+        std::cout << "[" << rank << "] started iter " << i << std::endl;
+
+        std::chrono::system_clock::duration exec_time{ 0 };
         auto start = std::chrono::system_clock::now();
         auto comm = ccl::create_communicator(size, rank, kvs);
         exec_time = std::chrono::system_clock::now() - start;

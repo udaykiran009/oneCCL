@@ -475,8 +475,10 @@ int main(int argc, char* argv[]) {
     init_attr.buf_count = options.buf_count;
     init_attr.max_elem_count = options.max_elem_count;
     init_attr.ranks_per_proc = options.ranks_per_proc;
+#ifdef CCL_ENABLE_SYCL
     init_attr.sycl_mem_type = options.sycl_mem_type;
     init_attr.sycl_usm_type = options.sycl_usm_type;
+#endif
     init_attr.v2i_ratio = options.v2i_ratio;
 
     try {

@@ -318,30 +318,28 @@ void env_data::print(int rank) {
              (kernel_path.length()) ? kernel_path : CCL_ENV_STR_NOT_SPECIFIED);
 
     auto bf16_impl_type = global_data.bf16_impl_type;
-
-    if (bf16_impl_type != ccl_bf16_none) {
-        LOG_INFO("BF16: enabled through ",
-                 (bf16_impl_type == ccl_bf16_avx512bf) ? "AVX512-BF" : "AVX512-F");
-    }
-    else {
-#ifdef CCL_BF16_COMPILER
-        LOG_INFO("BF16: disabled on HW level");
-#else
+    if (bf16_impl_type == ccl_bf16_compiler_none) {
         LOG_INFO("BF16: disabled on compiler level");
-#endif
+    }
+    else if (bf16_impl_type == ccl_bf16_hw_none) {
+        LOG_INFO("BF16: disabled on hardware level");
+    }
+    else if (bf16_impl_type == ccl_bf16_avx512f) {
+        LOG_INFO("BF16: enabled through AVX512-F");
+    }
+    else if (bf16_impl_type == ccl_bf16_avx512bf) {
+        LOG_INFO("BF16: enabled through AVX512-BF");
     }
 
     auto fp16_impl_type = global_data.fp16_impl_type;
-
-    if (fp16_impl_type != ccl_fp16_none) {
-        LOG_INFO("FP16: enabled through AVX512-F");
-    }
-    else {
-#ifdef CCL_FP16_COMPILER
-        LOG_INFO("FP16: disabled on HW level");
-#else
+    if (fp16_impl_type == ccl_fp16_compiler_none) {
         LOG_INFO("FP16: disabled on compiler level");
-#endif
+    }
+    else if (fp16_impl_type == ccl_fp16_hw_none) {
+        LOG_INFO("FP16: disabled on hardware level");
+    }
+    else if (fp16_impl_type == ccl_fp16_avx512f) {
+        LOG_INFO("FP16: enabled through AVX512-F");
     }
 
 #ifdef ENABLE_DEBUG
@@ -506,8 +504,8 @@ int env_data::env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_cou
 
 void env_data::env_2_atl_transport() {
     if (!getenv(CCL_ATL_TRANSPORT) && !with_mpirun()) {
-        LOG_INFO("\n\nDid not find MPI-launcher specific variables, switch to ATL/OFI"
-                 "\nTo force enable ATL/MPI set CCL_ATL_TRANSPORT=mpi\n");
+        LOG_WARN("did not find MPI-launcher specific variables, switch to ATL/OFI, "
+                 "to force enable ATL/MPI set CCL_ATL_TRANSPORT=mpi");
 
         atl_transport = ccl_atl_ofi;
     }

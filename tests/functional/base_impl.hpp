@@ -10,80 +10,63 @@
 
 template <typename T>
 template <class coll_attr_type>
-void typed_test_param<T>::prepare_coll_attr(coll_attr_type& coll_attr, size_t idx) {
-    coll_attr.template set<ccl::operation_attr_id::priority>(generate_priority_value(idx));
-    coll_attr.template set<ccl::operation_attr_id::to_cache>(
-        test_conf.cache_type == CT_CACHE_1 ? true : false);
+void test_operation<T>::prepare_attr(coll_attr_type& attr, size_t idx) {
+    attr.template set<ccl::operation_attr_id::priority>(generate_priority_value(idx));
+    attr.template set<ccl::operation_attr_id::to_cache>(param.cache_type == CACHE_TRUE ? true
+                                                                                       : false);
 
-    char* test_unordered_coll = getenv("CCL_UNORDERED_COLL");
-    if (test_unordered_coll && atoi(test_unordered_coll) == 1) {
-        coll_attr.template set<ccl::operation_attr_id::synchronous>(false);
+    char* unordered_coll_env = getenv("CCL_UNORDERED_COLL");
+    if (unordered_coll_env && atoi(unordered_coll_env) == 1) {
+        attr.template set<ccl::operation_attr_id::synchronous>(false);
     }
     else {
-        coll_attr.template set<ccl::operation_attr_id::synchronous>(
-            test_conf.sync_type == SNCT_SYNC_1 ? true : false);
+        attr.template set<ccl::operation_attr_id::synchronous>(
+            param.sync_type == SYNC_TRUE ? true : false);
     }
 
     match_id = create_match_id(idx);
-    coll_attr.template set<ccl::operation_attr_id::match_id>(match_id);
+    attr.template set<ccl::operation_attr_id::match_id>(match_id);
 }
 
 template <typename T>
-std::string typed_test_param<T>::create_match_id(size_t buf_idx) {
-    return (std::to_string(buf_idx) + std::to_string(comm_size) + std::to_string(elem_count) +
-            std::to_string(buffer_count) + std::to_string(test_conf.reduction) +
-            std::to_string(test_conf.sync_type) + std::to_string(test_conf.cache_type) +
-            std::to_string(test_conf.size_type) + std::to_string(test_conf.datatype) +
-            std::to_string(test_conf.completion_type) + std::to_string(test_conf.place_type) +
-            std::to_string(test_conf.start_order_type) +
-            std::to_string(test_conf.complete_order_type) + std::to_string(test_conf.prolog_type) +
-            std::to_string(test_conf.epilog_type));
+std::string test_operation<T>::create_match_id(size_t buf_idx) {
+    return (std::to_string(param.datatype) + std::to_string(param.size_type) +
+            std::to_string(param.buf_count_type) + std::to_string(param.place_type) +
+            std::to_string(param.start_order) + std::to_string(param.complete_order) +
+            std::to_string(param.complete_type) + std::to_string(param.cache_type) +
+            std::to_string(param.sync_type) + std::to_string(param.reduction) +
+            std::to_string(buf_idx) + std::to_string(comm_size));
 }
 
 template <typename T>
-bool typed_test_param<T>::complete_request(ccl::event& e) {
-    if (test_conf.completion_type == CMPT_TEST) {
-        return e.test();
-    }
-    else if (test_conf.completion_type == CMPT_WAIT) {
-        e.wait();
-        return true;
-    }
-    else {
-        ASSERT(0, "unexpected completion type %d", test_conf.completion_type);
-        return false;
-    }
-}
-
-template <typename T>
-void typed_test_param<T>::define_start_order(std::default_random_engine& rand_engine) {
+void test_operation<T>::define_start_order(std::default_random_engine& rand_engine) {
     std::iota(buf_indexes.begin(), buf_indexes.end(), 0);
-    if (test_conf.start_order_type == ORDER_INDIRECT) {
+    if (param.start_order == ORDER_INDIRECT) {
         std::reverse(buf_indexes.begin(), buf_indexes.end());
     }
-    else if (test_conf.start_order_type == ORDER_RANDOM) {
-        char* test_unordered_coll = getenv("CCL_UNORDERED_COLL");
-        if (test_unordered_coll && atoi(test_unordered_coll) == 1) {
+    else if (param.start_order == ORDER_RANDOM) {
+        char* unordered_coll_env = getenv("CCL_UNORDERED_COLL");
+        if (unordered_coll_env && atoi(unordered_coll_env) == 1) {
             std::shuffle(buf_indexes.begin(), buf_indexes.end(), rand_engine);
         }
     }
 }
 
 template <typename T>
-bool typed_test_param<T>::complete() {
+bool test_operation<T>::complete_events() {
     size_t idx, msg_idx;
     size_t completions = 0;
     std::vector<bool> msg_completions(buffer_count, false);
 
     while (completions < buffer_count) {
         for (idx = 0; idx < buffer_count; idx++) {
-            if (test_conf.complete_order_type == ORDER_DIRECT) {
+            if (param.complete_order == ORDER_DIRECT) {
                 msg_idx = idx;
             }
-            else if (test_conf.complete_order_type == ORDER_INDIRECT) {
+            else if (param.complete_order == ORDER_INDIRECT) {
                 msg_idx = (buffer_count - idx - 1);
             }
-            else if (test_conf.complete_order_type == ORDER_RANDOM) {
+            else if (param.complete_order == ORDER_RANDOM) {
                 msg_idx = rand() % buffer_count;
             }
             else {
@@ -93,7 +76,7 @@ bool typed_test_param<T>::complete() {
             if (msg_completions[msg_idx])
                 continue;
 
-            if (complete_request(events[msg_idx])) {
+            if (complete_event(events[msg_idx])) {
                 completions++;
                 msg_completions[msg_idx] = true;
             }
@@ -106,32 +89,47 @@ bool typed_test_param<T>::complete() {
 }
 
 template <typename T>
-void typed_test_param<T>::change_buffer_pointers() {
-    char* test_dynamic_pointer = getenv("TEST_DYNAMIC_POINTER");
-    if (test_dynamic_pointer && atoi(test_dynamic_pointer) == 1) {
+bool test_operation<T>::complete_event(ccl::event& e) {
+    if (param.complete_type == COMPLETE_TEST) {
+        return e.test();
+    }
+    else if (param.complete_type == COMPLETE_WAIT) {
+        e.wait();
+        return true;
+    }
+    else {
+        ASSERT(0, "unexpected completion type %d", param.complete_type);
+        return false;
+    }
+}
+
+template <typename T>
+void test_operation<T>::change_buffer_pointers() {
+    char* dynamic_pointer_env = getenv("CCL_TEST_DYNAMIC_POINTER");
+    if (dynamic_pointer_env && atoi(dynamic_pointer_env) == 1) {
         /*
             create deep copy of vector with buffers and swap it with original one
             as result buffers in updated vector will have original content
             but in new memory locations
         */
         if (comm_rank % 2) {
-            std::vector<std::vector<T>>(send_buf.begin(), send_buf.end()).swap(send_buf);
+            std::vector<std::vector<T>>(send_bufs.begin(), send_bufs.end()).swap(send_bufs);
         }
         else {
-            std::vector<std::vector<T>>(recv_buf.begin(), recv_buf.end()).swap(recv_buf);
+            std::vector<std::vector<T>>(recv_bufs.begin(), recv_bufs.end()).swap(recv_bufs);
         }
     }
 }
 
 template <typename T>
-size_t typed_test_param<T>::generate_priority_value(size_t buf_idx) {
+size_t test_operation<T>::generate_priority_value(size_t buf_idx) {
     return buf_idx++;
 }
 
 template <typename T>
-void typed_test_param<T>::print(std::ostream& output) {
-    output << "test conf:\n"
-           << test_conf << "\ncomm_size: " << comm_size << "\ncomm_rank: " << comm_rank
+void test_operation<T>::print(std::ostream& output) {
+    output << "test op:\n"
+           << param << "\ncomm_size: " << comm_size << "\ncomm_rank: " << comm_rank
            << "\nelem_count: " << elem_count << "\nbuffer_count: " << buffer_count
            << "\nmatch_id: " << match_id << "\n-------------\n"
            << std::endl;
@@ -139,47 +137,44 @@ void typed_test_param<T>::print(std::ostream& output) {
 
 template <typename T>
 base_test<T>::base_test() {
-    global_comm_rank = GlobalData::instance().comms[0].rank();
-    global_comm_size = GlobalData::instance().comms[0].size();
+    global_comm_rank = global_data::instance().comms[0].rank();
+    global_comm_size = global_data::instance().comms[0].size();
     memset(err_message, '\0', ERR_MESSAGE_MAX_LEN);
     rand_engine = std::default_random_engine{ rand_device() };
 }
 
 template <typename T>
-int base_test<T>::check_error(typed_test_param<T>& param,
-                              T expected,
-                              size_t buf_idx,
-                              size_t elem_idx) {
+int base_test<T>::check_error(test_operation<T>& op, T expected, size_t buf_idx, size_t elem_idx) {
     double max_error = 0;
     double precision = 0;
 
-    if (param.test_conf.datatype == DT_FLOAT16) {
+    if (op.param.datatype == DATATYPE_FLOAT16) {
         precision = 2 * FP16_PRECISION;
     }
-    else if (param.test_conf.datatype == DT_FLOAT32) {
+    else if (op.param.datatype == DATATYPE_FLOAT32) {
         precision = FP32_PRECISION;
     }
-    else if (param.test_conf.datatype == DT_FLOAT64) {
+    else if (op.param.datatype == DATATYPE_FLOAT64) {
         precision = FP64_PRECISION;
     }
-    else if (param.test_conf.datatype == DT_BFLOAT16) {
+    else if (op.param.datatype == DATATYPE_BFLOAT16) {
         precision = 2 * BF16_PRECISION;
     }
 
     if (precision) {
         /* https://www.mcs.anl.gov/papers/P4093-0713_1.pdf */
-        double log_base2 = log(param.comm_size) / log(2);
+        double log_base2 = log(op.comm_size) / log(2);
         double g = (log_base2 * precision) / (1 - (log_base2 * precision));
         max_error = g * expected;
     }
 
-    if (fabs(max_error) < fabs((double)expected - (double)param.recv_buf[buf_idx][elem_idx])) {
-        printf("[%d] got param.recvBuf[%zu][%zu] = %0.7f, but expected = %0.7f, "
+    if (fabs(max_error) < fabs((double)expected - (double)op.recv_bufs[buf_idx][elem_idx])) {
+        printf("[%d] got op.recvBuf[%zu][%zu] = %0.7f, but expected = %0.7f, "
                "max_error = %0.10f, precision = %0.7f\n",
-               param.comm_rank,
+               op.comm_rank,
                buf_idx,
                elem_idx,
-               (double)param.recv_buf[buf_idx][elem_idx],
+               (double)op.recv_bufs[buf_idx][elem_idx],
                (double)expected,
                (double)max_error,
                precision);
@@ -190,174 +185,169 @@ int base_test<T>::check_error(typed_test_param<T>& param,
 }
 
 template <typename T>
-void base_test<T>::alloc_buffers_base(typed_test_param<T>& param) {
-    param.send_buf.resize(param.buffer_count);
-    param.recv_buf.resize(param.buffer_count);
-    if (is_lp_datatype(param.test_conf.datatype)) {
-        param.send_buf_lp.resize(param.buffer_count);
-        param.recv_buf_lp.resize(param.buffer_count);
+void base_test<T>::alloc_buffers_base(test_operation<T>& op) {
+    op.send_bufs.resize(op.buffer_count);
+    op.recv_bufs.resize(op.buffer_count);
+    if (is_lp_datatype(op.param.datatype)) {
+        op.send_bufs_lp.resize(op.buffer_count);
+        op.recv_bufs_lp.resize(op.buffer_count);
     }
 
-    for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
-        param.send_buf[buf_idx].resize(param.elem_count * param.comm_size);
-        param.recv_buf[buf_idx].resize(param.elem_count * param.comm_size);
+    for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
+        op.send_bufs[buf_idx].resize(op.elem_count * op.comm_size);
+        op.recv_bufs[buf_idx].resize(op.elem_count * op.comm_size);
 
-        if (is_lp_datatype(param.test_conf.datatype)) {
-            param.send_buf_lp[buf_idx].resize(param.elem_count * param.comm_size);
-            param.recv_buf_lp[buf_idx].resize(param.elem_count * param.comm_size);
+        if (is_lp_datatype(op.param.datatype)) {
+            op.send_bufs_lp[buf_idx].resize(op.elem_count * op.comm_size);
+            op.recv_bufs_lp[buf_idx].resize(op.elem_count * op.comm_size);
         }
     }
 }
 
 template <typename T>
-void base_test<T>::alloc_buffers(typed_test_param<T>& param) {}
+void base_test<T>::alloc_buffers(test_operation<T>& op) {}
 
 template <typename T>
-void base_test<T>::fill_send_buffers_base(typed_test_param<T>& param) {
-    if (!is_lp_datatype(param.test_conf.datatype))
+void base_test<T>::fill_send_buffers_base(test_operation<T>& op) {
+    if (!is_lp_datatype(op.param.datatype))
         return;
 
-    for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
-        std::fill(
-            param.send_buf_lp[buf_idx].begin(), param.send_buf_lp[buf_idx].end(), (T)SOME_VALUE);
+    for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
+        std::fill(op.send_bufs_lp[buf_idx].begin(), op.send_bufs_lp[buf_idx].end(), (T)SOME_VALUE);
     }
 }
 
 template <typename T>
-void base_test<T>::fill_send_buffers(typed_test_param<T>& param) {
-    for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
-        for (size_t elem_idx = 0; elem_idx < param.send_buf[buf_idx].size(); elem_idx++) {
-            param.send_buf[buf_idx][elem_idx] = param.comm_rank + buf_idx;
+void base_test<T>::fill_send_buffers(test_operation<T>& op) {
+    for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
+        for (size_t elem_idx = 0; elem_idx < op.send_bufs[buf_idx].size(); elem_idx++) {
+            op.send_bufs[buf_idx][elem_idx] = op.comm_rank + buf_idx;
 
-            if (param.test_conf.reduction == RT_PROD) {
-                param.send_buf[buf_idx][elem_idx] += 1;
+            if (op.param.reduction == REDUCTION_PROD) {
+                op.send_bufs[buf_idx][elem_idx] += 1;
             }
         }
     }
 }
 
 template <typename T>
-void base_test<T>::fill_recv_buffers_base(typed_test_param<T>& param) {
-    for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
-        if (param.test_conf.place_type == PT_IN) {
-            std::copy(param.send_buf[buf_idx].begin(),
-                      param.send_buf[buf_idx].end(),
-                      param.recv_buf[buf_idx].begin());
+void base_test<T>::fill_recv_buffers_base(test_operation<T>& op) {
+    for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
+        if (op.param.place_type == PLACE_IN) {
+            std::copy(op.send_bufs[buf_idx].begin(),
+                      op.send_bufs[buf_idx].end(),
+                      op.recv_bufs[buf_idx].begin());
         }
         else {
-            std::fill(
-                param.recv_buf[buf_idx].begin(), param.recv_buf[buf_idx].end(), (T)SOME_VALUE);
+            std::fill(op.recv_bufs[buf_idx].begin(), op.recv_bufs[buf_idx].end(), (T)SOME_VALUE);
         }
-        if (is_lp_datatype(param.test_conf.datatype)) {
-            std::fill(
-                param.recv_buf_lp[buf_idx].begin(), param.recv_buf_lp[buf_idx].end(), SOME_VALUE);
+        if (is_lp_datatype(op.param.datatype)) {
+            std::fill(op.recv_bufs_lp[buf_idx].begin(), op.recv_bufs_lp[buf_idx].end(), SOME_VALUE);
         }
     }
 }
 
 template <typename T>
-void base_test<T>::fill_recv_buffers(typed_test_param<T>& param) {}
+void base_test<T>::fill_recv_buffers(test_operation<T>& op) {}
 
 template <typename T>
-T base_test<T>::calculate_reduce_value(typed_test_param<T>& param,
-                                       size_t buf_idx,
-                                       size_t elem_idx) {
+T base_test<T>::calculate_reduce_value(test_operation<T>& op, size_t buf_idx, size_t elem_idx) {
     T expected = 0;
-    switch (param.test_conf.reduction) {
-        case RT_SUM:
-            expected = (param.comm_size * (param.comm_size - 1)) / 2 + param.comm_size * buf_idx;
+    switch (op.param.reduction) {
+        case REDUCTION_SUM:
+            expected = (op.comm_size * (op.comm_size - 1)) / 2 + op.comm_size * buf_idx;
             break;
-        case RT_PROD:
+        case REDUCTION_PROD:
             expected = 1;
-            for (int rank = 0; rank < param.comm_size; rank++) {
+            for (int rank = 0; rank < op.comm_size; rank++) {
                 expected *= rank + buf_idx + 1;
             }
             break;
-        case RT_MIN: expected = (T)(buf_idx); break;
-        case RT_MAX: expected = (T)(param.comm_size - 1 + buf_idx); break;
-        default: ASSERT(0, "unexpected reduction %d", param.test_conf.reduction); break;
+        case REDUCTION_MIN: expected = (T)(buf_idx); break;
+        case REDUCTION_MAX: expected = (T)(op.comm_size - 1 + buf_idx); break;
+        default: ASSERT(0, "unexpected reduction %d", op.param.reduction); break;
     }
     return expected;
 }
 
 template <>
-void base_test<float>::fill_send_buffers(typed_test_param<float>& param) {
-    for (size_t buf_idx = 0; buf_idx < param.buffer_count; buf_idx++) {
-        for (size_t elem_idx = 0; elem_idx < param.send_buf[buf_idx].size(); elem_idx++) {
-            param.send_buf[buf_idx][elem_idx] =
-                FIRST_FP_COEFF * param.comm_rank + SECOND_FP_COEFF * buf_idx;
+void base_test<float>::fill_send_buffers(test_operation<float>& op) {
+    for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
+        for (size_t elem_idx = 0; elem_idx < op.send_bufs[buf_idx].size(); elem_idx++) {
+            op.send_bufs[buf_idx][elem_idx] =
+                FIRST_FP_COEFF * op.comm_rank + SECOND_FP_COEFF * buf_idx;
 
-            if (param.test_conf.reduction == RT_PROD) {
-                param.send_buf[buf_idx][elem_idx] += 1;
+            if (op.param.reduction == REDUCTION_PROD) {
+                op.send_bufs[buf_idx][elem_idx] += 1;
             }
         }
     }
 }
 
 template <>
-float base_test<float>::calculate_reduce_value(typed_test_param<float>& param,
+float base_test<float>::calculate_reduce_value(test_operation<float>& op,
                                                size_t buf_idx,
                                                size_t elem_idx) {
     float expected = 0;
-    switch (param.test_conf.reduction) {
-        case RT_SUM:
-            expected = param.comm_size *
-                       (FIRST_FP_COEFF * (param.comm_size - 1) / 2 + SECOND_FP_COEFF * buf_idx);
+    switch (op.param.reduction) {
+        case REDUCTION_SUM:
+            expected = op.comm_size *
+                       (FIRST_FP_COEFF * (op.comm_size - 1) / 2 + SECOND_FP_COEFF * buf_idx);
             break;
-        case RT_PROD:
+        case REDUCTION_PROD:
             expected = 1;
-            for (int rank = 0; rank < param.comm_size; rank++) {
+            for (int rank = 0; rank < op.comm_size; rank++) {
                 expected *= FIRST_FP_COEFF * rank + SECOND_FP_COEFF * buf_idx + 1;
             }
             break;
-        case RT_MIN: expected = SECOND_FP_COEFF * buf_idx; break;
-        case RT_MAX:
-            expected = FIRST_FP_COEFF * (param.comm_size - 1) + SECOND_FP_COEFF * buf_idx;
+        case REDUCTION_MIN: expected = SECOND_FP_COEFF * buf_idx; break;
+        case REDUCTION_MAX:
+            expected = FIRST_FP_COEFF * (op.comm_size - 1) + SECOND_FP_COEFF * buf_idx;
             break;
-        default: ASSERT(0, "unexpected reduction %d", param.test_conf.reduction); break;
+        default: ASSERT(0, "unexpected reduction %d", op.param.reduction); break;
     }
     return expected;
 }
 
 template <typename T>
-int base_test<T>::run(typed_test_param<T>& param) {
+int base_test<T>::run(test_operation<T>& op) {
     size_t result = 0;
 
     char* algo = getenv(ALGO_SELECTION_ENV);
     if (algo)
         std::cout << ALGO_SELECTION_ENV << " = " << algo << "\n";
-    std::cout << param.test_conf << "\n";
+    std::cout << op.param << "\n";
 
     for (size_t iter = 0; iter < ITER_COUNT; iter++) {
         try {
-            alloc_buffers_base(param);
-            alloc_buffers(param);
+            alloc_buffers_base(op);
+            alloc_buffers(op);
 
-            fill_send_buffers_base(param);
-            fill_send_buffers(param);
+            fill_send_buffers_base(op);
+            fill_send_buffers(op);
 
-            fill_recv_buffers_base(param);
-            fill_recv_buffers(param);
+            fill_recv_buffers_base(op);
+            fill_recv_buffers(op);
 
             if (iter > 0) {
-                param.change_buffer_pointers();
+                op.change_buffer_pointers();
             }
 
-            param.define_start_order(rand_engine);
+            op.define_start_order(rand_engine);
 
-            if (is_lp_datatype(param.test_conf.datatype)) {
-                make_lp_prologue(param, param.comm_size * param.elem_count);
+            if (is_lp_datatype(op.param.datatype)) {
+                make_lp_prologue(op, op.comm_size * op.elem_count);
             }
 
-            run_derived(param);
+            run_derived(op);
 
-            param.complete();
+            op.complete_events();
 
-            if (is_lp_datatype(param.test_conf.datatype)) {
-                make_lp_epilogue(param, param.comm_size * param.elem_count);
+            if (is_lp_datatype(op.param.datatype)) {
+                make_lp_epilogue(op, op.comm_size * op.elem_count);
             }
 
-            result += check(param);
+            result += check(op);
         }
         catch (const std::exception& ex) {
             result += TEST_FAILURE;

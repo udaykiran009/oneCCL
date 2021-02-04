@@ -1,312 +1,268 @@
 #include "conf.hpp"
 #include "lp.hpp"
 
-std::vector<ccl_test_conf> test_params;
+std::vector<test_param> test_params;
 
-ccl_place_type first_ccl_place_type = PT_IN;
+ccl_data_type first_data_type = DATATYPE_INT8;
+ccl_data_type last_data_type = DATATYPE_LAST;
+std::map<int, std::string> data_type_names = {
+    { DATATYPE_INT8, "DATATYPE_INT8" },       { DATATYPE_UINT8, "DATATYPE_UINT8" },
+    { DATATYPE_INT16, "DATATYPE_INT16" },     { DATATYPE_UINT16, "DATATYPE_UINT16" },
+    { DATATYPE_INT32, "DATATYPE_INT32" },     { DATATYPE_UINT32, "DATATYPE_UINT32" },
+    { DATATYPE_INT64, "DATATYPE_INT64" },     { DATATYPE_UINT64, "DATATYPE_UINT64" },
+    { DATATYPE_FLOAT16, "DATATYPE_FLOAT16" }, { DATATYPE_FLOAT32, "DATATYPE_FLOAT32" },
+    { DATATYPE_FLOAT64, "DATATYPE_FLOAT64" }, { DATATYPE_BFLOAT16, "DATATYPE_BFLOAT16" },
+};
+std::map<int, ccl::datatype> data_type_values = {
+    { DATATYPE_INT8, ccl::datatype::int8 },       { DATATYPE_UINT8, ccl::datatype::uint8 },
+    { DATATYPE_INT16, ccl::datatype::int16 },     { DATATYPE_UINT16, ccl::datatype::uint16 },
+    { DATATYPE_INT32, ccl::datatype::int32 },     { DATATYPE_UINT32, ccl::datatype::uint32 },
+    { DATATYPE_INT64, ccl::datatype::int64 },     { DATATYPE_UINT64, ccl::datatype::uint64 },
+    { DATATYPE_FLOAT16, ccl::datatype::float16 }, { DATATYPE_FLOAT32, ccl::datatype::float32 },
+    { DATATYPE_FLOAT64, ccl::datatype::float64 }, { DATATYPE_BFLOAT16, ccl::datatype::bfloat16 },
+};
+
+ccl_size_type first_size_type = SIZE_SMALL;
+ccl_size_type last_size_type = SIZE_LAST;
+std::map<int, std::string> size_type_names = { { SIZE_SMALL, "SIZE_SMALL" },
+                                               { SIZE_MEDIUM, "SIZE_MEDIUM" },
+                                               { SIZE_LARGE, "SIZE_LARGE" } };
+std::map<int, size_t> size_type_values = { { SIZE_SMALL, 17 },
+                                           { SIZE_MEDIUM, 32769 },
+                                           { SIZE_LARGE, 262144 } };
+
+ccl_buf_count_type first_buf_count_type = BUF_COUNT_SMALL;
+ccl_buf_count_type last_buf_count_type = BUF_COUNT_LAST;
+std::map<int, std::string> buf_count_type_names = { { BUF_COUNT_SMALL, "BUF_COUNT_SMALL" },
+                                                    { BUF_COUNT_LARGE, "BUF_COUNT_LARGE" } };
+std::map<int, size_t> buf_count_values = { { BUF_COUNT_SMALL, 1 }, { BUF_COUNT_LARGE, 4 } };
+
+ccl_place_type first_place_type = PLACE_IN;
 #ifdef TEST_CCL_BCAST
-ccl_place_type last_ccl_place_type = static_cast<ccl_place_type>(first_ccl_place_type + 1);
+ccl_place_type last_place_type = static_cast<ccl_place_type>(first_place_type + 1);
 #else
-ccl_place_type last_ccl_place_type = PT_LAST;
+ccl_place_type last_place_type = PLACE_LAST;
 #endif
-std::map<int, const char*> ccl_place_type_str = { { PT_IN, "PT_IN" }, { PT_OOP, "PT_OOP" } };
+std::map<int, std::string> place_type_names = { { PLACE_IN, "PLACE_IN" },
+                                                { PLACE_OUT, "PLACE_OUT" } };
 
-ccl_size_type first_ccl_size_type = ST_SMALL;
-ccl_size_type last_ccl_size_type = ST_LAST;
-std::map<int, const char*> ccl_size_type_str = { { ST_SMALL, "ST_SMALL" },
-                                                 { ST_MEDIUM, "ST_MEDIUM" },
-                                                 { ST_LARGE, "ST_LARGE" } };
-std::map<int, size_t> ccl_size_type_values = { { ST_SMALL, 17 },
-                                               { ST_MEDIUM, 32769 },
-                                               { ST_LARGE, 262144 } };
+ccl_order_type first_start_order = ORDER_DIRECT;
+ccl_order_type last_start_order = ORDER_LAST;
+ccl_order_type first_complete_order = ORDER_DIRECT;
+ccl_order_type last_complete_order = static_cast<ccl_order_type>(first_complete_order + 1);
+std::map<int, std::string> order_type_names = { { ORDER_DIRECT, "ORDER_DIRECT" },
+                                                { ORDER_INDIRECT, "ORDER_INDIRECT" },
+                                                { ORDER_RANDOM, "ORDER_RANDOM" } };
 
-ccl_buffer_count first_ccl_buffer_count = BC_SMALL;
-ccl_buffer_count last_ccl_buffer_count = BC_LAST;
-std::map<int, const char*> ccl_buffer_count_str = { { BC_SMALL, "BC_SMALL" },
-                                                    { BC_LARGE, "BC_LARGE" } };
-std::map<int, size_t> ccl_buffer_count_values = { { BC_SMALL, 1 }, { BC_LARGE, 4 } };
+ccl_complete_type first_complete_type = COMPLETE_TEST; //COMPLETE_WAIT;
+ccl_complete_type last_complete_type = COMPLETE_LAST;
+std::map<int, std::string> complete_type_names = { { COMPLETE_WAIT, "COMPLETE_WAIT" },
+                                                   { COMPLETE_TEST, "COMPLETE_TEST" } };
 
-ccl_completion_type first_ccl_completion_type = CMPT_TEST; //CMPT_WAIT;
-ccl_completion_type last_ccl_completion_type = CMPT_LAST;
-std::map<int, const char*> ccl_completion_type_str = { { CMPT_WAIT, "CMPT_WAIT" },
-                                                       { CMPT_TEST, "CMPT_TEST" } };
+ccl_cache_type first_cache_type = CACHE_FALSE;
+ccl_cache_type last_cache_type = CACHE_LAST;
+std::map<int, std::string> cache_type_names = { { CACHE_FALSE, "CACHE_FALSE" },
+                                                { CACHE_TRUE, "CACHE_TRUE" } };
 
-ccl_prolog_type first_ccl_prolog_type = PTYPE_NULL;
-ccl_prolog_type last_ccl_prolog_type = PTYPE_LAST;
-std::map<int, const char*> ccl_prolog_type_str = { { PTYPE_NULL, "PTYPE_NULL" },
-#ifdef TEST_CCL_CUSTOM_PROLOG
-                                                   { PTYPE_T_TO_2X, "PTYPE_T_TO_2X" },
-                                                   { PTYPE_T_TO_CHAR, "PTYPE_T_TO_CHAR" }
-#endif
-};
+ccl_sync_type first_sync_type = SYNC_FALSE;
+ccl_sync_type last_sync_type = SYNC_TRUE; //SYNC_LAST;
+std::map<int, std::string> sync_type_names = { { SYNC_FALSE, "SYNC_FALSE" },
+                                               { SYNC_TRUE, "SYNC_TRUE" } };
 
-ccl_epilog_type first_ccl_epilog_type = ETYPE_NULL;
-ccl_epilog_type last_ccl_epilog_type = ETYPE_LAST;
-std::map<int, const char*> ccl_epilog_type_str = { { ETYPE_NULL, "ETYPE_NULL" },
-#ifdef TEST_CCL_CUSTOM_EPILOG
-                                                   { ETYPE_T_TO_2X, "ETYPE_T_TO_2X" },
-                                                   { ETYPE_CHAR_TO_T, "ETYPE_CHAR_TO_T" }
-#endif
-};
-
-ccl_data_type first_ccl_data_type = DT_INT8;
-ccl_data_type last_ccl_data_type = DT_LAST;
-std::map<int, const char*> ccl_data_type_str = {
-    { DT_INT8, "DT_INT8" },       { DT_UINT8, "DT_UINT8" },     { DT_INT16, "DT_INT16" },
-    { DT_UINT16, "DT_UINT16" },   { DT_INT32, "DT_INT32" },     { DT_UINT32, "DT_UINT32" },
-    { DT_INT64, "DT_INT64" },     { DT_UINT64, "DT_UINT64" },   { DT_FLOAT16, "DT_FLOAT16" },
-    { DT_FLOAT32, "DT_FLOAT32" }, { DT_FLOAT64, "DT_FLOAT64" }, { DT_BFLOAT16, "DT_BFLOAT16" },
-};
-std::map<int, ccl::datatype> ccl_datatype_values = {
-    { DT_INT8, ccl::datatype::int8 },       { DT_UINT8, ccl::datatype::uint8 },
-    { DT_INT16, ccl::datatype::int16 },     { DT_UINT16, ccl::datatype::uint16 },
-    { DT_INT32, ccl::datatype::int32 },     { DT_UINT32, ccl::datatype::uint32 },
-    { DT_INT64, ccl::datatype::int64 },     { DT_UINT64, ccl::datatype::uint64 },
-    { DT_FLOAT16, ccl::datatype::float16 }, { DT_FLOAT32, ccl::datatype::float32 },
-    { DT_FLOAT64, ccl::datatype::float64 }, { DT_BFLOAT16, ccl::datatype::bfloat16 },
-};
-
-ccl_reduction_type first_ccl_reduction_type = RT_SUM;
+ccl_reduction_type first_reduction_type = REDUCTION_SUM;
 #ifdef TEST_CCL_REDUCE
-ccl_reduction_type last_ccl_reduction_type = RT_LAST;
+ccl_reduction_type last_reduction_type = REDUCTION_LAST;
 #else
-ccl_reduction_type last_ccl_reduction_type =
-    static_cast<ccl_reduction_type>(first_ccl_reduction_type + 1);
+ccl_reduction_type last_reduction_type = static_cast<ccl_reduction_type>(first_reduction_type + 1);
 #endif
-std::map<int, const char*> ccl_reduction_type_str = {
-    { RT_SUM, "RT_SUM" },       { RT_PROD, "RT_PROD" },
-    { RT_MIN, "RT_MIN" },       { RT_MAX, "RT_MAX" },
+std::map<int, std::string> reduction_type_names = {
+    { REDUCTION_SUM, "REDUCTION_SUM" },       { REDUCTION_PROD, "REDUCTION_PROD" },
+    { REDUCTION_MIN, "REDUCTION_MIN" },       { REDUCTION_MAX, "REDUCTION_MAX" },
 #ifdef TEST_CCL_CUSTOM_REDUCE
-    { RT_CUSTOM, "RT_CUSTOM" }, { RT_CUSTOM_NULL, "RT_CUSTOM_NULL" }
+    { REDUCTION_CUSTOM, "REDUCTION_CUSTOM" }, { REDUCTION_CUSTOM_NULL, "REDUCTION_CUSTOM_NULL" }
 #endif
 };
-std::map<int, ccl::reduction> ccl_reduction_values = {
-    { RT_SUM, ccl::reduction::sum },       { RT_PROD, ccl::reduction::prod },
-    { RT_MIN, ccl::reduction::min },       { RT_MAX, ccl::reduction::max },
+std::map<int, ccl::reduction> reduction_values = {
+    { REDUCTION_SUM, ccl::reduction::sum },       { REDUCTION_PROD, ccl::reduction::prod },
+    { REDUCTION_MIN, ccl::reduction::min },       { REDUCTION_MAX, ccl::reduction::max },
 #ifdef TEST_CCL_CUSTOM_REDUCE
-    { RT_CUSTOM, ccl::reduction::custom }, { RT_CUSTOM_NULL, ccl::reduction::custom }
+    { REDUCTION_CUSTOM, ccl::reduction::custom }, { REDUCTION_CUSTOM_NULL, ccl::reduction::custom }
 #endif
 };
 
-ccl_cache_type first_ccl_cache_type = CT_CACHE_0;
-ccl_cache_type last_ccl_cache_type = CT_LAST;
-std::map<int, const char*> ccl_cache_type_str = { { CT_CACHE_0, "CT_CACHE_0" },
-                                                  { CT_CACHE_1, "CT_CACHE_1" } };
-std::map<int, int> ccl_cache_type_values = { { CT_CACHE_0, 0 }, { CT_CACHE_1, 1 } };
+ccl_prologue_type first_prologue_type = PROLOGUE_NULL;
+ccl_prologue_type last_prologue_type = PROLOGUE_LAST;
+std::map<int, std::string> prologue_type_names = { { PROLOGUE_NULL, "PROLOGUE_NULL" },
+#ifdef TEST_CCL_CUSTOM_PROLOG
+                                                   { PROLOGUE_2X, "PROLOGUE_2X" },
+                                                   { PROLOGUE_CHAR, "PROLOGUE_CHAR" }
+#endif
+};
 
-ccl_sync_type first_ccl_sync_type = SNCT_SYNC_0;
-ccl_sync_type last_ccl_sync_type = SNCT_SYNC_1; //SNCT_LAST;
-std::map<int, const char*> ccl_sync_type_str = { { SNCT_SYNC_0, "SNCT_SYNC_0" },
-                                                 { SNCT_SYNC_1, "SNCT_SYNC_1" } };
-std::map<int, int> ccl_sync_type_values = { { SNCT_SYNC_0, 0 }, { SNCT_SYNC_1, 1 } };
+ccl_epilogue_type first_epilogue_type = EPILOGUE_NULL;
+ccl_epilogue_type last_epilogue_type = EPILOGUE_LAST;
+std::map<int, std::string> epilogue_type_names = { { EPILOGUE_NULL, "EPILOGUE_NULL" },
+#ifdef TEST_CCL_CUSTOM_EPILOG
+                                                   { EPILOGUE_2X, "EPILOGUE_2X" },
+                                                   { EPILOGUE_CHAR, "EPILOGUE_CHAR" }
+#endif
+};
 
-ccl_order_type first_ccl_order_type = ORDER_DIRECT;
-ccl_order_type last_ccl_order_type = ORDER_LAST;
-std::map<int, const char*> ccl_order_type_str = { { ORDER_DIRECT, "ORDER_DIRECT" },
-                                                  { ORDER_INDIRECT, "ORDER_INDIRECT" },
-                                                  { ORDER_RANDOM, "ORDER_RANDOM" } };
-std::map<int, int> ccl_order_type_values = { { ORDER_DIRECT, 0 },
-                                             { ORDER_INDIRECT, 1 },
-                                             { ORDER_RANDOM, 2 } };
-
-POST_AND_PRE_INCREMENTS(ccl_place_type, PT_LAST);
-POST_AND_PRE_INCREMENTS(ccl_size_type, ST_LAST);
-POST_AND_PRE_INCREMENTS(ccl_completion_type, CMPT_LAST);
-POST_AND_PRE_INCREMENTS(ccl_data_type, DT_LAST);
-POST_AND_PRE_INCREMENTS(ccl_reduction_type, RT_LAST);
-POST_AND_PRE_INCREMENTS(ccl_cache_type, CT_LAST);
-POST_AND_PRE_INCREMENTS(ccl_sync_type, SNCT_LAST);
+POST_AND_PRE_INCREMENTS(ccl_data_type, DATATYPE_LAST);
+POST_AND_PRE_INCREMENTS(ccl_size_type, SIZE_LAST);
+POST_AND_PRE_INCREMENTS(ccl_buf_count_type, BUF_COUNT_LAST);
+POST_AND_PRE_INCREMENTS(ccl_place_type, PLACE_LAST);
 POST_AND_PRE_INCREMENTS(ccl_order_type, ORDER_LAST);
-POST_AND_PRE_INCREMENTS(ccl_buffer_count, BC_LAST);
-POST_AND_PRE_INCREMENTS(ccl_prolog_type, PTYPE_LAST);
-POST_AND_PRE_INCREMENTS(ccl_epilog_type, ETYPE_LAST);
+POST_AND_PRE_INCREMENTS(ccl_complete_type, COMPLETE_LAST);
+POST_AND_PRE_INCREMENTS(ccl_cache_type, CACHE_LAST);
+POST_AND_PRE_INCREMENTS(ccl_sync_type, SYNC_LAST);
+POST_AND_PRE_INCREMENTS(ccl_reduction_type, REDUCTION_LAST);
 
-size_t get_ccl_elem_count(ccl_test_conf& test_conf) {
-    return ccl_size_type_values[test_conf.size_type];
+size_t get_elem_count(const test_param& param) {
+    return size_type_values[param.size_type];
 }
 
-size_t get_ccl_buffer_count(ccl_test_conf& test_conf) {
-    return ccl_buffer_count_values[test_conf.buffer_count];
+size_t get_buffer_count(const test_param& param) {
+    return buf_count_values[param.buf_count_type];
 }
 
-ccl::datatype get_ccl_lib_datatype(const ccl_test_conf& test_conf) {
-    return ccl_datatype_values[test_conf.datatype];
+ccl::datatype get_ccl_datatype(const test_param& param) {
+    return data_type_values[param.datatype];
 }
 
-ccl::reduction get_ccl_lib_reduction(const ccl_test_conf& test_conf) {
-    return ccl_reduction_values[test_conf.reduction];
+ccl::reduction get_ccl_reduction(const test_param& param) {
+    return reduction_values[param.reduction];
 }
 
 bool should_skip_datatype(ccl_data_type dt) {
-    if (dt == DT_BFLOAT16 && !is_bf16_enabled())
+    if (dt == DATATYPE_BFLOAT16 && !is_bf16_enabled())
         return true;
 
-    if (dt == DT_FLOAT16 && !is_fp16_enabled())
+    if (dt == DATATYPE_FLOAT16 && !is_fp16_enabled())
         return true;
 
-    if (dt == DT_INT8 || dt == DT_UINT8 || dt == DT_INT16 || dt == DT_UINT16 || dt == DT_UINT32 ||
-        dt == DT_INT64 || dt == DT_UINT64 || dt == DT_FLOAT64)
+    if (dt == DATATYPE_INT8 || dt == DATATYPE_UINT8 || dt == DATATYPE_INT16 ||
+        dt == DATATYPE_UINT16 || dt == DATATYPE_UINT32 || dt == DATATYPE_INT64 ||
+        dt == DATATYPE_UINT64 || dt == DATATYPE_FLOAT64)
         return true;
 
     return false;
 }
 
-size_t calculate_test_count() {
-    size_t test_count = max_test_count();
+void init_test_dims() {
+    char* data_type_env = getenv("CCL_TEST_DATA_TYPE");
+    char* size_type_env = getenv("CCL_TEST_SIZE_TYPE");
+    char* buf_count_env = getenv("CCL_TEST_BUF_COUNT_TYPE");
+    char* place_type_env = getenv("CCL_TEST_PLACE_TYPE");
+    char* start_order_type_env = getenv("CCL_TEST_START_ORDER_TYPE");
+    char* complete_order_type_env = getenv("CCL_TEST_COMPLETE_ORDER_TYPE");
+    char* complete_type_env = getenv("CCL_TEST_COMPLETE_TYPE");
+    char* cache_type_env = getenv("CCL_TEST_CACHE_TYPE");
+    char* sync_env = getenv("CCL_TEST_SYNC_TYPE");
+    char* reduction_type_env = getenv("CCL_TEST_REDUCTION_TYPE");
 
-    // CCL_TEST_EPILOG_TYPE=0 CCL_TEST_PROLOG_TYPE=0 CCL_TEST_PLACE_TYPE=0 CCL_TEST_CACHE_TYPE=0 CCL_TEST_BUFFER_COUNT=0 CCL_TEST_SIZE_TYPE=0 CCL_TEST_PRIORITY_TYPE=1 CCL_TEST_COMPLETION_TYPE=0 CCL_TEST_SYNC_TYPE=0 CCL_TEST_REDUCTION_TYPE=0 CCL_TEST_DATA_TYPE=0
-    char* test_data_type_enabled = getenv("CCL_TEST_DATA_TYPE");
-    char* test_reduction_enabled = getenv("CCL_TEST_REDUCTION_TYPE");
-    char* test_sync_enabled = getenv("CCL_TEST_SYNC_TYPE");
-    char* test_completion_enabled = getenv("CCL_TEST_COMPLETION_TYPE");
-    // TODO: rename to CCL_TEST_ORDER_TYPE in Jenkins
-    char* test_order_type_enabled = getenv("CCL_TEST_PRIORITY_TYPE");
-    char* test_size_type_enabled = getenv("CCL_TEST_SIZE_TYPE");
-    char* test_buffer_count_enabled = getenv("CCL_TEST_BUFFER_COUNT");
-    char* test_cache_type_enabled = getenv("CCL_TEST_CACHE_TYPE");
-    char* test_place_type_enabled = getenv("CCL_TEST_PLACE_TYPE");
-    char* test_prolog_enabled = getenv("CCL_TEST_PROLOG_TYPE");
-    char* test_epilog_enabled = getenv("CCL_TEST_EPILOG_TYPE");
+    /* limit test dimensions */
 
-    if (test_data_type_enabled && atoi(test_data_type_enabled) == 0) {
-        test_count /= last_ccl_data_type;
-        first_ccl_data_type = static_cast<ccl_data_type>(DT_FLOAT32);
-        last_ccl_data_type = static_cast<ccl_data_type>(first_ccl_data_type + 1);
+    if (data_type_env && atoi(data_type_env) == 0) {
+        first_data_type = DATATYPE_FLOAT32;
+        last_data_type = static_cast<ccl_data_type>(first_data_type + 1);
     }
 
-    if (test_reduction_enabled && atoi(test_reduction_enabled) == 0) {
-        test_count /= last_ccl_reduction_type;
-        first_ccl_reduction_type = static_cast<ccl_reduction_type>(RT_SUM);
-        last_ccl_reduction_type = static_cast<ccl_reduction_type>(first_ccl_reduction_type + 1);
+    if (size_type_env && atoi(size_type_env) == 0) {
+        first_size_type = SIZE_MEDIUM;
+        last_size_type = static_cast<ccl_size_type>(first_size_type + 1);
     }
 
-    if (test_sync_enabled && atoi(test_sync_enabled) == 0) {
-        test_count /= last_ccl_sync_type;
-        first_ccl_sync_type = static_cast<ccl_sync_type>(SNCT_SYNC_0);
-        last_ccl_sync_type = static_cast<ccl_sync_type>(first_ccl_sync_type + 1);
+    if (buf_count_env && atoi(buf_count_env) == 0) {
+        first_buf_count_type = BUF_COUNT_LARGE;
+        last_buf_count_type = static_cast<ccl_buf_count_type>(first_buf_count_type + 1);
     }
 
-    if (test_completion_enabled && atoi(test_completion_enabled) == 0) {
-        test_count /= last_ccl_completion_type;
-        first_ccl_completion_type = static_cast<ccl_completion_type>(CMPT_TEST);
-        last_ccl_completion_type = static_cast<ccl_completion_type>(first_ccl_completion_type + 1);
+    if (place_type_env && atoi(place_type_env) == 0) {
+        first_place_type = PLACE_IN;
+        last_place_type = static_cast<ccl_place_type>(first_place_type + 1);
     }
 
-    if (test_order_type_enabled && atoi(test_order_type_enabled) == 0) {
-        test_count /= (last_ccl_order_type * last_ccl_order_type);
-        first_ccl_order_type = static_cast<ccl_order_type>(ORDER_DIRECT);
-        last_ccl_order_type = static_cast<ccl_order_type>(first_ccl_order_type + 1);
+    if (start_order_type_env && atoi(start_order_type_env) == 0) {
+        first_start_order = ORDER_DIRECT;
+        last_start_order = static_cast<ccl_order_type>(first_start_order + 1);
     }
 
-    if (test_size_type_enabled && atoi(test_size_type_enabled) == 0) {
-        test_count /= last_ccl_size_type;
-        first_ccl_size_type = static_cast<ccl_size_type>(ST_MEDIUM);
-        last_ccl_size_type = static_cast<ccl_size_type>(first_ccl_size_type + 1);
+    if (complete_order_type_env && atoi(complete_order_type_env) == 0) {
+        first_complete_order = ORDER_DIRECT;
+        last_complete_order = static_cast<ccl_order_type>(first_complete_order + 1);
     }
 
-    if (test_buffer_count_enabled && atoi(test_buffer_count_enabled) == 0) {
-        test_count /= last_ccl_buffer_count;
-        first_ccl_buffer_count = static_cast<ccl_buffer_count>(BC_LARGE);
-        last_ccl_buffer_count = static_cast<ccl_buffer_count>(first_ccl_buffer_count + 1);
+    if (complete_type_env && atoi(complete_type_env) == 0) {
+        first_complete_type = COMPLETE_TEST;
+        last_complete_type = static_cast<ccl_complete_type>(first_complete_type + 1);
     }
 
-    if (test_cache_type_enabled && atoi(test_cache_type_enabled) == 0) {
-        test_count /= last_ccl_cache_type;
-        first_ccl_cache_type = static_cast<ccl_cache_type>(CT_CACHE_1);
-        last_ccl_cache_type = static_cast<ccl_cache_type>(first_ccl_cache_type + 1);
+    if (cache_type_env && atoi(cache_type_env) == 0) {
+        first_cache_type = CACHE_TRUE;
+        last_cache_type = static_cast<ccl_cache_type>(first_cache_type + 1);
     }
 
-    if (test_place_type_enabled && atoi(test_place_type_enabled) == 0) {
-        test_count /= last_ccl_place_type;
-        first_ccl_place_type = static_cast<ccl_place_type>(PT_IN);
-        last_ccl_place_type = static_cast<ccl_place_type>(first_ccl_place_type + 1);
+    if (sync_env && atoi(sync_env) == 0) {
+        first_sync_type = SYNC_FALSE;
+        last_sync_type = static_cast<ccl_sync_type>(first_sync_type + 1);
     }
 
-    if (test_prolog_enabled && atoi(test_prolog_enabled) == 0) {
-        test_count /= last_ccl_prolog_type;
-        first_ccl_prolog_type = static_cast<ccl_prolog_type>(PTYPE_NULL);
-        last_ccl_prolog_type = static_cast<ccl_prolog_type>(first_ccl_prolog_type + 1);
+    if (reduction_type_env && atoi(reduction_type_env) == 0) {
+        first_reduction_type = REDUCTION_SUM;
+        last_reduction_type = static_cast<ccl_reduction_type>(first_reduction_type + 1);
     }
-
-    if (test_epilog_enabled && atoi(test_epilog_enabled) == 0) {
-        test_count /= last_ccl_epilog_type;
-        first_ccl_epilog_type = static_cast<ccl_epilog_type>(ETYPE_NULL);
-        last_ccl_epilog_type = static_cast<ccl_epilog_type>(first_ccl_epilog_type + 1);
-    }
-
-    return test_count;
 }
 
 void init_test_params() {
-    test_params.resize(calculate_test_count());
+    init_test_dims();
 
-    size_t idx = 0;
-    for (ccl_prolog_type prolog_type = first_ccl_prolog_type; prolog_type < last_ccl_prolog_type;
-         prolog_type++) {
-        for (ccl_epilog_type epilog_type = first_ccl_epilog_type;
-             epilog_type < last_ccl_epilog_type;
-             epilog_type++) {
-            // if ((epilog_type != ETYPE_CHAR_TO_T && prolog_type == PTYPE_T_TO_CHAR)||(epilog_type == ETYPE_CHAR_TO_T && prolog_type != PTYPE_T_TO_CHAR))
-            //      // TODO: remove skipped data type
-            //      continue;
-            for (ccl_reduction_type reduction_type = first_ccl_reduction_type;
-                 reduction_type < last_ccl_reduction_type;
-                 reduction_type++) {
-                for (ccl_sync_type sync_type = first_ccl_sync_type; sync_type < last_ccl_sync_type;
-                     sync_type++) {
-                    for (ccl_cache_type cache_type = first_ccl_cache_type;
-                         cache_type < last_ccl_cache_type;
-                         cache_type++) {
-                        for (ccl_size_type size_type = first_ccl_size_type;
-                             size_type < last_ccl_size_type;
-                             size_type++) {
-                            for (ccl_data_type data_type = first_ccl_data_type;
-                                 data_type < last_ccl_data_type;
-                                 data_type++) {
-                                if (should_skip_datatype(data_type))
-                                    continue;
-
-                                for (ccl_completion_type completion_type =
-                                         first_ccl_completion_type;
-                                     completion_type < last_ccl_completion_type;
-                                     completion_type++) {
-                                    for (ccl_place_type place_type = first_ccl_place_type;
-                                         place_type < last_ccl_place_type;
-                                         place_type++) {
+    for (auto data_type = first_data_type; data_type < last_data_type; data_type++) {
+        if (should_skip_datatype(data_type))
+            continue;
+        for (auto size_type = first_size_type; size_type < last_size_type; size_type++) {
+            for (auto buf_count_type = first_buf_count_type; buf_count_type < last_buf_count_type;
+                 buf_count_type++) {
+                for (auto place_type = first_place_type; place_type < last_place_type;
+                     place_type++) {
 #ifdef TEST_CCL_BCAST
-                                        if (place_type == PT_OOP)
-                                            continue;
+                    if (place_type == PLACE_OUT)
+                        continue;
 #endif
-                                        for (ccl_order_type start_order_type = first_ccl_order_type;
-                                             start_order_type < last_ccl_order_type;
-                                             start_order_type++) {
-                                            for (ccl_order_type complete_order_type =
-                                                     first_ccl_order_type;
-                                                 complete_order_type <
-                                                 (first_ccl_order_type + 1) /*last_ccl_order_type*/;
-                                                 complete_order_type++) {
-                                                for (ccl_buffer_count buffer_count =
-                                                         first_ccl_buffer_count;
-                                                     buffer_count < last_ccl_buffer_count;
-                                                     buffer_count++) {
-                                                    test_params[idx].place_type = place_type;
-                                                    test_params[idx].size_type = size_type;
-                                                    test_params[idx].datatype = data_type;
-                                                    test_params[idx].cache_type = cache_type;
-                                                    test_params[idx].sync_type = sync_type;
-                                                    test_params[idx].completion_type =
-                                                        completion_type;
-                                                    test_params[idx].reduction = reduction_type;
-                                                    test_params[idx].buffer_count = buffer_count;
-                                                    test_params[idx].start_order_type =
-                                                        start_order_type;
-                                                    test_params[idx].complete_order_type =
-                                                        complete_order_type;
-                                                    test_params[idx].prolog_type = prolog_type;
-                                                    test_params[idx].epilog_type = epilog_type;
-                                                    idx++;
-                                                }
-                                            }
+                    for (auto start_order = first_start_order; start_order < last_start_order;
+                         start_order++) {
+                        if (start_order == ORDER_RANDOM) {
+                            char* unordered_coll_env = getenv("CCL_UNORDERED_COLL");
+                            if (!unordered_coll_env || atoi(unordered_coll_env) == 0) {
+                                continue;
+                            }
+                        }
+                        for (auto complete_order = first_complete_order;
+                             complete_order < last_complete_order;
+                             complete_order++) {
+                            for (auto complete_type = first_complete_type;
+                                 complete_type < last_complete_type;
+                                 complete_type++) {
+                                for (auto sync_type = first_sync_type; sync_type < last_sync_type;
+                                     sync_type++) {
+                                    for (auto cache_type = first_cache_type;
+                                         cache_type < last_cache_type;
+                                         cache_type++) {
+                                        for (auto reduction_type = first_reduction_type;
+                                             reduction_type < last_reduction_type;
+                                             reduction_type++) {
+                                            test_param param;
+                                            param.datatype = data_type;
+                                            param.size_type = size_type;
+                                            param.buf_count_type = buf_count_type;
+                                            param.place_type = place_type;
+                                            param.start_order = start_order;
+                                            param.complete_order = complete_order;
+                                            param.complete_type = complete_type;
+                                            param.cache_type = cache_type;
+                                            param.sync_type = sync_type;
+                                            param.reduction = reduction_type;
+                                            test_params.push_back(param);
                                         }
                                     }
                                 }
@@ -317,31 +273,22 @@ void init_test_params() {
             }
         }
     }
-
-    test_params.resize(idx);
 }
 
-std::ostream& operator<<(std::ostream& stream, ccl_test_conf const& test_conf) {
+std::ostream& operator<<(std::ostream& stream, const test_param& param) {
     std::stringstream sstream;
     sstream << "["
-            << " " << ccl_data_type_str[test_conf.datatype] << " "
-            << ccl_place_type_str[test_conf.place_type] << " "
-            << ccl_cache_type_str[test_conf.cache_type] << " "
-            << ccl_size_type_str[test_conf.size_type] << " "
-            << ccl_sync_type_str[test_conf.sync_type] << " "
-            << ccl_reduction_type_str[test_conf.reduction] << " "
-            << ccl_order_type_str[test_conf.start_order_type] << " "
-            << ccl_order_type_str[test_conf.complete_order_type] << " "
-            << ccl_completion_type_str[test_conf.completion_type] << " "
-            << ccl_buffer_count_str[test_conf.buffer_count]
-            // << " " << ccl_prolog_type_str[test_conf.prolog_type]
-            // << " " << ccl_epilog_type_str[test_conf.epilog_type]
-            << " ]";
+            << " " << data_type_names[param.datatype] << " " << size_type_names[param.size_type]
+            << " " << buf_count_type_names[param.buf_count_type] << " "
+            << place_type_names[param.place_type] << " " << order_type_names[param.start_order]
+            << " " << complete_type_names[param.complete_type] << " "
+            << cache_type_names[param.cache_type] << " " << sync_type_names[param.sync_type] << " "
+            << reduction_type_names[param.reduction] << " ]";
     return stream << sstream.str();
 }
 
 void print_err_message(char* message, std::ostream& output) {
-    ccl::communicator& comm = GlobalData::instance().comms[0];
+    ccl::communicator& comm = global_data::instance().comms[0];
     int comm_size = comm.size();
     int comm_rank = comm.rank();
 

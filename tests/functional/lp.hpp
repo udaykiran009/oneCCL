@@ -9,7 +9,7 @@
 #include "conf.hpp"
 
 template <typename T>
-struct typed_test_param;
+struct test_operation;
 
 #define FLOATS_IN_M512 16
 #define FLOATS_IN_M256 8
@@ -68,9 +68,9 @@ template <typename T>
 void convert_lp_to_fp32_arrays(short* lp_buf, T* buf, size_t count, ccl_data_type dtype);
 
 template <typename T>
-void make_lp_prologue(typed_test_param<T>& param, size_t size);
+void make_lp_prologue(test_operation<T>& op, size_t size);
 
 template <typename T>
-void make_lp_epilogue(typed_test_param<T>& param, size_t size);
+void make_lp_epilogue(test_operation<T>& op, size_t size);
 
 #include "lp_impl.hpp"

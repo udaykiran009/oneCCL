@@ -20,16 +20,17 @@ print_help()
     echo_log "    -cv  Path to oneCCL variables script"
     echo_log "    -mv  Path to IMPI variables script"
     echo_log "    -lf  Log file"
-    echo_log "    -sf  Store file"
+    echo_log "    -km  Create KVS mode"
+    echo_log "    -kp  Create KVS param"
     echo_log ""
     echo_log "Example:"
-    echo_log "    ./${BASENAME}.sh -s 4 -r 0 -ls 2 -lr 0 -cv <ccl_vars> -mv <mpi_vars> -lf <log_file> -sf <store_file>"
+    echo_log "    ./${BASENAME}.sh -s 4 -r 0 -ls 2 -lr 0 -cv <ccl_vars> -mv <mpi_vars> -lf <log_file> -km <mode> -kp <param>"
     echo_log ""
 }
 
 parse_arguments()
 {
-    if [ $# -ne 16 ];
+    if [ $# -ne 18 ];
     then
         echo_log "ERROR: unexpected number of options"
         print_help
@@ -69,8 +70,12 @@ parse_arguments()
                 LOG_FILE=$2
                 read_count=$((read_count+1))
                 ;;
-            "-sf"|"--store_file")
-                STORE_FILE=$2
+            "-km"|"--kvs_mode")
+                KVS_MODE=$2
+                read_count=$((read_count+1))
+                ;;
+            "-kp"|"--kvs_param")
+                KVS_PARAM=$2
                 read_count=$((read_count+1))
                 ;;
             *)
@@ -84,7 +89,7 @@ parse_arguments()
         shift
     done
 
-    expected_read_count=8
+    expected_read_count=9
     if [ "${read_count}" -ne "${expected_read_count}" ];
     then
         echo_log "ERROR: unexpected number of read options ($read_count), expected ${expected_read_count}"
@@ -102,7 +107,8 @@ parse_arguments()
     echo_log "CCL_VARS   = ${CCL_VARS}"
     echo_log "MPI_VARS   = ${MPI_VARS}"
     echo_log "LOG_FILE   = ${LOG_FILE}"
-    echo_log "STORE_FILE = ${STORE_FILE}"
+    echo_log "KVS_MODE   = ${KVS_MODE}"
+    echo_log "KVS_PARAM  = ${KVS_PARAM}"
     echo_log "-----------------------------------------------------------"
 }
 
@@ -113,7 +119,7 @@ function run()
 
     binary_env="FI_PROVIDER=tcp CCL_LOG_LEVEL=info CCL_LOCALRANKID=$LOCAL_RANK CCL_LOCALNRANKS=$LOCAL_SIZE"
     binary_path="$dir/external_launcher"
-    binary_arg="$SIZE $RANK ${STORE_FILE}"
+    binary_arg="$SIZE $RANK ${KVS_MODE} ${KVS_PARAM}"
 
     if [ -f $LOG_FILE ];
     then

@@ -161,13 +161,19 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
             "sparse_allreduce requires completion callback only or allocation callback only");
     }
 
-    CCL_THROW_IF_NOT((param.dtype.idx() != ccl::datatype::float16) ||
-                         (ccl::global_data::get().fp16_impl_type != ccl_fp16_none),
-                     "FP16 datatype is requested but not supported");
+    if (param.dtype.idx() == ccl::datatype::float16) {
+        CCL_THROW_IF_NOT(ccl::global_data::get().fp16_impl_type != ccl_fp16_compiler_none,
+                         "FP16 datatype is requested but not supported by CCL compiler");
+        CCL_THROW_IF_NOT(ccl::global_data::get().fp16_impl_type != ccl_fp16_hw_none,
+                         "FP16 datatype is requested but not supported by hardware");
+    }
 
-    CCL_THROW_IF_NOT((param.dtype.idx() != ccl::datatype::bfloat16) ||
-                         (ccl::global_data::get().bf16_impl_type != ccl_bf16_none),
-                     "BF16 datatype is requested but not supported");
+    if (param.dtype.idx() == ccl::datatype::bfloat16) {
+        CCL_THROW_IF_NOT(ccl::global_data::get().bf16_impl_type != ccl_bf16_compiler_none,
+                         "BF16 datatype is requested but not supported by CCL compiler");
+        CCL_THROW_IF_NOT(ccl::global_data::get().bf16_impl_type != ccl_bf16_hw_none,
+                         "BF16 datatype is requested but not supported by hardware");
+    }
 
     ccl_sched_key key;
     ccl_master_sched_ptr sched;

@@ -301,40 +301,32 @@ run()
     ppn=1
     n=2
     dtype_list="int8,int32,float32"
-    reduction_list="sum,max"
+    reduction_list="sum"
     ccl_base_env="FI_PROVIDER=tcp"
 
+    sycl_example_selector_list="none"
     if [[ ${MODE} = "cpu" ]]
     then
-        common_dir_list="external_launcher cpu common"
-        if [[ ${SCOPE} = "abi" ]]
-        then
-            dir_list=${common_dir_list}
-            bench_backend_list="host"
-            example_selector_list="cpu"
-        else
-            dir_list="${common_dir_list} benchmark"
-            bench_backend_list="host"
-            example_selector_list="cpu host default"
-        fi
+        dir_list="benchmark common cpu external_launcher"
+        bench_backend_list="host"
     else
+        common_dir_list="benchmark common"
         if [[ ${SCOPE} = "pr" ]]
         then
-            dir_list="common benchmark"
+            dir_list="${common_dir_list}"
             bench_backend_list="sycl"
-            example_selector_list="host gpu"
         elif [[ ${SCOPE} = "abi" ]]; then
-            dir_list="cpu common sycl"
+            dir_list="${common_dir_list} cpu sycl"
             bench_backend_list="host sycl"
-            example_selector_list="cpu gpu"
+            sycl_example_selector_list="cpu gpu"
         else
-            dir_list="cpu common sycl benchmark"
+            dir_list="${common_dir_list} cpu sycl"
             bench_backend_list="host sycl"
-            example_selector_list="cpu host gpu default"
+            sycl_example_selector_list="cpu gpu"
         fi
     fi
 
-    echo "dir_list =" $dir_list "; example_selector_list =" $example_selector_list
+    echo "dir_list =" $dir_list "; sycl_example_selector_list =" $sycl_example_selector_list
     for dir_name in $dir_list
     do
         if [ ! -d "$(pwd)/${dir_name}" ]
@@ -433,13 +425,13 @@ run()
                             ccl_extra_env="${ccl_runtime_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernel_colls} float32 sum
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernel_colls_with_dtypes} ${supported_kernel_dtypes} sum
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${kernel_colls_with_reductions} ${supported_kernel_dtypes} sum,max
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${kernel_colls_with_reductions} ${supported_kernel_dtypes} sum
 
                         done
                     done
                 elif [ "$dir_name" == "sycl" ];
                 then
-                    for selector in $example_selector_list
+                    for selector in $sycl_example_selector_list
                     do
                         if [[ "${example}" == *"_usm_"* ]]
                         then

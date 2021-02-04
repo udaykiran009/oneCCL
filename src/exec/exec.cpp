@@ -295,7 +295,8 @@ void ccl_executor::set_local_coord() {
                  mpi_idx_env_name,
                  " or ",
                  mpi_count_env_name,
-                 " not found. Use default: local_proc_idx ",
+                 " not found");
+        LOG_WARN("use default: local_proc_idx ",
                  local_proc_idx,
                  " , local_proc_count ",
                  local_proc_count);

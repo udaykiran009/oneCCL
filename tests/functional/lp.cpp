@@ -1,7 +1,7 @@
 #include "lp.hpp"
 
 bool is_lp_datatype(ccl_data_type dtype) {
-    return (dtype == DT_FLOAT16 || dtype == DT_BFLOAT16) ? true : false;
+    return (dtype == DATATYPE_FLOAT16 || dtype == DATATYPE_BFLOAT16) ? true : false;
 }
 
 int is_fp16_enabled() {
@@ -99,10 +99,10 @@ void convert_bf16_to_fp32(const void* src, void* dst) {
 #endif /* CCL_BF16_COMPILER */
 
 void convert_lp_to_fp32(const void* src, void* dst, ccl_data_type dtype) {
-    if (dtype == DT_FLOAT16) {
+    if (dtype == DATATYPE_FLOAT16) {
         convert_fp16_to_fp32(src, dst);
     }
-    else if (dtype == DT_BFLOAT16) {
+    else if (dtype == DATATYPE_BFLOAT16) {
         convert_bf16_to_fp32(src, dst);
     }
     else {
@@ -111,10 +111,10 @@ void convert_lp_to_fp32(const void* src, void* dst, ccl_data_type dtype) {
 }
 
 void convert_fp32_to_lp(const void* src, void* dst, ccl_data_type dtype) {
-    if (dtype == DT_FLOAT16) {
+    if (dtype == DATATYPE_FLOAT16) {
         convert_fp32_to_fp16(src, dst);
     }
-    else if (dtype == DT_BFLOAT16) {
+    else if (dtype == DATATYPE_BFLOAT16) {
         convert_fp32_to_bf16(src, dst);
     }
     else {
