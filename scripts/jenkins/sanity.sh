@@ -157,38 +157,27 @@ set_environment()
         build_type="release"
     fi
 
-    if [ -z  "${node_label}" ]
-    then
-        build_compiler="gnu"
-        source ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_icc
-    elif [ $node_label == "mlsl2_test_gpu" ]
-    then
-        build_compiler="sycl"
-        source ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
-    else
-        build_compiler="gnu"
-        source ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_icc
-    fi
-
-    if [ -z "${build_compiler}" ]
-    then
-        build_compiler="sycl"
-    fi
-    if [ $build_compiler == "gnu" ]
-    then
-        BUILD_COMPILER_TYPE="gnu"
-    elif [ $build_compiler == "sycl" ] || [ $build_compiler == "nosycl" ]
-    then
-        BUILD_COMPILER_TYPE="clang"
-    elif [ $build_compiler == "intel" ]
-    then
-        BUILD_COMPILER_TYPE="intel"
-    fi
     # $BUILD_COMPILER_TYPE may be set up by user: clang/gnu/intel
     if [ -z "${BUILD_COMPILER_TYPE}" ]
     then
-        BUILD_COMPILER_TYPE="clang"
+        if [ $node_label == "mlsl2_test_gpu" ] || [ ${build_compiler} == "sycl" ]
+        then
+            BUILD_COMPILER_TYPE="clang"
+            source ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+        elif [ ${node_label} == "mlsl2_test_cpu" ] || [ ${build_compiler} == "gnu" ]
+        then
+            BUILD_COMPILER_TYPE="gnu"
+            source ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_icc
+        elif [ ${build_compiler} == "intel" ]
+        then
+            BUILD_COMPILER_TYPE="intel"
+            source ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_icc
+        else
+            echo "WARNING: the 'node_label' variable is not set. Clang will be used by default."
+            BUILD_COMPILER_TYPE="clang"
+        fi
     fi
+
     if [ "${BUILD_COMPILER_TYPE}" == "gnu" ]
      then
         BUILD_COMPILER=/usr/bin
@@ -207,7 +196,7 @@ set_environment()
             echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
         fi
         source ${SYCL_BUNDLE_ROOT}/../../../setvars.sh
-        BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/compiler/latest/linux/bin
+        BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/bin
         C_COMPILER=${BUILD_COMPILER}/clang
         CXX_COMPILER=${BUILD_COMPILER}/clang++
     fi
