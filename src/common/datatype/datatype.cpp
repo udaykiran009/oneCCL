@@ -5,12 +5,10 @@
 #include "common/utils/enums.hpp"
 #include "exec/exec.hpp"
 
-
 const ccl::datatype last_predefined_dt = ccl::datatype::bfloat16;
 
 namespace ccl {
-using datatype_str_enum =
-    utils::enum_to_str<utils::enum_to_underlying(last_predefined_dt) + 1>;
+using datatype_str_enum = utils::enum_to_str<utils::enum_to_underlying(last_predefined_dt) + 1>;
 string_class to_string(const datatype& dt) {
     return datatype_str_enum({ "INT8",
                                "UINT8",
@@ -55,8 +53,7 @@ ccl_datatype_storage::ccl_datatype_storage() {
     LOG_DEBUG("create datatype_storage");
 
     using IntType = typename std::underlying_type<ccl::datatype>::type;
-    custom_idx =
-        static_cast<ccl::datatype>(static_cast<IntType>(last_predefined_dt) + 1);
+    custom_idx = static_cast<ccl::datatype>(static_cast<IntType>(last_predefined_dt) + 1);
 
     size_t size = 0;
     std::string name_str;

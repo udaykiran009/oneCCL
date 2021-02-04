@@ -15,11 +15,10 @@ group_context& group_context::instance() {
 group_context::comm_group_t group_context::group_by_kvs(
     const std::vector<int>& local_thread_device_group_ranks,
     int cluster_device_group_size,
-    std::shared_ptr<kvs_interface> kvs) {
+    std::shared_ptr<ikvs_wrapper> kvs) {
     LOG_INFO("thread acquire by barrier");
-    std::shared_ptr<ikvs_wrapper> kvs_wrap = std::shared_ptr<ikvs_wrapper>(new users_kvs(kvs));
     std::shared_ptr<atl_wrapper> atl = std::shared_ptr<atl_wrapper>(
-        new atl_wrapper(cluster_device_group_size, local_thread_device_group_ranks, kvs_wrap));
+        new atl_wrapper(cluster_device_group_size, local_thread_device_group_ranks, kvs));
 
     /* Indicate that multiple devices are not supported, don't throw anything if kernel_path env variable
      * is set to enable our testing with partial functionality.

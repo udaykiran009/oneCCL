@@ -37,14 +37,14 @@ communicator_interface_ptr communicator_interface_dispatcher::create_communicato
 
 communicator_interface_ptr communicator_interface_dispatcher::create_communicator_impl(
     const size_t size,
-    shared_ptr_class<kvs_interface> kvs) {
+    shared_ptr_class<ikvs_wrapper> kvs) {
     return communicator_interface_ptr(new host_communicator(size, kvs));
 }
 
 communicator_interface_ptr communicator_interface_dispatcher::create_communicator_impl(
     const size_t size,
     const int rank,
-    shared_ptr_class<kvs_interface> kvs) {
+    shared_ptr_class<ikvs_wrapper> kvs) {
     return communicator_interface_ptr(new host_communicator(size, rank, kvs));
 }
 

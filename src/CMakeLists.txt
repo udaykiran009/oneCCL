@@ -108,6 +108,7 @@ set(CCL_SRC
     atl/ofi/atl_ofi.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable_simple.cpp
+    atl/util/pm/pmi_resizable_rt/pmi_resizable_simple_internal.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/helper.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs_keeper.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/pmi_listener.cpp
@@ -116,6 +117,7 @@ set(CCL_SRC
     atl/util/pm/pmi_resizable_rt/pmi_resizable/resizable_pmi.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/shift_list.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.cpp
+    atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs_server.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/users_kvs.cpp
     atl/util/pm/pmi_rt/pmi_simple.cpp
     atl/util/pm/pmi_rt/pmi/simple_pmi.c

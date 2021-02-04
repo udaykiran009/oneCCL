@@ -15,31 +15,6 @@ int killed_ranks_count = 0;
 rank_list_t* new_ranks = NULL;
 int new_ranks_count = 0;
 
-void kvs_str_copy(char* dst, const char* src, size_t bytes) {
-    strncpy(dst, src, bytes - 1);
-    dst[bytes - 1] = '\0';
-}
-
-long int safe_strtol(const char* str, char** endptr, int base) {
-    auto val = strtol(str, endptr, base);
-    if (val == 0) {
-        /* if a conversion error occurred, display a message and exit */
-        if (errno == EINVAL) {
-            throw std::runtime_error(
-                std::string(__PRETTY_FUNCTION__) +
-                ": conversion error occurred from: " + std::to_string((int)val));
-        }
-
-        /* if the value provided was out of range, display a warning message */
-        if (errno == ERANGE) {
-            throw std::runtime_error(
-                std::string(__PRETTY_FUNCTION__) +
-                ": the value provided was out of range, value: " + std::to_string((int)val));
-        }
-    }
-    return val;
-}
-
 size_t helper::replace_str(char* str, int old_rank, int new_rank) {
     throw std::runtime_error("unexpected path");
 

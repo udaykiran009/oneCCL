@@ -72,12 +72,12 @@ struct communicator_interface_dispatcher {
 
     // create communicator for host
     static communicator_interface_ptr create_communicator_impl(const size_t size,
-                                                               shared_ptr_class<kvs_interface> kvs);
+                                                               shared_ptr_class<ikvs_wrapper> kvs);
 
     // create communicator for host
     static communicator_interface_ptr create_communicator_impl(const size_t size,
                                                                const int rank,
-                                                               shared_ptr_class<kvs_interface> kvs);
+                                                               shared_ptr_class<ikvs_wrapper> kvs);
 
 private:
     static communicator_interface_ptr create_communicator_from_unified_device(

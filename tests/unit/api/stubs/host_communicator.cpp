@@ -9,7 +9,7 @@ namespace ccl {
 
 host_communicator::host_communicator() : comm_attr(ccl::ccl_empty_attr{}) {}
 
-host_communicator::host_communicator(int size, shared_ptr_class<kvs_interface> kvs)
+host_communicator::host_communicator(int size, shared_ptr_class<ikvs_wrapper> kvs)
         : comm_attr(ccl::ccl_empty_attr{}),
           comm_rank(0),
           comm_size(size) {
@@ -18,7 +18,7 @@ host_communicator::host_communicator(int size, shared_ptr_class<kvs_interface> k
     }
 }
 
-host_communicator::host_communicator(int size, int rank, shared_ptr_class<kvs_interface> kvs)
+host_communicator::host_communicator(int size, int rank, shared_ptr_class<ikvs_wrapper> kvs)
         : comm_attr(ccl::ccl_empty_attr{}),
           comm_rank(rank),
           comm_size(size) {}

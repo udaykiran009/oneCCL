@@ -52,7 +52,7 @@ struct comm_impl_base_dispatch {
         const size_t cluster_devices_size, /*global devices count*/
         const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         map_class<int, DeviceType> converted_map;
         std::transform(local_rank_device_map.begin(),
                        local_rank_device_map.end(),
@@ -92,7 +92,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::empty_backend>
         const size_t cluster_devices_size, /*global devices count*/
         const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         return base_t::template create_communicators_selector<DeviceType>(
             cluster_devices_size,
             local_rank_device_map,
@@ -105,7 +105,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::empty_backend>
         const size_t cluster_devices_size, /*global devices count*/
         const map_class<int, DeviceType>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         base_t::validate_contract(cluster_devices_size, local_rank_device_map.size());
         if (local_rank_device_map.size() != 1) {
             throw ccl::unsupported(
@@ -139,7 +139,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
         const size_t cluster_devices_size, /*global devices count*/
         const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         return base_t::template create_communicators_selector<DeviceType>(
             cluster_devices_size,
             local_rank_device_map,
@@ -152,7 +152,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
         const size_t cluster_devices_size, /*global devices count*/
         const map_class<int, ccl::device_index_type>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         base_t::validate_contract(cluster_devices_size, local_rank_device_map.size());
 
         map_class<int, cl::sycl::device> converted_device_map;
@@ -174,7 +174,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
         const size_t cluster_devices_size, /*global devices count*/
         const map_class<int, ccl::device>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         map_class<int, cl::sycl::device> converted_device_map;
         std::transform(local_rank_device_map.begin(),
                        local_rank_device_map.end(),
@@ -193,7 +193,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
         const size_t cluster_devices_size, /*global devices count*/
         const map_class<int, cl::sycl::device>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         base_t::validate_contract(cluster_devices_size, local_rank_device_map.size());
 
         auto it = local_rank_device_map.begin();
@@ -271,9 +271,8 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
             "Create single device communicator from SYCL device (sycl and !mgpu), after find_if rank ",
             rank);
 
-        std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs));
-        std::shared_ptr<atl_wrapper> atl = std::shared_ptr<atl_wrapper>(
-            new atl_wrapper(cluster_devices_size, { rank }, kvs_wrapper));
+        std::shared_ptr<atl_wrapper> atl =
+            std::shared_ptr<atl_wrapper>(new atl_wrapper(cluster_devices_size, { rank }, kvs));
 
         ccl::communicator_interface_ptr impl =
             ccl::communicator_interface::create_communicator_impl(device,
@@ -332,7 +331,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::l0>
         const size_t cluster_devices_size, /*global devices count*/
         const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         return base_t::template create_communicators_selector<DeviceType>(
             cluster_devices_size,
             local_rank_device_map,
@@ -345,7 +344,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::l0>
         const size_t cluster_devices_size, /*global devices count*/
         const map_class<int, ccl::device>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         map_class<int, ccl::device_index_type> converted_device_map;
         std::transform(local_rank_device_map.begin(),
                        local_rank_device_map.end(),
@@ -365,7 +364,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::l0>
         const size_t cluster_devices_size, /*global devices count*/
         const map_class<int, typename unified_device_type::ccl_native_t>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         map_class<int, ccl::device_index_type> converted_device_map;
         std::transform(
             local_rank_device_map.begin(),
@@ -386,7 +385,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::l0>
         const size_t cluster_devices_size, /*global devices count*/
         const map_class<int, ccl::device_index_type>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         base_t::validate_contract(cluster_devices_size, local_rank_device_map.size());
 
         //collect ranks
@@ -430,7 +429,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0>
         const size_t cluster_devices_size, /*global devices count*/
         const vector_class<pair_class<int, DeviceType>>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         return base_t::template create_communicators_selector<DeviceType>(
             cluster_devices_size,
             local_rank_device_map,
@@ -443,7 +442,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0>
         const size_t cluster_devices_size, /*global devices count*/
         const map_class<int, ccl::device>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         map_class<int, cl::sycl::device> converted_device_map;
         std::transform(local_rank_device_map.begin(),
                        local_rank_device_map.end(),
@@ -463,7 +462,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0>
         const size_t cluster_devices_size, /*global devices count*/
         const map_class<int, cl::sycl::device>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         base_t::validate_contract(cluster_devices_size, local_rank_device_map.size());
 
         //collect ranks
@@ -497,7 +496,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0>
         const size_t cluster_devices_size, /*global devices count*/
         const map_class<int, ccl::device_index_type>& local_rank_device_map,
         const ContextType& context,
-        shared_ptr_class<kvs_interface> kvs) {
+        shared_ptr_class<ikvs_wrapper> kvs) {
         base_t::validate_contract(cluster_devices_size, local_rank_device_map.size());
 
         //collect ranks

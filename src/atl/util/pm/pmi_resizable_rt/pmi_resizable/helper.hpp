@@ -28,9 +28,6 @@ extern int killed_ranks_count;
 extern rank_list_t* new_ranks;
 extern int new_ranks_count;
 
-void kvs_str_copy(char* dst, const char* src, size_t bytes);
-long int safe_strtol(const char* str, char** endptr, int base);
-
 class helper {
 public:
     helper() = delete;

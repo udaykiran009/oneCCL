@@ -1,3 +1,4 @@
+#include <util/pm/pmi_resizable_rt/pmi_resizable_simple_internal.h>
 #include "atl/util/pm/pmi_resizable_rt/pmi_resizable_simple.h"
 #include "atl/util/pm/pmi_rt/pmi_simple.h"
 #include "atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.h"
@@ -98,7 +99,14 @@ atl_wrapper::atl_wrapper(int total_rank_count,
     switch (transport_type) {
         case ccl_atl_ofi: {
             size_t transorts_count = transports.size();
-            pmi = std::unique_ptr<ipmi>(new pmi_resizable_simple(total_rank_count, ranks, k));
+            std::shared_ptr<internal_kvs> kvs;
+            if ((kvs = std::dynamic_pointer_cast<internal_kvs>(k)) != nullptr) {
+                pmi = std::unique_ptr<ipmi>(
+                    new pmi_resizable_simple_internal(total_rank_count, ranks, kvs));
+            }
+            else {
+                pmi = std::unique_ptr<ipmi>(new pmi_resizable_simple(total_rank_count, ranks, k));
+            }
 
             if (pmi->get_local_thread_idx() == 0) {
                 transports.push_back(std::shared_ptr<iatl>(new atl_ofi()));
