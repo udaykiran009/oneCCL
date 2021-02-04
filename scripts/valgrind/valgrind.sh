@@ -135,9 +135,9 @@ run_benchmark()
 
     if [[ ${VALGRIND_SCOPE} = "regular" ]]
     then
-        options=" -w 5 -i 100 -y 256,2048,1048576,2097152 -d all -r all"
+        options=" -w 0 -i 6 -n 4 -y 256,16384,1048576 -d int32,float32 -r sum"
     else
-        options=" -w 0 -i 2 -n 2 -y 2048,1048576"
+        options=" -w 0 -i 2 -n 2 -y 256,1048576 -d int32,float32 -r sum"
     fi
 
     usm_list="none"
