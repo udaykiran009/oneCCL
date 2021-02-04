@@ -48,7 +48,7 @@ void print_help_usage(const char* app) {
           "\t[-m,--sycl_mem_type <sycl memory type>]: %s\n"
           "\t[-u,--sycl_usm_type <sycl usm type>]: %s\n"
 #endif
-          "\t[-k,--ranks_per_proc <rnumber of ranks per process>]: %d\n"
+          "\t[-k,--ranks_per_proc <number of ranks per process>]: %d\n"
           "\t[-l,--coll <collectives list/all>]: %s\n"
           "\t[-d,--dtype <datatypes list/all>]: %s\n"
           "\t[-r,--reduction <reductions list/all>]: %s\n"
