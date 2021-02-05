@@ -19,36 +19,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-
-#define private public
-#define protected public
-#define MULTI_GPU_SUPPORT
-#include "oneapi/ccl/native_device_api/export_api.hpp"
-#include "oneapi/ccl/native_device_api/l0/declarations.hpp"
-#include "lp.hpp"
-
-#undef protected
-#undef private
-
-#ifdef STANDALONE_UT
-#define UT_ASSERT(cond, ...) \
-    do { \
-        if (!(cond)) { \
-            std::cerr << __VA_ARGS__ << std::endl; \
-            this->set_error(__PRETTY_FUNCTION__); \
-            dump(); \
-            abort(); \
-        } \
-    } while (0);
-#else
-#define UT_ASSERT(cond, ...) \
-    do { \
-        if (!(cond)) { \
-            this->set_error(__PRETTY_FUNCTION__); \
-        } \
-        { ASSERT_TRUE((cond)) << __VA_ARGS__ << std::endl; } \
-    } while (0);
-#endif
+#include "export_configuration.hpp"
 
 class check_on_exception : public std::exception {
     std::string m_msg;
@@ -80,88 +51,6 @@ public:
         return m_msg.c_str();
     }
 };
-
-template <typename T>
-inline void str_to_array(const char* input, std::vector<T>& output, char delimiter) {
-    if (!input) {
-        return;
-    }
-    std::stringstream ss(input);
-    T temp{};
-    while (ss >> temp) {
-        output.push_back(temp);
-        if (ss.peek() == delimiter) {
-            ss.ignore();
-        }
-    }
-}
-
-template <>
-inline void str_to_array(const char* input, std::vector<std::string>& output, char delimiter) {
-    std::string processes_input(input);
-
-    processes_input.erase(std::remove_if(processes_input.begin(),
-                                         processes_input.end(),
-                                         [](unsigned char x) {
-                                             return std::isspace(x);
-                                         }),
-                          processes_input.end());
-
-    std::replace(processes_input.begin(), processes_input.end(), delimiter, ' ');
-    std::stringstream ss(processes_input);
-
-    while (ss >> processes_input) {
-        output.push_back(processes_input);
-    }
-}
-
-inline int readFromSocket(int socket, unsigned char* buffer, size_t size) {
-    size_t bytesRead = 0;
-    int result;
-    while (bytesRead < size) {
-        result = static_cast<int>(read(socket, buffer + bytesRead, size - bytesRead));
-        if (result < 0) {
-            return -1;
-        }
-
-        bytesRead += static_cast<int>(result);
-    }
-    return 0;
-}
-
-inline int writeToSocket(int socket, unsigned char* buffer, size_t size) {
-    size_t bytesWritten = 0;
-    int result;
-    while (bytesWritten < size) {
-        result = static_cast<int>(write(socket, buffer + bytesWritten, size - bytesWritten));
-        if (result < 0) {
-            return -1;
-        }
-
-        bytesWritten += static_cast<int>(result);
-    }
-    return 0;
-}
-
-inline std::vector<uint8_t> load_binary_file(const std::string& source_path) {
-    std::ifstream stream(source_path, std::ios::in | std::ios::binary);
-
-    std::vector<uint8_t> binary_file;
-    if (!stream.good()) {
-        std::string error("Failed to load binary file: ");
-        error += source_path;
-        throw std::runtime_error(error);
-    }
-
-    size_t length = 0;
-    stream.seekg(0, stream.end);
-    length = static_cast<size_t>(stream.tellg());
-    stream.seekg(0, stream.beg);
-
-    binary_file.resize(length);
-    stream.read(reinterpret_cast<char*>(binary_file.data()), length);
-    return binary_file;
-}
 
 template <class Container>
 typename Container::mapped_type& find_storage_val(Container& storage, int thread_idx) {
@@ -235,6 +124,38 @@ void queue_sync_processing(native::ccl_device::device_cmd_list& list,
     }
 }
 
+ze_command_queue_desc_t select_compute_group_prop(
+    size_t device_index,
+    const native::ccl_device::queue_group_properties& queue_props,
+    const ze_command_queue_desc_t& default_descr) {
+    ze_command_queue_desc_t queue_desc = default_descr;
+
+    // find compute ordinal
+    uint32_t computeOrdinal = std::numeric_limits<uint32_t>::max();
+    for (uint32_t i = 0; i < queue_props.size(); i++) {
+        // Prefer CCS
+        if (queue_props[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE &&
+            queue_props[i].numQueues > 1) {
+            queue_desc.ordinal = i;
+        }
+    }
+    // if CCS not found, look for RCS/CCCS
+    if (computeOrdinal == std::numeric_limits<uint32_t>::max()) {
+        for (uint32_t i = 0; i < queue_props.size(); i++) {
+            if (queue_props[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
+                queue_desc.ordinal = i;
+            }
+        }
+    }
+
+    //calculate index
+    queue_desc.index = device_index % queue_props[queue_desc.ordinal].numQueues;
+
+    // make async
+    queue_desc.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;
+    return queue_desc;
+}
+
 template <class T>
 struct handles_storage {
     using mem_handles_container = std::list<T*>;
@@ -243,7 +164,7 @@ struct handles_storage {
     std::vector<native::ccl_device::device_memory<T>> allocated_storage;
     thread_handles_container per_thread_storage;
 
-    handles_storage(size_t expected_size) {
+    handles_storage(size_t expected_size = 0) {
         allocated_storage.reserve(expected_size);
     }
 

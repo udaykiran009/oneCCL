@@ -34,6 +34,7 @@ function show_help()
 
 out_name=""
 input_name=""
+cases_folder=""
 has_c_option=false # compile
 has_s_option=false # single device
 has_m_option=false # multi device
@@ -102,6 +103,7 @@ function export_ccl_common()
                             "${PROJECT_DIR}/include/oneapi/ccl/types.hpp"
                             "${PROJECT_DIR}/include/oneapi/ccl/type_traits.hpp"
                             "${PROJECT_DIR}/include/oneapi/ccl/device_types.hpp"
+                            "${PROJECT_DIR}/include/oneapi/ccl/lp_types.hpp"
                             "${PROJECT_DIR}/include/oneapi/ccl/device_type_traits.hpp"
                             )
     copy_files "oneapi/ccl" ${CCLPublicSourceArray[@]}
@@ -117,7 +119,8 @@ function export_ccl_common()
 
     copy_dirs "native_device_api" ${NAPISourceDirsArray[@]}
 
-    declare -a SpecialSources=("${PROJECT_DIR}src/native_device_api/api_explicit_instantiation.hpp")
+    declare -a SpecialSources=("${PROJECT_DIR}src/native_device_api/api_explicit_instantiation.hpp"
+                               "${PROJECT_DIR}include/oneapi/ccl/native_device_api/export_api.hpp" )
     copy_files "oneapi/ccl/native_device_api" ${SpecialSources[@]}
 
 
@@ -126,13 +129,11 @@ function export_ccl_common()
 
 function export_test_common()
 {
-    declare -a SourceArray=("${SCRIPT_DIR}/base.hpp"
-                            "${SCRIPT_DIR}/utils.hpp"
-                            "${SCRIPT_DIR}/lp.hpp"
-                            "${SCRIPT_DIR}/fixture.hpp"
-                            "${SCRIPT_DIR}/base_fixture.hpp"
-                            "${SCRIPT_DIR}/common_fixture.hpp"
+    declare -a SourceArray=(
+                            "${SCRIPT_DIR}/base_kernel_fixture.hpp"
                             "${SCRIPT_DIR}/kernel_storage.hpp"
+                            "${SCRIPT_DIR}/kernel_utils.hpp"
+                            "${SCRIPT_DIR}/lp.hpp"
                             )
     cp "${PROJECT_DIR}/src/ccl_utils.cpp" "${export_dir}/native_device_api/l0/"
 
@@ -142,14 +143,17 @@ function export_test_common()
 
 function copy_all_stuff()
 {
-    printf "#define CCL_PRODUCT_FULL 0\n#define CCL_BE_API\n#define CCL_API\n#define CCL_GPU_BF16_TRUNCATE\n#define MULTI_GPU_SUPPORT\n" \
-                                                                                                    > "${export_dir}/oneapi/ccl/config.h"
+    printf "#define CCL_PRODUCT_FULL 0\n#define CCL_HELPER_DLL_EXPORT\n#define CCL_API\n#define CCL_GPU_BF16_TRUNCATE\n#define MULTI_GPU_SUPPORT\n \
+            #define CCL_DEPRECATED_ENUM_FIELD\n" > "${export_dir}/oneapi/ccl/config.h"
+    printf "\n" >"${export_dir}/oneapi/ccl/native_device_api/interop_utils.hpp"
+
     mkdir -p "${export_dir}/kernels"
-    declare -a TestSuite=("${SCRIPT_DIR}/kernels/*_test.hpp"
-                          "${SCRIPT_DIR}/kernels/*_fixture.hpp")
+    mkdir -p "${export_dir}/cases"
+    declare -a TestSuite=("${SCRIPT_DIR}/*_fixture.hpp")
     copy_files  "kernels" ${TestSuite[@]}
 
-    cp -r "${SCRIPT_DIR}/kernels/multi_tile" "${export_dir}/kernels"
+    cp -r "${SCRIPT_DIR}/include" "${export_dir}/cases"
+    cp -r "${SCRIPT_DIR}/../include" "${export_dir}"
 
     find "${PROJECT_DIR}/src/kernels/" -type f -name "*.cl" \
           -o -name "*.spv" \
@@ -158,11 +162,13 @@ function copy_all_stuff()
 
 function compile()
 {
+    local cases_dir=$1
+
     cd ${export_dir}
     echo "Compiling..."
     # Note add: '-W -w' to disable g++ warnings
-     output=$(g++ -g -DMULTI_GPU_SUPPORT=1 -DSTANDALONE_UT -DUT_DEBUG -I${INCLUDE_PATH_TO_LEVEL_ZERO} \
-    -I./ -Ioneapi -Ioneapi/ccl native_device_api/l0/*.cpp -L${LIB_PATH_TO_LEVEL_ZERO} -lze_loader \
+     output=$(g++ -g -DSTANDALONE_UT -DUT_DEBUG -I${INCLUDE_PATH_TO_LEVEL_ZERO} \
+    -I./ -Icases -Icases/include -Iinclude -Icases/$cases_dir -Ioneapi -Ioneapi/ccl native_device_api/l0/*.cpp -L${LIB_PATH_TO_LEVEL_ZERO} -lze_loader \
     -L/usr/lib/ -lpthread  -pthread \
     ./$input_name -o ./$out_name 2>&1)
 
@@ -195,19 +201,23 @@ function main()
     if $has_s_option; then
         echo "kernel_ring_single_device_suite test"
         out_name='kernel_ring_single_device_suite'
+        cases_folder='single_device'
 
-        declare -a TestSource=("${SCRIPT_DIR}/kernel_ring_single_device_suite.cpp" )
+        declare -a TestSource=("${SCRIPT_DIR}/single_device/kernel_ring_single_device_suite.cpp" )
         copy_files "" ${TestSource[@]}
+        cp -r "${SCRIPT_DIR}/single_device" "${export_dir}/cases"
 
         input_name="kernel_ring_single_device_suite.cpp"
     fi
 
     if $has_m_option; then
         echo "kernel_ring_multi_device_suite"
+        cases_folder='multi_device'
 
         out_name="kernel_ring_multi_device_suite"
-        declare -a TestSource=("${SCRIPT_DIR}/kernel_ring_multi_device_suite.cpp" )
+        declare -a TestSource=("${SCRIPT_DIR}/multi_device/kernel_ring_multi_device_suite.cpp" )
         copy_files "" ${TestSource[@]}
+        cp -r "${SCRIPT_DIR}/multi_device" "${export_dir}/cases"
 
         input_name="kernel_ring_multi_device_suite.cpp"
     fi
@@ -228,9 +238,11 @@ function main()
     if $has_t_option; then
         echo "kernel_ring_single_device_multi_tile_suite test"
         out_name="kernel_ring_single_device_multi_tile_suite"
+        cases_folder='multi_tile'
 
-        declare -a TestSource=("${SCRIPT_DIR}/kernel_ring_single_device_multi_tile_suite.cpp" )
+        declare -a TestSource=("${SCRIPT_DIR}/multi_tile/kernel_ring_single_device_multi_tile_suite.cpp" )
         copy_files "" ${TestSource[@]}
+        cp -r "${SCRIPT_DIR}/multi_tile" "${export_dir}/cases"
 
         input_name="kernel_ring_single_device_multi_tile_suite.cpp"
     fi
@@ -258,7 +270,7 @@ export_ccl_common
 export_test_common
 
 if $has_c_option; then
-    compile
+    compile $cases_folder
 fi
 
 if $has_p_option; then

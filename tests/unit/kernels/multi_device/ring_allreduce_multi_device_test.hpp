@@ -1,16 +1,19 @@
 #pragma once
 
 #include "allreduce_fixture.hpp"
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, add);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, mult);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, min);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, max);
 
 namespace ring_multi_device_case {
 
-using native_type = float;
-
-TEST_F(ring_allreduce_multi_device_fixture, ring_allreduce_multi_device_mt) {
+TYPED_TEST_CASE(ring_allreduce_single_process_fixture, TestTypesAndOpsReduction);
+TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_multi_device_mt) {
     using namespace native;
     // test case data
     const size_t buffer_size = 512;
-    const int num_thread = 2;
+    size_t num_thread = 2;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
 
@@ -21,24 +24,23 @@ TEST_F(ring_allreduce_multi_device_fixture, ring_allreduce_multi_device_mt) {
         .ordinal = 0,
     };
 
-    handles_storage<native_type> memory_storage(42 * num_thread);
-    handles_storage<int> flags_storage(42 * num_thread);
-    std::map<int, std::vector<int>> comm_param_storage;
-
-    std::shared_ptr<ccl_context> ctx;
-
     // check global driver
     auto drv_it = local_platform->drivers.find(0);
     UT_ASSERT(drv_it != local_platform->drivers.end(), "Driver by idx 0 must exist!");
     auto driver = drv_it->second;
 
     // device per thread
-    UT_ASSERT(driver->devices.size() == local_affinity.size(),
-              "Count: %" << driver->devices.size() << ", enabled: " << local_affinity.size()
-                         << "Device count is not equal to affinity mask!");
-    UT_ASSERT(driver->devices.size() == num_thread,
-              "Devies count: " << driver->devices.size()
-                               << " should be equal with thread count: " << num_thread);
+    num_thread = driver->devices.size();
+    UT_ASSERT(
+        driver->devices.size() > 1,
+        "MultileDevice test scope require at least 2 devices in local platform! Use correct \""
+            << ut_device_affinity_mask_name << "\"");
+
+    handles_storage<native_type> memory_storage(42 * num_thread);
+    handles_storage<int> flags_storage(42 * num_thread);
+    std::map<int, std::vector<int>> comm_param_storage;
+
+    std::shared_ptr<ccl_context> ctx;
 
     // device memory stencil data
     std::vector<native_type> send_values(buffer_size);

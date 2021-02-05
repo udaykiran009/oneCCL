@@ -46,9 +46,9 @@ DEFINE_KERNEL_TYPE_A2A(float64, double)
 
 } // namespace a2a_bcast_case
 
-TYPED_TEST_CASE(a2a_bcast_single_device_fixture, TestTypes);
+TYPED_TEST_CASE(a2a_bcast_single_process_fixture, TestTypes);
 
-TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
+TYPED_TEST(a2a_bcast_single_process_fixture, a2a_bcast_single_device_mt) {
     using namespace native;
     // Type of our test
     using native_type = TypeParam;
@@ -73,9 +73,9 @@ TYPED_TEST(a2a_bcast_single_device_fixture, a2a_bcast_single_device_mt) {
     ccl_device_driver& driver = *drv_it->second;
 
     // check devices per process
-    UT_ASSERT(driver.devices.size() == this->local_affinity.size(),
-              "Count: %" << driver.devices.size() << ", bits: " << this->local_affinity.size()
-                         << "Device count is not equal to affinity mask!");
+    UT_ASSERT(driver.devices.size() > 0,
+              "SingleDevice test scope require at least 1 device in local platform! Use correct \""
+                  << ut_device_affinity_mask_name << "\"");
 
     std::vector<size_t> thread_indices;
 

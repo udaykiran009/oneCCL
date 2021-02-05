@@ -1,6 +1,6 @@
 #pragma once
 #include "../topology_utils.hpp"
-#include "stubs/stub_platform.hpp"
+#include "../stubs/stub_platform.hpp"
 
 namespace topology_suite {
 

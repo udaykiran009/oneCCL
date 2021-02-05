@@ -1,36 +1,31 @@
 #pragma once
 
-#include "../base_fixture.hpp"
+#include "../base_kernel_fixture.hpp"
+#include "data_storage.hpp"
 
 template <class DType>
-class ring_allreduce_single_device_fixture : public common_fixture {
+class ring_allreduce_single_process_fixture : public platform_fixture,
+                                              public data_storage<typename DType::first_type> {
 protected:
-    ring_allreduce_single_device_fixture()
-            : common_fixture(get_global_device_indices() /*"[0:0]"*/) {}
+    using native_type = typename DType::first_type;
+    using op_type = typename DType::second_type;
+    using storage = data_storage<native_type>;
 
-    ~ring_allreduce_single_device_fixture() {}
+    ring_allreduce_single_process_fixture() : platform_fixture(get_global_device_indices()) {}
+
+    ~ring_allreduce_single_process_fixture() = default;
 
     void SetUp() override {
-        create_global_platform();
-        local_affinity = global_affinities.at(0);
-        create_local_platform();
-        create_module_descr("kernels/ring_allreduce.spv");
-    }
+        platform_fixture::SetUp();
 
-    void TearDown() override {}
-};
+        // get affinity for the first (only first process) in affinity mask
+        const auto& local_affinity = cluster_device_indices[0];
+        create_local_platform(local_affinity);
 
-class ring_allreduce_multi_device_fixture : public common_fixture {
-protected:
-    ring_allreduce_multi_device_fixture()
-            : common_fixture(get_global_device_indices() /*"[0:0],[0:1]"*/) {}
+        // prepare preallocated data storage
+        storage::initialize_data_storage(get_local_devices().size());
 
-    ~ring_allreduce_multi_device_fixture() {}
-
-    void SetUp() override {
-        create_global_platform();
-        local_affinity = global_affinities.at(0);
-        create_local_platform();
+        // prepare binary kernel source
         create_module_descr("kernels/ring_allreduce.spv");
     }
 
@@ -38,75 +33,51 @@ protected:
 };
 
 template <class DType>
-class ring_allreduce_single_device_multi_tile_fixture : public common_fixture {
+class a2a_allreduce_single_process_fixture : public platform_fixture, public data_storage<DType> {
 protected:
-    ring_allreduce_single_device_multi_tile_fixture()
-            : common_fixture(get_global_device_indices() /*"[0:0:0],[0:0:1]"*/) {}
+    using native_type = DType;
+    using storage = data_storage<native_type>;
 
-    ~ring_allreduce_single_device_multi_tile_fixture() {}
+    a2a_allreduce_single_process_fixture() : platform_fixture(get_global_device_indices()) {}
+
+    ~a2a_allreduce_single_process_fixture() = default;
 
     void SetUp() override {
-        create_global_platform();
-        const auto first_node_affinity = global_affinities.at(0);
-        local_affinity = first_node_affinity;
-        const auto second_node_affinity = global_affinities.at(1);
-        local_affinity.insert(second_node_affinity.begin(), second_node_affinity.end());
-        create_local_platform();
+        platform_fixture::SetUp();
+
+        // get affinity for the first (only first process) in affinity mask
+        const auto& local_affinity = cluster_device_indices[0];
+        create_local_platform(local_affinity);
+
+        // prepare preallocated data storage
+        storage::initialize_data_storage(get_local_devices().size());
+
+        create_module_descr("kernels/a2a_allreduce.spv");
+    }
+
+    void TearDown() override {}
+};
+
+template <class DType>
+class ring_allreduce_multi_process_fixture : public multi_platform_fixture,
+                                             public data_storage<typename DType::first_type> {
+protected:
+    using native_type = typename DType::first_type;
+    using op_type = typename DType::second_type;
+    using storage = data_storage<native_type>;
+
+    ring_allreduce_multi_process_fixture() : multi_platform_fixture(get_global_device_indices()) {}
+
+    ~ring_allreduce_multi_process_fixture() override {}
+
+    void SetUp() override {
+        multi_platform_fixture::SetUp();
+
+        // prepare preallocated data storage
+        storage::initialize_data_storage(get_local_devices().size());
+
+        // prepare binary kernel source
         create_module_descr("kernels/ring_allreduce.spv");
-    }
-
-    void TearDown() override {}
-};
-
-class a2a_allreduce_single_device_fixture : public common_fixture {
-protected:
-    a2a_allreduce_single_device_fixture()
-            : common_fixture(get_global_device_indices() /*"[0:0]"*/) {}
-
-    ~a2a_allreduce_single_device_fixture() {}
-
-    void SetUp() override {
-        create_global_platform();
-        local_affinity = global_affinities.at(0);
-        create_local_platform();
-        create_module_descr("kernels/a2a_allreduce.spv");
-    }
-
-    void TearDown() override {}
-};
-
-class a2a_allreduce_multi_device_fixture : public common_fixture {
-protected:
-    a2a_allreduce_multi_device_fixture()
-            : common_fixture(get_global_device_indices() /*"[0:0],[0:1]"*/) {}
-
-    ~a2a_allreduce_multi_device_fixture() {}
-
-    void SetUp() override {
-        create_global_platform();
-        local_affinity = global_affinities.at(0);
-        create_local_platform();
-        create_module_descr("kernels/a2a_allreduce.spv");
-    }
-
-    void TearDown() override {}
-};
-
-class a2a_allreduce_single_device_multi_tile_fixture : public common_fixture {
-protected:
-    a2a_allreduce_single_device_multi_tile_fixture()
-            : common_fixture(get_global_device_indices() /*"[0:0:0],[0:0:1]"*/) {}
-
-    ~a2a_allreduce_single_device_multi_tile_fixture() {}
-
-    void SetUp() override {
-        create_global_platform();
-        const auto first_node_affinity = global_affinities.at(0);
-        local_affinity = first_node_affinity;
-        const auto second_node_affinity = global_affinities.at(1);
-        local_affinity.insert(second_node_affinity.begin(), second_node_affinity.end());
-        create_local_platform();
-        create_module_descr("kernels/a2a_allreduce.spv");
     }
 
     void TearDown() override {}

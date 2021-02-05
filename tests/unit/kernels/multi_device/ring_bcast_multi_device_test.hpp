@@ -4,19 +4,13 @@
 namespace ring_multi_device_case {
 
 using native_type = float;
-
-TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
+using ring_bcast_float_fixture = ring_bcast_single_process_fixture<native_type>;
+TEST_F(ring_bcast_float_fixture, ring_bcast_multi_device_mt) {
     using namespace native;
     const size_t buffer_size = 512;
-    const int num_thread = 2;
+    int num_thread = 2;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
-
-    handles_storage<native_type> memory_storage(42 * num_thread);
-    handles_storage<int> flags_storage(42 * num_thread);
-    std::map<int, std::vector<int>> comm_param_storage;
-
-    std::shared_ptr<ccl_context> ctx;
 
     // check global driver
     auto drv_it = local_platform->drivers.find(0);
@@ -25,12 +19,17 @@ TEST_F(ring_bcast_multi_device_fixture, ring_bcast_multi_device_mt) {
     int root = 2;
 
     // device per thread
-    UT_ASSERT(driver->devices.size() == local_affinity.size(),
-              "Count: %" << driver->devices.size() << ", enabled: " << local_affinity.size()
-                         << "Device count is not equal to affinity mask!");
-    UT_ASSERT(driver->devices.size() == num_thread,
-              "Devies count: " << driver->devices.size()
-                               << " should be equal with thread count: " << num_thread);
+    num_thread = driver->devices.size();
+    UT_ASSERT(
+        driver->devices.size() > 1,
+        "MultileDevice test scope require at least 2 devices in local platform! Use correct \""
+            << ut_device_affinity_mask_name << "\"");
+
+    handles_storage<native_type> memory_storage(42 * num_thread);
+    handles_storage<int> flags_storage(42 * num_thread);
+    std::map<int, std::vector<int>> comm_param_storage;
+
+    std::shared_ptr<ccl_context> ctx;
 
     // device memory stencil data
     std::vector<native_type> send_values(buffer_size);

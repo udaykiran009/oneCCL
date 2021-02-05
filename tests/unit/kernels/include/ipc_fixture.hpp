@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../base_fixture.hpp"
+#include "../base_kernel_fixture.hpp"
+#include "kernel_utils.hpp"
 
 class ring_ipc_allreduce_single_device_fixture : public ipc_fixture {
 protected:

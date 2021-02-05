@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common_fixture.hpp"
+#include "multi_process_fixture.hpp"
 
 #ifdef STANDALONE_UT
 namespace ccl {
@@ -13,6 +13,8 @@ struct native_type_info {
 #else
 #include "oneapi/ccl/type_traits.hpp"
 #endif
+
+#include "lp.hpp"
 
 using bfloat16 = ccl::bfloat16;
 

@@ -42,7 +42,10 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
 
     using device_ipc_memory = ipc_memory<ccl_device, ccl_context>;
     using device_ipc_memory_handle = ipc_memory_handle<ccl_device, ccl_context>;
+
+    using queue_group_properties = std::vector<ze_command_queue_group_properties_t>;
     using device_queue = queue<ccl_device, ccl_context>;
+
     using device_queue_fence = queue_fence<ccl_device, ccl_context>;
     using device_cmd_list = cmd_list<ccl_device, ccl_context>;
     using device_module = module<ccl_device, ccl_context>;
@@ -154,6 +157,8 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
     device_queue_fence& get_fence(const device_queue& queue, std::shared_ptr<ccl_context> ctx);
     device_queue& get_cmd_queue(const ze_command_queue_desc_t& properties,
                                 std::shared_ptr<ccl_context> ctx);
+    queue_group_properties get_queue_group_prop() const;
+
     device_cmd_list create_cmd_list(
         std::shared_ptr<ccl_context> ctx,
         const ze_command_list_desc_t& properties = get_default_list_desc());

@@ -1,5 +1,3 @@
-#include "base.hpp"
-#include "fixture.hpp"
 #include "ring_allgatherv_single_device_test.hpp"
 #include "ring_allreduce_single_device_test.hpp"
 //TODO: have to fix alltoallv launch, then uncoment
@@ -9,7 +7,7 @@
 #include "ring_reduce_scatter_single_device_test.hpp"
 
 int main(int ac, char* av[]) {
-    set_test_device_indices(getenv("L0_CLUSTER_AFFINITY_MASK"));
+    set_test_device_indices(getenv(ut_device_affinity_mask_name));
 #ifndef STANDALONE_UT
     testing::InitGoogleTest(&ac, av);
     return RUN_ALL_TESTS();

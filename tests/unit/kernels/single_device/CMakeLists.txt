@@ -13,6 +13,7 @@ include_directories(${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.
                     ${CMAKE_CURRENT_BINARY_DIR}
                     ${PROJECT_SOURCE_DIR}/include
                     ${PROJECT_SOURCE_DIR}/src
+                    ${PROJECT_SOURCE_DIR}/tests/unit/include
                     ${PROJECT_SOURCE_DIR}/tests/unit/kernels
                     ${PROJECT_SOURCE_DIR}/tests/unit/kernels/include
                     ${PROJECT_SOURCE_DIR}/src/atl)

@@ -1,3 +1,4 @@
+#pragma once
 #define once
 
 #include "oneapi/ccl/lp_types.hpp"

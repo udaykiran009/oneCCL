@@ -1,5 +1,5 @@
 #pragma once
-#include "ipc_fixture.hpp"
+#include "multi_process_fixture.hpp"
 #include "common/comm/l0/devices/communication_structs/ipc_server.hpp"
 #include "common/comm/l0/devices/communication_structs/ipc_connection.hpp"
 
@@ -9,7 +9,7 @@ using native_type = int;
 
 constexpr size_t connect_iteration = 100;
 
-TEST_F(ipc_handles_fixture, ipc_unix_server_test) {
+TEST_F(multi_platform_fixture, ipc_unix_server_test) {
     using namespace native;
     using namespace net;
 

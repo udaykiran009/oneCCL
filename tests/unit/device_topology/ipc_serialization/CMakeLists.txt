@@ -14,7 +14,7 @@ include_directories(${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.
                     ${PROJECT_SOURCE_DIR}/include
                     ${PROJECT_SOURCE_DIR}/src
                     ${PROJECT_SOURCE_DIR}/src/atl
-                    ${PROJECT_SOURCE_DIR}/tests/unit/l0)
+                    ${PROJECT_SOURCE_DIR}/tests/unit/include)
 
 file(GLOB sources "*.c" "*.cpp")
 set (dependencies_sources

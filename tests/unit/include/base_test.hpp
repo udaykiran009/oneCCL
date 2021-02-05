@@ -1,10 +1,12 @@
+#pragma once
 
-void set_test_device_indices(const char *indices_csv = nullptr);
+#include "export_configuration.hpp"
 
 #ifndef STANDALONE_UT
 #include <gtest/gtest.h>
 #else // STANDALONE_UT
 #include <tuple>
+
 namespace testing {
 class Test {
 public:

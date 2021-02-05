@@ -1,57 +1,29 @@
 #pragma once
 
-#include "../base_fixture.hpp"
+#include "../base_kernel_fixture.hpp"
+#include "data_storage.hpp"
 
 template <class DType>
-class ring_allgatherv_single_device_fixture : public common_fixture {
+class ring_allgatherv_single_process_fixture : public platform_fixture, public data_storage<DType> {
 protected:
-    ring_allgatherv_single_device_fixture()
-            : common_fixture(get_global_device_indices() /*"[0:0]"*/) {}
+    using native_type = DType;
+    using storage = data_storage<native_type>;
 
-    ~ring_allgatherv_single_device_fixture() {}
+    ring_allgatherv_single_process_fixture() : platform_fixture(get_global_device_indices()) {}
+
+    ~ring_allgatherv_single_process_fixture() = default;
 
     void SetUp() override {
-        create_global_platform();
-        local_affinity = global_affinities.at(0);
-        create_local_platform();
-        create_module_descr("kernels/ring_allgatherv.spv");
-    }
+        platform_fixture::SetUp();
 
-    void TearDown() override {}
-};
+        // get affinity for the first (only first process) in affinity mask
+        const auto& local_affinity = cluster_device_indices[0];
+        create_local_platform(local_affinity);
 
-class ring_allgatherv_multi_device_fixture : public common_fixture {
-protected:
-    ring_allgatherv_multi_device_fixture()
-            : common_fixture(get_global_device_indices() /*"[0:0],[0:1]"*/) {}
+        // prepare preallocated data storage
+        storage::initialize_data_storage(get_local_devices().size());
 
-    ~ring_allgatherv_multi_device_fixture() {}
-
-    void SetUp() override {
-        create_global_platform();
-        local_affinity = global_affinities.at(0);
-        create_local_platform();
-        create_module_descr("kernels/ring_allgatherv.spv");
-    }
-
-    void TearDown() override {}
-};
-
-template <class DType>
-class ring_allgatherv_single_device_multi_tile_fixture : public common_fixture {
-protected:
-    ring_allgatherv_single_device_multi_tile_fixture()
-            : common_fixture(get_global_device_indices() /*"[0:0:0],[0:0:1]"*/) {}
-
-    ~ring_allgatherv_single_device_multi_tile_fixture() {}
-
-    void SetUp() override {
-        create_global_platform();
-        const auto first_node_affinity = global_affinities.at(0);
-        local_affinity = first_node_affinity;
-        const auto second_node_affinity = global_affinities.at(1);
-        local_affinity.insert(second_node_affinity.begin(), second_node_affinity.end());
-        create_local_platform();
+        // prepare binary kernel source
         create_module_descr("kernels/ring_allgatherv.spv");
     }
 

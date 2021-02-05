@@ -2,6 +2,8 @@
 #include <memory>
 #include <sstream>
 
+#include "allreduce_fixture.hpp"
+
 #define HOST_CTX
 #include "kernels/a2a_helpers.h"
 
@@ -16,13 +18,12 @@
 
 /* 3) just use it! */
 
-#include "allreduce_fixture.hpp"
-
 namespace a2a_single_device_case {
 
 using native_type = float;
 
-TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
+using a2a_allreduce_float_fixture = a2a_allreduce_single_process_fixture<native_type>;
+TEST_F(a2a_allreduce_float_fixture, a2a_allreduce_single_device_mt) {
     using namespace native;
     std::shared_ptr<ccl_context> ctx;
 
@@ -43,11 +44,6 @@ TEST_F(a2a_allreduce_single_device_fixture, a2a_allreduce_single_device_mt) {
     auto drv_it = local_platform->drivers.find(0);
     UT_ASSERT(drv_it != local_platform->drivers.end(), "Driver by idx 0 must exist!");
     ccl_device_driver& driver = *drv_it->second;
-
-    // check devices per process
-    UT_ASSERT(driver.devices.size() == local_affinity.size(),
-              "Count: %" << driver.devices.size() << ", bits: " << local_affinity.size()
-                         << "Device count is not equal to affinity mask!");
 
     std::vector<size_t> thread_indices;
 

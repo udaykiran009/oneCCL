@@ -607,6 +607,29 @@ CCL_BE_API ccl_device::device_queue& ccl_device::get_cmd_queue(
     return it->second;
 }
 
+CCL_BE_API ccl_device::queue_group_properties ccl_device::get_queue_group_prop() const {
+    uint32_t numQueueGroups = 0;
+    ze_result_t ret = zeDeviceGetCommandQueueGroupProperties(handle, &numQueueGroups, nullptr);
+    if (ret != ZE_RESULT_SUCCESS) {
+        throw std::runtime_error(
+            std::string("cannot execute zeDeviceGetCommandQueueGroupProperties, error: ") +
+            native::to_string(ret));
+    }
+
+    ccl_device::queue_group_properties props;
+    if (numQueueGroups != 0) {
+        props.resize(numQueueGroups);
+        ret = zeDeviceGetCommandQueueGroupProperties(handle, &numQueueGroups, props.data());
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw std::runtime_error(
+                std::string(
+                    "cannot get groups by zeDeviceGetCommandQueueGroupProperties, error: ") +
+                native::to_string(ret));
+        }
+    }
+    return props;
+}
+
 CCL_BE_API
 ccl_device::context_storage_type ccl_device::get_contexts() {
     return get_ctx().lock();

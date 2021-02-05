@@ -1,12 +1,13 @@
-#include "base.hpp"
-#include "fixture.hpp"
+#include "base_test.hpp"
+#include "export_configuration.hpp"
 #include "subdevice_test.hpp"
 #include "platform_test.hpp"
 #include <iostream>
 #include <string.h>
 
 int main(int ac, char* av[]) {
-    set_test_device_indices(getenv("L0_CLUSTER_AFFINITY_MASK"));
+    set_test_device_indices(getenv(ut_device_affinity_mask_name));
+
     if (ac == 2 && strcmp(av[1], "--dump_table") == 0) {
         if (setenv("NATIVE_API_ARGS", "dump_table", 0)) {
             std::cout << "Unable to set environment variable NATIVE_API_ARGS" << std::endl;

@@ -3,14 +3,22 @@
 #include <memory>
 #include <sstream>
 
-#include "ipc_fixture.hpp"
+#include "allreduce_fixture.hpp"
+
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, add);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, mult);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, min);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, max);
 
 namespace ring_single_device_case {
 
-using native_type = float;
-
-TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_device) {
+TYPED_TEST_CASE(ring_allreduce_multi_process_fixture, TestTypesAndOpsReduction);
+TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_device) {
     using namespace native;
+
+    // Type of our test
+    using native_type = typename TypeParam::first_type;
+    using op_type = typename TypeParam::second_type;
 
     // test case data
     const size_t buffer_size = 512;
@@ -34,11 +42,6 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
     auto drv_it = local_platform->drivers.find(0);
     UT_ASSERT(drv_it != local_platform->drivers.end(), "Driver by idx 0 must exist!");
     ccl_device_driver& driver = *drv_it->second;
-
-    // check devices per process
-    UT_ASSERT(driver.devices.size() == local_affinity.size(),
-              "Count: " << driver.devices.size() << ", bits: " << local_affinity.size()
-                        << "Device count is not equal to affinity mask!");
 
     std::vector<size_t> thread_indices;
 
@@ -145,7 +148,7 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
     // send to other process
     output << "PID: " << pid << " write to socket bytes: " << serialized_raw_handles.size()
            << std::endl;
-    int ret = writeToSocket(
+    int ret = utils::writeToSocket(
         communication_socket, serialized_raw_handles.data(), serialized_raw_handles.size());
     UT_ASSERT(ret == 0, "Cannot writeToSocket: " << strerror(errno));
 
@@ -154,7 +157,8 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
                                               0); // size to receive must be equal with send
     output << "PID: " << pid << " read from socket,expected bytes: " << received_raw_handles.size()
            << std::endl;
-    readFromSocket(communication_socket, received_raw_handles.data(), received_raw_handles.size());
+    utils::readFromSocket(
+        communication_socket, received_raw_handles.data(), received_raw_handles.size());
     UT_ASSERT(ret == 0, "Cannot readFromSocket" << strerror(errno));
 
     std::shared_ptr<native::ccl_device_platform> ipc_platform;
@@ -409,8 +413,8 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
                 //sync processes
                 uint8_t data = is_child(), ret_data = is_child();
                 {
-                    writeToSocket(communication_socket, &data, sizeof(data));
-                    readFromSocket(communication_socket, &ret_data, sizeof(ret_data));
+                    utils::writeToSocket(communication_socket, &data, sizeof(data));
+                    utils::readFromSocket(communication_socket, &ret_data, sizeof(ret_data));
                     UT_ASSERT(data != ret_data, "invalid sync");
                 }
 
@@ -472,11 +476,11 @@ TEST_F(ring_ipc_allreduce_single_device_fixture, ring_ipc_allreduce_single_devic
 
     uint8_t ready = 0;
     if (is_child()) {
-        readFromSocket(communication_socket, &ready, sizeof(ready));
+        utils::readFromSocket(communication_socket, &ready, sizeof(ready));
     }
     else {
         ready = 1;
-        writeToSocket(communication_socket, &ready, sizeof(ready));
+        utils::writeToSocket(communication_socket, &ready, sizeof(ready));
     }
     output << "PID: " << pid << ", finished, status: " << ready << std::endl;
     //printout

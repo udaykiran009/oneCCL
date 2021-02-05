@@ -1,5 +1,5 @@
 #pragma once
-#include "ipc_fixture.hpp"
+#include "multi_process_fixture.hpp"
 
 namespace ipc_suite {
 

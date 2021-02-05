@@ -1,5 +1,5 @@
 #pragma once
-#include "ipc_fixture.hpp"
+#include "multi_process_fixture.hpp"
 #include "common/comm/l0/devices/communication_structs/ipc_server.hpp"
 #include "common/comm/l0/devices/communication_structs/ipc_connection.hpp"
 
@@ -7,7 +7,7 @@ namespace ipc_suite {
 
 using native_type = int;
 
-TEST_F(ipc_handles_fixture, ipc_unix_server_handles_serialize) {
+TEST_F(multi_platform_fixture, ipc_unix_server_handles_serialize) {
     using namespace native;
     using namespace net;
 
@@ -25,9 +25,9 @@ TEST_F(ipc_handles_fixture, ipc_unix_server_handles_serialize) {
     ccl_device_driver& driver = *drv_it->second;
 
     // check devices per process
-    UT_ASSERT(driver.devices.size() == local_affinity.size(),
-              "Device count is not equal to affinity mask!" << driver.devices.size()
-                                                            << local_affinity.size());
+    UT_ASSERT(driver.devices.size() > 1,
+              "IPC test scope require at least 2 devices in local platform! Use correct \""
+                  << ut_device_affinity_mask_name << "\"");
 
     // initialize device memory
     using mem_handles_container = std::vector<ccl_device::device_memory<native_type>>;

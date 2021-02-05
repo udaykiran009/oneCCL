@@ -1,17 +1,13 @@
 #pragma once
-#define private public
-#define protected public
+
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "common_fixture.hpp"
+#include "common_platform_fixture.hpp"
 
-#undef protected
-#undef private
-
-class default_fixture : public common_fixture {
+class default_fixture : public platform_fixture {
 protected:
-    default_fixture() : common_fixture("") {}
+    default_fixture() : platform_fixture("") {}
 
     virtual ~default_fixture() {}
     void SetUp() override {
@@ -19,23 +15,24 @@ protected:
     }
 };
 
-class ipc_handles_fixture : public common_fixture {
+class multi_platform_fixture : public platform_fixture {
 public:
     int wait_for_child_fork(int pid) {
         return 0;
     }
 
 protected:
-    ipc_handles_fixture() : common_fixture(get_global_device_indices()) {}
+    multi_platform_fixture(const std::string& affinities = std::string(get_global_device_indices()))
+            : platform_fixture(affinities) {}
 
-    virtual ~ipc_handles_fixture() override {}
+    virtual ~multi_platform_fixture() override {}
 
     bool is_child() const {
         return !pid;
     }
 
     inline void wait_phase(unsigned char phase) {
-        int ret = writeToSocket(communication_socket, &phase, sizeof(phase));
+        int ret = utils::writeToSocket(communication_socket, &phase, sizeof(phase));
         if (ret != 0) {
             std::cerr << "Cannot writeToSocket on phase: " << (int)phase
                       << ", error: " << strerror(errno) << std::endl;
@@ -44,7 +41,7 @@ protected:
         }
 
         unsigned char get_phase = phase + 1;
-        ret = readFromSocket(communication_socket, &get_phase, sizeof(get_phase));
+        ret = utils::readFromSocket(communication_socket, &get_phase, sizeof(get_phase));
         if (ret != 0) {
             std::cerr << "Cannot readFromSocket on phase: " << (int)phase
                       << ", error: " << strerror(errno) << std::endl;
@@ -59,9 +56,10 @@ protected:
         }
     }
 
-    void SetUp() override {
-        if (global_affinities.size() != 2) {
-            std::cerr << __FUNCTION__ << " - not enough devices in L0_CLUSTER_AFFINITY_MASK."
+    virtual void SetUp() override {
+        if (cluster_device_indices.size() != 2) {
+            std::cerr << __FUNCTION__ << " - not enough devices in \""
+                      << ut_device_affinity_mask_name << "\"."
                       << "Two devices required at least" << std::endl;
             abort();
         }
@@ -84,7 +82,6 @@ protected:
         else if (pid == 0) //child
         {
             close(sockets[TO_CHILD]);
-            local_affinity = global_affinities[TO_CHILD];
 
             pid_pair[TO_CHILD] = getpid();
             my_pid = &pid_pair[TO_CHILD];
@@ -93,12 +90,12 @@ protected:
             communication_socket = sockets[TO_PARENT];
 
             // create local to child process driver & devices
-            create_global_platform();
-            create_local_platform();
+            platform_fixture::SetUp();
+            const auto& local_affinity = cluster_device_indices[TO_CHILD];
+            create_local_platform(local_affinity);
         }
         else {
             close(sockets[TO_PARENT]);
-            local_affinity = global_affinities[TO_PARENT];
 
             pid_pair[TO_CHILD] = pid;
 
@@ -108,12 +105,13 @@ protected:
             communication_socket = sockets[TO_CHILD];
 
             // create local to parent process driver & devices
-            create_global_platform();
-            create_local_platform();
+            platform_fixture::SetUp();
+            const auto& local_affinity = cluster_device_indices[TO_PARENT];
+            create_local_platform(local_affinity);
         }
     }
 
-    void TearDown() override {
+    virtual void TearDown() override {
         //TODO waitpid for parent
         if (pid) {
             std::cout << "PID: " << *my_pid << " wait child: " << *other_pid << std::endl;

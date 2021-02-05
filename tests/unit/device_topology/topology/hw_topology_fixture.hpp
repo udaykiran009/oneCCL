@@ -1,7 +1,6 @@
 #pragma once
-#define private public
-#define protected public
-#include "common_fixture.hpp"
+
+#include "common_platform_fixture.hpp"
 
 #include "stubs/stub_platform.hpp"
 #include "stubs/stub_context.hpp"
@@ -9,6 +8,8 @@
 #include <map>
 
 #include "oneapi/ccl/config.h"
+#define private public
+#define protected public
 #include "common/comm/l0/topology/ring_topology.hpp"
 #include "common/comm/l0/device_community.hpp"
 #include "common/comm/l0/context/device_group_ctx.hpp"
@@ -22,12 +23,12 @@
 #undef protected
 #undef private
 
-class router_fixture : public common_fixture {
+class router_fixture : public platform_fixture {
 public:
     using tracer::set_error;
 
     router_fixture()
-            : common_fixture(get_global_device_indices() /*"[0:0:0],[0:1:0],[0:2:0],[0:3:0]"*/) {}
+            : platform_fixture(get_global_device_indices() /*"[0:0:0],[0:1:0],[0:2:0],[0:3:0]"*/) {}
 
     virtual ~router_fixture() {}
 
@@ -37,7 +38,6 @@ public:
 
     virtual void SetUp() override {
         create_global_platform();
-        local_affinity = global_affinities.at(0);
         create_local_platform();
 
         const auto& modules =

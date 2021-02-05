@@ -1,7 +1,7 @@
 #pragma once
 #include <initializer_list>
 #include "../topology_utils.hpp"
-#include "stubs/stub_platform.hpp"
+#include "../stubs/stub_platform.hpp"
 #include "common/comm/l0/topology/ring/ring_construction_utils.hpp"
 
 namespace topology_suite {

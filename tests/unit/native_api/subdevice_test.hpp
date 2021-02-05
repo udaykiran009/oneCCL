@@ -12,9 +12,9 @@ TEST_F(allreduce_single_device_fixture, subdevice_2_tiles_test) {
     UT_ASSERT(drv_it != local_platform->drivers.end(), "Driver by idx 0 must exist!");
     auto driver = drv_it->second;
 
-    UT_ASSERT(driver->devices.size() == local_affinity.size(),
-              "Count: %" << driver->devices.size() << ", bits: " << local_affinity.size()
-                         << "Device count is not equal to affinity mask!");
+    UT_ASSERT(driver.devices.size() > 0,
+              "SingleDevice test scope require at least 1 device in local platform! Use correct \"" <<
+               ut_device_affinity_mask_name << "\"");
 
     ccl_device_driver::device_ptr one_device = driver->devices.begin()->second;
     auto &subdevices = one_device->get_subdevices();

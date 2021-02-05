@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include "allreduce_fixture.hpp"
+#include "single_device_utils.hpp"
 
 DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, sum);
 DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, prod);
@@ -15,219 +16,142 @@ namespace ring_single_device_case {
 
 namespace ring_allreduce_case {}
 
-TYPED_TEST_CASE(ring_allreduce_single_device_fixture, TestTypesAndOpsReduction);
+TYPED_TEST_CASE(ring_allreduce_single_process_fixture, TestTypesAndOpsReduction);
 
-TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt) {
+TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_single_device_mt) {
     using namespace native;
 
     // Type of our test
     using native_type = typename TypeParam::first_type;
     using op_type = typename TypeParam::second_type;
 
+    // check test preconditions
+    const auto& devices = this->get_local_devices();
+    UT_ASSERT(devices.size() > 0,
+              "SingleDevice test scope require at least 1 device in local platform! Use correct \""
+                  << ut_device_affinity_mask_name << "\"");
+
+    UT_ASSERT(this->get_unique_local_devices().size() == 1,
+              "Devices must not be unique to launch single device case");
+
     // test case data
     const size_t buffer_size = 512 * 4;
-    const int num_thread = 4;
+    const size_t num_thread = devices.size();
+    constexpr size_t comm_group_count = 3;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
 
-    ze_device_mem_alloc_desc_t mem_descr{
-        .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
-        .pNext = NULL,
-        .flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED,
-        .ordinal = 0,
-    };
-
-    handles_storage<native_type> memory_storage(mem_group_count * num_thread);
-    handles_storage<int> flags_storage(flag_group_count * num_thread);
-    std::map<int, std::vector<int>> comm_param_storage;
-
+    // fill device memory stencil data
     std::shared_ptr<ccl_context> ctx;
-
-    // check global driver
-    auto drv_it = this->local_platform->drivers.find(0);
-    UT_ASSERT(drv_it != this->local_platform->drivers.end(), "Driver by idx 0 must exist!");
-    ccl_device_driver& driver = *drv_it->second;
-
-    // check devices per process
-    UT_ASSERT(driver.devices.size() == this->local_affinity.size(),
-              "Count: %" << driver.devices.size() << ", bits: " << this->local_affinity.size()
-                         << "Device count is not equal to affinity mask!");
-
-    std::vector<size_t> thread_indices;
-
-    // device memory stencil data
     std::vector<native_type> send_values(buffer_size);
     std::iota(send_values.begin(), send_values.end(), 1);
     std::vector<native_type> recv_values(buffer_size, 0);
 
-    // allocate device memory
-    auto dev_it = driver.devices.begin();
-    ccl_device& device = *dev_it->second;
+    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+        //initialize communication params
+        int rank_idx = thread_idx;
+        int rank_size = num_thread;
+        size_t elem_count = buffer_size;
+        this->output << "Device id" << ccl::to_string(devices[thread_idx]->get_device_path())
+                     << ", rank id" << rank_idx << std::endl;
 
-    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-        thread_indices.push_back(thread_idx);
-        try {
-            //initialize communication params
-            int rank_idx = thread_idx;
-            int rank_size = num_thread;
-            size_t elem_count = buffer_size;
-            this->output << "Device id" << ccl::to_string(device.get_device_path()) << ", rank id"
-                         << rank_idx << std::endl;
+        this->register_shared_comm_data(rank_idx, rank_idx, rank_size, elem_count);
 
-            comm_param_storage[thread_idx].push_back(rank_idx);
-            comm_param_storage[thread_idx].push_back(rank_size);
-            comm_param_storage[thread_idx].push_back(elem_count);
+        // allocate flags & memory
+        ze_device_mem_alloc_desc_t mem_uncached_descr{
+            .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
+            .pNext = NULL,
+            .flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED,
+            .ordinal = 0,
+        };
 
-            //allocate flags & memory
-            // memory
-            auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
-            auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
+        //allocate flags & memory
+        // memory
+        auto mem_send = devices[thread_idx]->template alloc_memory<native_type>(
+            buffer_size, sizeof(native_type), ctx);
+        auto mem_recv = devices[thread_idx]->template alloc_memory<native_type>(
+            buffer_size, sizeof(native_type), ctx);
 
-            /* FIXME: use 2x size for tmp buffer for parallel recv and reduce+send */
-            /* consider to remove tmp buffer further */
-            auto temp_recv = device.alloc_memory<native_type>(
-                2 * buffer_size / num_thread, sizeof(native_type), ctx, mem_descr);
+        /* FIXME: use 2x size for tmp buffer for parallel recv and reduce+send */
+        /* consider to remove tmp buffer further */
+        auto temp_recv = devices[thread_idx]->template alloc_memory<native_type>(
+            2 * buffer_size / num_thread, sizeof(native_type), ctx, mem_uncached_descr);
 
-            mem_send.enqueue_write_sync(send_values);
-            mem_recv.enqueue_write_sync(recv_values);
-            temp_recv.enqueue_write_sync(recv_values.begin(),
-                                         recv_values.begin() + 2 * buffer_size / num_thread);
+        mem_send.enqueue_write_sync(send_values);
+        mem_recv.enqueue_write_sync(recv_values);
+        temp_recv.enqueue_write_sync(recv_values.begin(),
+                                     recv_values.begin() + 2 * buffer_size / num_thread);
 
-            /* fill array in specific order
+        /* fill array in specific order
              * Left: l_send, l_recv, l_tmp_recv, r_tmp_recv
              * Right: r_send, r_recv, r_tmp_recv, l_tmp_recv
              */
-            memory_storage.register_shared_data(thread_idx,
-                                                num_thread,
-                                                std::move(mem_send),
-                                                std::move(mem_recv),
-                                                std::move(temp_recv));
+        this->register_shared_memories_data(
+            rank_idx, std::move(mem_send), std::move(mem_recv), std::move(temp_recv));
 
-            // flags
-            auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx, mem_descr);
-            auto ready_for_receive_flag = device.alloc_memory<int>(1, sizeof(int), ctx, mem_descr);
-            auto barrier_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
-            left_wrote_2_me_flag.enqueue_write_sync({ (int)0 });
-            ready_for_receive_flag.enqueue_write_sync({ (int)0 });
-            barrier_flag.enqueue_write_sync({ (int)0 });
+        // flags
+        auto left_wrote_2_me_flag = devices[thread_idx]->template alloc_memory<int>(
+            1, sizeof(int), ctx, mem_uncached_descr);
+        auto ready_for_receive_flag = devices[thread_idx]->template alloc_memory<int>(
+            1, sizeof(int), ctx, mem_uncached_descr);
+        auto barrier_flag = devices[thread_idx]->template alloc_memory<int>(1, sizeof(int), ctx);
+        left_wrote_2_me_flag.enqueue_write_sync({ (int)0 });
+        ready_for_receive_flag.enqueue_write_sync({ (int)0 });
+        barrier_flag.enqueue_write_sync({ (int)0 });
 
-            /* fill array in specific order
+        /* fill array in specific order
              * Left: l_L, l_R, l_B, r_L, r_R
              * Right: r_L, r_R, r_B, l_L, L_R
              */
-            flags_storage.register_shared_data(thread_idx,
-                                               num_thread,
-                                               std::move(left_wrote_2_me_flag),
-                                               std::move(ready_for_receive_flag),
-                                               std::move(barrier_flag));
-        }
-        catch (const std::exception& ex) {
-            UT_ASSERT(
-                false,
-                "Cannot allocate memory for thread: " << thread_idx << "\nError: " << ex.what());
-        }
+        this->register_shared_flags_data(rank_idx,
+                                         std::move(left_wrote_2_me_flag),
+                                         std::move(ready_for_receive_flag),
+                                         std::move(barrier_flag));
     }
 
-    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-        memory_storage.rotate_shared_data(thread_idx, num_thread, mem_group_count);
-        flags_storage.rotate_shared_data(thread_idx, num_thread, flag_group_count);
-    }
-    //Check memory handles
-    /*
-    try
-    {
-        for(const auto& alloc_pair : thread_allocated_memory_storage)
-        {
-            const mem_handles_container& mem_handles = alloc_pair.second;
-            for(const auto& mem : mem_handles)
-            {
-                //TODO
-                //device.is_own_memory(mem);
-                ze_memory_allocation_properties_t mem_prop;
-                mem_prop.version = ZE_MEMORY_ALLOCATION_PROPERTIES_VERSION_CURRENT;
-                ze_device_handle_t alloc_device_handle{};
-                ze_result_t result = zeDriverGetMemAllocProperties(driver.handle, mem->handle, &mem_prop, &alloc_device_handle);
-                if (result != ZE_RESULT_SUCCESS)
-                {
-                    throw std::runtime_error(std::string("Cannot zeDriverGetMemAllocProperties at: ") +
-                                             native::to_string(result));
-                }
-                if(alloc_device_handle and alloc_device_handle != device.handle)
-                {
-                    throw std::runtime_error(std::string("Device handle for memory allocations mismatch detected"));
-                }
-            }
-        }
-    }
-    catch(const std::exception& ex)
-    {
-        UT_ASSERT(false, "Check allocated memory failed: %s",
-                  ex.what());
-    }
-    */
-    //prepare kernels in multithreading environment
-    ze_kernel_desc_t desc = {
-        .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
-        .pNext = nullptr,
-        .flags = 0,
-    };
-    desc.pKernelName = allreduce_param_traits<native_type, op_type>::kernel_name;
-    this->output << "KERNEL_NAME: " << desc.pKernelName << std::endl;
+    this->finalize_data_registration(comm_group_count, mem_group_count, flag_group_count);
 
-    std::map<size_t, ze_kernel_handle_t> thread_kernels;
+    // prepare kernels
+    for (size_t device_index = 0; device_index < num_thread; device_index++) {
+        this->create_kernel(device_index,
+                            allreduce_param_traits<native_type, op_type>::kernel_name);
+    }
+
+    // prepare queues & lists
     std::map<size_t, ccl_device::device_queue> thread_queue;
     std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
-    ccl_device::device_module& module = *(this->device_modules.find(&device)->second);
-    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-        //thread_group.emplace
-        ze_kernel_handle_t handle = nullptr;
-        try {
-            ze_result_t result = zeKernelCreate(module.handle, &desc, &handle);
-            if (result != ZE_RESULT_SUCCESS) {
-                throw std::runtime_error(std::string("Cannot create kernel: ") + desc.pKernelName +
-                                         ", error: " + native::to_string(result));
-            }
 
-            thread_kernels.emplace(thread_idx, std::move(handle));
-            thread_queue.emplace(thread_idx, device.create_cmd_queue(ctx));
-            thread_cmd_list.emplace(thread_idx, device.create_cmd_list(ctx));
-        }
-        catch (const std::exception& ex) {
-            throw std::runtime_error(std::string("Error: ") + ex.what());
-        }
-    }
+    single_device_utils::prepare_kernel_queues_lists(
+        devices, ctx, thread_queue, thread_cmd_list, this->output);
 
-    //printout
-    auto& out = this->output;
-    // out << "L0 memory handles: " << std::endl;
-    // memory_storage.dump(out, true);
+    //printout memory handles
+    this->dump_memory(this->output, true);
 
     //Set args and launch kernel
     std::mutex thread_lock; //workaround
     std::atomic<size_t> val{ 0 }; //workaround
     std::vector<std::thread> thread_group;
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
-    for (auto& idx_kernel : thread_kernels) {
-        size_t thread_idx = idx_kernel.first;
-        ze_kernel_handle_t kernel = idx_kernel.second;
+    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+        ze_kernel_handle_t kernel = this->get_kernel(thread_idx);
+        auto& mem_handles = this->get_memory_handles(thread_idx);
+        auto& flag_handles = this->get_flag_handles(thread_idx);
+        auto& comm_handles = this->get_comm_handles(thread_idx);
 
-        auto& mem_handles = find_storage_val(memory_storage.per_thread_storage, thread_idx);
-        auto& flag_handles = find_storage_val(flags_storage.per_thread_storage, thread_idx);
-        auto& comm_handles = find_storage_val(comm_param_storage, thread_idx);
+        this->output << "Launch kernel params: \n"
+                     << " Device idx" << ccl::to_string(devices[thread_idx]->get_device_path())
+                     << ",  Rank idx" << thread_idx << std::endl;
 
         //WORKAROUND: ONLY ONE LIST & QUEUE!
-        //ccl_device::device_queue& queue = thread_queue.find(thread_idx)->second;
         ccl_device::device_queue& queue = thread_queue.find(0)->second;
-        //ccl_device::device_cmd_list& list = thread_cmd_list.find(thread_idx)->second;
         ccl_device::device_cmd_list& list = thread_cmd_list.find(0)->second;
 
         std::unique_ptr<std::stringstream> out_ptr(new std::stringstream());
         std::stringstream* raw_out = out_ptr.get();
         thread_group.emplace_back([this,
-                                   &driver,
-                                   &device,
                                    thread_idx,
                                    kernel,
+                                   num_thread,
                                    &list,
                                    &queue,
                                    &mem_handles,
@@ -236,8 +160,6 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
                                    &thread_lock,
                                    &val,
                                    raw_out]() {
-            (void)driver;
-            (void)device;
             std::stringstream& out = *raw_out;
             ze_group_count_t launch_args = { 1, 1, 1 };
             try {
@@ -293,24 +215,21 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
                 throw;
             }
         });
-
         thread_out_put.push_back(std::move(out_ptr));
     }
 
+    // waiting for threads with kernel execution
     size_t index = 0;
     for (auto& t : thread_group) {
         t.join();
-        out << "Kernels argument binding log for Thread: " << index << std::endl;
-        out << thread_out_put[index]->str() << std::endl;
+        this->output << thread_out_put[index]->str() << std::endl;
         index++;
     }
 
     size_t corr_val;
     try {
-        for (auto& idx_kernel : thread_kernels) {
-            size_t thread_idx = idx_kernel.first;
+        for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
             corr_val = 0;
-
             auto lambda = [&corr_val](
                               size_t thread_idx, size_t num_thread, native_type value) -> bool {
                 corr_val++;
@@ -329,17 +248,17 @@ TYPED_TEST(ring_allreduce_single_device_fixture, ring_allreduce_single_device_mt
                 return true;
             };
 
-            memory_storage.check_results(
-                thread_idx, out, 1 /*recv_mem*/, lambda, thread_idx, num_thread);
+            this->check_test_results(
+                thread_idx, this->output, 1 /*recv_mem*/, lambda, thread_idx, num_thread);
         }
     }
     catch (check_on_exception& ex) {
-        out << "Check results: \n";
+        this->output << "Check results: \n";
         //printout
-        out << "Send memory:" << std::endl;
-        memory_storage.dump_by_index(out, 0 /*send_mem*/);
-        out << "\nRecv memory:" << std::endl;
-        memory_storage.dump_by_index(out, 1 /*recv_mem*/);
+        this->output << "Send memory:" << std::endl;
+        this->dump_memory_by_index(this->output, 0 /*send_mem*/);
+        this->output << "\nRecv memory:" << std::endl;
+        this->dump_memory_by_index(this->output, 1 /*recv_mem*/);
 
         std::stringstream ss;
         ss << ex.what() << ", But expected: " << corr_val * num_thread << std::endl;

@@ -11,6 +11,7 @@
 //#include "oneapi/ccl/types.hpp"
 //#include "oneapi/ccl/type_traits.hpp"
 #include "oneapi/ccl/types.hpp"
+#include "oneapi/ccl/lp_types.hpp"
 #endif
 
 namespace native {
