@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <netinet/ip.h>
 #include <mutex>
+#include <list>
 #include "ikvs_wrapper.h"
 
 class internal_kvs final : public ikvs_wrapper {
@@ -55,6 +56,7 @@ private:
     pthread_t kvs_thread = 0;
 
     char main_host_ip[CCL_IP_LEN];
+    std::list<std::string> local_host_ips;
     char local_host_ip[CCL_IP_LEN];
 
     size_t main_port;

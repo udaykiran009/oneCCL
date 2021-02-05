@@ -321,8 +321,10 @@ size_t internal_kvs::init_main_server_by_env() {
     memset(main_host_ip, 0, CCL_IP_LEN);
     kvs_str_copy(main_host_ip, tmp_host_ip, CCL_IP_LEN);
     if ((port = strstr(main_host_ip, "_")) == nullptr) {
-        LOG_ERROR("set ", CCL_KVS_IP_PORT_ENV, " in format <ip>_<port>\n");
-        return 1;
+        if ((port = strstr(main_host_ip, ":")) == nullptr) {
+            LOG_ERROR("set ", CCL_KVS_IP_PORT_ENV, " in format <ip>_<port>\n");
+            return 1;
+        }
     }
     port[0] = '\0';
     port++;
@@ -360,9 +362,11 @@ size_t internal_kvs::init_main_server_by_string(const char* main_addr) {
     kvs_str_copy(main_host_ip, main_addr, CCL_IP_LEN);
 
     if ((port = strstr(main_host_ip, "_")) == nullptr) {
-        LOG_ERROR(
-            "init_main_server_by_string: set ", CCL_KVS_IP_PORT_ENV, " in format <ip>_<port>");
-        return 1;
+        if ((port = strstr(main_host_ip, ":")) == nullptr) {
+            LOG_ERROR(
+                "init_main_server_by_string: set ", CCL_KVS_IP_PORT_ENV, " in format <ip>_<port>");
+            return 1;
+        }
     }
     port[0] = '\0';
     port++;
@@ -382,69 +386,58 @@ size_t internal_kvs::init_main_server_by_string(const char* main_addr) {
 int internal_kvs::fill_local_host_ip() {
     struct ifaddrs *ifaddr, *ifa;
     int family = AF_UNSPEC;
+    char local_ip[CCL_IP_LEN];
     if (getifaddrs(&ifaddr) < 0) {
         LOG_ERROR("fill_local_host_ip: can not get host IP");
         return -1;
     }
 
     const char iface_name[] = "lo";
+    local_host_ips.clear();
 
     for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
         if (ifa->ifa_addr == NULL)
             continue;
         if (strstr(ifa->ifa_name, iface_name) == NULL) {
             family = ifa->ifa_addr->sa_family;
-            if (family == AF_INET || family == AF_INET6)
-                break;
-        }
-    }
-    if (!ifa) {
-        LOG_ERROR("fill_local_host_ip: can't find interface to get host IP");
-        return -1;
-    }
-
-    int res =
-        getnameinfo(ifa->ifa_addr,
+            if (family == AF_INET || family == AF_INET6) {
+                memset(local_ip, 0, CCL_IP_LEN);
+                int res = getnameinfo(
+                    ifa->ifa_addr,
                     (family == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6),
-                    local_host_ip,
+                    local_ip,
                     CCL_IP_LEN,
                     NULL,
                     0,
                     NI_NUMERICHOST);
-
-    if (res != 0) {
-        std::string s("fill_local_host_ip: getnameinfo error > ");
-        s.append(gai_strerror(res));
-        LOG_ERROR(s.c_str());
+                if (res != 0) {
+                    std::string s("fill_local_host_ip: getnameinfo error > ");
+                    s.append(gai_strerror(res));
+                    LOG_ERROR(s.c_str());
+                    return -1;
+                }
+                local_host_ips.push_back(local_ip);
+            }
+        }
+    }
+    if (local_host_ips.empty()) {
+        LOG_ERROR("fill_local_host_ip: can't find interface to get host IP");
         return -1;
     }
+
+    memset(local_host_ip, 0, CCL_IP_LEN);
+    strncpy(local_host_ip, local_host_ips.front().c_str(), CCL_IP_LEN);
 
     freeifaddrs(ifaddr);
     return 0;
 }
 
 size_t internal_kvs::kvs_main_server_address_reserve(char* main_address) {
-    char* additional_local_host_ips;
-
     if (!server_address.empty())
         return 0;
 
     if (fill_local_host_ip() < 0) {
         LOG_ERROR("reserve_main_address: failed to get local host IP");
-        exit(EXIT_FAILURE);
-    }
-
-    while (local_host_ip[strlen(local_host_ip) - 1] == '\n' ||
-           local_host_ip[strlen(local_host_ip) - 1] == ' ')
-        local_host_ip[strlen(local_host_ip) - 1] = NULL_CHAR;
-    if ((additional_local_host_ips = strstr(local_host_ip, " ")) != nullptr)
-        additional_local_host_ips[0] = NULL_CHAR;
-
-    if (strlen(local_host_ip) >= CCL_IP_LEN - INT_STR_SIZE - 1) {
-        LOG_ERROR("reserve_main_address: local host IP is too long: ",
-                  strlen(local_host_ip),
-                  ", expected: ",
-                  CCL_IP_LEN - INT_STR_SIZE - 1);
         exit(EXIT_FAILURE);
     }
 
@@ -478,21 +471,11 @@ size_t internal_kvs::kvs_main_server_address_reserve(char* main_address) {
 
 size_t internal_kvs::init_main_server_address(const char* main_addr) {
     char* ip_getting_type = std::getenv(CCL_KVS_IP_EXCHANGE_ENV.c_str());
-    char* additional_local_host_ips;
 
     memset(local_host_ip, 0, CCL_IP_LEN);
     if (fill_local_host_ip() < 0) {
         LOG_ERROR("init_main_server_address: failed to get local host IP");
         exit(EXIT_FAILURE);
-    }
-
-    while (local_host_ip[strlen(local_host_ip) - 1] == '\n' ||
-           local_host_ip[strlen(local_host_ip) - 1] == ' ')
-        local_host_ip[strlen(local_host_ip) - 1] = NULL_CHAR;
-
-    if ((additional_local_host_ips = strstr(local_host_ip, " ")) != nullptr) {
-        additional_local_host_ips[0] = NULL_CHAR;
-        additional_local_host_ips++;
     }
 
     if (ip_getting_type) {
@@ -554,7 +537,9 @@ size_t internal_kvs::init_main_server_address(const char* main_addr) {
                 is_master_node = 1;
             }
             else {
-                if (additional_local_host_ips && strstr(additional_local_host_ips, main_host_ip)) {
+                auto main_node_ip =
+                    std::find(local_host_ips.begin(), local_host_ips.end(), main_host_ip);
+                if (main_node_ip != local_host_ips.end()) {
                     is_master_node = 1;
                     memset(local_host_ip, 0, CCL_IP_LEN);
                     strncpy(local_host_ip, main_host_ip, CCL_IP_LEN);
