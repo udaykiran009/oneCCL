@@ -11,7 +11,11 @@
 #define ALL_REDUCTIONS_LIST            "sum,prod,min,max"
 #define ALL_REDUCTIONS_LIST_WITH_CHECK "sum"
 
-#define DEFAULT_BACKEND        BACKEND_HOST
+#ifdef CCL_ENABLE_SYCL
+#define DEFAULT_BACKEND BACKEND_SYCL
+#else /* CCL_ENABLE_SYCL */
+#define DEFAULT_BACKEND BACKEND_HOST
+#endif /* CCL_ENABLE_SYCL */
 #define DEFAULT_LOOP           LOOP_REGULAR
 #define DEFAULT_ITERS          (16)
 #define DEFAULT_WARMUP_ITERS   (16)

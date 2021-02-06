@@ -349,9 +349,13 @@ void env_data::print(int rank) {
 #endif
     LOG_INFO("build mode: ", build_mode);
 
-    auto version = utils::get_library_version();
+    LOG_INFO("C compiler: ", CCL_C_COMPILER);
+    LOG_INFO("C++ compiler: ", CCL_CXX_COMPILER);
 
-    LOG_INFO("version: ", version.full);
+    auto version = utils::get_library_version();
+    LOG_INFO("library version: ", version.full);
+
+    LOG_INFO("spec version: ", ONECCL_SPEC_VERSION);
 
     char* ccl_root = getenv("CCL_ROOT");
     LOG_INFO("CCL_ROOT: ", (ccl_root) ? ccl_root : CCL_ENV_STR_NOT_SPECIFIED);

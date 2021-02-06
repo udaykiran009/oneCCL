@@ -111,11 +111,11 @@ long int safe_c_strtol(const char* str, char** endptr, int base) {
     if (val == 0) {
         /* if a conversion error occurred, display a message and exit */
         if (errno == EINVAL) {
-            printf("\nconversion error occurred from: %ld\n", val);
+            LOG_ERROR("conversion error occurred for string: ", str);
         }
         /* if the value provided was out of range, display a warning message */
         if (errno == ERANGE) {
-            printf("\nthe value provided was out of range, value: %ld\n", val);
+            LOG_ERROR("the value provided was out of range, string: ", str);
         }
     }
     return val;
@@ -1692,14 +1692,14 @@ static atl_status_t atl_ofi_init(int* argc,
                 prov_name = NULL;
         }
 
-        prov_hints->fabric_attr->prov_name = prov_name;
-
         LOG_DEBUG("request provider: idx ",
                   idx,
                   ", name ",
-                  prov_hints->fabric_attr->prov_name,
+                  (prov_name) ? prov_name : "<default>",
                   ", is_shm ",
                   prov->is_shm);
+
+        prov_hints->fabric_attr->prov_name = prov_name;
 
         ret = fi_getinfo(fi_version, NULL, NULL, 0ULL, prov_hints, &providers);
 

@@ -52,6 +52,9 @@ message(STATUS "Build examples: ${BUILD_EXAMPLES}")
 message(STATUS "Build functional tests: ${BUILD_FT}")
 message(STATUS "Build unit tests: ${BUILD_UT}")
 
+add_definitions(-DCCL_C_COMPILER="${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
+add_definitions(-DCCL_CXX_COMPILER="${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+
 SET(MULTI_GPU_SUPPORT OFF CACHE BOOL "Enable Multi GPU extension support")
 
 set(CCL_COMMON_INSTALL_PREFIX "intel64")

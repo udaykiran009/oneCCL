@@ -18,13 +18,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 #define ATL_MPI_PM_KEY     "atl-mpi"
 #define EP_IDX_MAX_STR_LEN 4
-#define EP_IDX_KEY         "ep_idx"
+
+#define EP_IDX_KEY    "ep_idx"
+#define NIC_IDX_KEY   "pref_close_nic"
+#define NIC_COUNT_KEY "num_close_nics"
 
 #define RET2ATL(ret) (ret != MPI_SUCCESS) ? ATL_STATUS_FAILURE : ATL_STATUS_SUCCESS
 
-typedef enum { ATL_MPI_LIB_NONE, ATL_MPI_LIB_IMPI } atl_mpi_lib_type_t;
+typedef enum { ATL_MPI_LIB_NONE, ATL_MPI_LIB_IMPI, ATL_MPI_LIB_MPICH } atl_mpi_lib_type_t;
 
 typedef struct {
     atl_mpi_lib_type_t type;
@@ -46,10 +50,11 @@ typedef struct {
     const char* kind_value;
 } atl_mpi_lib_info_t;
 
-#define MPI_LIB_INFO_MAX_COUNT 1
+#define MPI_LIB_INFO_MAX_COUNT 2
 
 static atl_mpi_lib_info_t mpi_lib_infos[MPI_LIB_INFO_MAX_COUNT] = {
-    { ATL_MPI_LIB_IMPI, "impi", "Intel(R) MPI Library", "", 2019, "library kind:", "release_mt" }
+    { ATL_MPI_LIB_IMPI, "impi", "Intel(R) MPI Library", "", 2019, "library kind:", "release_mt" },
+    { ATL_MPI_LIB_MPICH, "mpich", "MPICH Custom Information:", "drop", 34, "", "" }
 };
 
 #ifdef CCL_BF16_COMPILER
@@ -90,6 +95,7 @@ typedef struct {
     int sync_coll;
     int extra_ep;
     int is_external_init;
+    size_t nic_count;
 } atl_mpi_global_data_t;
 
 static atl_mpi_global_data_t global_data;
@@ -518,10 +524,12 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
     /* request IMPI level append library kind into MPI_Get_library_version output */
     setenv("I_MPI_INFO_LIBRARY_KIND", "1", 0);
 
+    /* can be called before MPI_Init */
     int ret = MPI_Get_library_version(mpi_version, &mpi_version_len);
+
     if ((ret != MPI_SUCCESS) || (mpi_version_len < 0) ||
         (mpi_version_len > MPI_MAX_LIBRARY_VERSION_STRING)) {
-        LOG_DEBUG("can't retrieve MPI version, mpi_version_len ", mpi_version_len, ", ret", ret);
+        LOG_WARN("can not retrieve MPI version, mpi_version_len ", mpi_version_len, ", ret", ret);
         return ATL_MPI_LIB_NONE;
     }
 
@@ -529,7 +537,7 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
     while (strlen(mpi_version) && isspace(mpi_version[strlen(mpi_version) - 1]))
         mpi_version[strlen(mpi_version) - 1] = '\0';
 
-    LOG_DEBUG("\nMPI version: ", mpi_version);
+    LOG_INFO("MPI version: ", mpi_version);
 
     for (i = 0; i < MPI_LIB_INFO_MAX_COUNT; i++) {
         atl_mpi_lib_info_t* info = &(mpi_lib_infos[i]);
@@ -556,8 +564,7 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
             LOG_DEBUG("MPI numerical version: ", version_value);
 
             if (version_value < info->min_version_value) {
-                LOG_INFO("\nWARNING !!!\n"
-                         "Loaded MPI doesn't match with expected version, "
+                LOG_WARN("loaded MPI doesn't match with expected version, "
                          "consider to switch to ",
                          info->version_prefix_1,
                          " ",
@@ -581,8 +588,7 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
                     LOG_DEBUG("kind_substr: ", kind_substr);
 
                     if (strncmp(kind_substr, info->kind_value, strlen(info->kind_value))) {
-                        LOG_INFO("\nWARNING !!!\n"
-                                 "Loaded MPI version (",
+                        LOG_WARN("loaded MPI version (",
                                  version_value,
                                  ") ",
                                  "is higher or equal to minimal expected version (",
@@ -636,31 +642,37 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
     }
 
     if (final_info) {
-        LOG_DEBUG("use lib_type = ", final_info->name);
+        LOG_INFO("MPI library type: ", final_info->name);
         lib_type = final_info->type;
     }
     else {
-        LOG_DEBUG("use lib_type none");
+        LOG_INFO("MPI library type: none");
         lib_type = ATL_MPI_LIB_NONE;
     }
 
     return lib_type;
 }
 
-atl_status_t atl_mpi_set_impi_env(const atl_attr_t& attr) {
-    char mpi_ep_count_str[EP_IDX_MAX_STR_LEN] = { 0 };
-
-    /* we have endpoints on MPI and ATL levels */
+size_t atl_mpi_get_ep_count(const atl_attr_t& attr) {
     size_t mpi_ep_count = attr.ep_count;
     if (attr.extra_ep)
         mpi_ep_count += attr.extra_ep;
+    return mpi_ep_count;
+}
 
-    snprintf(mpi_ep_count_str, EP_IDX_MAX_STR_LEN, "%zu", mpi_ep_count);
+atl_status_t atl_mpi_set_base_env(const atl_attr_t& attr) {
+    setenv("PSM2_MULTI_EP", "1", 0);
+    return ATL_STATUS_SUCCESS;
+}
+
+atl_status_t atl_mpi_set_impi_env(const atl_attr_t& attr) {
+    char ep_count_str[MPI_MAX_INFO_VAL] = { 0 };
+    snprintf(ep_count_str, MPI_MAX_INFO_VAL, "%zu", atl_mpi_get_ep_count(attr));
 
     setenv("MPIR_CVAR_DEFAULT_THREAD_LEVEL", "MPI_THREAD_MULTIPLE", 0);
     setenv("I_MPI_THREAD_SPLIT", "1", 0);
     setenv("I_MPI_THREAD_RUNTIME", "generic", 0);
-    setenv("I_MPI_THREAD_MAX", mpi_ep_count_str, 0);
+    setenv("I_MPI_THREAD_MAX", ep_count_str, 0);
     setenv("I_MPI_THREAD_ID_KEY", EP_IDX_KEY, 0);
     setenv("I_MPI_THREAD_LOCK_LEVEL", "vci", 0);
 
@@ -672,32 +684,139 @@ atl_status_t atl_mpi_set_impi_env(const atl_attr_t& attr) {
     if (attr.ep_count)
         setenv("I_MPI_OFI_ISEND_INJECT_THRESHOLD", "0", 0);
 
-    setenv("PSM2_MULTI_EP", "1", 0);
+    return ATL_STATUS_SUCCESS;
+}
+
+atl_status_t atl_mpi_set_mpich_env(const atl_attr_t& attr) {
+    char ep_count_str[MPI_MAX_INFO_VAL] = { 0 };
+    snprintf(ep_count_str, MPI_MAX_INFO_VAL, "%zu", atl_mpi_get_ep_count(attr));
+
+    setenv("MPIR_CVAR_CH4_MT_MODEL", "direct", 0);
+    setenv("MPIR_CVAR_CH4_OFI_MAX_VCIS", ep_count_str, 0);
+    setenv("MPIR_COMM_HINT_ASYNC_PROG_ID", EP_IDX_KEY, 0);
 
     return ATL_STATUS_SUCCESS;
 }
 
 atl_status_t atl_mpi_set_env(const atl_attr_t& attr) {
-    atl_mpi_set_impi_env(attr);
+    if (global_data.mpi_lib_type != ATL_MPI_LIB_NONE) {
+        /* env was already set */
+        return ATL_STATUS_SUCCESS;
+    }
+
+    atl_mpi_lib_type_t type = atl_mpi_get_lib_type();
+
+    if (type == ATL_MPI_LIB_NONE) {
+        /* nothing to do */
+        return ATL_STATUS_SUCCESS;
+    }
+
+    atl_mpi_set_base_env(attr);
+
+    if (type == ATL_MPI_LIB_IMPI) {
+        if (!getenv("I_MPI_ROOT")) {
+            LOG_ERROR("CCL/MPI uses ",
+                      mpi_lib_infos[type].version_prefix_1,
+                      " but I_MPI_ROOT is not set. ",
+                      "Please source ",
+                      mpi_lib_infos[type].kind_value,
+                      " version of ",
+                      mpi_lib_infos[type].version_prefix_1,
+                      " (",
+                      mpi_lib_infos[type].min_version_value,
+                      " or higher version).");
+            return ATL_STATUS_FAILURE;
+        }
+        atl_mpi_set_impi_env(attr);
+    }
+    else if (type == ATL_MPI_LIB_MPICH) {
+        atl_mpi_set_mpich_env(attr);
+    }
 
     int is_mpi_inited = 0;
     MPI_Initialized(&is_mpi_inited);
     if (is_mpi_inited) {
-        LOG_INFO("MPI was initialized externaly, CCL/MPI specific enviroment is ignored");
+        LOG_WARN("MPI was initialized externally, CCL/MPI specific enviroment is ignored");
     }
     else {
-        LOG_DEBUG("set CCL/MPI specific enviroment");
+        LOG_INFO("set CCL/MPI specific enviroment");
     }
+
+    global_data.mpi_lib_type = type;
 
     return ATL_STATUS_SUCCESS;
 }
 
-atl_status_t atl_mpi_set_lib_environment(const atl_attr_t& attr) {
-    if (global_data.mpi_lib_type == ATL_MPI_LIB_IMPI) {
-        atl_mpi_set_impi_env(attr);
+size_t atl_mpi_get_nic_count() {
+    if (global_data.mpi_lib_type != ATL_MPI_LIB_MPICH)
+        return 1;
+
+    int flag, count;
+    MPI_Info info;
+    char nic_count_str[MPI_MAX_INFO_VAL] = { 0 };
+
+    MPI_Comm_get_info(MPI_COMM_WORLD, &info);
+    MPI_Info_get(info, NIC_COUNT_KEY, MPI_MAX_INFO_VAL, nic_count_str, &flag);
+
+    if (!flag) {
+        LOG_WARN(NIC_COUNT_KEY, " hint does not exist, using nic_count = 1");
+        count = 1;
     }
-    return ATL_STATUS_SUCCESS;
+    else {
+        count = atoi(nic_count_str);
+        if (count <= 0)
+            count = 1;
+    }
+
+    MPI_Info_free(&info);
+    return count;
 }
+
+void atl_mpi_check_hint(MPI_Comm comm, const char* hint, const char* expected_value) {
+    int flag;
+    MPI_Info info;
+    char read_value[MPI_MAX_INFO_VAL] = { 0 };
+
+    MPI_Comm_get_info(comm, &info);
+    MPI_Info_get(info, hint, MPI_MAX_INFO_VAL, read_value, &flag);
+    MPI_Info_free(&info);
+
+    CCL_THROW_IF_NOT(flag, "MPI comm hint ", hint, " was not set");
+    CCL_THROW_IF_NOT(!strcmp(read_value, expected_value),
+                     "MPI comm hint ",
+                     hint,
+                     ": expected: ",
+                     expected_value,
+                     ", read: ",
+                     read_value);
+}
+
+void atl_mpi_check_ep_idx_hint(MPI_Comm comm, size_t idx) {
+    if (global_data.mpi_lib_type == ATL_MPI_LIB_NONE)
+        return;
+
+    char idx_str[MPI_MAX_INFO_VAL] = { 0 };
+    snprintf(idx_str, MPI_MAX_INFO_VAL, "%zu", idx);
+    atl_mpi_check_hint(comm, EP_IDX_KEY, idx_str);
+}
+
+void atl_mpi_check_nic_idx_hint(MPI_Comm comm, size_t idx) {
+    if (global_data.mpi_lib_type != ATL_MPI_LIB_MPICH)
+        return;
+
+    char idx_str[MPI_MAX_INFO_VAL] = { 0 };
+    snprintf(idx_str, MPI_MAX_INFO_VAL, "%zu", idx);
+    atl_mpi_check_hint(comm, NIC_IDX_KEY, idx_str);
+}
+
+#ifdef ENABLE_DEBUG
+inline void atl_mpi_check_ep(atl_ep_t* ep) {
+    atl_mpi_ep_t* mpi_ep = container_of(ep, atl_mpi_ep_t, ep);
+    atl_mpi_check_ep_idx_hint(mpi_ep->mpi_comm, ep->idx);
+}
+#else
+#define atl_mpi_check_ep(ep)
+#endif
 
 static atl_status_t atl_mpi_finalize(atl_ctx_t* ctx) {
     int ret = MPI_SUCCESS;
@@ -762,6 +881,8 @@ static atl_status_t atl_mpi_ep_send(atl_ep_t* ep,
     int ret = MPI_Isend(
         buf, len, MPI_CHAR, dst_proc_idx, (int)tag, mpi_ep->mpi_comm, &mpi_req->native_req);
 
+    atl_mpi_check_ep(ep);
+
     return RET2ATL(ret);
 }
 
@@ -777,6 +898,8 @@ static atl_status_t atl_mpi_ep_recv(atl_ep_t* ep,
 
     int ret = MPI_Irecv(
         buf, len, MPI_CHAR, src_proc_idx, (int)tag, mpi_ep->mpi_comm, &mpi_req->native_req);
+
+    atl_mpi_check_ep(ep);
 
     return RET2ATL(ret);
 }
@@ -800,6 +923,8 @@ static atl_status_t atl_mpi_ep_probe(atl_ep_t* ep,
         *found = flag;
     if (recv_len)
         *recv_len = len;
+
+    atl_mpi_check_ep(ep);
 
     return RET2ATL(ret);
 }
@@ -841,6 +966,8 @@ static atl_status_t atl_mpi_ep_allgatherv(atl_ep_t* ep,
         mpi_req->comp_state = ATL_MPI_COMP_POSTED;
     }
 
+    atl_mpi_check_ep(ep);
+
     return RET2ATL(ret);
 }
 
@@ -880,32 +1007,7 @@ static atl_status_t atl_mpi_ep_allreduce(atl_ep_t* ep,
         mpi_req->comp_state = ATL_MPI_COMP_POSTED;
     }
 
-#if 0
-//#ifdef ENABLE_DEBUG
-    if (global_data.mpi_lib_type != ATL_MPI_LIB_NONE)
-    {
-        MPI_Info info_out;
-        char buf[MPI_MAX_INFO_VAL];
-        int flag;
-        MPI_Comm_get_info(mpi_ep->mpi_comm, &info_out);
-        MPI_Info_get(info_out, EP_IDX_KEY, MPI_MAX_INFO_VAL, buf, &flag);
-
-        if (!flag)
-        {
-            LOG_ERROR("unexpected ep_idx_key ", EP_IDX_KEY);
-            return ATL_STATUS_FAILURE;
-        }
-
-        if (ep->idx != atoi(buf))
-        {
-            LOG_ERROR("unexpected ep_idx: expected ", ep->idx, ", got ", atoi(buf));
-        }
-
-        LOG_DEBUG("len ", len, ", comm_key ", buf, ", comm ", (void*)(&(mpi_ep->mpi_comm)));
-
-        MPI_Info_free(&info_out);
-    }
-#endif
+    atl_mpi_check_ep(ep);
 
     return RET2ATL(ret);
 }
@@ -942,6 +1044,8 @@ static atl_status_t atl_mpi_ep_alltoall(atl_ep_t* ep,
                             &mpi_req->native_req);
         mpi_req->comp_state = ATL_MPI_COMP_POSTED;
     }
+
+    atl_mpi_check_ep(ep);
 
     return RET2ATL(ret);
 }
@@ -986,6 +1090,8 @@ static atl_status_t atl_mpi_ep_alltoallv(atl_ep_t* ep,
         mpi_req->comp_state = ATL_MPI_COMP_POSTED;
     }
 
+    atl_mpi_check_ep(ep);
+
     return RET2ATL(ret);
 }
 
@@ -1004,6 +1110,8 @@ static atl_status_t atl_mpi_ep_barrier(atl_ep_t* ep, atl_req_t* req) {
         ret = MPI_Ibarrier(mpi_ep->mpi_comm, &mpi_req->native_req);
         mpi_req->comp_state = ATL_MPI_COMP_POSTED;
     }
+
+    atl_mpi_check_ep(ep);
 
     return RET2ATL(ret);
 }
@@ -1027,6 +1135,8 @@ static atl_status_t atl_mpi_ep_bcast(atl_ep_t* ep,
         ret = MPI_Ibcast(buf, len, MPI_CHAR, root, mpi_ep->mpi_comm, &mpi_req->native_req);
         mpi_req->comp_state = ATL_MPI_COMP_POSTED;
     }
+
+    atl_mpi_check_ep(ep);
 
     return RET2ATL(ret);
 }
@@ -1073,6 +1183,8 @@ static atl_status_t atl_mpi_ep_reduce(atl_ep_t* ep,
         mpi_req->comp_state = ATL_MPI_COMP_POSTED;
     }
 
+    atl_mpi_check_ep(ep);
+
     return RET2ATL(ret);
 }
 
@@ -1113,6 +1225,8 @@ static atl_status_t atl_mpi_ep_reduce_scatter(atl_ep_t* ep,
             &mpi_req->native_req);
         mpi_req->comp_state = ATL_MPI_COMP_POSTED;
     }
+
+    atl_mpi_check_ep(ep);
 
     return RET2ATL(ret);
 }
@@ -1228,6 +1342,10 @@ static atl_comp_ops_t atl_mpi_ep_comp_ops = { .wait = atl_mpi_ep_wait,
 static atl_status_t atl_mpi_ep_init(atl_mpi_ctx_t* mpi_ctx, size_t idx, atl_ep_t** ep) {
     int ret;
     ssize_t mpi_ep_idx = idx;
+    size_t nic_idx = (idx % global_data.nic_count);
+
+    char nic_idx_str[MPI_MAX_INFO_VAL] = { 0 };
+    char mpi_ep_idx_str[MPI_MAX_INFO_VAL] = { 0 };
 
     atl_mpi_ep_t* mpi_ep = (atl_mpi_ep_t*)calloc(1, sizeof(atl_mpi_ep_t));
     if (!mpi_ep)
@@ -1240,14 +1358,16 @@ static atl_status_t atl_mpi_ep_init(atl_mpi_ctx_t* mpi_ctx, size_t idx, atl_ep_t
     MPI_Info info;
     MPI_Info_create(&info);
 
-    char mpi_ep_idx_str[EP_IDX_MAX_STR_LEN];
+    /* set NIC index */
+    snprintf(nic_idx_str, MPI_MAX_INFO_VAL, "%zu", nic_idx);
+    MPI_Info_set(info, NIC_IDX_KEY, nic_idx_str);
 
+    /* set EP index */
     if (global_data.extra_ep)
         mpi_ep_idx += global_data.extra_ep;
-    memset(mpi_ep_idx_str, 0, EP_IDX_MAX_STR_LEN);
-    snprintf(mpi_ep_idx_str, EP_IDX_MAX_STR_LEN, "%zu", mpi_ep_idx);
-
+    snprintf(mpi_ep_idx_str, MPI_MAX_INFO_VAL, "%zu", mpi_ep_idx);
     MPI_Info_set(info, EP_IDX_KEY, mpi_ep_idx_str);
+
     MPI_Comm_set_info(mpi_ep->mpi_comm, info);
 
     if (global_data.progress_mode == ATL_PROGRESS_POLL) {
@@ -1256,11 +1376,17 @@ static atl_status_t atl_mpi_ep_init(atl_mpi_ctx_t* mpi_ctx, size_t idx, atl_ep_t
             goto err_ep_dup;
         MPI_Comm_set_info(mpi_ep->dummy_comm, info);
         MPI_Irecv(NULL, 0, MPI_CHAR, 0, 0, mpi_ep->dummy_comm, &(mpi_ep->dummy_req.native_req));
+
+        atl_mpi_check_nic_idx_hint(mpi_ep->dummy_comm, nic_idx);
+        atl_mpi_check_ep_idx_hint(mpi_ep->dummy_comm, mpi_ep_idx);
     }
 
     MPI_Info_free(&info);
 
-    LOG_DEBUG("idx ", idx, ", mpi_ep_idx_str ", mpi_ep_idx_str);
+    atl_mpi_check_nic_idx_hint(mpi_ep->mpi_comm, nic_idx);
+    atl_mpi_check_ep_idx_hint(mpi_ep->mpi_comm, mpi_ep_idx);
+
+    LOG_DEBUG("atl_ep_idx ", idx, ", mpi_ep_idx ", mpi_ep_idx, ", nic_idx ", nic_idx);
 
     *ep = &mpi_ep->ep;
     (*ep)->idx = idx;
@@ -1295,6 +1421,7 @@ static atl_status_t atl_mpi_init(int* argc,
     int is_tag_ub_set = 0;
     void* tag_ub_ptr = NULL;
     int required_thread_level = MPI_THREAD_MULTIPLE, provided_thread_level;
+    int is_mpi_inited = 0;
 
     atl_mpi_ctx_t* mpi_ctx = (atl_mpi_ctx_t*)calloc(1, sizeof(atl_mpi_ctx_t));
     if (!mpi_ctx)
@@ -1302,22 +1429,15 @@ static atl_status_t atl_mpi_init(int* argc,
 
     atl_ctx_t* ctx = &(mpi_ctx->ctx);
 
-    global_data.mpi_lib_type = atl_mpi_get_lib_type();
-    global_data.sync_coll = attr->sync_coll;
-    global_data.extra_ep = attr->extra_ep;
-
-    if (global_data.mpi_lib_type != ATL_MPI_LIB_NONE) {
-        atl_mpi_set_lib_environment(*attr);
-    }
-
-    int is_mpi_inited = 0;
-    MPI_Initialized(&is_mpi_inited);
-
-    if ((global_data.mpi_lib_type == ATL_MPI_LIB_IMPI) && !getenv("I_MPI_ROOT")) {
-        LOG_ERROR("ATL MPI uses Intel MPI but I_MPI_ROOT is not set. "
-                  "Please source release_mt version of Intel MPI (2019 or higher version).");
+    if (atl_mpi_set_env(*attr)) {
         goto err_init;
     }
+
+    global_data.sync_coll = attr->sync_coll;
+    global_data.extra_ep = attr->extra_ep;
+    global_data.nic_count = atl_mpi_get_nic_count();
+
+    MPI_Initialized(&is_mpi_inited);
 
     if (!is_mpi_inited) {
         global_data.is_external_init = 0;
@@ -1390,6 +1510,7 @@ static atl_status_t atl_mpi_init(int* argc,
         LOG_INFO("progress_mode ", global_data.progress_mode);
         LOG_INFO("sync_coll ", global_data.sync_coll);
         LOG_INFO("extra_ep ", global_data.extra_ep);
+        LOG_INFO("nic_count ", global_data.nic_count);
     }
 
     for (i = 0; i < attr->ep_count; i++) {
