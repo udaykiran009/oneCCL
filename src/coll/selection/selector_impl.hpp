@@ -216,7 +216,7 @@ void ccl_algorithm_selector_base<algo_group_type>::print() const {
                 << "]: " << ccl_coll_algorithm_to_str(elem_algo) << std::endl;
         }
     }
-    LOG_INFO(str.str());
+    LOG_DEBUG(str.str());
 }
 
 template <typename algo_group_type>

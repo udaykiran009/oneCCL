@@ -132,8 +132,11 @@ void atl_wrapper::init_transport() {
     static std::mutex memory_mutex;
     {
         std::lock_guard<std::mutex> lock(memory_mutex);
-        if (!transport->is_inited())
-            transport->atl_init(nullptr, nullptr, &attr, nullptr, pmi);
+        if (!transport->is_inited()) {
+            CCL_THROW_IF_NOT(
+                transport->atl_init(nullptr, nullptr, &attr, nullptr, pmi) == ATL_STATUS_SUCCESS,
+                "failed to initialize ATL");
+        }
     }
     eps = transport->atl_get_eps();
     tag = std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(attr.tag_bits, attr.max_tag));
@@ -153,26 +156,13 @@ void atl_wrapper::init_transport() {
 
     if (rank == 0) {
         tag->print();
-
-        LOG_INFO("\n",
-                 "\nATL parameters:",
-                 "\n  ep_count:           ",
-                 attr.ep_count,
-                 "\n  enable_shm:         ",
-                 attr.enable_shm,
-                 "\n  tag_bits:           ",
-                 attr.tag_bits,
-                 "\n  max_tag:            ",
-                 attr.max_tag,
-                 "\n  enable_rma:         ",
-                 attr.enable_rma,
-                 "\n  max_order_waw_size: ",
-                 attr.max_order_waw_size,
-                 "\n  sync_coll:          ",
-                 attr.sync_coll,
-                 "\n  extra_ep:           ",
-                 attr.extra_ep,
-                 "\n");
+        LOG_INFO("ATL parameters:");
+        LOG_INFO("  ep_count: ", attr.ep_count);
+        LOG_INFO("  enable_shm: ", attr.enable_shm);
+        LOG_INFO("  enable_rma: ", attr.enable_rma);
+        LOG_INFO("  max_order_waw_size: ", attr.max_order_waw_size);
+        LOG_INFO("  sync_coll: ", attr.sync_coll);
+        LOG_INFO("  extra_ep: ", attr.extra_ep);
     }
 }
 atl_wrapper::~atl_wrapper() {

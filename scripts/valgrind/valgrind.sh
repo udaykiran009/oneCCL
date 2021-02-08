@@ -258,7 +258,7 @@ run()
     n=2
     dtype_list="int8,int32,float32"
     reduction_list="sum,max"
-    ccl_base_env="FI_PROVIDER=tcp"
+    ccl_base_env="FI_PROVIDER=tcp CCL_ATL_MPI_LIB_TYPE=impi CCL_LOG_LEVEL=info I_MPI_DEBUG=2"
 
     if [[ ${MODE} = "cpu" ]]
     then

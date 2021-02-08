@@ -355,13 +355,20 @@ void env_data::print(int rank) {
     auto version = utils::get_library_version();
     LOG_INFO("library version: ", version.full);
 
-    LOG_INFO("spec version: ", ONECCL_SPEC_VERSION);
+    LOG_INFO("specification version: ", ONECCL_SPEC_VERSION);
 
     char* ccl_root = getenv("CCL_ROOT");
     LOG_INFO("CCL_ROOT: ", (ccl_root) ? ccl_root : CCL_ENV_STR_NOT_SPECIFIED);
 
     char* impi_root = getenv("I_MPI_ROOT");
     LOG_INFO("I_MPI_ROOT: ", (impi_root) ? impi_root : CCL_ENV_STR_NOT_SPECIFIED);
+
+    char* fi_provider_path = getenv("FI_PROVIDER_PATH");
+    LOG_INFO("FI_PROVIDER_PATH: ",
+             (fi_provider_path) ? fi_provider_path : CCL_ENV_STR_NOT_SPECIFIED);
+
+    char* fi_provider = getenv("FI_PROVIDER");
+    LOG_INFO("FI_PROVIDER: ", (fi_provider) ? fi_provider : CCL_ENV_STR_NOT_SPECIFIED);
 
     global_data.algorithm_selector->print();
 }

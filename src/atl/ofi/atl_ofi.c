@@ -27,6 +27,7 @@
 #define ATL_OFI_WAIT_SEC            10
 #define ATL_OFI_CQ_READ_ITERS       10000
 #define ATL_OFI_CQ_BUNCH_SIZE       8
+#define ATL_OFI_MAX_PROV_ENV_LEN    128
 #define ATL_OFI_PMI_PROV_MULTIPLIER 100
 #define ATL_OFI_PMI_PROC_MULTIPLIER (ATL_OFI_PMI_PROV_MULTIPLIER * 10)
 #define ATL_OFI_MAX_PROV_COUNT      2 /* NW and SHM providers */
@@ -64,9 +65,8 @@ static inline atl_status_t atl_ofi_ep_poll(atl_ep_t* ep);
 #define ATL_OFI_RETRY(func, ep, ret_val) \
     do { \
         atl_ctx_t* ctx = ep->ctx; \
-        atl_ofi_ctx_t* ofi_ctx = container_of(ctx, atl_ofi_ctx_t, ctx); \
-        size_t timeout_sec = ofi_ctx->timeout_sec; \
-        size_t max_retry_count = ofi_ctx->max_retry_count; \
+        size_t timeout_sec = global_data.timeout_sec; \
+        size_t max_retry_count = global_data.max_retry_count; \
         int is_resize_enabled = ctx->is_resize_enabled; \
         time_t start = 0, end = 0; \
         do { \
@@ -174,17 +174,10 @@ typedef struct {
 typedef struct {
     atl_ctx_t ctx;
     pm_rt_desc_t* pm_rt;
-
     atl_ofi_prov_t provs[ATL_OFI_MAX_PROV_COUNT];
     size_t prov_count;
     size_t shm_prov_idx;
     size_t nw_prov_idx;
-
-    char* prov_env_copy;
-
-    size_t timeout_sec;
-    size_t max_retry_count;
-    atl_progress_mode_t progress_mode;
 } atl_ofi_ctx_t;
 
 typedef struct {
@@ -194,6 +187,25 @@ typedef struct {
     atl_ofi_comp_state_t comp_state;
     size_t recv_len;
 } atl_ofi_req_t;
+
+typedef struct atl_ofi_global_data {
+    char prov_env_copy[ATL_OFI_MAX_PROV_ENV_LEN];
+    size_t timeout_sec;
+    size_t max_retry_count;
+    atl_progress_mode_t progress_mode;
+    int is_env_set;
+
+    atl_ofi_global_data()
+            : timeout_sec(0),
+              max_retry_count(ATL_OFI_MAX_RETRY_COUNT),
+              progress_mode(ATL_PROGRESS_CHECK),
+              is_env_set(0) {
+        memset(prov_env_copy, 0, sizeof(prov_env_copy));
+    }
+
+} atl_ofi_global_data_t;
+
+static atl_ofi_global_data_t global_data;
 
 static void atl_ofi_print_coord(atl_proc_coord_t* coord) {
     LOG_DEBUG("coord: global [idx ",
@@ -883,7 +895,57 @@ static void atl_ofi_reset(atl_ctx_t* ctx) {
     free(recv_buf);
 }
 
+static atl_status_t atl_ofi_adjust_env(const atl_attr_t& attr) {
+    char* prov_env = getenv("FI_PROVIDER");
+
+    if (prov_env && strlen(prov_env)) {
+        CCL_THROW_IF_NOT(strlen(prov_env) < sizeof(global_data.prov_env_copy),
+                         "too long FI_PROVIDER value, max expected length ",
+                         sizeof(global_data.prov_env_copy));
+        memcpy(global_data.prov_env_copy, prov_env, strlen(prov_env));
+    }
+
+    if (attr.enable_shm) {
+        /* add shm provider in the list of allowed providers */
+        if (prov_env && !strstr(prov_env, ATL_OFI_SHM_PROV_NAME)) {
+            /* whether single provider will be in the final env variable */
+            int single_prov = (strlen(prov_env) == 0) ? 1 : 0;
+
+            size_t prov_env_new_size = strlen(prov_env) + strlen(ATL_OFI_SHM_PROV_NAME) +
+                                       (single_prov ? 0 : 1) + /* for delimeter */
+                                       1; /* for terminating null symbol */
+
+            char* prov_env_new = (char*)calloc(prov_env_new_size, sizeof(char));
+            if (prov_env_new == NULL) {
+                LOG_ERROR("memory allocaion failed");
+                return ATL_STATUS_FAILURE;
+            }
+
+            if (single_prov)
+                snprintf(prov_env_new, prov_env_new_size, "%s", ATL_OFI_SHM_PROV_NAME);
+            else {
+                snprintf(prov_env_new, prov_env_new_size, "%s,%s", prov_env, ATL_OFI_SHM_PROV_NAME);
+            }
+
+            LOG_INFO("ATL/SHM is requested, modify FI_PROVIDER: old value: ",
+                     prov_env,
+                     ", new value: ",
+                     prov_env_new);
+
+            setenv("FI_PROVIDER", prov_env_new, 1);
+
+            free(prov_env_new);
+        }
+    }
+
+    return ATL_STATUS_SUCCESS;
+}
+
 static atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
+    if (global_data.is_env_set) {
+        return ATL_STATUS_SUCCESS;
+    }
+
     setenv("FI_PSM2_DELAY", "0", 0);
     setenv("FI_PSM2_TIMEOUT", "0", 0);
     setenv("FI_PSM2_LOCK_LEVEL", "1", 0);
@@ -899,55 +961,9 @@ static atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
     setenv("FI_SHM_TX_SIZE", "8192", 0);
     setenv("FI_SHM_RX_SIZE", "8192", 0);
 
-    return ATL_STATUS_SUCCESS;
-}
+    atl_ofi_adjust_env(attr);
 
-static atl_status_t atl_ofi_adjust_env(atl_ofi_ctx_t* ofi_ctx, const atl_attr_t& attr) {
-    atl_ofi_set_env(attr);
-
-    char* prov_env = getenv("FI_PROVIDER");
-
-    if (prov_env && strlen(prov_env)) {
-        ofi_ctx->prov_env_copy = (char*)calloc(strlen(prov_env) + 1, sizeof(char));
-        if (ofi_ctx->prov_env_copy == NULL) {
-            LOG_ERROR("memory allocaion failed");
-            return ATL_STATUS_FAILURE;
-        }
-        memcpy(ofi_ctx->prov_env_copy, prov_env, strlen(prov_env));
-    }
-    else
-        ofi_ctx->prov_env_copy = NULL;
-
-    if (attr.enable_shm) {
-        /* add shm provider in the list of allowed providers */
-        if (prov_env && !strstr(prov_env, ATL_OFI_SHM_PROV_NAME)) {
-            /* whether single provider will be in the final env variable */
-            int single_prov = (strlen(prov_env) == 0) ? 1 : 0;
-
-            size_t prov_env_copy_size = strlen(prov_env) + strlen(ATL_OFI_SHM_PROV_NAME) +
-                                        (single_prov ? 0 : 1) + /* for delimeter */
-                                        1; /* for terminating null symbol */
-
-            char* prov_env_copy = (char*)calloc(prov_env_copy_size, sizeof(char));
-            if (prov_env_copy == NULL) {
-                LOG_ERROR("memory allocaion failed");
-                return ATL_STATUS_FAILURE;
-            }
-
-            if (single_prov)
-                snprintf(prov_env_copy, prov_env_copy_size, "%s", ATL_OFI_SHM_PROV_NAME);
-            else {
-                snprintf(
-                    prov_env_copy, prov_env_copy_size, "%s,%s", prov_env, ATL_OFI_SHM_PROV_NAME);
-            }
-
-            LOG_DEBUG("modify FI_PROVIDER: old value ", prov_env, ", new value ", prov_env_copy);
-
-            setenv("FI_PROVIDER", prov_env_copy, 1);
-
-            free(prov_env_copy);
-        }
-    }
+    global_data.is_env_set = 1;
 
     return ATL_STATUS_SUCCESS;
 }
@@ -1421,12 +1437,9 @@ static inline atl_status_t atl_ofi_ep_progress(atl_ep_t* ep, atl_ofi_req_t* req 
 }
 
 static inline atl_status_t atl_ofi_ep_poll(atl_ep_t* ep) {
-    atl_ofi_ctx_t* ofi_ctx;
-    ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
-    if (ofi_ctx->progress_mode == ATL_PROGRESS_POLL) {
+    if (global_data.progress_mode == ATL_PROGRESS_POLL) {
         atl_ofi_ep_progress(ep, NULL /* ofi_req */);
     }
-
     return ATL_STATUS_SUCCESS;
 }
 
@@ -1434,21 +1447,17 @@ static atl_status_t atl_ofi_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t*
     CCL_THROW_IF_NOT(is_completed);
 
     atl_status_t status;
-
     atl_ofi_req_t* ofi_req;
-    atl_ofi_ctx_t* ofi_ctx;
 
     status = ATL_STATUS_SUCCESS;
-
     ofi_req = ((atl_ofi_req_t*)req->internal);
-    ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
 
     *is_completed = (ofi_req->comp_state == ATL_OFI_COMP_COMPLETED);
     if (*is_completed) {
         return ATL_STATUS_SUCCESS;
     }
 
-    if (ofi_ctx->progress_mode == ATL_PROGRESS_CHECK) {
+    if (global_data.progress_mode == ATL_PROGRESS_CHECK) {
         status = atl_ofi_ep_progress(ep, ofi_req);
         *is_completed = (ofi_req->comp_state == ATL_OFI_COMP_COMPLETED);
     }
@@ -1523,19 +1532,16 @@ static atl_status_t atl_ofi_init(int* argc,
                      ", expected offset ",
                      offsetof(atl_req_t, internal));
 
+    ret = atl_ofi_set_env(*attr);
+    if (ret != ATL_STATUS_SUCCESS) {
+        LOG_ERROR("atl_ofi_set_env error");
+        return ATL_STATUS_FAILURE;
+    }
+
     atl_ofi_ctx_t* ofi_ctx;
     ofi_ctx = (atl_ofi_ctx_t*)calloc(1, sizeof(atl_ofi_ctx_t));
     if (!ofi_ctx)
         return ATL_STATUS_FAILURE;
-
-    ret = atl_ofi_adjust_env(ofi_ctx, *attr);
-    if (ret != ATL_STATUS_SUCCESS) {
-        LOG_ERROR("atl_ofi_adjust_env error");
-        free(ofi_ctx->prov_env_copy);
-        ofi_ctx->prov_env_copy = NULL;
-        free(ofi_ctx);
-        return ATL_STATUS_FAILURE;
-    }
 
     atl_ctx_t* ctx = &(ofi_ctx->ctx);
 
@@ -1686,8 +1692,8 @@ static atl_status_t atl_ofi_init(int* argc,
         if (prov->is_shm)
             prov_name = strdup(ATL_OFI_SHM_PROV_NAME);
         else {
-            if (ofi_ctx->prov_env_copy && !strstr(ofi_ctx->prov_env_copy, ","))
-                prov_name = strdup(ofi_ctx->prov_env_copy);
+            if (strlen(global_data.prov_env_copy) && !strstr(global_data.prov_env_copy, ","))
+                prov_name = strdup(global_data.prov_env_copy);
             else
                 prov_name = NULL;
         }
@@ -1767,12 +1773,12 @@ static atl_status_t atl_ofi_init(int* argc,
         prov->max_msg_size = prov_info->ep_attr->max_msg_size;
 
         if (coord->global_idx == 0) {
-            LOG_INFO("provider ", prov_info->fabric_attr->prov_name);
-            LOG_INFO("mr_mode ", prov_info->domain_attr->mr_mode);
-            LOG_INFO("threading ", prov_info->domain_attr->threading);
-            LOG_INFO("tx_ctx_cnt ", prov_info->domain_attr->tx_ctx_cnt);
-            LOG_INFO("max_ep_tx_ctx ", prov_info->domain_attr->max_ep_tx_ctx);
-            LOG_INFO("max_msg_size ", prov_info->ep_attr->max_msg_size);
+            LOG_INFO("provider: ", prov_info->fabric_attr->prov_name);
+            LOG_INFO("  mr_mode: ", prov_info->domain_attr->mr_mode);
+            LOG_INFO("  threading: ", prov_info->domain_attr->threading);
+            LOG_INFO("  tx_ctx_cnt: ", prov_info->domain_attr->tx_ctx_cnt);
+            LOG_INFO("  max_ep_tx_ctx: ", prov_info->domain_attr->max_ep_tx_ctx);
+            LOG_INFO("  max_msg_size: ", prov_info->ep_attr->max_msg_size);
         }
 
         ATL_OFI_CALL(fi_fabric(prov_info->fabric_attr, &prov->fabric, NULL), ret, goto err);
@@ -1815,7 +1821,7 @@ static atl_status_t atl_ofi_init(int* argc,
 
         fi_freeinfo(prov_hints);
         prov_hints = NULL;
-    }
+    } /* prov loop */
 
     for (ep_idx = 0; ep_idx < attr->ep_count; ep_idx++) {
         atl_ofi_ep_t* ofi_ep;
@@ -1839,43 +1845,40 @@ static atl_status_t atl_ofi_init(int* argc,
 
     pmi->pmrt_barrier();
 
-    /* by default don't use timeout for retry operations and just break by retry_count */
-    ofi_ctx->timeout_sec = 0;
-
     if (ctx->is_resize_enabled) {
-        ofi_ctx->timeout_sec = ATL_OFI_DEFAULT_TIMEOUT_SEC;
+        global_data.timeout_sec = ATL_OFI_DEFAULT_TIMEOUT_SEC;
         char* timeout_sec_env = getenv(ATL_OFI_TIMEOUT_SEC_ENV);
         if (timeout_sec_env) {
-            if ((ofi_ctx->timeout_sec = safe_c_strtol(timeout_sec_env, NULL, 10)) == 0)
+            if ((global_data.timeout_sec = safe_c_strtol(timeout_sec_env, NULL, 10)) == 0)
                 goto err;
         }
     }
 
-    ofi_ctx->max_retry_count = ATL_OFI_MAX_RETRY_COUNT;
     char* max_retry_count_env;
     max_retry_count_env = getenv(ATL_OFI_MAX_RETRY_COUNT_ENV);
     if (max_retry_count_env) {
-        if ((ofi_ctx->max_retry_count = safe_c_strtol(max_retry_count_env, NULL, 10)) == 0)
+        if ((global_data.max_retry_count = safe_c_strtol(max_retry_count_env, NULL, 10)) == 0)
             goto err;
     }
 
     if ((coord->global_count == coord->local_count) && (coord->global_count <= 4)) {
-        ofi_ctx->progress_mode = ATL_PROGRESS_CHECK;
+        global_data.progress_mode = ATL_PROGRESS_CHECK;
     }
     else {
-        ofi_ctx->progress_mode = ATL_PROGRESS_POLL;
+        global_data.progress_mode = ATL_PROGRESS_POLL;
     }
 
     char* progress_mode_env;
     progress_mode_env = getenv(ATL_PROGRESS_MODE_ENV);
     if (progress_mode_env) {
-        ofi_ctx->progress_mode = static_cast<atl_progress_mode_t>(atoi(progress_mode_env));
+        global_data.progress_mode = static_cast<atl_progress_mode_t>(atoi(progress_mode_env));
     }
 
     if (coord->global_idx == 0) {
-        LOG_INFO("timeout_sec ", ofi_ctx->timeout_sec);
-        LOG_INFO("max_retry_count ", ofi_ctx->max_retry_count);
-        LOG_INFO("progress_mode ", ofi_ctx->progress_mode);
+        LOG_INFO("ATL/OFI:")
+        LOG_INFO("  timeout_sec: ", global_data.timeout_sec);
+        LOG_INFO("  max_retry_count: ", global_data.max_retry_count);
+        LOG_INFO("  progress_mode: ", global_data.progress_mode);
     }
 
     *out_ctx = ctx;
@@ -1883,15 +1886,9 @@ static atl_status_t atl_ofi_init(int* argc,
     fi_freeinfo(base_hints);
     base_hints = NULL;
 
-    free(ofi_ctx->prov_env_copy);
-    ofi_ctx->prov_env_copy = NULL;
-
     return ATL_STATUS_SUCCESS;
 
 err:
-    free(ofi_ctx->prov_env_copy);
-    ofi_ctx->prov_env_copy = NULL;
-
     LOG_ERROR("can't find suitable provider");
 
     if (providers) {

@@ -28,7 +28,7 @@ extern "C" {
 
 #define RET2ATL(ret) (ret != MPI_SUCCESS) ? ATL_STATUS_FAILURE : ATL_STATUS_SUCCESS
 
-typedef enum { ATL_MPI_LIB_NONE, ATL_MPI_LIB_IMPI, ATL_MPI_LIB_MPICH } atl_mpi_lib_type_t;
+typedef enum { ATL_MPI_LIB_IMPI, ATL_MPI_LIB_MPICH, ATL_MPI_LIB_NONE } atl_mpi_lib_type_t;
 
 typedef struct {
     atl_mpi_lib_type_t type;
@@ -87,15 +87,25 @@ typedef struct {
     ccl_fp16_impl_type impl_type;
 } atl_mpi_fp16_data_t;
 
-typedef struct {
+typedef struct atl_mpi_global_data {
+    int is_external_init;
     atl_mpi_lib_type_t mpi_lib_type;
-    atl_mpi_bf16_data_t bf16;
-    atl_mpi_fp16_data_t fp16;
     atl_progress_mode_t progress_mode;
     int sync_coll;
     int extra_ep;
-    int is_external_init;
     size_t nic_count;
+
+    atl_mpi_bf16_data_t bf16;
+    atl_mpi_fp16_data_t fp16;
+
+    atl_mpi_global_data()
+            : is_external_init(0),
+              mpi_lib_type(ATL_MPI_LIB_NONE),
+              progress_mode(ATL_PROGRESS_CHECK),
+              sync_coll(0),
+              extra_ep(0),
+              nic_count(1) {}
+
 } atl_mpi_global_data_t;
 
 static atl_mpi_global_data_t global_data;
@@ -642,11 +652,11 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
     }
 
     if (final_info) {
-        LOG_INFO("MPI library type: ", final_info->name);
+        LOG_DEBUG("MPI library type: ", final_info->name);
         lib_type = final_info->type;
     }
     else {
-        LOG_INFO("MPI library type: none");
+        LOG_DEBUG("MPI library type: none");
         lib_type = ATL_MPI_LIB_NONE;
     }
 
@@ -739,7 +749,7 @@ atl_status_t atl_mpi_set_env(const atl_attr_t& attr) {
         LOG_WARN("MPI was initialized externally, CCL/MPI specific enviroment is ignored");
     }
     else {
-        LOG_INFO("set CCL/MPI specific enviroment");
+        LOG_DEBUG("set CCL/MPI specific enviroment");
     }
 
     global_data.mpi_lib_type = type;
@@ -1433,10 +1443,6 @@ static atl_status_t atl_mpi_init(int* argc,
         goto err_init;
     }
 
-    global_data.sync_coll = attr->sync_coll;
-    global_data.extra_ep = attr->extra_ep;
-    global_data.nic_count = atl_mpi_get_nic_count();
-
     MPI_Initialized(&is_mpi_inited);
 
     if (!is_mpi_inited) {
@@ -1466,6 +1472,10 @@ static atl_status_t atl_mpi_init(int* argc,
 
     if (ret)
         goto err_init;
+
+    global_data.sync_coll = attr->sync_coll;
+    global_data.extra_ep = attr->extra_ep;
+    global_data.nic_count = atl_mpi_get_nic_count();
 
     if (atl_mpi_bf16_init() == ATL_STATUS_FAILURE) {
         atl_mpi_bf16_finalize();
@@ -1498,8 +1508,6 @@ static atl_status_t atl_mpi_init(int* argc,
         goto err_after_init;
     ctx->is_resize_enabled = 0;
 
-    global_data.progress_mode = ATL_PROGRESS_CHECK;
-
     char* progress_mode_env;
     progress_mode_env = getenv(ATL_PROGRESS_MODE_ENV);
     if (progress_mode_env) {
@@ -1507,10 +1515,13 @@ static atl_status_t atl_mpi_init(int* argc,
     }
 
     if (coord->global_idx == 0) {
-        LOG_INFO("progress_mode ", global_data.progress_mode);
-        LOG_INFO("sync_coll ", global_data.sync_coll);
-        LOG_INFO("extra_ep ", global_data.extra_ep);
-        LOG_INFO("nic_count ", global_data.nic_count);
+        LOG_INFO("ATL/MPI:")
+        LOG_INFO("  is_external_init: ", global_data.is_external_init);
+        LOG_INFO("  mpi_lib_type: ", mpi_lib_infos[global_data.mpi_lib_type].name);
+        LOG_INFO("  progress_mode: ", global_data.progress_mode);
+        LOG_INFO("  sync_coll: ", global_data.sync_coll);
+        LOG_INFO("  extra_ep: ", global_data.extra_ep);
+        LOG_INFO("  nic_count: ", global_data.nic_count);
     }
 
     for (i = 0; i < attr->ep_count; i++) {
