@@ -206,8 +206,13 @@ std::vector<sycl::queue> create_sycl_queues(const std::string& device_type,
     std::vector<sycl::device> devices;
 
     try {
-        if ((device_type.compare("gpu") == 0) && has_gpu()) {
-            /* special handling to cover multi-tile case */
+        if (device_type.compare("gpu") == 0) {
+
+            if (!has_gpu()) {
+                throw std::runtime_error("GPU is requested but not available.");
+            }
+
+            /* GPU type has special handling to cover multi-tile case */
             devices = create_sycl_gpu_devices();
         }
         else {
@@ -215,19 +220,6 @@ std::vector<sycl::queue> create_sycl_queues(const std::string& device_type,
 
             if (device_type.compare("cpu") == 0) {
                 selector.reset(new cpu_selector());
-            }
-            else if (device_type.compare("gpu") == 0) {
-                if (has_accelerator()) {
-                    selector.reset(new host_selector());
-                    cout
-                        << "Accelerator is the first in device list, but unavailable for multiprocessing "
-                        << "host_selector has been created instead of default_selector.\n";
-                }
-                else {
-                    selector.reset(new default_selector());
-                    cout
-                        << "GPU is unavailable, default_selector has been created instead of gpu_selector.\n";
-                }
             }
             else if (device_type.compare("host") == 0) {
                 selector.reset(new host_selector());
