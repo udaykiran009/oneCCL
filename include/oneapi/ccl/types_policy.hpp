@@ -64,7 +64,7 @@ struct copy_on_write_access_policy {
         static_assert(std::is_same<typename ccl_api_t::acc_policy_t, self_t>::value,
                       "ccl_api_t is not provide 'copy_on_write_access_policy'");
         if (dst != &src) {
-            dst->get_impl().swap(src.get_impl());
+            dst->get_impl() = std::move(src.get_impl());
         }
     }
 
@@ -102,7 +102,7 @@ struct direct_access_policy {
         static_assert(std::is_same<typename ccl_api_t::acc_policy_t, self_t>::value,
                       "ccl_api_t is not provide 'copy_on_write_access_policy'");
         if (dst != &src) {
-            dst->get_impl().swap(src.get_impl());
+            dst->get_impl() = std::move(src.get_impl());
         }
     }
 
