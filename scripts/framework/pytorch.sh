@@ -27,13 +27,13 @@ EPOCHS="2" # 90
 WORKERS="2" # 4
 BATCH_SIZE="64"
 
-DOWNLOAD_ANACONDA="0"
-DOWNLOAD_PYTORCH="0"
-DOWNLOAD_IPEX="0"
-DOWNLOAD_TORCHCCL="0"
-DOWNLOAD_JEMALLOC="0"
-DOWNLOAD_VISION="0"
-DOWNLOAD_IMAGENET="0"
+DOWNLOAD_ANACONDA="1"
+DOWNLOAD_PYTORCH="1"
+DOWNLOAD_IPEX="1"
+DOWNLOAD_TORCHCCL="1"
+DOWNLOAD_JEMALLOC="1"
+DOWNLOAD_VISION="1"
+DOWNLOAD_IMAGENET="1"
 DOWNLOAD_CCL="0" # TODO don't use while torch-ccl is not ported to latest CCL API
 
 BUILD_ANACONDA="0"
@@ -52,6 +52,22 @@ print_log()
     msg=$1
     date=`date`
     echo "[$date] ========> $msg"
+}
+
+print_env()
+{
+    ccl_env=`env | grep CCL_`
+    impi_env=`env | grep I_MPI_`
+    omp_env=`env | grep "OMP_\|KMP_" `
+
+    print_log "CCL env:"
+    print_log "${ccl_env}"
+
+    print_log "IMPI env:"
+    print_log "${impi_env}"
+
+    print_log "OMP env:"
+    print_log "${omp_env}"
 }
 
 remove_dir()
@@ -183,7 +199,7 @@ test()
     export USE_ROCM=0
     export REL_WITH_DEB_INFO=1
     export USE_CUDA=0
-    export CCL_LOG_LEVEL=info
+    export CCL_LOG_LEVEL=1 # TODO: "info" since 2021.2
     export I_MPI_DEBUG=12
 
     export DNNL_PRIMITIVE_CACHE_CAPACITY=1024
@@ -194,6 +210,7 @@ test()
     if [ "${DOWNLOAD_ANACONDA}" == "1" ]
     then
         print_log "download anaconda"
+        rm anaconda3.sh
         wget https://repo.continuum.io/archive/Anaconda3-5.0.0-Linux-x86_64.sh -O anaconda3.sh
         chmod +x anaconda3.sh  
         ${work_dir}/anaconda3.sh -b -p ${anaconda_install_path}
@@ -204,17 +221,23 @@ test()
         print_log "build anaconda"
 
         # TODO fix for sysct_lab
+
+        print_log "removing env ${ENV_NAME}"
+        ${anaconda_install_path}/bin/conda remove -y --name ${ENV_NAME} --all
+
+        print_log "creating env ${ENV_NAME}"
         ${anaconda_install_path}/bin/conda create -yn ${ENV_NAME} python=3.7
+
         print_log "install python packages"
-        pip install sklearn onnx
         conda config --add channels intel
         conda install ninja pyyaml setuptools cmake cffi typing intel-openmp
+        #pip install sklearn onnx
+        pip install sklearn
         conda install mkl mkl-include numpy -c intel --no-update-deps
     fi
 
     print_log "activate ${ENV_NAME}"
     source ${anaconda_install_path}/bin/activate ${ENV_NAME}
-
 
 
     if [ "${DOWNLOAD_PYTORCH}" == "1" ]
@@ -277,6 +300,9 @@ test()
         print_log "download imagenet"
         remove_dir ${work_dir}/imagenet
         clone_code https://gitlab.devtools.intel.com/ia-optimized-model-for-pytorch/imagenet.git enbale_ipex_torch_ccl_ddp
+
+        # TODO: tmp WA
+        #sed -i '1i import torch_ccl' ${work_dir}/imagenet/imagenet/main.py
     fi
 
     if [ "${DOWNLOAD_CCL}" == "1" ]
@@ -355,14 +381,17 @@ test()
 
     cleanup_hosts $hostfile
 
-    cd ${work_dir}/imagenet/imagenet
     export LD_PRELOAD=${jemalloc_install_path}/lib/libjemalloc.so
 
+    print_env
     print_log "training started"
-    python lauch.py --nnodes ${N} --nproc_per_node ${PPN} --ccl_worker_count=${WORKERS} \
+
+    python ${work_dir}/imagenet/imagenet/lauch.py --nnodes ${N} --nproc_per_node ${PPN} --ccl_worker_count=${WORKERS} \
         --master_addr=${master_ip} --hostfile $hostfile \
-        python -u main.py --lr 0.1 -a resnet50 --ipex --dnnl -b ${BATCH_SIZE} \
-        -j 2 --epochs ${EPOCHS} --dist-backend=ccl --seed 2020 ${imagenet_dir}
+        python -u ${work_dir}/imagenet/imagenet/main.py --lr 0.1 -a resnet50 --ipex --dnnl -b ${BATCH_SIZE} \
+        -j 2 --epochs ${EPOCHS} --use_torch_ccl --dist-backend=ccl --seed 1 ${imagenet_dir}
+
+    # TODO: --mix-precision
 
     print_log "training completed"
 

@@ -207,7 +207,6 @@ std::vector<sycl::queue> create_sycl_queues(const std::string& device_type,
 
     try {
         if (device_type.compare("gpu") == 0) {
-
             if (!has_gpu()) {
                 throw std::runtime_error("GPU is requested but not available.");
             }

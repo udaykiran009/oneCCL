@@ -39,7 +39,7 @@ check_test()
     local test_log=$1
     local test_file=$2
     # test_passed=`grep -E -c -i 'PASSED' ${test_log}`
-    test_failed=`grep -E -c -i 'invalid|Aborted|fail|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
+    test_failed=`grep -E -c -i 'illegal|mismatched|invalid|Aborted|fail|failed|^BAD$|KILLED|^fault$|sycl::runtime_error|terminate' ${test_log}`
     # test_skipped=`grep -E -c -i 'unavailable|skipped|skip' ${test_log}`
     if [ ${test_failed} -ne 0 ]
     then
@@ -161,7 +161,7 @@ run_benchmark()
     then
         options=" -w 0 -i 6 -n 4 -y 256,16384,1048576 -d int32,float32 -r sum"
     else
-        options=" -w 0 -i 2 -n 2 -y 256,1048576 -d int32,float32 -r sum"
+        options=" -w 0 -i 2 -n 2 -y 256,1048576 -d float32 -r sum"
     fi
 
     usm_list="none"
@@ -347,16 +347,13 @@ run()
     if [ ${total_fails} != 0 ]
     then
         echo "There are ${total_fails} failed tests"
-        sleep 20
         exit 1
     elif [ ${total_skipped} != 0 ]
     then
         echo "Tests passed, except ${total_skipped} skipped tests"
-        sleep 20
         exit 0
     else
         echo "All tests passed!"
-        sleep 20
         exit 0
     fi
 }
