@@ -401,7 +401,7 @@ void server::run(void* args) {
                    (struct sockaddr*)(((server_args_t*)args)->args),
                    sizeof(addr)) < 0) {
     }
-    while (!should_stop || client_count > 1) {
+    while (!should_stop || client_count > 0) {
         FD_ZERO(&read_fds);
         FD_SET(server_listen_sock, &read_fds);
         FD_SET(server_control_sock, &read_fds);
