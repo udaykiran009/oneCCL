@@ -183,7 +183,8 @@ public:
               dtype(dtype_in),
               device_stream(stream),
               ctx(in_ctx),
-              entry_state(gpu_entry_state::initial) {
+              entry_state(gpu_entry_state::initial),
+              dev_queue(init_default_queue(parent_communicator->get_device())) {
         // TODO: remove once all the child entries are refactored to not
         // use fence field directly
         fence = get_fence();
@@ -283,8 +284,7 @@ public:
     }
 
     ccl_device::device_queue &get_queue() const {
-        ccl_device &device = parent_communicator->get_device();
-        return device.get_cmd_queue(ccl_device::get_default_queue_desc(), ctx);
+        return dev_queue;
     }
 
     ze_fence_handle_t get_fence() {
@@ -600,6 +600,42 @@ private:
     ccl_driver_context_ptr ctx;
     // Internal gpu entry state to keep track of kernel status, it's not directly related to status field
     gpu_entry_state entry_state;
+    ccl_device::device_queue &dev_queue;
+
+    ccl_device::device_queue &init_default_queue(ccl_device &device) {
+        native::ccl_device::queue_group_properties queue_props = device.get_queue_group_prop();
+
+        ze_command_queue_desc_t queue_desc = device.get_default_queue_desc();
+
+        // find compute ordinal
+        uint32_t computeOrdinal = std::numeric_limits<uint32_t>::max();
+        for (uint32_t i = 0; i < queue_props.size(); i++) {
+            // Prefer CCS
+            if (queue_props[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE &&
+                queue_props[i].numQueues > 1) {
+                queue_desc.ordinal = i;
+                break;
+            }
+        }
+        // if CCS not found, look for RCS/CCS
+        if (computeOrdinal == std::numeric_limits<uint32_t>::max()) {
+            for (uint32_t i = 0; i < queue_props.size(); i++) {
+                if (queue_props[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
+                    queue_desc.ordinal = i;
+                    break;
+                }
+            }
+        }
+
+        //calculate rank (remember it is a local rank)
+        queue_desc.index = comm_addr.rank % queue_props[queue_desc.ordinal].numQueues;
+        ENTRY_LOG_DEBUG("Rank to calculate for queue idx:",
+                        comm_addr.rank,
+                        ", calculated queue idx: ",
+                        queue_desc.index);
+
+        return device.get_cmd_queue(queue_desc, ctx);
+    }
 };
 
 } // namespace native
