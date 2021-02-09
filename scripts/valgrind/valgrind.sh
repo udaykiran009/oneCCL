@@ -8,7 +8,7 @@ BASENAME=`basename $0 .sh`
 set_example_work_dir()
 {
     SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
-    export EXAMPLE_WORK_DIR=${SCRIPT_DIR}/build
+    export EXAMPLE_WORK_DIR=${SCRIPT_DIR}/../../examples/build
 }
 
 create_work_dir()
@@ -49,17 +49,36 @@ check_test()
     fi
 }
 
+check_and_set_clang_path()
+{
+    if [ -z "${SYCL_BUNDLE_ROOT}" ]
+    then
+        SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/last/compiler/latest/linux/"
+        echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
+    fi
+    source ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
+}
+
 check_clang()
 {
     which clang++
     COMPILER_INSTALL_CHECK=$?
     if [ "$COMPILER_INSTALL_CHECK" != "0" ]
     then
-        echo "Warning: clang++ compiler wasn't found, ccl-configuration=cpu_icc will be sourced"
-        source ${CCL_ROOT}/env/vars.sh --ccl-configuration=cpu_icc
-        MODE="cpu"
+        check_and_set_clang_path
     fi
 }
+
+check_and_set_impi_path()
+{
+    if [ -z "${I_MPI_ROOT}" ]
+    then
+        I_MPI_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/last/mpi/latest"
+        echo "WARNING: I_MPI_ROOT is not defined, will be used default: $I_MPI_ROOT"
+    fi
+    source ${I_MPI_ROOT}/env/vars.sh intel64
+}
+
 
 check_environment()
 {
@@ -67,15 +86,7 @@ check_environment()
     MPI_INSTALL_CHECK=$?
     if [ "$MPI_INSTALL_CHECK" != "0" ]
     then
-        echo "Error: IMPI wasn't found"
-        exit 1
-    fi
-
-    MPI_INSTALL_CHECK_2=`echo $I_MPI_ROOT`
-    if [ "$MPI_INSTALL_CHECK_2" == "" ]
-    then
-        echo "Error: I_MPI_ROOT wasn't found"
-        exit 1
+        check_and_set_impi_path
     fi
 
     CCL_INSTALL_CHECK=`echo $CCL_ROOT`
@@ -84,10 +95,23 @@ check_environment()
         echo "Error: CCL_ROOT wasn't found"
         exit 1
     fi
+
+    vg_major_version=`valgrind --version | awk -F"[-.]" '{print $2}'`
+    vg_minor_version=`valgrind --version | awk -F"[-.]" '{print $3}'`
+    vg_patch_version=`valgrind --version | awk -F"[-.]" '{print $4}'`
+    
+    vg_num_version=$(( vg_major_version * 10000 + vg_minor_version * 100 + vg_patch_version ))
+    
+    if [[ $vg_num_version -lt 31300 ]]
+    then
+        echo "Error: please use valgrind >= 3.13.0"
+        exit 1
+    fi
 }
 
-set_debug_impi_env()
+set_debug_impi_env_and_timeout()
 {
+    export I_MPI_JOB_TIMEOUT=360
     source $I_MPI_ROOT/env/vars.sh --i_mpi_library_kind=debug_mt
     IMPI_DEBUG_CHECK=$?
     if [ "$IMPI_DEBUG_CHECK" != "0" ]
@@ -449,7 +473,7 @@ check_mode()
 
 parse_arguments $@
 check_environment
-set_debug_impi_env
+set_debug_impi_env_and_timeout
 check_mode
 check_scope
 create_work_dir
