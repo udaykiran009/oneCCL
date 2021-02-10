@@ -1,5 +1,4 @@
-#ifndef BASE_HPP
-#define BASE_HPP
+#pragma once
 
 #include "oneapi/ccl.hpp"
 
@@ -106,5 +105,3 @@ void mpi_finalize() {
     if (!is_finalized)
         MPI_Finalize();
 }
-
-#endif /* BASE_HPP */

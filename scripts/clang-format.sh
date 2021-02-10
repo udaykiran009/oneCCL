@@ -17,13 +17,17 @@ else
     echo -e "Clang-format version: ${green_color}$(clang-format --version)${no_color}"
 
     for filename in $(find $(git rev-parse --show-toplevel) -type f | \
-        grep -v googletest | \
+        grep -v "googletest" | \
         grep -v "doc"| \
         grep -v "ofi/include"| \
         grep -v "mpi/include" | \
         grep -v "scripts/copyright" | \
+        grep -v "examples/build" | \
+        grep -v "CMakeFiles" | \
+        grep -v "_install" | \
         grep -P ".*\.(c|cpp|h|hpp|cl|i)$")
-    do 
+    do
+        echo "process file ${filename}"
         clang-format -style=file -i $filename
     done
 

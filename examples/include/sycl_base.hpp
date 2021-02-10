@@ -1,6 +1,6 @@
-#ifndef SYCL_BASE_HPP
-#define SYCL_BASE_HPP
+#pragma once
 
+#include <algorithm>
 #include <CL/sycl.hpp>
 #include <iostream>
 #include <map>
@@ -52,28 +52,28 @@ inline bool check_sycl_usm(queue& q, usm::alloc alloc_type) {
         ret = false;
 
     if (!ret) {
-        cout << "Incompatible device type and USM type\n";
+        cout << "incompatible device type and USM type\n";
     }
 
     return ret;
 }
 
 std::string get_preferred_gpu_platform_name() {
-    std::string backend;
+    std::string filter;
     std::string result;
 
     if (getenv("SYCL_DEVICE_FILTER") == nullptr) {
-        backend = "OpenCL";
+        filter = "level-zero";
     }
     else if (getenv("SYCL_DEVICE_FILTER") != nullptr) {
         if (std::strstr(getenv("SYCL_DEVICE_FILTER"), "level_zero") != NULL) {
-            backend = "Level-Zero";
+            filter = "level-zero";
         }
         else if (std::strstr(getenv("SYCL_DEVICE_FILTER"), "opencl") != NULL) {
-            backend = "OpenCL";
+            filter = "opencl";
         }
         else {
-            throw std::runtime_error("invalid backend: " +
+            throw std::runtime_error("invalid device filter: " +
                                      std::string(getenv("SYCL_DEVICE_FILTER")));
         }
     }
@@ -81,8 +81,6 @@ std::string get_preferred_gpu_platform_name() {
     auto plaform_list = sycl::platform::get_platforms();
 
     for (const auto& platform : plaform_list) {
-        auto platform_name = platform.get_info<sycl::info::platform::name>();
-
         auto devices = platform.get_devices();
         auto gpu_dev = std::find_if(devices.begin(), devices.end(), [](const sycl::device& d) {
             return d.is_gpu();
@@ -94,10 +92,17 @@ std::string get_preferred_gpu_platform_name() {
             continue;
         }
 
-        if (platform_name.find(backend) == std::string::npos) {
+        auto platform_name = platform.get_info<sycl::info::platform::name>();
+        std::string platform_name_low_case;
+        platform_name_low_case.resize(platform_name.size());
+
+        std::transform(
+            platform_name.begin(), platform_name.end(), platform_name_low_case.begin(), ::tolower);
+
+        if (platform_name_low_case.find(filter) == std::string::npos) {
             // cout << "platform [" << platform_name
             //      << "] does not match with requested "
-            //      << backend << ", skipping\n";
+            //      << filter << ", skipping\n";
             continue;
         }
 
@@ -507,5 +512,3 @@ public:
         ccl_tuple_for_each(allocators, dealloc_impl{ &in_ptr, size, type, this });
     }
 };
-
-#endif /* SYCL_BASE_HPP */

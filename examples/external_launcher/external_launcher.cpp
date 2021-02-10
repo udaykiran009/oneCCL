@@ -1,15 +1,21 @@
 #include <algorithm>
-#include <stdlib.h>
+#include <cstdlib>
+#include <ctime>
 
 #include "oneapi/ccl.hpp"
 #include "store.hpp"
 
-#define ITER_COUNT               10
-#define REINIT_COUNT             3
-#define KVS_CREATE_SUCCESS       0
-#define STORE_READ_WRITE_TIMEOUT 120
-#define BASE_PORT                10000
-#define KVS_IP_PORT_DELIMETER    "_"
+#define ELEM_COUNT        (256 * 1024)
+#define ITER_COUNT        10
+#define REINIT_COUNT      20
+#define STORE_TIMEOUT_SEC 120
+#define MAX_SLEEP_MSEC    500
+
+#define KVS_BASE_PORT         10000
+#define KVS_IP_PORT_DELIMETER "_"
+
+#define KVS_CREATE_SUCCESS 0
+#define KVS_CREATE_FAILURE -1
 
 enum class kvs_mode { store, ip_port };
 
@@ -44,9 +50,9 @@ void run_collective(const char* cmd_name,
     ccl::barrier(comm);
 
     std::cout << "avg time of " << cmd_name << ": "
-              << std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count() /
+              << std::chrono::duration_cast<std::chrono::milliseconds>(exec_time).count() /
                      ITER_COUNT
-              << ", us" << std::endl;
+              << " ms" << std::endl;
 }
 
 void print_help() {
@@ -64,37 +70,37 @@ int create_kvs_by_store(std::shared_ptr<file_store> store,
         main_addr = kvs->get_address();
         exec_time = std::chrono::system_clock::now() - start;
         std::cout << "main kvs create time: "
-                  << std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count()
-                  << ", us" << std::endl;
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(exec_time).count()
+                  << " ms" << std::endl;
 
         start = std::chrono::system_clock::now();
         if (store->write((void*)main_addr.data(), main_addr.size()) < 0) {
             printf("error occurred during write attempt\n");
             kvs.reset();
-            return -1;
+            return KVS_CREATE_FAILURE;
         }
         exec_time = std::chrono::system_clock::now() - start;
         std::cout << "write to store time: "
-                  << std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count()
-                  << ", us" << std::endl;
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(exec_time).count()
+                  << " ms" << std::endl;
     }
     else {
         if (store->read((void*)main_addr.data(), main_addr.size()) < 0) {
             printf("error occurred during read attempt\n");
             kvs.reset();
-            return -1;
+            return KVS_CREATE_FAILURE;
         }
         exec_time = std::chrono::system_clock::now() - start;
         std::cout << "read from store time: "
-                  << std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count()
-                  << ", us" << std::endl;
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(exec_time).count()
+                  << " ms" << std::endl;
 
         start = std::chrono::system_clock::now();
         kvs = ccl::create_kvs(main_addr);
         exec_time = std::chrono::system_clock::now() - start;
         std::cout << "kvs create time: "
-                  << std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count()
-                  << ", us" << std::endl;
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(exec_time).count()
+                  << " ms" << std::endl;
     }
     return KVS_CREATE_SUCCESS;
 }
@@ -105,13 +111,12 @@ int create_kvs_by_attr(ccl::kvs_attr attr, ccl::shared_ptr_class<ccl::kvs>& kvs)
     kvs = ccl::create_main_kvs(attr);
     exec_time = std::chrono::system_clock::now() - start;
     std::cout << "main kvs create time: "
-              << std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count() << ", us"
+              << std::chrono::duration_cast<std::chrono::milliseconds>(exec_time).count() << " ms"
               << std::endl;
     return KVS_CREATE_SUCCESS;
 }
 
 int main(int argc, char** argv) {
-    const size_t elem_count = 64 * 1024;
     int ret = 0;
     int size, rank;
     kvs_mode mode;
@@ -156,7 +161,7 @@ int main(int argc, char** argv) {
 
         kvs_param = argv[4];
 
-        std::cout << "[" << rank << "] args: "
+        std::cout << "args: "
                   << "size = " << size << ", rank = " << rank
                   << ", kvs mode = " << kvs_mode_names[mode] << ", kvs param = " << kvs_param
                   << std::endl;
@@ -169,11 +174,13 @@ int main(int argc, char** argv) {
     ccl::init();
 
     for (int i = 0; i < REINIT_COUNT; ++i) {
+        std::cout << "========== started iter " << i << " ==========" << std::endl;
+
         ccl::shared_ptr_class<ccl::kvs> kvs;
 
         if (mode == kvs_mode::store) {
             store = std::make_shared<file_store>(
-                kvs_param, rank, std::chrono::seconds(STORE_READ_WRITE_TIMEOUT));
+                kvs_param, rank, std::chrono::seconds(STORE_TIMEOUT_SEC));
             if (create_kvs_by_store(store, rank, kvs) != KVS_CREATE_SUCCESS) {
                 std::cout << "can not create kvs by store" << std::endl;
                 return -1;
@@ -181,7 +188,7 @@ int main(int argc, char** argv) {
         }
         else if (mode == kvs_mode::ip_port) {
             std::string ip_port(std::string(kvs_param) + KVS_IP_PORT_DELIMETER +
-                                std::to_string(BASE_PORT + i));
+                                std::to_string(KVS_BASE_PORT + i));
             auto attr = ccl::create_kvs_attr();
             attr.set<ccl::kvs_attr_id::ip_port>(ccl::string_class(ip_port));
             if (create_kvs_by_attr(attr, kvs) != KVS_CREATE_SUCCESS) {
@@ -194,24 +201,22 @@ int main(int argc, char** argv) {
             return -1;
         }
 
-        std::cout << "[" << rank << "] started iter " << i << std::endl;
-
         std::chrono::system_clock::duration exec_time{ 0 };
         auto start = std::chrono::system_clock::now();
         auto comm = ccl::create_communicator(size, rank, kvs);
         exec_time = std::chrono::system_clock::now() - start;
         std::cout << "communicator create time: "
-                  << std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count()
-                  << ", us" << std::endl;
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(exec_time).count()
+                  << " ms" << std::endl;
 
         start = std::chrono::system_clock::now();
-        std::vector<float> send_buf(elem_count, static_cast<float>(comm.rank()));
-        std::vector<float> recv_buf(elem_count);
+        std::vector<float> send_buf(ELEM_COUNT, static_cast<float>(comm.rank()));
+        std::vector<float> recv_buf(ELEM_COUNT);
         run_collective("allreduce", send_buf, recv_buf, comm);
         exec_time = std::chrono::system_clock::now() - start;
-        std::cout << "total allreduce time: "
-                  << std::chrono::duration_cast<std::chrono::microseconds>(exec_time).count()
-                  << ", us" << std::endl;
+        std::cout << "total collective time: "
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(exec_time).count()
+                  << " ms" << std::endl;
 
         ccl::barrier(comm);
 
@@ -220,10 +225,16 @@ int main(int argc, char** argv) {
 
         ccl::barrier(comm);
 
-        std::cout << "[" << rank << "] completed iter " << i << std::endl;
+        /* imitate non-simultaneous destruction of KVS */
+        int slow_rank = i % size;
+        int sleep_ms = (rank == slow_rank) ? MAX_SLEEP_MSEC : 0;
+        std::cout << "sleep for " << sleep_ms << " ms" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
+
+        std::cout << "========== completed iter " << i << " ==========" << std::endl << std::endl;
     }
 
-    std::cout << "[" << rank << "] PASSED" << std::endl;
+    std::cout << "PASSED" << std::endl;
 
     return ret;
 }

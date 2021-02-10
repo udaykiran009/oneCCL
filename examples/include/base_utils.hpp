@@ -1,5 +1,4 @@
-#ifndef BASE_UTILS_HPP
-#define BASE_UTILS_HPP
+#pragma once
 
 #include <algorithm>
 #include <iterator>
@@ -145,4 +144,3 @@ void str_to_mset(const char* input, std::multiset<T>& output, char delimiter) {
     }
 }
 } // namespace utils
-#endif /* BASE_UTILS_HPP */

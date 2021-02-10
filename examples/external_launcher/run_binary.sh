@@ -32,7 +32,6 @@ parse_arguments()
 {
     if [ $# -ne 18 ];
     then
-        echo_log "ERROR: unexpected number of options"
         print_help
         exit 1
     fi
