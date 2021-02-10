@@ -75,7 +75,7 @@ if (COMPUTE_BACKEND)
     message ("Enable multi GPU support: ${MULTI_GPU_SUPPORT}")
     message ("COMPUTE_BACKEND_TARGET_NAME: ${COMPUTE_BACKEND_TARGET_NAME}")
 
-    if ((${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL"))
+    if ((${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL_level_zero"))
         add_subdirectory(sycl)
     endif()
     if(${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "ze_loader")
