@@ -87,4 +87,5 @@ private:
     const int CONNECTION_TIMEOUT = 120;
     int server_listen_sock; /* used on server side to handle new incoming connect requests from clients */
     std::string server_address{};
+    const size_t default_start_port = 4096;
 };

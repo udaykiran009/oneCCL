@@ -2,8 +2,6 @@
 #include "util/pm/pmi_resizable_rt/pmi_resizable/def.h"
 
 typedef enum kvs_access_mode {
-    AM_CONNECT = -1,
-    //    AM_DISCONNECT = 1,
     AM_PUT = 2,
     AM_REMOVE = 3,
     AM_GET_COUNT = 4,

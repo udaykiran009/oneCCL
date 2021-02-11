@@ -343,7 +343,7 @@ size_t internal_kvs::init_main_server_by_string(const char* main_addr) {
     char* port = nullptr;
     local_server_address.sin_family = AF_INET;
     local_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
-    local_server_address.sin_port = 1;
+    local_server_address.sin_port = default_start_port;
 
     main_server_address.sin_family = AF_INET;
 
@@ -448,7 +448,7 @@ size_t internal_kvs::kvs_main_server_address_reserve(char* main_address) {
 
     main_server_address.sin_family = AF_INET;
     main_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
-    main_server_address.sin_port = 1;
+    main_server_address.sin_port = default_start_port;
     local_server_address.sin_family = AF_INET;
     local_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
 
@@ -505,7 +505,7 @@ size_t internal_kvs::init_main_server_address(const char* main_addr) {
 
     local_server_address.sin_family = AF_INET;
     local_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
-    local_server_address.sin_port = 1;
+    local_server_address.sin_port = default_start_port;
 
     main_server_address.sin_family = AF_INET;
 
@@ -584,15 +584,13 @@ size_t internal_kvs::kvs_init(const char* main_addr) {
     int err;
     socklen_t len = 0;
     struct sockaddr_in addr;
-    kvs_request_t request;
     time_t start_time;
     time_t connection_time = 0;
-    memset(&request, 0, sizeof(kvs_request_t));
     memset(&addr, 0, sizeof(struct sockaddr_in));
 
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    addr.sin_port = 1;
+    addr.sin_port = default_start_port;
 
     if ((client_op_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         LOG_ERROR("kvs_init: client_op_sock init");
@@ -652,15 +650,6 @@ size_t internal_kvs::kvs_init(const char* main_addr) {
                   CONNECTION_TIMEOUT);
         exit(EXIT_FAILURE);
     }
-
-    request.mode = AM_CONNECT;
-
-    DO_RW_OP(write,
-             client_op_sock,
-             &request,
-             sizeof(kvs_request_t),
-             client_memory_mutex,
-             "client: connect");
 
     if (strstr(main_host_ip, local_host_ip) && local_port == main_port) {
         is_master = 1;

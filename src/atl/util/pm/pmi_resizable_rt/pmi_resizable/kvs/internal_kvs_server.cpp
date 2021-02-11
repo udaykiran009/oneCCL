@@ -4,6 +4,7 @@
 #include <list>
 #include <map>
 #include <mutex>
+#include <poll.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -13,15 +14,13 @@
 #include "common/log/log.hpp"
 #include "internal_kvs_server.hpp"
 
-#define MAX_CLIENT_COUNT 300
-
 class server {
 public:
     server() = default;
     void run(void*);
-    bool check_finalize(fd_set read_fds);
+    bool check_finalize();
     void make_client_request(int& socket);
-    void try_to_connect_new(fd_set read_fds);
+    void try_to_connect_new();
 
 private:
     struct clients_info {
@@ -50,47 +49,53 @@ private:
         size_t local_size = 0;
         std::list<std::shared_ptr<clients_info>> clients;
     };
+    enum fd_indexes { FDI_LISTENER = 0, FDI_CONTROL = 1, FDI_LAST = 2 };
+
     kvs_request_t request{};
     size_t count{};
     size_t client_count = 0;
-    int sockets[MAX_CLIENT_COUNT]{};
+    const size_t max_client_queue_size = 300;
+    const size_t client_count_increase = 300;
     std::map<std::string, barrier_info> barriers;
     std::map<std::string, comm_info> communicators;
-    int server_control_sock{};
     int ret = 0;
     std::mutex server_memory_mutex;
     std::map<std::string, std::map<std::string, std::string>> requests;
-    int server_listen_sock; /* used on server side to handle new incoming connect requests from clients */
     const int free_socket = -1;
+    std::vector<struct pollfd> poll_fds;
 };
 
-void server::try_to_connect_new(fd_set read_fds) {
-    int i = 0;
-    struct sockaddr_in addr;
+void server::try_to_connect_new() {
+    if (poll_fds[FDI_LISTENER].revents != 0) {
+        struct sockaddr_in addr;
 
-    memset(&addr, 0, sizeof(addr));
+        memset(&addr, 0, sizeof(addr));
 
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_port = 0;
-
-    if (FD_ISSET(server_listen_sock, &read_fds)) {
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = INADDR_ANY;
+        addr.sin_port = 0;
         int new_socket;
         socklen_t peer_addr_size = sizeof(addr);
         if ((new_socket = accept(
-                 server_listen_sock, (struct sockaddr*)&addr, (socklen_t*)&peer_addr_size)) < 0) {
+                 poll_fds[FDI_LISTENER].fd, (struct sockaddr*)&addr, (socklen_t*)&peer_addr_size)) <
+            0) {
             perror("server: server_listen_sock accept");
             exit(EXIT_FAILURE);
         }
-        for (i = 0; i < MAX_CLIENT_COUNT; i++) {
-            if (sockets[i] == free_socket) {
-                sockets[i] = new_socket;
+        for (size_t i = FDI_LAST; i < poll_fds.size(); i++) {
+            if (poll_fds[i].fd == free_socket) {
+                poll_fds[i].fd = new_socket;
                 break;
             }
         }
-        if (i >= MAX_CLIENT_COUNT) {
-            printf("server: no free sockets\n");
-            exit(EXIT_FAILURE);
+        client_count++;
+        if (poll_fds.size() - FDI_LAST == client_count) {
+            size_t old_size = poll_fds.size();
+            poll_fds.resize(old_size + client_count_increase);
+            for (size_t i = old_size; i < poll_fds.size(); i++) {
+                poll_fds[i].fd = free_socket;
+                poll_fds[i].events = POLLIN;
+            }
         }
     }
 }
@@ -106,10 +111,6 @@ void server::make_client_request(int& socket) {
     }
 
     switch (request.mode) {
-        case AM_CONNECT: {
-            client_count++;
-            break;
-        }
         case AM_PUT: {
             auto& req = requests[request.name];
             req[request.key] = request.val;
@@ -342,18 +343,18 @@ void server::make_client_request(int& socket) {
     }
 }
 
-bool server::check_finalize(fd_set read_fds) {
+bool server::check_finalize() {
     bool to_finalize = false;
-    if (FD_ISSET(server_control_sock, &read_fds)) {
+    if (poll_fds[FDI_CONTROL].revents != 0) {
         DO_RW_OP_1(read,
-                   server_control_sock,
+                   poll_fds[FDI_CONTROL].fd,
                    &request,
                    sizeof(kvs_request_t),
                    ret,
                    "server: get control msg from client");
         if (ret == 0) {
-            close(server_control_sock);
-            server_control_sock = free_socket;
+            close(poll_fds[FDI_CONTROL].fd);
+            poll_fds[FDI_CONTROL].fd = free_socket;
         }
         if (request.mode != AM_FINALIZE) {
             printf("server: invalid access mode for local socket\n");
@@ -365,12 +366,16 @@ bool server::check_finalize(fd_set read_fds) {
 }
 
 void server::run(void* args) {
-    int max_sd, sd, i;
     bool should_stop = false;
-    fd_set read_fds;
     int so_reuse = 1;
     struct sockaddr_in addr;
-    server_listen_sock = ((server_args_t*)args)->sock_listener;
+    poll_fds.resize(client_count_increase);
+    for (auto& it : poll_fds) {
+        it.fd = free_socket;
+        it.events = POLLIN;
+    }
+    poll_fds[FDI_LISTENER].fd = ((server_args_t*)args)->sock_listener;
+
     memset(&addr, 0, sizeof(addr));
 
     addr.sin_family = AF_INET;
@@ -378,51 +383,29 @@ void server::run(void* args) {
     addr.sin_port = 0;
 
 #ifdef SO_REUSEPORT
-    setsockopt(server_listen_sock, SOL_SOCKET, SO_REUSEPORT, &so_reuse, sizeof(so_reuse));
+    setsockopt(poll_fds[FDI_LISTENER].fd, SOL_SOCKET, SO_REUSEPORT, &so_reuse, sizeof(so_reuse));
 #else
-    setsockopt(server_listen_sock, SOL_SOCKET, SO_REUSEADDR, &so_reuse, sizeof(so_reuse));
+    setsockopt(poll_fds[FDI_LISTENER].fd, SOL_SOCKET, SO_REUSEADDR, &so_reuse, sizeof(so_reuse));
 #endif
 
-    if (listen(server_listen_sock, MAX_CLIENT_COUNT) < 0) {
+    if (listen(poll_fds[FDI_LISTENER].fd, max_client_queue_size) < 0) {
         LOG_ERROR("server: server_listen_sock listen");
         exit(EXIT_FAILURE);
     }
 
-    for (i = 0; i < MAX_CLIENT_COUNT; i++) {
-        sockets[i] = free_socket;
-    }
-
-    if ((server_control_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((poll_fds[FDI_CONTROL].fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("server: server_control_sock init");
         exit(EXIT_FAILURE);
     }
 
-    while (connect(server_control_sock,
+    while (connect(poll_fds[FDI_CONTROL].fd,
                    (struct sockaddr*)(((server_args_t*)args)->args),
                    sizeof(addr)) < 0) {
     }
     while (!should_stop || client_count > 0) {
-        FD_ZERO(&read_fds);
-        FD_SET(server_listen_sock, &read_fds);
-        FD_SET(server_control_sock, &read_fds);
-        max_sd = server_listen_sock;
-
-        for (i = 0; i < MAX_CLIENT_COUNT; i++) {
-            sd = sockets[i];
-
-            if (sd != free_socket)
-                FD_SET(sd, &read_fds);
-
-            if (sd > max_sd)
-                max_sd = sd;
-        }
-
-        if (server_control_sock > max_sd)
-            max_sd = server_control_sock;
-
-        if (select(max_sd + 1, &read_fds, nullptr, nullptr, nullptr) < 0) {
+        if (poll(poll_fds.data(), poll_fds.size(), -1) < 0) {
             if (errno != EINTR) {
-                perror("server: select");
+                perror("server: poll");
                 exit(EXIT_FAILURE);
             }
             else {
@@ -431,42 +414,38 @@ void server::run(void* args) {
             }
         }
 
-        for (i = 0; i < MAX_CLIENT_COUNT; i++) {
-            sd = sockets[i];
-            if (sd == free_socket)
-                continue;
-
-            if (FD_ISSET(sd, &read_fds)) {
-                make_client_request(sockets[i]);
+        for (size_t i = FDI_LAST; i < poll_fds.size(); i++) {
+            if (poll_fds[i].fd != free_socket && poll_fds[i].revents != 0) {
+                make_client_request(poll_fds[i].fd);
             }
         }
-        try_to_connect_new(read_fds);
+        try_to_connect_new();
         if (!should_stop) {
-            should_stop = check_finalize(read_fds);
+            should_stop = check_finalize();
         }
     }
 
-    if (server_control_sock) {
+    if (poll_fds[FDI_CONTROL].fd != free_socket) {
         DO_RW_OP_1(write,
-                   server_control_sock,
+                   poll_fds[FDI_CONTROL].fd,
                    &should_stop,
                    sizeof(should_stop),
                    ret,
                    "server: send control msg to client");
     }
 
-    close(server_control_sock);
-    server_control_sock = free_socket;
+    close(poll_fds[FDI_CONTROL].fd);
+    poll_fds[FDI_CONTROL].fd = free_socket;
 
-    for (i = 0; i < MAX_CLIENT_COUNT; i++) {
-        if (sockets[i] != free_socket) {
-            close(sockets[i]);
-            sockets[i] = free_socket;
+    for (size_t i = FDI_LAST; i < poll_fds.size(); i++) {
+        if (poll_fds[i].fd != free_socket) {
+            close(poll_fds[i].fd);
+            poll_fds[i].fd = free_socket;
         }
     }
 
-    close(server_listen_sock);
-    server_listen_sock = free_socket;
+    close(poll_fds[FDI_LISTENER].fd);
+    poll_fds[FDI_LISTENER].fd = free_socket;
 }
 
 void* kvs_server_init(void* args) {
