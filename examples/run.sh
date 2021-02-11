@@ -177,19 +177,22 @@ run_benchmark()
     fi
 
     use_kernels=0
-    # these conditions check for benchmark with kernels
-    # coll are all there except alltoall,reduce_scatter
-    if [ "$example" == "benchmark" ] &&   \
-       [ "$backend" == "sycl" ] &&        \
-       [ "$transport" == "ofi" ] &&       \
-       [ "$runtime" == "level_zero" ] &&  \
-       [ "$loop" == "regular" ] &&        \
-       [[ "$coll" == ${supported_kernel_colls} || "$coll" == ${supported_kernel_colls_with_dtypes} ]] && \
-       [[ "$dtype" == "float32" || "$dtype" == ${supported_kernel_dtypes} ]] &&       \
-       [ "$reduction" == "sum" ]
+    if [ "${USE_KERNELS}" == "yes" ]
     then
-        echo "set flag use_kernels"
-        use_kernels=1
+        # these conditions check for benchmark with kernels
+        # coll are all there except alltoall,reduce_scatter
+        if [ "$example" == "benchmark" ] &&   \
+            [ "$backend" == "sycl" ] &&        \
+            [ "$transport" == "ofi" ] &&       \
+            [ "$runtime" == "level_zero" ] &&  \
+            [ "$loop" == "regular" ] &&        \
+            [[ "$coll" == ${supported_kernel_colls} || "$coll" == ${supported_kernel_colls_with_dtypes} ]] && \
+            [[ "$dtype" == "float32" || "$dtype" == ${supported_kernel_dtypes} ]] &&       \
+            [ "$reduction" == "sum" ]
+        then
+            echo "set flag use_kernels"
+            use_kernels=1
+        fi
     fi
 
     for usm in $usm_list;
@@ -564,6 +567,7 @@ print_help()
     echo_log "  --mode mode             cpu|gpu mode"
     echo_log "  --scope scope           pr reduces scope till minimal pre-merge scope"
     echo_log "  --build-only            build only"
+    echo_log "  --use-kernels           run the benchmark with the kernels support"
     echo_log "  --help                  print help information"
     echo_log
     echo_log "Usage examples:"
@@ -592,6 +596,7 @@ parse_arguments()
             "--scope" | "-scope")                       SCOPE=$2 ; shift ;;
             "--build-only" | "-build-only")             BUILD_ONLY="yes" ;;
             "--run-only" | "-run-only")                 RUN_ONLY="yes" ;;
+            "--use-kernels" | "-use-kernels")           USE_KERNELS="yes" ;;
             *)
             echo "$(basename $0): ERROR: unknown option ($1)"
             print_help
@@ -606,6 +611,7 @@ parse_arguments()
     [[ ! -z "$SCOPE" ]] && echo "SCOPE: $SCOPE"
     [[ ! -z "$BUILD_ONLY" ]] && echo "BUILD_ONLY: $BUILD_ONLY"
     [[ ! -z "$RUN_ONLY" ]] && echo "RUN_ONLY: $RUN_ONLY"
+    [[ ! -z "$USE_KERNELS" ]] && echo "USE_KERNELS: $USE_KERNELS"
     echo
 }
 

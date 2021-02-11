@@ -304,7 +304,7 @@ run_compatibitily_tests()
     if [ ${node_label} == "mlsl2_test_gpu" ]
     then
         export FI_TCP_IFACE=eno1
-        ${CURRENT_WORK_DIR}/examples/run.sh gpu ${scope}
+        ${CURRENT_WORK_DIR}/examples/run.sh gpu ${scope} --use-kernels
     else
         ${CURRENT_WORK_DIR}/examples/run.sh cpu ${scope}
     fi
