@@ -67,10 +67,6 @@ public:
         return transport->atl_get_proc_coord();
     }
 
-    int atl_is_resize_enabled() {
-        return transport->atl_is_resize_enabled();
-    }
-
     atl_status_t atl_mr_reg(const void* buf, size_t len, atl_mr_t** mr) {
         return transport->atl_mr_reg(buf, len, mr);
     }

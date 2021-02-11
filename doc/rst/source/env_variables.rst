@@ -496,7 +496,7 @@ CCL_WORKER_AFFINITY
      - Description
    * - ``auto``
      - Workers are automatically pinned to last cores of pin domain.
-       Pin domain depends from process laucher.
+       Pin domain depends from process launcher.
        If ``mpirun`` from |product_short| package is used then pin domain is MPI process pin domain.
        Otherwise, pin domain is all cores on the node.
    * - ``n1,n2,..``

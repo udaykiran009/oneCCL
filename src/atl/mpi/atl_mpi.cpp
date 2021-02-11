@@ -33,10 +33,6 @@ atl_proc_coord_t* atl_mpi::atl_get_proc_coord() {
     return &(ctx->coord);
 }
 
-int atl_mpi::atl_is_resize_enabled() {
-    return ctx->is_resize_enabled;
-}
-
 atl_status_t atl_mpi::atl_mr_reg(const void* buf, size_t len, atl_mr_t** mr) {
     return atl_mpi_mr_reg(ctx, buf, len, mr);
 }

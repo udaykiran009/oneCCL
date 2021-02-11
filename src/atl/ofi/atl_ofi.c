@@ -65,34 +65,22 @@ static inline atl_status_t atl_ofi_ep_poll(atl_ep_t* ep);
 #define ATL_OFI_RETRY(func, ep, ret_val) \
     do { \
         atl_ctx_t* ctx = ep->ctx; \
-        size_t timeout_sec = global_data.timeout_sec; \
-        size_t max_retry_count = global_data.max_retry_count; \
-        int is_resize_enabled = ctx->is_resize_enabled; \
-        time_t start = 0, end = 0; \
+        atl_ofi_ctx_t* ofi_ctx = container_of(ctx, atl_ofi_ctx_t, ctx); \
+        size_t max_retry_count = ofi_ctx->max_retry_count; \
+        size_t retry_count = 0; \
         do { \
-            size_t retry_count = 0; \
-            if (is_resize_enabled) { \
-                start = time(NULL); \
+            ret_val = func; \
+            if (ret_val == FI_SUCCESS) \
+                break; \
+            if (ret_val != -FI_EAGAIN) { \
+                LOG_ERROR( \
+                    #func "\n fails with ret: ", ret_val, ", strerror: ", fi_strerror(-ret_val)); \
+                CCL_THROW("OFI function error"); \
+                break; \
             } \
-            do { \
-                ret_val = func; \
-                if (ret_val == FI_SUCCESS) \
-                    break; \
-                if (ret_val != -FI_EAGAIN) { \
-                    LOG_ERROR(#func "\n fails with ret: ", \
-                              ret_val, \
-                              ", strerror: ", \
-                              fi_strerror(-ret_val)); \
-                    CCL_THROW("OFI function error"); \
-                    break; \
-                } \
-                (void)atl_ofi_ep_poll(ep); \
-                retry_count += 1; \
-            } while (ret_val == -FI_EAGAIN && retry_count < max_retry_count); \
-            if (is_resize_enabled) { \
-                end = time(NULL); \
-            } \
-        } while (ret_val == -FI_EAGAIN && (size_t)(end - start) < timeout_sec); \
+            (void)atl_ofi_ep_poll(ep); \
+            retry_count++; \
+        } while ((ret_val == -FI_EAGAIN) && (retry_count < max_retry_count)); \
     } while (0)
 
 /* OFI returns 0 or -errno */
@@ -113,7 +101,7 @@ long int safe_c_strtol(const char* str, char** endptr, int base) {
         if (errno == EINVAL) {
             LOG_ERROR("conversion error occurred for string: ", str);
         }
-        /* if the value provided was out of range, display a warning message */
+        /* if the value provided was out of range, display a error message */
         if (errno == ERANGE) {
             LOG_ERROR("the value provided was out of range, string: ", str);
         }
@@ -178,6 +166,8 @@ typedef struct {
     size_t prov_count;
     size_t shm_prov_idx;
     size_t nw_prov_idx;
+    size_t max_retry_count;
+    atl_progress_mode_t progress_mode;
 } atl_ofi_ctx_t;
 
 typedef struct {
@@ -189,20 +179,13 @@ typedef struct {
 } atl_ofi_req_t;
 
 typedef struct atl_ofi_global_data {
+    size_t ctx_count;
+    int is_env_inited;
     char prov_env_copy[ATL_OFI_MAX_PROV_ENV_LEN];
-    size_t timeout_sec;
-    size_t max_retry_count;
-    atl_progress_mode_t progress_mode;
-    int is_env_set;
 
-    atl_ofi_global_data()
-            : timeout_sec(0),
-              max_retry_count(ATL_OFI_MAX_RETRY_COUNT),
-              progress_mode(ATL_PROGRESS_CHECK),
-              is_env_set(0) {
+    atl_ofi_global_data() : ctx_count(0), is_env_inited(0) {
         memset(prov_env_copy, 0, sizeof(prov_env_copy));
     }
-
 } atl_ofi_global_data_t;
 
 static atl_ofi_global_data_t global_data;
@@ -942,7 +925,7 @@ static atl_status_t atl_ofi_adjust_env(const atl_attr_t& attr) {
 }
 
 static atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
-    if (global_data.is_env_set) {
+    if (global_data.is_env_inited) {
         return ATL_STATUS_SUCCESS;
     }
 
@@ -963,7 +946,7 @@ static atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
 
     atl_ofi_adjust_env(attr);
 
-    global_data.is_env_set = 1;
+    global_data.is_env_inited = 1;
 
     return ATL_STATUS_SUCCESS;
 }
@@ -973,6 +956,11 @@ static atl_status_t atl_ofi_finalize(atl_ctx_t* ctx) {
     size_t idx;
 
     atl_ofi_ctx_t* ofi_ctx = container_of(ctx, atl_ofi_ctx_t, ctx);
+
+    global_data.ctx_count--;
+    if (ctx->coord.global_idx == 0) {
+        LOG_INFO("finalize atl-ofi ctx, remaining ctx_count ", global_data.ctx_count);
+    }
 
     for (idx = 0; idx < ofi_ctx->prov_count; idx++) {
         atl_ofi_prov_t* prov = &ofi_ctx->provs[idx];
@@ -984,8 +972,13 @@ static atl_status_t atl_ofi_finalize(atl_ctx_t* ctx) {
         free(ofi_ep);
     }
 
-    free(ctx->eps);
+    if (global_data.ctx_count == 0) {
+        if (ctx->coord.global_idx == 0) {
+            LOG_INFO("finalized last atl-ofi ctx");
+        }
+    }
 
+    free(ctx->eps);
     free(ofi_ctx);
 
     return RET2ATL(ret);
@@ -1437,7 +1430,8 @@ static inline atl_status_t atl_ofi_ep_progress(atl_ep_t* ep, atl_ofi_req_t* req 
 }
 
 static inline atl_status_t atl_ofi_ep_poll(atl_ep_t* ep) {
-    if (global_data.progress_mode == ATL_PROGRESS_POLL) {
+    atl_ofi_ctx_t* ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
+    if (ofi_ctx->progress_mode == ATL_PROGRESS_POLL) {
         atl_ofi_ep_progress(ep, NULL /* ofi_req */);
     }
     return ATL_STATUS_SUCCESS;
@@ -1448,6 +1442,7 @@ static atl_status_t atl_ofi_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t*
 
     atl_status_t status;
     atl_ofi_req_t* ofi_req;
+    atl_ofi_ctx_t* ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
 
     status = ATL_STATUS_SUCCESS;
     ofi_req = ((atl_ofi_req_t*)req->internal);
@@ -1457,7 +1452,7 @@ static atl_status_t atl_ofi_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t*
         return ATL_STATUS_SUCCESS;
     }
 
-    if (global_data.progress_mode == ATL_PROGRESS_CHECK) {
+    if (ofi_ctx->progress_mode == ATL_PROGRESS_CHECK) {
         status = atl_ofi_ep_progress(ep, ofi_req);
         *is_completed = (ofi_req->comp_state == ATL_OFI_COMP_COMPLETED);
     }
@@ -1532,11 +1527,14 @@ static atl_status_t atl_ofi_init(int* argc,
                      ", expected offset ",
                      offsetof(atl_req_t, internal));
 
-    ret = atl_ofi_set_env(*attr);
-    if (ret != ATL_STATUS_SUCCESS) {
-        LOG_ERROR("atl_ofi_set_env error");
-        return ATL_STATUS_FAILURE;
+    if (global_data.ctx_count == 0) {
+        ret = atl_ofi_set_env(*attr);
+        if (ret != ATL_STATUS_SUCCESS) {
+            LOG_ERROR("atl_ofi_set_env error");
+            return ATL_STATUS_FAILURE;
+        }
     }
+    global_data.ctx_count++;
 
     atl_ofi_ctx_t* ofi_ctx;
     ofi_ctx = (atl_ofi_ctx_t*)calloc(1, sizeof(atl_ofi_ctx_t));
@@ -1563,8 +1561,6 @@ static atl_status_t atl_ofi_init(int* argc,
 
     atl_proc_coord_t* coord;
     coord = &(ctx->coord);
-
-    ctx->is_resize_enabled = pmi->is_pm_resize_enabled();
 
     base_hints = fi_allocinfo();
     if (!base_hints) {
@@ -1655,7 +1651,7 @@ static atl_status_t atl_ofi_init(int* argc,
     attr->tag_bits = 64;
     attr->max_tag = 0xFFFFFFFFFFFFFFFF;
 
-    if ((coord->global_count == coord->local_count) && !(ctx->is_resize_enabled)) {
+    if (coord->global_count == coord->local_count) {
         ofi_ctx->prov_count = 1;
         ofi_ctx->provs[0].is_shm = (attr->enable_shm) ? 1 : 0;
     }
@@ -1845,40 +1841,33 @@ static atl_status_t atl_ofi_init(int* argc,
 
     pmi->pmrt_barrier();
 
-    if (ctx->is_resize_enabled) {
-        global_data.timeout_sec = ATL_OFI_DEFAULT_TIMEOUT_SEC;
-        char* timeout_sec_env = getenv(ATL_OFI_TIMEOUT_SEC_ENV);
-        if (timeout_sec_env) {
-            if ((global_data.timeout_sec = safe_c_strtol(timeout_sec_env, NULL, 10)) == 0)
-                goto err;
-        }
-    }
-
     char* max_retry_count_env;
     max_retry_count_env = getenv(ATL_OFI_MAX_RETRY_COUNT_ENV);
     if (max_retry_count_env) {
-        if ((global_data.max_retry_count = safe_c_strtol(max_retry_count_env, NULL, 10)) == 0)
-            goto err;
+        ofi_ctx->max_retry_count = safe_c_strtol(max_retry_count_env, NULL, 10);
+    }
+    else {
+        ofi_ctx->max_retry_count = ATL_OFI_MAX_RETRY_COUNT;
     }
 
     if ((coord->global_count == coord->local_count) && (coord->global_count <= 4)) {
-        global_data.progress_mode = ATL_PROGRESS_CHECK;
+        ofi_ctx->progress_mode = ATL_PROGRESS_CHECK;
     }
     else {
-        global_data.progress_mode = ATL_PROGRESS_POLL;
+        ofi_ctx->progress_mode = ATL_PROGRESS_POLL;
     }
 
     char* progress_mode_env;
     progress_mode_env = getenv(ATL_PROGRESS_MODE_ENV);
     if (progress_mode_env) {
-        global_data.progress_mode = static_cast<atl_progress_mode_t>(atoi(progress_mode_env));
+        ofi_ctx->progress_mode = static_cast<atl_progress_mode_t>(atoi(progress_mode_env));
     }
 
     if (coord->global_idx == 0) {
-        LOG_INFO("ATL/OFI:")
-        LOG_INFO("  timeout_sec: ", global_data.timeout_sec);
-        LOG_INFO("  max_retry_count: ", global_data.max_retry_count);
-        LOG_INFO("  progress_mode: ", global_data.progress_mode);
+        LOG_INFO("atl-ofi-ctx:");
+        LOG_INFO("  new ctx_count: ", global_data.ctx_count);
+        LOG_INFO("  max_retry_count: ", ofi_ctx->max_retry_count);
+        LOG_INFO("  progress_mode: ", ofi_ctx->progress_mode);
     }
 
     *out_ctx = ctx;

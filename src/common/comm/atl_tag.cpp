@@ -2,7 +2,7 @@
 #include "exec/exec.hpp"
 
 void ccl_atl_tag::print() {
-    LOG_INFO("ATL tag:");
+    LOG_INFO("atl-tag:");
     LOG_INFO("  bits: ", tag_bits);
     LOG_INFO("  max: ", max_tag);
     LOG_INFO("  mask: ", max_tag_mask);

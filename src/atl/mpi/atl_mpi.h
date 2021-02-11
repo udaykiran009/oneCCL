@@ -19,8 +19,6 @@ public:
 
     atl_proc_coord_t* atl_get_proc_coord() override;
 
-    int atl_is_resize_enabled() override;
-
     atl_status_t atl_mr_reg(const void* buf, size_t len, atl_mr_t** mr) override;
 
     atl_status_t atl_mr_dereg(atl_mr_t* mr) override;

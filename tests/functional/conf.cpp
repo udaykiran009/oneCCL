@@ -311,3 +311,11 @@ void print_err_message(char* message, std::ostream& output) {
         output << messages.data();
     }
 }
+
+void mpi_finalize() {
+    int is_finalized = 0;
+    MPI_Finalized(&is_finalized);
+
+    if (!is_finalized)
+        MPI_Finalize();
+}

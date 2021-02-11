@@ -149,6 +149,7 @@
         if (!mpi_inited) { \
             MPI_Init(NULL, NULL); \
         } \
+        atexit(mpi_finalize); \
         int size, rank; \
         MPI_Comm_size(MPI_COMM_WORLD, &size); \
         MPI_Comm_rank(MPI_COMM_WORLD, &rank); \
@@ -167,7 +168,6 @@
         PATCH_OUTPUT_NAME_ARG(argc, argv); \
         testing::InitGoogleTest(&argc, argv); \
         int res = RUN_ALL_TESTS(); \
-        MPI_Finalize(); \
         return res; \
     }
 

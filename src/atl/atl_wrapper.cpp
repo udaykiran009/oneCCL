@@ -156,7 +156,7 @@ void atl_wrapper::init_transport() {
 
     if (rank == 0) {
         tag->print();
-        LOG_INFO("ATL parameters:");
+        LOG_INFO("atl-parameters:");
         LOG_INFO("  ep_count: ", attr.ep_count);
         LOG_INFO("  enable_shm: ", attr.enable_shm);
         LOG_INFO("  enable_rma: ", attr.enable_rma);
@@ -165,6 +165,7 @@ void atl_wrapper::init_transport() {
         LOG_INFO("  extra_ep: ", attr.extra_ep);
     }
 }
+
 atl_wrapper::~atl_wrapper() {
     static std::mutex memory_mutex;
     std::lock_guard<std::mutex> lock(memory_mutex);

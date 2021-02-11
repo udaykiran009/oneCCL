@@ -136,8 +136,6 @@ struct atl_ctx {
 
     size_t ep_count;
     atl_ep_t** eps;
-
-    int is_resize_enabled;
 };
 
 /*
