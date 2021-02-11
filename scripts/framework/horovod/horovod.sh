@@ -26,11 +26,10 @@ MYNAME=$(id -u -n)
 
 BASENAME=$(basename $0 .sh)
 SCRIPT_DIR=$(cd $(dirname "$BASH_SOURCE") && pwd -P)
-HOROVOD_OUT_DIR=${SCRIPT_DIR}/_horovod
+SRC_DIR="${SCRIPT_DIR}/../../../"
+HOROVOD_OUT_DIR=${SRC_DIR}/_horovod
 HOROVOD_TESTING_DIR="/p/pdsd/scratch/Uploads/Horovod_testing"
 
-
-#. ~/bashrc
 export ENV_NAME="horovod_manual"
 
 if [[ -z ${FFN_OUT_DIR} ]]; then
@@ -42,26 +41,18 @@ JOBLOGFILE=${FFN_OUT_DIR}/${TSTAMP}_ffn_${MYNAME}.log
 
 TSTAMP=$(date +%s)
 
-if [[ -z ${CCL_ROOT} ]]; then
-    echo "ERROR: CCL_ROOT was not set!"
-    exit 1
-fi
-if [[ -z ${I_MPI_ROOT} ]]; then
-    echo "ERROR: I_MPI_ROOT was not set!"
-    exit 1
-fi
+DATE=$(date +%Y%m%d)
+TIME=$(date +%H%M%S)
 
 echo "HOME: $HOME"
 echo "USER: $USER"
 echo "tail -f $JOBLOGFILE"
-exec 1>$JOBLOGFILE
-exec 2>&1
 
 export MKLDNN_VERBOSE=0
 
 CheckCommandExitCode() {
     if [ $1 -ne 0 ]; then
-        echo_log "ERROR: ${2}" 1>&2
+        echo "ERROR: ${2}" 1>&2
         exit $1
     fi
 }
@@ -91,18 +82,12 @@ oneccl_config() {
     export I_MPI_JOB_RESPECT_PROCESS_PLACEMENT=0 
     export I_MPI_PIN_DOMAIN=socket
     export I_MPI_DEBUG=6
-    #export I_MPI_FABRICS_LIST=dapl,ofa,tmi,ofi,tcp
     export I_MPI_FALLBACK=enable
     export I_MPI_FABRICS=shm:ofi
-    #export I_MPI_TMI_PROVIDER=psm2
     export PSM2_IDENTIFY=1
-    #export FI_PROVIDER=psm2
     
     # Horovod related
-    #export HOROVOD_LOG_LEVEL=DEBUG
     export HOROVOD_FUSION_THRESHOLD=0 #67108864 #64MB default
-    #HOROVOD_CYCLE_TIME=5
-    #HOROVOD_TIMELINE_MARK_CYCLES=1
     export HOROVOD_CPU_OPERATIONS=CCL
     
     # oneCCL related
@@ -191,10 +176,7 @@ single_run() {
             echo "HOROVOD_TIMELINE else"
         fi
         echo "HOROVOD_TIMELINE $HOROVOD_TIMELINE"
-        #    -genv HOROVOD_TIMELINE=$HOROVOD_TIMELINE \
 
-        #    -bind-to socket \
-        #export I_MPI_PIN_DOMAIN=socket 
         mpirun -n $NRANKS -ppn  $NRANK_PER_NODE \
             -hosts $HOSTS -bootstrap ssh  \
             -bind-to socket \
@@ -237,10 +219,6 @@ single_run() {
 ffn_config() {
     HDF5_USE_FILE_LOCKING=False
     H5PY_DEFAULT_READONLY=1
-    #FFN_DATA_DIR=$HOME/panfs/a21/FFN/data
-    #FFN_DATA_DIR=/panfs/projects/ML_datasets/FFN/data
-    #FFN_DATA_DIR=/tmp/$USER/a21/FFN/data
-    #FFN_DATA_DIR=$HOME/lfs/a21/FFN/data
     if [[ -z ${FFN_DATA_DIR} ]]; then
         FFN_DATA_DIR=${HOROVOD_TESTING_DIR}/data/
     fi
@@ -280,25 +258,171 @@ ffn_config() {
     LRATE=0.001
     SHARDING_RULE=1 # 0 for no sharding, 1 for sharding
     SCALING_RULE=1 # 0 for no scaling, 1 for linear scaling, 2 for sqrt scaling wrt number of ranks
-    MAX_ITERS=300
-
+    MAX_ITERS=100
 }
 
+check_environment()
+{
+    which mpiexec
+    MPI_INSTALL_CHECK=$?
+    if [ "$MPI_INSTALL_CHECK" != "0" ]
+    then
+        echo "Error: IMPI wasn't found"
+        exit 1
+    fi
+
+    MPI_INSTALL_CHECK_2=`echo $I_MPI_ROOT`
+    if [ "$MPI_INSTALL_CHECK_2" == "" ]
+    then
+        echo "Error: I_MPI_ROOT wasn't found"
+        exit 1
+    fi
+
+    CCL_INSTALL_CHECK=`echo $CCL_ROOT`
+    if [ "$CCL_INSTALL_CHECK" == "" ]
+    then
+        echo "Error: CCL_ROOT wasn't found"
+        exit 1
+    fi
+}
+
+build_horovod() {
+    if [[ ${BUILD_HOROVOD} == "yes" ]]; then
+        echo "DEBUG: BUILD HOROVOD..."
+        echo "DEBUG: pip = $(which pip)"
+        echo "DEBUG: python = $(which python)"
+        check_environment
+        conda list -n ${ENV_NAME} | grep horovod
+        pip uninstall -y horovod
+
+        cd ${SRC_DIR}
+        git clone --recursive https://github.com/horovod/horovod.git
+        cd horovod
+        export HOROVOD_WITH_MPI=1
+        export HOROVOD_CPU_OPERATIONS=CCL
+        export HOROVOD_WITHOUT_MXNET=1
+        export HOROVOD_WITHOUT_PYTORCH=1
+        export HOROVOD_WITH_TENSORFLOW=1
+        export HOROVOD_WITHOUT_GLOO=1
+
+        python setup.py install > ${HOROVOD_OUT_DIR}/build_horovod_${DATE}_${TIME}.log 2>&1
+        CheckCommandExitCode $? "Build Horovod failed"
+        echo "DEBUG: BUILD HOROVOD...DONE"
+    fi
+}
+
+ccl_build_cpu() {
+    if [[ ${BUILD_CPU}  == "yes" ]]; then
+        cd ${SRC_DIR}
+        BUILD_COMPILER_TYPE=intel ${SRC_DIR}/scripts/build.sh --build-cpu > ${HOROVOD_OUT_DIR}/build_cpu_${DATE}_${TIME}.log 2>&1
+        CheckCommandExitCode $? "Build cpu failed"
+        cp ${SRC_DIR}/ccl_public/vars.sh.in ${SRC_DIR}/build/_install/env
+        mv ${SRC_DIR}/build/_install/env/vars.sh.in ${SRC_DIR}/build/_install/env/vars.sh
+    fi
+}
+
+ccl_build_gpu() {
+    if [[ ${BUILD_GPU}  == "yes" ]]; then
+        cd ${SRC_DIR}
+        ${SRC_DIR}/scripts/build.sh --build-gpu > ${HOROVOD_OUT_DIR}/build_gpu_${DATE}_${TIME}.log 2>&1
+        CheckCommandExitCode $? "Build gpu failed"
+        cp ${SRC_DIR}/ccl_public/vars.sh.in ${SRC_DIR}/build_gpu/_install/env
+        mv ${SRC_DIR}/build_gpu/_install/env/vars.sh.in ${SRC_DIR}/build_gpu/_install/env/vars.sh
+    fi
+}
+
+submit_job() {
+    if [[ ${SUBMIT_JOB} == "yes" ]]; then
+        if [[ -z ${HOSTS} ]]; then
+            if [[ ${PARTITION} ]]; then
+                PARTITION="skx-opa-18"
+            fi
+            if [[ -z ${N} ]]; then
+                N=2
+            fi
+            echo "INFO: The 'HOSTS' variable is not set. The task will be run in SLURM on ${PARTITION} nodes" 
+        else
+            #TODO
+            echo "Running on specific nodes is not supported yet"
+            exit 1
+        fi
+
+        ###
+        ### Checking that the task is still alive
+        ###
+
+        SLURM_JOB_ID=$(ssh nnlmpisnb03 "sbatch --export=ALL,SRC_DIR=${SRC_DIR},SCRIPT_DIR=${SCRIPT_DIR} --export=SRC_DIR=${SRC_DIR} --output=${SRC_DIR}/slurm_logfile.log --error=${SRC_DIR}/slurm_err_logfile.log -N ${N} -p ${PARTITION} ${SCRIPT_DIR}/run_horovod.sh")
+        SLURM_JOB_ID=$(grep -o "[[:digit:]]*" <<< ${SLURM_JOB_ID})
+
+        while true
+        do
+            sleep 30
+            ssh nnlmpisnb03 "squeue --job $SLURM_JOB_ID" | grep -c "$SLURM_JOB_ID"
+            STATUS="$?"
+            if [ "$STATUS" != "0" ]
+            then
+                break
+            fi
+        done
+
+        TESTSPACE_DIR=${ARTEFACT_DIR}/testspace
+        FFN_OUT_DIR=${TESTSPACE_DIR}/ffn_out_dir
+
+        ###
+        ###	Check exit status
+        ###
+
+        if [[ $(ls ${FFN_OUT_DIR} | grep ".*ppn.*log" | wc -l) -eq 0 ]]
+        then 
+            echo "ERROR: Log files was not found!"
+            exit 1
+        fi
+
+        for TEST_LOG in $(ls ${FFN_OUT_DIR} | grep ".*ppn.*log")
+        do 
+            test_failed=$(grep -E -c -i 'error|invalid|Aborted|fail|failed' ${FFN_OUT_DIR}/${TEST_LOG})
+            
+            echo "#"
+            echo "# ${TEST_LOG}"
+            echo "#"
+            
+            if [[ ${test_failed} -ne 0 ]]
+            then
+                echo "ERROR: testing failed"
+                exit 1
+            fi
+        done
+
+
+        echo "LOGS:"
+        for TEST_LOG in $(ls ${FFN_OUT_DIR} | grep ".*ppn.*log")
+        do 
+            echo "	->  ${FFN_OUT_DIR}/${TEST_LOG}"
+    done
+    fi
+}
 # run
 
 conda_envs
 
 HOME=${FFN_OUT_DIR}/../TEST
 
-oneccl_config
-ffn_config $@
+ccl_build_cpu
+ccl_build_gpu
+build_horovod
+submit_job
 
-for batchsize in 4 16
-do
-   BATCHSIZE=${batchsize}
-   single_run
-   wait
-   BATCHSIZE=$((4*$BATCHSIZE))
-done
-
+if [[ "${ENABLE_TESTING}" == "yes" ]]
+then
+    oneccl_config
+    ffn_config $@
+    check_environment
+    for batchsize in 4 16
+    do
+        BATCHSIZE=${batchsize}
+        single_run
+        wait
+        BATCHSIZE=$((4*$BATCHSIZE))
+    done
+fi
 echo "Finished running!"
