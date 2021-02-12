@@ -13,6 +13,11 @@ else()
     message(FATAL_ERROR "Please define CCL_ROOT environment variable")
 endif()
 
+if (DEFINED ENV{I_MPI_ROOT})
+    set(I_MPI_ROOT "$ENV{I_MPI_ROOT}")
+    set(CMAKE_INSTALL_RPATH "${I_MPI_ROOT}/lib/release_mt/")
+endif()
+
 message(STATUS "CCL_ROOT: ${CCL_ROOT}")
 message(STATUS "CCL_CONFIGURATION: ${CCL_CONFIGURATION}")
 
