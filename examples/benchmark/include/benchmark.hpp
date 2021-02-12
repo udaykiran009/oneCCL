@@ -331,13 +331,13 @@ void print_timings(ccl::communicator& comm,
 
         stddev_timer = sqrt(sum / comm.size()) / avg_timer * 100;
         if (buf_count == 1) {
-            printf("%10zu %12.2lf %11.1lf\n",
+            printf("%10zu %12.1lf %11.1lf\n",
                    elem_count * ccl::get_datatype_size(dtype) * buf_count,
                    avg_timer,
                    stddev_timer);
         }
         else {
-            printf("%10zu %13.2lf %18.2lf %11.1lf\n",
+            printf("%10zu %13.1lf %18.1lf %11.1lf\n",
                    elem_count * ccl::get_datatype_size(dtype) * buf_count,
                    avg_timer,
                    avg_timer_per_buf,

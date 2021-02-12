@@ -36,8 +36,8 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
     ret->native_context.second = native_stream.get_context();
     ret->native_context.first = true;
     LOG_INFO("SYCL queue type: ",
-             static_cast<int>(type),
-             " device: ",
+             ::to_string(type),
+             ", device: ",
              native_stream.get_device().template get_info<cl::sycl::info::device::name>());
 
 #else

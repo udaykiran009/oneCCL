@@ -1,8 +1,8 @@
 #! /bin/bash
 
-BUILD_CCL=0
+BUILD_CCL=1
 RUN_CCL=1
-RUN_MPI=1
+RUN_MPI=0
 
 msg_count=2097152
 msg_log_start=23
@@ -115,13 +115,13 @@ echo -e "\nstart parsing\n"
 echo -e "\nCCL results\n"
 for coll in ${ccl_coll_list}
 do
-    timing=`cat ${ccl_raw_log} | grep -i "Benchmarking: ${coll}$ " -A 5 | tail -n 1 | awk '{ print $2 }'`
+    timing=`cat ${ccl_raw_log} | grep -i "Benchmarking: ${coll} " -A 5 | tail -n 1 | awk '{ print $2 }'`
     echo "${coll}: ${timing}" | tee -a ${ccl_parsed_log}
 done
 echo -e "\nMPI results\n"
 for coll in ${mpi_coll_list}
 do
-    timing=`cat ${mpi_raw_log} | grep -i "Benchmarking ${coll}$ " -A 4 | tail -n 1 | awk '{ print $4 }'`
+    timing=`cat ${mpi_raw_log} | grep -i "Benchmarking ${coll} " -A 4 | tail -n 1 | awk '{ print $4 }'`
     echo "${coll}: ${timing}" | tee -a ${mpi_parsed_log}
 done
 

@@ -12,13 +12,13 @@
 
 class ccl_base_thread {
 public:
-    ccl_base_thread(size_t idx, void* (*progress_function)(void*))
+    ccl_base_thread(size_t idx, void* (*thread_function)(void*))
             : should_stop(false),
               started(false),
               wait(0),
               idx(idx),
               start_affinity(CCL_UNDEFINED_CPU_ID),
-              progress_function(progress_function) {}
+              thread_function(thread_function) {}
 
     ccl_base_thread() = delete;
     ~ccl_base_thread() = default;
@@ -76,6 +76,6 @@ private:
     const size_t idx;
 
     int start_affinity;
-    void* (*progress_function)(void*);
+    void* (*thread_function)(void*);
     pthread_t thread{};
 };

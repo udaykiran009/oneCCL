@@ -15,7 +15,7 @@ ccl::status ccl_base_thread::start(int affinity) {
     __CPU_SET_S(affinity, sizeof(cpu_set_t), &cpuset);
     pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpuset);
 
-    int err = pthread_create(&thread, &attr, progress_function, get_this());
+    int err = pthread_create(&thread, &attr, thread_function, get_this());
     if (err) {
         LOG_ERROR(
             "error while creating ", name(), " thread #", idx, " pthread_create returns ", err);
@@ -48,10 +48,10 @@ ccl::status ccl_base_thread::stop() {
 
     err = pthread_join(thread, &exit_code);
     if (err) {
-        LOG_INFO("error while joining progress thread # ", idx, " , pthread_join returns ", err);
+        LOG_INFO("error while joining thread # ", idx, " , pthread_join returns ", err);
     }
     else {
-        LOG_DEBUG("progress thread # ",
+        LOG_DEBUG("thread # ",
                   idx,
                   ", exited with code (",
                   (uintptr_t)exit_code,
