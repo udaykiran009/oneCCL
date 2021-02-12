@@ -96,6 +96,26 @@ struct test_operation {
         else
             return static_cast<void*>(recv_bufs[buf_idx].data());
     }
+
+    size_t get_check_step(size_t elem_idx) {
+        size_t step;
+        if (param.size_type == SIZE_SMALL)
+            step = 1;
+        else if (param.size_type == SIZE_MEDIUM)
+            step = 4;
+        else
+            step = 32;
+
+        if ((step > 1) && (elem_idx + step >= elem_count)) {
+            /* 
+                to process tail elements
+                when elem_count is not dividable by step
+            */
+            step = 1;
+        }
+
+        return step;
+    }
 };
 
 template <typename T>

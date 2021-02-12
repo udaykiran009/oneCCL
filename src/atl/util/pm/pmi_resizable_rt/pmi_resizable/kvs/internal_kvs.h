@@ -1,9 +1,10 @@
 #pragma once
 
 #include <cstddef>
-#include <netinet/ip.h>
-#include <mutex>
 #include <list>
+#include <mutex>
+#include <netinet/ip.h>
+
 #include "ikvs_wrapper.h"
 
 class internal_kvs final : public ikvs_wrapper {

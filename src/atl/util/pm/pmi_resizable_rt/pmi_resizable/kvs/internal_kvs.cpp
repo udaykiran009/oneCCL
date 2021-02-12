@@ -426,7 +426,7 @@ int internal_kvs::fill_local_host_ip() {
     }
 
     memset(local_host_ip, 0, CCL_IP_LEN);
-    strncpy(local_host_ip, local_host_ips.front().c_str(), CCL_IP_LEN);
+    kvs_str_copy(local_host_ip, local_host_ips.front().c_str(), CCL_IP_LEN);
 
     freeifaddrs(ifaddr);
     return 0;
@@ -542,7 +542,7 @@ size_t internal_kvs::init_main_server_address(const char* main_addr) {
                 if (main_node_ip != local_host_ips.end()) {
                     is_master_node = 1;
                     memset(local_host_ip, 0, CCL_IP_LEN);
-                    strncpy(local_host_ip, main_host_ip, CCL_IP_LEN);
+                    kvs_str_copy_known_sizes(local_host_ip, main_host_ip, CCL_IP_LEN);
                     local_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
                 }
             }

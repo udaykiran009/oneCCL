@@ -296,7 +296,7 @@ post_build()
     then
         LDFLAGS="-L${LIBFABRIC_INSTALL_DIR}/lib/"
     fi
-    LDFLAGS=" ${LD_FLAGS} -Wl,-rpath,../../../../mpi/latest/lib/release_mt/"
+    LDFLAGS=" ${LD_FLAGS} -Wl,-rpath,'$ORIGIN'/../../../../mpi/latest/lib/release_mt/"
 
     gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack \
         -Wl,--version-script=${WORKSPACE}/ccl.map -std=gnu99 -Wall -Werror \

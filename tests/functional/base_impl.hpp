@@ -162,10 +162,15 @@ int base_test<T>::check_error(test_operation<T>& op, T expected, size_t buf_idx,
     }
 
     if (precision) {
-        /* https://www.mcs.anl.gov/papers/P4093-0713_1.pdf */
-        double log_base2 = log(op.comm_size) / log(2);
-        double g = (log_base2 * precision) / (1 - (log_base2 * precision));
-        max_error = g * expected;
+        if (op.comm_size == 1) {
+            max_error = precision;
+        }
+        else {
+            /* https://www.mcs.anl.gov/papers/P4093-0713_1.pdf */
+            double log_base2 = log(op.comm_size) / log(2);
+            double g = (log_base2 * precision) / (1 - (log_base2 * precision));
+            max_error = g * expected;
+        }
     }
 
     if (fabs(max_error) < fabs((double)expected - (double)op.recv_bufs[buf_idx][elem_idx])) {

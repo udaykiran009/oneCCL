@@ -173,7 +173,7 @@ void server::make_client_request(int& socket) {
         }
         case AM_GET_KEYS_VALUES: {
             size_t j = 0;
-            kvs_request_t* answers = nullptr;
+            std::vector<kvs_request_t> answers;
             count = 0;
             auto it_name = requests.find(request.name);
             if (it_name != requests.end()) {
@@ -189,13 +189,10 @@ void server::make_client_request(int& socket) {
             if (count == 0)
                 break;
 
-            answers = (kvs_request_t*)calloc(count, sizeof(kvs_request_t));
-            if (answers == nullptr) {
-                printf("Memory allocation failed\n");
-                break;
-            }
+            answers.resize(count);
+
             for (auto it_keys : it_name->second) {
-                kvs_str_copy(answers[j].name, request.name, MAX_KVS_NAME_LENGTH);
+                kvs_str_copy_known_sizes(answers[j].name, request.name, MAX_KVS_NAME_LENGTH);
                 kvs_str_copy(answers[j].key, it_keys.first.c_str(), MAX_KVS_KEY_LENGTH);
                 kvs_str_copy(answers[j].val, it_keys.second.c_str(), MAX_KVS_VAL_LENGTH);
                 j++;
@@ -203,12 +200,11 @@ void server::make_client_request(int& socket) {
 
             DO_RW_OP(write,
                      socket,
-                     answers,
+                     answers.data(),
                      sizeof(kvs_request_t) * count,
                      server_memory_mutex,
                      "server: get_keys_values write data");
 
-            free(answers);
             break;
         }
         case AM_BARRIER: {

@@ -10,14 +10,15 @@ public:
 
     int check(test_operation<T>& op) {
         for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
-            size_t elem_idx = 0;
+            size_t global_elem_idx_base = 0;
             for (int rank = 0; rank < op.comm_size; rank++) {
                 T expected = static_cast<T>(rank + buf_idx);
-                for (size_t idx = 0; idx < recv_counts[rank]; idx++) {
-                    if (base_test<T>::check_error(op, expected, buf_idx, elem_idx))
+                for (size_t idx = 0; idx < recv_counts[rank]; idx += op.get_check_step(idx)) {
+                    if (base_test<T>::check_error(
+                            op, expected, buf_idx, global_elem_idx_base + idx))
                         return TEST_FAILURE;
-                    elem_idx++;
                 }
+                global_elem_idx_base += recv_counts[rank];
             }
         }
         return TEST_SUCCESS;

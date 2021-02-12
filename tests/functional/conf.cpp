@@ -28,7 +28,7 @@ std::map<int, std::string> size_type_names = { { SIZE_SMALL, "SIZE_SMALL" },
                                                { SIZE_MEDIUM, "SIZE_MEDIUM" },
                                                { SIZE_LARGE, "SIZE_LARGE" } };
 std::map<int, size_t> size_type_values = { { SIZE_SMALL, 17 },
-                                           { SIZE_MEDIUM, 32769 },
+                                           { SIZE_MEDIUM, 32771 },
                                            { SIZE_LARGE, 262144 } };
 
 ccl_buf_count_type first_buf_count_type = BUF_COUNT_SMALL;

@@ -3,6 +3,7 @@
 BASENAME=`basename $0 .sh`
 
 SCOPE="all"
+DEPTH="1"
 
 LOG_FILE="clang_format.log"
 rm ${LOG_FILE}
@@ -20,7 +21,9 @@ print_help()
     echo_log "<options>:"
     echo_log "   ------------------------------------------------------------"
     echo_log "    -s <value>|--scope <value>"
-    echo_log "        Set processing scope (value: all | commit)"
+    echo_log "        Set processing scope (value: all | commit, default: ${SCOPE})"
+    echo_log "    -d <value>|--depth <value>"
+    echo_log "        Set depth for 'commit' scope (default: ${DEPTH})"
     echo_log "   ------------------------------------------------------------"
     echo_log "    -h|--help"
     echo_log "        Print help information"
@@ -38,6 +41,10 @@ parse_arguments()
                 ;;
             "-s"| "--scope")
                 SCOPE=$2
+                shift
+                ;;
+            "-d"| "--depth")
+                DEPTH=$2
                 shift
                 ;;
             *)
@@ -61,6 +68,10 @@ parse_arguments()
     echo_log "PARAMETERS"
     echo_log "----------------"
     echo_log "SCOPE = ${SCOPE}"
+    if [ "${SCOPE}" == "commit" ]
+    then
+        echo_log "DEPTH = ${DEPTH}"
+    fi
     echo_log "----------------"
 }
 
@@ -82,13 +93,15 @@ process_files()
 
         echo_log "Clang-format version: ${green_color}$(clang-format --version)${no_color}"
 
+        echo_log "Getting list of files..."
+
         root_dir=`git rev-parse --show-toplevel`
         if [ "${SCOPE}" == "all" ]
         then
             files=`find ${root_dir} -type f`
         elif [ "${SCOPE}" == "commit" ]
         then
-            commit_files=`git diff-tree --no-commit-id --name-only -r HEAD`
+            commit_files=`git diff-tree --no-commit-id --name-only -r HEAD..HEAD~${DEPTH}`
             for f in ${commit_files}
             do
                 files="${files}\n${root_dir}/${f}"

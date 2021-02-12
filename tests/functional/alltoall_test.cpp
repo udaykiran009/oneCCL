@@ -8,7 +8,8 @@ public:
     int check(test_operation<T>& op) {
         for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
             for (int rank = 0; rank < op.comm_size; rank++) {
-                for (size_t elem_idx = 0; elem_idx < op.elem_count; elem_idx++) {
+                for (size_t elem_idx = 0; elem_idx < op.elem_count;
+                     elem_idx += op.get_check_step(elem_idx)) {
                     T expected = static_cast<T>(rank + buf_idx);
                     size_t global_elem_idx = (op.elem_count * rank) + elem_idx;
                     if (base_test<T>::check_error(op, expected, buf_idx, global_elem_idx))

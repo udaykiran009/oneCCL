@@ -8,7 +8,8 @@ public:
     int check(test_operation<T>& op) {
         size_t my_rank = global_data::instance().comms[0].rank();
         for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
-            for (size_t elem_idx = 0; elem_idx < op.elem_count; elem_idx++) {
+            for (size_t elem_idx = 0; elem_idx < op.elem_count;
+                 elem_idx += op.get_check_step(elem_idx)) {
                 size_t real_elem_idx = my_rank * op.elem_count + elem_idx;
                 T expected = base_test<T>::calculate_reduce_value(op, buf_idx, real_elem_idx);
                 if (base_test<T>::check_error(op, expected, buf_idx, elem_idx))

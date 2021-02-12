@@ -137,6 +137,11 @@ void inline kvs_str_copy(char* dst, const char* src, size_t bytes) {
     dst[bytes - 1] = '\0';
 }
 
+void inline kvs_str_copy_known_sizes(char* dst, const char* src, size_t bytes) {
+    strncpy(dst, src, bytes);
+    dst[bytes - 1] = '\0';
+}
+
 long int inline safe_strtol(const char* str, char** endptr, int base) {
     auto val = strtol(str, endptr, base);
     if (val == 0) {
