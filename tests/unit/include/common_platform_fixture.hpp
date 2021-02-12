@@ -5,6 +5,8 @@
 
 class platform_fixture : public testing::Test, public tracer {
 protected:
+    using thread_device_indices_t = ccl::process_device_indices_type;
+
     platform_fixture(const std::string& cluster_affinity) : tracer() {
         // extract GPU affinities by processes using '#' separator from L0_CLUSTER_AFFINITY_MASK
         std::vector<std::string> process_group_gpu_affinity;
@@ -47,6 +49,16 @@ protected:
     // Creators
     void create_global_platform() {
         global_platform = native::ccl_device_platform::create();
+
+        auto driver = global_platform->get_driver(0);
+        const auto& dev_map = driver->get_devices();
+        for (const auto& dev_pair : dev_map) {
+            global_devices.push_back(dev_pair.second);
+            const auto subdev_map = dev_pair.second->get_subdevices();
+            for (const auto& subdev_pair : subdev_map) {
+                global_devices.push_back(subdev_pair.second);
+            }
+        }
     }
 
     void create_local_platform(const ccl::process_device_indices_type& local_process_affinity =
@@ -116,6 +128,10 @@ protected:
     }
 
     // Getters
+    const std::map<size_t, thread_device_indices_t>& get_cluster_platform_device_indices() const {
+        return cluster_device_indices;
+    }
+
     const ccl::device_indices_type& get_local_platform_device_indices() const {
         return local_platform_device_indices;
     }
@@ -126,6 +142,10 @@ protected:
 
     const std::set<native::ccl_device_driver::device_ptr>& get_unique_local_devices() const {
         return set_of_devices;
+    }
+
+    const std::vector<native::ccl_device_driver::device_ptr>& get_global_devices() const {
+        return global_devices;
     }
 
     ze_kernel_handle_t get_kernel(size_t device_index) const {
@@ -210,7 +230,6 @@ protected:
         }
     }
 
-    using thread_device_indices_t = ccl::process_device_indices_type;
     std::map<size_t, thread_device_indices_t> cluster_device_indices;
 
     std::shared_ptr<native::ccl_device_platform> global_platform;
@@ -220,6 +239,7 @@ protected:
 
 private:
     ccl::device_indices_type local_platform_device_indices;
+    std::vector<native::ccl_device_driver::device_ptr> global_devices;
     std::vector<native::ccl_device_driver::device_ptr> devices;
     std::set<native::ccl_device_driver::device_ptr> set_of_devices;
     std::map<size_t /*devices element index*/, ze_kernel_handle_t> kernels;

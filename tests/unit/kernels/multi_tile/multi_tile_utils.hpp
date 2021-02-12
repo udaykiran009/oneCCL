@@ -7,7 +7,8 @@ void prepare_queues_and_lists(const std::vector<native::ccl_device_driver::devic
                               std::shared_ptr<native::ccl_context> in_ctx,
                               std::map<size_t, native::ccl_device::device_queue>& out_queues,
                               std::map<size_t, native::ccl_device::device_cmd_list>& out_lists,
-                              std::ostream& out) {
+                              std::ostream& out,
+                              size_t device_index_start_offset = 0) {
     out_queues.clear();
     out_lists.clear();
     for (const auto& device : in_devices) {
@@ -16,7 +17,7 @@ void prepare_queues_and_lists(const std::vector<native::ccl_device_driver::devic
             // get queue group properties
             native::ccl_device::queue_group_properties queue_props = device->get_queue_group_prop();
             ze_command_queue_desc_t queue_descr = select_compute_group_prop(
-                device_index, queue_props, device->get_default_queue_desc());
+                device_index + device_index_start_offset, queue_props, device->get_default_queue_desc());
 
             out << "Create ASYNC command queue for device: " << device_index
                 << " - ordinal: " << queue_descr.ordinal << ", index: " << queue_descr.index

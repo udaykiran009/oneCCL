@@ -13,6 +13,10 @@ public:
         threads_count = threads_num;
         memory_storage = handles_storage<native_type>(data_count_max_limit * threads_count);
         flags_storage = handles_storage<int>(data_count_max_limit * threads_count);
+
+        ipc_memory_storage =
+            ipc_server_handles_storage<native_type>(data_count_max_limit * threads_count);
+        ipc_flags_storage = ipc_server_handles_storage<int>(data_count_max_limit * threads_count);
     }
 
     // Creators
@@ -34,6 +38,30 @@ public:
                                      ", total threads count: " + std::to_string(threads_count));
         }
         flags_storage.register_shared_data(thread_idx, threads_count, std::forward<Handles>(h)...);
+    }
+
+    template <class... Handles>
+    void register_ipc_memories_data(std::shared_ptr<native::ccl_context> ctx,
+                                    size_t thread_idx,
+                                    Handles&&... h) {
+        if (thread_idx >= threads_count) {
+            throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
+                                     " - invalid thread requested: " + std::to_string(thread_idx) +
+                                     ", total threads count: " + std::to_string(threads_count));
+        }
+        ipc_memory_storage.create_ipcs(ctx, thread_idx, threads_count, std::forward<Handles>(h)...);
+    }
+
+    template <class... Handles>
+    void register_ipc_flags_data(std::shared_ptr<native::ccl_context> ctx,
+                                 size_t thread_idx,
+                                 Handles&&... h) {
+        if (thread_idx >= threads_count) {
+            throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
+                                     " - invalid thread requested: " + std::to_string(thread_idx) +
+                                     ", total threads count: " + std::to_string(threads_count));
+        }
+        ipc_flags_storage.create_ipcs(ctx, thread_idx, threads_count, std::forward<Handles>(h)...);
     }
 
     template <class... Handles>
@@ -87,6 +115,14 @@ public:
         return find_storage_val(flags_storage.per_thread_storage, thread_idx);
     }
 
+    ipc_server_handles_storage<native_type>& get_ipc_memory_storage() {
+        return ipc_memory_storage;
+    }
+
+    ipc_server_handles_storage<int>& get_ipc_flags_storage() {
+        return ipc_flags_storage;
+    }
+
     std::vector<int>& get_comm_handles(size_t thread_idx) {
         if (thread_idx >= threads_count) {
             throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
@@ -121,5 +157,9 @@ private:
     size_t threads_count;
     handles_storage<native_type> memory_storage;
     handles_storage<int> flags_storage;
+
+    ipc_server_handles_storage<native_type> ipc_memory_storage;
+    ipc_server_handles_storage<int> ipc_flags_storage;
+
     std::map<int, std::vector<int>> comm_param_storage;
 };

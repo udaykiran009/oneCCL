@@ -64,7 +64,16 @@ typename Container::mapped_type& find_storage_val(Container& storage, int thread
 
 template <class Arr_t, class Type>
 ze_result_t zeKernelSetArgumentValueWrap(ze_kernel_handle_t kernel, Arr_t& offset, Type& handle) {
-    return zeKernelSetArgumentValue(kernel, offset, sizeof(handle), &handle);
+    ze_result_t result = zeKernelSetArgumentValue(kernel, offset, sizeof(handle), &handle);
+    if (result != ZE_RESULT_SUCCESS) {
+        const void* ptr = reinterpret_cast<const void*>(&handle);
+        std::stringstream ss;
+        ss << ptr;
+        throw std::runtime_error(std::string("Cannot zeKernelSetArgumentValue memory at offset: ") +
+                                 std::to_string(offset) + ", mem: " + ss.str() +
+                                 "\nError: " + native::to_string(result));
+    }
+    return result;
 }
 
 template <class Arr_t, class Type>
@@ -72,7 +81,36 @@ ze_result_t zeKernelSetArgumentValueWrap(ze_kernel_handle_t kernel,
                                          Arr_t& offset,
                                          native::ccl_device::device_memory<Type>* handle) {
     auto ptr = handle->get_ptr();
-    return zeKernelSetArgumentValue(kernel, offset, sizeof(*ptr), ptr);
+    ze_result_t result = zeKernelSetArgumentValue(kernel, offset, sizeof(*ptr), ptr);
+    if (result != ZE_RESULT_SUCCESS) {
+        const void* ptr_v = reinterpret_cast<const void*>(ptr);
+        std::stringstream ss;
+        ss << ptr_v;
+        throw std::runtime_error(
+            std::string("Cannot zeKernelSetArgumentValue device memory at offset: ") +
+            std::to_string(offset) + ", device mem: " + ss.str() +
+            "\nError: " + native::to_string(result));
+    }
+    return result;
+}
+
+template <class Arr_t>
+ze_result_t zeKernelSetArgumentValueWrap(
+    ze_kernel_handle_t kernel,
+    Arr_t& offset,
+    std::shared_ptr<native::ccl_device::device_ipc_memory>& handle) {
+    auto h = handle->get_ptr();
+    ze_result_t result = zeKernelSetArgumentValue(kernel, offset, sizeof(*h), h);
+    if (result != ZE_RESULT_SUCCESS) {
+        const void* ptr_v = static_cast<const void*>(h);
+        std::stringstream ss;
+        ss << ptr_v;
+        throw std::runtime_error(
+            std::string("Cannot zeKernelSetArgumentValue IPC memory at offset: ") +
+            std::to_string(offset) + ", IPC mem: " + ss.str() +
+            "\nError: " + native::to_string(result));
+    }
+    return result;
 }
 
 template <class Arr, class Container>
@@ -91,12 +129,7 @@ void bind_kernel_args(ze_kernel_handle_t kernel,
             continue; //skip this argument
         }
 
-        ze_result_t result = zeKernelSetArgumentValueWrap(kernel, offsets[i], handle);
-        if (result != ZE_RESULT_SUCCESS) {
-            throw std::runtime_error(
-                std::string("Cannot zeKernelSetArgumentValue memory at mem_offset: ") +
-                std::to_string(offsets[i]) + " index\nError: " + native::to_string(result));
-        }
+        zeKernelSetArgumentValueWrap(kernel, offsets[i], handle);
         i++;
     }
 }
@@ -131,7 +164,7 @@ ze_command_queue_desc_t select_compute_group_prop(
     ze_command_queue_desc_t queue_desc = default_descr;
 
     // find compute ordinal
-    uint32_t computeOrdinal = std::numeric_limits<uint32_t>::max();
+    queue_desc.ordinal = std::numeric_limits<uint32_t>::max();
     for (uint32_t i = 0; i < queue_props.size(); i++) {
         // Prefer CCS
         if (queue_props[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE &&
@@ -140,7 +173,7 @@ ze_command_queue_desc_t select_compute_group_prop(
         }
     }
     // if CCS not found, look for RCS/CCCS
-    if (computeOrdinal == std::numeric_limits<uint32_t>::max()) {
+    if (queue_desc.ordinal == std::numeric_limits<uint32_t>::max()) {
         for (uint32_t i = 0; i < queue_props.size(); i++) {
             if (queue_props[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
                 queue_desc.ordinal = i;
@@ -381,7 +414,7 @@ struct ipc_server_handles_storage {
     std::vector<ipc_shared_handle> allocated_storage;
     std::map<size_t, ipc_handles_container> per_thread_storage;
 
-    ipc_server_handles_storage(size_t expected_size) {
+    ipc_server_handles_storage(size_t expected_size = 0) {
         allocated_storage.reserve(expected_size);
     }
 
@@ -402,6 +435,15 @@ struct ipc_server_handles_storage {
                            return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle,
                                                                               ctx);
                        });
+    }
+
+    ipc_handles_container& get_handles_container(size_t thread_idx) {
+        auto it = per_thread_storage.find(thread_idx);
+        if (it == per_thread_storage.end()) {
+            std::cerr << __PRETTY_FUNCTION__ << " invalid thred id: " << thread_idx << std::endl;
+            abort();
+        }
+        return it->second;
     }
 
     std::vector<uint8_t> serialize_storage(size_t thread_idx) {

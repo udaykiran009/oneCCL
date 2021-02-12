@@ -125,6 +125,7 @@ struct my_max<bfloat16> {
     template <> \
     struct COLL##_param_traits<T> { \
         static constexpr const char* kernel_name = #COLL "_execution_" #NAME; \
+        static constexpr const char* ipc_kernel_name = #COLL "_execution_ipc_" #NAME; \
     };
 
 #define DEFINE_KERNEL_TYPES(COLL) \
@@ -143,6 +144,7 @@ struct my_max<bfloat16> {
     template <> \
     struct COLL##_param_traits<T, my_##OP<T>> { \
         static constexpr const char* kernel_name = #COLL "_execution_" #NAME "_" #OP; \
+        static constexpr const char* ipc_kernel_name = #COLL "_execution_ipc_" #NAME "_" #OP; \
         using op_type = my_##OP<T>; \
     };
 

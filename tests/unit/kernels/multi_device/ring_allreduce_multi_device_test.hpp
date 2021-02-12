@@ -1,8 +1,8 @@
 #pragma once
 
 #include "allreduce_fixture.hpp"
-DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, add);
-DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, mult);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, sum);
+DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, prod);
 DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, min);
 DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, max);
 

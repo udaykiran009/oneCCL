@@ -466,6 +466,243 @@ DEFINE_KERNELS_WITH_BF16OP(prod)
 DEFINE_KERNELS_WITH_BF16OP(min)
 DEFINE_KERNELS_WITH_BF16OP(max)
 
+#define DEFINE_IPC_KERNEL(Name, T, VecSize, Op, OpName) \
+    __kernel void allreduce_execution_ipc_##Name##_##OpName( \
+        int my_rank, \
+        int comm_size, \
+        size_t elems_count, \
+        const __global T* input_buffer, \
+        __global T* output_buffer, \
+\
+        __global T* tmp_buffer, \
+        __global volatile int* left_wrote_to_me_flag, \
+        __global volatile int* i_ready_to_receive_flag, \
+\
+        __global volatile int* local_barrier_flag, \
+\
+        __global T* right_temp_buffer, \
+        __global volatile int* i_send_to_right_flag, \
+        __global volatile int* right_ready_to_recv_flag) { \
+        /*Known limitation                                                                                      \
+      1) MUST: elems_count >= get_global_size(0) * 4 (vector size) * comm_size                              \
+      2) MUST: elems_count be aligned with 'get_global_size(0) * 4 (vector size)'                           \
+      3) TBA: double-buffering                                                                              \
+      4) TBA: chunking                                                                                      \
+      5) TBA: multiple WGs; */ \
+\
+        elems_count = elems_count / VecSize; /*reduce by vectro T */ \
+        size_t segment_size = elems_count / comm_size; \
+        size_t work_group_size = get_global_size(0); \
+        int my_rank_buffer_start_idx = my_rank * segment_size; \
+        int thread_id = get_global_id(0); \
+\
+        int work_rank = my_rank; \
+        int ready_to_recv_sync_count = 1; \
+        int can_send_sync_count = 1; \
+\
+        size_t tmp_buffer_offset = 0; \
+        size_t right_tmp_buffer_offset = segment_size; \
+\
+        DEBUG_BLOCK(/*int sg_id = get_sub_group_id();*/ \
+                    printf("kernel %zu.%d work_group_size: %d, segment_size: %d\n", \
+                           my_rank, \
+                           thread_id, \
+                           work_group_size, \
+                           segment_size /*, sg_id*/)); \
+\
+        /*1. copy own part to the right rank*/ \
+        PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+\
+        /*aka send*/ \
+        WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
+\
+        for (size_t i = 0; i < segment_size; i += work_group_size) { \
+            right_temp_buffer[thread_id + i] = \
+                input_buffer[my_rank_buffer_start_idx + thread_id + i]; \
+        } \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
+\
+        I_SENT(i_send_to_right_flag); \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+\
+        /*aka receive*/ \
+        WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
+\
+        DEBUG_BLOCK(printf("kernel %zu.%d send complete\n", my_rank, thread_id)); \
+        /*2nd phase - reduce scatter                                                                            \
+      get data written by left rank to our temp buffer, reduce with our part and send to right rank*/ \
+\
+        for (int iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx) { \
+            work_rank = get_left_rank(work_rank, comm_size); \
+            size_t segment_offset = work_rank * segment_size; \
+\
+            /*left rank has written data to our temp buffer, reduce it with corresponding element               \
+        from our initial buffer                                                                             \
+          and send to the right rank  */ \
+\
+            PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+            /*aka send*/ \
+            WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
+\
+            for (size_t i = 0; i < segment_size; i += work_group_size) { \
+                DEBUG_BLOCK( \
+                    printf("kernel %zu.%d, phase 2.%zu -- temp[%zu] = %f, this[%zu] = %f\n", \
+                           my_rank, \
+                           thread_id, \
+                           iter_idx, \
+                           segment_offset + thread_id + i, \
+                           tmp_buffer[thread_id + i], \
+                           segment_offset + thread_id + i, \
+                           input_buffer[segment_offset + thread_id + i])); \
+                right_temp_buffer[thread_id + i + right_tmp_buffer_offset] = \
+                    Op(tmp_buffer[thread_id + i + tmp_buffer_offset], \
+                       input_buffer[segment_offset + thread_id + i]); \
+            } \
+            barrier(CLK_GLOBAL_MEM_FENCE); \
+            I_SENT(i_send_to_right_flag); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+\
+            /*aka receive*/ \
+            WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
+\
+            SWAP_VARIABLES(tmp_buffer_offset, right_tmp_buffer_offset, size_t); \
+        } \
+\
+        DEBUG_BLOCK(printf( \
+            "kernel %zu.%d, phase 2 completed, work_rank %zu\n", my_rank, thread_id, work_rank)); \
+\
+        /* Local reduction */ \
+        PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+        /*aka send*/ \
+        WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
+\
+        work_rank = get_left_rank(work_rank, comm_size); \
+        size_t segment_offset = work_rank * segment_size; \
+\
+        /*left rank has written data to our temp buffer,                                                        \
+      reduce it with corresponding element from our initial buffer                                          \
+      and put to output buffer*/ \
+\
+        for (size_t i = 0; i < segment_size; i += work_group_size) { \
+            output_buffer[segment_offset + thread_id + i] = \
+                Op(tmp_buffer[thread_id + i + tmp_buffer_offset], \
+                   input_buffer[segment_offset + thread_id + i]); \
+            right_temp_buffer[thread_id + i + right_tmp_buffer_offset] = \
+                output_buffer[segment_offset + thread_id + i]; \
+            /* We should be able to issue 2 stores for the same data - local and remote,                        \
+            no need for local read */ \
+        } \
+        barrier(CLK_GLOBAL_MEM_FENCE); \
+        I_SENT(i_send_to_right_flag); \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+\
+        /*aka receive*/ \
+        WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
+\
+        SWAP_VARIABLES(tmp_buffer_offset, right_tmp_buffer_offset, size_t); \
+\
+        DEBUG_BLOCK(printf( \
+            "kernel %zu.%d, phase 2 completed, work_rank %zu\n", my_rank, thread_id, work_rank)); \
+\
+        work_rank = my_rank; \
+        /*3rd phase - allgather                                                                                 \
+      copy ready data from temp buffer by [segment_offset] offset, reduce                                   \
+      and send data by [work_rank] offset */ \
+        for (int iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx) { \
+            segment_offset = work_rank * segment_size; \
+            /*copy reduced value to initial buffer*/ \
+\
+            PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+\
+            /*aka send*/ \
+            WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
+            for (size_t i = 0; i < segment_size; i += work_group_size) { \
+                output_buffer[segment_offset + thread_id + i] = \
+                    tmp_buffer[thread_id + i + tmp_buffer_offset]; \
+\
+                DEBUG_BLOCK(printf("kernel %zu.%d, phase 3.%d -- send %f to idx %zu, rank %d\n", \
+                                   my_rank, \
+                                   thread_id, \
+                                   iter_idx, \
+                                   tmp_buffer[thread_id + i], \
+                                   segment_offset + thread_id, \
+                                   work_rank + i)); \
+                /*TODO optimize for local memory to avoid double read for global?*/ \
+                right_temp_buffer[thread_id + i + right_tmp_buffer_offset] = \
+                    tmp_buffer[thread_id + i + tmp_buffer_offset]; \
+            } \
+            barrier(CLK_GLOBAL_MEM_FENCE); \
+            I_SENT(i_send_to_right_flag); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+            /*aka receive*/ \
+            WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
+\
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
+            work_rank = get_left_rank(work_rank, comm_size); \
+\
+            SWAP_VARIABLES(tmp_buffer_offset, right_tmp_buffer_offset, size_t); \
+        } \
+\
+        /* Copy from tmp to output buf*/ \
+        PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+\
+        /*aka send*/ \
+        WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
+        segment_offset = work_rank * segment_size; \
+        for (size_t i = 0; i < segment_size; i += work_group_size) { \
+            output_buffer[segment_offset + thread_id + i] = \
+                tmp_buffer[thread_id + i + tmp_buffer_offset]; \
+        } \
+\
+        DEBUG_BLOCK(printf("kernel %zu.%d completed\n", my_rank, thread_id)); \
+    }
+
+// Macro to define kernels for a specific operation for all the supported types.
+// Note: for op function we use convention __<OpName>_<type>, where type is the actual type(e.g. int4, float)
+#define DEFINE_IPC_KERNELS_WITH_OP(OpName) \
+    DEFINE_IPC_KERNEL(int8, char4, 4, __##OpName##_##char4, OpName) \
+    DEFINE_IPC_KERNEL(uint8, uchar4, 4, __##OpName##_##uchar4, OpName) \
+\
+    DEFINE_IPC_KERNEL(int16, short4, 4, __##OpName##_##short4, OpName) \
+    DEFINE_IPC_KERNEL(uint16, ushort4, 4, __##OpName##_##ushort4, OpName) \
+\
+    DEFINE_IPC_KERNEL(int32, int4, 4, __##OpName##_##int4, OpName) \
+    DEFINE_IPC_KERNEL(uint32, uint4, 4, __##OpName##_##uint4, OpName) \
+\
+    DEFINE_IPC_KERNEL(int64, long4, 4, __##OpName##_##long4, OpName) \
+    DEFINE_IPC_KERNEL(uint64, ulong4, 4, __##OpName##_##ulong4, OpName) \
+\
+    /* TODO: implement support for missing types*/ \
+    DEFINE_IPC_KERNEL(float16, float16, 1, __##OpName##_##float16, OpName) \
+    DEFINE_IPC_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName) \
+    DEFINE_IPC_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName)
+
+#define DEFINE_IPC_KERNELS_WITH_BF16OP(OpName) \
+    DEFINE_IPC_KERNEL(bfloat16, ushort, 1, __##OpName##_##ushort, OpName)
+
+DEFINE_IPC_KERNELS_WITH_OP(sum)
+DEFINE_IPC_KERNELS_WITH_OP(prod)
+DEFINE_IPC_KERNELS_WITH_OP(min)
+DEFINE_IPC_KERNELS_WITH_OP(max)
+
+DEFINE_IPC_KERNELS_WITH_BF16OP(sum)
+DEFINE_IPC_KERNELS_WITH_BF16OP(prod)
+DEFINE_IPC_KERNELS_WITH_BF16OP(min)
+DEFINE_IPC_KERNELS_WITH_BF16OP(max)
+
 // numa
 #define DEFINE_NUMA_KERNEL(Name, T, VecSize, Op, OpName) \
     __kernel void allreduce_execution_numa_##Name##_##OpName( \

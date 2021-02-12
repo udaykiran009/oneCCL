@@ -47,13 +47,14 @@ ipc_rx_connection::receive_ipc_memory_ext(std::vector<uint8_t>& out_data_resized
               ", bytes in rest: ",
               bytes_rest);
     try {
+        /* TODO assume subdevice: need add 4 bytes in native::ccl_device::device_ipc_memory_handle::get_size_for_serialize()
         if (bytes_rest != 0) {
             throw std::runtime_error(
                 std::string("Unexpected bytes to receive: ") +
                 std::to_string(out_data_resized.size()) +
                 ", handles count: " + std::to_string(handles_count) +
                 ", bytes in rest should be zero, got: " + std::to_string(bytes_rest));
-        }
+        }*/
 
         // receive data
         std::vector<connection::fd_t> out_pids_resized(handles_count, 0);
@@ -225,8 +226,12 @@ std::vector<uint8_t> ipc_tx_connection::send_ipc_memory_ext(
         native::ccl_device::device_ipc_memory_handle::get_size_for_serialize();
 
     size_t bytes_to_send =
-        handle_size * handles.size() +
-        out_raw_data_initial_offset_bytes; //ipc_data + out_raw_data_initial_offset_bytes
+        out_raw_data_initial_offset_bytes; //ipc_data + out_raw_data_initial_offset_bytes;
+
+    // TODO recalculate size for tile owner( additional 4 bytes for subdevice Id)
+    for (const auto& h : handles) {
+        bytes_to_send += handle_size + h.get_owner().lock()->is_subdevice() * sizeof(int);
+    }
     out_raw_data.resize(bytes_to_send);
 
     // fill send_buf & pid buf

@@ -7,6 +7,7 @@
 #include <stdexcept>
 
 #include "oneapi/ccl/native_device_api/l0/base.hpp"
+#include "oneapi/ccl/native_device_api/l0/subdevice.hpp"
 
 namespace native {
 inline std::ostream& operator<<(std::ostream& out, const ccl::device_index_type& index) {
@@ -135,7 +136,7 @@ std::shared_ptr<type> cl_base<TEMPLATE_DEF_ARG>::deserialize(const uint8_t** dat
     size_t initial_size = size;
 
     // recover parent handle at first
-    auto owner = resource_owner::deserialize(data, size, args...).lock();
+    auto owner = /*resource_owner*/ccl_subdevice::deserialize(data, size, args...).lock();
 
     size_t offset = initial_size - size;
     if (!owner or !offset) {

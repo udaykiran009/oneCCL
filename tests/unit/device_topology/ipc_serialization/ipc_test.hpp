@@ -24,11 +24,6 @@ TEST_F(multi_platform_fixture, ipc_unix_server_handles_serialize) {
     UT_ASSERT(drv_it != local_platform->drivers.end(), "Driver by idx 0 must exist!");
     ccl_device_driver& driver = *drv_it->second;
 
-    // check devices per process
-    UT_ASSERT(driver.devices.size() > 1,
-              "IPC test scope require at least 2 devices in local platform! Use correct \""
-                  << ut_device_affinity_mask_name << "\"");
-
     // initialize device memory
     using mem_handles_container = std::vector<ccl_device::device_memory<native_type>>;
     std::map<ccl_device*, mem_handles_container> device_allocated_memory_storage;
