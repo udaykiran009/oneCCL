@@ -16,8 +16,10 @@ void prepare_queues_and_lists(const std::vector<native::ccl_device_driver::devic
         try {
             // get queue group properties
             native::ccl_device::queue_group_properties queue_props = device->get_queue_group_prop();
-            ze_command_queue_desc_t queue_descr = select_compute_group_prop(
-                device_index + device_index_start_offset, queue_props, device->get_default_queue_desc());
+            ze_command_queue_desc_t queue_descr =
+                select_compute_group_prop(device_index + device_index_start_offset,
+                                          queue_props,
+                                          device->get_default_queue_desc());
 
             out << "Create ASYNC command queue for device: " << device_index
                 << " - ordinal: " << queue_descr.ordinal << ", index: " << queue_descr.index

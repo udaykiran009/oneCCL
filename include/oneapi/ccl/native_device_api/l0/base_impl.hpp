@@ -136,7 +136,7 @@ std::shared_ptr<type> cl_base<TEMPLATE_DEF_ARG>::deserialize(const uint8_t** dat
     size_t initial_size = size;
 
     // recover parent handle at first
-    auto owner = /*resource_owner*/ccl_subdevice::deserialize(data, size, args...).lock();
+    auto owner = /*resource_owner*/ ccl_subdevice::deserialize(data, size, args...).lock();
 
     size_t offset = initial_size - size;
     if (!owner or !offset) {

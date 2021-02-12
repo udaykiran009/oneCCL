@@ -107,8 +107,9 @@ std::tuple<bool, ze_module_handle_t, std::string> ccl_gpu_comm::create_module_ha
     return ret;
 }
 
-cmd_list_proxy ccl_gpu_comm::get_cmd_list(std::shared_ptr<ccl_context> ctx) {
-    auto& cmd_list = device.get_cmd_list(ctx);
+cmd_list_proxy ccl_gpu_comm::get_cmd_list(std::shared_ptr<ccl_context> ctx,
+                                          const ze_command_list_desc_t& properties) {
+    auto& cmd_list = device.get_cmd_list(ctx, properties);
     // TODO: add dynamic dispatch in case we don't have any registered virtual devices?
     return cmd_list_proxy(device, cmd_list, *this);
 }

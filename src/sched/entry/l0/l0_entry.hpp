@@ -184,7 +184,10 @@ public:
               device_stream(stream),
               ctx(in_ctx),
               entry_state(gpu_entry_state::initial),
-              dev_queue(init_default_queue(parent_communicator->get_device())) {
+              queue_descr(init_queue_descr(parent_communicator->get_device())),
+              list_descr(init_list_descr(parent_communicator->get_device())),
+              dev_queue(init_default_queue(parent_communicator->get_device())),
+              dev_cmd_list(init_default_cmd_list()) {
         // TODO: remove once all the child entries are refactored to not
         // use fence field directly
         fence = get_fence();
@@ -202,7 +205,7 @@ public:
     virtual void start() override {
         {
             //TODO make check, that device_stream belong to the device
-            auto &cmd_queue = get_queue();
+            auto &cmd_queue = get_dev_queue();
 
             auto fence = parent_communicator->get_fence(cmd_queue, get_ctx());
 
@@ -224,22 +227,6 @@ public:
         main_entry_function.template set_args<typename kernel_main_typed::common_entry_buf_arg>(
             send_buf_ptr);
 
-        /*ze_result_t result = zeCommandListAppendLaunchKernel(exec_cmd_list->handle, main_entry_function.handle, &launch_args, nullptr, 0, nullptr);
-        if(result != ZE_RESULT_SUCCESS)
-        {
-            LOG_ERROR("zeCommandListAppendLaunchKernel failed, error: ", to_string(result));
-            throw std::runtime_error("zeCommandListAppendLaunchKernel failed");
-        }
-
-        / * result = zeCommandListClose(exec_cmd_list->handle);
-        if(result != ZE_RESULT_SUCCESS)
-        {
-            LOG_ERROR("zeCommandListClose failed, error: ", to_string(result));
-            throw std::runtime_error("zeCommandListClose failed");
-        }*/
-
-        //make sure, that kernel ready for launch
-
         status = ccl_sched_entry_status_started;
         ENTRY_LOG_DEBUG("started");
     }
@@ -256,7 +243,7 @@ public:
         }
         else {
             //wait execution
-            auto &cmd_queue = get_queue();
+            auto &cmd_queue = get_dev_queue();
 
             ENTRY_LOG_TRACE(" waiting for finished execution, queue: ", cmd_queue.get());
 
@@ -283,12 +270,17 @@ public:
         return class_name();
     }
 
-    ccl_device::device_queue &get_queue() const {
+    // getters
+    ccl_device::device_queue &get_dev_queue() const {
         return dev_queue;
     }
 
     ze_fence_handle_t get_fence() {
         return get_fence_impl().get();
+    }
+
+    ze_command_queue_desc_t &get_queue_descr() {
+        return queue_descr;
     }
 
     //USE GPU cache binding
@@ -320,7 +312,7 @@ protected:
 
         ENTRY_LOG_TRACE("Try to finalize");
 
-        auto &&cmd_list = parent_communicator->get_cmd_list(get_ctx());
+        auto &&cmd_list = get_dev_cmd_list();
         cmd_list.append_kernel(main_entry_function.handle, &launch_args);
 
         ENTRY_LOG_DEBUG("Append kernel successfully: ",
@@ -352,12 +344,16 @@ protected:
     void reset_state() {
         // Reset the state of the used handles
         get_fence_impl().reset();
-        parent_communicator->get_cmd_list(get_ctx()).reset();
+        get_dev_cmd_list().reset();
     }
 
 protected:
     ccl_driver_context_ptr get_ctx() const {
         return ctx;
+    }
+
+    ze_command_list_desc_t get_list_descr() const {
+        return list_descr;
     }
 
     template <class options>
@@ -405,8 +401,13 @@ protected:
     bool ready_to_exec = false;
     ze_fence_handle_t fence;
 
-    auto get_fence_impl() -> decltype(parent_communicator->get_fence(get_queue(), get_ctx())) {
-        return parent_communicator->get_fence(get_queue(), get_ctx());
+    auto get_fence_impl() -> decltype(parent_communicator->get_fence(get_dev_queue(), get_ctx())) {
+        return parent_communicator->get_fence(get_dev_queue(), get_ctx());
+    }
+
+    auto get_dev_cmd_list()
+        -> decltype(parent_communicator->get_cmd_list(get_ctx(), get_list_descr())) {
+        return dev_cmd_list;
     }
 
     void set_state(gpu_entry_state new_state) noexcept {
@@ -600,12 +601,16 @@ private:
     ccl_driver_context_ptr ctx;
     // Internal gpu entry state to keep track of kernel status, it's not directly related to status field
     gpu_entry_state entry_state;
+    ze_command_queue_desc_t queue_descr;
+    ze_command_list_desc_t list_descr;
     ccl_device::device_queue &dev_queue;
+    decltype(parent_communicator->get_cmd_list(ctx, list_descr)) dev_cmd_list;
 
-    ccl_device::device_queue &init_default_queue(ccl_device &device) {
+    // initialize
+    ze_command_queue_desc_t init_queue_descr(ccl_device &device) {
         native::ccl_device::queue_group_properties queue_props = device.get_queue_group_prop();
 
-        ze_command_queue_desc_t queue_desc = device.get_default_queue_desc();
+        queue_descr = device.get_default_queue_desc();
 
         // find compute ordinal
         uint32_t computeOrdinal = std::numeric_limits<uint32_t>::max();
@@ -613,7 +618,7 @@ private:
             // Prefer CCS
             if (queue_props[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE &&
                 queue_props[i].numQueues > 1) {
-                queue_desc.ordinal = i;
+                queue_descr.ordinal = i;
                 break;
             }
         }
@@ -621,20 +626,34 @@ private:
         if (computeOrdinal == std::numeric_limits<uint32_t>::max()) {
             for (uint32_t i = 0; i < queue_props.size(); i++) {
                 if (queue_props[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
-                    queue_desc.ordinal = i;
+                    queue_descr.ordinal = i;
                     break;
                 }
             }
         }
 
         //calculate rank (remember it is a local rank)
-        queue_desc.index = comm_addr.rank % queue_props[queue_desc.ordinal].numQueues;
+        queue_descr.index = comm_addr.rank % queue_props[queue_descr.ordinal].numQueues;
         ENTRY_LOG_DEBUG("Rank to calculate for queue idx:",
                         comm_addr.rank,
-                        ", calculated queue idx: ",
-                        queue_desc.index);
+                        ", queue : ",
+                        to_string(queue_descr));
+        return queue_descr;
+    }
 
-        return device.get_cmd_queue(queue_desc, ctx);
+    ze_command_list_desc_t init_list_descr(ccl_device &device) {
+        list_descr = parent_communicator->get_device().get_default_list_desc();
+        return list_descr;
+    }
+
+    ccl_device::device_queue &init_default_queue(ccl_device &device) {
+        return device.get_cmd_queue(queue_descr, ctx);
+    }
+
+    auto init_default_cmd_list() -> decltype(parent_communicator->get_cmd_list(ctx, list_descr)) {
+        list_descr.commandQueueGroupOrdinal = queue_descr.ordinal;
+        ENTRY_LOG_DEBUG("cmd_list: ", to_string(list_descr));
+        return parent_communicator->get_cmd_list(ctx, list_descr);
     }
 };
 

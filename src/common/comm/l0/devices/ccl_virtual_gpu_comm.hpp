@@ -92,7 +92,8 @@ public:
         return { "virtual module" };
     }
 
-    cmd_list_proxy get_cmd_list(std::shared_ptr<ccl_context> ctx);
+    cmd_list_proxy get_cmd_list(std::shared_ptr<ccl_context> ctx,
+                                const ze_command_list_desc_t& properties);
 
     fence_proxy get_fence(const ccl_device::device_queue& cmd_queue,
                           std::shared_ptr<ccl_context> ctx);

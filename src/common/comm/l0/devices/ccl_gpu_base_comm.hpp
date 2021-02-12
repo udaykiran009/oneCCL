@@ -154,8 +154,10 @@ public:
             std::get<::utils::enum_to_underlying(group_id)>(std::get<module_type>(modules)));
     }
 
-    cmd_list_proxy_base get_cmd_list(std::shared_ptr<ccl_context> ctx) {
-        auto& cmd_list = device.get_cmd_list(ctx);
+    cmd_list_proxy_base get_cmd_list(
+        std::shared_ptr<ccl_context> ctx,
+        const ze_command_list_desc_t& properties = ccl_device::get_default_list_desc()) {
+        auto& cmd_list = device.get_cmd_list(ctx, properties);
         return cmd_list_proxy_base(device, cmd_list);
     }
 

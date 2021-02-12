@@ -20,8 +20,9 @@ std::string ccl_virtual_gpu_comm::to_string_impl() const {
     return ret;
 }
 
-cmd_list_proxy ccl_virtual_gpu_comm::get_cmd_list(std::shared_ptr<ccl_context> ctx) {
-    return real_gpu_comm.get_cmd_list(ctx);
+cmd_list_proxy ccl_virtual_gpu_comm::get_cmd_list(std::shared_ptr<ccl_context> ctx,
+                                                  const ze_command_list_desc_t& properties) {
+    return real_gpu_comm.get_cmd_list(ctx, properties);
 }
 
 fence_proxy ccl_virtual_gpu_comm::get_fence(const ccl_device::device_queue& cmd_queue,

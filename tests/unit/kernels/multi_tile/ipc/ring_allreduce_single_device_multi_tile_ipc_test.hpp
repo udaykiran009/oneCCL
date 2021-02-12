@@ -398,13 +398,14 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_single_device_multi_tile_i
             std::stringstream& out = *raw_out;
             ze_group_count_t launch_args = { 1, 1, 1 };
             try {
-                           // set group size
-            uint32_t groupSizeX = buffer_size;
-            uint32_t groupSizeY = 1u;
-            uint32_t groupSizeZ = 1u;
-            if(zeKernelSetGroupSize(kernel, groupSizeX, groupSizeY, groupSizeZ != ZE_RESULT_SUCCESS)) {
-               throw std::runtime_error(std::string("Cannot set kernel group size, error") );
-            }
+                // set group size
+                uint32_t groupSizeX = buffer_size;
+                uint32_t groupSizeY = 1u;
+                uint32_t groupSizeZ = 1u;
+                if (zeKernelSetGroupSize(
+                        kernel, groupSizeX, groupSizeY, groupSizeZ != ZE_RESULT_SUCCESS)) {
+                    throw std::runtime_error(std::string("Cannot set kernel group size, error"));
+                }
 
                 // bind rank, size, buffer_size
                 out << "PID: " << this->pid << ", thread_idx: " << thread_idx
