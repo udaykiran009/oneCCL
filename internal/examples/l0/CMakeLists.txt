@@ -1,5 +1,8 @@
 file(GLOB sources "*.c" "*.cpp")
 
+add_library(MPI SHARED IMPORTED)
+set_target_properties( MPI PROPERTIES IMPORTED_LOCATION ${I_MPI_ROOT}/lib/libmpi.so)
+
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)
     add_executable(${executable} ${src})
@@ -8,7 +11,7 @@ foreach(src ${sources})
     target_link_libraries(${executable} PUBLIC m)
     target_link_libraries(${executable} PRIVATE ccl)
     target_link_libraries(${executable} PRIVATE m pthread)
-    target_link_libraries(${executable} PRIVATE mpi)
+    target_link_libraries(${executable} PRIVATE MPI)
     target_link_libraries(${executable} PRIVATE ${COMPUTE_BACKEND_TARGET_NAME})
     install(TARGETS ${executable} RUNTIME DESTINATION ${CCL_INSTALL_EXAMPLES} OPTIONAL)
 endforeach()
