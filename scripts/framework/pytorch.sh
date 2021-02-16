@@ -9,6 +9,7 @@ imagenet_dir="/nfs/inn/proj/mpi/users/mshiryae/MLSL/PT/pytorch-tiny-imagenet/tin
 log_path=${work_dir}/log.txt
 anaconda_install_path=${work_dir}/anaconda
 jemalloc_install_path=${work_dir}/jemalloc/_install
+checkpoint_dir=${work_dir}/checkpoint
 
 # TODO fill hostfile
 hostfile=${work_dir}/hostfile
@@ -22,7 +23,7 @@ PPN="2"
 ENV_NAME="pytorch_jenkins"
 
 # TODO increase for real tesing
-EPOCHS="2" # 90
+EPOCHS="10" # 90
 
 WORKERS="2" # 4
 BATCH_SIZE="64"
@@ -34,6 +35,15 @@ DOWNLOAD_TORCHCCL="1"
 DOWNLOAD_JEMALLOC="1"
 DOWNLOAD_VISION="1"
 DOWNLOAD_IMAGENET="1"
+
+# DOWNLOAD_ANACONDA="0"
+# DOWNLOAD_PYTORCH="0"
+# DOWNLOAD_IPEX="0"
+# DOWNLOAD_TORCHCCL="0"
+# DOWNLOAD_JEMALLOC="0"
+# DOWNLOAD_VISION="0"
+# DOWNLOAD_IMAGENET="0"
+
 DOWNLOAD_CCL="0" # TODO don't use while torch-ccl is not ported to latest CCL API
 
 BUILD_ANACONDA="0"
@@ -108,15 +118,33 @@ cleanup_hosts()
 
 check()
 {
+    print_log "checking log file..."
+
     file=$1
-    errors=`grep -E -c -i 'error|invalid|Aborted|fail|failed|^bad$|killed|^fault$|runtime_error|terminate' ${file}`
-    if [ ${errors} -ne 0 ]
+
+    unexpected_str="unsupported|error|invalid|Aborted|fail|failed|^bad$|killed|^fault$|runtime_error|terminate"
+    expected_strs="CCL_WORKER_COUNT: training_started training_completed"
+
+    count=`grep -E -c -i "${unexpected_str}" ${file}`
+    if [ ${count} -ne 0 ]
     then
-        print_log "PyTorch test failed, ${errors} errors"
+        print_log "PyTorch test failed, found ${count} unexpected string"
         print_log "See ${file} for details"
-    else
-        print_log "PyTorch test passed"
+        exit 1
     fi
+
+    for str in $expected_strs
+    do
+        count=`grep -E -c -i "${str}" ${file}`
+        if [ ${count} -eq 0 ]
+        then
+            print_log "PyTorch test failed, did not find expected string (${str})"
+            print_log "See ${file} for details"
+            exit 1
+        fi
+    done
+
+    print_log "PyTorch test passed"
 }
 
 test()
@@ -303,6 +331,8 @@ test()
 
         # TODO: tmp WA
         #sed -i '1i import torch_ccl' ${work_dir}/imagenet/imagenet/main.py
+        sed -i 's/torch.save/#torch.save/' ${work_dir}/imagenet/imagenet/main.py
+        sed -i 's/if is_best:/if False:/' ${work_dir}/imagenet/imagenet/main.py
     fi
 
     if [ "${DOWNLOAD_CCL}" == "1" ]
@@ -384,18 +414,22 @@ test()
     export LD_PRELOAD=${jemalloc_install_path}/lib/libjemalloc.so
 
     print_env
-    print_log "training started"
+    mkdir -p ${checkpoint_dir}
+    print_log "training_started"
 
     python ${work_dir}/imagenet/imagenet/lauch.py --nnodes ${N} --nproc_per_node ${PPN} --ccl_worker_count=${WORKERS} \
         --master_addr=${master_ip} --hostfile $hostfile \
-        python -u ${work_dir}/imagenet/imagenet/main.py --lr 0.1 -a resnet50 --ipex --dnnl -b ${BATCH_SIZE} \
-        -j 2 --epochs ${EPOCHS} --use_torch_ccl --dist-backend=ccl --seed 1 ${imagenet_dir}
+        python -u ${work_dir}/imagenet/imagenet/main.py --lr 0.1 -a resnet50 --ipex --dnnl -b ${BATCH_SIZE} --iterations 10 \
+        -j 2 --epochs ${EPOCHS} --use_torch_ccl --dist-backend=ccl --seed 1 --checkpoint-dir ${checkpoint_dir} \
+        ${imagenet_dir}
 
     # TODO: --mix-precision
 
-    print_log "training completed"
+    print_log "training_completed"
 
-    source ${anaconda_install_path}/bin/deactivate ${ENV_NAME}
+    #source ${anaconda_install_path}/bin/deactivate ${ENV_NAME}
+
+    print_log "deactivated ${ENV_NAME}"
 }
 
 test 2>&1 | tee ${log_path}
