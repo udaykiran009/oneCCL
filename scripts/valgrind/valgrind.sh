@@ -73,7 +73,7 @@ check_and_set_impi_path()
 {
     if [ -z "${I_MPI_ROOT}" ]
     then
-        I_MPI_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/last/mpi/latest"
+        I_MPI_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/mpi_oneapi/last/mpi/latest/"
         echo "WARNING: I_MPI_ROOT is not defined, will be used default: $I_MPI_ROOT"
     fi
     source ${I_MPI_ROOT}/env/vars.sh intel64
@@ -111,7 +111,7 @@ check_environment()
 
 set_debug_impi_env_and_timeout()
 {
-    export I_MPI_JOB_TIMEOUT=360
+    export I_MPI_JOB_TIMEOUT=600
     source $I_MPI_ROOT/env/vars.sh --i_mpi_library_kind=debug_mt
     IMPI_DEBUG_CHECK=$?
     if [ "$IMPI_DEBUG_CHECK" != "0" ]
@@ -121,12 +121,6 @@ set_debug_impi_env_and_timeout()
     fi
     echo "LD_LIBRARY_PATH = $LD_LIBRARY_PATH"
 }
-
-# global variable for several use places
-# See: MLSL-675.
-supported_kernel_colls="allgatherv,allreduce,alltoallv,bcast,reduce"
-supported_kernel_colls_with_dtypes="allreduce,reduce,allgatherv"
-supported_kernel_dtypes="int8,int32,float32"
 
 run_benchmark()
 {
@@ -159,9 +153,9 @@ run_benchmark()
 
     if [[ ${VALGRIND_SCOPE} = "regular" ]]
     then
-        options=" -w 0 -i 6 -n 4 -y 256,16384,1048576 -d int32,float32 -r sum"
+        options=" -w 0 -i 2 -n 2 -y 256,16384,1048576"
     else
-        options=" -w 0 -i 2 -n 2 -y 256,1048576 -d float32 -r sum"
+        options=" -w 0 -i 2 -n 2 -y 256,1048576"
     fi
 
     usm_list="none"
@@ -202,29 +196,6 @@ run_benchmark()
     if [ "${reduction}" != "" ];
     then
         options="${options} --reduction ${reduction}"
-    fi
-
-    use_kernels=0
-    # these conditions check for benchmark with kernels
-    # coll are all there except alltoall,reduce_scatter
-
-    # all colls, reduce iters till 2-3, gpu and host selector, mpi and ofi, level_zero
-    # nightly (more messages, mpi and ofi, opencl and l0) + CI scope (mpi, l0,)
-    # debug mpi/ofi/ccl
-    # test:vg
-    # test:example (test:pr, test:all) + test:vg
-    
-    if [ "$example" == "benchmark" ] &&   \
-       [ "$backend" == "sycl" ] &&        \
-       [ "$transport" == "ofi" ] &&       \
-       [ "$runtime" == "level_zero" ] &&  \
-       [ "$loop" == "regular" ] &&        \
-       [[ "$coll" == ${supported_kernel_colls} || "$coll" == ${supported_kernel_colls_with_dtypes} ]] && \
-       [[ "$dtype" == "float32" || "$dtype" == ${supported_kernel_dtypes} ]] &&       \
-       [ "$reduction" == "sum" ]
-    then
-        echo "set flag use_kernels"
-        use_kernels=1
     fi
 
     for usm in $usm_list;
@@ -280,8 +251,8 @@ run()
 
     ppn=1
     n=2
-    dtype_list="int8,int32,float32"
-    reduction_list="sum,max"
+    reduction_list="sum"
+    coll_list="allgatherv allreduce alltoall alltoallv bcast reduce reduce_scatter"
     ccl_base_env="FI_PROVIDER=tcp CCL_ATL_MPI_LIB_TYPE=impi CCL_LOG_LEVEL=info I_MPI_DEBUG=2"
 
     if [[ ${MODE} = "cpu" ]]
@@ -295,9 +266,11 @@ run()
     if [[ ${VALGRIND_SCOPE} = "regular" ]]
     then
         runtime_list="level_zero opencl"
+        dtype_list="int32 float32"
         transport_list="ofi mpi"
     else
         runtime_list="level_zero"
+        dtype_list="float32"
         transport_list="mpi"
     fi
     for dir_name in $dir_list
@@ -313,7 +286,6 @@ run()
         for transport in ${transport_list};
         do
             ccl_transport_env="CCL_ATL_TRANSPORT=${transport} ${ccl_base_env}"
-            coll_list="all"
             example="benchmark"
 
             for backend in $bench_backend_list
@@ -327,18 +299,24 @@ run()
 
                 for runtime in $runtime_list
                 do
-                    ccl_runtime_env="${ccl_transport_env}"
+                    for dtype in $dtype_list
+                    do
+                        for coll in $coll_list
+                        do
+                            ccl_runtime_env="${ccl_transport_env}"
 
-                    if [ "$runtime" == "opencl" ];
-                    then
-                        ccl_runtime_env="SYCL_DEVICE_FILTER=opencl:*:0 ${ccl_runtime_env}"
-                    elif [ "$runtime" == "level_zero" ];
-                    then
-                        ccl_runtime_env="SYCL_DEVICE_FILTER=level_zero:*:0 ${ccl_runtime_env}"
-                    fi
+                            if [ "$runtime" == "opencl" ];
+                            then
+                                ccl_runtime_env="SYCL_DEVICE_FILTER=opencl:*:0 ${ccl_runtime_env}"
+                            elif [ "$runtime" == "level_zero" ];
+                            then
+                                ccl_runtime_env="SYCL_DEVICE_FILTER=level_zero:*:0 ${ccl_runtime_env}"
+                            fi
 
-                    ccl_extra_env="${ccl_runtime_env}"
-                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${coll_list}
+                            ccl_extra_env="${ccl_runtime_env}"
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${coll} ${dtype}
+                        done
+                    done
                 done
             done
         done
