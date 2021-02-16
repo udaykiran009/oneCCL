@@ -147,6 +147,67 @@ inline size_t take_mpi_rank_id_offest(const size_t mpi_rank_in_cluster,
 }
 
 #ifdef CCL_ENABLE_SYCL
+
+#ifdef MULTI_GPU_SUPPORT
+size_t get_sycl_device_id(const cl::sycl::device& device) {
+    if (!device.is_gpu()) {
+        throw std::runtime_error(std::string(__FUNCTION__) +
+                                 " - failed for sycl device: it is not gpu!");
+    }
+    size_t device_id = std::numeric_limits<size_t>::max();
+    try {
+        // extract native handle L0
+        auto l0_handle = device.template get_native<cl::sycl::backend::level_zero>();
+
+        ze_device_properties_t device_properties;
+        ze_result_t ret = zeDeviceGetProperties(l0_handle, &device_properties);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw std::runtime_error(std::string(__FUNCTION__) +
+                                     " - zeDeviceGetProperties failed, error");
+        }
+        device_id = device_properties.deviceId;
+    }
+    catch (const cl::sycl::exception& e) {
+        //TODO: errc::backend_mismatch
+        throw std::runtime_error(std::string(__FUNCTION__) +
+                                 "- cannot retrieve l0 handle: " + e.what());
+    }
+    return device_id;
+}
+
+size_t get_sycl_subdevice_id(const cl::sycl::device& device) {
+    if (!device.is_gpu()) {
+        throw std::runtime_error(std::string(__FUNCTION__) +
+                                 " - failed for sycl device: it is not gpu!");
+    }
+
+    size_t subdevice_id = std::numeric_limits<size_t>::max();
+    try {
+        // extract native handle L0
+        auto l0_handle = device.template get_native<cl::sycl::backend::level_zero>();
+
+        ze_device_properties_t device_properties;
+        ze_result_t ret = zeDeviceGetProperties(l0_handle, &device_properties);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw std::runtime_error(std::string(__FUNCTION__) +
+                                     " - zeDeviceGetProperties failed, error");
+        }
+
+        if (!(device_properties.flags & ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE)) {
+            return ccl::unused_index_value;
+        }
+
+        subdevice_id = device_properties.subdeviceId;
+    }
+    catch (const cl::sycl::exception& e) {
+        //TODO: errc::backend_mismatch
+        throw std::runtime_error(std::string(__FUNCTION__) +
+                                 "- cannot retrieve l0 handle: " + e.what());
+    }
+    return subdevice_id;
+}
+#endif // MULTI_GPU_SUPPORT
+
 cl::sycl::device create_device_from_index(
     const ccl::device_index_type& device_vendor_id,
     const std::string& platform_name,
@@ -173,54 +234,45 @@ cl::sycl::device create_device_from_index(
     }
 
     auto devices = platform_it->get_devices(type);
-    auto it = std::find_if(
-        devices.begin(), devices.end(), [device_vendor_id](const cl::sycl::device& device) -> bool {
 #ifdef MULTI_GPU_SUPPORT
-            if (!device.is_gpu()) {
-                return false;
-            }
-
-            size_t device_id = std::numeric_limits<size_t>::max();
-
-            // extract native handle L0
-            auto l0_handle_ptr = device.template get_native<cl::sycl::backend::level_zero>();
-            if (!l0_handle_ptr) {
-                throw std::runtime_error(std::string(__FUNCTION__) +
-                                         " - failed for sycl device: handle is nullptr!");
-            }
-
-            ze_device_properties_t device_properties;
-            ze_result_t ret = zeDeviceGetProperties(l0_handle_ptr, &device_properties);
-            if (ret != ZE_RESULT_SUCCESS) {
-                throw std::runtime_error(
-                    std::string(__FUNCTION__) +
-                    " - zeDeviceGetProperties failed, error: " + std::to_string(ret));
-            }
-
-            //use deviceId to return native device
-            device_id = device_properties.deviceId;
-
-            ccl::device_index_type full_id(0, device_id, ccl::unused_index_value);
-            return full_id == device_vendor_id;
-#endif
-            return false;
-        });
-
-    if (it == devices.end()) {
-        std::stringstream ss;
-        ss << "cannot find requested device. Supported devices are:\n";
-        for (const auto& dev : devices) {
-            ss << "Device:\nname: " << dev.get_info<cl::sycl::info::device::name>()
-               << "\nvendor: " << dev.get_info<cl::sycl::info::device::vendor>()
-               << "\nversion: " << dev.get_info<cl::sycl::info::device::version>()
-               << "\nprofile: " << dev.get_info<cl::sycl::info::device::profile>();
+    for (auto it_device = devices.begin(); it_device != devices.end(); ++it_device) {
+        const cl::sycl::device& device = *it_device;
+        if (!device.is_gpu()) {
+            continue;
         }
 
-        throw std::runtime_error(std::string("Cannot find device by id: ") +
-                                 utils::to_string(device_vendor_id) + ", reason:\n" + ss.str());
+        size_t device_id = get_sycl_device_id(device);
+        ccl::device_index_type full_id(0, device_id, ccl::unused_index_value);
+
+        if (full_id != device_vendor_id) {
+            auto sub_devices =
+                device.create_sub_devices<info::partition_property::partition_by_affinity_domain>(
+                    info::partition_affinity_domain::next_partitionable);
+            for (auto iter_subdevice = sub_devices.begin(); iter_subdevice != sub_devices.end();
+                 iter_subdevice++) {
+                size_t subdevice_id = get_sycl_subdevice_id(*iter_subdevice);
+                std::get<ccl::device_index_enum::subdevice_index_id>(full_id) = subdevice_id;
+                if (full_id == device_vendor_id) {
+                    return *iter_subdevice;
+                }
+            }
+        }
+        else {
+            return *it_device;
+        }
+    }
+#endif
+    std::stringstream ss;
+    ss << "cannot find requested device. Supported devices are:\n";
+    for (const auto& dev : devices) {
+        ss << "Device:\nname: " << dev.get_info<cl::sycl::info::device::name>()
+           << "\nvendor: " << dev.get_info<cl::sycl::info::device::vendor>()
+           << "\nversion: " << dev.get_info<cl::sycl::info::device::version>()
+           << "\nprofile: " << dev.get_info<cl::sycl::info::device::profile>();
     }
 
-    return *it;
+    throw std::runtime_error(std::string("Cannot find device by id: ") +
+                             utils::to_string(device_vendor_id) + ", reason:\n" + ss.str());
 }
 #endif
 

@@ -20,29 +20,59 @@ size_t get_sycl_device_id(const cl::sycl::device& device) {
         throw std::runtime_error(std::string(__FUNCTION__) +
                                  " - failed for sycl device: it is not gpu!");
     }
-
     size_t device_id = std::numeric_limits<size_t>::max();
+    try {
+        // extract native handle L0
+        auto l0_handle = device.template get_native<cl::sycl::backend::level_zero>();
 
-    // extract native handle L0
-    auto l0_handle_ptr = device.template get_native<cl::sycl::backend::level_zero>();
-    if (!l0_handle_ptr) {
+        ze_device_properties_t device_properties;
+        ze_result_t ret = zeDeviceGetProperties(l0_handle, &device_properties);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw std::runtime_error(
+                std::string(__FUNCTION__) +
+                " - zeDeviceGetProperties failed, error: " + native::to_string(ret));
+        }
+        device_id = device_properties.deviceId;
+    }
+    catch (const cl::sycl::exception& e) {
+        //TODO: errc::backend_mismatch
         throw std::runtime_error(std::string(__FUNCTION__) +
-                                 " - failed for sycl device: handle is nullptr!");
+                                 "- cannot retrieve l0 handle: " + e.what());
     }
-
-    ze_device_properties_t device_properties;
-    ze_result_t ret = zeDeviceGetProperties(l0_handle_ptr, &device_properties);
-    if (ret != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(
-            std::string(__FUNCTION__) +
-            " - zeDeviceGetProperties failed, error: " + native::to_string(ret));
-    }
-
-    //use deviceId to return native device
-    device_id = device_properties.deviceId;
-
-    //TODO only device not subdevices
     return device_id;
+}
+
+size_t get_sycl_subdevice_id(const cl::sycl::device& device) {
+    if (!device.is_gpu()) {
+        throw std::runtime_error(std::string(__FUNCTION__) +
+                                 " - failed for sycl device: it is not gpu!");
+    }
+
+    size_t subdevice_id = std::numeric_limits<size_t>::max();
+    try {
+        // extract native handle L0
+        auto l0_handle = device.template get_native<cl::sycl::backend::level_zero>();
+
+        ze_device_properties_t device_properties;
+        ze_result_t ret = zeDeviceGetProperties(l0_handle, &device_properties);
+        if (ret != ZE_RESULT_SUCCESS) {
+            throw std::runtime_error(
+                std::string(__FUNCTION__) +
+                " - zeDeviceGetProperties failed, error: " + native::to_string(ret));
+        }
+
+        if (!(device_properties.flags & ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE)) {
+            return ccl::unused_index_value;
+        }
+
+        subdevice_id = device_properties.subdeviceId;
+    }
+    catch (const cl::sycl::exception& e) {
+        //TODO: errc::backend_mismatch
+        throw std::runtime_error(std::string(__FUNCTION__) +
+                                 "- cannot retrieve l0 handle: " + e.what());
+    }
+    return subdevice_id;
 }
 #endif
 
