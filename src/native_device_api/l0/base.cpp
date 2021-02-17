@@ -166,8 +166,8 @@ std::string CCL_BE_API to_string(const ze_device_mem_alloc_desc_t& mem_descr) {
         flag += flag.empty() ? "" : "|";
         flag = flag + "ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED";
     }
-    else {
-        throw std::runtime_error(std::string("Unknown ze_device_mem_alloc_desc_t flag: ") +
+    if (flag.empty()) {
+        throw std::runtime_error(std::string("Unknown ze_device_mem_alloc_flags_t flag: ") +
                                  std::to_string(static_cast<int>(mem_descr.flags)));
     }
 
@@ -192,21 +192,25 @@ std::string CCL_BE_API to_string(const ze_ipc_mem_handle_t& handle) {
 
 std::string CCL_BE_API to_string(const ze_command_queue_desc_t& queue_descr) {
     std::stringstream ss;
-    std::string flag;
+    std::string flags;
+    if (queue_descr.flags == 0) {
+        flags = "Default";
+    }
     if (queue_descr.flags & ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY) {
-        flag = "ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY";
+        flags += flags.empty() ? "ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY"
+                               : "|ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY";
     }
     if (queue_descr.flags & ZE_COMMAND_QUEUE_FLAG_FORCE_UINT32) {
-        flag += flag.empty() ? "" : "|";
-        flag = flag + "ZE_COMMAND_QUEUE_FLAG_FORCE_UINT32";
+        flags += flags.empty() ? "ZE_COMMAND_QUEUE_FLAG_FORCE_UINT32"
+                               : "|ZE_COMMAND_QUEUE_FLAG_FORCE_UINT32";
     }
-    else {
-        throw std::runtime_error(std::string("Unknown ze_command_queue_desc_t flag: ") +
+    if (flags.empty()) {
+        throw std::runtime_error(std::string("Unknown ze_command_queue_flag_t flags: ") +
                                  std::to_string(static_cast<int>(queue_descr.flags)));
     }
 
     ss << "stype: " << queue_descr.stype << ", pNext: " << (void*)queue_descr.pNext
-       << ", flags: " << flag << ", ordinal: " << queue_descr.ordinal
+       << ", flags: " << flags << ", ordinal: " << queue_descr.ordinal
        << ", index: " << queue_descr.index << ", mode: " << (bool)queue_descr.mode
        << ", priority: " << (bool)queue_descr.priority;
     return ss.str();
@@ -215,8 +219,12 @@ std::string CCL_BE_API to_string(const ze_command_queue_desc_t& queue_descr) {
 std::string to_string(const ze_command_list_desc_t& list_descr) {
     std::stringstream ss;
     std::string flags;
+    if (list_descr.flags == 0) {
+        flags = "Default";
+    }
     if (list_descr.flags & ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING) {
-        flags += "ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING";
+        flags += flags.empty() ? "ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING"
+                               : "|ZE_COMMAND_LIST_FLAG_RELAXED_ORDERING";
     }
     if (list_descr.flags & ZE_COMMAND_LIST_FLAG_MAXIMIZE_THROUGHPUT) {
         flags += flags.empty() ? "ZE_COMMAND_LIST_FLAG_MAXIMIZE_THROUGHPUT"
@@ -230,8 +238,8 @@ std::string to_string(const ze_command_list_desc_t& list_descr) {
         flags += flags.empty() ? "ZE_COMMAND_LIST_FLAG_FORCE_UINT32"
                                : "|ZE_COMMAND_LIST_FLAG_FORCE_UINT32";
     }
-    else {
-        throw std::runtime_error(std::string("Unknown ze_command_list_desc_t flag: ") +
+    if (flags.empty()) {
+        throw std::runtime_error(std::string("Unknown ze_command_list_flag_t flags: ") +
                                  std::to_string(static_cast<int>(list_descr.flags)));
     }
 
