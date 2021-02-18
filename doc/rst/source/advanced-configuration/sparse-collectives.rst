@@ -112,5 +112,5 @@ Allocation callback should follow the signature:
             void**         /* out_val_buf  */
         );
 
-.. note::
-    WARNING: ``ccl::sparse_allreduce`` is experimental and subject to change.
+.. warning::
+   ``ccl::sparse_allreduce`` is experimental and subject to change.

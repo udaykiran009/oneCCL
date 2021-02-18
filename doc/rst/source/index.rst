@@ -16,50 +16,29 @@
 
 |product_short| package comprises the |product_short| Software Development Kit (SDK) and the Intel(R) MPI Library Runtime components.
 
-Contents:
-=========
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Get Started
-
-   prerequisites.rst
-   installation.rst
-   sample.rst
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Programming Model
-
-   specification.rst
-   host_communication.rst
-   device_communication.rst
-   limitations.rst
-
-.. toctree::
-   :maxdepth: 1
-   :caption: General Configuration
-
-   operation_execution.rst
-   transport_selection.rst
-   
-.. toctree::
-   :maxdepth: 1
-   :caption: Advanced Configuration
-
-   collective_algorithms_selection.rst
-   operation_caching.rst
-   operation_prioritization.rst
-   operation_fusion.rst
-   unordered_collectives.rst
-   sparse_collectives.rst
 
 .. toctree::
    :maxdepth: 2
-   :caption: Reference Materials
+   :caption: Get Started
 
-   env_variables.rst
+   introduction/release-notes.rst
+   introduction/installation.rst
+   introduction/sample.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Developer Guide
+
+   programming-model.rst
+   general-configuration.rst
+   advanced-configuration.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Developer Reference
+
    api.rst
+   env-variables.rst
 
 .. toctree::
    :hidden: 
