@@ -201,7 +201,7 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
 
     // serialize/deserialize
     static constexpr size_t get_size_for_serialize() {
-        return owner_t::get_size_for_serialize() + sizeof(device_properties.deviceId);
+        return owner_t::get_size_for_serialize();
     }
 
     static std::weak_ptr<ccl_device> deserialize(

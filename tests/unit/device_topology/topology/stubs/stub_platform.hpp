@@ -66,6 +66,18 @@ struct test_device : public native::ccl_device {
         }
         return dev;
     }
+
+    template <class elem_t>
+    device_memory<elem_t> alloc_memory(size_t count,
+                                       size_t alignment,
+                                       std::shared_ptr<native::ccl_context> ctx) {
+        return { device_memory<elem_t>(nullptr, count, get_ptr(), ctx) };
+    }
+
+    device_ipc_memory_handle create_ipc_memory_handle(void* device_mem_ptr,
+                                                      std::shared_ptr<native::ccl_context> ctx) {
+        return device_ipc_memory_handle({}, get_ptr(), ctx);
+    }
 };
 
 struct test_subdevice : public native::ccl_subdevice {
@@ -88,6 +100,8 @@ struct test_subdevice : public native::ccl_subdevice {
             std::make_shared<test_subdevice>(std::move(device), std::move(driver), ctx_holder);
         subdev->device_properties.type = ZE_DEVICE_TYPE_GPU;
         subdev->device_properties.deviceId =
+            std::get<ccl::device_index_enum::device_index_id>(full_device_index);
+        subdev->device_properties.subdeviceId =
             std::get<ccl::device_index_enum::subdevice_index_id>(full_device_index);
         subdev->device_properties.flags = ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE;
 
@@ -125,6 +139,18 @@ struct test_subdevice : public native::ccl_subdevice {
             }
         }
         return subdev;
+    }
+
+    template <class elem_t>
+    device_memory<elem_t> alloc_memory(size_t count,
+                                       size_t alignment,
+                                       std::shared_ptr<native::ccl_context> ctx) {
+        return device_memory<elem_t>(nullptr, count, get_ptr(), ctx);
+    }
+
+    device_ipc_memory_handle create_ipc_memory_handle(void* device_mem_ptr,
+                                                      std::shared_ptr<native::ccl_context> ctx) {
+        return device_ipc_memory_handle({}, get_ptr(), ctx);
     }
 };
 

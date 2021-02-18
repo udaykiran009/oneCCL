@@ -160,65 +160,22 @@ std::string ccl_subdevice::to_string(const std::string& prefix) const {
 }
 
 CCL_BE_API
-size_t ccl_subdevice::serialize(std::vector<uint8_t>& out,
-                                size_t from_pos,
-                                size_t expected_size) const {
-    // check parent existence
-    const auto device = parent_device.lock();
-    if (!device) {
-        throw std::runtime_error("cannot serialize ccl_subdevice without owner");
-    }
-
-    constexpr size_t expected_device_bytes = sizeof(device_properties.subdeviceId);
-    size_t serialized_bytes = device->serialize(
-        out, from_pos, expected_device_bytes + expected_size); //resize vector inside
-
-    // serialize from position
-    uint8_t* data_start = out.data() + from_pos + serialized_bytes;
-    *(reinterpret_cast<decltype(device_properties.subdeviceId)*>(data_start)) = get_device_id();
-    serialized_bytes += expected_device_bytes;
-
-    return serialized_bytes;
-}
-
-CCL_BE_API
 std::weak_ptr<ccl_subdevice> ccl_subdevice::deserialize(
     const uint8_t** data,
     size_t& size,
     std::shared_ptr<ccl_device_platform>& out_platform) {
-    //restore driver
+    //restore device
     auto device = ccl_device::deserialize(data, size, out_platform).lock();
     if (!device) {
-        throw std::runtime_error("cannot deserialize ccl_subdevice, because owner is nullptr");
+        throw std::runtime_error(std::string(__FUNCTION__) +
+                                 " - cannot deserialize ccl_subdevice, because owner is nullptr");
     }
 
-    constexpr size_t expected_bytes = sizeof(device_properties.subdeviceId);
-    if (size < expected_bytes) {
-        throw std::runtime_error("cannot deserialize ccl_device, not enough data");
+    if (!device->is_subdevice()) {
+        throw std::runtime_error(std::string(__FUNCTION__) + " - is not a subdevice");
     }
 
-    //restore subdevice index
-    decltype(device_properties.subdeviceId) recovered_handle =
-        *(reinterpret_cast<const decltype(device_properties.subdeviceId)*>(*data));
-    size -= expected_bytes;
-    *data += expected_bytes;
-
-    //find subdevice device with requested handle
-    const auto& subdevices = device->get_subdevices();
-
-    auto it = std::find_if(
-        subdevices.begin(),
-        subdevices.end(),
-        [recovered_handle](const typename ccl_device::sub_devices_container_type::value_type& sub) {
-            return sub.second->get_device_id() == recovered_handle;
-        });
-
-    if (it == subdevices.end()) {
-        throw std::runtime_error(
-            std::string("cannot deserialize ccl_subdevice: orphant subddevice: ") +
-            std::to_string(recovered_handle));
-    }
-    return it->second;
+    return std::static_pointer_cast<ccl_subdevice>(device);
 }
 
 CCL_BE_API

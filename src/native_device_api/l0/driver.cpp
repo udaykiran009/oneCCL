@@ -215,6 +215,10 @@ CCL_BE_API ccl_device_driver::driver_index_type ccl_device_driver::get_driver_id
     return driver_id;
 }
 
+CCL_BE_API ccl::device_index_type ccl_device_driver::get_driver_path() const noexcept {
+    return std::make_tuple(this->get_driver_id(), ccl::unused_index_value, ccl::unused_index_value);
+}
+
 CCL_BE_API ccl::device_indices_type ccl_device_driver::get_device_indices(
     const ccl::device_mask_t& mask) {
     ccl::device_indices_type ret;
@@ -289,31 +293,29 @@ std::string CCL_BE_API ccl_device_driver::to_string(const std::string& prefix) c
 CCL_BE_API std::weak_ptr<ccl_device_driver> ccl_device_driver::deserialize(
     const uint8_t** data,
     size_t& size,
-    std::shared_ptr<ccl_device_platform>& out_platform) {
+    std::shared_ptr<ccl_device_platform>& out_platform,
+    ccl::device_index_type& out_device_path) {
     //restore platform
     auto platform = ccl_device_platform::deserialize(data, size, out_platform).lock();
     if (!platform) {
-        throw std::runtime_error("cannot deserialize ccl_device_driver, because owner is nullptr");
+        throw std::runtime_error(
+            std::string(__FUNCTION__) +
+            " - cannot deserialize ccl_device_driver, because owner is nullptr");
     }
 
-    constexpr size_t expected_bytes = sizeof(driver_index_type);
-    if (!*data or size < expected_bytes) {
-        throw std::runtime_error("cannot deserialize ccl_device_driver, not enough data");
-    }
-
-    size_t recovered_index = *(reinterpret_cast<const driver_index_type*>(*data));
-    size -= expected_bytes;
-    *data += expected_bytes;
+    out_device_path = detail::deserialize_device_path(data, size);
+    auto recovered_driver_index =
+        std::get<ccl::device_index_enum::driver_index_id>(out_device_path);
 
     //TODO only one instance of driver is supported
-    assert(recovered_index == 0 && "Only one instance of driver is supported!");
+    assert(recovered_driver_index == 0 && "Only one instance of driver is supported!");
 
-    //find device with requested handle
-    auto driver_ptr = platform->get_driver(recovered_index);
+    auto driver_ptr = platform->get_driver(recovered_driver_index);
     if (!driver_ptr) {
-        throw std::runtime_error(std::string(__FUNCTION__) +
-                                 " - invalid driver index: " + std::to_string(recovered_index));
+        throw std::runtime_error(std::string(__FUNCTION__) + " - invalid driver index: " +
+                                 std::to_string(recovered_driver_index));
     }
+
     return driver_ptr;
 }
 
@@ -323,24 +325,23 @@ CCL_BE_API size_t ccl_device_driver::serialize(std::vector<uint8_t>& out,
     // check parent existence
     const auto platform = get_owner().lock();
     if (!platform) {
-        throw std::runtime_error("cannot serialize ccl_driver without owner");
+        throw std::runtime_error(std::string(__FUNCTION__) +
+                                 " - cannot serialize ccl_device_driver without owner");
     }
-
-    constexpr size_t expected_driver_bytes = sizeof(driver_index_type); // driver index
-
-    size_t serialized_bytes = platform->serialize(
-        out, from_pos, expected_driver_bytes + expected_size); //resize vector inside
-
-    // serialize from position
-    uint8_t* data_start = out.data() + from_pos + serialized_bytes;
 
     //TODO only one driver instance supported
     assert(platform->get_drivers().size() == 1 &&
            "Platform supports only one instance of the driver by 0 index");
 
-    //serialize driver index
-    *(reinterpret_cast<driver_index_type*>(data_start)) = get_driver_id();
-    serialized_bytes += expected_driver_bytes;
+    /* write platform index */
+    size_t serialized_bytes = platform->serialize(
+        out, from_pos, expected_size + detail::serialize_device_path_size); //resize vector inside
+
+    /* write driver path */
+    auto path = get_driver_path();
+    size_t offset = serialized_bytes + from_pos;
+    size_t size = detail::serialize_device_path(out, path, offset);
+    serialized_bytes += size;
 
     return serialized_bytes;
 }

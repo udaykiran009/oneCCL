@@ -286,8 +286,8 @@ CCL_BE_API ccl::device_index_type ccl_device::get_device_path() const {
         throw std::runtime_error("cannot get get_device_path() because ccl_device has no owner");
     }
 
-    ccl::device_index_type device_path = std::make_tuple(
-        driver->get_driver_id(), get_device_id(), std::numeric_limits<uint32_t>::max());
+    ccl::device_index_type device_path =
+        std::make_tuple(driver->get_driver_id(), get_device_id(), ccl::unused_index_value);
     return device_path;
 }
 
@@ -785,17 +785,19 @@ CCL_BE_API size_t ccl_device::serialize(std::vector<uint8_t>& out,
     // check parent existence
     const auto driver = get_owner().lock();
     if (!driver) {
-        throw std::runtime_error("cannot serialize ccl_device without owner");
+        throw std::runtime_error(std::string(__FUNCTION__) +
+                                 " - cannot serialize ccl_device without owner");
     }
 
-    constexpr size_t expected_device_bytes = sizeof(device_properties.deviceId);
-    size_t serialized_bytes = driver->serialize(
-        out, from_pos, expected_device_bytes + expected_size); //resize vector inside
+    /* write driver path */
+    size_t serialized_bytes =
+        driver->serialize(out, from_pos, expected_size); //resize vector inside
 
-    // serialize from position
-    uint8_t* data_start = out.data() + from_pos + serialized_bytes;
-    *(reinterpret_cast<decltype(device_properties.deviceId)*>(data_start)) = get_device_id();
-    serialized_bytes += expected_device_bytes;
+    auto path = get_device_path();
+
+    /* overwrite driver path to device path */
+    size_t offset = serialized_bytes + from_pos - detail::serialize_device_path_size;
+    detail::serialize_device_path(out, path, offset);
 
     return serialized_bytes;
 }
@@ -805,31 +807,19 @@ CCL_BE_API std::weak_ptr<ccl_device> ccl_device::deserialize(
     size_t& size,
     std::shared_ptr<ccl_device_platform>& out_platform) {
     //restore driver
-    auto driver = ccl_device_driver::deserialize(data, size, out_platform).lock();
+    ccl::device_index_type recovered_path;
+    auto driver = ccl_device_driver::deserialize(data, size, out_platform, recovered_path).lock();
     if (!driver) {
-        throw std::runtime_error("cannot deserialize ccl_device, because owner is nullptr");
+        throw std::runtime_error(std::string(__FUNCTION__) +
+                                 " - cannot deserialize ccl_device, because owner is nullptr");
     }
 
-    constexpr size_t expected_bytes = sizeof(device_properties.deviceId);
-    if (size < expected_bytes) {
-        throw std::runtime_error("cannot deserialize ccl_device, not enough data");
-    }
-
-    //restore device index
-    decltype(device_properties.deviceId) recovered_index =
-        *(reinterpret_cast<const decltype(device_properties.deviceId)*>(*data));
-    size -= expected_bytes;
-    *data += expected_bytes;
-
-    //find device with requested handle
-    ccl::device_index_type path{ driver->get_driver_id(),
-                                 recovered_index,
-                                 ccl::unused_index_value };
-    auto device_ptr = driver->get_device(path);
+    auto device_ptr = driver->get_device(recovered_path);
     if (!device_ptr) {
         throw std::runtime_error(std::string(__FUNCTION__) +
-                                 " - invalid device index: " + ccl::to_string(path));
+                                 " - invalid device index: " + ccl::to_string(recovered_path));
     }
+
     return device_ptr;
 }
 
