@@ -160,7 +160,7 @@ set_environment()
     # $BUILD_COMPILER_TYPE may be set up by user: clang/gnu/intel
     if [ -z "${BUILD_COMPILER_TYPE}" ]
     then
-        if [ $node_label == "mlsl2_test_gpu" ] || [ ${build_compiler} == "sycl" ]
+        if [ $node_label == "mlsl2_test_gpu" ] || [ $node_label == "mlsl2_test_gpu_vlgd" ] ||[ ${build_compiler} == "sycl" ]
         then
             BUILD_COMPILER_TYPE="clang"
             source ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
@@ -180,15 +180,15 @@ set_environment()
 
     if [ "${BUILD_COMPILER_TYPE}" == "gnu" ]
      then
-        BUILD_COMPILER=/usr/bin
-        C_COMPILER=${BUILD_COMPILER}/gcc
-        CXX_COMPILER=${BUILD_COMPILER}/g++
+        BUILD_COMPILER_PATH=/usr/bin
+        C_COMPILER=${BUILD_COMPILER_PATH}/gcc
+        CXX_COMPILER=${BUILD_COMPILER_PATH}/g++
     elif [ "${BUILD_COMPILER_TYPE}" = "intel" ]
     then
         source /nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/bin/compilervars.sh intel64
-        BUILD_COMPILER=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/bin/intel64/
-        C_COMPILER=${BUILD_COMPILER}/icc
-        CXX_COMPILER=${BUILD_COMPILER}/icpc
+        BUILD_COMPILER_PATH=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/bin/intel64/
+        C_COMPILER=${BUILD_COMPILER_PATH}/icc
+        CXX_COMPILER=${BUILD_COMPILER_PATH}/icpc
     else
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
@@ -196,9 +196,9 @@ set_environment()
             echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
         fi
         source ${SYCL_BUNDLE_ROOT}/../../../setvars.sh
-        BUILD_COMPILER=${SYCL_BUNDLE_ROOT}/bin
-        C_COMPILER=${BUILD_COMPILER}/clang
-        CXX_COMPILER=${BUILD_COMPILER}/clang++
+        BUILD_COMPILER_PATH=${SYCL_BUNDLE_ROOT}/bin
+        C_COMPILER=${BUILD_COMPILER_PATH}/clang
+        CXX_COMPILER=${BUILD_COMPILER_PATH}/clang++
     fi
     
     if [ -z "$worker_count" ]
@@ -217,11 +217,11 @@ set_environment()
         build_type="release"
     fi
     if [ -z ${CCL_ROOT} ]
-    then 
+    then
         if [ -z  "${node_label}" ]
         then
             source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
-        elif [ $node_label == "mlsl2_test_gpu" ]
+        elif [ $node_label == "mlsl2_test_gpu" ] || [ $node_label == "mlsl2_test_gpu_vlgd" ]
         then
             source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
             export DASHBOARD_GPU_DEVICE_PRESENT="yes"
@@ -276,7 +276,7 @@ run_valgrind_check()
     echo "EXAMPLE_WORK_DIR =" $EXAMPLE_WORK_DIR
     set_external_env
     cd ${EXAMPLE_WORK_DIR}
-    if [ ${node_label} == "mlsl2_test_gpu" ]
+    if [ ${node_label} == "mlsl2_test_gpu_vlgd" ]
     then
         export FI_TCP_IFACE=eno1
         ${CURRENT_WORK_DIR}/scripts/valgrind/valgrind.sh gpu ${valgrind_scope}
