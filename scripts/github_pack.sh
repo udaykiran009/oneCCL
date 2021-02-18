@@ -7,6 +7,7 @@ rm -rf $dstdir
 rm -rf $dstdir.tgz
 excluded=".git
 .gitignore
+.github
 ./oneccl_license.txt
 ./boms
 ./scripts
