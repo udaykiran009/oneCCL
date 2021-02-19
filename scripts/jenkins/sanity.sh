@@ -556,6 +556,10 @@ build_ut_tests()
         LIST=`make help | grep "kernel_" | grep -Po '(?<=\.\.\. ).*'`
         echo "List to build: $LIST\n"
         make -j8 ${LIST} native_api_suite
+        if [ $? -ne 0 ]; then
+            echo "Error: compilation of $LIST is FAILED"
+            exit $?
+        fi
         # TODO: When multi_tile, multi_device are ready.
         # Resolve an issue with common link for single_device, multi_device, multi_tile
         cd "${path}/tests/unit/kernels/single_device"
@@ -591,7 +595,8 @@ run_ut_single_device ()
     platfrom_info=$1
 
     if [ ${#platfrom_info[@]} -ne 0 ]; then
-        l0_affinity_mask='L0_CLUSTER_AFFINITY_MASK="'${platfrom_info[0]}','${platfrom_info[0]}'"'
+        index=$(echo "${platfrom_info[0]}" | sed 's/\:\*//g')
+        l0_affinity_mask='L0_CLUSTER_AFFINITY_MASK="'${index}','${index}','${index}','${index}'"'
         run_ut_ctest ${l0_affinity_mask} ${name_ut}
     fi
 }
