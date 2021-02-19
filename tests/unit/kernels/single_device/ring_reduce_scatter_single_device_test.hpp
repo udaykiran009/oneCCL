@@ -43,20 +43,9 @@ TYPED_TEST(ring_reduce_scatter_single_process_fixture, ring_reduce_scatter_singl
 
     // fill device memory stencil data
     std::shared_ptr<ccl_context> ctx;
-    std::map<size_t, std::vector<native_type>> send_values;
-    std::map<size_t, std::vector<native_type>> recv_values;
-    std::map<size_t, std::vector<native_type>> calc_values;
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-        size_t mult = 0;
-        for (size_t idx = 1; idx <= send_buffer_size; ++idx, ++mult) {
-            send_values[thread_idx].push_back(
-                static_cast<native_type>(idx * ((thread_idx + mult) % num_thread + 1)));
-            calc_values[thread_idx].push_back(static_cast<native_type>(0));
-        }
-        for (size_t idx = 1; idx <= send_buffer_size; ++idx, ++mult) {
-            recv_values[thread_idx].push_back(static_cast<native_type>(0));
-        }
-    }
+    std::vector<native_type> send_values(send_buffer_size);
+    std::iota(send_values.begin(), send_values.end(), 1);
+    std::vector<native_type> recv_values(send_buffer_size, 0);
 
     for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         //initialize communication params
@@ -77,11 +66,10 @@ TYPED_TEST(ring_reduce_scatter_single_process_fixture, ring_reduce_scatter_singl
         auto temp_recv = devices[thread_idx]->template alloc_memory<native_type>(
             2 * recv_buffer_size, sizeof(native_type), ctx);
 
-        mem_send.enqueue_write_sync(send_values[thread_idx]);
-        mem_recv.enqueue_write_sync(recv_values[thread_idx].begin(),
-                                    recv_values[thread_idx].begin() + recv_buffer_size);
-        temp_recv.enqueue_write_sync(recv_values[thread_idx].begin(),
-                                     recv_values[thread_idx].begin() + 2 * recv_buffer_size);
+        mem_send.enqueue_write_sync(send_values);
+        mem_recv.enqueue_write_sync(recv_values.begin(), recv_values.begin() + recv_buffer_size);
+        temp_recv.enqueue_write_sync(recv_values.begin(),
+                                     recv_values.begin() + 2 * recv_buffer_size);
 
         /* fill array in specific order
          * Left: l_send, l_recv, l_tmp_recv, r_tmp_recv
@@ -225,98 +213,9 @@ TYPED_TEST(ring_reduce_scatter_single_process_fixture, ring_reduce_scatter_singl
         index++;
     }
 
-    // Copy device buffers back to host...
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-        auto& mem_handles = this->get_memory_handles(thread_idx);
-        size_t mem_idx = 1; // Recv memory
-        size_t i = 0;
-        for (auto iter_mem = mem_handles.begin(); iter_mem != mem_handles.end(); iter_mem++, i++) {
-            if (i != mem_idx) {
-                continue;
-            }
-            const auto* data = *iter_mem;
-            auto it =
-                std::find_if(this->get_memory_storage().allocated_storage.begin(),
-                             this->get_memory_storage().allocated_storage.end(),
-                             [data](const native::ccl_device::device_memory<native_type>& wrapper) {
-                                 return wrapper.handle == data;
-                             });
-
-            recv_values[thread_idx] = it->enqueue_read_sync();
-        }
-    }
-
-    // Compute output buffers in the same order as within the OCl kernel i.e. do ring reduce-scatter on host...
-    size_t segment_offset_idx, right_thread_idx, buffer_offset;
-    size_t segment_size = send_buffer_size / num_thread;
-    native_type nbr_send_value, send_value, temp_calc_value;
-    constexpr auto op = op_type{};
-    // For each thread, populate the calc_values of the right neighbor
-    for (size_t thread_idx = 0; thread_idx < num_thread; ++thread_idx) {
-        right_thread_idx = (thread_idx + 1) % num_thread;
-        for (size_t segment_idx = 0; segment_idx < send_buffer_size; ++segment_idx) {
-            calc_values[right_thread_idx][segment_idx] = send_values[thread_idx][segment_idx];
-        }
-    }
-    // Now do ring reduce-scatter
-    for (size_t phase_idx = 1; phase_idx < num_thread; ++phase_idx) {
-        for (size_t thread_idx = 0; thread_idx < num_thread; ++thread_idx) {
-            right_thread_idx = (thread_idx + 1) % num_thread;
-            segment_offset_idx = (thread_idx - phase_idx + num_thread) % num_thread;
-            buffer_offset = segment_offset_idx * segment_size;
-            for (size_t segment_idx = 0; segment_idx < segment_size; ++segment_idx) {
-                nbr_send_value = calc_values[thread_idx][buffer_offset + segment_idx];
-                send_value = send_values[thread_idx][buffer_offset + segment_idx];
-                temp_calc_value = op(nbr_send_value, send_value);
-                calc_values[right_thread_idx][buffer_offset + segment_idx] = temp_calc_value;
-            }
-        }
-    }
-
-    // Check results against host...
-    try {
-        size_t segment_offset;
-        for (size_t thread_idx = 0; thread_idx < num_thread; ++thread_idx) {
-            segment_offset = thread_idx * segment_size;
-            for (size_t segment_idx = 0; segment_idx < segment_size; ++segment_idx) {
-                if (recv_values[thread_idx][segment_idx] !=
-                    calc_values[thread_idx][segment_offset + segment_idx]) {
-                    throw comparison_exception(
-                        to_string(thread_idx),
-                        to_string(segment_idx),
-                        to_string(recv_values[thread_idx][segment_idx]),
-                        to_string(calc_values[thread_idx][segment_offset + segment_idx]));
-                }
-            }
-        }
-    }
-    catch (comparison_exception& ex) {
-        this->output << "Check results: \n";
-        //printout
-        this->output << "Send memory:" << std::endl;
-        this->dump_memory_by_index(this->output, 0 /*send_mem*/);
-        this->output << std::endl;
-        this->output << "Recv memory:" << std::endl;
-        this->dump_memory_by_index(this->output, 1 /*recv_mem*/);
-        this->output << std::endl;
-        this->output << "Exp memory: " << std::endl;
-
-        size_t segment_size = send_buffer_size / num_thread, segment_offset;
-        for (size_t thread_idx = 0; thread_idx < num_thread; ++thread_idx) {
-            this->output << "Thread: " << thread_idx << ", handle: " << std::endl;
-            segment_offset = segment_size * thread_idx;
-            for (size_t segment_idx = 0; segment_idx < segment_size; ++segment_idx) {
-                this->output << segment_offset + segment_idx << ": "
-                             << calc_values[thread_idx][segment_offset + segment_idx] << "; ";
-            }
-            this->output << std::endl << std::endl << std::endl;
-        }
-        this->output << std::endl;
-
-        std::stringstream ss;
-        ss << ex.what() << std::endl;
-        UT_ASSERT(false, ss.str());
-    }
+    std::stringstream ss;
+    bool ret = reduce_scatter_checking_results<native_type, op_type>(this, num_thread, ss);
+    UT_ASSERT(ret, ss.str());
 }
 
 } // namespace ring_single_device_case

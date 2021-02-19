@@ -210,36 +210,8 @@ TYPED_TEST(ring_bcast_single_process_fixture, ring_bcast_single_device_mt) {
         index++;
     }
 
-    size_t corr_val = 0;
-    try {
-        for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-            auto lambda = [&corr_val](const int root,
-                                      size_t thread_idx,
-                                      size_t buffer_size,
-                                      native_type value) -> bool {
-                corr_val++;
-                if (corr_val > buffer_size)
-                    corr_val = 1;
-                if (value != static_cast<native_type>(corr_val))
-                    return false;
-                return true;
-            };
-
-            this->check_test_results(
-                thread_idx, this->output, 0 /*recv_mem*/, lambda, root, thread_idx, buffer_size);
-        }
-    }
-    catch (check_on_exception& ex) {
-        this->output << "Check results: \n";
-        //printout
-        this->output << "Send memory:" << std::endl;
-        this->dump_memory_by_index(this->output, 0 /*send_mem*/);
-        this->output << "\nRecv memory:" << std::endl;
-        this->dump_memory_by_index(this->output, 1 /*recv_mem*/);
-
-        std::stringstream ss;
-        ss << ex.what() << ", But expected: " << corr_val * num_thread << std::endl;
-        UT_ASSERT(false, ss.str());
-    }
+    std::stringstream ss;
+    bool ret = bcast_checking_results<native_type>(this, num_thread, root, buffer_size, ss);
+    UT_ASSERT(ret, ss.str());
 }
 } // namespace ring_single_device_case

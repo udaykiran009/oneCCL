@@ -82,3 +82,44 @@ protected:
 
     void TearDown() override {}
 };
+
+template <class DType, class Op_type, class Object>
+bool allreduce_checking_results(Object obj, size_t num_thread, std::stringstream& ss) {
+    size_t corr_val;
+    try {
+        for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+            corr_val = 0;
+            auto lambda = [&corr_val](size_t thread_idx, size_t num_thread, DType value) -> bool {
+                corr_val++;
+
+                constexpr auto op = Op_type{};
+
+                DType totalVal = op.init();
+                for (size_t i = 0; i < num_thread; ++i) {
+                    totalVal = op(totalVal, static_cast<DType>(corr_val));
+                }
+
+                if (value != totalVal) {
+                    return false;
+                }
+
+                return true;
+            };
+
+            obj->check_test_results(
+                thread_idx, obj->output, 1 /*recv_mem*/, lambda, thread_idx, num_thread);
+        }
+        return true;
+    }
+    catch (check_on_exception& ex) {
+        obj->output << "Check results: \n";
+        //printout
+        obj->output << "Send memory:" << std::endl;
+        obj->dump_memory_by_index(obj->output, 0 /*send_mem*/);
+        obj->output << "\nRecv memory:" << std::endl;
+        obj->dump_memory_by_index(obj->output, 1 /*recv_mem*/);
+
+        ss << ex.what() << ", But expected: " << corr_val * num_thread << std::endl;
+        return false;
+    }
+}

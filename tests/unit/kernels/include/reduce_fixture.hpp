@@ -31,3 +31,52 @@ protected:
 
     void TearDown() override {}
 };
+
+template <class DType, class Op_type, class Object>
+bool reduce_checking_results(Object obj, size_t num_thread, const int root, std::stringstream& ss) {
+    size_t corr_val = 0;
+    try {
+        for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+            auto lambda =
+                [&corr_val](
+                    const int root, size_t thread_idx, size_t num_thread, DType value) -> bool {
+                if (root == static_cast<int>(thread_idx)) {
+                    corr_val++;
+                    constexpr auto op = Op_type{};
+
+                    DType totalVal = op.init();
+                    for (size_t i = 0; i < num_thread; ++i) {
+                        auto val = corr_val * (i % num_thread + 1);
+                        totalVal = op(totalVal, static_cast<DType>(val));
+                    }
+
+                    if (!(value == totalVal)) {
+                        return false;
+                    }
+                }
+                else {
+                    if (value != DType(0)) {
+                        corr_val = 0;
+                        return false;
+                    }
+                }
+                return true;
+            };
+
+            obj->check_test_results(
+                thread_idx, obj->output, 1 /*recv_mem*/, lambda, root, thread_idx, num_thread);
+        }
+        return true;
+    }
+    catch (check_on_exception& ex) {
+        obj->output << "Check results: \n";
+        //printout
+        obj->output << "Send memory:" << std::endl;
+        obj->dump_memory_by_index(obj->output, 0 /*send_mem*/);
+        obj->output << "\nRecv memory:" << std::endl;
+        obj->dump_memory_by_index(obj->output, 1 /*recv_mem*/);
+
+        ss << ex.what() << ", But expected: " << corr_val * num_thread << std::endl;
+        return false;
+    }
+}

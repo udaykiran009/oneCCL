@@ -56,3 +56,41 @@ protected:
 
     void TearDown() override {}
 };
+
+template <class DType, class Object>
+bool bcast_checking_results(Object obj,
+                            size_t num_thread,
+                            int root,
+                            size_t buffer_size,
+                            std::stringstream& ss) {
+    size_t corr_val = 0;
+    try {
+        for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+            auto lambda =
+                [&corr_val](
+                    const int root, size_t thread_idx, size_t buffer_size, DType value) -> bool {
+                corr_val++;
+                if (corr_val > buffer_size)
+                    corr_val = 1;
+                if (value != static_cast<DType>(corr_val))
+                    return false;
+                return true;
+            };
+
+            obj->check_test_results(
+                thread_idx, obj->output, 0 /*recv_mem*/, lambda, root, thread_idx, buffer_size);
+        }
+        return true;
+    }
+    catch (check_on_exception& ex) {
+        obj->output << "Check results: \n";
+        //printout
+        obj->output << "Send memory:" << std::endl;
+        obj->dump_memory_by_index(obj->output, 0 /*send_mem*/);
+        obj->output << "\nRecv memory:" << std::endl;
+        obj->dump_memory_by_index(obj->output, 1 /*recv_mem*/);
+
+        ss << ex.what() << ", But expected: " << corr_val * num_thread << std::endl;
+        return false;
+    }
+}

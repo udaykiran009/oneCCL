@@ -286,7 +286,8 @@ TYPED_TEST(ring_alltoallv_single_process_fixture, ring_alltoallv_single_device_m
         index++;
     }
 
-    // printout result
-    this->dump_memory(this->output);
+    std::stringstream ss;
+    bool ret = alltoallv_checking_results<native_type>(this, num_thread, ss);
+    UT_ASSERT(ret, ss.str());
 }
 } // namespace ring_single_device_multi_tile_case

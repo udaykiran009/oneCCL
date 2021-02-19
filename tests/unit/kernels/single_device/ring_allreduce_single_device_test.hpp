@@ -226,44 +226,9 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_single_device_m
         index++;
     }
 
-    size_t corr_val;
-    try {
-        for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-            corr_val = 0;
-            auto lambda = [&corr_val](
-                              size_t thread_idx, size_t num_thread, native_type value) -> bool {
-                corr_val++;
-
-                constexpr auto op = op_type{};
-
-                native_type totalVal = op.init();
-                for (size_t i = 0; i < num_thread; ++i) {
-                    totalVal = op(totalVal, static_cast<native_type>(corr_val));
-                }
-
-                if (value != totalVal) {
-                    return false;
-                }
-
-                return true;
-            };
-
-            this->check_test_results(
-                thread_idx, this->output, 1 /*recv_mem*/, lambda, thread_idx, num_thread);
-        }
-    }
-    catch (check_on_exception& ex) {
-        this->output << "Check results: \n";
-        //printout
-        this->output << "Send memory:" << std::endl;
-        this->dump_memory_by_index(this->output, 0 /*send_mem*/);
-        this->output << "\nRecv memory:" << std::endl;
-        this->dump_memory_by_index(this->output, 1 /*recv_mem*/);
-
-        std::stringstream ss;
-        ss << ex.what() << ", But expected: " << corr_val * num_thread << std::endl;
-        UT_ASSERT(false, ss.str());
-    }
+    std::stringstream ss;
+    bool ret = allreduce_checking_results<native_type, op_type>(this, num_thread, ss);
+    UT_ASSERT(ret, ss.str());
 }
 
 } // namespace ring_single_device_case

@@ -234,7 +234,8 @@ TYPED_TEST(ring_allgatherv_single_process_fixture, ring_allgatherv_single_device
         index++;
     }
 
-    // printout result
-    this->dump_memory(this->output);
+    std::stringstream ss;
+    bool ret = allgatherv_checking_results<native_type>(this, num_thread, ss);
+    UT_ASSERT(ret, ss.str());
 }
 } // namespace ring_single_device_multi_tile_case

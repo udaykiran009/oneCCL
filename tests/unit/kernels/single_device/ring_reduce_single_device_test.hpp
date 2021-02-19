@@ -48,18 +48,15 @@ TYPED_TEST(ring_reduce_single_process_fixture, ring_reduce_single_device_mt) {
     // This allows to better test min/max ops.
     std::shared_ptr<ccl_context> ctx;
     std::map<size_t, std::vector<native_type>> send_values;
-    std::map<size_t, std::vector<native_type>> recv_values;
-    std::map<size_t, std::vector<native_type>> calc_values;
     for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         size_t mult = 0;
         for (size_t idx = 1; idx <= buffer_size; ++idx, ++mult) {
             send_values[thread_idx].push_back(
                 static_cast<native_type>(idx * ((thread_idx + mult) % num_thread + 1)));
-            recv_values[thread_idx].push_back(static_cast<native_type>(0));
-            calc_values[thread_idx].push_back(static_cast<native_type>(0));
         }
     }
-    int root = 2;
+    std::vector<native_type> recv_values(buffer_size, 0);
+    int root = 1;
 
     for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         //initialize communication params
@@ -80,9 +77,9 @@ TYPED_TEST(ring_reduce_single_process_fixture, ring_reduce_single_device_mt) {
         auto temp_recv = devices[thread_idx]->template alloc_memory<native_type>(
             buffer_size / num_thread, sizeof(native_type), ctx);
         mem_send.enqueue_write_sync(send_values[thread_idx]);
-        mem_recv.enqueue_write_sync(recv_values[thread_idx]);
-        temp_recv.enqueue_write_sync(recv_values[thread_idx].begin(),
-                                     recv_values[thread_idx].begin() + buffer_size / num_thread);
+        mem_recv.enqueue_write_sync(recv_values);
+        temp_recv.enqueue_write_sync(recv_values.begin(),
+                                     recv_values.begin() + buffer_size / num_thread);
 
         /* fill array in specific order
          * Left: l_send, l_recv, l_tmp_recv, r_tmp_recv
@@ -229,68 +226,9 @@ TYPED_TEST(ring_reduce_single_process_fixture, ring_reduce_single_device_mt) {
         index++;
     }
 
-    // Copy device buffers back to host...
-    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-        auto& mem_handles = this->get_memory_handles(thread_idx);
-        size_t mem_idx = 1; // Recv memory
-        size_t i = 0;
-        for (auto iter_mem = mem_handles.begin(); iter_mem != mem_handles.end(); iter_mem++, i++) {
-            if (i != mem_idx) {
-                continue;
-            }
-            const auto* data = *iter_mem;
-            auto it =
-                std::find_if(this->get_memory_storage().allocated_storage.begin(),
-                             this->get_memory_storage().allocated_storage.end(),
-                             [data](const native::ccl_device::device_memory<native_type>& wrapper) {
-                                 return wrapper.handle == data;
-                             });
-
-            recv_values[thread_idx] = it->enqueue_read_sync();
-        }
-    }
-
-    // Compute output buffers in the same order as within the OCl kernel i.e. farthest rank -> right_rank -> right_right_rank -> ... -> root_rank ...
-    size_t thread_idx_offset = (root + 1) % num_thread;
-    size_t thread_idx;
-    constexpr auto op = op_type{};
-    for (size_t buffer_idx = 0; buffer_idx < buffer_size; ++buffer_idx) {
-        native_type total_val = op.init();
-        for (size_t thread_ctr = 0; thread_ctr < num_thread; ++thread_ctr) {
-            thread_idx = (thread_ctr + thread_idx_offset) % num_thread;
-            native_type temp_send_values = send_values[thread_idx][buffer_idx];
-            total_val = op(total_val, temp_send_values);
-        }
-        calc_values[root][buffer_idx] = total_val;
-    }
-
-    // Check results against host...
-    try {
-        for (size_t thread_ctr = 0; thread_ctr < num_thread; ++thread_ctr) {
-            for (size_t buffer_idx = 0; buffer_idx < buffer_size; ++buffer_idx) {
-                if (recv_values[thread_idx][buffer_idx] != calc_values[thread_idx][buffer_idx]) {
-                    throw comparison_exception(to_string(thread_idx),
-                                               to_string(buffer_idx),
-                                               to_string(recv_values[thread_idx][buffer_idx]),
-                                               to_string(calc_values[thread_idx][buffer_idx]));
-                }
-            }
-        }
-    }
-    catch (comparison_exception& ex) {
-        this->output << "Check results: \n";
-        //printout
-        this->output << "Send memory:" << std::endl;
-        this->dump_memory_by_index(this->output, 0 /*send_mem*/);
-        this->output << std::endl;
-        this->output << "Recv memory:" << std::endl;
-        this->dump_memory_by_index(this->output, 1 /*recv_mem*/);
-        this->output << std::endl;
-
-        std::stringstream ss;
-        ss << ex.what() << std::endl;
-        UT_ASSERT(false, ss.str());
-    }
+    std::stringstream ss;
+    bool ret = reduce_checking_results<native_type, op_type>(this, num_thread, root, ss);
+    UT_ASSERT(ret, ss.str());
 }
 
 } // namespace ring_single_device_case

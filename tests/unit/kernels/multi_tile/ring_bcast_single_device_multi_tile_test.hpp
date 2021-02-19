@@ -14,12 +14,6 @@ TYPED_TEST(ring_bcast_single_process_fixture, ring_bcast_single_device_multi_til
     // Type of our test
     using native_type = TypeParam;
 
-    // declare test case data
-    const size_t buffer_size = 512;
-    constexpr size_t comm_group_count = 4;
-    constexpr size_t mem_group_count = 1;
-    constexpr size_t flag_group_count = 3;
-
     // check test preconditions
     const auto& subdevices = this->get_local_devices();
     UT_ASSERT(
@@ -29,12 +23,19 @@ TYPED_TEST(ring_bcast_single_process_fixture, ring_bcast_single_device_multi_til
     UT_ASSERT(subdevices.size() == this->get_unique_local_devices().size(),
               "Devices must be unique to launch multi tile case");
 
+    // declare test case data
+    const size_t buffer_size = 512;
+    const size_t num_thread = subdevices.size();
+    constexpr size_t comm_group_count = 4;
+    constexpr size_t mem_group_count = 1;
+    constexpr size_t flag_group_count = 3;
+
     // fill device memory stencil data
     std::shared_ptr<ccl_context> ctx;
     std::vector<native_type> send_values(buffer_size);
     std::iota(send_values.begin(), send_values.end(), 1);
     std::vector<native_type> recv_values(buffer_size, 0);
-    int root = 2;
+    int root = 1;
 
     int rank_device_idx = 0;
     for (auto dev_it = subdevices.begin(); dev_it != subdevices.end(); ++dev_it) {
@@ -197,7 +198,8 @@ TYPED_TEST(ring_bcast_single_process_fixture, ring_bcast_single_device_multi_til
         index++;
     }
 
-    // printout result
-    this->dump_memory(this->output);
+    std::stringstream ss;
+    bool ret = bcast_checking_results<native_type>(this, num_thread, root, buffer_size, ss);
+    UT_ASSERT(ret, ss.str());
 }
 } // namespace ring_single_device_multi_tile_case

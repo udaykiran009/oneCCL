@@ -32,7 +32,7 @@ TYPED_TEST(ring_reduce_scatter_single_process_fixture,
               "Devices must be unique to launch multi tile case");
 
     // declare test case data
-    int num_thread = subdevices.size();
+    const size_t num_thread = subdevices.size();
     const size_t recv_buffer_size = 64;
     const size_t send_buffer_size = num_thread * recv_buffer_size;
     constexpr size_t comm_group_count = 3;
@@ -215,7 +215,8 @@ TYPED_TEST(ring_reduce_scatter_single_process_fixture,
         index++;
     }
 
-    // printout result
-    this->dump_memory(this->output);
+    std::stringstream ss;
+    bool ret = reduce_scatter_checking_results<native_type, op_type>(this, num_thread, ss);
+    UT_ASSERT(ret, ss.str());
 }
 } // namespace ring_single_device_multi_tile_case

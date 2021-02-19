@@ -21,12 +21,6 @@ TYPED_TEST(ring_reduce_single_process_fixture, ring_reduce_single_device_multi_t
     using native_type = typename TypeParam::first_type;
     using op_type = typename TypeParam::second_type;
 
-    // declare test case data
-    const size_t buffer_size = 512;
-    constexpr size_t comm_group_count = 4;
-    constexpr size_t mem_group_count = 3;
-    constexpr size_t flag_group_count = 3;
-
     // check test preconditions
     const auto& subdevices = this->get_local_devices();
     UT_ASSERT(
@@ -36,25 +30,30 @@ TYPED_TEST(ring_reduce_single_process_fixture, ring_reduce_single_device_multi_t
     UT_ASSERT(subdevices.size() == this->get_unique_local_devices().size(),
               "Devices must be unique to launch multi tile case");
 
-    std::shared_ptr<ccl_context> ctx; // device memory stencil data
+    // declare test case data
+    const size_t num_thread = subdevices.size();
+    const size_t buffer_size = 512;
+    constexpr size_t comm_group_count = 4;
+    constexpr size_t mem_group_count = 3;
+    constexpr size_t flag_group_count = 3;
     // device memory stencil data
     // Fill the data in the following order:
     // 0: 1 4 6 ...
     // 1: 2 3 5 ...
     // i.e. on each iteration different thread has min and max value
     // This allows to better test min/max ops.
-    int num_thread = subdevices.size();
+    // device memory stencil data
+    std::shared_ptr<ccl_context> ctx;
     std::map<size_t, std::vector<native_type>> send_values;
-    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
         size_t mult = 0;
         for (size_t idx = 1; idx <= buffer_size; ++idx, ++mult) {
             send_values[thread_idx].push_back(
                 static_cast<native_type>(idx * ((thread_idx + mult) % num_thread + 1)));
         }
     }
-    //std::iota(send_values.begin(), send_values.end(), 1);
     std::vector<native_type> recv_values(buffer_size, 0);
-    int root = 2;
+    int root = 1;
 
     int rank_device_idx = 0;
     for (const std::shared_ptr<ccl_device>& sub_device : subdevices) {
@@ -228,7 +227,8 @@ TYPED_TEST(ring_reduce_single_process_fixture, ring_reduce_single_device_multi_t
         index++;
     }
 
-    // printout result
-    this->dump_memory(this->output);
+    std::stringstream ss;
+    bool ret = reduce_checking_results<native_type, op_type>(this, num_thread, root, ss);
+    UT_ASSERT(ret, ss.str());
 }
 } // namespace ring_single_device_multi_tile_case

@@ -18,12 +18,6 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_single_device_m
     using native_type = typename TypeParam::first_type;
     using op_type = typename TypeParam::second_type;
 
-    // declare test case data
-    const size_t buffer_size = 512;
-    constexpr size_t comm_group_count = 3;
-    constexpr size_t mem_group_count = 3;
-    constexpr size_t flag_group_count = 3;
-
     // check test preconditions
     const auto& subdevices = this->get_local_devices();
     UT_ASSERT(
@@ -32,6 +26,13 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_single_device_m
 
     UT_ASSERT(subdevices.size() == this->get_unique_local_devices().size(),
               "Devices must be unique to launch multi tile case");
+
+    // declare test case data
+    const size_t buffer_size = 512;
+    const size_t num_thread = subdevices.size();
+    constexpr size_t comm_group_count = 3;
+    constexpr size_t mem_group_count = 3;
+    constexpr size_t flag_group_count = 3;
 
     // fill device memory stencil data
     std::shared_ptr<ccl_context> ctx;
@@ -202,7 +203,8 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_single_device_m
         index++;
     }
 
-    // printout result
-    this->dump_memory(this->output);
+    std::stringstream ss;
+    bool ret = allreduce_checking_results<native_type, op_type>(this, num_thread, ss);
+    UT_ASSERT(ret, ss.str());
 }
 } // namespace ring_single_device_multi_tile_case
