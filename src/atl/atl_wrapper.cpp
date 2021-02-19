@@ -7,8 +7,10 @@
 #include "atl/mpi/atl_mpi.h"
 #include "atl_wrapper.h"
 #include "common/global/global.hpp"
+#include "exec/exec.hpp"
 
 static std::list<std::shared_ptr<iatl>> transports{};
+static ccl_executor* executor;
 
 atl_attr_t atl_wrapper::attr = {
     1, /* ep_count */
@@ -28,6 +30,10 @@ void atl_wrapper::set_internal_env(const atl_attr_t& attr) {
         atl_mpi::atl_set_env(attr);
     else if (transport_type == ccl_atl_ofi)
         atl_ofi::atl_set_env(attr);
+}
+
+void atl_wrapper::set_exec(ccl_executor* exec) {
+    executor = exec;
 }
 
 atl_wrapper::atl_wrapper() {
@@ -163,6 +169,13 @@ void atl_wrapper::init_transport() {
         LOG_INFO("  max_order_waw_size: ", attr.max_order_waw_size);
         LOG_INFO("  sync_coll: ", attr.sync_coll);
         LOG_INFO("  extra_ep: ", attr.extra_ep);
+    }
+
+    if ((!pmi) || (pmi && pmi->get_local_thread_idx() == 0)) {
+        if (!executor->are_workers_started()) {
+            atl_proc_coord_t* coord = atl_get_proc_coord();
+            executor->start_workers(coord->local_idx, coord->local_count);
+        }
     }
 }
 

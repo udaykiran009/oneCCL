@@ -60,8 +60,13 @@ ccl_executor::ccl_executor(const char* main_addr) {
 
     /* generate ATL attr for all future communicators */
     atl_wrapper::attr = generate_atl_attr(env);
+    atl_wrapper::set_exec(this);
+}
 
-    set_local_coord();
+void ccl_executor::start_workers(size_t loc_proc_idx, size_t loc_proc_count) {
+    auto& env = ccl::global_data::env();
+    local_proc_count = loc_proc_count;
+    local_proc_idx = loc_proc_idx;
     CCL_THROW_IF_NOT(env.env_2_worker_affinity(get_local_proc_idx(), get_local_proc_count()));
     start_workers();
 }
@@ -107,6 +112,7 @@ void ccl_executor::start_workers() {
                       affinity);
         }
     }
+    workers_started = true;
 }
 
 ccl_executor::~ccl_executor() {
@@ -258,47 +264,4 @@ void ccl_executor::update_wait_condition(size_t idx,
                                          size_t delta) {
     CCL_THROW_IF_NOT(idx < workers.size(), "unexpected worker idx ", idx);
     workers[idx]->update_wait_condition(type, delta);
-}
-
-void ccl_executor::set_local_coord() {
-    /* CCL specific variables */
-    /* TODO: add auto-detection */
-    const char ccl_idx_env_name[] = "CCL_LOCALRANKID";
-    const char ccl_count_env_name[] = "CCL_LOCALNRANKS";
-
-    /* hydra specific env variables */
-    const char mpi_idx_env_name[] = "MPI_LOCALRANKID";
-    const char mpi_count_env_name[] = "MPI_LOCALNRANKS";
-
-    char* ccl_idx_env = getenv(ccl_idx_env_name);
-    char* ccl_count_env = getenv(ccl_count_env_name);
-
-    char* mpi_idx_env = getenv(mpi_idx_env_name);
-    char* mpi_count_env = getenv(mpi_count_env_name);
-
-    if (ccl_idx_env && ccl_count_env) {
-        local_proc_idx = std::atoi(ccl_idx_env);
-        local_proc_count = std::atoi(ccl_count_env);
-    }
-    else if (mpi_idx_env && mpi_count_env) {
-        local_proc_idx = std::atoi(mpi_idx_env);
-        local_proc_count = std::atoi(mpi_count_env);
-    }
-    else {
-        local_proc_idx = 0;
-        local_proc_count = 1;
-
-        LOG_WARN(ccl_idx_env_name,
-                 " or ",
-                 ccl_count_env_name,
-                 " or ",
-                 mpi_idx_env_name,
-                 " or ",
-                 mpi_count_env_name,
-                 " not found");
-        LOG_WARN("use default: local_proc_idx ",
-                 local_proc_idx,
-                 " , local_proc_count ",
-                 local_proc_count);
-    }
 }

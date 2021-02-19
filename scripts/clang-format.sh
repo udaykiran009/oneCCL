@@ -109,7 +109,7 @@ process_files()
         fi
 
         for filename in $(echo -e "${files}" | \
-            grep -v ".git/" | \
+            grep -v "\.git/" | \
             grep -v "_install/" | \
             grep -v "build/" | \
             grep -v "cmake/"| \

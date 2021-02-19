@@ -55,6 +55,10 @@ public:
     bool test(const ccl_request* req);
 
     void start_workers();
+    void start_workers(size_t local_proc_idx, size_t local_proc_count);
+    bool are_workers_started() {
+        return workers_started;
+    };
     size_t get_worker_count() const;
     void update_wait_condition(size_t idx,
                                ccl_base_thread::wait_data::update_type type,
@@ -67,7 +71,6 @@ public:
     void unlock_workers();
     bool is_locked = false;
 
-    // TODO: make method to get real local_proc***
     size_t get_local_proc_idx() const {
         return local_proc_idx;
     }
@@ -84,7 +87,6 @@ private:
 
     std::unique_ptr<ccl_sched_queue> create_sched_queue(size_t idx, size_t ep_per_worker);
     void do_work();
-    void set_local_coord();
 
     std::vector<std::unique_ptr<ccl_worker>> workers;
     // TODO: Rework to support listener
@@ -95,6 +97,7 @@ private:
     size_t rr_worker_idx = 0; /* to distribute work in round-robin */
     size_t local_proc_idx;
     size_t local_proc_count;
+    bool workers_started = false;
 };
 
 inline void ccl_release_sched(ccl_master_sched* sched) {

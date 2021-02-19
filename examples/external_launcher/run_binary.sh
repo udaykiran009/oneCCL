@@ -116,7 +116,7 @@ function run()
     dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
     host=`hostname`
 
-    binary_env="FI_PROVIDER=tcp CCL_LOG_LEVEL=info CCL_LOCALRANKID=$LOCAL_RANK CCL_LOCALNRANKS=$LOCAL_SIZE"
+    binary_env="FI_PROVIDER=tcp CCL_LOG_LEVEL=info"
     binary_path="$dir/external_launcher"
     binary_arg="$SIZE $RANK ${KVS_MODE} ${KVS_PARAM}"
 

@@ -11,9 +11,12 @@
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.h"
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/users_kvs.h"
 
+class ccl_executor;
+
 class atl_wrapper {
 public:
     static void set_internal_env(const atl_attr_t& attr);
+    static void set_exec(ccl_executor* exec);
 
     ~atl_wrapper();
     atl_wrapper();
