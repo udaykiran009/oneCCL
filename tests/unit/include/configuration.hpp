@@ -20,12 +20,12 @@ static std::ostream& global_output = global_ss;
 static const char* ut_device_affinity_mask_name = "L0_CLUSTER_AFFINITY_MASK";
 static std::string device_indices{ "[0:6459]" };
 
-void set_test_device_indices(const char* indices_csv) {
+inline void set_test_device_indices(const char* indices_csv) {
     if (indices_csv) {
         device_indices = indices_csv;
     }
 }
 
-const std::string& get_global_device_indices() {
+inline const std::string& get_global_device_indices() {
     return device_indices;
 }

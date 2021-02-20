@@ -45,7 +45,7 @@ struct tracer {
 
 namespace utils {
 
-std::string to_string(const ccl::device_index_type& device_id) {
+inline std::string to_string(const ccl::device_index_type& device_id) {
     std::stringstream ss;
     ss << "[" << std::get<ccl::device_index_enum::driver_index_id>(device_id) << ":"
        << std::get<ccl::device_index_enum::device_index_id>(device_id) << ":";
@@ -62,7 +62,7 @@ std::string to_string(const ccl::device_index_type& device_id) {
     return ss.str();
 }
 
-ccl::device_index_type from_string(const std::string& device_id_str) {
+inline ccl::device_index_type from_string(const std::string& device_id_str) {
     std::string::size_type from_pos = device_id_str.find('[');
     if (from_pos == std::string::npos) {
         throw std::invalid_argument(std::string("Cannot get ccl::device_index_type from input: ") +
@@ -132,7 +132,7 @@ ccl::device_index_type from_string(const std::string& device_id_str) {
 }
 
 template <typename T>
-void str_to_array(const std::string& input, std::vector<T>& output, char delimiter) {
+inline void str_to_array(const std::string& input, std::vector<T>& output, char delimiter) {
     if (input.empty()) {
         return;
     }
@@ -146,7 +146,9 @@ void str_to_array(const std::string& input, std::vector<T>& output, char delimit
     }
 }
 template <>
-void str_to_array(const std::string& input, std::vector<std::string>& output, char delimiter) {
+inline void str_to_array(const std::string& input,
+                         std::vector<std::string>& output,
+                         char delimiter) {
     std::string processes_input(input);
 
     processes_input.erase(std::remove_if(processes_input.begin(),
@@ -165,7 +167,7 @@ void str_to_array(const std::string& input, std::vector<std::string>& output, ch
 }
 
 template <typename T>
-void str_to_mset(const std::string& input, std::multiset<T>& output, char delimiter) {
+inline void str_to_mset(const std::string& input, std::multiset<T>& output, char delimiter) {
     if (input.empty()) {
         return;
     }
@@ -180,9 +182,9 @@ void str_to_mset(const std::string& input, std::multiset<T>& output, char delimi
 }
 
 template <>
-void str_to_mset(const std::string& input,
-                 std::multiset<ccl::device_index_type>& output,
-                 char delimiter) {
+inline void str_to_mset(const std::string& input,
+                        std::multiset<ccl::device_index_type>& output,
+                        char delimiter) {
     std::string processes_input(input);
 
     processes_input.erase(std::remove_if(processes_input.begin(),

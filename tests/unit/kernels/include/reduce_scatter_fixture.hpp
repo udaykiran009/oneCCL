@@ -32,6 +32,32 @@ protected:
     void TearDown() override {}
 };
 
+template <class DType>
+class ring_reduce_scatter_multi_process_fixture : public multi_platform_fixture,
+                                                  public data_storage<typename DType::first_type> {
+protected:
+    using native_type = typename DType::first_type;
+    using op_type = typename DType::second_type;
+    using storage = data_storage<native_type>;
+
+    ring_reduce_scatter_multi_process_fixture()
+            : multi_platform_fixture(get_global_device_indices()) {}
+
+    ~ring_reduce_scatter_multi_process_fixture() override {}
+
+    void SetUp() override {
+        multi_platform_fixture::SetUp();
+
+        // prepare preallocated data storage
+        storage::initialize_data_storage(get_local_devices().size());
+
+        // prepare binary kernel source
+        create_module_descr("kernels/ring_reduce_scatter.spv");
+    }
+
+    void TearDown() override {}
+};
+
 template <class DType, class Op_type, class Object>
 bool reduce_scatter_checking_results(Object obj, size_t num_thread, std::stringstream& ss) {
     size_t corr_val = 0;

@@ -5,6 +5,11 @@
 
 #include "common_platform_fixture.hpp"
 
+namespace net {
+class ipc_rx_connection;
+class ipc_tx_connection;
+class ipc_server;
+} // namespace net
 class default_fixture : public platform_fixture {
 protected:
     default_fixture() : platform_fixture("") {}
@@ -22,108 +27,74 @@ public:
     }
 
 protected:
-    multi_platform_fixture(const std::string& affinities = std::string(get_global_device_indices()))
-            : platform_fixture(affinities) {}
-
-    virtual ~multi_platform_fixture() override {}
+    multi_platform_fixture(
+        const std::string& affinities = std::string(get_global_device_indices()));
+    virtual ~multi_platform_fixture() override;
 
     bool is_child() const {
         return !pid;
     }
 
-    inline void wait_phase(unsigned char phase) {
-        int ret = utils::writeToSocket(communication_socket, &phase, sizeof(phase));
-        if (ret != 0) {
-            std::cerr << "Cannot writeToSocket on phase: " << (int)phase
-                      << ", error: " << strerror(errno) << std::endl;
-            ;
-            abort();
-        }
+    void wait_phase(unsigned char phase);
 
-        unsigned char get_phase = phase + 1;
-        ret = utils::readFromSocket(communication_socket, &get_phase, sizeof(get_phase));
-        if (ret != 0) {
-            std::cerr << "Cannot readFromSocket on phase: " << (int)phase
-                      << ", error: " << strerror(errno) << std::endl;
-            abort();
-        }
+    virtual void SetUp() override;
+    virtual void TearDown() override;
 
-        if (phase != get_phase) {
-            std::cerr << "wait_phase phases mismatch! wait phase: " << (int)phase
-                      << ", got phase: " << (int)get_phase << std::endl;
-            ;
-            abort();
-        }
+    // IPC handles
+    using ipc_own_ptr = std::shared_ptr<native::ccl_device::device_ipc_memory_handle>;
+    using ipc_own_ptr_container = std::list<ipc_own_ptr>;
+
+    template <class NativeType, class... Handles>
+    void register_ipc_memories_data(std::shared_ptr<native::ccl_context> ctx,
+                                    size_t thread_idx,
+                                    Handles&&... h) {
+        std::array<native::ccl_device::device_memory<NativeType>*, sizeof...(h)> memory_handles{
+            h...
+        };
+
+        ipc_own_ptr_container& ipc_cont = ipc_mem_per_thread_storage[thread_idx];
+        std::transform(memory_handles.begin(),
+                       memory_handles.end(),
+                       std::back_inserter(ipc_cont),
+                       [ctx](native::ccl_device::device_memory<NativeType>* memory_handle) {
+                           auto device_ptr = memory_handle->get_owner().lock();
+                           return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle,
+                                                                              ctx);
+                       });
     }
 
-    virtual void SetUp() override {
-        if (cluster_device_indices.size() != 2) {
-            std::cerr << __FUNCTION__ << " - not enough devices in \""
-                      << ut_device_affinity_mask_name << "\"."
-                      << "Two devices required at least" << std::endl;
-            abort();
-        }
-        if (socketpair(AF_LOCAL, SOCK_STREAM, 0, sockets) < 0) {
-            std::cerr << __FUNCTION__
-                      << " - cannot create sockets pairt before fork: " << strerror(errno)
-                      << std::endl;
-            abort();
-        }
+    template <class... Handles>
+    void register_ipc_flags_data(std::shared_ptr<native::ccl_context> ctx,
+                                 size_t thread_idx,
+                                 Handles&&... h) {
+        using NativeType = int;
+        std::array<native::ccl_device::device_memory<NativeType>*, sizeof...(h)> memory_handles{
+            h...
+        };
 
-        pid_pair[TO_CHILD] = getpid();
-        pid_pair[TO_PARENT] = getpid();
-
-        pid = fork();
-        if (pid < 0) {
-            std::cerr << __FUNCTION__ << " - cannot fork() process: " << strerror(errno)
-                      << std::endl;
-            abort();
-        }
-        else if (pid == 0) //child
-        {
-            close(sockets[TO_CHILD]);
-
-            pid_pair[TO_CHILD] = getpid();
-            my_pid = &pid_pair[TO_CHILD];
-            other_pid = &pid_pair[TO_PARENT];
-
-            communication_socket = sockets[TO_PARENT];
-
-            // create local to child process driver & devices
-            platform_fixture::SetUp();
-            const auto& local_affinity = cluster_device_indices[TO_CHILD];
-            create_local_platform(local_affinity);
-        }
-        else {
-            close(sockets[TO_PARENT]);
-
-            pid_pair[TO_CHILD] = pid;
-
-            my_pid = &pid_pair[TO_PARENT];
-            other_pid = &pid_pair[TO_CHILD];
-
-            communication_socket = sockets[TO_CHILD];
-
-            // create local to parent process driver & devices
-            platform_fixture::SetUp();
-            const auto& local_affinity = cluster_device_indices[TO_PARENT];
-            create_local_platform(local_affinity);
-        }
+        ipc_own_ptr_container& ipc_cont = ipc_flag_per_thread_storage[thread_idx];
+        std::transform(memory_handles.begin(),
+                       memory_handles.end(),
+                       std::back_inserter(ipc_cont),
+                       [ctx](native::ccl_device::device_memory<NativeType>* memory_handle) {
+                           auto device_ptr = memory_handle->get_owner().lock();
+                           return device_ptr->create_shared_ipc_memory_handle(memory_handle->handle,
+                                                                              ctx);
+                       });
     }
-
-    virtual void TearDown() override {
-        //TODO waitpid for parent
-        if (pid) {
-            std::cout << "PID: " << *my_pid << " wait child: " << *other_pid << std::endl;
-            int status = 0;
-            int ret = waitpid(pid, &status, 0);
-            UT_ASSERT(ret == pid, "Waitpid return fails");
-        }
-        else {
-            std::cout << "PID: " << *my_pid << " exit" << std::endl;
-            quick_exit(0);
-        }
-    }
+    template <class... Handles>
+    void create_ipcs(std::shared_ptr<native::ccl_context> ctx,
+                     size_t thread_idx,
+                     size_t threads_count,
+                     Handles*... h) {}
+    using ipc_remote_ptr = std::shared_ptr<native::ccl_device::device_ipc_memory>;
+    using ipc_remote_ptr_container = std::list<ipc_remote_ptr>;
+    std::map<native::ccl_device*, ipc_remote_ptr_container> send_receive_ipc_memory(
+        const std::vector<std::shared_ptr<native::ccl_device>>& devices,
+        std::shared_ptr<native::ccl_context> ctx);
+    std::map<native::ccl_device*, ipc_remote_ptr_container> send_receive_ipc_flags(
+        const std::vector<std::shared_ptr<native::ccl_device>>& devices,
+        std::shared_ptr<native::ccl_context> ctx);
 
     int pid = 0;
     enum { TO_CHILD, TO_PARENT };
@@ -134,4 +105,22 @@ protected:
 
     int sockets[2];
     int communication_socket = 0;
+
+private:
+    std::unique_ptr<net::ipc_server> server;
+    std::unique_ptr<net::ipc_tx_connection> tx_conn;
+    std::unique_ptr<net::ipc_rx_connection> rx_conn;
+    unsigned char phase_sync_count;
+
+    std::vector<ipc_own_ptr> ipc_mem_allocated_storage;
+    std::map<size_t, ipc_own_ptr_container> ipc_mem_per_thread_storage;
+
+    std::vector<ipc_own_ptr> ipc_flag_allocated_storage;
+    std::map<size_t, ipc_own_ptr_container> ipc_flag_per_thread_storage;
+
+    template <class ipc_storage_type>
+    std::map<native::ccl_device*, ipc_remote_ptr_container> send_receive_ipc_impl(
+        ipc_storage_type& storage,
+        const std::vector<std::shared_ptr<native::ccl_device>>& devices,
+        std::shared_ptr<native::ccl_context> ctx);
 };

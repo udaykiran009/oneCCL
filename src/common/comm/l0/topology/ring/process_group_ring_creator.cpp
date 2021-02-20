@@ -1062,7 +1062,9 @@ bool allied_process_group_ring_topology::build_specific_colored(
             process_index,
             process_count,
             device_rank_offset,
-            1, /* TODO self closed ring - only one id_ring for all:   prev_proc: me_proc: next_proc   - prev = next, exclude one*/
+            ipc_comms.size()
+                ? 1
+                : 0, /* TODO self closed ring - only one id_ring for all:   prev_proc: me_proc: next_proc   - prev = next, exclude one*/
             devices,
             out_indexed_devices,
             ipc_device_indices,

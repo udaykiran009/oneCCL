@@ -30,6 +30,30 @@ protected:
     void TearDown() override {}
 };
 
+template <class DType>
+class ring_allgatherv_multi_process_fixture : public multi_platform_fixture,
+                                              public data_storage<DType> {
+protected:
+    using native_type = DType;
+    using storage = data_storage<native_type>;
+
+    ring_allgatherv_multi_process_fixture() : multi_platform_fixture(get_global_device_indices()) {}
+
+    ~ring_allgatherv_multi_process_fixture() override {}
+
+    void SetUp() override {
+        multi_platform_fixture::SetUp();
+
+        // prepare preallocated data storage
+        storage::initialize_data_storage(get_local_devices().size());
+
+        // prepare binary kernel source
+        create_module_descr("kernels/ring_allgatherv.spv");
+    }
+
+    void TearDown() override {}
+};
+
 template <class DType, class Object>
 bool allgatherv_checking_results(Object obj, size_t num_thread, std::stringstream& ss) {
     size_t corr_val;

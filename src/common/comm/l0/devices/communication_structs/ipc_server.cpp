@@ -10,6 +10,7 @@ namespace net {
 
 ipc_server::~ipc_server() {
     stop();
+    unlink(server_shared_name.c_str());
 }
 
 void ipc_server::start(const std::string& path, int expected_backlog_size) {
