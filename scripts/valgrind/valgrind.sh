@@ -253,7 +253,7 @@ run()
     n=2
     reduction_list="sum"
     coll_list="allgatherv allreduce alltoall alltoallv bcast reduce reduce_scatter"
-    ccl_base_env="FI_PROVIDER=tcp CCL_ATL_MPI_LIB_TYPE=impi CCL_LOG_LEVEL=info I_MPI_DEBUG=2"
+    ccl_base_env="FI_PROVIDER=tcp CCL_ATL_MPI=impi CCL_LOG_LEVEL=info I_MPI_DEBUG=2"
 
     if [[ ${MODE} = "cpu" ]]
     then

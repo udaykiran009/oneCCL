@@ -1898,11 +1898,6 @@ err:
     return RET2ATL(ret);
 }
 
-#ifndef __cplusplus
-ATL_OFI_INI {
-    atl_transport->name = "ofi";
-    atl_transport->init = atl_ofi_init;
-    atl_transport->reserve_addr = atl_ofi_main_addr_reserve;
-    return ATL_STATUS_SUCCESS;
+atl_status_t atl_ofi_main_addr_reserve(char* main_addr) {
+    return ATL_STATUS_UNSUPPORTED;
 }
-#endif

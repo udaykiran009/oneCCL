@@ -91,7 +91,7 @@ static void atl_ini_dir(const char* transport_name,
                 ret = transport.reserve_addr(const_cast<char*>(main_addr));
             }
             else {
-                ret = transport.init(argc, argv, attr, ctx, main_addr);
+                ret = transport.init(argc, argv, attr, ctx, main_addr, nullptr /* pmi */);
             }
             if (ret != ATL_STATUS_SUCCESS) {
                 dlclose(dlhandle);

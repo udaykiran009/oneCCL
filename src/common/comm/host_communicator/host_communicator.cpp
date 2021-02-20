@@ -42,7 +42,7 @@ host_communicator::host_communicator(int size, int rank, shared_ptr_class<ikvs_w
         throw ccl::exception("Incorrect rank or size value when creating a host communicator");
     }
 
-    LOG_DEBUG("host_communicator ctor");
+    LOG_DEBUG("ctor");
 
     ccl::global_data& data = ccl::global_data::get();
     std::shared_ptr<atl_wrapper> atl_tmp =
@@ -64,7 +64,7 @@ host_communicator::host_communicator(std::shared_ptr<atl_wrapper> atl)
                              std::to_string(rank) + " size: " + std::to_string(size));
     }
 
-    LOG_DEBUG("host_communicator ctor");
+    LOG_DEBUG("ctor");
 
     ccl::global_data& data = ccl::global_data::get();
     comm_impl = std::shared_ptr<ccl_comm>(new ccl_comm(rank, size, data.comm_ids->acquire(), atl));

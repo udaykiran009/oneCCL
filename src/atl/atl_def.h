@@ -1,4 +1,5 @@
 #pragma once
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -31,6 +32,8 @@
 
 #define ATL_OFI_INI ATL_EXT_INI
 #define ATL_MPI_INI ATL_EXT_INI
+
+class ipmi;
 
 typedef struct atl_ctx atl_ctx_t;
 typedef struct atl_ep atl_ep_t;
@@ -115,8 +118,12 @@ typedef struct {
 
 typedef struct {
     const char* name;
-    atl_status_t (
-        *init)(int* argc, char*** argv, atl_attr_t* attr, atl_ctx_t** ctx, const char* main_addr);
+    atl_status_t (*init)(int* argc,
+                         char*** argv,
+                         atl_attr_t* attr,
+                         atl_ctx_t** ctx,
+                         const char* main_addr,
+                         ipmi* pmi);
     atl_status_t (*reserve_addr)(char* main_addr);
 } atl_transport_t;
 

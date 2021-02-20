@@ -152,7 +152,7 @@ CCL_API vector_class<communicator> communicator::create_communicators(
 communicator communicator::create_communicator(const comm_attr& attr) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
-    LOG_DEBUG("Create host communicator");
+    LOG_DEBUG("create host communicator");
 
     communicator_interface_ptr impl = communicator_interface::create_communicator_impl();
 
@@ -171,7 +171,7 @@ communicator communicator::create_communicator(const int size,
                                                const comm_attr& attr) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
-    LOG_DEBUG("Create host communicator");
+    LOG_DEBUG("create host communicator");
 
     shared_ptr_class<ikvs_wrapper> kvs_tmp;
     if (std::dynamic_pointer_cast<ccl::v1::kvs>(kvs) != nullptr) {
@@ -198,7 +198,8 @@ communicator communicator::create_communicator(const int size,
                                                const int rank,
                                                shared_ptr_class<kvs_interface> kvs,
                                                const comm_attr& attr) {
-    LOG_DEBUG("Create host communicator: size ", size, ", rank ", rank);
+    LOG_DEBUG("size ", size, ", rank ", rank);
+
     shared_ptr_class<ikvs_wrapper> kvs_tmp;
     if (std::dynamic_pointer_cast<ccl::v1::kvs>(kvs) != nullptr) {
         kvs_tmp = std::dynamic_pointer_cast<ccl::v1::kvs>(kvs)->get_impl().get();
