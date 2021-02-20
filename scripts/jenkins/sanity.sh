@@ -27,7 +27,7 @@ export CCL_WORKER_AFFINITY=auto
 #==============================================================================
 #                                Defaults
 #==============================================================================
-set_default_values()
+function set_default_values()
 {
     ENABLE_DEBUG="no"
     ENABLE_VERBOSE="yes"
@@ -39,7 +39,7 @@ set_default_values()
 #==============================================================================
 
 # Logging. Always log. Echo if ENABLE_VERBOSE is "yes".
-log()
+function log()
 {
     if [ "${ENABLE_VERBOSE}" = "yes" ]; then
         eval $* 2>&1 | tee -a ${LOG_FILE}
@@ -49,7 +49,7 @@ log()
 }
 
 # Print usage and help information
-print_help()
+function print_help()
 {
     echo_log "Usage:"
     echo_log "    ./${BASENAME}.sh <options>"
@@ -63,31 +63,34 @@ print_help()
 }
 
 # Echo with logging. Always echo and always log
-echo_log()
+function echo_log()
 {
     echo -e "$*" 2>&1 | tee -a ${LOG_FILE}
 }
 # echo the debug information
-echo_debug()
+function echo_debug()
 {
     if [ ${ENABLE_DEBUG} = "yes" ]; then
         echo_log "DEBUG: $*"
     fi
 }
 
-echo_log_separator()
+function echo_log_separator()
 {
     echo_log "#=============================================================================="
 }
 
-check_command_exit_code() {
-    if [ $1 -ne 0 ]; then
-        echo_log "ERROR: ${2}" 1>&2
+function check_command_exit_code() {
+    local arg=$1
+    local err_msg=$2
+
+    if [ $arg -ne 0 ]; then
+        echo_log "ERROR: ${err_msg}" 1>&2
         exit $1
     fi
 }
 
-set_external_env(){
+function set_external_env(){
     if [ ${TEST_CONFIGURATIONS} == "test:nightly" ]
     then
         echo "Nightly test scope will be started."
@@ -113,14 +116,14 @@ set_external_env(){
     fi
 }
 
-enable_default_env()
+function enable_default_env()
 {
     echo "Use default env"
     export CCL_LOG_LEVEL=info
     export I_MPI_DEBUG=12
 }
 
-enable_default_test_scope()
+function enable_default_test_scope()
 {
     echo "Use default test scope"
     export CCL_TEST_DATA_TYPE=1
@@ -135,7 +138,7 @@ enable_default_test_scope()
     export CCL_TEST_REDUCTION_TYPE=0
 }
 
-enable_unordered_coll_test_scope()
+function enable_unordered_coll_test_scope()
 {
     echo "Use unordered coll test scope"
     export CCL_TEST_DATA_TYPE=0
@@ -150,7 +153,7 @@ enable_unordered_coll_test_scope()
     export CCL_TEST_REDUCTION_TYPE=0
 }
 
-set_environment()
+function set_environment()
 {
     if [ -z "$build_type" ]
     then
@@ -238,7 +241,7 @@ set_environment()
     fi
 }
 
-set_impi_environment()
+function set_impi_environment()
 {
     if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
     then
@@ -258,7 +261,7 @@ set_impi_environment()
     source ${IMPI_PATH}/env/vars.sh -i_mpi_library_kind=release_mt
 }
 
-make_tests()
+function make_tests()
 {
     cd ${CURRENT_WORK_DIR}/tests/functional
     mkdir -p build
@@ -268,7 +271,7 @@ make_tests()
     make all
 }
 
-run_valgrind_check()
+function run_valgrind_check()
 {
     export EXAMPLE_WORK_DIR="${CCL_ROOT}/examples/build"
     unset I_MPI_HYDRA_HOST_FILE
@@ -294,7 +297,7 @@ run_valgrind_check()
     fi
 }
 
-run_compatibitily_tests()
+function run_compatibitily_tests()
 {
     export EXAMPLE_WORK_DIR="${CCL_ROOT}/examples/build"
     mkdir -p ${EXAMPLE_WORK_DIR}
@@ -319,7 +322,7 @@ run_compatibitily_tests()
     fi
 }
 
-set_modulefile_environment()
+function set_modulefile_environment()
 {
     source /etc/profile.d/modules.sh
     export CCL_CONFIGURATION=cpu_icc
@@ -340,7 +343,7 @@ set_modulefile_environment()
     fi
 }
 
-unset_modulefile_environment()
+function unset_modulefile_environment()
 {
     module unload ccl
 
@@ -354,7 +357,7 @@ unset_modulefile_environment()
     fi
 }
 
-run_modulefile_tests()
+function run_modulefile_tests()
 {
     set_modulefile_environment
 
@@ -380,7 +383,7 @@ run_modulefile_tests()
     unset_modulefile_environment
 }
 
-run_tests()
+function run_tests()
 {
     enable_default_env
     enable_default_test_scope
@@ -540,7 +543,7 @@ run_tests()
     esac
 }
 
-build_ut_tests()
+function build_ut_tests()
 {
     local test_type=$1
     echo "CURRENT_WORK_DIR ${CURRENT_WORK_DIR}"
@@ -556,10 +559,7 @@ build_ut_tests()
         LIST=`make help | grep "kernel_" | grep -Po '(?<=\.\.\. ).*'`
         echo "List to build: $LIST\n"
         make -j8 ${LIST} native_api_suite
-        if [ $? -ne 0 ]; then
-            echo "Error: compilation of $LIST is FAILED"
-            exit $?
-        fi
+        check_command_exit_code $? "compilation of $LIST is FAILED"
         # TODO: When multi_tile, multi_device are ready.
         # Resolve an issue with common link for single_device, multi_device, multi_tile
         cd "${path}/tests/unit/kernels/single_device"
@@ -568,7 +568,7 @@ build_ut_tests()
     fi
 }
 
-get_ut_platfrom_info()
+function get_ut_platfrom_info()
 {
     output=$(${CURRENT_WORK_DIR}/build/tests/unit/native_api/native_api_suite --dump_table)
     full_table=$(echo $output | sed 's/^.* Table //' | sed 's/ EndTable.*//')
@@ -577,19 +577,16 @@ get_ut_platfrom_info()
     echo "${ret_arr[@]}"
 }
 
-run_ut_ctest()
+function run_ut_ctest()
 {
     local l0_affinity_mask=$1
     local ut_name=$2
 
     env ${l0_affinity_mask} ctest -VV -C $ut_name
-    if [ $? -ne 0 ]; then
-        echo "Error: $ut_name is FAILED"
-        exit $?
-    fi
+    check_command_exit_code $? "$ut_name is FAILED"
 }
 
-run_ut_single_device ()
+function run_ut_single_device ()
 {
     name_ut="kernel_ring_single_device_suite_test"
     platfrom_info=$1
@@ -598,10 +595,11 @@ run_ut_single_device ()
         index=$(echo "${platfrom_info[0]}" | sed 's/\:\*//g')
         l0_affinity_mask='L0_CLUSTER_AFFINITY_MASK="'${index}','${index}','${index}','${index}'"'
         run_ut_ctest ${l0_affinity_mask} ${name_ut}
+        check_command_exit_code $? "single_device ut is FAILED"
     fi
 }
 
-run_ut_multi_tile ()
+function run_ut_multi_tile ()
 {
     name_ut="kernel_ring_single_device_multi_tile_suite_test"
     platfrom_info=$1
@@ -616,10 +614,11 @@ run_ut_multi_tile ()
     if [ ${#platfrom_info[@]} -gt 1 ]; then
         l0_affinity_mask='L0_CLUSTER_AFFINITY_MASK="'$mask_str'"'
         run_ut_ctest ${l0_affinity_mask} ${name_ut}
+        check_command_exit_code $? "multi_tile ut is FAILED"
     fi
 }
 
-run_ut_tests()
+function run_ut_tests()
 {
     echo "RUNNING UNIT TESTS"
 
@@ -627,10 +626,7 @@ run_ut_tests()
     local errors=0
 
     build_ut_tests ${test_type}
-    if [ $? -ne 0 ]; then
-        echo "Error: Building of unit kernels tests is FAILED"
-        exit $?
-    fi
+    check_command_exit_code $? "Building of unit kernels tests is FAILED"
 
     platfrom_info=( $(get_ut_platfrom_info) )
 
@@ -655,7 +651,7 @@ run_ut_tests()
     fi
 }
 
-clean_nodes() {
+function clean_nodes() {
     echo "Start cleaning nodes..."
     if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
     then
@@ -713,6 +709,7 @@ do
         ;;
     "-functional_tests" )
         make_tests
+        check_command_exit_code $? "Compilation of functional tests is FAILED"
         run_tests
         shift
         ;;
