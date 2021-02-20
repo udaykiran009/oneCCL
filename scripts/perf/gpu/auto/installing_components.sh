@@ -7,50 +7,41 @@ CheckCommandExitCode() {
     fi
 }
 
-set_default_values()
+echo_log()
 {
-    PERF_WORK_DIR="/panfs/users/dsazanov/performance"
-    PRODUCT_ABBREVIATION="mpi_oneapi"
+    msg=$1
+    date=`date`
+    echo "[$date] > $msg"
 }
 
-# parse_parameters() {
-#     while [ $# -gt 0 ]
-#     do
-#         key="$1"
-#         case $key in
-#             mpi)
-#             export PRODUCT_ABBREVIATION="mpi_oneapi"; shift;
-#             ;;
-#             compiler)
-#             export PRODUCT_ABBREVIATION="compiler"; shift;
-#             ;;
-#         esac
-#     done
-# }
+
+set_default_values()
+{
+    WDIR="/panfs/users/dsazanov/performance"
+    PRODUCT_ABBREVIATION="mpi_oneapi"
+}
 
 info() {
     echo ""
     echo "   INFO: PRODUCT_ABBREVIATION   = ${PRODUCT_ABBREVIATION}"
-    echo "   INFO: PERF_WORK_DIR          = ${PERF_WORK_DIR}"
+    echo "   INFO: WDIR                   = ${WDIR}"
     echo ""
 }
 
-
-
 installing_components() {
-    INSTALL_DIR=${PERF_WORK_DIR}/oneapi/${PRODUCT_ABBREVIATION}
-    echo "MESSAGE: ${PRODUCT_ABBREVIATION} installation begins"
+    INSTALL_DIR=${WDIR}/oneapi/${PRODUCT_ABBREVIATION}
+    echo_log "MESSAGE: ${PRODUCT_ABBREVIATION} installation begins"
     mkdir -p ${INSTALL_DIR}/tmp
     export HOME=${INSTALL_DIR}/tmp
     ${INSTALL_DIR}/*${PRODUCT_ABBREVIATION}*.sh -x -f ${INSTALL_DIR}/tmp
     ${INSTALL_DIR}/tmp/*${PRODUCT_ABBREVIATION}*/install.sh -s --eula=accept --action=install --install-dir ${INSTALL_DIR}/_install --log-dir ${INSTALL_DIR}/tmp/log_dir_${PRODUCT_ABBREVIATION}
     CheckCommandExitCode $? "  ERROR: Installation components"
     rm -rf ${INSTALL_DIR}/tmp
-    echo "MESSAGE: ${PRODUCT_ABBREVIATION} installation: SUCCESS"
+    echo_log "MESSAGE: ${PRODUCT_ABBREVIATION} installation: SUCCESS"
 }
 
-set_default_values
-
+parse_parameters()
+{
     while [ $# -gt 0 ]
     do
         key="$1"
@@ -58,18 +49,21 @@ set_default_values
             mpi_oneapi)
             export PRODUCT_ABBREVIATION="mpi_oneapi"; shift;
             ;;
-            ATS)
-            export PERF_WORK_DIR="/home/gta/dsazanov/performance"; shift;
-            ;;
-            DG1)
-            export PERF_WORK_DIR="/panfs/users/dsazanov/performance"; shift;
-            ;;
             compiler)
             export PRODUCT_ABBREVIATION="compiler"; shift;
             ;;
+            -WDIR)
+            export WDIR="$2"; shift; shift;
+            ;;
         esac
     done
+}
 
-#parse_parameters
+#==============================================
+#==============================================
+#==============================================
+
+set_default_values
+parse_parameters $@
 info
 installing_components
