@@ -1,67 +1,117 @@
 #!/bin/bash
 
-# TODO
-work_dir="/nfs/inn/proj/mpi/users/mshiryae/MLSL/PT/jenkins"
-
-# TODO
-imagenet_dir="/nfs/inn/proj/mpi/users/mshiryae/MLSL/PT/pytorch-tiny-imagenet/tiny-imagenet-200"
-
-log_path=${work_dir}/log.txt
-anaconda_install_path=${work_dir}/anaconda
-jemalloc_install_path=${work_dir}/jemalloc/_install
-checkpoint_dir=${work_dir}/checkpoint
-
-# TODO fill hostfile
-hostfile=${work_dir}/hostfile
-hostname > $hostfile
-
-first_host=`cat $hostfile | head -n 1`
-master_ip=`ssh $first_host ifconfig | grep eno -A 1 | grep inet | awk '{print $2}'`
-
-N=`cat $hostfile | wc -l`
-PPN="2"
-ENV_NAME="pytorch_jenkins"
-
-# TODO increase for real tesing
-EPOCHS="10" # 90
-
-WORKERS="2" # 4
-BATCH_SIZE="64"
-
-DOWNLOAD_ANACONDA="1"
-DOWNLOAD_PYTORCH="1"
-DOWNLOAD_IPEX="1"
-DOWNLOAD_TORCHCCL="1"
-DOWNLOAD_JEMALLOC="1"
-DOWNLOAD_VISION="1"
-DOWNLOAD_IMAGENET="1"
-
-# DOWNLOAD_ANACONDA="0"
-# DOWNLOAD_PYTORCH="0"
-# DOWNLOAD_IPEX="0"
-# DOWNLOAD_TORCHCCL="0"
-# DOWNLOAD_JEMALLOC="0"
-# DOWNLOAD_VISION="0"
-# DOWNLOAD_IMAGENET="0"
-
-DOWNLOAD_CCL="0" # TODO don't use while torch-ccl is not ported to latest CCL API
-
-BUILD_ANACONDA="0"
-BUILD_PYTORCH="0"
-BUILD_IPEX="0"
-BUILD_TORCHCCL="0"
-BUILD_JEMALLOC="0"
-BUILD_VISION="0"
-BUILD_IMAGENET="0"
-BUILD_CCL="0"
-
-rm ${log_path}
-
 print_log()
 {
     msg=$1
     date=`date`
-    echo "[$date] ========> $msg"
+    echo "[$date] > $msg"
+}
+
+set_default_values()
+{
+    if [ -z ${IS_SLURM} ]
+    then
+        work_dir="/p/pdsd/Users/dsazanov/ccl_pytorch/PT"
+        imagenet_dir="/p/pdsd/scratch/Uploads/ccl_pytorch/pytorch-tiny-imagenet/tiny-imagenet-200"
+        anaconda_install_path=${work_dir}/anaconda
+        jemalloc_install_path=${work_dir}/jemalloc/_install
+        checkpoint_dir=${work_dir}/checkpoint
+        PPN="2"
+        EPOCHS="1" #90
+        WORKERS="2" #4
+        BATCH_SIZE="64"
+
+        DOWNLOAD_ANACONDA="0"
+        DOWNLOAD_PYTORCH="0"
+        DOWNLOAD_IPEX="0"
+        DOWNLOAD_TORCHCCL="0"
+        DOWNLOAD_JEMALLOC="0"
+        DOWNLOAD_VISION="0"
+        DOWNLOAD_IMAGENET="0"
+        DOWNLOAD_CCL="0"
+    fi
+
+    hostfile=${work_dir}/hostfile
+    first_host=`cat $hostfile | head -n 1`
+    masterip=${work_dir}/masterip; ssh ${first_host} "hostname -I" > $masterip
+    master_ip=$(cat $masterip | awk '{print $2}')
+    N=`cat $hostfile | wc -l`
+
+    log_path=${work_dir}/log.txt
+    ENV_NAME="pytorch_jenkins"
+
+    BUILD_ANACONDA="0"
+    BUILD_PYTORCH="0"
+    BUILD_IPEX="0"
+    BUILD_TORCHCCL="0"
+    BUILD_JEMALLOC="0"
+    BUILD_VISION="0"
+    BUILD_IMAGENET="0"
+    BUILD_CCL="0"
+}
+
+parse_parameters()
+{
+    while [ $# -gt 0 ]
+    do
+        key="$1"
+        case $key in
+            -work_dir)
+            work_dir="$2"; shift; shift;
+            ;;
+            -imagenet_dir)
+            imagenet_dir="$2"; shift; shift;
+            ;;
+            -anaconda_install_path)
+            anaconda_install_path="$2"; shift; shift;
+            ;;
+            -jemalloc_install_path)
+            jemalloc_install_path="$2"; shift; shift;
+            ;;
+            -checkpoint_dir)
+            checkpoint_dir="$2"; shift; shift;
+            ;;
+            -ppn)
+            PPN="$2"; shift; shift;
+            ;;
+            -epochs)
+            EPOCHS="$2"; shift; shift;
+            ;;
+            -workers)
+            WORKERS="$2"; shift; shift;
+            ;;
+            -batch_size)
+            BATCH_SIZE="$2"; shift; shift;
+            ;;
+            -log_path)
+            log_path="$2"; shift; shift;
+            ;;
+            -dl_anaconda)
+            DOWNLOAD_ANACONDA="1"; shift
+            ;;
+            -dl_pytorch)
+            DOWNLOAD_PYTORCH="1"; shift
+            ;;
+            -dl_ipex)
+            DOWNLOAD_IPEX="1"; shift
+            ;;
+            -dl_torchccl)
+            DOWNLOAD_TORCHCCL="1"; shift
+            ;;
+            -dl_jemalloc)
+            DOWNLOAD_JEMALLOC="1"; shift
+            ;;
+            -dl_vision)
+            DOWNLOAD_VISION="1"; shift
+            ;;
+            -dl_ccl)
+            DOWNLOAD_CCL="1"; shift
+            ;;
+            -*|--*)
+            echo_log "  ERROR: Unsupported flag $key"; exit 1
+            ;;
+        esac
+    done
 }
 
 print_env()
@@ -121,7 +171,6 @@ check()
     print_log "checking log file..."
 
     file=$1
-
     unexpected_str="unsupported|error|invalid|Aborted|fail|failed|^bad$|killed|^fault$|runtime_error|terminate"
     expected_strs="CCL_WORKER_COUNT: training_started training_completed"
 
@@ -147,13 +196,64 @@ check()
     print_log "PyTorch test passed"
 }
 
-test()
+print_parameters()
 {
-    print_log "options:"
-    print_log "master_ip = ${master_ip}"
-    print_log "N = ${N}"
-    print_log "PPN = ${PPN}"
+    print_log "DOWNLOAD_ANACONDA = ${DOWNLOAD_ANACONDA}"
+    print_log "DOWNLOAD_PYTORCH = ${DOWNLOAD_PYTORCH}"
+    print_log "DOWNLOAD_IPEX = ${DOWNLOAD_IPEX}"
+    print_log "DOWNLOAD_TORCHCCL = ${DOWNLOAD_TORCHCCL}"
+    print_log "DOWNLOAD_JEMALLOC = ${DOWNLOAD_JEMALLOC}"
+    print_log "DOWNLOAD_VISION = ${DOWNLOAD_VISION}"
+    print_log "DOWNLOAD_IMAGENET = ${DOWNLOAD_IMAGENET}"
+    print_log "DOWNLOAD_CCL = ${DOWNLOAD_CCL}"
+    print_log ""
+    print_log "BUILD_ANACONDA = ${BUILD_ANACONDA}"
+    print_log "BUILD_PYTORCH = ${BUILD_PYTORCH}"
+    print_log "BUILD_IPEX = ${BUILD_IPEX}"
+    print_log "BUILD_TORCHCCL = ${BUILD_TORCHCCL}"
+    print_log "BUILD_JEMALLOC = ${BUILD_JEMALLOC}"
+    print_log "BUILD_VISION = ${BUILD_VISION}"
+    print_log "BUILD_IMAGENET = ${BUILD_IMAGENET}"
+    print_log "BUILD_CCL = ${BUILD_CCL}"
+    print_log ""
+    print_log "WORK_DIR                       = ${work_dir}"
+    print_log "IMAGENET_DIR                   = ${imagenet_dir}"
+    print_log "ANACONDA_INSTALL_PATH          = ${anaconda_install_path}"
+    print_log "JEMALLOC_INSTALL_PATH          = ${jemalloc_install_path}"
+    print_log "CHECKPOINT_DIR                 = ${checkpoint_dir}"
+    print_log "WORKERS                        = ${WORKERS}"
+    print_log "EPOCHS                         = ${EPOCHS}"
+    print_log "N_NODES                        = ${N}"
+    print_log "PPN                            = ${PPN}"
+    print_log "LOG_PATH                       = ${log_path}"
+    print_log "MASTER_IP                      = ${master_ip}"
+    print_log ""
+}
 
+set_env()
+{
+    export PATH=${anaconda_install_path}/bin:${PATH}
+    compiler_path="/p/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.1.144/linux/"
+    source ${compiler_path}/bin/compilervars.sh intel64
+    export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
+    GCC_PATH=/p/pdsd/opt/EM64T-LIN/compilers/gnu/gcc-8.3.0
+    export PATH=${GCC_PATH}/bin:${PATH}
+    export LD_LIBRARY_PATH="${GCC_PATH}/lib64:${GCC_PATH}/lib":${LIB_LIBRARY_PATH}
+    export LD_LIBRARY_PATH=/usr/lib64/psm2-compat:${LD_LIBRARY_PATH}
+    export CC=gcc
+    export CXX=g++
+    export USE_NATIVE_ARCH=ON
+    export USE_ROCM=0
+    export REL_WITH_DEB_INFO=1
+    export USE_CUDA=0
+    export CCL_LOG_LEVEL=1
+    export I_MPI_DEBUG=12
+    export DNNL_PRIMITIVE_CACHE_CAPACITY=1024
+    export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:9000000000,muzzy_decay_ms:9000000000"
+}
+
+adjust_parameters()
+{
     if [ "${DOWNLOAD_ANACONDA}" == "1" ]
     then
         BUILD_ANACONDA=1
@@ -194,45 +294,10 @@ test()
     then
         BUILD_CCL=1
     fi
+}
 
-    print_log "DOWNLOAD_ANACONDA = ${DOWNLOAD_ANACONDA}"
-    print_log "DOWNLOAD_PYTORCH = ${DOWNLOAD_PYTORCH}"
-    print_log "DOWNLOAD_IPEX = ${DOWNLOAD_IPEX}"
-    print_log "DOWNLOAD_TORCHCCL = ${DOWNLOAD_TORCHCCL}"
-    print_log "DOWNLOAD_JEMALLOC = ${DOWNLOAD_JEMALLOC}"
-    print_log "DOWNLOAD_VISION = ${DOWNLOAD_VISION}"
-    print_log "DOWNLOAD_IMAGENET = ${DOWNLOAD_IMAGENET}"
-    print_log "DOWNLOAD_CCL = ${DOWNLOAD_CCL}"
-
-    print_log "BUILD_ANACONDA = ${BUILD_ANACONDA}"
-    print_log "BUILD_PYTORCH = ${BUILD_PYTORCH}"
-    print_log "BUILD_IPEX = ${BUILD_IPEX}"
-    print_log "BUILD_TORCHCCL = ${BUILD_TORCHCCL}"
-    print_log "BUILD_JEMALLOC = ${BUILD_JEMALLOC}"
-    print_log "BUILD_VISION = ${BUILD_VISION}"
-    print_log "BUILD_IMAGENET = ${BUILD_IMAGENET}"
-    print_log "BUILD_CCL = ${BUILD_CCL}"
-
-    export PATH=${anaconda_install_path}/bin:${PATH}
-    compiler_path="/p/pdsd/opt/EM64T-LIN/intel/compilers_and_libraries_2019.1.144/linux/"
-    source ${compiler_path}/bin/compilervars.sh intel64
-    export CMAKE_PREFIX_PATH=${CONDA_PREFIX:-"$(dirname $(which conda))/../"}
-    GCC_PATH=/p/pdsd/opt/EM64T-LIN/compilers/gnu/gcc-8.3.0
-    export PATH=${GCC_PATH}/bin:${PATH}
-    export LD_LIBRARY_PATH="${GCC_PATH}/lib64:${GCC_PATH}/lib":${LIB_LIBRARY_PATH}
-    export LD_LIBRARY_PATH=/usr/lib64/psm2-compat:${LD_LIBRARY_PATH}
-    export CC=gcc
-    export CXX=g++
-    export USE_NATIVE_ARCH=ON
-    export USE_ROCM=0
-    export REL_WITH_DEB_INFO=1
-    export USE_CUDA=0
-    export CCL_LOG_LEVEL=1 # TODO: "info" since 2021.2
-    export I_MPI_DEBUG=12
-
-    export DNNL_PRIMITIVE_CACHE_CAPACITY=1024
-    export MALLOC_CONF="oversize_threshold:1,background_thread:true,metadata_thp:auto,dirty_decay_ms:9000000000,muzzy_decay_ms:9000000000"
-
+download_and_build()
+{
     cd ${work_dir}
 
     if [ "${DOWNLOAD_ANACONDA}" == "1" ]
@@ -248,8 +313,6 @@ test()
     then
         print_log "build anaconda"
 
-        # TODO fix for sysct_lab
-
         print_log "removing env ${ENV_NAME}"
         ${anaconda_install_path}/bin/conda remove -y --name ${ENV_NAME} --all
 
@@ -259,14 +322,12 @@ test()
         print_log "install python packages"
         conda config --add channels intel
         conda install ninja pyyaml setuptools cmake cffi typing intel-openmp
-        #pip install sklearn onnx
         pip install sklearn
         conda install mkl mkl-include numpy -c intel --no-update-deps
     fi
 
     print_log "activate ${ENV_NAME}"
     source ${anaconda_install_path}/bin/activate ${ENV_NAME}
-
 
     if [ "${DOWNLOAD_PYTORCH}" == "1" ]
     then
@@ -324,26 +385,20 @@ test()
 
     if [ "${DOWNLOAD_IMAGENET}" == "1" ]
     then
-        # TODO use passwordless access
         print_log "download imagenet"
         remove_dir ${work_dir}/imagenet
         clone_code https://gitlab.devtools.intel.com/ia-optimized-model-for-pytorch/imagenet.git enbale_ipex_torch_ccl_ddp
 
-        # TODO: tmp WA
-        #sed -i '1i import torch_ccl' ${work_dir}/imagenet/imagenet/main.py
         sed -i 's/torch.save/#torch.save/' ${work_dir}/imagenet/imagenet/main.py
         sed -i 's/if is_best:/if False:/' ${work_dir}/imagenet/imagenet/main.py
     fi
 
     if [ "${DOWNLOAD_CCL}" == "1" ]
     then
-        # TODO use passwordless access
         print_log "download ccl"
         remove_dir ${work_dir}/mlsl2
-        clone_code https://github.intel.com/ict/mlsl2.git
+        clone_code git@github.intel.com:ict/mlsl2.git release/ccl_2021.1-beta07
     fi
-
-
 
     if [ "${BUILD_PYTORCH}" == "1" ]
     then
@@ -407,30 +462,38 @@ test()
     print_log "torch_ccl_path = ${torch_ccl_path}"
     source $torch_ccl_path/env/setvars.sh
 
-    print_log "master_ip = ${master_ip}"
-
     cleanup_hosts $hostfile
 
     export LD_PRELOAD=${jemalloc_install_path}/lib/libjemalloc.so
+}
 
+test()
+{
+    set_env
+    download_and_build
     print_env
-    mkdir -p ${checkpoint_dir}
-    print_log "training_started"
 
+    mkdir -p ${checkpoint_dir}
+
+    print_log "training_started"
     python ${work_dir}/imagenet/imagenet/lauch.py --nnodes ${N} --nproc_per_node ${PPN} --ccl_worker_count=${WORKERS} \
         --master_addr=${master_ip} --hostfile $hostfile \
-        python -u ${work_dir}/imagenet/imagenet/main.py --lr 0.1 -a resnet50 --ipex --dnnl -b ${BATCH_SIZE} --iterations 10 \
+        python -u ${work_dir}/imagenet/imagenet/main.py --lr 0.1 -a resnet50 --ipex --dnnl -b ${BATCH_SIZE} \
         -j 2 --epochs ${EPOCHS} --use_torch_ccl --dist-backend=ccl --seed 1 --checkpoint-dir ${checkpoint_dir} \
         ${imagenet_dir}
-
-    # TODO: --mix-precision
-
     print_log "training_completed"
 
     #source ${anaconda_install_path}/bin/deactivate ${ENV_NAME}
-
-    print_log "deactivated ${ENV_NAME}"
+    #print_log "deactivated ${ENV_NAME}"
 }
 
+#==============================================================================
+#                                     MAIN
+#==============================================================================
+
+set_default_values
+parse_parameters
+adjust_parameters
+print_parameters
 test 2>&1 | tee ${log_path}
 check ${log_path}
