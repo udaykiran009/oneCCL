@@ -120,7 +120,7 @@
 \
         if (my_rank == root) { \
             WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
-            barrier(CLK_LOCAL_MEM_FENCE); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
             for (size_t i = 0; i < segment_count; i++) { \
                 right_buffer[work_group_size * i + work_item_id] = \
@@ -130,6 +130,7 @@
             barrier(CLK_GLOBAL_MEM_FENCE); \
 \
             I_SENT(i_send_to_right_flag); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
 \
             /* for (size_t i = 0; i < segment_count; i++) {                                                         \
               output_buffer[work_group_size * i + work_item_id] =                                               \
@@ -139,19 +140,24 @@
         } \
         else { \
             PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+\
             WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
-            barrier(CLK_LOCAL_MEM_FENCE); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
             if (my_rank != last_rank) { \
                 WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
-                barrier(CLK_LOCAL_MEM_FENCE); \
+                work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
+\
                 for (size_t i = 0; i < segment_count; i++) { \
                     right_buffer[work_group_size * i + work_item_id] = \
                         buffer[work_group_size * i + work_item_id]; \
                     /* output_buffer[work_group_size * i + work_item_id]; */ \
                 } \
                 barrier(CLK_GLOBAL_MEM_FENCE); \
+\
                 I_SENT(i_send_to_right_flag); \
+                work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
             } \
         } \
 \

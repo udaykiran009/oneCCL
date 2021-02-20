@@ -129,12 +129,14 @@
 \
         if (my_rank == root) { /*consumer r:ROOT*/ \
             PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+\
             /*                                                                                              \
             TODO consider prefetch v                                                                    \
             oid prefetch(const __global gentype *p, size_t num_gentypes)                                \
         */ \
             WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
-            barrier(CLK_LOCAL_MEM_FENCE); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
             for (size_t i = 0; i < segment_count; i++) { \
                 DEBUG_BLOCK(printf("kernel %zu.%d, phase 2. -- temp[%zu] = %f, this[%zu] = %f\n", \
                                    my_rank, \
@@ -151,7 +153,7 @@
         } \
         else if (my_rank == (root + 1) % comm_size) { /* producer (the farthest rank) */ \
             WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
-            barrier(CLK_LOCAL_MEM_FENCE); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
             for (size_t i = 0; i < segment_count; i++) { \
                 right_temp_buffer[work_group_size * i + thread_id] = \
@@ -163,13 +165,17 @@
         } \
         else { /* consumer producer (in-between ranks) */ \
             PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+\
             WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
+\
             /*                                                                                              \
             TODO consider prefetch v                                                                    \
             oid prefetch(const __global gentype *p, size_t num_gentypes)                                \
         */ \
             WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
-            barrier(CLK_LOCAL_MEM_FENCE); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
             for (size_t i = 0; i < segment_count; i++) { \
                 right_temp_buffer[work_group_size * i + thread_id] = \

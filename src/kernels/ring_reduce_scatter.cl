@@ -213,8 +213,10 @@ int get_left_rank(int rank, int comm_size) {
 \
         /*1. copy own part to the right rank  */ \
         PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+\
         WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
-        barrier(CLK_LOCAL_MEM_FENCE); \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
         for (size_t i = 0; i < segment_size; i += work_group_size) { \
             right_temp_buffer[thread_id + i] = input_buffer[segment_offset + thread_id + i]; \
@@ -222,8 +224,10 @@ int get_left_rank(int rank, int comm_size) {
         barrier(CLK_GLOBAL_MEM_FENCE); \
 \
         I_SENT(i_send_to_right_flag); \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+\
         WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
-        barrier(CLK_LOCAL_MEM_FENCE); \
+        work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
         DEBUG_BLOCK(printf("kernel %zu.%d send complete\n", my_rank, thread_id)); \
         /*2nd phase - reduce scatter                                                                    \
@@ -237,8 +241,10 @@ int get_left_rank(int rank, int comm_size) {
           element from our initial buffer and send to the right rank*/ \
 \
             PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+\
             WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
-            barrier(CLK_LOCAL_MEM_FENCE); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
             __global T* right_buffer = \
                 (iter_idx == (comm_size - 2)) ? right_output_buffer : right_temp_buffer; \
@@ -262,8 +268,10 @@ int get_left_rank(int rank, int comm_size) {
             barrier(CLK_GLOBAL_MEM_FENCE); \
 \
             I_SENT(i_send_to_right_flag); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
+\
             WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
-            barrier(CLK_LOCAL_MEM_FENCE); \
+            work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
             SWAP_VARIABLES(tmp_buffer_offset, right_tmp_buffer_offset, size_t); \
         } \
