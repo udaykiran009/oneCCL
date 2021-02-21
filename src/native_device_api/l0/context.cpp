@@ -5,6 +5,7 @@
 #include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 #include "oneapi/ccl/native_device_api/l0/driver.hpp"
 #include "oneapi/ccl/native_device_api/l0/platform.hpp"
+#include "common/log/log.hpp"
 
 namespace native {
 
@@ -26,8 +27,7 @@ CCL_BE_API void* ccl_context::host_alloc_memory(size_t bytes_count,
     void* out_ptr = nullptr;
     ze_result_t ret = zeMemAllocHost(handle, &host_descr, bytes_count, alignment, &out_ptr);
     if (ret != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(std::string("cannot allocate host memory, error: ") +
-                                 std::to_string(ret));
+        CCL_THROW("cannot allocate host memory, error: " + std::to_string(ret));
     }
     return out_ptr;
 }
@@ -38,7 +38,7 @@ CCL_BE_API void ccl_context::host_free_memory(void* mem_handle) {
     }
 
     if (zeMemFree(handle, mem_handle) != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(std::string("cannot release host memory"));
+        CCL_THROW("cannot release host memory");
     }
 }
 
@@ -83,9 +83,8 @@ CCL_BE_API const context_array_t& ccl_context_holder::get_context_storage(
     std::unique_lock<std::mutex> lock(m); //TODO use simple shared lock
     auto it = drivers_context.find(driver);
     if (it == drivers_context.end()) {
-        throw std::runtime_error(std::string(__FUNCTION__) + " - cannot find context for driver: " +
-                                 driver->to_string() + "\nTotal driver_context count: " +
-                                 std::to_string(drivers_context.size()));
+        CCL_THROW("cannot find context for driver: " + driver->to_string() +
+                  "\nTotal driver_context count: " + std::to_string(drivers_context.size()));
     }
     return it->second;
 }

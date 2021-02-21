@@ -6,20 +6,19 @@
 #include "oneapi/ccl/native_device_api/l0/driver.hpp"
 #include "oneapi/ccl/native_device_api/l0/subdevice.hpp"
 #include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
-
 #include "oneapi/ccl/native_device_api/export_api.hpp"
+#include "common/log/log.hpp"
+
 namespace native {
 
 uint32_t get_subdevice_properties_from_handle(ccl_device::handle_t handle) {
     ze_device_properties_t device_properties;
     ze_result_t ret = zeDeviceGetProperties(handle, &device_properties);
     if (ret != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(std::string("zeDeviceGetProperties failed, error: ") +
-                                 native::to_string(ret));
+        CCL_THROW("zeDeviceGetProperties failed, error: " + native::to_string(ret));
     }
     if (!(device_properties.flags & ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE)) {
-        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
-                                 "- invalid device type, got device, but subdevice requested");
+        CCL_THROW("invalid device type, got device, but subdevice requested");
     }
     return device_properties.subdeviceId;
 }
@@ -41,8 +40,7 @@ ccl_subdevice::indexed_handles ccl_subdevice::get_handles(
     uint32_t subdevices_count = 0;
     ze_result_t err = zeDeviceGetSubDevices(device.get(), &subdevices_count, nullptr);
     if (err != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(std::string(__FUNCTION__) +
-                                 "zeDeviceGetSubDevices failed, error: " + native::to_string(err));
+        CCL_THROW("zeDeviceGetSubDevices failed, error: " + native::to_string(err));
     }
 
     std::vector<ccl_subdevice::handle_t> handles;
@@ -50,9 +48,8 @@ ccl_subdevice::indexed_handles ccl_subdevice::get_handles(
 
     err = zeDeviceGetSubDevices(device.get(), &subdevices_count, handles.data());
     if (err != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(
-            std::string(__FUNCTION__) +
-            "zeDeviceGetSubDevices failed for device request, error: " + native::to_string(err));
+        CCL_THROW("zeDeviceGetSubDevices failed for device request, error: " +
+                  native::to_string(err));
     }
 
     //filter indices
@@ -68,7 +65,7 @@ ccl_subdevice::indexed_handles ccl_subdevice::get_handles(
             }
         }
         if (filtered_ids.empty()) {
-            throw std::runtime_error(std::string(__FUNCTION__) + " - Failed, nothing to get");
+            CCL_THROW("failed, nothing to get");
         }
     }
 
@@ -81,8 +78,7 @@ ccl_subdevice::indexed_handles ccl_subdevice::get_handles(
             std::bind(get_subdevice_properties_from_handle, std::placeholders::_1));
     }
     catch (const std::exception& ex) {
-        throw std::runtime_error(std::string(__FUNCTION__) +
-                                 " - Cannot add subdevice: " + ex.what());
+        CCL_THROW(std::string("cannot add subdevice: ") + ex.what());
     }
     return ret;
 }
@@ -90,8 +86,7 @@ ccl_subdevice::indexed_handles ccl_subdevice::get_handles(
 void ccl_subdevice::initialize_subdevice_data() {
     ze_result_t ret = zeDeviceGetProperties(handle, &device_properties);
     if (ret != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(std::string("cannot get properties for subdevice, error: ") +
-                                 native::to_string(ret));
+        CCL_THROW("cannot get properties for subdevice, error: " + native::to_string(ret));
     }
 }
 
@@ -143,7 +138,7 @@ CCL_BE_API
 ccl::device_index_type CCL_BE_API ccl_subdevice::get_device_path() const {
     const auto device = parent_device.lock();
     if (!device) {
-        throw std::runtime_error("cannot get get_device_path() because ccl_subdevice has no owner");
+        CCL_THROW("cannot get get_device_path() because ccl_subdevice has no owner");
     }
 
     ccl::device_index_type suddevice_path = device->get_device_path();
@@ -167,12 +162,11 @@ std::weak_ptr<ccl_subdevice> ccl_subdevice::deserialize(
     //restore device
     auto device = ccl_device::deserialize(data, size, out_platform).lock();
     if (!device) {
-        throw std::runtime_error(std::string(__FUNCTION__) +
-                                 " - cannot deserialize ccl_subdevice, because owner is nullptr");
+        CCL_THROW("cannot deserialize ccl_subdevice, because owner is nullptr");
     }
 
     if (!device->is_subdevice()) {
-        throw std::runtime_error(std::string(__FUNCTION__) + " - is not a subdevice");
+        CCL_THROW("is not a subdevice");
     }
 
     return std::static_pointer_cast<ccl_subdevice>(device);

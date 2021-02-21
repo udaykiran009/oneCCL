@@ -11,6 +11,7 @@
 #endif
 
 #include "oneapi/ccl/native_device_api/l0/utils.hpp"
+#include "common/log/log.hpp"
 
 namespace native {
 namespace detail {
@@ -55,8 +56,7 @@ template <class ContextType>
         "Invalid ContextType");
     auto l0_handle_ptr = ctx.template get_native<cl::sycl::backend::level_zero>();
     if (!l0_handle_ptr) {
-        throw std::runtime_error(std::string(__FUNCTION__) +
-                                 " - failed for sycl context: handle is nullptr!");
+        CCL_THROW("failed for sycl context: handle is nullptr");
     }
     auto& drivers = get_platform().get_drivers();
     assert(drivers.size() == 1 && "Only one driver supported for L0 at now");

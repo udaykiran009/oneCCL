@@ -5,6 +5,7 @@
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "oneapi/ccl/native_device_api/l0/platform.hpp"
 #include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
+#include "common/log/log.hpp"
 
 #ifndef gettid
 #include <sys/syscall.h>
@@ -46,8 +47,8 @@ CCL_BE_API ccl_device_platform::ccl_device_platform(platform_id_type platform_id
     // initialize Level-Zero driver
     ze_result_t ret = zeInit(ZE_INIT_FLAG_GPU_ONLY);
     if (ret != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error("Cannot initialize L0: " + native::to_string(ret) +
-                                 ", hint: add user into `video` group");
+        CCL_THROW("cannot initialize L0: " + native::to_string(ret) +
+                  ", hint: add user into `video` group");
     }
     context = std::make_shared<ccl_context_holder>();
 
@@ -115,8 +116,7 @@ CCL_BE_API ccl_device_platform::const_driver_ptr ccl_device_platform::get_driver
     ccl::index_type index) const {
     auto it = drivers.find(index);
     if (it == drivers.end()) {
-        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
-                                 "No driver by index: " + std::to_string(index) + " on platform");
+        CCL_THROW("no driver by index: " + std::to_string(index) + " on platform");
     }
     return it->second;
 }
@@ -124,8 +124,7 @@ CCL_BE_API ccl_device_platform::const_driver_ptr ccl_device_platform::get_driver
 CCL_BE_API ccl_device_platform::driver_ptr ccl_device_platform::get_driver(ccl::index_type index) {
     auto it = drivers.find(index);
     if (it == drivers.end()) {
-        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
-                                 "No driver by index: " + std::to_string(index) + " on platform");
+        CCL_THROW("no driver by index: " + std::to_string(index) + " on platform");
     }
     return it->second;
 }
@@ -146,9 +145,8 @@ CCL_BE_API ccl_device_driver::const_device_ptr ccl_device_platform::get_device(
     ccl::index_type driver_idx = std::get<ccl::device_index_enum::driver_index_id>(path);
     auto it = drivers.find(driver_idx);
     if (it == drivers.end()) {
-        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
-                                 " - incorrect driver requested: " + ccl::to_string(path) +
-                                 ". Total driver count: " + std::to_string(drivers.size()));
+        CCL_THROW("incorrect driver requested: " + ccl::to_string(path) +
+                  ". Total driver count: " + std::to_string(drivers.size()));
     }
 
     return it->second->get_device(path);
@@ -190,8 +188,8 @@ detail::adjacency_matrix ccl_device_platform::calculate_device_access_metric(
         }
     }
     catch (const std::exception& ex) {
-        throw ccl::exception(std::string("Cannot calculate_device_access_metric, error: ") +
-                             ex.what() + "\nCurrent platform info:\n" + to_string());
+        CCL_THROW(std::string("cannot calculate_device_access_metric, error: ") + ex.what() +
+                  "\nCurrent platform info:\n" + to_string());
     }
     return result;
 }
@@ -211,9 +209,8 @@ CCL_BE_API std::weak_ptr<ccl_device_platform> ccl_device_platform::deserialize(
     std::shared_ptr<ccl_device_platform>& out_platform) {
     constexpr size_t expected_bytes = sizeof(pid_t) + sizeof(pid_t) + sizeof(platform_id_type);
     if (!*data or size < expected_bytes) {
-        throw std::runtime_error(std::string("cannot deserialize ccl_device_platform: ") +
-                                 "not enough data, required: " + std::to_string(expected_bytes) +
-                                 ", got: " + std::to_string(size));
+        CCL_THROW("cannot deserialize ccl_device_platform. Not enough data, required: " +
+                  std::to_string(expected_bytes) + ", got: " + std::to_string(size));
     }
 
     pid_t sender_pid = *(reinterpret_cast<const pid_t*>(*data));

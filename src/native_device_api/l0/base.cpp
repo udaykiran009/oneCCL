@@ -3,6 +3,7 @@
 
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 #include "oneapi/ccl/native_device_api/l0/base_impl.hpp"
+#include "common/log/log.hpp"
 
 namespace native {
 std::string CCL_BE_API to_string(const ze_result_t result) {
@@ -25,8 +26,7 @@ std::string CCL_BE_API to_string(const ze_result_t result) {
         case ZE_RESULT_ERROR_NOT_AVAILABLE: return "ZE_RESULT_ERROR_NOT_AVAILABLE ";
         case ZE_RESULT_ERROR_UNKNOWN: return "ZE_RESULT_ERROR_UNKNOWN ";
         default:
-            throw std::runtime_error(std::string("Unknown ze_result_t value: ") +
-                                     std::to_string(static_cast<int>(result)));
+            CCL_THROW("unknown ze_result_t value: " + std::to_string(static_cast<int>(result)));
     }
     return "";
 }
@@ -37,8 +37,7 @@ std::string CCL_BE_API to_string(ze_device_type_t type) {
         case ZE_DEVICE_TYPE_FPGA: return "ZE_DEVICE_TYPE_FPGA";
         default:
             assert(false && "incorrect ze_device_type_t type");
-            throw std::runtime_error(std::string("Unknown ze_device_type_t value: ") +
-                                     std::to_string(static_cast<int>(type)));
+            CCL_THROW("unknown ze_device_type_t value: " + std::to_string(static_cast<int>(type)));
     }
     return "";
 }
@@ -50,8 +49,7 @@ std::string CCL_BE_API to_string(ze_memory_type_t type) {
         case ZE_MEMORY_TYPE_DEVICE: return "ZE_MEMORY_TYPE_DEVICE";
         case ZE_MEMORY_TYPE_SHARED: return "ZE_MEMORY_TYPE_SHARED";
         default:
-            throw std::runtime_error(std::string("Unknown ze_memory_type_t value: ") +
-                                     std::to_string(static_cast<int>(type)));
+            CCL_THROW("unknown ze_memory_type_t value: " + std::to_string(static_cast<int>(type)));
             break;
     }
     return "";
@@ -167,8 +165,8 @@ std::string CCL_BE_API to_string(const ze_device_mem_alloc_desc_t& mem_descr) {
         flag = flag + "ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED";
     }
     if (flag.empty()) {
-        throw std::runtime_error(std::string("Unknown ze_device_mem_alloc_flags_t flag: ") +
-                                 std::to_string(static_cast<int>(mem_descr.flags)));
+        CCL_THROW("unknown ze_device_mem_alloc_flags_t flag: " +
+                  std::to_string(static_cast<int>(mem_descr.flags)));
     }
 
     ss << "stype: " << mem_descr.stype << ", pNext: " << (void*)mem_descr.pNext
@@ -205,8 +203,8 @@ std::string CCL_BE_API to_string(const ze_command_queue_desc_t& queue_descr) {
                                : "|ZE_COMMAND_QUEUE_FLAG_FORCE_UINT32";
     }
     if (flags.empty()) {
-        throw std::runtime_error(std::string("Unknown ze_command_queue_flag_t flags: ") +
-                                 std::to_string(static_cast<int>(queue_descr.flags)));
+        CCL_THROW("unknown ze_command_queue_flag_t flags: " +
+                  std::to_string(static_cast<int>(queue_descr.flags)));
     }
 
     ss << "stype: " << queue_descr.stype << ", pNext: " << (void*)queue_descr.pNext
@@ -239,8 +237,8 @@ std::string to_string(const ze_command_list_desc_t& list_descr) {
                                : "|ZE_COMMAND_LIST_FLAG_FORCE_UINT32";
     }
     if (flags.empty()) {
-        throw std::runtime_error(std::string("Unknown ze_command_list_flag_t flags: ") +
-                                 std::to_string(static_cast<int>(list_descr.flags)));
+        CCL_THROW("unknown ze_command_list_flag_t flags: " +
+                  std::to_string(static_cast<int>(list_descr.flags)));
     }
 
     ss << "stype: " << list_descr.stype << ", pNext: " << (void*)list_descr.pNext

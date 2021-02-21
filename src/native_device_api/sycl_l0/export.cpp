@@ -57,8 +57,7 @@ generic_device_type<cl_backend_type::dpcpp_sycl_l0>::generic_device_type(
                << "\nvendor: " << pl.get_info<cl::sycl::info::platform::vendor>();
         }
 
-        throw std::runtime_error(std::string("Cannot find device by id: ") + ccl::to_string(id) +
-                                 ", reason:\n" + ss.str());
+        CCL_THROW("cannot find device by id: " + ccl::to_string(id) + ", reason:\n" + ss.str());
     }
 
     LOG_DEBUG("Platform:\nprofile: ",
@@ -87,8 +86,7 @@ generic_device_type<cl_backend_type::dpcpp_sycl_l0>::generic_device_type(
                << "\ndevice id: " << native::get_runtime_device(dev)->get_device_path();
         }
 
-        throw std::runtime_error(std::string("Cannot find device by id: ") + ccl::to_string(id) +
-                                 ", reason:\n" + ss.str());
+        CCL_THROW("cannot find device by id: " + ccl::to_string(id) + ", reason:\n" + ss.str());
     }
     device = *it;
 }

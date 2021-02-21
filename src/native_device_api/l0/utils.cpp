@@ -1,4 +1,5 @@
 #include "oneapi/ccl/native_device_api/l0/utils.hpp"
+#include "common/log/log.hpp"
 
 #if defined(MULTI_GPU_SUPPORT)
 #include "oneapi/ccl/native_device_api/l0/device.hpp"
@@ -26,10 +27,10 @@ size_t serialize_device_path(std::vector<uint8_t>& out,
                              const ccl::device_index_type& path,
                              size_t offset) {
     if (out.size() <= 0) {
-        throw std::runtime_error(std::string(__FUNCTION__) + " - unexpected vector size");
+        CCL_THROW("unexpected vector size");
     }
     if (offset > out.size() - detail::serialize_device_path_size) {
-        throw std::runtime_error(std::string(__FUNCTION__) + " - unexpected offset size");
+        CCL_THROW("unexpected offset size");
     }
 
     size_t serialized_bytes = 0;
@@ -54,7 +55,7 @@ size_t serialize_device_path(std::vector<uint8_t>& out,
     serialized_bytes += index_type_size;
 
     if (serialized_bytes != detail::serialize_device_path_size) {
-        throw std::runtime_error(std::string(__FUNCTION__) + " - unexpected serialized size");
+        CCL_THROW("unexpected serialized size");
     }
 
     return serialized_bytes;
@@ -62,8 +63,7 @@ size_t serialize_device_path(std::vector<uint8_t>& out,
 
 ccl::device_index_type deserialize_device_path(const uint8_t** data, size_t& size) {
     if (data == nullptr || size < detail::serialize_device_path_size) {
-        throw std::runtime_error(std::string(__FUNCTION__) +
-                                 " - cannot deserialize path, not enough data");
+        CCL_THROW("cannot deserialize path, not enough data");
     }
 
     constexpr size_t index_type_size = sizeof(ccl::index_type);

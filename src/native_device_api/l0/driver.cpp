@@ -12,6 +12,7 @@
 #include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 #include "oneapi/ccl/native_device_api/l0/driver.hpp"
 #include "oneapi/ccl/native_device_api/l0/platform.hpp"
+#include "common/log/log.hpp"
 
 //#include "native_device_api/compiler_ccl_wrappers_dispatcher.hpp"
 
@@ -20,8 +21,7 @@ ccl_device_driver::driver_index_type get_driver_properties(ccl_device_driver::ha
     ze_driver_properties_t driver_properties{};
     ze_result_t ret = zeDriverGetProperties(handle, &driver_properties);
     if (ret != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(std::string("zeDriverGetProperties, error: ") +
-                                 native::to_string(ret));
+        CCL_THROW("zeDriverGetProperties, error: " + native::to_string(ret));
     }
     //TODO only 0 index in implemented in L0
     return 0;
@@ -40,8 +40,7 @@ ccl_device_driver::indexed_driver_handles ccl_device_driver::get_handles(
     uint32_t driver_count = 0;
     ze_result_t err = zeDriverGet(&driver_count, nullptr);
     if (err != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(std::string("zeDriverGet failed for count request, error: ") +
-                                 native::to_string(err));
+        CCL_THROW("zeDriverGet failed for count request, error: " + native::to_string(err));
     }
 
     std::vector<ccl_device_driver::handle_t> handles;
@@ -49,8 +48,7 @@ ccl_device_driver::indexed_driver_handles ccl_device_driver::get_handles(
 
     err = zeDriverGet(&driver_count, handles.data());
     if (err != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(std::string("zeDriverGet failed fro drivers request, error: ") +
-                                 native::to_string(err));
+        CCL_THROW("zeDriverGet failed fro drivers request, error: " + native::to_string(err));
     }
 
     //collect drivers by indices
@@ -62,7 +60,7 @@ ccl_device_driver::indexed_driver_handles ccl_device_driver::get_handles(
             std::bind(get_driver_properties, std::placeholders::_1));
     }
     catch (const std::exception& ex) {
-        throw std::runtime_error(std::string("Cannot add driver: ") + ex.what());
+        CCL_THROW(std::string("cannot add driver: ") + ex.what());
     }
     return ret;
 }
@@ -76,7 +74,7 @@ CCL_BE_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
     std::shared_ptr<ccl_device_driver> driver =
         std::make_shared<ccl_device_driver>(h, id, std::move(platform), std::move(ctx));
     if (!driver->create_context()) {
-        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + " - create context is invalid");
+        CCL_THROW("create context is invalid");
     }
 
     auto collected_devices_list =
@@ -97,7 +95,7 @@ CCL_BE_API std::shared_ptr<ccl_device_driver> ccl_device_driver::create(
     std::shared_ptr<ccl_device_driver> driver =
         std::make_shared<ccl_device_driver>(h, id, std::move(platform), ctx);
     if (!driver->create_context()) {
-        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) + " - create context is invalid");
+        CCL_THROW("create context is invalid");
     }
 
     auto collected_devices_list = ccl_device::get_handles(*driver, rank_device_affinity);
@@ -143,8 +141,7 @@ CCL_BE_API ccl_device_driver::ccl_device_driver(ccl_device_driver::handle_t h,
     ipc_prop.stype = ZE_STRUCTURE_TYPE_DRIVER_IPC_PROPERTIES;
     ze_result_t ret = zeDriverGetIpcProperties(handle, &ipc_prop);
     if (ret != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(std::string("zeDriverGetIpcProperties, error: ") +
-                                 native::to_string(ret));
+        CCL_THROW("zeDriverGetIpcProperties, error: " + native::to_string(ret));
     }
 }
 
@@ -153,8 +150,7 @@ ze_driver_properties_t ccl_device_driver::get_properties() const {
     ze_driver_properties_t driver_properties{};
     ze_result_t ret = zeDriverGetProperties(handle, &driver_properties);
     if (ret != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(std::string("zeDriverGetProperties, error: ") +
-                                 native::to_string(ret));
+        CCL_THROW("zeDriverGetProperties, error: " + native::to_string(ret));
     }
     return driver_properties;
 }
@@ -175,18 +171,16 @@ CCL_BE_API ccl_device_driver::const_device_ptr ccl_device_driver::get_device(
     ccl::index_type driver_idx = std::get<ccl::device_index_enum::driver_index_id>(path);
     if (driver_idx != get_driver_id()) {
         assert(false && "incorrect driver requested");
-        throw std::runtime_error(
-            std::string(__PRETTY_FUNCTION__) + " - incorrect driver requested, expected: " +
-            std::to_string(get_driver_id()) + ", requested: " + ccl::to_string(path));
+        CCL_THROW("incorrect driver requested, expected: " + std::to_string(get_driver_id()) +
+                  ", requested: " + ccl::to_string(path));
     }
 
     ccl::index_type device_index = std::get<ccl::device_index_enum::device_index_id>(path);
     auto device_it = devices.find(device_index);
     if (device_it == devices.end()) {
         assert(false && "incorrect device index requested");
-        throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
-                                 " - incorrect device index requested: " + ccl::to_string(path) +
-                                 ". Total devices count: " + std::to_string(devices.size()));
+        CCL_THROW("incorrect device index requested: " + ccl::to_string(path) +
+                  ". Total devices count: " + std::to_string(devices.size()));
     }
 
     const_device_ptr found_device_ptr = device_it->second;
@@ -257,8 +251,7 @@ CCL_BE_API std::shared_ptr<ccl_context> ccl_device_driver::create_context() {
 
     status = zeContextCreate(handle, &context_desc, &context);
     if (status != ZE_RESULT_SUCCESS) {
-        throw std::runtime_error(std::string("zeContextCreate, error: ") +
-                                 native::to_string(status));
+        CCL_THROW("zeContextCreate, error: " + native::to_string(status));
     }
 
     return create_context_from_handle(context);
@@ -298,9 +291,7 @@ CCL_BE_API std::weak_ptr<ccl_device_driver> ccl_device_driver::deserialize(
     //restore platform
     auto platform = ccl_device_platform::deserialize(data, size, out_platform).lock();
     if (!platform) {
-        throw std::runtime_error(
-            std::string(__FUNCTION__) +
-            " - cannot deserialize ccl_device_driver, because owner is nullptr");
+        CCL_THROW("cannot deserialize ccl_device_driver, because owner is nullptr");
     }
 
     out_device_path = detail::deserialize_device_path(data, size);
@@ -312,8 +303,7 @@ CCL_BE_API std::weak_ptr<ccl_device_driver> ccl_device_driver::deserialize(
 
     auto driver_ptr = platform->get_driver(recovered_driver_index);
     if (!driver_ptr) {
-        throw std::runtime_error(std::string(__FUNCTION__) + " - invalid driver index: " +
-                                 std::to_string(recovered_driver_index));
+        CCL_THROW("invalid driver index: " + std::to_string(recovered_driver_index));
     }
 
     return driver_ptr;
@@ -325,8 +315,7 @@ CCL_BE_API size_t ccl_device_driver::serialize(std::vector<uint8_t>& out,
     // check parent existence
     const auto platform = get_owner().lock();
     if (!platform) {
-        throw std::runtime_error(std::string(__FUNCTION__) +
-                                 " - cannot serialize ccl_device_driver without owner");
+        CCL_THROW("cannot serialize ccl_device_driver without owner");
     }
 
     //TODO only one driver instance supported
