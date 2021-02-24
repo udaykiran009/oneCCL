@@ -174,6 +174,12 @@ void atl_wrapper::init_transport() {
     if ((!pmi) || (pmi && pmi->get_local_thread_idx() == 0)) {
         if (!executor->are_workers_started()) {
             atl_proc_coord_t* coord = atl_get_proc_coord();
+            if (rank < coord->local_count)
+                LOG_INFO("start workers for local process [",
+                         coord->local_idx,
+                         ":",
+                         coord->local_count,
+                         "]");
             executor->start_workers(coord->local_idx, coord->local_count);
         }
     }

@@ -63,10 +63,9 @@ ccl_executor::ccl_executor(const char* main_addr) {
     atl_wrapper::set_exec(this);
 }
 
-void ccl_executor::start_workers(size_t loc_proc_idx, size_t loc_proc_count) {
+void ccl_executor::start_workers(size_t proc_idx, size_t proc_count) {
+    set_local_coord(proc_idx, proc_count);
     auto& env = ccl::global_data::env();
-    local_proc_count = loc_proc_count;
-    local_proc_idx = loc_proc_idx;
     CCL_THROW_IF_NOT(env.env_2_worker_affinity(get_local_proc_idx(), get_local_proc_count()));
     start_workers();
 }
@@ -251,6 +250,38 @@ void ccl_executor::do_work() {
     else {
         for (auto& worker : workers) {
             worker->do_work(processed_count);
+        }
+    }
+}
+
+void ccl_executor::set_local_coord(size_t proc_idx, size_t proc_count) {
+    local_proc_idx = proc_idx;
+    local_proc_count = proc_count;
+    auto& env = ccl::global_data::env();
+    if (env.atl_transport == ccl_atl_mpi) {
+        /* hydra specific env variables */
+        const char local_idx_env_name[] = "MPI_LOCALRANKID";
+        const char local_count_env_name[] = "MPI_LOCALNRANKS";
+        char* local_idx_env = getenv(local_idx_env_name);
+        char* local_count_env = getenv(local_count_env_name);
+        if (local_idx_env && local_count_env) {
+            size_t local_idx = std::atoi(local_idx_env);
+            size_t local_count = std::atoi(local_count_env);
+            CCL_THROW_IF_NOT(local_idx == local_proc_idx,
+                             "unexpected local_proc_idx ",
+                             local_proc_idx,
+                             ", expected ",
+                             local_idx);
+            CCL_THROW_IF_NOT(local_count == local_proc_count,
+                             "unexpected local_proc_count ",
+                             local_proc_count,
+                             ", expected ",
+                             local_count);
+        }
+        else {
+            LOG_WARN(local_idx_env_name, " or ", local_count_env_name, " not found");
+            LOG_WARN(
+                "use local_proc_idx: ", local_proc_idx, " , local_proc_count: ", local_proc_count);
         }
     }
 }
