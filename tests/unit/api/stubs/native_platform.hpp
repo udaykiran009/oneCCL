@@ -32,9 +32,10 @@ struct test_device : public native::ccl_device {
         //create default queue
         auto queue_prop = ccl_device::get_default_queue_desc();
         queue_prop.ordinal = 0;
-        dev->cmd_queus.emplace(queue_prop,
-                               ccl_device::device_queue{
-                                   nullptr, dev->get_ptr(), std::weak_ptr<native::ccl_context>{} });
+        dev->cmd_queues.emplace(queue_prop,
+                                ccl_device::device_queue{ nullptr,
+                                                          dev->get_ptr(),
+                                                          std::weak_ptr<native::ccl_context>{} });
 
         //create module
         auto module_ptr = std::make_shared<ccl_device::device_module>(
@@ -88,7 +89,7 @@ struct test_subdevice : public native::ccl_subdevice {
         //create default queue
         auto queue_prop = ccl_subdevice::get_default_queue_desc();
         queue_prop.ordinal = 0;
-        subdev->cmd_queus.emplace(
+        subdev->cmd_queues.emplace(
             queue_prop,
             ccl_subdevice::device_queue{
                 nullptr, subdev->get_ptr(), std::weak_ptr<native::ccl_context>{} });

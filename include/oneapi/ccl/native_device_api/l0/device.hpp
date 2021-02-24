@@ -92,6 +92,7 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
     virtual ccl::device_index_type get_device_path() const;
 
     const ze_device_properties_t& get_device_properties() const;
+    const ze_device_compute_properties_t& get_compute_properties() const;
     ze_device_p2p_properties_t get_p2p_properties(const ccl_device& remote_device) const;
 
     // primitives creation
@@ -139,6 +140,7 @@ struct ccl_device : public cl_base<ze_device_handle_t, ccl_device_driver, ccl_co
             get_ptr(),
             ctx);
     }
+
     device_ipc_memory_handle create_ipc_memory_handle(void* device_mem_ptr,
                                                       std::shared_ptr<ccl_context> ctx);
     std::shared_ptr<device_ipc_memory_handle> create_shared_ipc_memory_handle(
@@ -237,7 +239,7 @@ private:
 
     //TODO shared mutex?
     std::mutex queue_mutex;
-    std::map<ze_command_queue_desc_t, device_queue, command_queue_desc_comparator> cmd_queus;
+    std::map<ze_command_queue_desc_t, device_queue, command_queue_desc_comparator> cmd_queues;
     std::map<ze_command_queue_handle_t, device_queue_fence> queue_fences;
 
     std::mutex list_mutex;

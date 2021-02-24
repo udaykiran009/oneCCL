@@ -300,6 +300,28 @@ public:
     }
 
 protected:
+    size_t get_preferred_wg_size(size_t buffer_size, ccl_device &device) {
+        size_t val_vector_size;
+        auto dtype = ccl::native_type_info<typename kernel_params::native_type>::dtype;
+
+        if (dtype == ccl::datatype::bfloat16) {
+            val_vector_size = 1;
+        }
+        else {
+            // For comm kernels, we have float4 {float x, float y, float z, float w};
+            // data type, that's why we set a divider for group_size, wchich equals to 4.
+            // The vecsize of 4 goes with all data types except bfloat16
+            val_vector_size = 4;
+        }
+
+        size_t group_size = buffer_size / val_vector_size;
+        if (group_size > device.get_compute_properties().maxGroupSizeX || group_size == 0)
+            group_size = device.get_compute_properties().maxGroupSizeX;
+
+        //TODO: remove 'return 1' and retrun 'group_size', when fix small msg sizes issue
+        return 1; //group_size;
+    }
+
     bool finalize_entry() {
         kernel_main_typed &main_entry_function = get_local_kernel();
 
@@ -313,6 +335,33 @@ protected:
         ENTRY_LOG_TRACE("Try to finalize");
 
         auto &&cmd_list = get_dev_cmd_list();
+
+        // setting the group size to control resource consumption
+        // assuming that groupSizeX only can be adjusted by changing the value.
+        // groupSizeY/groupSizeZ shouldn't be > 1.
+        uint32_t groupSizeX =
+            get_preferred_wg_size(send_buf.get_size(), parent_communicator->get_device());
+        uint32_t groupSizeY = 1u;
+        uint32_t groupSizeZ = 1u;
+        ze_result_t result =
+            zeKernelSetGroupSize(main_entry_function.handle, groupSizeX, groupSizeY, groupSizeZ);
+        if (result != ZE_RESULT_SUCCESS) {
+            throw std::runtime_error(
+                std::string(__FUNCTION__) +
+                " - zeKernelSetGroupSize failed. Result: " + native::to_string(result) +
+                " groupSizeX: " + std::to_string(static_cast<uint32_t>(groupSizeX)) +
+                " groupSizeY: " + std::to_string(static_cast<uint32_t>(groupSizeY)) +
+                " groupSizeZ: " + std::to_string(static_cast<uint32_t>(groupSizeZ)));
+        }
+
+        ENTRY_LOG_DEBUG("Set kernel group size successfully: \
+                                     groupSizeX",
+                        groupSizeX,
+                        " groupSizeY: ",
+                        groupSizeY,
+                        " groupSizeZ: ",
+                        groupSizeZ);
+
         cmd_list.append_kernel(main_entry_function.handle, &launch_args);
 
         ENTRY_LOG_DEBUG("Append kernel successfully: ",

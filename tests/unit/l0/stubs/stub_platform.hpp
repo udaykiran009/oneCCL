@@ -38,8 +38,8 @@ struct test_device : public native::ccl_device {
         //create default queue
         auto queue_prop = native::ccl_device::get_default_queue_desc();
         queue_prop.ordinal = 0;
-        dev->cmd_queus.emplace(queue_prop,
-                               ccl_device::device_queue{ nullptr, dev->get_ptr(), def_ctx });
+        dev->cmd_queues.emplace(queue_prop,
+                                ccl_device::device_queue{ nullptr, dev->get_ptr(), def_ctx });
 
         //create module
         auto module_ptr =
@@ -98,7 +98,7 @@ struct test_subdevice : public native::ccl_subdevice {
         //create default queue
         auto queue_prop = ccl_subdevice::get_default_queue_desc();
         queue_prop.ordinal = 0;
-        subdev->cmd_queus.emplace(
+        subdev->cmd_queues.emplace(
             queue_prop, ccl_subdevice::device_queue{ nullptr, subdev->get_ptr(), def_ctx });
 
         //create module

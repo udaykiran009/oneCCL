@@ -201,8 +201,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_single_device_multi_tile_i
                 uint32_t groupSizeX = buffer_size;
                 uint32_t groupSizeY = 1u;
                 uint32_t groupSizeZ = 1u;
-                if (zeKernelSetGroupSize(
-                        kernel, groupSizeX, groupSizeY, groupSizeZ != ZE_RESULT_SUCCESS)) {
+                if (zeKernelSetGroupSize(kernel, groupSizeX, groupSizeY, groupSizeZ)) {
                     throw std::runtime_error(std::string("Cannot set kernel group size, error"));
                 }
 

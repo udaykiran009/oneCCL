@@ -195,7 +195,7 @@ ccl_device::ccl_device(handle_t h, owner_ptr_t&& parent, std::weak_ptr<ccl_conte
 }
 
 CCL_BE_API ccl_device::~ccl_device() {
-    cmd_queus.clear();
+    cmd_queues.clear();
     sub_devices.clear();
 }
 
@@ -253,6 +253,10 @@ CCL_BE_API ccl_device::const_subdevice_ptr ccl_device::get_subdevice(
 
 CCL_BE_API const ze_device_properties_t& ccl_device::get_device_properties() const {
     return device_properties;
+}
+
+CCL_BE_API const ze_device_compute_properties_t& ccl_device::get_compute_properties() const {
+    return compute_properties;
 }
 
 CCL_BE_API bool ccl_device::is_subdevice() const noexcept {
@@ -573,9 +577,9 @@ CCL_BE_API ccl_device::device_queue& ccl_device::get_cmd_queue(
     const ze_command_queue_desc_t& properties,
     std::shared_ptr<ccl_context> ctx) {
     std::unique_lock<std::mutex> lock(queue_mutex);
-    auto it = cmd_queus.find(properties);
-    if (it == cmd_queus.end()) {
-        it = cmd_queus.emplace(properties, create_cmd_queue(ctx, properties)).first;
+    auto it = cmd_queues.find(properties);
+    if (it == cmd_queues.end()) {
+        it = cmd_queues.emplace(properties, create_cmd_queue(ctx, properties)).first;
     }
     return it->second;
 }
