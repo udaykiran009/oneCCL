@@ -237,7 +237,7 @@ run_benchmark()
         then
             echo "Running benchmark with the kernels support:"
             final_options="${options} -n 1 -k 4 -f 256 -t 512"
-            cmd=`echo $ccl_extra_env CCL_COLL_KERNELS_PATH=../../../../src/kernels CCL_KVS_GET_TIMEOUT=10 ./$example ${final_options}`
+            cmd=`echo $ccl_extra_env CCL_COMM_KERNELS=1 CCL_KVS_GET_TIMEOUT=10 ./$example ${final_options}`
             echo "Running: $cmd"
             eval $cmd 2>&1 | tee ${test_log}
             check_test ${test_log} ${example}

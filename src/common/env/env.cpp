@@ -79,6 +79,7 @@ env_data::env_data()
           alltoall_scatter_plain(0),
 
           default_resizable(0),
+          enable_comm_kernels(0),
           kernel_path() {}
 
 void env_data::parse() {
@@ -196,7 +197,37 @@ void env_data::parse() {
     CCL_THROW_IF_NOT(
         default_resizable <= 2, "incorrect ", CCL_DEFAULT_RESIZABLE, " ", default_resizable);
 
-    env_2_type(CCL_COLL_KERNELS_PATH, kernel_path);
+    env_2_type(CCL_COMM_KERNELS, enable_comm_kernels);
+    if (enable_comm_kernels) {
+        env_2_type(CCL_COMM_KERNELS_PATH, kernel_path);
+        if (kernel_path.empty()) {
+            std::string ccl_root = getenv("CCL_ROOT");
+            CCL_THROW_IF_NOT(!ccl_root.empty(), "incorrect kernel path. CCL_ROOT not found!");
+            kernel_path = ccl_root + "/lib/kernels/";
+        }
+
+        // TODO remove IPC workaround knobs
+        if (!getenv("DisableStatelessToStatefulOptimization")) {
+            setenv("DisableStatelessToStatefulOptimization", "1", 1);
+            LOG_WARN(
+                "Environment variable 'DisableStatelessToStatefulOptimization' is not set. Will be used DisableStatelessToStatefulOptimization=1");
+        }
+        if (!getenv("CFESingleSliceDispatchCCSMode")) {
+            setenv("CFESingleSliceDispatchCCSMode", "1", 1);
+            LOG_WARN(
+                "Environment variable 'CFESingleSliceDispatchCCSMode' is not set. Will be used CFESingleSliceDispatchCCSMode=1");
+        }
+        if (!getenv("OverrideStatelessMocsIndex")) {
+            setenv("OverrideStatelessMocsIndex", "2", 1);
+            LOG_WARN(
+                "Environment variable 'OverrideStatelessMocsIndex' is not set. Will be used OverrideStatelessMocsIndex=2");
+        }
+        if (!getenv("CCL_KVS_GET_TIMEOUT")) {
+            setenv("CCL_KVS_GET_TIMEOUT", "10", 1);
+            LOG_WARN(
+                "Environment variable 'CCL_KVS_GET_TIMEOUT' is not set. Will be used CCL_KVS_GET_TIMEOUT=10");
+        }
+    }
 }
 
 void env_data::print(int rank) {
@@ -313,9 +344,12 @@ void env_data::print(int rank) {
                  : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_ALLTOALL_SCATTER_PLAIN, ": ", alltoall_scatter_plain);
 
-    LOG_INFO(CCL_COLL_KERNELS_PATH,
-             ": ",
-             (kernel_path.length()) ? kernel_path : CCL_ENV_STR_NOT_SPECIFIED);
+    LOG_INFO(CCL_COMM_KERNELS, ": ", enable_comm_kernels);
+    if (enable_comm_kernels) {
+        LOG_INFO(CCL_COMM_KERNELS_PATH,
+                 ": ",
+                 (!kernel_path.empty()) ? kernel_path : CCL_ENV_STR_NOT_SPECIFIED);
+    }
 
     auto bf16_impl_type = global_data.bf16_impl_type;
     if (bf16_impl_type == ccl_bf16_compiler_none) {

@@ -5,4 +5,11 @@ DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCo
 <deliverydir>/l_lib_runtime/cpu_icc/libccl.so.1.0	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_icc_path>/libccl.so.1.0		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/lib/cpu_icc/libccl.so.1.0
 <N/A>	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_icc_path>/libccl.so.1		external	Ksenya Kochanova		1	755	redistributable	root	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_icc_path>/libccl.so.1.0
 <N/A>	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_icc_path>/libccl.so		external	Ksenya Kochanova		1	755	redistributable	root	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_icc_path>/libccl.so.1
+
+<deliverydir>/l_lib_runtime/kernels/ring_allgatherv.spv	<installdir><l_ccl_install_path><l_ccl_platform>/lib/kernels/ring_allgatherv.spv		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/src/kernels/ring_allgatherv.spv
+<deliverydir>/l_lib_runtime/kernels/ring_allreduce.spv	<installdir><l_ccl_install_path><l_ccl_platform>/lib/kernels/ring_allreduce.spv		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/src/kernels/ring_allreduce.spv
+<deliverydir>/l_lib_runtime/kernels/ring_alltoallv.spv	<installdir><l_ccl_install_path><l_ccl_platform>/lib/kernels/ring_alltoallv.spv		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/src/kernels/ring_alltoallv.spv
+<deliverydir>/l_lib_runtime/kernels/ring_bcast.spv	<installdir><l_ccl_install_path><l_ccl_platform>/lib/kernels/ring_bcast.spv		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/src/kernels/ring_bcast.spv
+<deliverydir>/l_lib_runtime/kernels/ring_reduce_scatter.spv	<installdir><l_ccl_install_path><l_ccl_platform>/lib/kernels/ring_reduce_scatter.spv		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/src/kernels/ring_reduce_scatter.spv
+<deliverydir>/l_lib_runtime/kernels/ring_reduce.spv	<installdir><l_ccl_install_path><l_ccl_platform>/lib/kernels/ring_reduce.spv		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/src/kernels/ring_reduce.spv
 #Intel Confidential
