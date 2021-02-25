@@ -109,8 +109,9 @@ std::unique_ptr<ipc_rx_connection> ipc_server::process_connection() {
     int fd = accept(listen_fd, nullptr, nullptr);
     if (fd == -1) {
         if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
-            LOG_ERROR("Accept failed on socket: ", listen_fd, ", error: ", strerror(errno));
-            abort();
+            throw std::runtime_error(std::string(__FUNCTION__) +
+                                     " - failed, accept failed on socket: " +
+                                     std::to_string(listen_fd) + ", error: " + strerror(errno));
         }
         LOG_TRACE("Nothing to accept on socket:", listen_fd);
     }

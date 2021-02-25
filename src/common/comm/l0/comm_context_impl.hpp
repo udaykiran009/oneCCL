@@ -4,6 +4,7 @@
 #include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/comm/l0/gpu_comm_attr.hpp"
 #include "common/comm/l0/comm_context.hpp"
+#include "common/global/global.hpp"
 
 namespace ccl {
 
@@ -31,7 +32,8 @@ ccl::communicator_interface_ptr ccl::comm_group::create_communicator_from_group(
     LOG_DEBUG("Create communicator from device, expected devices per process: ",
               device_count_per_process);
     auto host_comm = pimpl->get_host_communicator();
-    if (device_count_per_process == 1) /* special single device case */
+    if (device_count_per_process == 1 &&
+        ccl::global_data::env().kernel_path.empty()) /* special single device case */
     {
         LOG_TRACE("Create single device communicator from SYCL device");
         //TODO

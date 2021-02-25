@@ -196,10 +196,16 @@ void ipc_ctx<TEMPLATE_DEF_ARG>::listener(ccl_ipc_gpu_comm* listener_device) {
     // TODO ring only, peer-to-peer case: one SRC connects to one DST
     std::unique_ptr<net::ipc_rx_connection> incoming_connection;
     while (!incoming_connection) {
-        auto incoming = listener_device->process_connection();
-        if (incoming) {
-            LOG_INFO("Got connection on device: ", listener_device->to_string());
-            incoming_connection = std::move(incoming);
+        try {
+            auto incoming = listener_device->process_connection();
+            if (incoming) {
+                LOG_INFO("Got connection on device: ", listener_device->to_string());
+                incoming_connection = std::move(incoming);
+            }
+        }
+        catch (const std::exception& ex) {
+            LOG_INFO("Stop requested at serving connection stage");
+            return;
         }
 
         if (stop.load()) {
