@@ -337,30 +337,36 @@ protected:
         auto &&cmd_list = get_dev_cmd_list();
 
         // setting the group size to control resource consumption
-        // assuming that groupSizeX only can be adjusted by changing the value.
+        // assuming that group_size_x only can be adjusted by changing the value.
         // groupSizeY/groupSizeZ shouldn't be > 1.
-        uint32_t groupSizeX =
-            get_preferred_wg_size(send_buf.get_size(), parent_communicator->get_device());
-        uint32_t groupSizeY = 1u;
-        uint32_t groupSizeZ = 1u;
-        ze_result_t result =
-            zeKernelSetGroupSize(main_entry_function.handle, groupSizeX, groupSizeY, groupSizeZ);
+        uint32_t group_size_x;
+        if (ccl::global_data::env().gpu_num_threads != CCL_ENV_SIZET_NOT_SPECIFIED) {
+            group_size_x = ccl::global_data::env().gpu_num_threads;
+        }
+        else {
+            group_size_x =
+                get_preferred_wg_size(send_buf.get_size(), parent_communicator->get_device());
+        }
+        uint32_t group_size_y = 1u;
+        uint32_t group_size_z = 1u;
+        ze_result_t result = zeKernelSetGroupSize(
+            main_entry_function.handle, group_size_x, group_size_y, group_size_z);
         if (result != ZE_RESULT_SUCCESS) {
             throw std::runtime_error(
                 std::string(__FUNCTION__) +
                 " - zeKernelSetGroupSize failed. Result: " + native::to_string(result) +
-                " groupSizeX: " + std::to_string(static_cast<uint32_t>(groupSizeX)) +
-                " groupSizeY: " + std::to_string(static_cast<uint32_t>(groupSizeY)) +
-                " groupSizeZ: " + std::to_string(static_cast<uint32_t>(groupSizeZ)));
+                " groupSizeX: " + std::to_string(static_cast<uint32_t>(group_size_x)) +
+                " groupSizeY: " + std::to_string(static_cast<uint32_t>(group_size_y)) +
+                " groupSizeZ: " + std::to_string(static_cast<uint32_t>(group_size_z)));
         }
 
         ENTRY_LOG_DEBUG("Set kernel group size successfully: \
                                      groupSizeX",
-                        groupSizeX,
+                        group_size_x,
                         " groupSizeY: ",
-                        groupSizeY,
+                        group_size_y,
                         " groupSizeZ: ",
-                        groupSizeZ);
+                        group_size_z);
 
         cmd_list.append_kernel(main_entry_function.handle, &launch_args);
 

@@ -79,8 +79,11 @@ env_data::env_data()
           alltoall_scatter_plain(0),
 
           default_resizable(0),
+
           enable_comm_kernels(0),
-          kernel_path() {}
+          kernel_path(),
+
+          gpu_num_threads(CCL_ENV_SIZET_NOT_SPECIFIED) {}
 
 void env_data::parse() {
     env_2_enum(CCL_LOG_LEVEL, ccl_logger::level_names, log_level);
@@ -228,6 +231,8 @@ void env_data::parse() {
                 "Environment variable 'CCL_KVS_GET_TIMEOUT' is not set. Will be used CCL_KVS_GET_TIMEOUT=10");
         }
     }
+
+    env_2_type(CCL_GPU_THREAD_COUNT, gpu_num_threads);
 }
 
 void env_data::print(int rank) {
@@ -350,6 +355,11 @@ void env_data::print(int rank) {
                  ": ",
                  (!kernel_path.empty()) ? kernel_path : CCL_ENV_STR_NOT_SPECIFIED);
     }
+
+    LOG_INFO(CCL_GPU_THREAD_COUNT,
+             ": ",
+             (gpu_num_threads != CCL_ENV_SIZET_NOT_SPECIFIED) ? std::to_string(gpu_num_threads)
+                                                              : CCL_ENV_STR_NOT_SPECIFIED);
 
     auto bf16_impl_type = global_data.bf16_impl_type;
     if (bf16_impl_type == ccl_bf16_compiler_none) {

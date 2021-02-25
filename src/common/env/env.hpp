@@ -81,6 +81,8 @@ constexpr const char* CCL_DEFAULT_RESIZABLE = "CCL_DEFAULT_RESIZABLE";
 constexpr const char* CCL_COMM_KERNELS = "CCL_COMM_KERNELS";
 constexpr const char* CCL_COMM_KERNELS_PATH = "CCL_COMM_KERNELS_PATH";
 
+constexpr const char* CCL_GPU_THREAD_COUNT = "CCL_GPU_THREAD_COUNT";
+
 enum ccl_priority_mode {
     ccl_priority_none,
     ccl_priority_direct,
@@ -187,6 +189,8 @@ public:
     size_t default_resizable;
     int enable_comm_kernels;
     std::string kernel_path;
+
+    ssize_t gpu_num_threads;
 
     template <class T>
     static int env_2_type(const char* env_name, T& val) {
