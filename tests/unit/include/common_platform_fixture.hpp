@@ -4,6 +4,14 @@
 #include "fixture_utils.hpp"
 
 class platform_fixture : public testing::Test, public tracer {
+public:
+    template <class NativeType, class... Handles>
+    void register_ipc_memories_data(std::shared_ptr<native::ccl_context> ctx,
+                                    size_t thread_idx,
+                                    Handles&&... h) {
+        throw std::runtime_error("IPC mem is unsupported");
+    }
+
 protected:
     using thread_device_indices_t = ccl::process_device_indices_type;
 
@@ -110,7 +118,7 @@ protected:
 
         this->output << "Preparing kernels params: name of kernel: " << desc.pKernelName << "\n"
                      << "  device id: " << ccl::to_string(device.get_device_path()) << "\n"
-                     << "  Rank idx" << device_index << std::endl;
+                     << "  rank: " << device_index << std::endl;
 
         ze_kernel_handle_t handle = nullptr;
         try {

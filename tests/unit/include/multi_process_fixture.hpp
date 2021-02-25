@@ -26,20 +26,6 @@ public:
         return 0;
     }
 
-protected:
-    multi_platform_fixture(
-        const std::string& affinities = std::string(get_global_device_indices()));
-    virtual ~multi_platform_fixture() override;
-
-    bool is_child() const {
-        return !pid;
-    }
-
-    void wait_phase(unsigned char phase);
-
-    virtual void SetUp() override;
-    virtual void TearDown() override;
-
     // IPC handles
     using ipc_own_ptr = std::shared_ptr<native::ccl_device::device_ipc_memory_handle>;
     using ipc_own_ptr_container = std::list<ipc_own_ptr>;
@@ -62,6 +48,20 @@ protected:
                                                                               ctx);
                        });
     }
+
+protected:
+    multi_platform_fixture(
+        const std::string& affinities = std::string(get_global_device_indices()));
+    virtual ~multi_platform_fixture() override;
+
+    bool is_child() const {
+        return !pid;
+    }
+
+    void wait_phase(unsigned char phase);
+
+    virtual void SetUp() override;
+    virtual void TearDown() override;
 
     template <class... Handles>
     void register_ipc_flags_data(std::shared_ptr<native::ccl_context> ctx,

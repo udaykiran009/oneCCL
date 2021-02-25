@@ -58,42 +58,79 @@ protected:
     void TearDown() override {}
 };
 
-template <class DType, class Op_type, class Object>
-bool reduce_scatter_checking_results(Object obj, size_t num_thread, std::stringstream& ss) {
-    size_t corr_val = 0;
-    try {
-        for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-            auto lambda = [&corr_val](size_t thread_idx, size_t num_thread, DType value) -> bool {
-                corr_val++;
+template <class DType, class Object>
+void alloc_and_fill_reduce_scatter_buffers(
+    Object obj,
+    size_t recv_elem_count,
+    const std::vector<native::ccl_device_driver::device_ptr>& devs,
+    std::shared_ptr<native::ccl_context> ctx,
+    bool with_ipc = false) {
+    size_t comm_size = devs.size();
+    size_t send_elem_count = comm_size * recv_elem_count;
 
-                constexpr auto op = Op_type{};
+    std::vector<DType> send_values = get_initial_send_values<DType>(send_elem_count);
+    std::vector<DType> recv_values(recv_elem_count, 0);
 
-                DType totalVal = op.init();
-                for (size_t i = 0; i < num_thread; ++i) {
-                    totalVal = op(totalVal, static_cast<DType>(corr_val));
-                }
+    ze_device_mem_alloc_desc_t mem_uncached_descr{
+        .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
+        .pNext = NULL,
+        .flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED,
+        .ordinal = 0,
+    };
 
-                if (!(value == totalVal)) {
-                    return false;
-                }
+    for (size_t rank = 0; rank < devs.size(); rank++) {
+        auto send_buf =
+            devs[rank]->template alloc_memory<DType>(send_elem_count, sizeof(DType), ctx);
+        auto recv_buf =
+            devs[rank]->template alloc_memory<DType>(recv_elem_count, sizeof(DType), ctx);
+        auto temp_buf = devs[rank]->template alloc_memory<DType>(
+            2 * recv_elem_count, sizeof(DType), ctx, mem_uncached_descr);
 
-                return true;
-            };
+        send_buf.enqueue_write_sync(send_values);
+        recv_buf.enqueue_write_sync(recv_values);
 
-            obj->check_test_results(
-                thread_idx, obj->output, 1 /*recv_mem*/, lambda, thread_idx, num_thread);
+        if (with_ipc)
+            obj->template register_ipc_memories_data<DType>(ctx, rank, &recv_buf, &temp_buf);
+
+        obj->register_shared_memories_data(
+            rank, std::move(send_buf), std::move(recv_buf), std::move(temp_buf));
+    }
+}
+
+template <class DType, class OpType, class Object>
+void check_reduce_scatter_buffers(Object obj, size_t comm_size, size_t recv_elem_count) {
+    std::stringstream ss;
+    bool res = true;
+
+    size_t send_elem_count = recv_elem_count * comm_size;
+
+    std::vector<DType> send_values = get_initial_send_values<DType>(send_elem_count);
+    std::vector<DType> expected_buf(send_elem_count);
+
+    for (size_t idx = 0; idx < send_elem_count; idx++) {
+        constexpr auto op = OpType{};
+        DType expected = op.init();
+        for (size_t rank = 0; rank < comm_size; rank++) {
+            expected = op(expected, static_cast<DType>(send_values[idx]));
         }
-        return true;
+        expected_buf[idx] = expected;
     }
-    catch (check_on_exception& ex) {
-        obj->output << "Check results: \n";
-        //printout
-        obj->output << "Send memory:" << std::endl;
-        obj->dump_memory_by_index(obj->output, 0 /*send_mem*/);
-        obj->output << "\nRecv memory:" << std::endl;
-        obj->dump_memory_by_index(obj->output, 1 /*recv_mem*/);
 
-        ss << ex.what() << ", But expected: " << corr_val * num_thread << std::endl;
-        return false;
+    for (size_t rank = 0; rank < comm_size; rank++) {
+        auto recv_buf = obj->get_memory(rank, 1);
+        std::vector<DType> expected_chunk(expected_buf.begin() + rank * recv_elem_count,
+                                          expected_buf.begin() + (rank + 1) * recv_elem_count);
+        if (recv_buf != expected_chunk) {
+            ss << "\nunexpected recv buffer for rank " << rank << ":\n";
+            std::copy(recv_buf.begin(), recv_buf.end(), std::ostream_iterator<DType>(ss, " "));
+            ss << "\nexpected:\n";
+            std::copy(expected_chunk.begin(),
+                      expected_chunk.end(),
+                      std::ostream_iterator<DType>(ss, " "));
+            res = false;
+            break;
+        }
     }
+
+    UT_ASSERT_OBJ(res, obj, ss.str());
 }

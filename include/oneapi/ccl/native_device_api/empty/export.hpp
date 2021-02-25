@@ -19,7 +19,7 @@ struct backend_info<CL_BACKEND_TYPE> {
         return CL_BACKEND_TYPE;
     }
     static constexpr const char* name() {
-        return "CL_BACKEND_UNAVAILABLE";
+        return "BACKEND_UNAVAILABLE";
     }
 };
 

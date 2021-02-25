@@ -81,39 +81,54 @@ protected:
 };
 
 template <class DType, class Object>
-bool bcast_checking_results(Object obj,
-                            size_t num_thread,
-                            int root,
-                            size_t buffer_size,
-                            std::stringstream& ss) {
-    size_t corr_val = 0;
-    try {
-        for (size_t thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-            auto lambda =
-                [&corr_val](
-                    const int root, size_t thread_idx, size_t buffer_size, DType value) -> bool {
-                corr_val++;
-                if (corr_val > buffer_size)
-                    corr_val = 1;
-                if (value != static_cast<DType>(corr_val))
-                    return false;
-                return true;
-            };
+void alloc_and_fill_bcast_buffers(Object obj,
+                                  size_t elem_count,
+                                  size_t root,
+                                  const std::vector<native::ccl_device_driver::device_ptr>& devs,
+                                  std::shared_ptr<native::ccl_context> ctx,
+                                  bool with_ipc = false) {
+    std::vector<DType> send_values(elem_count);
+    std::iota(send_values.begin(), send_values.end(), 1);
+    std::vector<DType> recv_values(elem_count, 0);
 
-            obj->check_test_results(
-                thread_idx, obj->output, 0 /*recv_mem*/, lambda, root, thread_idx, buffer_size);
+    for (size_t rank = 0; rank < devs.size(); rank++) {
+        auto buf = devs[rank]->template alloc_memory<DType>(elem_count, sizeof(DType), ctx);
+
+        if (rank == root) {
+            buf.enqueue_write_sync(send_values);
         }
-        return true;
-    }
-    catch (check_on_exception& ex) {
-        obj->output << "Check results: \n";
-        //printout
-        obj->output << "Send memory:" << std::endl;
-        obj->dump_memory_by_index(obj->output, 0 /*send_mem*/);
-        obj->output << "\nRecv memory:" << std::endl;
-        obj->dump_memory_by_index(obj->output, 1 /*recv_mem*/);
+        else {
+            buf.enqueue_write_sync(recv_values);
+        }
 
-        ss << ex.what() << ", But expected: " << corr_val * num_thread << std::endl;
-        return false;
+        if (with_ipc)
+            obj->template register_ipc_memories_data<DType>(ctx, rank, &buf);
+
+        obj->register_shared_memories_data(rank, std::move(buf));
     }
+}
+
+template <class DType, class Object>
+void check_bcast_buffers(Object obj, size_t comm_size, size_t elem_count) {
+    std::stringstream ss;
+    bool res = true;
+
+    std::vector<DType> expected_buf(elem_count);
+    std::iota(expected_buf.begin(), expected_buf.end(), 1);
+
+    for (size_t rank = 0; rank < comm_size; rank++) {
+        auto recv_buf = obj->get_memory(rank, 0);
+
+        if (recv_buf != expected_buf) {
+            ss << "\nunexpected recv buffer for rank " << rank << ":\n";
+            std::copy(recv_buf.begin(), recv_buf.end(), std::ostream_iterator<DType>(ss, " "));
+            ss << "\nexpected:\n";
+            std::copy(
+                expected_buf.begin(), expected_buf.end(), std::ostream_iterator<DType>(ss, " "));
+            res = false;
+            break;
+        }
+    }
+
+    UT_ASSERT_OBJ(res, obj, ss.str());
 }

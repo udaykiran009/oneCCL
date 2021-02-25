@@ -1,4 +1,5 @@
 #pragma once
+
 #include "kernel_utils.hpp"
 
 namespace single_device_utils {
@@ -11,10 +12,10 @@ void prepare_kernel_queues_lists(
     std::ostream& out) {
     out_queues.clear();
     out_lists.clear();
-    for (size_t thread_idx = 0; thread_idx < in_devices.size(); thread_idx++) {
+    for (size_t rank = 0; rank < in_devices.size(); rank++) {
         try {
-            out_queues.emplace(thread_idx, in_devices[thread_idx]->create_cmd_queue(in_ctx));
-            out_lists.emplace(thread_idx, in_devices[thread_idx]->create_cmd_list(in_ctx));
+            out_queues.emplace(rank, in_devices[rank]->create_cmd_queue(in_ctx));
+            out_lists.emplace(rank, in_devices[rank]->create_cmd_list(in_ctx));
         }
         catch (const std::exception& ex) {
             throw std::runtime_error(std::string("Error: ") + ex.what());

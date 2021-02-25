@@ -21,16 +21,16 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
 
     // test case data
     const size_t buffer_size = 512;
-    const int num_thread = 1;
+    const int comm_size = 1;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
     constexpr size_t ipc_mem_group_count = 1;
     constexpr size_t ipc_flag_group_count = 2;
 
-    handles_storage<native_type> memory_storage(42 * num_thread);
-    handles_storage<int> flags_storage(42 * num_thread);
-    ipc_server_handles_storage<native_type> ipc_server_memory(42 * num_thread);
-    ipc_server_handles_storage<int> ipc_server_flags(42 * num_thread);
+    handles_storage<native_type> memory_storage(42 * comm_size);
+    handles_storage<int> flags_storage(42 * comm_size);
+    ipc_server_handles_storage<native_type> ipc_server_memory(42 * comm_size);
+    ipc_server_handles_storage<int> ipc_server_flags(42 * comm_size);
 
     ipc_client_handles_storage<native_type> ipc_client_memory;
     ipc_client_handles_storage<int> ipc_client_flags;
@@ -55,30 +55,30 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
     auto dev_it = driver.devices.begin();
     ccl_device& device = *dev_it->second;
 
-    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-        thread_indices.push_back(thread_idx);
+    for (int rank = 0; rank < comm_size; rank++) {
+        thread_indices.push_back(rank);
         try {
             // initialize communication params
-            int rank_idx = thread_idx + is_child();
-            int rank_size = num_thread + 1; //forked
+            int rank = rank + is_child();
+            int comm_size = comm_size + 1; //forked
             size_t elem_count = buffer_size;
 
-            comm_param_storage[thread_idx].push_back(rank_idx);
-            comm_param_storage[thread_idx].push_back(rank_size);
-            comm_param_storage[thread_idx].push_back(elem_count);
+            comm_param_storage[rank].push_back(rank);
+            comm_param_storage[rank].push_back(comm_size);
+            comm_param_storage[rank].push_back(elem_count);
 
             // allocate flags & memory
             // memory
             auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
             auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
-            auto temp_recv = device.alloc_memory<native_type>(
-                buffer_size / num_thread, sizeof(native_type), ctx);
+            auto temp_recv =
+                device.alloc_memory<native_type>(buffer_size / comm_size, sizeof(native_type), ctx);
             mem_send.enqueue_write_sync(send_values);
             mem_recv.enqueue_write_sync(recv_values);
             temp_recv.enqueue_write_sync(recv_values.begin(),
-                                         recv_values.begin() + buffer_size / num_thread);
+                                         recv_values.begin() + buffer_size / comm_size);
 
-            ipc_server_memory.create_ipcs(ctx, thread_idx, num_thread, &temp_recv);
+            ipc_server_memory.create_ipcs(ctx, rank, comm_size, &temp_recv);
 
             /* fill array in specific order
              * l - left
@@ -86,11 +86,8 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
              * Left: l_send, l_recv, l_tmp_recv, r_tmp_recv
              * Right: r_send, r_recv, r_tmp_recv, l_tmp_recv
              */
-            memory_storage.register_shared_data(thread_idx,
-                                                num_thread,
-                                                std::move(mem_send),
-                                                std::move(mem_recv),
-                                                std::move(temp_recv));
+            memory_storage.register_shared_data(
+                rank, comm_size, std::move(mem_send), std::move(mem_recv), std::move(temp_recv));
 
             // flags
             auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
@@ -101,28 +98,27 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
             barrier_flag.enqueue_write_sync({ (int)0 });
 
             ipc_server_flags.create_ipcs(
-                ctx, thread_idx, num_thread, &left_wrote_2_me_flag, &read_for_receive_flag);
+                ctx, rank, comm_size, &left_wrote_2_me_flag, &read_for_receive_flag);
 
             /* fill array in specific order
              * Left: l_L, l_R, l_B, r_L, r_R
              * Right: r_L, r_R, r_B, l_L, L_R
              */
-            flags_storage.register_shared_data(thread_idx,
-                                               num_thread,
+            flags_storage.register_shared_data(rank,
+                                               comm_size,
                                                std::move(left_wrote_2_me_flag),
                                                std::move(read_for_receive_flag),
                                                std::move(barrier_flag));
         }
         catch (const std::exception& ex) {
-            UT_ASSERT(
-                false,
-                "Cannot allocate memory for thread: %" << thread_idx << "\nError: " << ex.what());
+            UT_ASSERT(false,
+                      "Cannot allocate memory for rank: %" << rank << "\nError: " << ex.what());
         }
     }
 
-    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-        memory_storage.rotate_shared_data(thread_idx, num_thread, mem_group_count);
-        flags_storage.rotate_shared_data(thread_idx, num_thread, flag_group_count);
+    for (int rank = 0; rank < comm_size; rank++) {
+        memory_storage.rotate_shared_data(rank, comm_size, mem_group_count);
+        flags_storage.rotate_shared_data(rank, comm_size, flag_group_count);
     }
 
     //serialize
@@ -130,9 +126,9 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
     std::vector<std::vector<uint8_t>> memory_serialized;
     std::vector<std::vector<uint8_t>> flags_serialized;
 
-    memory_serialized.resize(num_thread);
-    flags_serialized.resize(num_thread);
-    for (size_t thread_id = 0; thread_id < num_thread; thread_id++) {
+    memory_serialized.resize(comm_size);
+    flags_serialized.resize(comm_size);
+    for (size_t thread_id = 0; thread_id < comm_size; thread_id++) {
         memory_serialized[thread_id] = ipc_server_memory.serialize_storage(thread_id);
         serialized_raw_handles.insert(serialized_raw_handles.end(),
                                       memory_serialized[thread_id].begin(),
@@ -163,7 +159,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
     std::shared_ptr<native::ccl_device_platform> ipc_platform;
     try {
         // deserialize
-        for (size_t thread_id = 0; thread_id < num_thread; thread_id++) {
+        for (size_t thread_id = 0; thread_id < comm_size; thread_id++) {
             //swap send - received arrays
             size_t mem_send = memory_serialized[thread_id].size();
             memory_serialized[thread_id].assign(received_raw_handles.begin(),
@@ -191,11 +187,11 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
         .pKernelName = "ipc_allreduce_execution_float",
     };
 
-    std::map<size_t, ze_kernel_handle_t> thread_kernels;
-    std::map<size_t, ccl_device::device_queue> thread_queue;
-    std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
+    std::map<size_t, ze_kernel_handle_t> rank_kernels;
+    std::map<size_t, ccl_device::device_queue> rank_queues;
+    std::map<size_t, ccl_device::device_cmd_list> rank_cmd_lists;
     ccl_device::device_module& module = *(device_modules.find(&device)->second);
-    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (int rank = 0; rank < comm_size; rank++) {
         //thread_group.emplace
         ze_kernel_handle_t handle = nullptr;
         try {
@@ -205,9 +201,9 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
                                          ", error: " + native::to_string(result));
             }
 
-            thread_kernels.emplace(thread_idx, std::move(handle));
-            thread_queue.emplace(thread_idx, device.create_cmd_queue(ctx));
-            thread_cmd_list.emplace(thread_idx, device.create_cmd_list(ctx));
+            rank_kernels.emplace(rank, std::move(handle));
+            rank_queues.emplace(rank, device.create_cmd_queue(ctx));
+            rank_cmd_lists.emplace(rank, device.create_cmd_list(ctx));
         }
         catch (const std::exception& ex) {
             throw std::runtime_error(std::string("Error: ") + ex.what());
@@ -224,21 +220,21 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
     std::atomic<size_t> val{ 0 }; //workaround
     std::vector<std::thread> thread_group;
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
-    for (auto& idx_kernel : thread_kernels) {
-        size_t thread_idx = idx_kernel.first;
+    for (auto& idx_kernel : rank_kernels) {
+        size_t rank = idx_kernel.first;
         ze_kernel_handle_t kernel = idx_kernel.second;
-        auto& mem_handles = find_storage_val(memory_storage.per_thread_storage, thread_idx);
-        auto& flag_handles = find_storage_val(flags_storage.per_thread_storage, thread_idx);
-        auto& comm_handles = find_storage_val(comm_param_storage, thread_idx);
+        auto& mem_handles = find_storage_val(memory_storage.per_rank_storage, rank);
+        auto& flag_handles = find_storage_val(flags_storage.per_rank_storage, rank);
+        auto& comm_handles = find_storage_val(comm_param_storage, rank);
 
-        auto& ipc_mem_handles = ipc_client_memory.per_thread_storage.find(thread_idx)->second;
-        auto& ipc_flag_handles = ipc_client_flags.per_thread_storage.find(thread_idx)->second;
+        auto& ipc_mem_handles = ipc_client_memory.per_rank_storage.find(rank)->second;
+        auto& ipc_flag_handles = ipc_client_flags.per_rank_storage.find(rank)->second;
 
         //WORKAROUND: ONLY ONE LIST & QUEUE!
-        //ccl_device::device_queue& queue = thread_queue.find(thread_idx)->second;
-        ccl_device::device_queue& queue = thread_queue.find(0)->second;
-        //ccl_device::device_cmd_list& list = thread_cmd_list.find(thread_idx)->second;
-        ccl_device::device_cmd_list& list = thread_cmd_list.find(0)->second;
+        //ccl_device::device_queue& queue = rank_queues.find(rank)->second;
+        ccl_device::device_queue& queue = rank_queues.find(0)->second;
+        //ccl_device::device_cmd_list& list = rank_cmd_lists.find(rank)->second;
+        ccl_device::device_cmd_list& list = rank_cmd_lists.find(0)->second;
 
         output << "PID: " << pid << ", start thread for kernel execution" << std::endl;
         std::unique_ptr<std::stringstream> out_ptr(new std::stringstream());
@@ -246,7 +242,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
         thread_group.emplace_back([this,
                                    &driver,
                                    &device,
-                                   thread_idx,
+                                   rank,
                                    kernel,
                                    &list,
                                    &queue,
@@ -270,7 +266,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
                 ze_result_t result;
 
                 // bind rank, size, buffer_size
-                out << "PID: " << pid << ", thread_idx: " << thread_idx << ", comm_handles: \n";
+                out << "PID: " << pid << ", rank: " << rank << ", comm_handles: \n";
                 size_t i = 0;
                 std::array<int, 3> comm_offset{ 0, 1, 2 };
                 UT_ASSERT(comm_offset.size() == comm_handles.size(), "comm_offset != comm_handles");
@@ -290,7 +286,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
                 // bind l_send, l_recv, l_tmp,
                 i = 0;
                 std::array<int, mem_group_count> mem_offset{ 3, 4, 5 };
-                out << "PID: " << pid << ", thread_idx: " << thread_idx << ", mem_handles: \n";
+                out << "PID: " << pid << ", rank: " << rank << ", mem_handles: \n";
                 for (auto& mem : mem_handles) {
                     if (i >= mem_group_count) {
                         break;
@@ -313,8 +309,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
                 try {
                     size_t i = 0;
                     std::array<int, ipc_mem_group_count> mem_offset{ 9 };
-                    out << "PID: " << pid << ", thread_idx: " << thread_idx
-                        << ", ipc_mem_handles: \n";
+                    out << "PID: " << pid << ", rank: " << rank << ", ipc_mem_handles: \n";
                     for (auto& mem : ipc_mem_handles) {
                         if (i >= ipc_mem_group_count) {
                             break;
@@ -344,8 +339,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
                 // bindleft_wrote_2_me_flag, read_for_receive_flag, local_barrier_flag
                 i = 0;
                 std::array<int, flag_group_count> flag_offset{ 6, 7, 8 };
-                out << "PID: " << pid << ", thread_idx: " << thread_idx << ", flag_handles: \n"
-                    << std::endl;
+                out << "PID: " << pid << ", rank: " << rank << ", flag_handles: \n" << std::endl;
                 for (auto& flag : flag_handles) {
                     if (i >= flag_group_count) {
                         break;
@@ -366,8 +360,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
                 try {
                     size_t i = 0;
                     std::array<int, ipc_flag_group_count> mem_offset{ 10, 11 };
-                    out << "PID: " << pid << ", thread_idx: " << thread_idx
-                        << ", ipc_flag_handles: \n"
+                    out << "PID: " << pid << ", rank: " << rank << ", ipc_flag_handles: \n"
                         << std::endl;
                     for (auto& flag : ipc_flag_handles) {
                         int arg_offset = mem_offset.at(i);
@@ -405,7 +398,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
                 //thread_lock.unlock();
 
                 // sync and make sure all threads have arrived up to this point.
-                /*while(val < num_thread)
+                /*while(val < comm_size)
                 {
                 }*/
 
@@ -417,7 +410,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
                     UT_ASSERT(data != ret_data, "invalid sync");
                 }
 
-                if (thread_idx == 0 /* && ret_data == 1*/ /*uncommet for master pid*/) {
+                if (rank == 0 /* && ret_data == 1*/ /*uncommet for master pid*/) {
                     std::cerr << "PID: " << pid << ", process close queue" << std::endl;
 
                     ret = zeCommandListClose(list.handle);
@@ -450,7 +443,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_ipc_allreduce_single_devic
             }
             catch (const std::exception& ex) {
                 UT_ASSERT(false,
-                          "Exception in PID: " << pid << ",thread: " << thread_idx
+                          "Exception in PID: " << pid << ", rank: " << rank
                                                << "\nError: " << ex.what() << ", at phase:\n{\n"
                                                << out.str() << "\n}\n");
                 throw;

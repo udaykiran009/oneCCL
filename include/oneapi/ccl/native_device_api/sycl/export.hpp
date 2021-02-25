@@ -14,7 +14,7 @@ struct backend_info<CL_BACKEND_TYPE> {
         return CL_BACKEND_TYPE;
     }
     static constexpr const char* name() {
-        return "CL_DPCPP_BACKEND";
+        return "DPCPP_BACKEND";
     }
 };
 

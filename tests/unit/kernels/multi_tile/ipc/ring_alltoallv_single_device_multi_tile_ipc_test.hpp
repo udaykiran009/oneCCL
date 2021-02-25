@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <sstream>
+
 #include "alltoallv_fixture.hpp"
 #include "multi_tile_utils.hpp"
 
@@ -12,6 +13,8 @@ namespace ring_single_device_multi_tile_ipc_case {
 TYPED_TEST_CASE(ring_alltoallv_multi_process_fixture, TestTypes);
 TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_multi_tile_ipc) {
     using namespace native;
+
+    std::shared_ptr<ccl_context> ctx;
 
     // Type of our test
     using native_type = TypeParam;
@@ -59,8 +62,6 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
     handles_storage<native_type> memory_storage(42 * world_size);
     handles_storage<int> flags_storage(42 * world_size);
 
-    // device memory stencil data
-    std::shared_ptr<ccl_context> ctx;
     // send
     std::vector<std::vector<native_type>> send_values(world_size);
     std::vector<std::vector<size_t>> send_counts(world_size);
@@ -99,8 +100,15 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
         }
     }
 
-    // tmp
-    std::vector<native_type> tmp_values(tmp_buffer_size, 0);
+    alloc_and_fill_alltoallv_buffers<native_type>(this,
+                                                  total_send_sizes,
+                                                  total_recv_size,
+                                                  tmp_buffer_size,
+                                                  send_values,
+                                                  recv_values,
+                                                  devices,
+                                                  ctx,
+                                                  true);
 
     int rank_device_idx = 0;
     size_t device_index_start_offset =
@@ -112,14 +120,14 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
             std::shared_ptr<ccl_device> sub_device = *dev_it;
 
             // initialize communication params
-            int rank_idx = rank_device_idx + device_index_start_offset;
-            int rank_size = world_size;
+            int rank = rank_device_idx + device_index_start_offset;
+            int comm_size = world_size;
 
             this->output << "Create device memory & flags handles for device by index: "
-                         << std::to_string(sub_device->get_device_id()) << ", as rank: ("
-                         << rank_idx << "/" << rank_size << ")" << std::endl;
+                         << std::to_string(sub_device->get_device_id()) << ", as rank: (" << rank
+                         << "/" << comm_size << ")" << std::endl;
 
-            this->register_shared_comm_data(rank_device_idx, rank_idx, rank_size);
+            this->register_shared_comm_data(rank_device_idx, rank, comm_size);
 
             // allocate flags & memory
             ze_device_mem_alloc_desc_t mem_uncached_descr{
@@ -138,11 +146,11 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
             auto mem_send_offsets =
                 sub_device->alloc_memory<size_t>(world_size, sizeof(size_t), ctx);
 
-            mem_send_counts.enqueue_write_sync(send_counts[rank_idx]);
-            mem_send_offsets.enqueue_write_sync(send_offsets[rank_idx]);
+            mem_send_counts.enqueue_write_sync(send_counts[rank]);
+            mem_send_offsets.enqueue_write_sync(send_offsets[rank]);
 
-            comm_param_mem_storage[rank_idx].emplace_back(std::move(mem_send_counts));
-            comm_param_mem_storage[rank_idx].emplace_back(std::move(mem_send_offsets));
+            comm_param_mem_storage[rank].emplace_back(std::move(mem_send_counts));
+            comm_param_mem_storage[rank].emplace_back(std::move(mem_send_offsets));
 
             // recv
             auto mem_recv_counts =
@@ -150,29 +158,11 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
             auto mem_recv_offsets =
                 sub_device->alloc_memory<size_t>(world_size, sizeof(size_t), ctx);
 
-            mem_recv_counts.enqueue_write_sync(recv_counts[rank_idx]);
-            mem_recv_offsets.enqueue_write_sync(recv_offsets[rank_idx]);
+            mem_recv_counts.enqueue_write_sync(recv_counts[rank]);
+            mem_recv_offsets.enqueue_write_sync(recv_offsets[rank]);
 
-            comm_param_mem_storage[rank_idx].emplace_back(std::move(mem_recv_counts));
-            comm_param_mem_storage[rank_idx].emplace_back(std::move(mem_recv_offsets));
-
-            // allocate flags & memory
-            // memory
-            auto mem_send = sub_device->alloc_memory<native_type>(
-                total_send_sizes[rank_idx], sizeof(native_type), ctx);
-            auto mem_recv =
-                sub_device->alloc_memory<native_type>(total_recv_size, sizeof(native_type), ctx);
-            auto mem_tmp = sub_device->alloc_memory<native_type>(
-                tmp_buffer_size, sizeof(native_type), ctx, mem_uncached_descr);
-
-            mem_send.enqueue_write_sync(send_values[rank_idx]);
-            mem_recv.enqueue_write_sync(recv_values[rank_idx]);
-            mem_tmp.enqueue_write_sync(tmp_values);
-
-            this->template register_ipc_memories_data<native_type>(ctx, rank_device_idx, &mem_tmp);
-
-            this->register_shared_memories_data(
-                rank_device_idx, std::move(mem_send), std::move(mem_recv), std::move(mem_tmp));
+            comm_param_mem_storage[rank].emplace_back(std::move(mem_recv_counts));
+            comm_param_mem_storage[rank].emplace_back(std::move(mem_recv_offsets));
 
             // flags
             auto left_wrote_2_me_flag =
@@ -200,9 +190,9 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
             rank_device_idx++;
         }
         catch (const std::exception& ex) {
-            UT_ASSERT(false,
-                      "Cannot allocate memory for thread: " << rank_device_idx
-                                                            << "\nError: " << ex.what());
+            UT_ASSERT(
+                false,
+                "Cannot allocate memory for rank: " << rank_device_idx << "\nError: " << ex.what());
         }
     }
 
@@ -221,10 +211,10 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
     }
 
     // prepare queues & lists
-    std::map<size_t, ccl_device::device_queue> thread_queue;
-    std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
+    std::map<size_t, ccl_device::device_queue> rank_queues;
+    std::map<size_t, ccl_device::device_cmd_list> rank_cmd_lists;
     multi_tile_utils::prepare_queues_and_lists(
-        devices, ctx, thread_queue, thread_cmd_list, this->output);
+        devices, ctx, rank_queues, rank_cmd_lists, this->output);
 
     //printout memory handles
     this->dump_memory(this->output, true);
@@ -233,22 +223,22 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
     std::vector<std::thread> thread_group;
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
     for (const auto& device : devices) {
-        size_t thread_idx = thread_group.size();
-        ze_kernel_handle_t kernel = this->get_kernel(thread_idx);
-        auto& mem_handles = this->get_memory_handles(thread_idx);
-        auto& flag_handles = this->get_flag_handles(thread_idx);
-        auto& comm_handles = this->get_comm_handles(thread_idx);
-        auto& comm_mem_handles = find_storage_val(comm_param_mem_storage, thread_idx);
+        size_t rank = thread_group.size();
+        ze_kernel_handle_t kernel = this->get_kernel(rank);
+        auto& mem_handles = this->get_memory_handles(rank);
+        auto& flag_handles = this->get_flag_handles(rank);
+        auto& comm_handles = this->get_comm_handles(rank);
+        auto& comm_mem_handles = find_storage_val(comm_param_mem_storage, rank);
 
-        ccl_device::device_queue& queue = thread_queue.find(thread_idx)->second;
-        ccl_device::device_cmd_list& list = thread_cmd_list.find(thread_idx)->second;
+        ccl_device::device_queue& queue = rank_queues.find(rank)->second;
+        ccl_device::device_cmd_list& list = rank_cmd_lists.find(rank)->second;
 
         std::unique_ptr<std::stringstream> out_ptr(new std::stringstream());
         std::stringstream* raw_out = out_ptr.get();
 
         native::ccl_device* device_ptr = device.get();
         thread_group.emplace_back([this,
-                                   thread_idx,
+                                   rank,
                                    kernel,
                                    device_ptr,
                                    &list,
@@ -266,44 +256,42 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
             std::stringstream& out = *raw_out;
             ze_group_count_t launch_args = { 1, 1, 1 };
             try {
-                out << "Binding kernels arguments for thread:" << thread_idx << std::endl;
+                out << "Binding kernels arguments for rank: " << rank << std::endl;
                 // bind rank, size
-                out << "thread_idx: " << thread_idx << " - "
+                out << "rank: " << rank << " - "
                     << "comm_offset" << std::endl;
                 std::array<int, 2> comm_offset{ 0, 1 };
                 UT_ASSERT(comm_offset.size() == comm_handles.size(), "comm_offset != comm_handles");
-                bind_kernel_args(kernel, thread_idx, comm_offset, comm_handles);
+                bind_kernel_args(kernel, rank, comm_offset, comm_handles);
 
                 // bind recv_counts, recv_offets
-                out << "thread_idx: " << thread_idx << " - "
+                out << "rank: " << rank << " - "
                     << "comm_mem_offset" << std::endl;
                 std::array<int, 4> comm_mem_offset{ 2, 3, 4, 5 };
-                bind_kernel_args(kernel, thread_idx, comm_mem_offset, comm_mem_handles);
+                bind_kernel_args(kernel, rank, comm_mem_offset, comm_mem_handles);
 
                 // bind l_send, l_recv, r_recv
-                out << "thread_idx: " << thread_idx << " - "
+                out << "rank: " << rank << " - "
                     << "mem_offset" << std::endl;
                 std::array<int, mem_group_count> mem_offset{ 6, 7, 8 };
-                bind_kernel_args(kernel, thread_idx, mem_offset, mem_handles);
+                bind_kernel_args(kernel, rank, mem_offset, mem_handles);
 
                 // Bind IPC memory
                 std::array<int, ipc_mem_group_count> ipc_mem_offset{ 9 };
-                out << "PID: " << this->pid << ", thread_idx: " << thread_idx
-                    << ", ipc_mem_handles: \n";
-                bind_kernel_args(kernel, thread_idx, ipc_mem_offset, ipc_mem_handles);
+                out << "PID: " << this->pid << ", rank: " << rank << ", ipc_mem_handles: \n";
+                bind_kernel_args(kernel, rank, ipc_mem_offset, ipc_mem_handles);
 
                 // bind left_wrote_2_me_flag, ready_for_receive_flag
-                out << "thread_idx: " << thread_idx << " - "
+                out << "rank: " << rank << " - "
                     << "flag_offset" << std::endl;
                 std::array<int, flag_group_count> flag_offset{ 10, 11, 12 };
-                bind_kernel_args(kernel, thread_idx, flag_offset, flag_handles);
+                bind_kernel_args(kernel, rank, flag_offset, flag_handles);
 
                 // Bind IPC flags
                 std::array<int, ipc_flag_group_count> ipc_flag_offset{ 13, 14, 15 };
-                out << "PID: " << this->pid << ", thread_idx: " << thread_idx
-                    << ", ipc_flag_handles: \n"
+                out << "PID: " << this->pid << ", rank: " << rank << ", ipc_flag_handles: \n"
                     << std::endl;
-                bind_kernel_args(kernel, thread_idx, ipc_flag_offset, ipc_flag_handles);
+                bind_kernel_args(kernel, rank, ipc_flag_offset, ipc_flag_handles);
 
                 {
                     ze_result_t ret = ZE_RESULT_SUCCESS;
@@ -322,7 +310,7 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
                 out << "thread finished" << std::endl;
             }
             catch (const std::exception& ex) {
-                UT_ASSERT(false, "Exception in thread: " << thread_idx << "\nError: " << ex.what());
+                UT_ASSERT(false, "Exception in rank: " << rank << "\nError: " << ex.what());
                 throw;
             }
         });
@@ -347,9 +335,7 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
         index++;
     }
 
-    std::stringstream ss;
-    bool ret = alltoallv_checking_results<native_type>(this, world_size, ss);
-    UT_ASSERT(ret, ss.str());
+    check_alltoallv_buffers<native_type>(this, world_size, total_recv_size);
 
     // gracefull finalize
     uint8_t ready = 0;

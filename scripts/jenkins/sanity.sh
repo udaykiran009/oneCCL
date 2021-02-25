@@ -588,20 +588,20 @@ function run_ut_ctest()
 
 function run_ut_single_device ()
 {
-    name_ut="kernel_ring_single_device_suite_test"
+    ut_name="kernel_ring_single_device_suite_test"
     platfrom_info=$1
 
     if [ ${#platfrom_info[@]} -ne 0 ]; then
         index=$(echo "${platfrom_info[0]}" | sed 's/\:\*//g')
         l0_affinity_mask='L0_CLUSTER_AFFINITY_MASK="'${index}','${index}','${index}','${index}'"'
-        run_ut_ctest ${l0_affinity_mask} ${name_ut}
+        run_ut_ctest ${l0_affinity_mask} ${ut_name}
         check_command_exit_code $? "single_device ut is FAILED"
     fi
 }
 
 function run_ut_multi_tile ()
 {
-    name_ut="kernel_ring_single_device_multi_tile_suite_test"
+    ut_name="kernel_ring_single_device_multi_tile_suite_test"
     platfrom_info=$1
 
     for ((i=1;i<${#platfrom_info[@]};i++)); do
@@ -613,7 +613,7 @@ function run_ut_multi_tile ()
 
     if [ ${#platfrom_info[@]} -gt 1 ]; then
         l0_affinity_mask='L0_CLUSTER_AFFINITY_MASK="'$mask_str'"'
-        run_ut_ctest ${l0_affinity_mask} ${name_ut}
+        run_ut_ctest ${l0_affinity_mask} ${ut_name}
         check_command_exit_code $? "multi_tile ut is FAILED"
     fi
 }

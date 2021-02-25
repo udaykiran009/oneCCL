@@ -13,7 +13,7 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_multi_device_mt
     using namespace native;
     // test case data
     const size_t buffer_size = 512;
-    size_t num_thread = 2;
+    size_t comm_size = 2;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
 
@@ -30,14 +30,14 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_multi_device_mt
     auto driver = drv_it->second;
 
     // device per thread
-    num_thread = driver->devices.size();
+    comm_size = driver->devices.size();
     UT_ASSERT(
         driver->devices.size() > 1,
         "MultileDevice test scope require at least 2 devices in local platform! Use correct \""
             << ut_device_affinity_mask_name << "\"");
 
-    handles_storage<native_type> memory_storage(42 * num_thread);
-    handles_storage<int> flags_storage(42 * num_thread);
+    handles_storage<native_type> memory_storage(42 * comm_size);
+    handles_storage<int> flags_storage(42 * comm_size);
     std::map<int, std::vector<int>> comm_param_storage;
 
     std::shared_ptr<ccl_context> ctx;
@@ -47,22 +47,18 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_multi_device_mt
     std::iota(send_values.begin(), send_values.end(), 1);
     std::vector<native_type> recv_values(buffer_size, 0);
 
-    int rank_device_idx = 0;
+    int rank = 0;
     for (auto dev_it = driver->devices.begin(); dev_it != driver->devices.end(); ++dev_it) {
         auto& device = *dev_it->second;
 
         //initialize communication params
-        int rank_idx = rank_device_idx;
-        int rank_size = driver->devices.size();
-        size_t elem_count = buffer_size;
-
         this->output << "Create device memory & flags handles for device by index: "
-                     << std::to_string(device.get_device_id()) << ", as rank: (" << rank_device_idx
-                     << "/" << rank_size << ")" << std::endl;
+                     << std::to_string(device.get_device_id()) << ", as rank: (" << rank << "/"
+                     << comm_size << ")" << std::endl;
 
-        comm_param_storage[rank_device_idx].push_back(rank_idx);
-        comm_param_storage[rank_device_idx].push_back(rank_size);
-        comm_param_storage[rank_device_idx].push_back(elem_count);
+        comm_param_storage[rank].push_back(rank);
+        comm_param_storage[rank].push_back(comm_size);
+        comm_param_storage[rank].push_back(buffer_size);
 
         //allocate flags & memory
         // memory
@@ -79,11 +75,8 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_multi_device_mt
          * Left: l_send, l_recv, l_tmp_recv, r_tmp_recv
          * Right: r_send, r_recv, r_tmp_recv, l_tmp_recv
          */
-        memory_storage.register_shared_data(rank_device_idx,
-                                            num_thread,
-                                            std::move(mem_send),
-                                            std::move(mem_recv),
-                                            std::move(temp_recv));
+        memory_storage.register_shared_data(
+            rank, comm_size, std::move(mem_send), std::move(mem_recv), std::move(temp_recv));
 
         // flags
         auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx, mem_descr);
@@ -97,17 +90,17 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_multi_device_mt
          * Left: l_L, l_R, l_B, r_L, r_R
          * Right: r_L, r_R, r_B, l_L, L_R
          */
-        flags_storage.register_shared_data(rank_device_idx,
-                                           num_thread,
+        flags_storage.register_shared_data(rank,
+                                           comm_size,
                                            std::move(left_wrote_2_me_flag),
                                            std::move(read_for_receive_flag),
                                            std::move(barrier_flag));
-        rank_device_idx++;
+        rank++;
     }
 
-    for (size_t rank_idx = 0; rank_idx < driver->devices.size(); rank_idx++) {
-        memory_storage.rotate_shared_data(rank_idx, driver->devices.size(), mem_group_count);
-        flags_storage.rotate_shared_data(rank_idx, driver->devices.size(), flag_group_count);
+    for (size_t rank = 0; rank < driver->devices.size(); rank++) {
+        memory_storage.rotate_shared_data(rank, driver->devices.size(), mem_group_count);
+        flags_storage.rotate_shared_data(rank, driver->devices.size(), flag_group_count);
     }
 
     //prepare kernels
@@ -118,18 +111,18 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_multi_device_mt
         .pKernelName = "allreduce_execution_float",
     };
 
-    std::map<size_t, ze_kernel_handle_t> thread_kernels;
-    std::map<size_t, ccl_device::device_queue> thread_queue;
-    std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
+    std::map<size_t, ze_kernel_handle_t> rank_kernels;
+    std::map<size_t, ccl_device::device_queue> rank_queues;
+    std::map<size_t, ccl_device::device_cmd_list> rank_cmd_lists;
 
-    rank_device_idx = 0;
+    rank = 0;
     for (auto dev_it = driver->devices.begin(); dev_it != driver->devices.end(); ++dev_it) {
         ccl_device& device = *dev_it->second;
         ccl_device::device_module& module = *(device_modules.find(&device)->second);
 
         this->output << "Preparing kernels params: name of kernel: " << desc.pKernelName << "\n"
                      << "  device id: " << ccl::to_string(device.get_device_path()) << "\n"
-                     << "  Rank idx" << rank_device_idx << std::endl;
+                     << "  rank: " << rank << std::endl;
 
         ze_kernel_handle_t handle = nullptr;
         try {
@@ -142,11 +135,11 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_multi_device_mt
             this->output << "Create list & queue with default properties on device by id: "
                          << ccl::to_string(device.get_device_path()) << std::endl;
 
-            thread_kernels.emplace(rank_device_idx, std::move(handle));
-            thread_queue.emplace(rank_device_idx, device.create_cmd_queue(ctx));
-            thread_cmd_list.emplace(rank_device_idx, device.create_cmd_list(ctx));
+            rank_kernels.emplace(rank, std::move(handle));
+            rank_queues.emplace(rank, device.create_cmd_queue(ctx));
+            rank_cmd_lists.emplace(rank, device.create_cmd_list(ctx));
 
-            rank_device_idx++;
+            rank++;
         }
         catch (const std::exception& ex) {
             throw std::runtime_error(std::string("Error: ") + ex.what());
@@ -160,27 +153,27 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_multi_device_mt
     std::vector<std::thread> thread_group;
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
     // using mem_handles_storage = typename handles_storage<native_type>::mem_handles_container;
-    size_t thread_idx = 0;
     for (auto dev_it = driver->devices.begin(); dev_it != driver->devices.end(); ++dev_it) {
         ccl_device& device = *dev_it->second;
-        ze_kernel_handle_t kernel = thread_kernels.find(thread_idx)->second;
-        auto& mem_handles = find_storage_val(memory_storage.per_thread_storage, thread_idx);
-        auto& flag_handles = find_storage_val(flags_storage.per_thread_storage, thread_idx);
-        auto& comm_handles = find_storage_val(comm_param_storage, thread_idx);
+        size_t rank = thread_group.size();
+        ze_kernel_handle_t kernel = rank_kernels.find(rank)->second;
+        auto& mem_handles = find_storage_val(memory_storage.per_rank_storage, rank);
+        auto& flag_handles = find_storage_val(flags_storage.per_rank_storage, rank);
+        auto& comm_handles = find_storage_val(comm_param_storage, rank);
 
         this->output << "Launch kernel params: \n"
-                     << " Device idx" << ccl::to_string(device.get_device_path()) << ",  Rank idx"
-                     << rank_device_idx << std::endl;
+                     << " device id: " << ccl::to_string(device.get_device_path())
+                     << ", rank: " << rank << std::endl;
 
-        ccl_device::device_queue& queue = thread_queue.find(thread_idx)->second;
-        ccl_device::device_cmd_list& list = thread_cmd_list.find(thread_idx)->second;
+        ccl_device::device_queue& queue = rank_queues.find(rank)->second;
+        ccl_device::device_cmd_list& list = rank_cmd_lists.find(rank)->second;
 
         std::unique_ptr<std::stringstream> out_ptr(new std::stringstream());
         std::stringstream* raw_out = out_ptr.get();
         thread_group.emplace_back([this,
                                    driver,
                                    &device,
-                                   thread_idx,
+                                   rank,
                                    kernel,
                                    &list,
                                    &queue,
@@ -195,7 +188,7 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_multi_device_mt
             ze_group_count_t launch_args = { 1, 1, 1 };
             try {
                 ze_result_t result;
-                out << "thread_idx: " << thread_idx << ", comm_handles: \n";
+                out << "rank: " << rank << ", comm_handles: \n";
 
                 // bind rank, size, buffer_size
                 int i = 0;
@@ -224,7 +217,7 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_multi_device_mt
                           "mem_offset != mem_handles"
                               << "\nLog:\n"
                               << out.str());
-                out << "thread_idx: " << thread_idx << ", mem_handles: \n";
+                out << "rank: " << rank << ", mem_handles: \n";
                 for (auto& mem : mem_handles) {
                     if (mem_offset[i] == -1) {
                         i++;
@@ -250,7 +243,7 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_multi_device_mt
                           "flag_offset != flag_handles"
                               << "\nLog:\n"
                               << out.str());
-                out << "thread_idx: " << thread_idx << ", flag_handles: \n";
+                out << "rank: " << rank << ", flag_handles: \n";
                 for (auto& flag : flag_handles) {
                     if (flag_offset[i] == -1) {
                         i++;
@@ -298,12 +291,10 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_multi_device_mt
                 out << "thread finished" << std::endl;
             }
             catch (const std::exception& ex) {
-                UT_ASSERT(false, "Exception in thread: " << thread_idx << "\nError: " << ex.what());
+                UT_ASSERT(false, "Exception in rank: " << rank << "\nError: " << ex.what());
                 throw;
             }
         });
-
-        thread_idx++;
         thread_out_put.push_back(std::move(out_ptr));
     }
 

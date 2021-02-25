@@ -54,10 +54,8 @@ class check_on_exception : public std::exception {
     std::string m_msg;
 
 public:
-    check_on_exception(const std::string& index,
-                       const std::string& value,
-                       const std::string& thread_idx)
-            : m_msg("Invalid data: Thread idx: " + thread_idx + ", At index: " + index +
+    check_on_exception(const std::string& index, const std::string& value, const std::string& rank)
+            : m_msg("Invalid data: Thread idx: " + rank + ", At index: " + index +
                     ", Has got: " + value) {}
 
     virtual const char* what() const throw() {
@@ -69,11 +67,11 @@ class comparison_exception : public std::exception {
     std::string m_msg;
 
 public:
-    comparison_exception(const std::string& thread_idx,
+    comparison_exception(const std::string& rank,
                          const std::string& buffer_idx,
                          const std::string& kernel_val,
                          const std::string& host_val)
-            : m_msg("Invalid data - thread_idx: " + thread_idx + "; buffer_idx: " + buffer_idx +
+            : m_msg("Invalid data - rank: " + rank + "; buffer_idx: " + buffer_idx +
                     " -- kernel val: " + kernel_val + "; host_val: " + host_val) {}
 
     virtual const char* what() const throw() {
@@ -164,13 +162,13 @@ inline std::vector<uint8_t> load_binary_file(const std::string& source_path) {
 }
 
 template <class Container>
-typename Container::mapped_type& find_storage_val(Container& storage, int thread_idx) {
-    if (storage.find(thread_idx) == storage.end()) {
+typename Container::mapped_type& find_storage_val(Container& storage, int rank) {
+    if (storage.find(rank) == storage.end()) {
         throw std::runtime_error(std::string(__PRETTY_FUNCTION__) +
-                                 std::string("Cannot find storage for thread: ") +
-                                 std::to_string(thread_idx));
+                                 std::string("Cannot find storage for rank: ") +
+                                 std::to_string(rank));
     }
-    return storage.find(thread_idx)->second;
+    return storage.find(rank)->second;
 }
 
 template <class Arr_t, class Type>
@@ -188,7 +186,7 @@ ze_result_t zeKernelSetArgumentValueWrap(ze_kernel_handle_t kernel,
 
 template <class Arr, class Container>
 void bind_kernel_args(ze_kernel_handle_t kernel,
-                      const size_t thread_idx,
+                      const size_t rank,
                       Arr& offsets,
                       Container& handles) {
     size_t i = 0;
@@ -238,29 +236,29 @@ void queue_sync_processing(native::ccl_device::device_cmd_list& list,
 template <class T>
 struct handles_storage {
     using mem_handles_container = std::list<T*>;
-    using thread_handles_container = std::map<size_t, mem_handles_container>;
+    using rank_handles_container = std::map<size_t, mem_handles_container>;
 
     std::vector<native::ccl_device::device_memory<T>> allocated_storage;
-    thread_handles_container per_thread_storage;
+    rank_handles_container per_rank_storage;
 
     handles_storage(size_t expected_size) {
         allocated_storage.reserve(expected_size);
     }
 
     // TODO check on depreaction - perhaps not needed anymore
-    void rotate_shared_data(size_t thread_id, size_t threads_count, size_t group_size) {
+    void rotate_shared_data(size_t rank, size_t comm_size, size_t group_size) {
         size_t initial_index = 0;
-        mem_handles_container& right_mem_handles = per_thread_storage[thread_id];
+        mem_handles_container& right_mem_handles = per_rank_storage[rank];
 
-        // make to rank (thread_id or device_id) elemenst become first in array
-        //Needed to kernel arguments binding: Resident Parameters come at fist position
+        // make rank elements become first in array
+        // needed for kernel arguments binding: resident parameters come at fist position
         auto rotation_it = right_mem_handles.begin();
-        std::advance(rotation_it, (thread_id - initial_index) * group_size);
+        std::advance(rotation_it, (rank - initial_index) * group_size);
         std::rotate(right_mem_handles.begin(), rotation_it, right_mem_handles.end());
     }
 
     template <class... Handles>
-    void register_shared_data(size_t thread_idx, size_t threads_count, Handles&&... h) {
+    void register_shared_data(size_t rank, size_t comm_size, Handles&&... h) {
         std::array<native::ccl_device::device_memory<T>, sizeof...(h)> list{ std::move(h)... };
         std::vector<T*> weak_handles;
         for (auto& h : list) {
@@ -269,29 +267,29 @@ struct handles_storage {
 
         std::move(list.begin(), list.end(), std::back_inserter(allocated_storage));
 
-        //to front of left: my thread handles belong to current device
+        //to front of left: my rank handles belong to current device
         // -> owns handles has position in beginning of kernel arguments
-        mem_handles_container& left_mem_handles = per_thread_storage[thread_idx];
+        mem_handles_container& left_mem_handles = per_rank_storage[rank];
         left_mem_handles.insert(left_mem_handles.end(), weak_handles.begin(), weak_handles.end());
 
-        //to the end of right: next thread id handles belong to next device
+        //to the end of right: next rank handles belong to next device
         // -> foreign handles has position in ending of kernel arguments
-        size_t initial_index = thread_idx;
-        size_t right_thread_idx = (initial_index + 1) % threads_count;
+        size_t initial_index = rank;
+        size_t right_rank = (initial_index + 1) % comm_size;
         do {
-            mem_handles_container& right_mem_handles = per_thread_storage[right_thread_idx];
+            mem_handles_container& right_mem_handles = per_rank_storage[right_rank];
             right_mem_handles.insert(
                 right_mem_handles.end(), weak_handles.begin(), weak_handles.end());
 
-            thread_idx++;
-            right_thread_idx = (thread_idx + 1) % threads_count;
-        } while (right_thread_idx != initial_index);
+            rank++;
+            right_rank = (rank + 1) % comm_size;
+        } while (right_rank != initial_index);
     }
 
-    void dump_for_thread(std::ostream& out, size_t thread_idx, bool handles_only = false) {
-        auto it = per_thread_storage.find(thread_idx);
-        if (it == per_thread_storage.end()) {
-            std::cerr << __FUNCTION__ << ": Invalid thread_idx: " << thread_idx << std::endl;
+    void dump_for_rank(std::ostream& out, size_t rank, bool handles_only = false) {
+        auto it = per_rank_storage.find(rank);
+        if (it == per_rank_storage.end()) {
+            std::cerr << __FUNCTION__ << ": Invalid rank: " << rank << std::endl;
             abort();
         }
         const auto& handles = it->second;
@@ -323,18 +321,18 @@ struct handles_storage {
     }
 
     void dump(std::ostream& out, bool handles_only = false) {
-        for (const auto& val : per_thread_storage) {
-            dump_for_thread(out, val.first, handles_only);
+        for (const auto& val : per_rank_storage) {
+            dump_for_rank(out, val.first, handles_only);
         }
     }
 
-    void dump_for_thread_by_index(std::ostream& out,
-                                  size_t thread_idx,
-                                  size_t mem_idx,
-                                  bool handles_only = false) {
-        auto it = per_thread_storage.find(thread_idx);
-        if (it == per_thread_storage.end()) {
-            std::cerr << __FUNCTION__ << ": Invalid thread_idx: " << thread_idx << std::endl;
+    void dump_for_rank_by_index(std::ostream& out,
+                                size_t rank,
+                                size_t mem_idx,
+                                bool handles_only = false) {
+        auto it = per_rank_storage.find(rank);
+        if (it == per_rank_storage.end()) {
+            std::cerr << __FUNCTION__ << ": Invalid rank: " << rank << std::endl;
             abort();
         }
         const auto& handles = it->second;
@@ -371,16 +369,16 @@ struct handles_storage {
         }
     }
     void dump_by_index(std::ostream& out, size_t mem_handle_index, bool handles_only = false) {
-        for (const auto& val : per_thread_storage) {
-            dump_for_thread_by_index(out, val.first, mem_handle_index, handles_only);
+        for (const auto& val : per_rank_storage) {
+            dump_for_rank_by_index(out, val.first, mem_handle_index, handles_only);
         }
     }
 
-    mem_handles_container collect_thread_handles_by_index(size_t thread_idx,
-                                                          std::initializer_list<size_t> ids) {
-        auto it = per_thread_storage.find(thread_idx);
-        if (it == per_thread_storage.end()) {
-            std::cerr << __FUNCTION__ << ": Invalid thread_idx: " << thread_idx << std::endl;
+    mem_handles_container collect_rank_handles_by_index(size_t rank,
+                                                        std::initializer_list<size_t> ids) {
+        auto it = per_rank_storage.find(rank);
+        if (it == per_rank_storage.end()) {
+            std::cerr << __FUNCTION__ << ": Invalid rank: " << rank << std::endl;
             abort();
         }
 
@@ -401,18 +399,18 @@ struct handles_storage {
         return ret;
     }
 
-    thread_handles_container collect_handles_by_index(std::initializer_list<size_t> ids) {
-        thread_handles_container ret;
+    rank_handles_container collect_handles_by_index(std::initializer_list<size_t> ids) {
+        rank_handles_container ret;
 
-        for (const auto& val : per_thread_storage) {
-            ret[val.first] = collect_thread_handles_by_index(val.first, ids);
+        for (const auto& val : per_rank_storage) {
+            ret[val.first] = collect_rank_handles_by_index(val.first, ids);
         }
         return ret;
     }
 
     template <class CheckFunctor, class... Args>
     void check_on(const std::vector<T>& vec,
-                  const size_t& thread_idx,
+                  const size_t& rank,
                   CheckFunctor lambda,
                   Args&&... params) {
         using std::to_string;
@@ -421,17 +419,17 @@ struct handles_storage {
         auto it = std::find_if_not(vec.begin(), vec.end(), check_lambda);
         if (it != vec.end())
             throw check_on_exception(
-                to_string(std::distance(vec.begin(), it)), to_string(*it), to_string(thread_idx));
+                to_string(std::distance(vec.begin(), it)), to_string(*it), to_string(rank));
     }
 
     template <class CheckFunctor, class... Args>
     void check_results(
-        const size_t& thread_idx,
+        const size_t rank,
         std::ostream& output,
         size_t mem_idx, /* offset into mem_handles: 0 - send buffer, 1 - recv buffer*/
         CheckFunctor funct,
         Args&&... params) {
-        auto& mem_handles = per_thread_storage.find(thread_idx)->second;
+        auto& mem_handles = per_rank_storage.find(rank)->second;
         size_t i = 0;
 
         for (auto iter_mem = mem_handles.begin(); iter_mem != mem_handles.end(); iter_mem++, i++) {
@@ -446,7 +444,7 @@ struct handles_storage {
                                    });
 
             std::vector<T> tmp = it->enqueue_read_sync();
-            check_on(tmp, thread_idx, funct, std::forward<Args>(params)...);
+            check_on(tmp, rank, funct, std::forward<Args>(params)...);
         }
     }
 };
@@ -458,7 +456,7 @@ struct ipc_server_handles_storage {
     using ipc_handles_container = std::list<ipc_shared_handle>;
 
     std::vector<ipc_shared_handle> allocated_storage;
-    std::map<size_t, ipc_handles_container> per_thread_storage;
+    std::map<size_t, ipc_handles_container> per_rank_storage;
 
     ipc_server_handles_storage(size_t expected_size) {
         allocated_storage.reserve(expected_size);
@@ -466,12 +464,12 @@ struct ipc_server_handles_storage {
 
     template <class... Handles>
     void create_ipcs(std::shared_ptr<native::ccl_context> ctx,
-                     size_t thread_idx,
-                     size_t threads_count,
+                     size_t rank,
+                     size_t comm_size,
                      Handles*... h) {
         std::array<native::ccl_device::device_memory<T>*, sizeof...(h)> memory_handles{ h... };
 
-        ipc_handles_container& ipc_cont = per_thread_storage[thread_idx];
+        ipc_handles_container& ipc_cont = per_rank_storage[rank];
 
         std::transform(memory_handles.begin(),
                        memory_handles.end(),
@@ -483,18 +481,18 @@ struct ipc_server_handles_storage {
                        });
     }
 
-    std::vector<uint8_t> serialize_storage(size_t thread_idx) {
+    std::vector<uint8_t> serialize_storage(size_t rank) {
         std::vector<uint8_t> serialized_raw_handles;
-        auto it = per_thread_storage.find(thread_idx);
-        if (it == per_thread_storage.end()) {
-            std::cerr << __PRETTY_FUNCTION__ << " invalid thred id: " << thread_idx << std::endl;
+        auto it = per_rank_storage.find(rank);
+        if (it == per_rank_storage.end()) {
+            std::cerr << __PRETTY_FUNCTION__ << " invalid thred id: " << rank << std::endl;
             abort();
         }
 
         //serialize handles
         ipc_handles_container& ipc_cont = it->second;
         size_t offset = 0;
-        serialized_raw_handles.push_back((uint8_t)thread_idx); //TODO
+        serialized_raw_handles.push_back((uint8_t)rank); //TODO
         offset += sizeof(uint8_t);
         for (auto& ipc_ptr : ipc_cont) {
             try {
@@ -516,7 +514,7 @@ struct ipc_client_handles_storage {
     using ipc_client_shared = std::shared_ptr<native::ccl_device::device_ipc_memory>;
     using ipc_client_handles_container = std::list<ipc_client_shared>;
 
-    std::map<size_t, ipc_client_handles_container> per_thread_storage;
+    std::map<size_t, ipc_client_handles_container> per_rank_storage;
 
     size_t deserialize(std::shared_ptr<native::ccl_context> ctx,
                        const std::vector<uint8_t>& received_raw_handles,
@@ -526,7 +524,7 @@ struct ipc_client_handles_storage {
         using namespace native;
 
         size_t restored_handles = 0;
-        uint8_t thread_id = received_raw_handles.front();
+        uint8_t rank = received_raw_handles.front();
 
         const uint8_t* recv_data_start = received_raw_handles.data() + sizeof(uint8_t);
         size_t recv_data_size = received_raw_handles.size() - sizeof(uint8_t);
@@ -554,7 +552,7 @@ struct ipc_client_handles_storage {
                     throw std::runtime_error("Cannot find ipc device in global driver");
                 }
 
-                per_thread_storage[thread_id].emplace_back(
+                per_rank_storage[rank].emplace_back(
                     owner_device->restore_shared_ipc_memory(std::move(recv_ipc_handle), ctx));
                 restored_handles++;
             }

@@ -18,6 +18,8 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_single_device_multi_tile_i
     using namespace native;
     using namespace net;
 
+    std::shared_ptr<ccl_context> ctx;
+
     // Type of our test
     using native_type = typename TypeParam::first_type;
     using op_type = typename TypeParam::second_type;
@@ -46,59 +48,31 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_single_device_multi_tile_i
               "Devices must be unique to launch multi device case");
 
     // START TEST execution
-    // fill device memory stencil data
-    std::shared_ptr<ccl_context> ctx;
-    std::vector<native_type> send_values(buffer_size);
-    std::iota(send_values.begin(), send_values.end(), 1);
-    std::vector<native_type> recv_values(buffer_size, 0);
+
+    alloc_and_fill_allreduce_buffers<native_type>(this, buffer_size, devices, ctx, true);
 
     // allocate & initialize test kernel params
     int rank_device_idx = 0;
-    int rank_size = 0;
+    int comm_size = 0;
     const auto total_dev_indices = this->get_cluster_platform_device_indices();
     for (const auto& process_indices : total_dev_indices) {
         const ccl::process_device_indices_type& thread_indices = process_indices.second;
         for (const auto& thread_index : thread_indices) {
-            rank_size += thread_index.second.size();
+            comm_size += thread_index.second.size();
         }
     }
 
     size_t device_index_start_offset =
         this->is_child() * devices.size(); /* global cluster numeration */
-    this->output << "PID: " << this->pid << " calculated world size: " << rank_size
+    this->output << "PID: " << this->pid << " calculated world size: " << comm_size
                  << ", device_index_start_offset: " << device_index_start_offset << std::endl;
     for (const std::shared_ptr<ccl_device>& device : devices) {
         try {
             // initialize communication params
-            int rank_idx = rank_device_idx + device_index_start_offset;
+            int rank = rank_device_idx + device_index_start_offset;
             size_t elem_count = buffer_size;
 
-            this->register_shared_comm_data(rank_device_idx, rank_idx, rank_size, elem_count);
-
-            // allocate flags & memory
-            // memory
-            auto mem_send =
-                device->alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
-            auto mem_recv =
-                device->alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
-            auto temp_recv = device->alloc_memory<native_type>(
-                buffer_size / devices.size(), sizeof(native_type), ctx);
-            mem_send.enqueue_write_sync(send_values);
-            mem_recv.enqueue_write_sync(recv_values);
-            temp_recv.enqueue_write_sync(recv_values.begin(),
-                                         recv_values.begin() + buffer_size / devices.size());
-
-            this->template register_ipc_memories_data<native_type>(
-                ctx, rank_device_idx, &temp_recv);
-
-            /* fill array in specific order
-             * l - left
-             * r - right
-             * Left: l_send, l_recv, l_tmp_recv, r_tmp_recv
-             * Right: r_send, r_recv, r_tmp_recv, l_tmp_recv
-             */
-            this->register_shared_memories_data(
-                rank_device_idx, std::move(mem_send), std::move(mem_recv), std::move(temp_recv));
+            this->register_shared_comm_data(rank_device_idx, rank, comm_size, elem_count);
 
             // flags
             auto left_wrote_2_me_flag = device->alloc_memory<int>(1, sizeof(int), ctx);
@@ -146,12 +120,12 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_single_device_multi_tile_i
 
     // prepare queues & lists
     this->output << "PID: " << this->pid << "Prepare queue and lists \n";
-    std::map<size_t, ccl_device::device_queue> thread_queue;
-    std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
+    std::map<size_t, ccl_device::device_queue> rank_queues;
+    std::map<size_t, ccl_device::device_cmd_list> rank_cmd_lists;
     multi_tile_utils::prepare_queues_and_lists(devices,
                                                ctx,
-                                               thread_queue,
-                                               thread_cmd_list,
+                                               rank_queues,
+                                               rank_cmd_lists,
                                                this->output,
                                                device_index_start_offset /* cluster offset */);
 
@@ -165,14 +139,14 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_single_device_multi_tile_i
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
     for (const auto& device : devices) {
         (void)device;
-        size_t thread_idx = thread_group.size();
-        ze_kernel_handle_t kernel = this->get_kernel(thread_idx);
-        auto mem_handles = this->get_memory_handles(thread_idx);
-        auto flag_handles = this->get_flag_handles(thread_idx);
-        auto comm_handles = this->get_comm_handles(thread_idx);
+        size_t rank = thread_group.size();
+        ze_kernel_handle_t kernel = this->get_kernel(rank);
+        auto mem_handles = this->get_memory_handles(rank);
+        auto flag_handles = this->get_flag_handles(rank);
+        auto comm_handles = this->get_comm_handles(rank);
 
-        ccl_device::device_queue& queue = thread_queue.find(thread_idx)->second;
-        ccl_device::device_cmd_list& list = thread_cmd_list.find(thread_idx)->second;
+        ccl_device::device_queue& queue = rank_queues.find(rank)->second;
+        ccl_device::device_cmd_list& list = rank_cmd_lists.find(rank)->second;
 
         this->output << "PID: " << this->pid << ", start thread for kernel execution" << std::endl;
         std::unique_ptr<std::stringstream> out_ptr(new std::stringstream());
@@ -180,7 +154,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_single_device_multi_tile_i
 
         native::ccl_device* device_ptr = device.get();
         thread_group.emplace_back([this,
-                                   thread_idx,
+                                   rank,
                                    kernel,
                                    device_ptr,
                                    &list,
@@ -206,38 +180,33 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_single_device_multi_tile_i
                 }
 
                 // bind rank, size, buffer_size
-                out << "PID: " << this->pid << ", thread_idx: " << thread_idx
-                    << ", comm_handles: \n"
+                out << "PID: " << this->pid << ", rank: " << rank << ", comm_handles: \n"
                     << std::endl;
                 std::array<int, 3> comm_offset{ 0, 1, 2 };
                 UT_ASSERT(comm_offset.size() == comm_handles.size(), "comm_offset != comm_handles");
-                bind_kernel_args(kernel, thread_idx, comm_offset, comm_handles);
+                bind_kernel_args(kernel, rank, comm_offset, comm_handles);
 
                 // bind l_send, l_recv, l_tmp,
-                out << "PID: " << this->pid << ", thread_idx: " << thread_idx
-                    << ", mem_handles: \n";
+                out << "PID: " << this->pid << ", rank: " << rank << ", mem_handles: \n";
                 std::array<int, mem_group_count> mem_offset{ 3, 4, 5 };
-                bind_kernel_args(kernel, thread_idx, mem_offset, mem_handles);
+                bind_kernel_args(kernel, rank, mem_offset, mem_handles);
 
                 // Bind IPC memory
                 std::array<int, ipc_mem_group_count> ipc_mem_offset{ 9 };
-                out << "PID: " << this->pid << ", thread_idx: " << thread_idx
-                    << ", ipc_mem_handles: \n";
-                bind_kernel_args(kernel, thread_idx, ipc_mem_offset, ipc_mem_handles);
+                out << "PID: " << this->pid << ", rank: " << rank << ", ipc_mem_handles: \n";
+                bind_kernel_args(kernel, rank, ipc_mem_offset, ipc_mem_handles);
 
                 // bindleft_wrote_2_me_flag, read_for_receive_flag, local_barrier_flag
                 std::array<int, flag_group_count> flag_offset{ 6, 7, 8 };
-                out << "PID: " << this->pid << ", thread_idx: " << thread_idx
-                    << ", flag_handles: \n"
+                out << "PID: " << this->pid << ", rank: " << rank << ", flag_handles: \n"
                     << std::endl;
-                bind_kernel_args(kernel, thread_idx, flag_offset, flag_handles);
+                bind_kernel_args(kernel, rank, flag_offset, flag_handles);
 
                 // Bind IPC flags
                 std::array<int, ipc_flag_group_count> ipc_flag_offset{ 10, 11 };
-                out << "PID: " << this->pid << ", thread_idx: " << thread_idx
-                    << ", ipc_flag_handles: \n"
+                out << "PID: " << this->pid << ", rank: " << rank << ", ipc_flag_handles: \n"
                     << std::endl;
-                bind_kernel_args(kernel, thread_idx, ipc_flag_offset, ipc_flag_handles);
+                bind_kernel_args(kernel, rank, ipc_flag_offset, ipc_flag_handles);
 
                 ze_result_t ret = zeCommandListAppendLaunchKernel(
                     list.handle, kernel, &launch_args, nullptr, 0, nullptr);
@@ -266,7 +235,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_single_device_multi_tile_i
             }
             catch (const std::exception& ex) {
                 UT_ASSERT(false,
-                          "Exception in PID: " << this->pid << ",thread: " << thread_idx
+                          "Exception in PID: " << this->pid << ", rank: " << rank
                                                << "\nError: " << ex.what() << ", at phase:\n{\n"
                                                << out.str() << "\n}\n");
                 throw;
@@ -293,9 +262,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_single_device_multi_tile_i
         index++;
     }
 
-    std::stringstream ss;
-    bool ret = allreduce_checking_results<native_type, op_type>(this, rank_size, ss);
-    UT_ASSERT(ret, ss.str());
+    check_allreduce_buffers<native_type, op_type>(this, comm_size, buffer_size);
 
     // gracefull finalize
     uint8_t ready = 0;

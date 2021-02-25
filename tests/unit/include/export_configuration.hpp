@@ -22,11 +22,12 @@
         } \
     } while (0);
 #else
-#define UT_ASSERT(cond, ...) \
+#define UT_ASSERT_OBJ(cond, obj, ...) \
     do { \
         if (!(cond)) { \
-            this->set_error(__PRETTY_FUNCTION__); \
+            obj->set_error(__PRETTY_FUNCTION__); \
         } \
         { ASSERT_TRUE((cond)) << __VA_ARGS__ << std::endl; } \
     } while (0);
+#define UT_ASSERT(cond, ...) UT_ASSERT_OBJ(cond, this, __VA_ARGS__)
 #endif

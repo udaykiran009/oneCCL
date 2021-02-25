@@ -29,15 +29,15 @@ TEST_F(a2a_allreduce_float_fixture, a2a_allreduce_single_device_mt) {
 
     // test case data
     const size_t buffer_size = 512;
-    const int num_thread = 4;
+    const int comm_size = 4;
     constexpr size_t mem_group_count = 3;
     constexpr size_t a2a_mem_group_count = 2;
     constexpr size_t flag_group_count = 3;
 
     create_module_descr("kernels/a2a_allreduce.spv", true);
 
-    handles_storage<native_type> memory_storage(42 * num_thread);
-    handles_storage<int> flags_storage(42 * num_thread);
+    handles_storage<native_type> memory_storage(42 * comm_size);
+    handles_storage<int> flags_storage(42 * comm_size);
     std::map<int, std::vector<int>> comm_param_storage;
 
     // check global driver
@@ -56,39 +56,32 @@ TEST_F(a2a_allreduce_float_fixture, a2a_allreduce_single_device_mt) {
     auto dev_it = driver.devices.begin();
     ccl_device& device = *dev_it->second;
 
-    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-        thread_indices.push_back(thread_idx);
+    for (int rank = 0; rank < comm_size; rank++) {
+        thread_indices.push_back(rank);
         try {
             //initialize communication params
-            int rank_idx = thread_idx;
-            int rank_size = num_thread;
-            size_t elem_count = buffer_size;
-
-            comm_param_storage[thread_idx].push_back(rank_idx);
-            comm_param_storage[thread_idx].push_back(rank_size);
-            comm_param_storage[thread_idx].push_back(elem_count);
+            comm_param_storage[rank].push_back(rank);
+            comm_param_storage[rank].push_back(comm_size);
+            comm_param_storage[rank].push_back(buffer_size);
 
             //allocate flags & memory
             // memory
             auto mem_send = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
             auto mem_recv = device.alloc_memory<native_type>(buffer_size, sizeof(native_type), ctx);
-            auto temp_recv = device.alloc_memory<native_type>(
-                buffer_size / num_thread, sizeof(native_type), ctx);
+            auto temp_recv =
+                device.alloc_memory<native_type>(buffer_size / comm_size, sizeof(native_type), ctx);
 
             mem_send.enqueue_write_sync(send_values);
             mem_recv.enqueue_write_sync(recv_values);
             temp_recv.enqueue_write_sync(recv_values.begin(),
-                                         recv_values.begin() + buffer_size / num_thread);
+                                         recv_values.begin() + buffer_size / comm_size);
 
             /* fill array in specific order
              * Left: l_send, l_recv, l_tmp_recv, r_tmp_recv
              * Right: r_send, r_recv, r_tmp_recv, l_tmp_recv
              */
-            memory_storage.register_shared_data(thread_idx,
-                                                num_thread,
-                                                std::move(mem_send),
-                                                std::move(mem_recv),
-                                                std::move(temp_recv));
+            memory_storage.register_shared_data(
+                rank, comm_size, std::move(mem_send), std::move(mem_recv), std::move(temp_recv));
 
             // flags
             auto left_wrote_2_me_flag = device.alloc_memory<int>(1, sizeof(int), ctx);
@@ -102,31 +95,30 @@ TEST_F(a2a_allreduce_float_fixture, a2a_allreduce_single_device_mt) {
              * Left: l_L, l_R, l_B, r_L, r_R
              * Right: r_L, r_R, r_B, l_L, L_R
              */
-            flags_storage.register_shared_data(thread_idx,
-                                               num_thread,
+            flags_storage.register_shared_data(rank,
+                                               comm_size,
                                                std::move(left_wrote_2_me_flag),
                                                std::move(read_for_receive_flag),
                                                std::move(barrier_flag));
         }
         catch (const std::exception& ex) {
-            UT_ASSERT(
-                false,
-                "Cannot allocate memory for thread: %" << thread_idx << "\nError: " << ex.what());
+            UT_ASSERT(false,
+                      "Cannot allocate memory for rank: %" << rank << "\nError: " << ex.what());
         }
     }
 
-    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
-        memory_storage.rotate_shared_data(thread_idx, num_thread, mem_group_count);
-        flags_storage.rotate_shared_data(thread_idx, num_thread, flag_group_count);
+    for (int rank = 0; rank < comm_size; rank++) {
+        memory_storage.rotate_shared_data(rank, comm_size, mem_group_count);
+        flags_storage.rotate_shared_data(rank, comm_size, flag_group_count);
     }
 
     //get handles for A2A
-    typename handles_storage<native_type>::thread_handles_container rank_mem =
+    typename handles_storage<native_type>::rank_handles_container rank_mem =
         memory_storage.collect_handles_by_index({ 2 });
-    typename handles_storage<int>::thread_handles_container rank_flags =
+    typename handles_storage<int>::rank_handles_container rank_flags =
         flags_storage.collect_handles_by_index({ 0, 1 });
 
-    std::vector<a2a_gpu_comm_data_float32> a2a_comm(num_thread);
+    std::vector<a2a_gpu_comm_data_float32> a2a_comm(comm_size);
 
     //Register memory handles to A2A
     for (size_t thread_id = 0; thread_id < rank_mem.size(); thread_id++) {
@@ -140,7 +132,7 @@ TEST_F(a2a_allreduce_float_fixture, a2a_allreduce_single_device_mt) {
 
     //prepare gpu object
     auto a2a_comm_handle = device.alloc_memory<a2a_gpu_comm_data_float32>(
-        num_thread, sizeof(a2a_gpu_comm_data_float32), ctx);
+        comm_size, sizeof(a2a_gpu_comm_data_float32), ctx);
     a2a_comm_handle.enqueue_write_sync(a2a_comm);
 
     //prepare kernels in multithreading environment
@@ -150,11 +142,11 @@ TEST_F(a2a_allreduce_float_fixture, a2a_allreduce_single_device_mt) {
         .flags = 0,
     };
     desc.pKernelName = "allreduce_execution_float";
-    std::map<size_t, ze_kernel_handle_t> thread_kernels;
-    std::map<size_t, ccl_device::device_queue> thread_queue;
-    std::map<size_t, ccl_device::device_cmd_list> thread_cmd_list;
+    std::map<size_t, ze_kernel_handle_t> rank_kernels;
+    std::map<size_t, ccl_device::device_queue> rank_queues;
+    std::map<size_t, ccl_device::device_cmd_list> rank_cmd_lists;
     ccl_device::device_module& module = *(device_modules.find(&device)->second);
-    for (int thread_idx = 0; thread_idx < num_thread; thread_idx++) {
+    for (int rank = 0; rank < comm_size; rank++) {
         //thread_group.emplace
         ze_kernel_handle_t handle = nullptr;
         try {
@@ -164,9 +156,9 @@ TEST_F(a2a_allreduce_float_fixture, a2a_allreduce_single_device_mt) {
                                          ", error: " + native::to_string(result));
             }
 
-            thread_kernels.emplace(thread_idx, std::move(handle));
-            thread_queue.emplace(thread_idx, device.create_cmd_queue(ctx));
-            thread_cmd_list.emplace(thread_idx, device.create_cmd_list(ctx));
+            rank_kernels.emplace(rank, std::move(handle));
+            rank_queues.emplace(rank, device.create_cmd_queue(ctx));
+            rank_cmd_lists.emplace(rank, device.create_cmd_list(ctx));
         }
         catch (const std::exception& ex) {
             throw std::runtime_error(std::string("Error: ") + ex.what());
@@ -183,25 +175,25 @@ TEST_F(a2a_allreduce_float_fixture, a2a_allreduce_single_device_mt) {
     std::atomic<size_t> val{ 0 }; //workaround
     std::vector<std::thread> thread_group;
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
-    for (auto& idx_kernel : thread_kernels) {
-        size_t thread_idx = idx_kernel.first;
+    for (auto& idx_kernel : rank_kernels) {
+        size_t rank = idx_kernel.first;
         ze_kernel_handle_t kernel = idx_kernel.second;
-        auto& mem_handles = find_storage_val(memory_storage.per_thread_storage, thread_idx);
-        auto& flag_handles = find_storage_val(flags_storage.per_thread_storage, thread_idx);
-        auto& comm_handles = find_storage_val(comm_param_storage, thread_idx);
+        auto& mem_handles = find_storage_val(memory_storage.per_rank_storage, rank);
+        auto& flag_handles = find_storage_val(flags_storage.per_rank_storage, rank);
+        auto& comm_handles = find_storage_val(comm_param_storage, rank);
         (void)flag_handles;
 
         //WORKAROUND: ONLY ONE LIST & QUEUE!
-        //ccl_device::device_queue& queue = thread_queue.find(thread_idx)->second;
-        ccl_device::device_queue& queue = thread_queue.find(0)->second;
-        //ccl_device::device_cmd_list& list = thread_cmd_list.find(thread_idx)->second;
-        ccl_device::device_cmd_list& list = thread_cmd_list.find(0)->second;
+        //ccl_device::device_queue& queue = rank_queues.find(rank)->second;
+        ccl_device::device_queue& queue = rank_queues.find(0)->second;
+        //ccl_device::device_cmd_list& list = rank_cmd_lists.find(rank)->second;
+        ccl_device::device_cmd_list& list = rank_cmd_lists.find(0)->second;
 
         std::unique_ptr<std::stringstream> out_ptr(new std::stringstream());
         std::stringstream* raw_out = out_ptr.get();
         thread_group.emplace_back([this,
                                    &a2a_comm_handle,
-                                   thread_idx,
+                                   rank,
                                    kernel,
                                    &list,
                                    &queue,
@@ -211,10 +203,10 @@ TEST_F(a2a_allreduce_float_fixture, a2a_allreduce_single_device_mt) {
                                    &val,
                                    raw_out]() {
             std::stringstream& out = *raw_out;
-            ze_group_count_t launch_args = { num_thread, 1, 1 };
+            ze_group_count_t launch_args = { comm_size, 1, 1 };
             try {
                 ze_result_t result;
-                out << "thread_idx: " << thread_idx << ", comm_handles: \n";
+                out << "rank: " << rank << ", comm_handles: \n";
 
                 // bind rank, size, buffer_size
                 size_t i = 0;
@@ -237,7 +229,7 @@ TEST_F(a2a_allreduce_float_fixture, a2a_allreduce_single_device_mt) {
                 i = 0;
                 std::array<int, a2a_mem_group_count> mem_offset{ 3, 4 };
                 //UT_ASSERT(mem_offset.size() == mem_handles.size(), "mem_offset != mem_handles");
-                out << "thread_idx: " << thread_idx << ", mem_handles: \n";
+                out << "rank: " << rank << ", mem_handles: \n";
                 for (auto& mem : mem_handles) {
                     if (i >= a2a_mem_group_count) {
                         break; //only own is needed
@@ -288,11 +280,11 @@ TEST_F(a2a_allreduce_float_fixture, a2a_allreduce_single_device_mt) {
                 }
 
                 // sync and make sure all threads have arrived up to this point.
-                while (val < num_thread) {
+                while (val < comm_size) {
                 }
 
                 // let thread 0 to be the one submitting commands to the queue and sync
-                if (thread_idx == 0) {
+                if (rank == 0) {
                     ret = zeCommandListClose(list.handle);
                     if (ret != ZE_RESULT_SUCCESS) {
                         throw std::runtime_error(std::string("cannot zeCommandListClose, error: ") +
@@ -319,8 +311,8 @@ TEST_F(a2a_allreduce_float_fixture, a2a_allreduce_single_device_mt) {
             }
             catch (const std::exception& ex) {
                 UT_ASSERT(false,
-                          "Exception in thread: " << thread_idx << "\nError: " << ex.what()
-                                                  << ", at pahse: " << out.str());
+                          "Exception in rank: " << rank << "\nError: " << ex.what()
+                                                << ", at phase: " << out.str());
                 throw;
             }
         });
@@ -331,7 +323,7 @@ TEST_F(a2a_allreduce_float_fixture, a2a_allreduce_single_device_mt) {
     size_t index = 0;
     for (auto& t : thread_group) {
         t.join();
-        output << "Kernels argument binding log for Thread: " << index << std::endl;
+        output << "Kernels argument binding log for rank: " << index << std::endl;
         output << thread_out_put[index]->str() << std::endl;
         index++;
     }
