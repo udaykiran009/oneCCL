@@ -12,8 +12,8 @@ int is_fp16_enabled() {
 
         __asm__ __volatile__("cpuid"
                              : "=a"(reg[0]), "=b"(reg[1]), "=c"(reg[2]), "=d"(reg[3])
-                             : "a"(7), "c"(0));
-        is_fp16_enabled = ((reg[1] & (1 << 16)) >> 16);
+                             : "a"(1));
+        is_fp16_enabled = (reg[2] & (1 << 29)) >> 29;
     }
     printf("FUNC_TESTS: FP16 compiler, is_fp16_enabled %d\n", is_fp16_enabled);
     return is_fp16_enabled;
@@ -61,10 +61,13 @@ int is_avx512bf_enabled() {
 
 #ifdef CCL_FP16_COMPILER
 void convert_fp32_to_fp16(const void* src, void* dst) {
-    _mm256_storeu_si256((__m256i*)dst, _mm512_cvtps_ph(_mm512_loadu_ps((float*)src), 0));
+    // _mm256_storeu_si256((__m256i*)dst, _mm512_cvtps_ph(_mm512_loadu_ps((float*)src), 0));
+    _mm_storeu_si128((__m128i*)dst,
+                     _mm256_cvtps_ph((__m256)(_mm256_loadu_si256((__m256i*)src)), 0));
 }
 void convert_fp16_to_fp32(const void* src, void* dst) {
-    _mm512_storeu_si512(dst, (__m512i)(_mm512_cvtph_ps(_mm256_loadu_si256((__m256i*)src))));
+    // _mm512_storeu_si512(dst, (__m512i)(_mm512_cvtph_ps(_mm256_loadu_si256((__m256i*)src))));
+    _mm256_storeu_si256((__m256i*)dst, (__m256i)(_mm256_cvtph_ps(_mm_loadu_si128((__m128i*)src))));
 }
 #else /* CCL_FP16_COMPILER */
 void convert_fp32_to_fp16(const void* src, void* dst) {

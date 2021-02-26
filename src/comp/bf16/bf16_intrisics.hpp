@@ -5,7 +5,9 @@
 #include <immintrin.h>
 #include <inttypes.h>
 
+#include "common/global/global.hpp"
 #include "comp/bf16/bf16_utils.hpp"
+#include "oneapi/ccl/types.hpp"
 
 #define CCL_BF16_IN_M256 16
 
@@ -58,7 +60,7 @@ BF16_INLINE_TARGET_ATTRIBUTE void ccl_fp32_store_as_bf16_avx512bf(const void* sr
 }
 #endif
 
-#define CCL_BF16_REDUCE_FUNC_DEFINITIONS(impl_type) \
+#define CCL_BF16_DEFINE_REDUCE_FUNC(impl_type) \
 \
     BF16_INLINE_TARGET_ATTRIBUTE_ALL void ccl_bf16_reduce_inputs_##impl_type( \
         const void* a, const void* b, void* res, ccl_bf16_reduction_func_ptr op) { \
@@ -94,21 +96,31 @@ BF16_INLINE_TARGET_ATTRIBUTE void ccl_fp32_store_as_bf16_avx512bf(const void* sr
             (uint16_t*)in_buf + i, (uint16_t*)inout_buf + i, (uint8_t)(in_cnt - i), op); \
     }
 
-CCL_BF16_REDUCE_FUNC_DEFINITIONS(avx512f);
+CCL_BF16_DEFINE_REDUCE_FUNC(avx512f);
 #ifdef CCL_BF16_AVX512BF_COMPILER
-CCL_BF16_REDUCE_FUNC_DEFINITIONS(avx512bf);
+CCL_BF16_DEFINE_REDUCE_FUNC(avx512bf);
 #endif
 
 BF16_INLINE_TARGET_ATTRIBUTE_ALL void ccl_bf16_reduce_impl(const void* in_buf,
                                                            void* inout_buf,
                                                            size_t in_cnt,
-                                                           ccl_bf16_reduction_func_ptr op,
-                                                           ccl_bf16_impl_type impl_type) {
+                                                           ccl::reduction op) {
+    ccl_bf16_reduction_func_ptr func = nullptr;
+    switch (op) {
+        case ccl::reduction::sum: func = &bf16_sum_wrap; break;
+        case ccl::reduction::prod: func = &bf16_prod_wrap; break;
+        case ccl::reduction::min: func = &bf16_min_wrap; break;
+        case ccl::reduction::max: func = &bf16_max_wrap; break;
+        default: CCL_FATAL("unexpected value ", utils::enum_to_underlying(op));
+    }
+
+    auto impl_type = ccl::global_data::env().bf16_impl_type;
+
     if (impl_type == ccl_bf16_avx512f)
-        ccl_bf16_reduce_impl_avx512f(in_buf, inout_buf, in_cnt, op);
+        ccl_bf16_reduce_impl_avx512f(in_buf, inout_buf, in_cnt, func);
 #ifdef CCL_BF16_AVX512BF_COMPILER
     else if (impl_type == ccl_bf16_avx512bf)
-        ccl_bf16_reduce_impl_avx512bf(in_buf, inout_buf, in_cnt, op);
+        ccl_bf16_reduce_impl_avx512bf(in_buf, inout_buf, in_cnt, func);
 #endif
 }
 

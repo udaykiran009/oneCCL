@@ -40,9 +40,11 @@ struct comm_impl_base_dispatch {
                     " must not exceed total size: " + std::to_string(cluster_devices_size));
         }
 
-        /* Indicate that multiple devices are not supported, don't throw anything if kernel_path env variable
-         * is set to enable our testing with partial functionality. */
-        if (table_size > 1 && ccl::global_data::env().kernel_path.empty()) {
+        /*
+           Indicate that multiple devices are not supported
+           Don't throw anything if comm_kernels=1 to enable our testing with partial functionality.
+        */
+        if (table_size > 1 && !ccl::global_data::env().enable_comm_kernels) {
             throw ccl::unimplemented("API", "create_communicators", "for multiple devices");
         }
     }

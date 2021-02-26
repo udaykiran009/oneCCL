@@ -72,7 +72,6 @@ typedef struct {
     MPI_Op max_op;
     // custom MPI dtype for BF16
     MPI_Datatype dtype;
-    ccl_bf16_impl_type impl_type;
 } atl_mpi_bf16_data_t;
 
 typedef struct {
@@ -83,7 +82,6 @@ typedef struct {
     MPI_Op max_op;
     // custom MPI dtype for FP16
     MPI_Datatype dtype;
-    ccl_fp16_impl_type impl_type;
 } atl_mpi_fp16_data_t;
 
 typedef struct atl_mpi_global_data {
@@ -108,14 +106,12 @@ typedef struct atl_mpi_global_data {
         bf16.prod_op = MPI_OP_NULL;
         bf16.min_op = MPI_OP_NULL;
         bf16.max_op = MPI_OP_NULL;
-        bf16.impl_type = ccl_bf16_compiler_none;
 
         fp16.dtype = MPI_DATATYPE_NULL;
         fp16.sum_op = MPI_OP_NULL;
         fp16.prod_op = MPI_OP_NULL;
         fp16.min_op = MPI_OP_NULL;
         fp16.max_op = MPI_OP_NULL;
-        fp16.impl_type = ccl_fp16_compiler_none;
     }
 
 } atl_mpi_global_data_t;
@@ -209,12 +205,12 @@ static void atl_mpi_print_error(int error) {
 static void BF16_INLINE_TARGET_ATTRIBUTE_ALL atl_mpi_bf16_base_op(void* in,
                                                                   void* inout,
                                                                   int* length,
-                                                                  ccl_bf16_reduction_func_ptr op) {
+                                                                  ccl::reduction op) {
     unsigned short* in_buf = (unsigned short*)in;
     unsigned short* inout_buf = (unsigned short*)inout;
 
     size_t len = *length;
-    ccl_bf16_reduce_impl(in_buf, inout_buf, len, op, global_data.bf16.impl_type);
+    ccl_bf16_reduce_impl(in_buf, inout_buf, len, op);
 }
 
 static void BF16_TARGET_ATTRIBUTE_ALL atl_mpi_bf16_sum_op(void* in,
@@ -222,7 +218,7 @@ static void BF16_TARGET_ATTRIBUTE_ALL atl_mpi_bf16_sum_op(void* in,
                                                           int* length,
                                                           MPI_Datatype* datatype) {
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
-    atl_mpi_bf16_base_op(in, inout, length, &bf16_sum_wrap);
+    atl_mpi_bf16_base_op(in, inout, length, ccl::reduction::sum);
 }
 
 static void BF16_TARGET_ATTRIBUTE_ALL atl_mpi_bf16_prod_op(void* in,
@@ -230,7 +226,7 @@ static void BF16_TARGET_ATTRIBUTE_ALL atl_mpi_bf16_prod_op(void* in,
                                                            int* length,
                                                            MPI_Datatype* datatype) {
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
-    atl_mpi_bf16_base_op(in, inout, length, &bf16_prod_wrap);
+    atl_mpi_bf16_base_op(in, inout, length, ccl::reduction::prod);
 }
 
 static void BF16_TARGET_ATTRIBUTE_ALL atl_mpi_bf16_min_op(void* in,
@@ -238,7 +234,7 @@ static void BF16_TARGET_ATTRIBUTE_ALL atl_mpi_bf16_min_op(void* in,
                                                           int* length,
                                                           MPI_Datatype* datatype) {
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
-    atl_mpi_bf16_base_op(in, inout, length, &bf16_min_wrap);
+    atl_mpi_bf16_base_op(in, inout, length, ccl::reduction::min);
 }
 
 static void BF16_TARGET_ATTRIBUTE_ALL atl_mpi_bf16_max_op(void* in,
@@ -246,7 +242,7 @@ static void BF16_TARGET_ATTRIBUTE_ALL atl_mpi_bf16_max_op(void* in,
                                                           int* length,
                                                           MPI_Datatype* datatype) {
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
-    atl_mpi_bf16_base_op(in, inout, length, &bf16_max_wrap);
+    atl_mpi_bf16_base_op(in, inout, length, ccl::reduction::max);
 }
 #endif /* ATL_MPI_BF16 */
 
@@ -255,12 +251,12 @@ static void BF16_TARGET_ATTRIBUTE_ALL atl_mpi_bf16_max_op(void* in,
 static void FP16_INLINE_TARGET_ATTRIBUTE_ALL atl_mpi_fp16_base_op(void* in,
                                                                   void* inout,
                                                                   int* length,
-                                                                  ccl_fp16_reduction_func_ptr op) {
+                                                                  ccl::reduction op) {
     unsigned short* in_buf = (unsigned short*)in;
     unsigned short* inout_buf = (unsigned short*)inout;
 
     size_t len = *length;
-    ccl_fp16_reduce_impl(in_buf, inout_buf, len, op, global_data.fp16.impl_type);
+    ccl_fp16_reduce_impl(in_buf, inout_buf, len, op);
 }
 
 static void FP16_TARGET_ATTRIBUTE_ALL atl_mpi_fp16_sum_op(void* in,
@@ -268,7 +264,7 @@ static void FP16_TARGET_ATTRIBUTE_ALL atl_mpi_fp16_sum_op(void* in,
                                                           int* length,
                                                           MPI_Datatype* datatype) {
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
-    atl_mpi_fp16_base_op(in, inout, length, &fp16_sum_wrap);
+    atl_mpi_fp16_base_op(in, inout, length, ccl::reduction::sum);
 }
 
 static void FP16_TARGET_ATTRIBUTE_ALL atl_mpi_fp16_prod_op(void* in,
@@ -276,7 +272,7 @@ static void FP16_TARGET_ATTRIBUTE_ALL atl_mpi_fp16_prod_op(void* in,
                                                            int* length,
                                                            MPI_Datatype* datatype) {
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
-    atl_mpi_fp16_base_op(in, inout, length, &fp16_prod_wrap);
+    atl_mpi_fp16_base_op(in, inout, length, ccl::reduction::prod);
 }
 
 static void FP16_TARGET_ATTRIBUTE_ALL atl_mpi_fp16_min_op(void* in,
@@ -284,7 +280,7 @@ static void FP16_TARGET_ATTRIBUTE_ALL atl_mpi_fp16_min_op(void* in,
                                                           int* length,
                                                           MPI_Datatype* datatype) {
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
-    atl_mpi_fp16_base_op(in, inout, length, &fp16_min_wrap);
+    atl_mpi_fp16_base_op(in, inout, length, ccl::reduction::min);
 }
 
 static void FP16_TARGET_ATTRIBUTE_ALL atl_mpi_fp16_max_op(void* in,
@@ -292,21 +288,14 @@ static void FP16_TARGET_ATTRIBUTE_ALL atl_mpi_fp16_max_op(void* in,
                                                           int* length,
                                                           MPI_Datatype* datatype) {
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
-    atl_mpi_fp16_base_op(in, inout, length, &fp16_max_wrap);
+    atl_mpi_fp16_base_op(in, inout, length, ccl::reduction::max);
 }
 #endif /* ATL_MPI_FP16 */
 
 static int atl_mpi_bf16_init() {
     int ret = MPI_SUCCESS;
 
-    global_data.bf16.impl_type = ccl_bf16_get_impl_type();
-
-    if (global_data.bf16.impl_type == ccl_bf16_compiler_none) {
-        LOG_DEBUG("BF16: disabled on compiler level");
-        return RET2ATL(ret);
-    }
-    else if (global_data.bf16.impl_type == ccl_bf16_hw_none) {
-        LOG_DEBUG("BF16: disabled on hardware level");
+    if (ccl::global_data::env().bf16_impl_type <= ccl_bf16_no_hardware_support) {
         return RET2ATL(ret);
     }
 
@@ -389,14 +378,7 @@ static void atl_mpi_bf16_finalize() {
 static int atl_mpi_fp16_init() {
     int ret = MPI_SUCCESS;
 
-    global_data.fp16.impl_type = ccl_fp16_get_impl_type();
-
-    if (global_data.fp16.impl_type == ccl_fp16_compiler_none) {
-        LOG_DEBUG("FP16: disabled on compiler level");
-        return RET2ATL(ret);
-    }
-    else if (global_data.fp16.impl_type == ccl_fp16_hw_none) {
-        LOG_DEBUG("FP16: disabled on hardware level");
+    if (ccl::global_data::env().fp16_impl_type <= ccl_fp16_no_hardware_support) {
         return RET2ATL(ret);
     }
 

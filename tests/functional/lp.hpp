@@ -25,13 +25,13 @@ int is_bf16_enabled();
 int is_avx512bf_enabled();
 
 #ifdef CCL_FP16_TARGET_ATTRIBUTES
-void convert_fp32_to_fp16(const void* src, void* dst) __attribute__((target("avx512f")));
+void convert_fp32_to_fp16(const void* src, void* dst) __attribute__((target("f16c,avx512f")));
 #else
 void convert_fp32_to_fp16(const void* src, void* dst);
 #endif
 
 #ifdef CCL_FP16_TARGET_ATTRIBUTES
-void convert_fp16_to_fp32(const void* src, void* dst) __attribute__((target("avx512f")));
+void convert_fp16_to_fp32(const void* src, void* dst) __attribute__((target("f16c,avx512f")));
 #else
 void convert_fp16_to_fp32(const void* src, void* dst);
 #endif

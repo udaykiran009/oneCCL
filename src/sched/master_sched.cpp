@@ -162,16 +162,16 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
     }
 
     if (param.dtype.idx() == ccl::datatype::float16) {
-        CCL_THROW_IF_NOT(ccl::global_data::get().fp16_impl_type != ccl_fp16_compiler_none,
+        CCL_THROW_IF_NOT(ccl::global_data::env().fp16_impl_type != ccl_fp16_no_compiler_support,
                          "FP16 datatype is requested but not supported by CCL compiler");
-        CCL_THROW_IF_NOT(ccl::global_data::get().fp16_impl_type != ccl_fp16_hw_none,
+        CCL_THROW_IF_NOT(ccl::global_data::env().fp16_impl_type != ccl_fp16_no_hardware_support,
                          "FP16 datatype is requested but not supported by hardware");
     }
 
     if (param.dtype.idx() == ccl::datatype::bfloat16) {
-        CCL_THROW_IF_NOT(ccl::global_data::get().bf16_impl_type != ccl_bf16_compiler_none,
+        CCL_THROW_IF_NOT(ccl::global_data::env().bf16_impl_type != ccl_bf16_no_compiler_support,
                          "BF16 datatype is requested but not supported by CCL compiler");
-        CCL_THROW_IF_NOT(ccl::global_data::get().bf16_impl_type != ccl_bf16_hw_none,
+        CCL_THROW_IF_NOT(ccl::global_data::env().bf16_impl_type != ccl_bf16_no_hardware_support,
                          "BF16 datatype is requested but not supported by hardware");
     }
 

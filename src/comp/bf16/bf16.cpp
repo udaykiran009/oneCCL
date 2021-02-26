@@ -8,34 +8,37 @@
 #define CCL_FLOATS_IN_M512 16
 #define CCL_BF16_SHIFT     16
 
+std::map<ccl_bf16_impl_type, std::string> bf16_impl_names = {
+    std::make_pair(ccl_bf16_no_compiler_support, "no_compiler_support"),
+    std::make_pair(ccl_bf16_no_hardware_support, "no_hardware_support"),
+    std::make_pair(ccl_bf16_avx512f, "avx512f"),
+    std::make_pair(ccl_bf16_avx512bf, "avx512bf")
+};
+
+std::map<ccl_bf16_impl_type, std::string> bf16_env_impl_names = {
+    std::make_pair(ccl_bf16_avx512f, "avx512f"),
+    std::make_pair(ccl_bf16_avx512bf, "avx512bf")
+};
+
 #ifdef CCL_BF16_COMPILER
 
 void ccl_bf16_reduce(const void* in_buf,
                      size_t in_cnt,
                      void* inout_buf,
                      size_t* out_cnt,
-                     ccl::reduction reduction_op) {
+                     ccl::reduction op) {
     LOG_DEBUG("BF16 reduction for %zu elements\n", in_cnt);
 
     if (out_cnt != nullptr) {
         *out_cnt = in_cnt;
     }
 
-    ccl_bf16_reduction_func_ptr op = nullptr;
-    switch (reduction_op) {
-        case ccl::reduction::sum: op = &bf16_sum_wrap; break;
-        case ccl::reduction::prod: op = &bf16_prod_wrap; break;
-        case ccl::reduction::min: op = &bf16_min_wrap; break;
-        case ccl::reduction::max: op = &bf16_max_wrap; break;
-        default: CCL_FATAL("unexpected value ", utils::enum_to_underlying(reduction_op));
-    }
-
-    ccl_bf16_reduce_impl(in_buf, inout_buf, in_cnt, op, ccl::global_data::get().bf16_impl_type);
+    ccl_bf16_reduce_impl(in_buf, inout_buf, in_cnt, op);
 }
 
 void ccl_convert_fp32_to_bf16(const void* src, void* dst) {
 #ifdef CCL_BF16_AVX512BF_COMPILER
-    if (ccl::global_data::get().bf16_impl_type == ccl_bf16_avx512bf) {
+    if (ccl::global_data::env().bf16_impl_type == ccl_bf16_avx512bf) {
         _mm256_storeu_si256((__m256i*)(dst), _mm512_cvtneps_pbh(_mm512_loadu_ps(src)));
     }
     else

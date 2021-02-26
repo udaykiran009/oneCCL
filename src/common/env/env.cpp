@@ -78,12 +78,12 @@ env_data::env_data()
           alltoall_scatter_max_ops(CCL_ENV_SIZET_NOT_SPECIFIED),
           alltoall_scatter_plain(0),
 
-          default_resizable(0),
-
           enable_comm_kernels(0),
-          kernel_path(),
+          comm_kernels_path(),
+          gpu_thread_count(CCL_ENV_SIZET_NOT_SPECIFIED),
 
-          gpu_num_threads(CCL_ENV_SIZET_NOT_SPECIFIED) {}
+          bf16_impl_type(ccl_bf16_no_compiler_support),
+          fp16_impl_type(ccl_fp16_no_compiler_support) {}
 
 void env_data::parse() {
     env_2_enum(CCL_LOG_LEVEL, ccl_logger::level_names, log_level);
@@ -196,43 +196,63 @@ void env_data::parse() {
     env_2_type(CCL_ALLTOALL_SCATTER_MAX_OPS, (size_t&)alltoall_scatter_max_ops);
     env_2_type(CCL_ALLTOALL_SCATTER_PLAIN, alltoall_scatter_plain);
 
-    env_2_type(CCL_DEFAULT_RESIZABLE, default_resizable);
-    CCL_THROW_IF_NOT(
-        default_resizable <= 2, "incorrect ", CCL_DEFAULT_RESIZABLE, " ", default_resizable);
-
     env_2_type(CCL_COMM_KERNELS, enable_comm_kernels);
     if (enable_comm_kernels) {
-        env_2_type(CCL_COMM_KERNELS_PATH, kernel_path);
-        if (kernel_path.empty()) {
+        env_2_type(CCL_COMM_KERNELS_PATH, comm_kernels_path);
+        if (comm_kernels_path.empty()) {
             std::string ccl_root = getenv("CCL_ROOT");
-            CCL_THROW_IF_NOT(!ccl_root.empty(), "incorrect kernel path. CCL_ROOT not found!");
-            kernel_path = ccl_root + "/lib/kernels/";
+            CCL_THROW_IF_NOT(!ccl_root.empty(), "incorrect comm kernels path, CCL_ROOT not found!");
+            comm_kernels_path = ccl_root + "/lib/kernels/";
         }
 
         // TODO remove IPC workaround knobs
         if (!getenv("DisableStatelessToStatefulOptimization")) {
             setenv("DisableStatelessToStatefulOptimization", "1", 1);
             LOG_WARN(
-                "Environment variable 'DisableStatelessToStatefulOptimization' is not set. Will be used DisableStatelessToStatefulOptimization=1");
+                "environment variable 'DisableStatelessToStatefulOptimization' is not set, will be used DisableStatelessToStatefulOptimization=1");
         }
         if (!getenv("CFESingleSliceDispatchCCSMode")) {
             setenv("CFESingleSliceDispatchCCSMode", "1", 1);
             LOG_WARN(
-                "Environment variable 'CFESingleSliceDispatchCCSMode' is not set. Will be used CFESingleSliceDispatchCCSMode=1");
+                "environment variable 'CFESingleSliceDispatchCCSMode' is not set, will be used CFESingleSliceDispatchCCSMode=1");
         }
         if (!getenv("OverrideStatelessMocsIndex")) {
             setenv("OverrideStatelessMocsIndex", "2", 1);
             LOG_WARN(
-                "Environment variable 'OverrideStatelessMocsIndex' is not set. Will be used OverrideStatelessMocsIndex=2");
+                "environment variable 'OverrideStatelessMocsIndex' is not set, will be used OverrideStatelessMocsIndex=2");
         }
+
         if (!getenv("CCL_KVS_GET_TIMEOUT")) {
             setenv("CCL_KVS_GET_TIMEOUT", "10", 1);
             LOG_WARN(
-                "Environment variable 'CCL_KVS_GET_TIMEOUT' is not set. Will be used CCL_KVS_GET_TIMEOUT=10");
+                "environment variable 'CCL_KVS_GET_TIMEOUT' is not set, will be used CCL_KVS_GET_TIMEOUT=10");
         }
     }
+    env_2_type(CCL_GPU_THREAD_COUNT, gpu_thread_count);
 
-    env_2_type(CCL_GPU_THREAD_COUNT, gpu_num_threads);
+    auto bf16_impl_types = ccl_bf16_get_impl_types();
+    ccl_bf16_impl_type bf16_env_impl_type;
+    if (env_2_enum(CCL_BF16, bf16_env_impl_names, bf16_env_impl_type)) {
+        CCL_THROW_IF_NOT(bf16_impl_types.find(bf16_env_impl_type) != bf16_impl_types.end(),
+                         "unsupported BF16 impl type: ",
+                         bf16_env_impl_names[bf16_env_impl_type]);
+        bf16_impl_type = bf16_env_impl_type;
+    }
+    else {
+        bf16_impl_type = *bf16_impl_types.rbegin();
+    }
+
+    auto fp16_impl_types = ccl_fp16_get_impl_types();
+    ccl_fp16_impl_type fp16_env_impl_type;
+    if (env_2_enum(CCL_FP16, fp16_env_impl_names, fp16_env_impl_type)) {
+        CCL_THROW_IF_NOT(fp16_impl_types.find(fp16_env_impl_type) != fp16_impl_types.end(),
+                         "unsupported FP16 impl type: ",
+                         fp16_env_impl_names[fp16_env_impl_type]);
+        fp16_impl_type = fp16_env_impl_type;
+    }
+    else {
+        fp16_impl_type = *fp16_impl_types.rbegin();
+    }
 }
 
 void env_data::print(int rank) {
@@ -350,41 +370,16 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_ALLTOALL_SCATTER_PLAIN, ": ", alltoall_scatter_plain);
 
     LOG_INFO(CCL_COMM_KERNELS, ": ", enable_comm_kernels);
-    if (enable_comm_kernels) {
-        LOG_INFO(CCL_COMM_KERNELS_PATH,
-                 ": ",
-                 (!kernel_path.empty()) ? kernel_path : CCL_ENV_STR_NOT_SPECIFIED);
-    }
-
+    LOG_INFO(CCL_COMM_KERNELS_PATH,
+             ": ",
+             (!comm_kernels_path.empty()) ? comm_kernels_path : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_GPU_THREAD_COUNT,
              ": ",
-             (gpu_num_threads != CCL_ENV_SIZET_NOT_SPECIFIED) ? std::to_string(gpu_num_threads)
-                                                              : CCL_ENV_STR_NOT_SPECIFIED);
+             (gpu_thread_count != CCL_ENV_SIZET_NOT_SPECIFIED) ? std::to_string(gpu_thread_count)
+                                                               : CCL_ENV_STR_NOT_SPECIFIED);
 
-    auto bf16_impl_type = global_data.bf16_impl_type;
-    if (bf16_impl_type == ccl_bf16_compiler_none) {
-        LOG_INFO("BF16: disabled on compiler level");
-    }
-    else if (bf16_impl_type == ccl_bf16_hw_none) {
-        LOG_INFO("BF16: disabled on hardware level");
-    }
-    else if (bf16_impl_type == ccl_bf16_avx512f) {
-        LOG_INFO("BF16: enabled through AVX512-F");
-    }
-    else if (bf16_impl_type == ccl_bf16_avx512bf) {
-        LOG_INFO("BF16: enabled through AVX512-BF");
-    }
-
-    auto fp16_impl_type = global_data.fp16_impl_type;
-    if (fp16_impl_type == ccl_fp16_compiler_none) {
-        LOG_INFO("FP16: disabled on compiler level");
-    }
-    else if (fp16_impl_type == ccl_fp16_hw_none) {
-        LOG_INFO("FP16: disabled on hardware level");
-    }
-    else if (fp16_impl_type == ccl_fp16_avx512f) {
-        LOG_INFO("FP16: enabled through AVX512-F");
-    }
+    LOG_INFO(CCL_BF16, ": ", str_by_enum(bf16_impl_names, bf16_impl_type));
+    LOG_INFO(CCL_FP16, ": ", str_by_enum(fp16_impl_names, fp16_impl_type));
 
 #ifdef ENABLE_DEBUG
     const char* build_mode = "debug";

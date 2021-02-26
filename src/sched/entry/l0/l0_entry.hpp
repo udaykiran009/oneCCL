@@ -337,11 +337,11 @@ protected:
         auto &&cmd_list = get_dev_cmd_list();
 
         // setting the group size to control resource consumption
-        // assuming that group_size_x only can be adjusted by changing the value.
-        // groupSizeY/groupSizeZ shouldn't be > 1.
+        // assuming that group_size_x only can be adjusted by changing the value
+        // group_size_y / group_size_z shouldn't be > 1
         uint32_t group_size_x;
-        if (ccl::global_data::env().gpu_num_threads != CCL_ENV_SIZET_NOT_SPECIFIED) {
-            group_size_x = ccl::global_data::env().gpu_num_threads;
+        if (ccl::global_data::env().gpu_thread_count != CCL_ENV_SIZET_NOT_SPECIFIED) {
+            group_size_x = ccl::global_data::env().gpu_thread_count;
         }
         else {
             group_size_x =

@@ -279,6 +279,7 @@ post_build()
     # libccl.so
     cp ${ICC_BUNDLE_ROOT}/compiler/lib/intel64/libirc.a ./
     cp ${ICC_BUNDLE_ROOT}/compiler/lib/intel64/libsvml.a ./
+    cp ${ICC_BUNDLE_ROOT}/compiler/lib/intel64/libimf.a ./
     cp ${WORKSPACE}/build/_install/lib/libccl.a ./
 
     if [ "${ENABLE_CODECOV}" = "yes" ]
@@ -292,6 +293,8 @@ post_build()
     ar x libsvml.a svml_i_div4_iface_la.o svml_d_feature_flag_.o \
         svml_i_div4_core_e7la.o svml_i_div4_core_exla.o svml_i_div4_core_h9la.o \
         svml_i_div4_core_y8la.o
+    ar x libimf.a float16.o
+
     if [ ! -z "${LIBFABRIC_INSTALL_DIR}" ]
     then
         LDFLAGS="-L${LIBFABRIC_INSTALL_DIR}/lib/"

@@ -12,6 +12,8 @@
 #include "common/log/log.hpp"
 #include "common/utils/utils.hpp"
 #include "common/utils/yield.hpp"
+#include "comp/bf16/bf16_utils.hpp"
+#include "comp/fp16/fp16_utils.hpp"
 #include "sched/cache/cache.hpp"
 
 constexpr const char* CCL_ENV_STR_NOT_SPECIFIED = "<not specified>";
@@ -76,12 +78,12 @@ constexpr const char* CCL_ALLREDUCE_2D_SWITCH_DIMS = "CCL_ALLREDUCE_2D_SWITCH_DI
 constexpr const char* CCL_ALLTOALL_SCATTER_MAX_OPS = "CCL_ALLTOALL_SCATTER_MAX_OPS";
 constexpr const char* CCL_ALLTOALL_SCATTER_PLAIN = "CCL_ALLTOALL_SCATTER_PLAIN";
 
-constexpr const char* CCL_DEFAULT_RESIZABLE = "CCL_DEFAULT_RESIZABLE";
-
 constexpr const char* CCL_COMM_KERNELS = "CCL_COMM_KERNELS";
 constexpr const char* CCL_COMM_KERNELS_PATH = "CCL_COMM_KERNELS_PATH";
-
 constexpr const char* CCL_GPU_THREAD_COUNT = "CCL_GPU_THREAD_COUNT";
+
+constexpr const char* CCL_BF16 = "CCL_BF16";
+constexpr const char* CCL_FP16 = "CCL_FP16";
 
 enum ccl_priority_mode {
     ccl_priority_none,
@@ -186,11 +188,12 @@ public:
     ssize_t alltoall_scatter_max_ops;
     int alltoall_scatter_plain;
 
-    size_t default_resizable;
     int enable_comm_kernels;
-    std::string kernel_path;
+    std::string comm_kernels_path;
+    ssize_t gpu_thread_count;
 
-    ssize_t gpu_num_threads;
+    ccl_bf16_impl_type bf16_impl_type;
+    ccl_fp16_impl_type fp16_impl_type;
 
     template <class T>
     static int env_2_type(const char* env_name, T& val) {
@@ -208,14 +211,16 @@ public:
     static int env_2_enum(const char* env_name, const std::map<T, std::string>& values, T& val) {
         const char* env_val = getenv(env_name);
         if (env_val) {
-            val = enum_by_str(values, env_val);
+            val = enum_by_str(env_name, values, env_val);
             return 1;
         }
         return 0;
     }
 
     template <class T>
-    static T enum_by_str(const std::map<T, std::string>& e2s_map, std::string str) {
+    static T enum_by_str(const std::string& env_name,
+                         const std::map<T, std::string>& e2s_map,
+                         std::string str) {
         std::transform(str.begin(), str.end(), str.begin(), ::tolower);
         for (const auto& pair : e2s_map) {
             if (!str.compare(pair.second)) {
@@ -238,7 +243,7 @@ public:
                 expected_values += ", ";
         }
 
-        CCL_THROW("unexpected value: ", str, ", expected values: ", expected_values);
+        CCL_THROW(env_name, ": unexpected value: ", str, ", expected values: ", expected_values);
     }
 
     template <class T>

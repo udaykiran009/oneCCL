@@ -1,8 +1,6 @@
 #pragma once
 
 #include "coll/algorithms/algorithms_enum.hpp"
-#include "comp/bf16/bf16_utils.hpp"
-#include "comp/fp16/fp16_utils.hpp"
 #include "common/env/env.hpp"
 #include "common/utils/utils.hpp"
 #include "common/comm/l0/comm_context_storage.hpp"
@@ -90,8 +88,6 @@ public:
 
     static thread_local bool is_worker_thread;
     bool is_ft_enabled;
-    ccl_bf16_impl_type bf16_impl_type;
-    ccl_fp16_impl_type fp16_impl_type;
 
     //TODO new_api configure thread wait timeout
     size_t thread_barrier_wait_timeout_sec = 5;

@@ -7,29 +7,40 @@
 
 #define CCL_FLOATS_IN_M512 16
 
+std::map<ccl_fp16_impl_type, std::string> fp16_impl_names = {
+    std::make_pair(ccl_fp16_no_compiler_support, "no_compiler_support"),
+    std::make_pair(ccl_fp16_no_hardware_support, "no_hardware_support"),
+    std::make_pair(ccl_fp16_f16c, "f16c"),
+    std::make_pair(ccl_fp16_avx512f, "avx512f")
+};
+
+std::map<ccl_fp16_impl_type, std::string> fp16_env_impl_names = {
+    std::make_pair(ccl_fp16_f16c, "f16c"),
+    std::make_pair(ccl_fp16_avx512f, "avx512f")
+};
+
 #ifdef CCL_FP16_COMPILER
 
 void ccl_fp16_reduce(const void* in_buf,
                      size_t in_cnt,
                      void* inout_buf,
                      size_t* out_cnt,
-                     ccl::reduction reduction_op) {
+                     ccl::reduction op) {
     LOG_DEBUG("FP16 reduction for %zu elements\n", in_cnt);
 
     if (out_cnt != nullptr) {
         *out_cnt = in_cnt;
     }
 
-    ccl_fp16_reduction_func_ptr op = nullptr;
-    switch (reduction_op) {
-        case ccl::reduction::sum: op = &fp16_sum_wrap; break;
-        case ccl::reduction::prod: op = &fp16_prod_wrap; break;
-        case ccl::reduction::min: op = &fp16_min_wrap; break;
-        case ccl::reduction::max: op = &fp16_max_wrap; break;
-        default: CCL_FATAL("unexpected value ", utils::enum_to_underlying(reduction_op));
-    }
+    ccl_fp16_reduce_impl(in_buf, inout_buf, in_cnt, op);
+}
 
-    ccl_fp16_reduce_impl(in_buf, inout_buf, in_cnt, op, ccl::global_data::get().fp16_impl_type);
+void ccl_convert_fp32_to_fp16(const void* src, void* dst) {
+    _mm_storeu_si128((__m128i*)dst, _mm256_cvtps_ph((__m256)_mm256_loadu_si256((__m256i*)src), 0));
+}
+
+void ccl_convert_fp16_to_fp32(const void* src, void* dst) {
+    _mm256_storeu_si256((__m256i*)dst, (__m256i)_mm256_cvtph_ps(_mm_loadu_si128((__m128i*)src)));
 }
 
 #else /* CCL_FP16_COMPILER */
@@ -38,7 +49,7 @@ void ccl_fp16_reduce(const void* in_buf,
                      size_t in_cnt,
                      void* inout_buf,
                      size_t* out_cnt,
-                     ccl::reduction reduction_op) {
+                     ccl::reduction op) {
     CCL_FATAL("FP16 reduction is requested but CCL was compiled w/o FP16 support");
 }
 
