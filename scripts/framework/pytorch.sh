@@ -11,7 +11,7 @@ set_default_values()
 {
     if [ -z ${IS_SLURM} ]
     then
-        work_dir="/p/pdsd/Users/dsazanov/ccl_pytorch/PT"
+        work_dir="/p/pdsd/scratch/Uploads/ccl_pytorch"
         imagenet_dir="/p/pdsd/scratch/Uploads/ccl_pytorch/pytorch-tiny-imagenet/tiny-imagenet-200"
         anaconda_install_path=${work_dir}/anaconda
         jemalloc_install_path=${work_dir}/jemalloc/_install
