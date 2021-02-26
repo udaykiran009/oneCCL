@@ -86,7 +86,7 @@
     __kernel void bcast_execution_##Name( \
         int my_rank, \
         int comm_size, /* 1 */ \
-        size_t elems_count, /* 2 */ \
+        ulong elems_count, /* 2 */ \
 \
         /* const __global T* input_buffer,*/ /* 3 */ /* __global T* output_buffer,*/ /* 4 */ \
         __global T* buffer, /* 3 */ \
@@ -188,7 +188,7 @@ DEFINE_KERNEL(bfloat16, ushort, 1)
     __kernel void bcast_execution_numa_##Name( \
         int my_rank, \
         int comm_size, /* 1 */ \
-        size_t elems_count, /* 2 */ \
+        ulong elems_count, /* 2 */ \
 \
         /* const __global T* input_buffer,*/ /* 3 */ /* __global T* output_buffer,*/ /* 4 */ \
         __global T* buffer, /* 3 */ \

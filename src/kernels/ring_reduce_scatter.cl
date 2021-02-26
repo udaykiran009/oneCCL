@@ -169,7 +169,7 @@ int get_left_rank(int rank, int comm_size) {
     __kernel void reduce_scatter_execution_##Name##_##OpName( \
         int my_rank, \
         int comm_size, \
-        size_t elems_count, /* recv_count */ \
+        ulong elems_count, /* recv_count */ \
         const __global T* input_buffer, \
         __global T* output_buffer, \
 \
@@ -393,7 +393,7 @@ DEFINE_KERNELS_WITH_BF16OP(max)
     __kernel void reduce_scatter_execution_numa_##Name##_##OpName( \
         int my_rank, \
         int comm_size, \
-        size_t elems_count, /* recv_count */ \
+        ulong elems_count, /* recv_count */ \
         const __global T* input_buffer, \
         __global T* output_buffer, \
 \

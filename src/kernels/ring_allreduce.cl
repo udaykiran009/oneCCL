@@ -169,7 +169,7 @@ int get_left_rank(int rank, int comm_size) {
     __kernel void allreduce_execution_##Name##_##OpName( \
         int my_rank, \
         int comm_size, \
-        size_t elems_count, \
+        ulong elems_count, \
         const __global T* input_buffer, \
         __global T* output_buffer, \
 \
@@ -480,7 +480,7 @@ DEFINE_KERNELS_WITH_BF16OP(max)
     __kernel void allreduce_execution_numa_##Name##_##OpName( \
         int my_rank, \
         int comm_size, \
-        size_t elems_count, \
+        ulong elems_count, \
         const __global T* input_buffer, \
         __global T* output_buffer, \
 \

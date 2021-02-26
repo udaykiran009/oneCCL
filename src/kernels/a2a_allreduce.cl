@@ -70,7 +70,7 @@
 
 __kernel void allreduce_execution_float32(int rank_id,
                                           int comm_size,
-                                          size_t elems_count,
+                                          ulong elems_count,
                                           const __global float* input_buffer,
                                           __global float* output_buffer,
                                           __global a2a_gpu_comm_data_float32* comm_matrix) {

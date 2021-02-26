@@ -164,10 +164,10 @@ int get_left_rank(int rank, int comm_size) {
 #define DEFINE_KERNEL(Name, T, VecSize) \
     __kernel void allgatherv_execution_##Name(int my_rank, \
                                               int comm_size, \
-                                              size_t elem_count, \
+                                              ulong elem_count, \
 \
-                                              __global size_t* recv_elem_counts, \
-                                              __global size_t* recv_elem_offsets, \
+                                              __global ulong* recv_elem_counts, \
+                                              __global ulong* recv_elem_offsets, \
 \
                                               const __global T* input_buffer, \
                                               __global T* output_buffer, \
@@ -282,10 +282,10 @@ DEFINE_KERNEL(bfloat16, ushort, 1)
     __kernel void allgatherv_execution_numa_##Name( \
         int my_rank, \
         int comm_size, \
-        size_t elem_count, \
+        ulong elem_count, \
 \
-        __global size_t* recv_elem_counts, \
-        __global size_t* recv_elem_offsets, \
+        __global ulong* recv_elem_counts, \
+        __global ulong* recv_elem_offsets, \
 \
         const __global T* input_buffer, \
         __global T* output_buffer, \

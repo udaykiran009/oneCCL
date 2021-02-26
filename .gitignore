@@ -19,3 +19,4 @@ doc/doxygen/*
 .vs
 .vscode
 include/oneapi/ccl/config.h
+*.bc

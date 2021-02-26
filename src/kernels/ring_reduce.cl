@@ -87,7 +87,7 @@
     __kernel void reduce_execution_##Name##_##OpName( \
         int my_rank, /*0*/ \
         int comm_size, /*1*/ \
-        size_t elems_count, /*2*/ \
+        ulong elems_count, /*2*/ \
         const __global T* input_buffer, /*3*/ \
         __global T* output_buffer, /*4*/ \
 \
@@ -301,7 +301,7 @@ DEFINE_KERNELS_WITH_BF16OP(max)
     __kernel void reduce_execution_numa_##Name##_##OpName( \
         int my_rank, \
         int comm_size, /*1*/ \
-        size_t elems_count, /*2*/ \
+        ulong elems_count, /*2*/ \
         const __global T* input_buffer, /*3*/ \
         __global T* output_buffer, /*4*/ \
 \

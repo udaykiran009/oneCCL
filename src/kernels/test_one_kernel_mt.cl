@@ -1,5 +1,6 @@
 #pragma OPENCL EXTENSION cl_khr_byte_addressable_store : enable
-#pragma OPENCL EXTENSION cl_khr_fp16 cl_khr_depth_images : enable
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#pragma OPENCL EXTENSION cl_khr_depth_images : enable
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
 #pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
