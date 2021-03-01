@@ -936,6 +936,7 @@ static atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
     setenv("HFI_NO_CPUAFFINITY", "1", 0);
     setenv("PSM2_MULTI_EP", "1", 0);
 
+    setenv("FI_OFI_RXM_USE_HASH", "0", 0);
     setenv("FI_OFI_RXM_RX_SIZE", "8192", 0);
     setenv("FI_OFI_RXM_TX_SIZE", "8192", 0);
     setenv("FI_OFI_RXM_MSG_RX_SIZE", "128", 0);

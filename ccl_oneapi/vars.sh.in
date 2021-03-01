@@ -1,16 +1,19 @@
 #!/bin/bash
 # shellcheck shell=sh
 
+DEFAULT_CONFIGURATION="cpu_gpu_dpcpp"
+
 print_help()
 {
     echo ""
     echo "Usage: vars.sh [--ccl-configuration[=cpu_icc|cpu_gpu_dpcpp]]"
     echo ""
-    echo "By default, --ccl-configuration=cpu_gpu_dpcpp"
+    echo "By default, --ccl-configuration=${DEFAULT_CONFIGURATION}"
     echo "The arguments to the sourced script might be ignored"
     echo "(consult the documentation for the shell you are using)." 
     echo "The alternative way to pass the value of ccl-configuration"
     echo "to the script is through CCL_CONFIGURATION environment variable."
+    echo "Script's argument has higher priority than environment variable."
     echo ""
 }
 
@@ -95,8 +98,10 @@ CCL_ROOT="$(cd "${WORK_DIR}"/../; pwd -P)"; export CCL_ROOT
 
 if [ -z "${CCL_CONFIGURATION}" ]
 then
-    CCL_CONFIGURATION=cpu_gpu_dpcpp
+    CCL_CONFIGURATION=${DEFAULT_CONFIGURATION}
 fi
+
+ccl_configuration="${CCL_CONFIGURATION}"
 
 args=$*
 for arg in $args
@@ -107,14 +112,16 @@ do
             ;;
     esac
 done
-
 case "$ccl_configuration" in
     cpu_gpu_dpcpp|cpu_icc)
         ;;
     *)
-        ccl_configuration="cpu_gpu_dpcpp"
+	echo "Warning: ccl-configuration=${ccl_configuration} is incorrect"
+	echo "Warning: ccl-configuration will be set to ${DEFAULT_CONFIGURATION}"
+	ccl_configuration="${DEFAULT_CONFIGURATION}"
         ;;
 esac
+
 CCL_CONFIGURATION="${ccl_configuration}"; export CCL_CONFIGURATION
 
 CPATH="${CCL_ROOT}/include/${ccl_configuration}${CPATH+:${CPATH}}"; export CPATH
