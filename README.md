@@ -31,7 +31,9 @@ oneCCL is integrated into:
 Refer to [System Requirements](https://software.intel.com/content/www/us/en/develop/articles/oneapi-collective-communication-library-system-requirements.html) for more details.
 
 ### SYCL support <!-- omit in toc -->
-Intel(R) oneAPI DPC++/C++ Compiler with L0 v1.0 support
+Intel(R) oneAPI DPC++/C++ Compiler with Level Zero v1.0 support.
+
+To install Level Zero, refer to the instructions in [Intel(R) Graphics Compute Runtime repository](https://github.com/intel/compute-runtime/releases) or to the [installation guide](https://dgpu-docs.intel.com/installation-guides/index.html) for oneAPI users.
 
 ## Installation
 
