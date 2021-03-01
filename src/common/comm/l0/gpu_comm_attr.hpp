@@ -48,7 +48,7 @@ public:
     std::shared_ptr<host_communicator> get_host_communicator();
 
     const group_unique_key& get_unique_id() const;
-    const size_t get_expected_process_device_size() const noexcept;
+    size_t get_expected_process_device_size() const noexcept;
 
 private:
     bool delegate_sync_register_communicator(std::shared_ptr<communicator_interface> comm);

@@ -183,7 +183,7 @@ bool gpu_comm_attr::delegate_sync_register_communicator(
     return true;
 }
 
-const size_t gpu_comm_attr::get_expected_process_device_size() const noexcept {
+size_t gpu_comm_attr::get_expected_process_device_size() const noexcept {
     return expected_process_device_size;
 }
 
