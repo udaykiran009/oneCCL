@@ -300,26 +300,90 @@ public:
     }
 
 protected:
-    size_t get_preferred_wg_size(size_t buffer_size, ccl_device &device) {
+    size_t get_work_group_size(size_t buffer_size, ccl_device &device) {
+        size_t group_size;
         size_t val_vector_size;
         auto dtype = ccl::native_type_info<typename kernel_params::native_type>::dtype;
 
-        if (dtype == ccl::datatype::bfloat16) {
-            val_vector_size = 1;
+        if (ccl::global_data::env().gpu_thread_count != CCL_ENV_SIZET_NOT_SPECIFIED) {
+            group_size = ccl::global_data::env().gpu_thread_count;
+
+            ENTRY_LOG_DEBUG(
+                "Set group size for x dimension by CCL_GPU_THREAD_COUNT=", group_size, " by user");
         }
         else {
-            // For comm kernels, we have float4 {float x, float y, float z, float w};
-            // data type, that's why we set a divider for group_size, wchich equals to 4.
-            // The vecsize of 4 goes with all data types except bfloat16
-            val_vector_size = 4;
-        }
+            if (dtype == ccl::datatype::bfloat16) {
+                val_vector_size = 1;
+            }
+            else {
+                // For comm kernels, we have float4 {float x, float y, float z, float w};
+                // data type, that's why we set a divider for group_size, wchich equals to 4.
+                // The vecsize of 4 goes with all data types except bfloat16
+                val_vector_size = 4;
+            }
 
-        size_t group_size = buffer_size / val_vector_size;
-        if (group_size > device.get_compute_properties().maxGroupSizeX || group_size == 0)
+            group_size = buffer_size / val_vector_size;
+
+            ENTRY_LOG_DEBUG("Set group size for x dimension: ", group_size);
+        }
+        if (group_size > device.get_compute_properties().maxGroupSizeX || group_size == 0) {
             group_size = device.get_compute_properties().maxGroupSizeX;
+            ENTRY_LOG_DEBUG(
+                "Group size is limited by compute_properties.maxGroupSizeX and should NOT equal to 0, set group_size: ",
+                group_size,
+                " by default");
+        }
 
         //TODO: remove 'return 1' and retrun 'group_size', when fix small msg sizes issue
         return 1; //group_size;
+    }
+
+    void get_suggested_group_size(ze_kernel_handle_t &kernel, size_t buffer_size) {
+        // zeKernelSuggestGroupSize ignores the group size that is set using zeKernelSetGroupSize
+        uint32_t group_size_x = 1u;
+        uint32_t group_size_y = 1u;
+        uint32_t group_size_z = 1u;
+        ze_result_t result = zeKernelSuggestGroupSize(
+            kernel, buffer_size, 1u, 1u, &group_size_x, &group_size_y, &group_size_z);
+        if (result != ZE_RESULT_SUCCESS) {
+            throw std::runtime_error(
+                std::string(__FUNCTION__) +
+                " - zeKernelSuggestGroupSize failed. Result: " + native::to_string(result));
+        }
+        ENTRY_LOG_DEBUG("Suggested kernel group sizes, which is based on buffer_size: ",
+                        buffer_size,
+                        ", are: groupSizeX: ",
+                        group_size_x,
+                        " groupSizeY: ",
+                        group_size_y,
+                        " groupSizeZ: ",
+                        group_size_z);
+    }
+
+    void set_group_size(ze_kernel_handle_t &kernel, size_t buffer_size) {
+        // setting the group size to control resource consumption
+        // assuming that group_size_x can be adjusted by changing the value or CCL_GPU_THREAD_COUNT knob
+        // group_size_y / group_size_z shouldn't be > 1
+        uint32_t group_size_x = get_work_group_size(buffer_size, parent_communicator->get_device());
+        uint32_t group_size_y = 1u;
+        uint32_t group_size_z = 1u;
+
+        ze_result_t result = zeKernelSetGroupSize(kernel, group_size_x, group_size_y, group_size_z);
+        if (result != ZE_RESULT_SUCCESS) {
+            throw std::runtime_error(
+                std::string(__FUNCTION__) +
+                " - zeKernelSetGroupSize failed. Result: " + native::to_string(result) +
+                " groupSizeX: " + std::to_string(static_cast<uint32_t>(group_size_x)) +
+                " groupSizeY: " + std::to_string(static_cast<uint32_t>(group_size_y)) +
+                " groupSizeZ: " + std::to_string(static_cast<uint32_t>(group_size_z)));
+        }
+
+        ENTRY_LOG_DEBUG("Set kernel group size successfully: groupSizeX: ",
+                        group_size_x,
+                        " groupSizeY: ",
+                        group_size_y,
+                        " groupSizeZ: ",
+                        group_size_z);
     }
 
     bool finalize_entry() {
@@ -336,37 +400,11 @@ protected:
 
         auto &&cmd_list = get_dev_cmd_list();
 
-        // setting the group size to control resource consumption
-        // assuming that group_size_x only can be adjusted by changing the value
-        // group_size_y / group_size_z shouldn't be > 1
-        uint32_t group_size_x;
-        if (ccl::global_data::env().gpu_thread_count != CCL_ENV_SIZET_NOT_SPECIFIED) {
-            group_size_x = ccl::global_data::env().gpu_thread_count;
-        }
-        else {
-            group_size_x =
-                get_preferred_wg_size(send_buf.get_size(), parent_communicator->get_device());
-        }
-        uint32_t group_size_y = 1u;
-        uint32_t group_size_z = 1u;
-        ze_result_t result = zeKernelSetGroupSize(
-            main_entry_function.handle, group_size_x, group_size_y, group_size_z);
-        if (result != ZE_RESULT_SUCCESS) {
-            throw std::runtime_error(
-                std::string(__FUNCTION__) +
-                " - zeKernelSetGroupSize failed. Result: " + native::to_string(result) +
-                " groupSizeX: " + std::to_string(static_cast<uint32_t>(group_size_x)) +
-                " groupSizeY: " + std::to_string(static_cast<uint32_t>(group_size_y)) +
-                " groupSizeZ: " + std::to_string(static_cast<uint32_t>(group_size_z)));
-        }
+        // setting group size
+        set_group_size(main_entry_function.handle, send_buf.get_size());
 
-        ENTRY_LOG_DEBUG("Set kernel group size successfully: \
-                                     groupSizeX",
-                        group_size_x,
-                        " groupSizeY: ",
-                        group_size_y,
-                        " groupSizeZ: ",
-                        group_size_z);
+        // get suggested group size for info usage only
+        get_suggested_group_size(main_entry_function.handle, send_buf.get_size());
 
         cmd_list.append_kernel(main_entry_function.handle, &launch_args);
 
