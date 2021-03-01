@@ -24,6 +24,7 @@
    introduction/release-notes.rst
    introduction/installation.rst
    introduction/sample.rst
+   introduction/cmake-configuration.rst
 
 .. toctree::
    :maxdepth: 2

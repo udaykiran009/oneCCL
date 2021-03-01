@@ -17,6 +17,8 @@ oneCCL is integrated into:
   - [Setting workers affinity](#setting-workers-affinity)
     - [Automatic setup](#automatic-setup)
     - [Explicit setup](#explicit-setup)
+  - [Using oneCCL package from CMake](#using-oneccl-package-from-cmake)
+    - [oneCCLConfig files generation](#onecclconfig-files-generation)
 - [Additional Resources](#additional-resources)
   - [Blog Posts](#blog-posts)
   - [Workshop Materials](#workshop-materials)
@@ -95,6 +97,32 @@ export CCL_WORKER_COUNT=4
 export CCL_WORKER_AFFINITY=3,4,5,6
 ```
 With the variables above, oneCCL will create four workers per process and pin them to the cores with the IDs of 3, 4, 5, and 6 respectively.
+
+### Using oneCCL package from CMake
+
+`oneCCLConfig.cmake` and `oneCCLConfigVersion.cmake` are included into oneCCL distribution.
+
+With these files, you can integrate oneCCL into a user project with the [find_package](https://cmake.org/cmake/help/latest/command/find_package.html) command. Successful invocation of `find_package(oneCCL <options>)` creates imported target `oneCCL` that can be passed to the [target_link_libraries](https://cmake.org/cmake/help/latest/command/target_link_libraries.html) command.
+
+For example:
+
+```cmake
+project(Foo)
+add_executable(foo foo.cpp)
+
+# Search for oneCCL
+find_package(oneCCL REQUIRED)
+
+# Connect oneCCL to foo
+target_link_libraries(foo oneCCL)
+```
+#### oneCCLConfig files generation
+
+To generate oneCCLConfig files for oneCCL package, use the provided [`cmake/scripts/config_generation.cmake`](/cmake/scripts/config_generation.cmake) file:
+
+```
+cmake [-DOUTPUT_DIR=<output_dir>] -P cmake/script/config_generation.cmake
+```
 
 ## Additional Resources
 
