@@ -677,6 +677,7 @@ size_t atl_mpi_get_ep_count(const atl_attr_t& attr) {
 /* set these knobs without detection of MPI library type */
 atl_status_t atl_mpi_set_base_env(const atl_attr_t& attr) {
     setenv("PSM2_MULTI_EP", "1", 0);
+    setenv("FI_OFI_RXM_USE_HASH", "0", 0);
     setenv("MPIR_CVAR_DEFAULT_THREAD_LEVEL", "MPI_THREAD_MULTIPLE", 0);
 
     /* request IMPI level append library kind into MPI_Get_library_version output */
