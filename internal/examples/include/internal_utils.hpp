@@ -6,6 +6,8 @@
 #include <sstream>
 #include <tuple>
 #include <utility>
+
+#include <mpi.h>
 #include "base_utils.hpp"
 
 #if defined(MULTI_GPU_SUPPORT) && defined(CCL_ENABLE_SYCL)
@@ -102,6 +104,7 @@ ccl::device_index_type from_string(const std::string& device_id_str) {
 }
 
 #ifdef MULTI_GPU_SUPPORT
+
 template <>
 void str_to_mset(const char* input, std::multiset<ccl::device_index_type>& output, char delimiter) {
     std::string processes_input(input);
@@ -134,6 +137,14 @@ std::shared_ptr<ccl::kvs> build_kvs(int mpi_rank) {
         kvs_instance = ccl::create_kvs(main_addr);
     }
     return kvs_instance;
+}
+
+void mpi_finalize() {
+    int is_finalized = 0;
+    MPI_Finalized(&is_finalized);
+
+    if (!is_finalized)
+        MPI_Finalize();
 }
 
 inline size_t take_mpi_rank_id_offest(const size_t mpi_rank_in_cluster,

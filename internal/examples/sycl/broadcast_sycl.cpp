@@ -167,6 +167,9 @@ int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+
+    atexit(mpi_finalize);
+
     if (static_cast<size_t>(mpi_size) != process_group_gpu_affinity.size()) {
         std::cerr << "L0_CLUSTER_AFFINITY_MASK is configured for processes: "
                   << process_group_gpu_affinity.size()
@@ -174,6 +177,7 @@ int main(int argc, char** argv) {
                   << std::endl;
         return -1;
     }
+
     std::cout << "MPI process rank: " << mpi_rank << ", size: " << mpi_size << std::endl;
 
     /* build CCL internal KVS */
