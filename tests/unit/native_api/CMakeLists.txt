@@ -1,8 +1,6 @@
 set (executable "single_dev")
 
-
 enable_testing()
-message ("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 
 if(L0_TESTS_UT)
     set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}")

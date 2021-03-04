@@ -17,6 +17,7 @@ struct native_type_info {
 #include "lp.hpp"
 
 using bfloat16 = ccl::bfloat16;
+using float16 = ccl::float16;
 
 #define DECLARE_KERNEL_TYPE(COLL) \
     template <class T> \
@@ -121,6 +122,50 @@ struct my_max<bfloat16> {
     }
 };
 
+template <>
+struct my_sum<float16> {
+    float16 operator()(const float16& lhs, const float16& rhs) const {
+        return fp32_to_fp16(fp16_to_fp32(lhs) + fp16_to_fp32(rhs));
+    }
+
+    static constexpr float16 init() {
+        return float16(0);
+    }
+};
+
+template <>
+struct my_prod<float16> {
+    float16 operator()(const float16& lhs, const float16& rhs) const {
+        return fp32_to_fp16(fp16_to_fp32(lhs) * fp16_to_fp32(rhs));
+    }
+
+    static constexpr float16 init() {
+        return float16(1);
+    }
+};
+
+template <>
+struct my_min<float16> {
+    float16 operator()(const float16& lhs, const float16& rhs) const {
+        return fp32_to_fp16(std::min(fp16_to_fp32(lhs), fp16_to_fp32(rhs)));
+    }
+
+    static constexpr float16 init() {
+        return float16(0x7bff);
+    }
+};
+
+template <>
+struct my_max<float16> {
+    float16 operator()(const float16& lhs, const float16& rhs) const {
+        return fp32_to_fp16(std::max(fp16_to_fp32(lhs), fp16_to_fp32(rhs)));
+    }
+
+    static constexpr float16 init() {
+        return float16(0xfbff);
+    }
+};
+
 #define DEFINE_KERNEL_TYPE(NAME, T, COLL) \
     template <> \
     struct COLL##_param_traits<T> { \
@@ -137,8 +182,10 @@ struct my_max<bfloat16> {
     DEFINE_KERNEL_TYPE(uint32, uint32_t, COLL) \
     DEFINE_KERNEL_TYPE(int64, int64_t, COLL) \
     DEFINE_KERNEL_TYPE(uint64, uint64_t, COLL) \
+    DEFINE_KERNEL_TYPE(float16, float16, COLL) \
     DEFINE_KERNEL_TYPE(float32, float, COLL) \
-    DEFINE_KERNEL_TYPE(float64, double, COLL)
+    DEFINE_KERNEL_TYPE(float64, double, COLL) \
+    DEFINE_KERNEL_TYPE(bfloat16, bfloat16, COLL)
 
 #define DEFINE_KERNEL_TYPE_FOR_OP(NAME, T, COLL, OP) \
     template <> \
@@ -157,15 +204,25 @@ struct my_max<bfloat16> {
     DEFINE_KERNEL_TYPE_FOR_OP(uint32, uint32_t, COLL, OP) \
     DEFINE_KERNEL_TYPE_FOR_OP(int64, int64_t, COLL, OP) \
     DEFINE_KERNEL_TYPE_FOR_OP(uint64, uint64_t, COLL, OP) \
+    DEFINE_KERNEL_TYPE_FOR_OP(float16, float16, COLL, OP) \
     DEFINE_KERNEL_TYPE_FOR_OP(float32, float, COLL, OP) \
-    DEFINE_KERNEL_TYPE_FOR_OP(float64, double, COLL, OP)
-
-#define DEFINE_KERNEL_TYPES_FOR_OP_BF16(COLL, OP) \
-    DEFINE_KERNEL_TYPES_FOR_OP(COLL, OP) \
+    DEFINE_KERNEL_TYPE_FOR_OP(float64, double, COLL, OP) \
     DEFINE_KERNEL_TYPE_FOR_OP(bfloat16, bfloat16, COLL, OP)
 
-using TestTypes = ::testing::
-    Types<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double>;
+using TestTypes = ::testing::Types<int8_t,
+                                   uint8_t,
+                                   int16_t,
+                                   uint16_t,
+                                   int32_t,
+                                   uint32_t,
+                                   int64_t,
+                                   uint64_t,
+                                   float16,
+                                   float,
+                                   double,
+                                   bfloat16>;
+
+using TestTypesA2A = ::testing::Types<float>;
 
 #define DEFINE_PAIR(T, Op) std::pair<T, Op>
 
@@ -183,19 +240,9 @@ using TestTypesAndOps = ::testing::Types<DEFINE_PAIR(int8_t, my_sum<int8_t>),
                                          DEFINE_PAIR(uint32_t, my_prod<uint32_t>),
                                          //DEFINE_PAIR(int64_t, my_min<int64_t>),
                                          //DEFINE_PAIR(uint64_t, my_max<uint64_t>),
-                                         DEFINE_PAIR(float, my_max<float>),
-                                         DEFINE_PAIR(double, my_min<double>)>;
-
-/* BF16 in kernels is supported for allreduce & reduce only... */
-using TestTypesAndOpsReduction = ::testing::Types<DEFINE_PAIR(int8_t, my_sum<int8_t>),
-                                                  //DEFINE_PAIR(uint8_t, my_prod<uint8_t>),
-                                                  DEFINE_PAIR(int16_t, my_min<int16_t>),
-                                                  //DEFINE_PAIR(uint16_t, my_max<uint16_t>),
-                                                  //DEFINE_PAIR(int32_t, my_sum<int32_t>),
-                                                  DEFINE_PAIR(uint32_t, my_prod<uint32_t>),
-                                                  //DEFINE_PAIR(int64_t, my_min<int64_t>),
-                                                  //DEFINE_PAIR(uint64_t, my_max<uint64_t>),
-                                                  DEFINE_PAIR(float, my_sum<float>),
-                                                  DEFINE_PAIR(double, my_min<double>),
-                                                  DEFINE_PAIR(bfloat16, my_sum<bfloat16>),
-                                                  DEFINE_PAIR(bfloat16, my_max<bfloat16>)>;
+                                         DEFINE_PAIR(float, my_sum<float>),
+                                         DEFINE_PAIR(double, my_min<double>),
+                                         DEFINE_PAIR(bfloat16, my_sum<bfloat16>),
+                                         DEFINE_PAIR(bfloat16, my_max<bfloat16>),
+                                         DEFINE_PAIR(float16, my_sum<float16>),
+                                         DEFINE_PAIR(float16, my_max<float16>)>;

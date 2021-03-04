@@ -6,16 +6,16 @@
 #include "reduce_scatter_fixture.hpp"
 #include "single_device_utils.hpp"
 
-DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce_scatter, sum);
-DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce_scatter, prod);
-DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce_scatter, min);
-DEFINE_KERNEL_TYPES_FOR_OP_BF16(reduce_scatter, max);
+DEFINE_KERNEL_TYPES_FOR_OP(reduce_scatter, sum);
+DEFINE_KERNEL_TYPES_FOR_OP(reduce_scatter, prod);
+DEFINE_KERNEL_TYPES_FOR_OP(reduce_scatter, min);
+DEFINE_KERNEL_TYPES_FOR_OP(reduce_scatter, max);
 
 namespace ring_single_device_case {
 
 namespace ring_reduce_scatter_case {}
 
-TYPED_TEST_CASE(ring_reduce_scatter_single_process_fixture, TestTypesAndOpsReduction);
+TYPED_TEST_CASE(ring_reduce_scatter_single_process_fixture, TestTypesAndOps);
 
 TYPED_TEST(ring_reduce_scatter_single_process_fixture, ring_reduce_scatter_single_device_mt) {
     using namespace native;

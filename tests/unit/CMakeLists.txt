@@ -3,6 +3,11 @@ set(UPSTREAM_SOURCE_DIR ${PROJECT_SOURCE_DIR})
 include(${UPSTREAM_SOURCE_DIR}/cmake/helpers.cmake)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
+if (NOT DEFINED LP_ENV_DEFINED)
+    include(${PROJECT_SOURCE_DIR}/../../cmake/helpers.cmake)
+    set_lp_env()
+endif()
+
 if (COMPUTE_BACKEND)
     activate_compute_backend("${UPSTREAM_SOURCE_DIR}/cmake" ${COMPUTE_BACKEND})
     if (NOT COMPUTE_BACKEND_TARGET_NAME)
@@ -117,7 +122,7 @@ if(MULTI_GPU_SUPPORT)
                  #"${UPSTREAM_SOURCE_DIR}/tests/unit/l0/stubs/sched/sched_base.cpp"
                  "${UPSTREAM_SOURCE_DIR}/tests/unit/l0/stubs/sched/gpu_sched.cpp"
                  "${UPSTREAM_SOURCE_DIR}/tests/unit/l0/stubs/sched/gpu_concurrent_sched.cpp"
-                 "${UPSTREAM_SOURCE_DIR}/tests/unit/l0/stubs/spare/bfp16.cpp"
+                 #"${UPSTREAM_SOURCE_DIR}/tests/unit/l0/stubs/spare/bfp16.cpp"
                  )
 
     set(CCL_MAJOR_VERSION     "0")

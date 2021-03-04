@@ -143,7 +143,7 @@ function export_test_common()
 
 function copy_all_stuff()
 {
-    printf "#define CCL_PRODUCT_FULL 0\n#define CCL_HELPER_DLL_EXPORT\n#define CCL_API\n#define CCL_GPU_BF16_TRUNCATE\n#define MULTI_GPU_SUPPORT\n \
+    printf "#define CCL_PRODUCT_FULL 0\n#define CCL_HELPER_DLL_EXPORT\n#define CCL_API\n#define CCL_BF16_GPU_TRUNCATE\n#define MULTI_GPU_SUPPORT\n \
             #define CCL_DEPRECATED_ENUM_FIELD\n" > "${export_dir}/oneapi/ccl/config.h"
     printf "\n" >"${export_dir}/oneapi/ccl/native_device_api/interop_utils.hpp"
 

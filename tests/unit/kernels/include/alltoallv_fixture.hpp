@@ -94,31 +94,13 @@ void alloc_and_fill_alltoallv_buffers(
 template <class DType, class Object>
 void check_alltoallv_buffers(Object obj, size_t comm_size, size_t total_recv_count) {
     std::stringstream ss;
-    bool res = true;
 
     std::vector<DType> expected_buf(total_recv_count);
     std::iota(expected_buf.begin(), expected_buf.end(), 0);
 
     for (size_t rank = 0; rank < comm_size; rank++) {
-        auto recv_buf = obj->get_memory(rank, 1);
-        if (recv_buf != expected_buf) {
-            size_t idx;
-            for (idx = 0; idx < expected_buf.size(); idx++) {
-                if (expected_buf[idx] != recv_buf[idx])
-                    break;
-            }
-            ss << "\nunexpected recv buffer for rank " << rank << ", index: " << idx
-               << ", got: " << recv_buf[idx] << ", expected: " << expected_buf[idx];
-
-            ss << "\nunexpected recv buffer for rank " << rank << ":\n";
-            std::copy(recv_buf.begin(), recv_buf.end(), std::ostream_iterator<DType>(ss, " "));
-            ss << "\nexpected:\n";
-            std::copy(
-                expected_buf.begin(), expected_buf.end(), std::ostream_iterator<DType>(ss, " "));
-            res = false;
-            break;
-        }
+        ss << "\ncheck recv buffer for rank: " << rank;
+        auto res = compare_buffers(expected_buf, obj->get_memory(rank, 1), ss);
+        UT_ASSERT_OBJ(res, obj, ss.str());
     }
-
-    UT_ASSERT_OBJ(res, obj, ss.str());
 }

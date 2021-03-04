@@ -1,74 +1,4 @@
-#include "common_helpers.h"
-#include "lp.h"
-
-#pragma OPENCL EXTENSION cl_intel_subgroups : enable
-#pragma OPENCL EXTENSION cl_khr_subgroups : enable
-
-#ifdef KERNEL_DEBUG
-
-#define LOG_INPUT_DATA_START(kern_id) printf("Kernel %zu, wait income data \n", kern_id)
-
-#define LOG_INPUT_DATA_END(kern_id) printf("Kernel %zu, received data \n", kern_id)
-
-#define LOG_OUTGOING_DATA_START(kern_id) printf("Kernel %zu, wait signal to send\n", kern_id)
-
-#define LOG_OUTGOING_DATA_END(kern_id) printf("Kernel %zu, received signal to send\n", kern_id)
-
-#define LOG_SEND_PROGRESS(kern_id, thread_id, flag, desired) \
-    printf("Kernel %zu.%d, send %d/%d\n", kern_id, thread_id, flag, desired)
-
-#define LOG_BARRIER_PASSED(kern_id, thread_id) \
-    printf("kernel %zu.%d barrier passed\n", kern_id, thread_id);
-
-#define LOG_IN_BARRIER(kern_id, thread_id, flag, desired) \
-    printf("kernel %zu.%d barrier %d/%d\n", kern_id, thread_id, flag, desired);
-
-#define DEBUG_BLOCK(block) block
-
-#else
-
-#define LOG_INPUT_DATA_START(kern_id)
-#define LOG_INPUT_DATA_END(kern_id)
-#define LOG_OUTGOING_DATA_START(kern_id)
-#define LOG_OUTGOING_DATA_END(kern_id)
-#define LOG_BARRIER_PASSED(kern_id, thread_id)
-
-#define LOG_IN_BARRIER(kern_id, thread_id, flag, desired)
-
-#define DEBUG_BLOCK(block)
-
-#endif
-
-#define PUT_READY_TO_RECEIVE(_sync_flag) \
-    if (thread_id == 0) { \
-        (*_sync_flag)++; \
-    }
-
-#define WAIT_INPUT_DATA(_sync_flag, _desired) \
-    if (thread_id == 0) { \
-        LOG_INPUT_DATA_START(my_rank); \
-        while (1) { \
-            if (*_sync_flag == _desired) { \
-                LOG_INPUT_DATA_END(my_rank); \
-                ++_desired; \
-                break; \
-            } \
-        } \
-    }
-
-#define WAIT_SIGNAL_TO_SEND(_sync_flag, _desired) \
-    if (thread_id == 0) { \
-        LOG_OUTGOING_DATA_START(my_rank); \
-        while (_desired != *_sync_flag) { \
-        }; \
-        LOG_OUTGOING_DATA_END(my_rank); \
-        ++_desired; \
-    }
-
-#define I_SENT(_sync_flag) \
-    if (thread_id == 0) { \
-        (*_sync_flag)++; \
-    }
+#include "common.h"
 
 /**
  * @param left_wrote_to_me_flag  - located in the memory of the current kernel, left rank uses a pointer to it to notify that he has sent some data.
@@ -205,53 +135,15 @@
     DEFINE_KERNEL(int64, long4, 4, __##OpName##_##long4, OpName) \
     DEFINE_KERNEL(uint64, ulong4, 4, __##OpName##_##ulong4, OpName) \
 \
-    /* TODO: implement support for missing types*/ \
-    DEFINE_KERNEL(float16, float16, 1, __##OpName##_##float16, OpName) \
     DEFINE_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName) \
     DEFINE_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName)
 
 #define DEFINE_KERNELS_WITH_BF16OP(OpName) \
     DEFINE_KERNEL(bfloat16, ushort, 1, __##OpName##_##ushort, OpName)
 
-#define DEFINE_SUM_OP(T) \
-    T __sum_##T(T lhs, T rhs) { \
-        return lhs + rhs; \
-    }
-
-#define DEFINE_PROD_OP(T) \
-    T __prod_##T(T lhs, T rhs) { \
-        return lhs * rhs; \
-    }
-
-#define DEFINE_MIN_OP(T) \
-    T __min_##T(T lhs, T rhs) { \
-        return min(lhs, rhs); \
-    }
-
-#define DEFINE_MAX_OP(T) \
-    T __max_##T(T lhs, T rhs) { \
-        return max(lhs, rhs); \
-    }
-
-#define DEFINE_BF16SUM_OP(T) \
-    T __sum_##T(T lhs, T rhs) { \
-        return __fp32_to_bf16(__bf16_to_fp32(lhs) + __bf16_to_fp32(rhs)); \
-    }
-
-#define DEFINE_BF16PROD_OP(T) \
-    T __prod_##T(T lhs, T rhs) { \
-        return __fp32_to_bf16(__bf16_to_fp32(lhs) * __bf16_to_fp32(rhs)); \
-    }
-
-#define DEFINE_BF16MIN_OP(T) \
-    T __min_##T(T lhs, T rhs) { \
-        return __fp32_to_bf16(min(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs))); \
-    }
-
-#define DEFINE_BF16MAX_OP(T) \
-    T __max_##T(T lhs, T rhs) { \
-        return __fp32_to_bf16(max(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs))); \
-    }
+#define DEFINE_KERNELS_WITH_LP_OP(OpName) \
+    DEFINE_KERNEL(bfloat16, ushort, 1, __##OpName##_##ushort, OpName) \
+    DEFINE_KERNEL(float16, half, 1, __##OpName##_##half, OpName)
 
 #define DEFINE_OPS(T) \
     DEFINE_SUM_OP(T) \
@@ -265,25 +157,25 @@
     DEFINE_BF16MIN_OP(T) \
     DEFINE_BF16MAX_OP(T)
 
+#define DEFINE_FP16OPS(T) \
+    DEFINE_FP16SUM_OP(T) \
+    DEFINE_FP16PROD_OP(T) \
+    DEFINE_FP16MIN_OP(T) \
+    DEFINE_FP16MAX_OP(T)
+
 // Define Op function for each supported type(use vector types for some of them as required by the kernel)
 DEFINE_OPS(char4)
 DEFINE_OPS(uchar4)
-
 DEFINE_OPS(short4)
 DEFINE_OPS(ushort4)
-
 DEFINE_OPS(int4)
 DEFINE_OPS(uint4)
-
 DEFINE_OPS(long4)
 DEFINE_OPS(ulong4)
-
+DEFINE_FP16OPS(half)
 DEFINE_OPS(float4)
 DEFINE_OPS(double4)
-
 DEFINE_BF16OPS(ushort)
-// TODO: Enable when half is supported
-DEFINE_OPS(float16)
 
 // Define the actual kernels
 DEFINE_KERNELS_WITH_OP(sum)
@@ -291,53 +183,7 @@ DEFINE_KERNELS_WITH_OP(prod)
 DEFINE_KERNELS_WITH_OP(min)
 DEFINE_KERNELS_WITH_OP(max)
 
-DEFINE_KERNELS_WITH_BF16OP(sum)
-DEFINE_KERNELS_WITH_BF16OP(prod)
-DEFINE_KERNELS_WITH_BF16OP(min)
-DEFINE_KERNELS_WITH_BF16OP(max)
-
-// numa
-#define DEFINE_NUMA_KERNEL(Name, T, VecSize, Op, OpName) \
-    __kernel void reduce_execution_numa_##Name##_##OpName( \
-        int my_rank, \
-        int comm_size, /*1*/ \
-        ulong elems_count, /*2*/ \
-        const __global T* input_buffer, /*3*/ \
-        __global T* output_buffer, /*4*/ \
-\
-        __global T* tmp_buffer, /*5*/ \
-        __global volatile int* left_wrote_to_me_flag, /*6*/ \
-        __global volatile int* i_ready_to_receive_flag, /*7*/ \
-\
-        __global volatile int* local_barrier_flag, /*8*/ \
-\
-        __global T* right_temp_buffer, /*9*/ \
-        __global volatile int* i_send_to_right_flag, /*10*/ \
-        __global volatile int* right_ready_to_recv_flag, /*11*/ \
-        int root /*12*/) { \
-        return; \
-    }
-
-#define DEFINE_NUMA_KERNELS_WITH_OP(OpName) \
-    DEFINE_NUMA_KERNEL(int8, char4, 4, __##OpName##_##char4, OpName) \
-    DEFINE_NUMA_KERNEL(uint8, uchar4, 4, __##OpName##_##uchar4, OpName) \
-\
-    DEFINE_NUMA_KERNEL(int16, short4, 4, __##OpName##_##short4, OpName) \
-    DEFINE_NUMA_KERNEL(uint16, ushort4, 4, __##OpName##_##ushort4, OpName) \
-\
-    DEFINE_NUMA_KERNEL(int32, int4, 4, __##OpName##_##int4, OpName) \
-    DEFINE_NUMA_KERNEL(uint32, uint4, 4, __##OpName##_##uint4, OpName) \
-\
-    DEFINE_NUMA_KERNEL(int64, long4, 4, __##OpName##_##long4, OpName) \
-    DEFINE_NUMA_KERNEL(uint64, ulong4, 4, __##OpName##_##ulong4, OpName) \
-\
-    /* TODO: implement support for missing types*/ \
-    DEFINE_NUMA_KERNEL(float16, float16, 1, __##OpName##_##float16, OpName) \
-    DEFINE_NUMA_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName) \
-    DEFINE_NUMA_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName) \
-    DEFINE_NUMA_KERNEL(bfloat16, ushort, 1, __##OpName##_##bfloat16, OpName)
-
-DEFINE_NUMA_KERNELS_WITH_OP(sum)
-DEFINE_NUMA_KERNELS_WITH_OP(prod)
-DEFINE_NUMA_KERNELS_WITH_OP(min)
-DEFINE_NUMA_KERNELS_WITH_OP(max)
+DEFINE_KERNELS_WITH_LP_OP(sum)
+DEFINE_KERNELS_WITH_LP_OP(prod)
+DEFINE_KERNELS_WITH_LP_OP(min)
+DEFINE_KERNELS_WITH_LP_OP(max)

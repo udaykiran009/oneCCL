@@ -30,9 +30,12 @@ run_build() {
     check_cmd clang
     check_cmd llvm-spirv
 
+    # should be aligned with cmake function set_lp_env
+    defines="-DCCL_BF16_GPU_TRUNCATE"
+
     # Use commands from https://www.khronos.org/blog/offline-compilation-of-opencl-kernels-into-spir-v-using-open-source-tooling
     # + some additional flags(-flto is used because clang complains when llvm-bc is emitted without the option)
-    run_cmd "clang -cc1 -triple spir64-unknown-unknown $fn.cl -O3 -flto -emit-llvm-bc -include opencl-c.h -x cl -cl-std=CL2.0 -o $fn.bc"
+    run_cmd "clang -cc1 ${defines} -triple spir64-unknown-unknown $fn.cl -O3 -flto -emit-llvm-bc -include opencl-c.h -x cl -cl-std=CL2.0 -o $fn.bc"
     run_cmd "llvm-spirv $fn.bc -o $fn.spv"
 }
 

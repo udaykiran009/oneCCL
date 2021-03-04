@@ -1,157 +1,10 @@
-#include "common_helpers.h"
-
-#pragma OPENCL EXTENSION cl_intel_subgroups : enable
-#pragma OPENCL EXTENSION cl_khr_subgroups : enable
-
-//#define KERNEL_DEBUG
-#ifdef KERNEL_DEBUG
-
-#define LOG_INPUT_DATA_START(kern_id) printf("Kernel %zu, wait income data \n", kern_id)
-
-#define LOG_INPUT_DATA_END(kern_id) printf("Kernel %zu, received data \n", kern_id)
-
-#define LOG_OUTGOING_DATA_START(kern_id) printf("Kernel %zu, wait signal to send\n", kern_id)
-
-#define LOG_OUTGOING_DATA_END(kern_id) printf("Kernel %zu, received signal to send\n", kern_id)
-
-#define LOG_SEND_PROGRESS(kern_id, thread_id, flag, desired) \
-    printf("Kernel %zu.%d, send %d/%d\n", kern_id, thread_id, flag, desired)
-
-#define LOG_BARRIER_PASSED(kern_id, thread_id) \
-    printf("kernel %zu.%d barrier passed\n", kern_id, thread_id);
-
-#define LOG_IN_BARRIER(kern_id, thread_id, flag, desired) \
-    printf("kernel %zu.%d barrier %d/%d\n", kern_id, thread_id, flag, desired);
-
-#else
-
-#define LOG_INPUT_DATA_START(kern_id)
-#define LOG_INPUT_DATA_END(kern_id)
-#define LOG_OUTGOING_DATA_START(kern_id)
-#define LOG_OUTGOING_DATA_END(kern_id)
-#define LOG_BARRIER_PASSED(kern_id, thread_id)
-
-#define LOG_IN_BARRIER(kern_id, thread_id, flag, desired)
-
-#endif
-
-#define PUT_READY_TO_RECEIVE(_sync_flag) \
-    if (thread_id == 0) { \
-        (*_sync_flag)++; \
-    }
-/*
-#define PUT_READY_TO_RECEIVE(_sync_flag)             \
-    if(thread_id == 0)                               \
-    {                                                \
-        atomic_inc(_sync_flag);                      \
-    }
-*/
-
-#define I_SENT(_sync_flag) \
-    if (thread_id == 0) { \
-        (*_sync_flag)++; \
-    }
-/*
-#define I_SENT(_sync_flag)                          \
-    if(thread_id == 0)                              \
-    {                                               \
-        atomic_inc(_sync_flag);                     \
-    }
-*/
-//int _old_value = atomic_cmpxchg(_sync_flag, _desired, _desired);
-
-#define WAIT_INPUT_DATA(_sync_flag, _desired) \
-    if (thread_id == 0) { \
-        LOG_INPUT_DATA_START(my_rank); \
-        while (1) { \
-            if (*_sync_flag == _desired) { \
-                LOG_INPUT_DATA_END(my_rank); \
-                ++_desired; \
-                break; \
-            } \
-        } \
-    }
-
-/*
-#define WAIT_INPUT_DATA(_sync_flag, _desired)                                       \
-    if(thread_id == 0)                                                              \
-    {                                                                               \
-        LOG_INPUT_DATA_START(my_rank);                                              \
-        while(1)                                                                    \
-        {                                                                           \
-            int _old_value = atomic_add(_sync_flag, 0);                             \
-            if(_old_value == _desired)                                              \
-            {                                                                       \
-                LOG_INPUT_DATA_END(my_rank);                                        \
-                ++_desired;                                                         \
-                break;                                                              \
-            }                                                                       \
-        }                                                                           \
-    }
-*/
-
-#define WAIT_SIGNAL_TO_SEND(_sync_flag, _desired) \
-    if (thread_id == 0) { \
-        LOG_OUTGOING_DATA_START(my_rank); \
-        while (_desired != *_sync_flag) { \
-        }; \
-        LOG_OUTGOING_DATA_END(my_rank); \
-        ++_desired; \
-    }
-
-/*
-#define WAIT_SIGNAL_TO_SEND(_sync_flag, _desired)                                   \
-    if(thread_id == 0)                                                              \
-    {                                                                               \
-        LOG_OUTGOING_DATA_START(my_rank);                                           \
-        while(_desired != atomic_add(_sync_flag, 0)) {};                            \
-        LOG_OUTGOING_DATA_END(my_rank);                                             \
-        ++_desired;                                                                 \
-    }
-*/
-
-/*
-#define KERNEL_BARRIER(_barrier_flag, _desired, _increment)                         \
-    do                                                                              \
-    {                                                                               \
-        int _barrier_value = atomic_add(_barrier_flag, 0);                          \
-        atomic_inc(_barrier_flag);                                                  \
-        int _old_value = _barrier_value;                                            \
-        while(1)                                                                    \
-        {                                                                           \
-            / *thread that last reached the barrier will reset it                    \
-              other threads may expect to receive _desired value while it can be 0  \
-              check if received value is less than initially received* /             \
-            if(_old_value == _desired || _old_value < _barrier_value)               \
-            {                                                                       \
-                BARRIER_PASSED(my_rank, thread_id);                                 \
-                break;                                                              \
-            }                                                                       \
-            IN_BARRIER(my_rank, thread_id, _old_value, _desired);                   \
-            _old_value = atomic_add(_barrier_flag, 0);                \
-        }                                                                           \
-    } while (0);
-*/
-
-int get_left_rank(int rank, int comm_size) {
-    return rank == 0 ? comm_size - 1 : rank - 1;
-}
-
-int get_right_rank(int rank, int comm_size) {
-    return rank == (comm_size - 1) ? 0 : rank + 1;
-}
+#include "common.h"
 
 #define SET_PROXY_SIZE(size) \
     if (thread_id == 0) { \
         *right_proxy_size_flag = size; \
     }
 #define GET_PROXY_SIZE(size) size = *proxy_size_flag;
-
-#ifdef KERNEL_DEBUG
-#define DEBUG_BLOCK(block) block
-#else
-#define DEBUG_BLOCK(block)
-#endif
 
 /**
  * @param left_wrote_to_me_flag  - located in the memory of the current kernel, left rank uses a pointer to it to notify that he has sent some data.
@@ -284,65 +137,13 @@ int get_right_rank(int rank, int comm_size) {
 
 DEFINE_KERNEL(int8, char4, 4)
 DEFINE_KERNEL(uint8, uchar4, 4)
-
 DEFINE_KERNEL(int16, short4, 4)
 DEFINE_KERNEL(uint16, ushort4, 4)
-
 DEFINE_KERNEL(int32, int4, 4)
 DEFINE_KERNEL(uint32, uint4, 4)
-
 DEFINE_KERNEL(int64, long4, 4)
 DEFINE_KERNEL(uint64, ulong4, 4)
-
-// TODO: implement support for missing types
-DEFINE_KERNEL(float16, float16, 1)
+DEFINE_KERNEL(float16, half, 1)
 DEFINE_KERNEL(float32, float4, 4)
 DEFINE_KERNEL(float64, double4, 4)
-
 DEFINE_KERNEL(bfloat16, ushort, 1)
-
-// numa
-// TODO: vecsize
-#define DEFINE_KERNEL_NUMA(Name, T) \
-    __kernel void alltoallv_execution_numa_##Name( \
-        int my_rank, /*0*/ \
-        int comm_size, /*1*/ \
-\
-        __global size_t* send_elem_counts, /*2*/ \
-        __global size_t* send_elem_offsets, /*3*/ \
-        __global size_t* recv_elem_counts, /*4*/ \
-        __global size_t* recv_elem_offsets, /*5*/ \
-\
-        const __global T* input_buffer, /*6*/ \
-        __global T* output_buffer, /*7*/ \
-        __global T* tmp_buffer, /*8*/ \
-        __global T* right_temp_buffer, /*9*/ \
-\
-        __global volatile int* left_wrote_to_me_flag, /*10*/ \
-        __global volatile int* i_ready_to_receive_flag, /*11*/ \
-        __global volatile int* proxy_size_flag, /*12*/ \
-        __global volatile int* i_send_to_right_flag, /*13*/ \
-        __global volatile int* right_ready_to_recv_flag, /*14*/ \
-        __global volatile int* right_proxy_size_flag /*15*/ \
-    ) { \
-        return; \
-    }
-
-DEFINE_KERNEL_NUMA(int8, char4)
-DEFINE_KERNEL_NUMA(uint8, uchar4)
-
-DEFINE_KERNEL_NUMA(int16, short4)
-DEFINE_KERNEL_NUMA(uint16, ushort4)
-
-DEFINE_KERNEL_NUMA(int32, int4)
-DEFINE_KERNEL_NUMA(uint32, uint4)
-
-DEFINE_KERNEL_NUMA(int64, long4)
-DEFINE_KERNEL_NUMA(uint64, ulong4)
-
-// TODO: implement support for missing types
-DEFINE_KERNEL_NUMA(float16, float16)
-DEFINE_KERNEL_NUMA(float32, float4)
-DEFINE_KERNEL_NUMA(float64, double4)
-
-DEFINE_KERNEL_NUMA(bfloat16, ushort)

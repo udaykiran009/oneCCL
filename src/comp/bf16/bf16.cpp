@@ -105,15 +105,15 @@ void ccl_bf16_reduce(const void* in_buf,
                      void* inout_buf,
                      size_t* out_cnt,
                      ccl::reduction reduction_op) {
-    CCL_FATAL("BF16 reduction is requested but CCL was compiled w/o BF16 support");
+    CCL_FATAL("BF16 reduction was requested but CCL was compiled w/o BF16 support");
 }
 
 void ccl_convert_fp32_to_bf16_arrays(void* fp32_buf, void* bf16_buf, size_t count) {
-    CCL_FATAL("BF16 reduction is requested but CCL was compiled w/o BF16 support");
+    CCL_FATAL("FP32->BF16 conversion was requested but CCL was compiled w/o BF16 support");
 }
 
 void ccl_convert_bf16_to_fp32_arrays(void* bf16_buf, float* fp32_buf, size_t count) {
-    CCL_FATAL("BF16 reduction is requested but CCL was compiled w/o BF16 support");
+    CCL_FATAL("BF16->FP32 conversion was requested but CCL was compiled w/o BF16 support");
 }
 
 #endif /* CCL_BF16_COMPILER */

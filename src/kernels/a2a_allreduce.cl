@@ -1,73 +1,5 @@
 #include "a2a_helpers.h"
 
-#ifdef KERNEL_DEBUG
-
-#define LOG_INPUT_DATA_START(kern_id, wg_id) \
-    printf("Kernel %zu,%zu wait income data \n", kern_id, wg_id)
-
-#define LOG_INPUT_DATA_END(kern_id, wg_id) printf("Kernel %zu,%zu received data \n", kern_id, wg_id)
-
-#define LOG_OUTGOING_DATA_START(kern_id, wg_id) \
-    printf("Kernel %zu,%zu wait signal to send\n", kern_id, wg_id)
-
-#define LOG_OUTGOING_DATA_END(kern_id, wg_id) \
-    printf("Kernel %zu,%zu received signal to send\n", kern_id, wg_id)
-
-#define LOG_SEND_PROGRESS(kern_id, wg_id, thread_id, flag, desired) \
-    printf("Kernel %zu.%zu, %d, send %d/%d\n", kern_id, wg_id, thread_id, flag, desired)
-
-#define LOG_BARRIER_PASSED(kern_id, thread_id) \
-    printf("kernel %zu.%d barrier passed\n", kern_id, thread_id);
-
-#define LOG_IN_BARRIER(kern_id, thread_id, flag, desired) \
-    printf("kernel %zu.%d barrier %d/%d\n", kern_id, thread_id, flag, desired);
-
-#else
-
-#define LOG_INPUT_DATA_START(kern_id, wg_id)
-#define LOG_INPUT_DATA_END(kern_id, wg_id)
-#define LOG_OUTGOING_DATA_START(kern_id, wg_id)
-#define LOG_OUTGOING_DATA_END(kern_id, wg_id)
-#define LOG_SEND_PROGRESS(kern_id, wg_id, thread_id, flag, desired)
-
-#define LOG_BARRIER_PASSED(kern_id, thread_id)
-
-#define LOG_IN_BARRIER(kern_id, thread_id, flag, desired)
-
-#endif
-
-#define PUT_READY_TO_RECEIVE(_sync_flag) \
-    if (local_thread_id == 0) { \
-        atomic_inc(_sync_flag); \
-    }
-
-#define I_SENT(_sync_flag) \
-    if (local_thread_id == 0) { \
-        atomic_inc(_sync_flag); \
-    }
-
-#define WAIT_INPUT_DATA(_sync_flag, _desired) \
-    if (local_thread_id == 0) { \
-        LOG_INPUT_DATA_START(rank_id, wg_id); \
-        while (1) { \
-            int _old_value = atomic_cmpxchg(_sync_flag, _desired, _desired); \
-            if (_old_value == _desired) { \
-                LOG_INPUT_DATA_END(rank_id, wg_id); \
-                _desired += comm_size; \
-                break; \
-            } \
-        } \
-    }
-
-#define WAIT_SIGNAL_TO_SEND(_sync_flag, _desired) \
-    if (local_thread_id == 0) { \
-        LOG_OUTGOING_DATA_START(rank_id, wg_id); \
-        while (_desired != atomic_cmpxchg(_sync_flag, _desired, _desired)) { \
-        }; \
-        LOG_OUTGOING_DATA_END(rank_id, wg_id); \
-        _desired += comm_size; \
-    }
-
 __kernel void allreduce_execution_float32(int rank_id,
                                           int comm_size,
                                           ulong elems_count,
@@ -80,7 +12,7 @@ __kernel void allreduce_execution_float32(int rank_id,
     size_t wg_id = get_group_id(0);
     size_t wg_size = get_local_size(0);
     size_t wg_count = get_num_groups(0);
-    size_t local_thread_id = get_local_id(0);
+    size_t thread_id = get_local_id(0);
     size_t g_thread_id = get_global_id(0);
 
     int ready_to_recv_sync_count = comm_size;
@@ -112,11 +44,11 @@ __kernel void allreduce_execution_float32(int rank_id,
     //
 
 #ifdef KERNEL_DEBUG
-    if (local_thread_id == 0) {
+    if (thread_id == 0) {
         printf("kernel %zu.%zu.%zu, wg_size: %zu, segment_size: %zu\n",
                rank_id,
                wg_id,
-               local_thread_id,
+               thread_id,
                wg_size,
                segment_size);
     }
@@ -125,21 +57,21 @@ __kernel void allreduce_execution_float32(int rank_id,
     for (size_t segment_start_idx = 0; segment_start_idx < elems_count;
          segment_start_idx += segment_size) {
 #ifdef KERNEL_DEBUG
-        if (local_thread_id == 0) {
+        if (thread_id == 0) {
             printf("kernel %zu.%zu.%zu, start from segment offset: %zu\n",
                    rank_id,
                    wg_id,
-                   local_thread_id,
+                   thread_id,
                    segment_start_idx);
             printf("kernel %zu.%zu.%zu, ready_to_receive_flag: %zu\n",
                    rank_id,
                    wg_id,
-                   local_thread_id,
+                   thread_id,
                    *comm_matrix[rank_id].ready_to_receive_flag);
             printf("kernel %zu.%zu.%zu, data_sent_flag: %zu\n",
                    rank_id,
                    wg_id,
-                   local_thread_id,
+                   thread_id,
                    *comm_matrix[rank_id].data_sent_flag);
         }
 #endif
@@ -151,16 +83,16 @@ __kernel void allreduce_execution_float32(int rank_id,
 
         //1)reduce scatter
         //Send segment_size by wg_size to each rank determined by WG_idx <-> rank
-        comm_matrix[wg_id].recv_buf[rank_id * wg_size + local_thread_id] =
-            input_buffer[segment_start_idx + wg_size * wg_id + local_thread_id];
+        comm_matrix[wg_id].recv_buf[rank_id * wg_size + thread_id] =
+            input_buffer[segment_start_idx + wg_size * wg_id + thread_id];
 #ifdef KERNEL_DEBUG
         {
             printf("kernel %zu.%zu.%zu send: %e by offset: %zu\n",
                    rank_id,
                    wg_id,
-                   local_thread_id,
-                   input_buffer[segment_start_idx + wg_size * wg_id + local_thread_id],
-                   segment_start_idx + wg_size * wg_id + local_thread_id);
+                   thread_id,
+                   input_buffer[segment_start_idx + wg_size * wg_id + thread_id],
+                   segment_start_idx + wg_size * wg_id + thread_id);
         }
 #endif
         barrier(CLK_LOCAL_MEM_FENCE);
@@ -207,8 +139,7 @@ __kernel void allreduce_execution_float32(int rank_id,
         float thread_reduced_value = 0;
         for (size_t recv_buf_start_idx = 0; recv_buf_start_idx < segment_size;
              recv_buf_start_idx += wg_size) {
-            thread_reduced_value +=
-                comm_matrix[rank_id].recv_buf[recv_buf_start_idx + local_thread_id];
+            thread_reduced_value += comm_matrix[rank_id].recv_buf[recv_buf_start_idx + thread_id];
         }
 
         barrier(CLK_LOCAL_MEM_FENCE);
@@ -217,7 +148,7 @@ __kernel void allreduce_execution_float32(int rank_id,
             printf("kernel %zu.%zu.%zu,thread_reduced_value: %e\n",
                    rank_id,
                    wg_id,
-                   local_thread_id,
+                   thread_id,
                    thread_reduced_value);
         }
 #endif
@@ -226,7 +157,7 @@ __kernel void allreduce_execution_float32(int rank_id,
 
         //scatter
         I_SENT(comm_matrix[wg_id].data_sent_flag);
-        comm_matrix[wg_id].recv_buf[rank_id * wg_size + local_thread_id] = thread_reduced_value;
+        comm_matrix[wg_id].recv_buf[rank_id * wg_size + thread_id] = thread_reduced_value;
 
         barrier(CLK_GLOBAL_MEM_FENCE); //wait all WGs
 
@@ -235,8 +166,8 @@ __kernel void allreduce_execution_float32(int rank_id,
         barrier(CLK_GLOBAL_MEM_FENCE); //wait all WGs
 
         //remember to itself from other devices
-        output_buffer[segment_start_idx + wg_size * wg_id + local_thread_id] =
-            comm_matrix[wg_id].recv_buf[wg_id * wg_size + local_thread_id];
+        output_buffer[segment_start_idx + wg_size * wg_id + thread_id] =
+            comm_matrix[wg_id].recv_buf[wg_id * wg_size + thread_id];
         barrier(CLK_GLOBAL_MEM_FENCE);
     }
 }

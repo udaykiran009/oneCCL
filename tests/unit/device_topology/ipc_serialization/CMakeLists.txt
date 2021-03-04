@@ -1,7 +1,6 @@
 set (executable "ip_serialization_suite")
 
 enable_testing()
-message ("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 
 set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 

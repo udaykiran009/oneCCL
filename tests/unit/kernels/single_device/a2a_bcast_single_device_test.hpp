@@ -39,14 +39,14 @@ DEFINE_KERNEL_TYPE_A2A(int32, int32_t)
 DEFINE_KERNEL_TYPE_A2A(uint32, uint32_t)
 DEFINE_KERNEL_TYPE_A2A(int64, int64_t)
 DEFINE_KERNEL_TYPE_A2A(uint64, uint64_t)
-/*DEFINE_KERNEL_TYPE_A2A(float16, ushort)*/
+//DEFINE_KERNEL_TYPE_A2A(float16, ushort)
 DEFINE_KERNEL_TYPE_A2A(float32, float)
 DEFINE_KERNEL_TYPE_A2A(float64, double)
-// DEFINE_KERNEL_TYPE_A2A(bfloat16, ushort)
+//DEFINE_KERNEL_TYPE_A2A(bfloat16, ushort)
 
 } // namespace a2a_bcast_case
 
-TYPED_TEST_CASE(a2a_bcast_single_process_fixture, TestTypes);
+TYPED_TEST_CASE(a2a_bcast_single_process_fixture, TestTypesA2A);
 
 TYPED_TEST(a2a_bcast_single_process_fixture, a2a_bcast_single_device_mt) {
     using namespace native;

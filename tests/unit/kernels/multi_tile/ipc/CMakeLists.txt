@@ -1,10 +1,8 @@
 set (executable "multi_tile_ipc_suite")
 
-
 enable_testing()
-message ("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 
-    set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
+set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
@@ -29,7 +27,7 @@ set (dependencies_sources
             ${PROJECT_SOURCE_DIR}/src/common/comm/l0/devices/communication_structs/ipc_server.cpp
             ${PROJECT_SOURCE_DIR}/src/common/comm/l0/devices/communication_structs/ipc_client.cpp
 
-            ${PROJECT_SOURCE_DIR}/tests/unit/src/multi_process_fixture.cpp)
+            ${PROJECT_SOURCE_DIR}/tests/unit/src/multi_process_fixture.cpp ${dependencies_sources})
 
 
 foreach(src ${sources})

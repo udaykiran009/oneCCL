@@ -100,10 +100,7 @@ void alloc_and_fill_reduce_scatter_buffers(
 template <class DType, class OpType, class Object>
 void check_reduce_scatter_buffers(Object obj, size_t comm_size, size_t recv_elem_count) {
     std::stringstream ss;
-    bool res = true;
-
     size_t send_elem_count = recv_elem_count * comm_size;
-
     std::vector<DType> send_values = get_initial_send_values<DType>(send_elem_count);
     std::vector<DType> expected_buf(send_elem_count);
 
@@ -117,20 +114,10 @@ void check_reduce_scatter_buffers(Object obj, size_t comm_size, size_t recv_elem
     }
 
     for (size_t rank = 0; rank < comm_size; rank++) {
-        auto recv_buf = obj->get_memory(rank, 1);
+        ss << "\ncheck recv buffer for rank: " << rank;
         std::vector<DType> expected_chunk(expected_buf.begin() + rank * recv_elem_count,
                                           expected_buf.begin() + (rank + 1) * recv_elem_count);
-        if (recv_buf != expected_chunk) {
-            ss << "\nunexpected recv buffer for rank " << rank << ":\n";
-            std::copy(recv_buf.begin(), recv_buf.end(), std::ostream_iterator<DType>(ss, " "));
-            ss << "\nexpected:\n";
-            std::copy(expected_chunk.begin(),
-                      expected_chunk.end(),
-                      std::ostream_iterator<DType>(ss, " "));
-            res = false;
-            break;
-        }
+        auto res = compare_buffers(expected_chunk, obj->get_memory(rank, 1), ss);
+        UT_ASSERT_OBJ(res, obj, ss.str());
     }
-
-    UT_ASSERT_OBJ(res, obj, ss.str());
 }

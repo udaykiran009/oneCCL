@@ -98,7 +98,7 @@ public:
 
     // Utils
     void dump_memory(std::ostream& out, bool handles_only = false) {
-        memory_storage.dump(out, handles_only);
+        //memory_storage.dump(out, handles_only);
     }
 
     void dump_memory_by_index(std::ostream& out, size_t mem_handle_index) {
@@ -126,3 +126,55 @@ private:
     handles_storage<int> flags_storage;
     std::map<int, std::vector<int>> comm_param_storage;
 };
+
+template <class DType>
+std::vector<DType> get_initial_send_values(size_t elem_count) {
+    std::vector<DType> res(elem_count);
+    ccl::datatype dt = ccl::native_type_info<typename std::remove_pointer<DType>::type>::dtype;
+    if (dt == ccl::datatype::bfloat16) {
+        for (size_t elem_idx = 0; elem_idx < elem_count; elem_idx++) {
+            res[elem_idx] = fp32_to_bf16(0.00001 * elem_idx).get_data();
+        }
+    }
+    else if (dt == ccl::datatype::float16) {
+        for (size_t elem_idx = 0; elem_idx < elem_count; elem_idx++) {
+            res[elem_idx] = fp32_to_fp16(0.0001 * elem_idx).get_data();
+        }
+    }
+    else {
+        std::iota(res.begin(), res.end(), 1);
+    }
+    return res;
+}
+
+template <class DType>
+bool compare_buffers(std::vector<DType> expected,
+                     std::vector<DType> actual,
+                     std::stringstream& ss) {
+    bool res = true;
+
+    if (expected.size() != actual.size()) {
+        ss << "\nunexpected buffer size: expected " << expected.size() << ", got " << actual.size()
+           << "\n";
+        res = false;
+    }
+
+    for (size_t idx = 0; idx < expected.size(); idx++) {
+        if (expected[idx] != actual[idx]) {
+            ss << "\nunexpected value: idx " << idx << ", expected " << expected[idx] << ", got "
+               << actual[idx] << "\n";
+            res = false;
+            break;
+        }
+    }
+
+    // if (!res) {
+    //     ss << "\nfull content:\n";
+    //     ss << "\nexpected buffer:\n";
+    //     std::copy(expected.begin(), expected.end(), std::ostream_iterator<DType>(ss, " "));
+    //     ss << "\nactual buffer:\n";
+    //     std::copy(actual.begin(), actual.end(), std::ostream_iterator<DType>(ss, " "));
+    // }
+
+    return res;
+}

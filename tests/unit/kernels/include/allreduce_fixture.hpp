@@ -83,25 +83,6 @@ protected:
     void TearDown() override {}
 };
 
-template <class DType>
-std::vector<DType> get_initial_send_values(size_t elem_count) {
-    std::vector<DType> res(elem_count);
-    ccl::datatype dt = ccl::native_type_info<typename std::remove_pointer<DType>::type>::dtype;
-    if (dt == ccl::datatype::bfloat16) {
-        std::vector<float> fp32_vec(elem_count);
-        for (size_t elem_idx = 0; elem_idx < elem_count; elem_idx++) {
-            res[elem_idx] = fp32_to_bf16(0.00001 * elem_idx).get_data();
-        }
-    }
-    else if (dt == ccl::datatype::float16) {
-        /* TODO */
-    }
-    else {
-        std::iota(res.begin(), res.end(), 1);
-    }
-    return res;
-}
-
 template <class DType, class Object>
 void alloc_and_fill_allreduce_buffers(
     Object obj,
@@ -144,7 +125,6 @@ void alloc_and_fill_allreduce_buffers(
 template <class DType, class OpType, class Object>
 void check_allreduce_buffers(Object obj, size_t comm_size, size_t elem_count) {
     std::stringstream ss;
-    bool res = true;
 
     std::vector<DType> send_values = get_initial_send_values<DType>(elem_count);
     std::vector<DType> expected_buf(elem_count);
@@ -159,17 +139,8 @@ void check_allreduce_buffers(Object obj, size_t comm_size, size_t elem_count) {
     }
 
     for (size_t rank = 0; rank < comm_size; rank++) {
-        auto recv_buf = obj->get_memory(rank, 1);
-        if (recv_buf != expected_buf) {
-            ss << "\nunexpected recv buffer for rank " << rank << ":\n";
-            std::copy(recv_buf.begin(), recv_buf.end(), std::ostream_iterator<DType>(ss, " "));
-            ss << "\nexpected:\n";
-            std::copy(
-                expected_buf.begin(), expected_buf.end(), std::ostream_iterator<DType>(ss, " "));
-            res = false;
-            break;
-        }
+        ss << "\ncheck recv buffer for rank: " << rank;
+        auto res = compare_buffers(expected_buf, obj->get_memory(rank, 1), ss);
+        UT_ASSERT_OBJ(res, obj, ss.str());
     }
-
-    UT_ASSERT_OBJ(res, obj, ss.str());
 }

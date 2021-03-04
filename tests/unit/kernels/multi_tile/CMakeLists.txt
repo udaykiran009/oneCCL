@@ -1,10 +1,8 @@
 set (executable "multi_tile_suite")
 
-
 enable_testing()
-message ("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 
-    set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
+set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
@@ -28,7 +26,7 @@ foreach(src ${sources})
                                  $<TARGET_OBJECTS:api_objects>
                                  $<TARGET_OBJECTS:core_objects>
                                  $<TARGET_OBJECTS:test_stub_core_objects>
-                                 ${src})
+                                 ${src} ${dependencies_sources})
     add_dependencies(${executable} gtest)
     add_test (NAME ${executable}_default CONFIGURATIONS MultiTileDefaultSuite COMMAND ${CCL_UNIT_TESTS_BUILD}/kernels/multi_tile/${executable} --gtest_output=xml:${CCL_UNIT_TESTS_BUILD}/kernels/multi_tile/${executable}_default_suite_report.junit.xml)
     add_test (NAME ${executable}_test CONFIGURATIONS ${executable}_test COMMAND ${CCL_UNIT_TESTS_BUILD}/kernels/multi_tile/${executable} --gtest_output=xml:${CCL_UNIT_TESTS_BUILD}/kernels/multi_tile/${executable}_test_report.junit.xml)

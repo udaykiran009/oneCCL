@@ -1,8 +1,6 @@
 set (executable "init_attr_suite")
 
-
 enable_testing()
-message ("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 
 if(MULTI_GPU_SUPPORT)
     set (DEFINITIONS "-DCOMM_SUPPORT")

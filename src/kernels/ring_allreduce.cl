@@ -1,150 +1,4 @@
-#include "common_helpers.h"
-#include "lp.h"
-
-#pragma OPENCL EXTENSION cl_intel_subgroups : enable
-#pragma OPENCL EXTENSION cl_khr_subgroups : enable
-
-//#define KERNEL_DEBUG
-#ifdef KERNEL_DEBUG
-
-#define LOG_INPUT_DATA_START(kern_id) printf("Kernel %zu, wait income data \n", kern_id)
-
-#define LOG_INPUT_DATA_END(kern_id) printf("Kernel %zu, received data \n", kern_id)
-
-#define LOG_OUTGOING_DATA_START(kern_id) printf("Kernel %zu, wait signal to send\n", kern_id)
-
-#define LOG_OUTGOING_DATA_END(kern_id) printf("Kernel %zu, received signal to send\n", kern_id)
-
-#define LOG_SEND_PROGRESS(kern_id, thread_id, flag, desired) \
-    printf("Kernel %zu.%d, send %d/%d\n", kern_id, thread_id, flag, desired)
-
-#define LOG_BARRIER_PASSED(kern_id, thread_id) \
-    printf("kernel %zu.%d barrier passed\n", kern_id, thread_id);
-
-#define LOG_IN_BARRIER(kern_id, thread_id, flag, desired) \
-    printf("kernel %zu.%d barrier %d/%d\n", kern_id, thread_id, flag, desired);
-
-#else
-
-#define LOG_INPUT_DATA_START(kern_id)
-#define LOG_INPUT_DATA_END(kern_id)
-#define LOG_OUTGOING_DATA_START(kern_id)
-#define LOG_OUTGOING_DATA_END(kern_id)
-#define LOG_BARRIER_PASSED(kern_id, thread_id)
-
-#define LOG_IN_BARRIER(kern_id, thread_id, flag, desired)
-
-#endif
-
-#define PUT_READY_TO_RECEIVE(_sync_flag) \
-    if (thread_id == 0) { \
-        (*_sync_flag)++; \
-    }
-/*
-#define PUT_READY_TO_RECEIVE(_sync_flag)             \
-    if(thread_id == 0)                               \
-    {                                                \
-        atomic_inc(_sync_flag);                      \
-    }
-*/
-
-#define I_SENT(_sync_flag) \
-    if (thread_id == 0) { \
-        (*_sync_flag)++; \
-    }
-/*
-#define I_SENT(_sync_flag)                          \
-    if(thread_id == 0)                              \
-    {                                               \
-        atomic_inc(_sync_flag);                     \
-    }
-*/
-//int _old_value = atomic_cmpxchg(_sync_flag, _desired, _desired);
-
-#define WAIT_INPUT_DATA(_sync_flag, _desired) \
-    if (thread_id == 0) { \
-        LOG_INPUT_DATA_START(my_rank); \
-        while (1) { \
-            if (*_sync_flag == _desired) { \
-                LOG_INPUT_DATA_END(my_rank); \
-                ++_desired; \
-                break; \
-            } \
-        } \
-    }
-
-/*
-#define WAIT_INPUT_DATA(_sync_flag, _desired)                                       \
-    if(thread_id == 0)                                                              \
-    {                                                                               \
-        LOG_INPUT_DATA_START(my_rank);                                              \
-        while(1)                                                                    \
-        {                                                                           \
-            int _old_value = atomic_add(_sync_flag, 0);                             \
-            if(_old_value == _desired)                                              \
-            {                                                                       \
-                LOG_INPUT_DATA_END(my_rank);                                        \
-                ++_desired;                                                         \
-                break;                                                              \
-            }                                                                       \
-        }                                                                           \
-    }
-*/
-
-#define WAIT_SIGNAL_TO_SEND(_sync_flag, _desired) \
-    if (thread_id == 0) { \
-        LOG_OUTGOING_DATA_START(my_rank); \
-        while (_desired != *_sync_flag) { \
-        }; \
-        LOG_OUTGOING_DATA_END(my_rank); \
-        ++_desired; \
-    }
-
-/*
-#define WAIT_SIGNAL_TO_SEND(_sync_flag, _desired)                                   \
-    if(thread_id == 0)                                                              \
-    {                                                                               \
-        LOG_OUTGOING_DATA_START(my_rank);                                           \
-        while(_desired != atomic_add(_sync_flag, 0)) {};                            \
-        LOG_OUTGOING_DATA_END(my_rank);                                             \
-        ++_desired;                                                                 \
-    }
-*/
-
-/*
-#define KERNEL_BARRIER(_barrier_flag, _desired, _increment)                         \
-    do                                                                              \
-    {                                                                               \
-        int _barrier_value = atomic_add(_barrier_flag, 0);                          \
-        atomic_inc(_barrier_flag);                                                  \
-        int _old_value = _barrier_value;                                            \
-        while(1)                                                                    \
-        {                                                                           \
-            / *thread that last reached the barrier will reset it                    \
-              other threads may expect to receive _desired value while it can be 0  \
-              check if received value is less than initially received* /             \
-            if(_old_value == _desired || _old_value < _barrier_value)               \
-            {                                                                       \
-                BARRIER_PASSED(my_rank, thread_id);                                 \
-                break;                                                              \
-            }                                                                       \
-            IN_BARRIER(my_rank, thread_id, _old_value, _desired);                   \
-            _old_value = atomic_add(_barrier_flag, 0);                \
-        }                                                                           \
-    } while (0);
-*/
-
-#define SWAP_VARIABLES(var1, var2, type) \
-    do { \
-        type tmp; \
-        tmp = var1; \
-        var1 = var2; \
-        var2 = tmp; \
-    } while (0);
-
-int get_left_rank(int rank, int comm_size) {
-    return rank == 0 ? comm_size - 1 : rank - 1;
-}
+#include "common.h"
 
 /**
  * @param left_wrote_to_me_flag  - located in the memory of the current kernel, left rank uses a pointer to it to notify that he has sent some data.
@@ -152,12 +6,6 @@ int get_left_rank(int rank, int comm_size) {
  * @param i_send_to_right_flag - located in the memory of the right kernel. Used by current kernel to notify right kernel that he has sent some data
  * @param right_ready_to_recv_flag - located in the memory of the current kernel. Used by right kernel to notify us it's ready to receive
  */
-
-#ifdef KERNEL_DEBUG
-#define DEBUG_BLOCK(block) block
-#else
-#define DEBUG_BLOCK(block)
-#endif
 
 // Name - unique name suffix for the kernel
 // T - type parameter(e.g. float, int4, etc)
@@ -384,53 +232,12 @@ int get_left_rank(int rank, int comm_size) {
     DEFINE_KERNEL(int64, long4, 4, __##OpName##_##long4, OpName) \
     DEFINE_KERNEL(uint64, ulong4, 4, __##OpName##_##ulong4, OpName) \
 \
-    /* TODO: implement support for missing types*/ \
-    DEFINE_KERNEL(float16, float16, 1, __##OpName##_##float16, OpName) \
     DEFINE_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName) \
     DEFINE_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName)
 
-#define DEFINE_KERNELS_WITH_BF16OP(OpName) \
-    DEFINE_KERNEL(bfloat16, ushort, 1, __##OpName##_##ushort, OpName)
-
-#define DEFINE_SUM_OP(T) \
-    T __sum_##T(T lhs, T rhs) { \
-        return lhs + rhs; \
-    }
-
-#define DEFINE_PROD_OP(T) \
-    T __prod_##T(T lhs, T rhs) { \
-        return lhs * rhs; \
-    }
-
-#define DEFINE_MIN_OP(T) \
-    T __min_##T(T lhs, T rhs) { \
-        return min(lhs, rhs); \
-    }
-
-#define DEFINE_MAX_OP(T) \
-    T __max_##T(T lhs, T rhs) { \
-        return max(lhs, rhs); \
-    }
-
-#define DEFINE_BF16SUM_OP(T) \
-    T __sum_##T(T lhs, T rhs) { \
-        return __fp32_to_bf16(__bf16_to_fp32(lhs) + __bf16_to_fp32(rhs)); \
-    }
-
-#define DEFINE_BF16PROD_OP(T) \
-    T __prod_##T(T lhs, T rhs) { \
-        return __fp32_to_bf16(__bf16_to_fp32(lhs) * __bf16_to_fp32(rhs)); \
-    }
-
-#define DEFINE_BF16MIN_OP(T) \
-    T __min_##T(T lhs, T rhs) { \
-        return __fp32_to_bf16(min(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs))); \
-    }
-
-#define DEFINE_BF16MAX_OP(T) \
-    T __max_##T(T lhs, T rhs) { \
-        return __fp32_to_bf16(max(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs))); \
-    }
+#define DEFINE_KERNELS_WITH_LP_OP(OpName) \
+    DEFINE_KERNEL(bfloat16, ushort, 1, __##OpName##_##ushort, OpName) \
+    DEFINE_KERNEL(float16, half, 1, __##OpName##_##half, OpName)
 
 #define DEFINE_OPS(T) \
     DEFINE_SUM_OP(T) \
@@ -444,25 +251,25 @@ int get_left_rank(int rank, int comm_size) {
     DEFINE_BF16MIN_OP(T) \
     DEFINE_BF16MAX_OP(T)
 
+#define DEFINE_FP16OPS(T) \
+    DEFINE_FP16SUM_OP(T) \
+    DEFINE_FP16PROD_OP(T) \
+    DEFINE_FP16MIN_OP(T) \
+    DEFINE_FP16MAX_OP(T)
+
 // Define Op function for each supported type(use vector types for some of them as required by the kernel)
 DEFINE_OPS(char4)
 DEFINE_OPS(uchar4)
-
 DEFINE_OPS(short4)
 DEFINE_OPS(ushort4)
-
 DEFINE_OPS(int4)
 DEFINE_OPS(uint4)
-
 DEFINE_OPS(long4)
 DEFINE_OPS(ulong4)
-
+DEFINE_FP16OPS(half)
 DEFINE_OPS(float4)
 DEFINE_OPS(double4)
-
 DEFINE_BF16OPS(ushort)
-// TODO: Enable when half is supported
-DEFINE_OPS(float16)
 
 // Define the actual kernels
 DEFINE_KERNELS_WITH_OP(sum)
@@ -470,59 +277,7 @@ DEFINE_KERNELS_WITH_OP(prod)
 DEFINE_KERNELS_WITH_OP(min)
 DEFINE_KERNELS_WITH_OP(max)
 
-DEFINE_KERNELS_WITH_BF16OP(sum)
-DEFINE_KERNELS_WITH_BF16OP(prod)
-DEFINE_KERNELS_WITH_BF16OP(min)
-DEFINE_KERNELS_WITH_BF16OP(max)
-
-// numa
-#define DEFINE_NUMA_KERNEL(Name, T, VecSize, Op, OpName) \
-    __kernel void allreduce_execution_numa_##Name##_##OpName( \
-        int my_rank, \
-        int comm_size, \
-        ulong elems_count, \
-        const __global T* input_buffer, \
-        __global T* output_buffer, \
-\
-        __global T* tmp_buffer, \
-        __global volatile int* left_wrote_to_me_flag, \
-        __global volatile int* i_ready_to_receive_flag, \
-\
-        __global volatile int* local_barrier_flag, \
-\
-        __global T* right_temp_buffer, \
-        __global volatile int* i_send_to_right_flag, \
-        __global volatile int* right_ready_to_recv_flag) { \
-        return; \
-    }
-
-#define DEFINE_NUMA_KERNELS_WITH_OP(OpName) \
-    DEFINE_NUMA_KERNEL(int8, char4, 4, __##OpName##_##char4, OpName) \
-    DEFINE_NUMA_KERNEL(uint8, uchar4, 4, __##OpName##_##uchar4, OpName) \
-\
-    DEFINE_NUMA_KERNEL(int16, short4, 4, __##OpName##_##short4, OpName) \
-    DEFINE_NUMA_KERNEL(uint16, ushort4, 4, __##OpName##_##ushort4, OpName) \
-\
-    DEFINE_NUMA_KERNEL(int32, int4, 4, __##OpName##_##int4, OpName) \
-    DEFINE_NUMA_KERNEL(uint32, uint4, 4, __##OpName##_##uint4, OpName) \
-\
-    DEFINE_NUMA_KERNEL(int64, long4, 4, __##OpName##_##long4, OpName) \
-    DEFINE_NUMA_KERNEL(uint64, ulong4, 4, __##OpName##_##ulong4, OpName) \
-\
-    /* TODO: impl support for missing types*/ \
-    DEFINE_NUMA_KERNEL(float16, float16, 1, __##OpName##_##float16, OpName) \
-    DEFINE_NUMA_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName) \
-    DEFINE_NUMA_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName)
-
-#define DEFINE_NUMA_KERNELS_WITH_BF16OP(OpName) \
-    DEFINE_NUMA_KERNEL(bfloat16, ushort, 1, __##OpName##_##ushort, OpName)
-
-DEFINE_NUMA_KERNELS_WITH_OP(sum)
-DEFINE_NUMA_KERNELS_WITH_OP(prod)
-DEFINE_NUMA_KERNELS_WITH_OP(min)
-DEFINE_NUMA_KERNELS_WITH_OP(max)
-
-DEFINE_NUMA_KERNELS_WITH_BF16OP(sum)
-DEFINE_NUMA_KERNELS_WITH_BF16OP(prod)
-DEFINE_NUMA_KERNELS_WITH_BF16OP(min)
-DEFINE_NUMA_KERNELS_WITH_BF16OP(max)
+DEFINE_KERNELS_WITH_LP_OP(sum)
+DEFINE_KERNELS_WITH_LP_OP(prod)
+DEFINE_KERNELS_WITH_LP_OP(min)
+DEFINE_KERNELS_WITH_LP_OP(max)

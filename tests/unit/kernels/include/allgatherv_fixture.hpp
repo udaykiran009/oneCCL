@@ -65,9 +65,7 @@ void alloc_and_fill_allgatherv_buffers(
     std::shared_ptr<native::ccl_context> ctx,
     bool with_ipc = false) {
     size_t total_recv_count = std::accumulate(recv_counts.begin(), recv_counts.end(), 0);
-
-    std::vector<DType> send_values(total_recv_count);
-    std::iota(send_values.begin(), send_values.end(), 1);
+    std::vector<DType> send_values = get_initial_send_values<DType>(total_recv_count);
     std::vector<DType> recv_values(total_recv_count, 0);
 
     for (size_t rank = 0; rank < devs.size(); rank++) {
@@ -89,24 +87,12 @@ void alloc_and_fill_allgatherv_buffers(
 template <class DType, class Object>
 void check_allgatherv_buffers(Object obj, size_t comm_size, std::vector<size_t> recv_counts) {
     std::stringstream ss;
-    bool res = true;
-
     size_t total_recv_count = std::accumulate(recv_counts.begin(), recv_counts.end(), 0);
-    std::vector<DType> expected_buf(total_recv_count);
-    std::iota(expected_buf.begin(), expected_buf.end(), 1);
+    std::vector<DType> expected_buf = get_initial_send_values<DType>(total_recv_count);
 
     for (size_t rank = 0; rank < comm_size; rank++) {
-        auto recv_buf = obj->get_memory(rank, 1);
-        if (recv_buf != expected_buf) {
-            ss << "\nunexpected recv buffer for rank " << rank << ":\n";
-            std::copy(recv_buf.begin(), recv_buf.end(), std::ostream_iterator<DType>(ss, " "));
-            ss << "\nexpected:\n";
-            std::copy(
-                expected_buf.begin(), expected_buf.end(), std::ostream_iterator<DType>(ss, " "));
-            res = false;
-            break;
-        }
+        ss << "\ncheck recv buffer for rank: " << rank;
+        auto res = compare_buffers(expected_buf, obj->get_memory(rank, 1), ss);
+        UT_ASSERT_OBJ(res, obj, ss.str());
     }
-
-    UT_ASSERT_OBJ(res, obj, ss.str());
 }

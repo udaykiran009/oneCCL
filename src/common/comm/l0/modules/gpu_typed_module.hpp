@@ -40,11 +40,11 @@ struct real_gpu_typed_module : private gpu_module_base,
                                    return this->import_kernel(name);
                                }));
 
-        ccl_tuple_for_each(numa_class::value,
+        /*ccl_tuple_for_each(numa_class::value,
                            detail::kernel_entry_initializer<type>(
                                [this](const std::string& name) -> gpu_module_base::kernel_handle {
                                    return this->import_kernel(name);
-                               }));
+                               }));*/
 
         LOG_DEBUG("Imported functions count: ", functions.size());
     }
@@ -141,11 +141,11 @@ struct virtual_gpu_typed_module : private gpu_module_base,
                                [this](const std::string& name) -> gpu_module_base::kernel_handle {
                                    return this->import_kernel(name);
                                }));
-        ccl_tuple_for_each(numa_class::value,
+        /*ccl_tuple_for_each(numa_class::value,
                            detail::kernel_entry_initializer<type>(
                                [this](const std::string& name) -> gpu_module_base::kernel_handle {
                                    return this->import_kernel(name);
-                               }));
+                               }));*/
 
         LOG_DEBUG("Linked functions count: ", functions.size());
     }

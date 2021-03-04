@@ -87,8 +87,7 @@ void alloc_and_fill_bcast_buffers(Object obj,
                                   const std::vector<native::ccl_device_driver::device_ptr>& devs,
                                   std::shared_ptr<native::ccl_context> ctx,
                                   bool with_ipc = false) {
-    std::vector<DType> send_values(elem_count);
-    std::iota(send_values.begin(), send_values.end(), 1);
+    std::vector<DType> send_values = get_initial_send_values<DType>(elem_count);
     std::vector<DType> recv_values(elem_count, 0);
 
     for (size_t rank = 0; rank < devs.size(); rank++) {
@@ -111,24 +110,11 @@ void alloc_and_fill_bcast_buffers(Object obj,
 template <class DType, class Object>
 void check_bcast_buffers(Object obj, size_t comm_size, size_t elem_count) {
     std::stringstream ss;
-    bool res = true;
-
-    std::vector<DType> expected_buf(elem_count);
-    std::iota(expected_buf.begin(), expected_buf.end(), 1);
+    std::vector<DType> expected_buf = get_initial_send_values<DType>(elem_count);
 
     for (size_t rank = 0; rank < comm_size; rank++) {
-        auto recv_buf = obj->get_memory(rank, 0);
-
-        if (recv_buf != expected_buf) {
-            ss << "\nunexpected recv buffer for rank " << rank << ":\n";
-            std::copy(recv_buf.begin(), recv_buf.end(), std::ostream_iterator<DType>(ss, " "));
-            ss << "\nexpected:\n";
-            std::copy(
-                expected_buf.begin(), expected_buf.end(), std::ostream_iterator<DType>(ss, " "));
-            res = false;
-            break;
-        }
+        ss << "\ncheck buffer for rank: " << rank;
+        auto res = compare_buffers(expected_buf, obj->get_memory(rank, 0), ss);
+        UT_ASSERT_OBJ(res, obj, ss.str());
     }
-
-    UT_ASSERT_OBJ(res, obj, ss.str());
 }

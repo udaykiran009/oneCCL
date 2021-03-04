@@ -6,14 +6,14 @@
 #include "allreduce_fixture.hpp"
 #include "multi_tile_utils.hpp"
 
-DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, sum);
-DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, prod);
-DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, min);
-DEFINE_KERNEL_TYPES_FOR_OP_BF16(allreduce, max);
+DEFINE_KERNEL_TYPES_FOR_OP(allreduce, sum);
+DEFINE_KERNEL_TYPES_FOR_OP(allreduce, prod);
+DEFINE_KERNEL_TYPES_FOR_OP(allreduce, min);
+DEFINE_KERNEL_TYPES_FOR_OP(allreduce, max);
 
 namespace ring_single_device_multi_tile_ipc_case {
 
-TYPED_TEST_CASE(ring_allreduce_multi_process_fixture, TestTypesAndOpsReduction);
+TYPED_TEST_CASE(ring_allreduce_multi_process_fixture, TestTypesAndOps);
 TYPED_TEST(ring_allreduce_multi_process_fixture, ring_single_device_multi_tile_ipc) {
     using namespace native;
     using namespace net;

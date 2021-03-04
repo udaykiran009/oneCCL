@@ -1,7 +1,6 @@
 set (executable "single_device_suite")
 
 enable_testing()
-message ("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 
 set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 
@@ -25,7 +24,7 @@ foreach(src ${sources})
                                  $<TARGET_OBJECTS:api_objects>
                                  $<TARGET_OBJECTS:core_objects>
                                  $<TARGET_OBJECTS:test_stub_core_objects>
-                                 ${src})
+                                 ${src} ${dependencies_sources})
     add_dependencies(${executable} gtest)
     add_test (NAME ${executable}_default CONFIGURATIONS SingleDeviceDefaultSuite COMMAND ${CCL_UNIT_TESTS_BUILD}/kernels/single_device/${executable} --gtest_output=xml:${CCL_UNIT_TESTS_BUILD}/kernels/single_device/${executable}_default_suite_report.junit.xml)
     add_test (NAME ${executable}_test CONFIGURATIONS ${executable}_test COMMAND ${CCL_UNIT_TESTS_BUILD}/kernels/single_device/${executable} --gtest_output=xml:${CCL_UNIT_TESTS_BUILD}/kernels/single_device/${executable}_test_report.junit.xml)
