@@ -263,6 +263,7 @@ run()
             dir_list="benchmark"
             bench_backend_list="sycl"
     fi
+
     if [[ ${VALGRIND_SCOPE} = "regular" ]]
     then
         runtime_list="level_zero opencl"
@@ -272,7 +273,12 @@ run()
         runtime_list="level_zero"
         dtype_list="float32"
         transport_list="mpi"
+        if [[ ${MODE} = "gpu" ]]
+        then
+            coll_list="allreduce"
+        fi
     fi
+
     for dir_name in $dir_list
     do
         if [ ! -d "$(pwd)/${dir_name}" ]
