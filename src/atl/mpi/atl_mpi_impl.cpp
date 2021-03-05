@@ -674,6 +674,13 @@ size_t atl_mpi_get_ep_count(const atl_attr_t& attr) {
     return mpi_ep_count;
 }
 
+size_t atl_mpi_get_ep_idx(size_t ep_idx) {
+    size_t mpi_ep_idx = ep_idx;
+    if (global_data.extra_ep)
+        mpi_ep_idx += global_data.extra_ep;
+    return mpi_ep_idx;
+}
+
 /* set these knobs without detection of MPI library type */
 atl_status_t atl_mpi_set_base_env(const atl_attr_t& attr) {
     setenv("PSM2_MULTI_EP", "1", 0);
@@ -872,7 +879,7 @@ void atl_mpi_check_comm_nic_idx(MPI_Comm comm, size_t expected_idx, const char* 
 #ifdef ENABLE_DEBUG
 inline void atl_mpi_check_ep(atl_ep_t* ep) {
     atl_mpi_ep_t* mpi_ep = container_of(ep, atl_mpi_ep_t, ep);
-    atl_mpi_check_comm_ep_idx(mpi_ep->mpi_comm, ep->idx);
+    atl_mpi_check_comm_ep_idx(mpi_ep->mpi_comm, atl_mpi_get_ep_idx(ep->idx));
 }
 #else
 #define atl_mpi_check_ep(ep)
@@ -1426,7 +1433,7 @@ static atl_comp_ops_t atl_mpi_ep_comp_ops = { .wait = atl_mpi_ep_wait,
 
 static atl_status_t atl_mpi_ep_init(atl_mpi_ctx_t* mpi_ctx, size_t idx, atl_ep_t** ep) {
     int ret;
-    ssize_t mpi_ep_idx = idx;
+    ssize_t mpi_ep_idx = atl_mpi_get_ep_idx(idx);
 
     /* select NIC index from local NICs only */
     size_t nic_idx = (idx % global_data.close_nic_count);
@@ -1450,8 +1457,6 @@ static atl_status_t atl_mpi_ep_init(atl_mpi_ctx_t* mpi_ctx, size_t idx, atl_ep_t
     MPI_Info_set(info, CLOSE_NIC_IDX_KEY, nic_idx_str);
 
     /* set EP index */
-    if (global_data.extra_ep)
-        mpi_ep_idx += global_data.extra_ep;
     snprintf(mpi_ep_idx_str, MPI_MAX_INFO_VAL, "%zu", mpi_ep_idx);
     MPI_Info_set(info, EP_IDX_KEY, mpi_ep_idx_str);
 
