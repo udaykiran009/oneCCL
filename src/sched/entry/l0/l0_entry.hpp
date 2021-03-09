@@ -247,7 +247,17 @@ public:
 
             ENTRY_LOG_TRACE(" waiting for finished execution, queue: ", cmd_queue.get());
 
-            ze_result_t ret = get_fence_impl().query_status();
+            ze_result_t ret;
+
+            // Quering fence doesn't sync kernel output with the host, so if we need this
+            // we use QuerySyncronize API.
+            if (ccl::global_data::env().comm_kernels_debug == 0) {
+                ret = get_fence_impl().query_status();
+            }
+            else {
+                ret = zeCommandQueueSynchronize(cmd_queue.get(), 0);
+            }
+
             ENTRY_LOG_TRACE(
                 "Fence query status: ", native::to_string(ret), ", queue: ", cmd_queue.get());
             if (ret == ZE_RESULT_SUCCESS) {
