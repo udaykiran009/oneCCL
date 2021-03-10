@@ -38,12 +38,6 @@ void register_gpu_module(std::string kernels_path) {
 
     LOG_INFO("SPIRV kernels directory: ", kernels_path);
 
-    /*
-     * TODO:
-     * Important: Fix kernels data types generations, then uncoment
-     * the registration module.
-     */
-
     load_gpu_module(
         kernels_path + "ring_allgatherv.spv", ccl::device_topology_type::ring, ccl_coll_allgatherv);
     load_gpu_module(

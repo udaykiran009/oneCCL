@@ -381,11 +381,8 @@ CCL_BE_API void* ccl_device::device_alloc_memory(size_t bytes_count,
         ctx = get_default_context();
     }
 
-    ze_result_t
-        ret = //zeDriverAllocSharedMem(get_owner()->handle, handle, flags, ordinal, ZE_HOST_MEM_ALLOC_FLAG_DEFAULT, bytes_count, alignment, &out_ptr);
-        //zeDriverAllocHostMem(get_owner()->handle, ZE_HOST_MEM_ALLOC_FLAG_DEFAULT, bytes_count, alignment, &out_ptr);
-        zeMemAllocDevice(
-            ctx->get(), &mem_descr, /*&host_descr, */ bytes_count, alignment, handle, &out_ptr);
+    ze_result_t ret = zeMemAllocDevice(
+        ctx->get(), &mem_descr, /*&host_descr, */ bytes_count, alignment, handle, &out_ptr);
     if (ret != ZE_RESULT_SUCCESS) {
         CCL_THROW("cannot allocate memory, error: " + std::to_string(ret));
     }
