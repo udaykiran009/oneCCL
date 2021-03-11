@@ -48,31 +48,31 @@ typedef ushort bfloat16;
         return max(lhs, rhs); \
     }
 
-#ifdef KERNEL_DEBUG
+#ifdef ENABLE_KERNEL_DEBUG
 #define DEBUG_BLOCK(block) block
 #else
 #define DEBUG_BLOCK(block)
 #endif
 
-#ifdef KERNEL_DEBUG
-#define LOG_INPUT_DATA_START(rank)    printf("kernel %zu, wait income data\n", rank)
-#define LOG_INPUT_DATA_END(rank)      printf("kernel %zu, received data\n", rank)
-#define LOG_OUTGOING_DATA_START(rank) printf("kernel %zu, wait signal to send\n", rank)
-#define LOG_OUTGOING_DATA_END(rank)   printf("kernel %zu, received signal to send\n", rank)
+#ifdef ENABLE_KERNEL_DEBUG
+#define LOG_INPUT_DATA_START(rank)    printf("kernel %d, wait income data\n", rank)
+#define LOG_INPUT_DATA_END(rank)      printf("kernel %d, received data\n", rank)
+#define LOG_OUTGOING_DATA_START(rank) printf("kernel %d, wait signal to send\n", rank)
+#define LOG_OUTGOING_DATA_END(rank)   printf("kernel %d, received signal to send\n", rank)
 #define LOG_SEND_PROGRESS(rank, thread_id, flag, desired) \
-    printf("kernel %zu.%d, send %d/%d\n", rank, thread_id, flag, desired)
+    printf("kernel %d.%d, send %d/%d\n", rank, thread_id, flag, desired)
 #define LOG_BARRIER_PASSED(rank, thread_id) \
-    printf("kernel %zu.%d barrier passed\n", rank, thread_id);
+    printf("kernel %d.%d barrier passed\n", rank, thread_id);
 #define LOG_IN_BARRIER(rank, thread_id, flag, desired) \
-    printf("kernel %zu.%d barrier %d/%d\n", rank, thread_id, flag, desired);
-#else /* KERNEL_DEBUG */
+    printf("kernel %d.%d barrier %d/%d\n", rank, thread_id, flag, desired);
+#else /* ENABLE_KERNEL_DEBUG */
 #define LOG_INPUT_DATA_START(rank)
 #define LOG_INPUT_DATA_END(rank)
 #define LOG_OUTGOING_DATA_START(rank)
 #define LOG_OUTGOING_DATA_END(rank)
 #define LOG_BARRIER_PASSED(rank, thread_id)
 #define LOG_IN_BARRIER(rank, thread_id, flag, desired)
-#endif /* KERNEL_DEBUG */
+#endif /* ENABLE_KERNEL_DEBUG */
 
 #define SWAP_VARIABLES(var1, var2, type) \
     do { \
@@ -90,29 +90,51 @@ int get_right_rank(int rank, int comm_size) {
     return rank == (comm_size - 1) ? 0 : rank + 1;
 }
 
+#ifdef ENABLE_KERNEL_ATOMICS
+
+#define PUT_READY_TO_RECEIVE(_sync_flag) \
+    if (thread_id == 0) { \
+        atomic_inc(_sync_flag); \
+    }
+
+#define I_SENT(_sync_flag) \
+    if (thread_id == 0) { \
+        atomic_inc(_sync_flag); \
+    }
+
+#define WAIT_INPUT_DATA(_sync_flag, _desired) \
+    if (thread_id == 0) { \
+        LOG_INPUT_DATA_START(my_rank); \
+        while (1) { \
+            int _old_value = atomic_add(_sync_flag, 0); \
+            if (_old_value == _desired) { \
+                LOG_INPUT_DATA_END(my_rank); \
+                ++_desired; \
+                break; \
+            } \
+        } \
+    }
+
+#define WAIT_SIGNAL_TO_SEND(_sync_flag, _desired) \
+    if (thread_id == 0) { \
+        LOG_OUTGOING_DATA_START(my_rank); \
+        while (_desired != atomic_add(_sync_flag, 0)) { \
+        } \
+        LOG_OUTGOING_DATA_END(my_rank); \
+        ++_desired; \
+    }
+
+#else /* ENABLE_KERNEL_ATOMICS */
+
 #define PUT_READY_TO_RECEIVE(_sync_flag) \
     if (thread_id == 0) { \
         (*_sync_flag)++; \
     }
-/*
-#define PUT_READY_TO_RECEIVE(_sync_flag)             \
-    if(thread_id == 0)                               \
-    {                                                \
-        atomic_inc(_sync_flag);                      \
-    }
-*/
 
 #define I_SENT(_sync_flag) \
     if (thread_id == 0) { \
         (*_sync_flag)++; \
     }
-/*
-#define I_SENT(_sync_flag)                          \
-    if(thread_id == 0)                              \
-    {                                               \
-        atomic_inc(_sync_flag);                     \
-    }
-*/
 
 #define WAIT_INPUT_DATA(_sync_flag, _desired) \
     if (thread_id == 0) { \
@@ -126,24 +148,6 @@ int get_right_rank(int rank, int comm_size) {
         } \
     }
 
-/*
-#define WAIT_INPUT_DATA(_sync_flag, _desired)                                       \
-    if(thread_id == 0)                                                              \
-    {                                                                               \
-        LOG_INPUT_DATA_START(my_rank);                                              \
-        while(1)                                                                    \
-        {                                                                           \
-            int _old_value = atomic_add(_sync_flag, 0);                             \
-            if(_old_value == _desired)                                              \
-            {                                                                       \
-                LOG_INPUT_DATA_END(my_rank);                                        \
-                ++_desired;                                                         \
-                break;                                                              \
-            }                                                                       \
-        }                                                                           \
-    }
-*/
-
 #define WAIT_SIGNAL_TO_SEND(_sync_flag, _desired) \
     if (thread_id == 0) { \
         LOG_OUTGOING_DATA_START(my_rank); \
@@ -153,16 +157,7 @@ int get_right_rank(int rank, int comm_size) {
         ++_desired; \
     }
 
-/*
-#define WAIT_SIGNAL_TO_SEND(_sync_flag, _desired)                                   \
-    if(thread_id == 0)                                                              \
-    {                                                                               \
-        LOG_OUTGOING_DATA_START(my_rank);                                           \
-        while(_desired != atomic_add(_sync_flag, 0)) {};                            \
-        LOG_OUTGOING_DATA_END(my_rank);                                             \
-        ++_desired;                                                                 \
-    }
-*/
+#endif /* ENABLE_KERNEL_ATOMICS */
 
 /*
 #define KERNEL_BARRIER(_barrier_flag, _desired, _increment)                         \

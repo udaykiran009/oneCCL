@@ -1,26 +1,75 @@
+#!/bin/bash
 KERNELS_PATH=$(dirname $0)/../src/kernels
 echo "Building kernels in $KERNELS_PATH"
 
 BASENAME=$(basename $0 .sh)
 
+global_filename=""
+has_a_option=false # compilation for all kernels
+has_d_option=false # compilation with debug logs
+has_t_option=false # support atomics
+has_h_option=false # help
+
+function print_help() {
+    echo -e "Compile OpenCL kernels into SPIR-V binaries \n"                                                 \
+            "Usage: ./${BASENAME}.sh [-a]\n"                                                                 \
+            "       ./${BASENAME}.sh filename\n"                                                             \
+            " [-a]:            Compile all .cl files in the current folder\n"                                \
+            " [filename]:      Name of the file to compile. e.g ring_allreduce.cl\n"                         \
+            " [-d]             Compile with debug logs. e.g:\n"                                              \
+            "                       -d [ring_allreduce.cl] or [-a] -d\n"                                     \
+            " [-t]:            Compile with atomics support. e.g [-d] -t ring_allreduce.cl or [-a] -t \n"    \
+            " [-h]:            Print this help message"
+    exit 0
+}
+
+function parse_options() {
+    while getopts :adth opt; do
+        case $opt in
+            a) has_a_option=true ;; # build all kernels
+            d) has_d_option=true ;; # build with debug logs
+            t) has_t_option=true ;; # support atomics enable
+            h) print_help; exit ;;
+            :) echo "Missing argument for option -$OPTARG"; exit 1;;
+           \?) echo "Unknown option -$OPTARG"; exit 1;;
+        esac
+    done
+    shift $((OPTIND -1))
+    global_filename=$1
+}
+
 # Verify that the specified command is available
-check_cmd() {
+function check_cmd() {
     if ! [ -x "$(command -v $1)" ]; then
         echo "Error: $1 is not in PATH"
         exit 1
     fi
 }
 
-run_cmd() {
+function run_cmd() {
     echo "$1"
     $1
 }
 
-run_build() {
-    kernel="$KERNELS_PATH/$1"
+function run_build() {
+    local kernel_file_name=$1
+
+    # should be aligned with cmake function set_lp_env
+    local defines="-DCCL_BF16_GPU_TRUNCATE"
+
+    kernel="$KERNELS_PATH/$kernel_file_name"
     if [[ ! -f "$kernel" ]]; then
         echo "Error: unknown kernel file: $kernel"
         exit 1
+    fi
+
+    if $has_d_option; then
+        echo "Add -DENABLE_KERNEL_DEBUG in compilation time"
+        defines+=" -DENABLE_KERNEL_DEBUG"
+    fi
+    if $has_t_option; then
+        echo "Add -DENABLE_KERNEL_ATOMICS in compilation time"
+        defines+=" -DENABLE_KERNEL_ATOMICS"
     fi
 
     # Get full file name inluding path but without file extension
@@ -30,16 +79,13 @@ run_build() {
     check_cmd clang
     check_cmd llvm-spirv
 
-    # should be aligned with cmake function set_lp_env
-    defines="-DCCL_BF16_GPU_TRUNCATE"
-
     # Use commands from https://www.khronos.org/blog/offline-compilation-of-opencl-kernels-into-spir-v-using-open-source-tooling
     # + some additional flags(-flto is used because clang complains when llvm-bc is emitted without the option)
     run_cmd "clang -cc1 ${defines} -triple spir64-unknown-unknown $fn.cl -O3 -flto -emit-llvm-bc -include opencl-c.h -x cl -cl-std=CL2.0 -o $fn.bc"
     run_cmd "llvm-spirv $fn.bc -o $fn.spv"
 }
 
-run_build_all() {
+function run_all_build() {
     # run_build already aware of kernel path, so just list the directory and
     # provide names of the kernels
     for f in `find $KERNELS_PATH -type f -name "*.cl" -printf "%f\n"`; do
@@ -48,30 +94,15 @@ run_build_all() {
     done
 }
 
-print_help() {
-    echo "Compile OpenCL kernels into SPIR-V binaries"
-    echo "Usage: ./${BASENAME}.sh [-a | --all] [filename] [-h | --help]"
-    echo " -a | --all     Compile all .cl files in the current folder"
-    echo " filename       Name of the file to compile. e.g ring_allreduce.cl"
-    echo " -h | --help    Print this help message"
-    exit 0
+function main() {
+    if $has_a_option; then
+        run_all_build
+    elif [ -n "$global_filename" ]; then
+        run_build $global_filename
+    else
+        print_help
+    fi
 }
 
-
-# Empty arguments is a special case to print help message
-if [[ "$#" -eq 0 ]]; then
-    print_help
-fi
-
-case $1 in
-    -a|--all)
-        run_build_all;
-        ;;
-    -h|--help)
-        print_help;
-        ;;
-    *)
-        run_build $1;
-        ;;
-esac
-
+parse_options "$@"
+main

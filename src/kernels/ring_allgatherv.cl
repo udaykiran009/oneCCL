@@ -44,7 +44,7 @@
         int can_send_sync_count = 1; \
 \
         DEBUG_BLOCK(/* int sg_id = get_sub_group_id(); */ \
-                    printf("kernel %zu.%d work_group_size: %d, segment_size: %d\n", \
+                    printf("kernel %d.%d work_group_size: %zu, segment_size: %zu\n", \
                            my_rank, \
                            thread_id, \
                            work_group_size, \
@@ -68,7 +68,7 @@
         WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
         work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
-        DEBUG_BLOCK(printf("kernel %zu.%d send complete\n", my_rank, thread_id)); \
+        DEBUG_BLOCK(printf("kernel %d.%d send complete\n", my_rank, thread_id)); \
 \
         for (int iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx) { \
             work_rank = get_left_rank(work_rank, comm_size); \
@@ -104,7 +104,7 @@
         } \
         barrier(CLK_GLOBAL_MEM_FENCE); \
 \
-        DEBUG_BLOCK(printf("kernel %zu.%d completed\n", my_rank, thread_id)); \
+        DEBUG_BLOCK(printf("kernel %d.%d completed\n", my_rank, thread_id)); \
     }
 
 DEFINE_KERNEL(int8, char4, 4)

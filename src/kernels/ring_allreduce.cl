@@ -51,7 +51,7 @@
         size_t right_tmp_buffer_offset = segment_size; \
 \
         DEBUG_BLOCK(/*int sg_id = get_sub_group_id();*/ \
-                    printf("kernel %zu.%d work_group_size: %d, segment_size: %d\n", \
+                    printf("kernel %d.%d work_group_size: %zu, segment_size: %zu\n", \
                            my_rank, \
                            thread_id, \
                            work_group_size, \
@@ -78,7 +78,7 @@
         WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
         work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
-        DEBUG_BLOCK(printf("kernel %zu.%d send complete\n", my_rank, thread_id)); \
+        DEBUG_BLOCK(printf("kernel %d.%d send complete\n", my_rank, thread_id)); \
         /*2nd phase - reduce scatter                                                                            \
       get data written by left rank to our temp buffer, reduce with our part and send to right rank*/ \
 \
@@ -87,8 +87,8 @@
             size_t segment_offset = work_rank * segment_size; \
 \
             /*left rank has written data to our temp buffer, reduce it with corresponding element               \
-        from our initial buffer                                                                             \
-          and send to the right rank  */ \
+              from our initial buffer                                                                             \
+              and send to the right rank  */ \
 \
             PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
             work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
@@ -97,15 +97,14 @@
             work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
             for (size_t i = 0; i < segment_size; i += work_group_size) { \
-                DEBUG_BLOCK( \
-                    printf("kernel %zu.%d, phase 2.%zu -- temp[%zu] = %f, this[%zu] = %f\n", \
-                           my_rank, \
-                           thread_id, \
-                           iter_idx, \
-                           segment_offset + thread_id + i, \
-                           tmp_buffer[thread_id + i], \
-                           segment_offset + thread_id + i, \
-                           input_buffer[segment_offset + thread_id + i])); \
+                DEBUG_BLOCK(printf("kernel %d.%d, phase 2.%d -- temp[%zu] = %f, this[%zu] = %d\n", \
+                                   my_rank, \
+                                   thread_id, \
+                                   iter_idx, \
+                                   segment_offset + thread_id + i, \
+                                   tmp_buffer[thread_id + i], \
+                                   segment_offset + thread_id + i, \
+                                   input_buffer[segment_offset + thread_id + i])); \
                 right_temp_buffer[thread_id + i + right_tmp_buffer_offset] = \
                     Op(tmp_buffer[thread_id + i + tmp_buffer_offset], \
                        input_buffer[segment_offset + thread_id + i]); \
@@ -122,7 +121,7 @@
         } \
 \
         DEBUG_BLOCK(printf( \
-            "kernel %zu.%d, phase 2 completed, work_rank %zu\n", my_rank, thread_id, work_rank)); \
+            "kernel %d.%d, phase 2 completed, work_rank %d\n", my_rank, thread_id, work_rank)); \
 \
         /* Local reduction */ \
         PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
@@ -158,7 +157,7 @@
         SWAP_VARIABLES(tmp_buffer_offset, right_tmp_buffer_offset, size_t); \
 \
         DEBUG_BLOCK(printf( \
-            "kernel %zu.%d, phase 2 completed, work_rank %zu\n", my_rank, thread_id, work_rank)); \
+            "kernel %d.%d, phase 2 completed, work_rank %d\n", my_rank, thread_id, work_rank)); \
 \
         work_rank = my_rank; \
         /*3rd phase - allgather                                                                                 \
@@ -178,7 +177,7 @@
                 output_buffer[segment_offset + thread_id + i] = \
                     tmp_buffer[thread_id + i + tmp_buffer_offset]; \
 \
-                DEBUG_BLOCK(printf("kernel %zu.%d, phase 3.%d -- send %f to idx %zu, rank %d\n", \
+                DEBUG_BLOCK(printf("kernel %d.%d, phase 3.%d -- send %f to idx %zu, rank %zu\n", \
                                    my_rank, \
                                    thread_id, \
                                    iter_idx, \
@@ -214,7 +213,7 @@
                 tmp_buffer[thread_id + i + tmp_buffer_offset]; \
         } \
 \
-        DEBUG_BLOCK(printf("kernel %zu.%d completed\n", my_rank, thread_id)); \
+        DEBUG_BLOCK(printf("kernel %d.%d completed\n", my_rank, thread_id)); \
     }
 
 // Macro to define kernels for a specific operation for all the supported types.

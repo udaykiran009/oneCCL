@@ -55,7 +55,7 @@
         int can_send_sync_count = 1; \
 \
         DEBUG_BLOCK( \
-            printf("kernel %zu.%d work_group_size: %d\n", my_rank, thread_id, work_group_size)); \
+            printf("kernel %d.%d work_group_size: %zu\n", my_rank, thread_id, work_group_size)); \
 \
         if (my_rank == root) { /*consumer r:ROOT*/ \
             PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
@@ -68,7 +68,7 @@
             WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
             work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
             for (size_t i = 0; i < segment_count; i++) { \
-                DEBUG_BLOCK(printf("kernel %zu.%d, phase 2. -- temp[%zu] = %f, this[%zu] = %f\n", \
+                DEBUG_BLOCK(printf("kernel %d.%d, phase 2. -- temp[%zu] = %f, this[%zu] = %f\n", \
                                    my_rank, \
                                    thread_id, \
                                    i + thread_id, \
@@ -117,7 +117,7 @@
             I_SENT(i_send_to_right_flag); \
         } \
 \
-        DEBUG_BLOCK(printf("kernel %zu.%d completed\n", my_rank, thread_id)); \
+        DEBUG_BLOCK(printf("kernel %d.%d completed\n", my_rank, thread_id)); \
     }
 
 // Macro to define kernels for a specific operation for all the supported types.

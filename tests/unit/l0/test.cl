@@ -4,7 +4,7 @@ __kernel void test_main(global int* this_send_buf,
                         global int* ipc_recv_buf) {
     int thread_id = get_global_id(0);
     int data_offset = thread_id * sizeof(int16);
-    printf("kernel %zu.%d - offset: %d\n", this_rank, thread_id, data_offset);
+    printf("kernel %d.%d - offset: %d\n", this_rank, thread_id, data_offset);
 
     int16 send_vector = vload16(data_offset, this_send_buf);
     int16 ipc_send_vector = vload16(data_offset, ipc_send_buf);

@@ -39,7 +39,7 @@
         int can_send_sync_count = 1; \
 \
         DEBUG_BLOCK( \
-            printf("kernel %zu.%d work_group_size: %d, elems_count: %zu, segment_count %zu\n", \
+            printf("kernel %d.%d work_group_size: %zu, elems_count: %zu, segment_count %zu\n", \
                    my_rank, \
                    thread_id, \
                    work_group_size, \
@@ -89,7 +89,7 @@
             } \
         } \
 \
-        DEBUG_BLOCK(printf("kernel %zu.%d completed\n", my_rank, thread_id)); \
+        DEBUG_BLOCK(printf("kernel %d.%d completed\n", my_rank, thread_id)); \
     }
 
 DEFINE_KERNEL(int8, char4, 4)

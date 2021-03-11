@@ -1,6 +1,6 @@
 #include "a2a_helpers.h"
 
-__kernel void allreduce_execution_float32(int rank_id,
+__kernel void allreduce_execution_float32(int my_rank,
                                           int comm_size,
                                           ulong elems_count,
                                           const __global float* input_buffer,
@@ -45,8 +45,8 @@ __kernel void allreduce_execution_float32(int rank_id,
 
 #ifdef KERNEL_DEBUG
     if (thread_id == 0) {
-        printf("kernel %zu.%zu.%zu, wg_size: %zu, segment_size: %zu\n",
-               rank_id,
+        printf("kernel %d.%zu.%zu, wg_size: %zu, segment_size: %zu\n",
+               my_rank,
                wg_id,
                thread_id,
                wg_size,
@@ -58,24 +58,24 @@ __kernel void allreduce_execution_float32(int rank_id,
          segment_start_idx += segment_size) {
 #ifdef KERNEL_DEBUG
         if (thread_id == 0) {
-            printf("kernel %zu.%zu.%zu, start from segment offset: %zu\n",
-                   rank_id,
+            printf("kernel %d.%zu.%zu, start from segment offset: %zu\n",
+                   my_rank,
                    wg_id,
                    thread_id,
                    segment_start_idx);
-            printf("kernel %zu.%zu.%zu, ready_to_receive_flag: %zu\n",
-                   rank_id,
+            printf("kernel %d.%zu.%zu, ready_to_receive_flag: %d\n",
+                   my_rank,
                    wg_id,
                    thread_id,
-                   *comm_matrix[rank_id].ready_to_receive_flag);
-            printf("kernel %zu.%zu.%zu, data_sent_flag: %zu\n",
-                   rank_id,
+                   *comm_matrix[my_rank].ready_to_receive_flag);
+            printf("kernel %d.%zu.%zu, data_sent_flag: %d\n",
+                   my_rank,
                    wg_id,
                    thread_id,
-                   *comm_matrix[rank_id].data_sent_flag);
+                   *comm_matrix[my_rank].data_sent_flag);
         }
 #endif
-        PUT_READY_TO_RECEIVE(comm_matrix[rank_id].ready_to_receive_flag);
+        PUT_READY_TO_RECEIVE(comm_matrix[my_rank].ready_to_receive_flag);
 
         //each WG waits rank ready to receive
         WAIT_SIGNAL_TO_SEND(comm_matrix[wg_id].ready_to_receive_flag, can_send_sync_count);
@@ -83,12 +83,12 @@ __kernel void allreduce_execution_float32(int rank_id,
 
         //1)reduce scatter
         //Send segment_size by wg_size to each rank determined by WG_idx <-> rank
-        comm_matrix[wg_id].recv_buf[rank_id * wg_size + thread_id] =
+        comm_matrix[wg_id].recv_buf[my_rank * wg_size + thread_id] =
             input_buffer[segment_start_idx + wg_size * wg_id + thread_id];
 #ifdef KERNEL_DEBUG
         {
-            printf("kernel %zu.%zu.%zu send: %e by offset: %zu\n",
-                   rank_id,
+            printf("kernel %d.%zu.%zu send: %e by offset: %zu\n",
+                   my_rank,
                    wg_id,
                    thread_id,
                    input_buffer[segment_start_idx + wg_size * wg_id + thread_id],
@@ -99,7 +99,7 @@ __kernel void allreduce_execution_float32(int rank_id,
         I_SENT(comm_matrix[wg_id].data_sent_flag);
 
         //Wait for WG sent
-        WAIT_INPUT_DATA(comm_matrix[rank_id].data_sent_flag, ready_to_recv_sync_count);
+        WAIT_INPUT_DATA(comm_matrix[my_rank].data_sent_flag, ready_to_recv_sync_count);
         barrier(CLK_GLOBAL_MEM_FENCE); //wait all WGs
 
         //Local reduce of initial chunk
@@ -139,14 +139,14 @@ __kernel void allreduce_execution_float32(int rank_id,
         float thread_reduced_value = 0;
         for (size_t recv_buf_start_idx = 0; recv_buf_start_idx < segment_size;
              recv_buf_start_idx += wg_size) {
-            thread_reduced_value += comm_matrix[rank_id].recv_buf[recv_buf_start_idx + thread_id];
+            thread_reduced_value += comm_matrix[my_rank].recv_buf[recv_buf_start_idx + thread_id];
         }
 
         barrier(CLK_LOCAL_MEM_FENCE);
 #ifdef KERNEL_DEBUG
         {
-            printf("kernel %zu.%zu.%zu,thread_reduced_value: %e\n",
-                   rank_id,
+            printf("kernel %d.%zu.%zu,thread_reduced_value: %e\n",
+                   my_rank,
                    wg_id,
                    thread_id,
                    thread_reduced_value);
@@ -157,12 +157,12 @@ __kernel void allreduce_execution_float32(int rank_id,
 
         //scatter
         I_SENT(comm_matrix[wg_id].data_sent_flag);
-        comm_matrix[wg_id].recv_buf[rank_id * wg_size + thread_id] = thread_reduced_value;
+        comm_matrix[wg_id].recv_buf[my_rank * wg_size + thread_id] = thread_reduced_value;
 
         barrier(CLK_GLOBAL_MEM_FENCE); //wait all WGs
 
         //Wait for WG sent
-        WAIT_INPUT_DATA(comm_matrix[rank_id].data_sent_flag, ready_to_recv_sync_count);
+        WAIT_INPUT_DATA(comm_matrix[my_rank].data_sent_flag, ready_to_recv_sync_count);
         barrier(CLK_GLOBAL_MEM_FENCE); //wait all WGs
 
         //remember to itself from other devices
