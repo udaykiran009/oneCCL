@@ -150,7 +150,7 @@ run_benchmark()
                 buf_count=1
             fi
             options="${options} --iters 8 --buf_count ${buf_count} --sycl_mem_type usm"
-            usm_list="device shared"
+            usm_list="device" #shared (MLSL-779)
         else
             options="${options} --iters 16 --buf_count 8"
         fi
@@ -438,7 +438,7 @@ run()
                     do
                         if [[ "${example}" == *"_usm_"* ]]
                         then
-                            usm_list="host device shared"
+                            usm_list="host device" # shared (MLSL-779)
                         else
                             usm_list="default"
                         fi
@@ -457,14 +457,22 @@ run()
                                 continue
                             fi
 
+                            # MLSL-779
+                            if [ "$selector" == "gpu" ];
+                            then
+                                ccl_staging_buffer="CCL_STAGING_BUFFER=regular"
+                            else
+                                ccl_staging_buffer=""
+                            fi
+
                             echo "selector $selector, usm $usm"
 
                             if [ "$selector" == "gpu" ];
                             then
-                                ccl_extra_env="SYCL_DEVICE_FILTER=level_zero:*:0 ${ccl_transport_env}"
+                                ccl_extra_env="SYCL_DEVICE_FILTER=level_zero:*:0 ${ccl_transport_env} ${ccl_staging_buffer}"
                                 run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} "${selector} ${usm}"
                             fi
-                            ccl_extra_env="SYCL_DEVICE_FILTER=opencl:*:0 ${ccl_transport_env}"
+                            ccl_extra_env="SYCL_DEVICE_FILTER=opencl:*:0 ${ccl_transport_env} ${ccl_staging_buffer}"
                             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} "${selector} ${usm}"
                         done
                     done
