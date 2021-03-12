@@ -6,32 +6,45 @@ BASENAME=$(basename $0 .sh)
 
 global_filename=""
 has_a_option=false # compilation for all kernels
-has_d_option=false # compilation with debug logs
-has_t_option=false # support atomics
+has_d_option=0 # compilation with debug logs. Default: disable
+has_t_option=1 # support atomics. Default: enable
 has_h_option=false # help
 
 function print_help() {
-    echo -e "Compile OpenCL kernels into SPIR-V binaries \n"                                                 \
-            "Usage: ./${BASENAME}.sh [-a]\n"                                                                 \
-            "       ./${BASENAME}.sh filename\n"                                                             \
-            " [-a]:            Compile all .cl files in the current folder\n"                                \
-            " [filename]:      Name of the file to compile. e.g ring_allreduce.cl\n"                         \
-            " [-d]             Compile with debug logs. e.g:\n"                                              \
-            "                       -d [ring_allreduce.cl] or [-a] -d\n"                                     \
-            " [-t]:            Compile with atomics support. e.g [-d] -t ring_allreduce.cl or [-a] -t \n"    \
-            " [-h]:            Print this help message"
+    echo -e "Compile OpenCL kernels into SPIR-V binaries \n" \
+            "Options:\n"\
+            " [-a]:            Compile all .cl files in the current folder: ./${BASENAME}.sh -a\n" \
+            " [filename]:      Name of the file to compile. Example: ./${BASENAME}.sh ring_allreduce.cl\n" \
+            " [-d <enable/disable debug logs>]      by default ${has_d_option} - exmaple: -d 1\n" \
+            " [-t <enable/disable atomics support>] by default ${has_t_option} - example: -t 0\n" \
+            " [-h]:            Print this help message\n\n" \
+            "Examples: ./${BASENAME}.sh -a -d 0\n" \
+            "          ./${BASENAME}.sh filename\n" \
+            "          ./${BASENAME}.sh -d 1 -t 0 filename\n" \
     exit 0
 }
 
 function parse_options() {
-    while getopts :adth opt; do
+    while getopts :ad:t:h opt; do
         case $opt in
             a) has_a_option=true ;; # build all kernels
-            d) has_d_option=true ;; # build with debug logs
-            t) has_t_option=true ;; # support atomics enable
+            d) has_d_option=${OPTARG}
+               if [ "$has_t_option" != "1" ] && [ "$has_t_option" != "0" ]; then
+                      echo "Error: -d option got an arg: $OPTARG. See help:"
+               fi
+               ;; # build with debug logs
+            t) has_t_option="${OPTARG}"
+               if [ "$has_t_option" != "1" ] && [ "$has_t_option" != "0" ]; then
+                    echo "Error: -t option got an incorrect arg: $OPTARG. See help:"
+                    print_help
+               fi
+               ;; # support atomics enable
             h) print_help; exit ;;
-            :) echo "Missing argument for option -$OPTARG"; exit 1;;
-           \?) echo "Unknown option -$OPTARG"; exit 1;;
+            :) echo "Missing argument for option -$OPTARG, See help:";
+               print_help
+               exit 1;;
+           \?) echo "Unknown option -$OPTARG";
+               exit 1;;
         esac
     done
     shift $((OPTIND -1))
@@ -63,11 +76,11 @@ function run_build() {
         exit 1
     fi
 
-    if $has_d_option; then
+    if [ $has_d_option -eq 1 ]; then
         echo "Add -DENABLE_KERNEL_DEBUG in compilation time"
         defines+=" -DENABLE_KERNEL_DEBUG"
     fi
-    if $has_t_option; then
+    if [ $has_t_option -eq 1 ]; then
         echo "Add -DENABLE_KERNEL_ATOMICS in compilation time"
         defines+=" -DENABLE_KERNEL_ATOMICS"
     fi

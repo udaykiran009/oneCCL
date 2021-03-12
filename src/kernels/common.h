@@ -6,6 +6,14 @@
 using namespace ccl;
 #include <cstdint>
 
+#ifdef ENABLE_KERNEL_ATOMICS
+// type for sync flags for atomics support
+typedef atomic_int sync_flag_type;
+#else
+// default type for sync flags
+typedef volatile int sync_flag_type;
+#endif /* ENABLE_KERNEL_ATOMICS */
+
 #else /* HOST_CTX */
 
 #pragma OPENCL EXTENSION cl_intel_subgroups : enable
@@ -13,7 +21,7 @@ using namespace ccl;
 
 #include "lp.h"
 
-// Define aliases for OpenCL types
+// define aliases for OpenCL types
 typedef char int8_t;
 typedef uchar uint8_t;
 typedef short int16_t;
@@ -25,7 +33,6 @@ typedef ulong uint64_t;
 typedef half float16_t;
 typedef float float32_t;
 typedef double float64_t;
-typedef ushort bfloat16_t;
 typedef ushort bfloat16;
 
 #define DEFINE_SUM_OP(T) \
@@ -92,21 +99,27 @@ int get_right_rank(int rank, int comm_size) {
 
 #ifdef ENABLE_KERNEL_ATOMICS
 
+// type for sync flags for atomics support
+typedef atomic_int sync_flag_type;
+
 #define PUT_READY_TO_RECEIVE(_sync_flag) \
     if (thread_id == 0) { \
-        atomic_inc(_sync_flag); \
+        atomic_fetch_add_explicit( \
+            _sync_flag, 1, memory_order_seq_cst, memory_scope_all_svm_devices); \
     }
 
 #define I_SENT(_sync_flag) \
     if (thread_id == 0) { \
-        atomic_inc(_sync_flag); \
+        atomic_fetch_add_explicit( \
+            _sync_flag, 1, memory_order_seq_cst, memory_scope_all_svm_devices); \
     }
 
 #define WAIT_INPUT_DATA(_sync_flag, _desired) \
     if (thread_id == 0) { \
         LOG_INPUT_DATA_START(my_rank); \
         while (1) { \
-            int _old_value = atomic_add(_sync_flag, 0); \
+            int _old_value = atomic_load_explicit( \
+                _sync_flag, memory_order_seq_cst, memory_scope_all_svm_devices); \
             if (_old_value == _desired) { \
                 LOG_INPUT_DATA_END(my_rank); \
                 ++_desired; \
@@ -118,13 +131,26 @@ int get_right_rank(int rank, int comm_size) {
 #define WAIT_SIGNAL_TO_SEND(_sync_flag, _desired) \
     if (thread_id == 0) { \
         LOG_OUTGOING_DATA_START(my_rank); \
-        while (_desired != atomic_add(_sync_flag, 0)) { \
+        while (_desired != atomic_load_explicit( \
+                               _sync_flag, memory_order_seq_cst, memory_scope_all_svm_devices)) { \
         } \
         LOG_OUTGOING_DATA_END(my_rank); \
         ++_desired; \
     }
 
+#define SET_PROXY_SIZE(_sync_flag, size) \
+    if (thread_id == 0) { \
+        atomic_store_explicit( \
+            _sync_flag, size, memory_order_seq_cst, memory_scope_all_svm_devices); \
+    }
+
+#define GET_PROXY_SIZE(_sync_flag, size) \
+    size = atomic_load_explicit(_sync_flag, memory_order_seq_cst, memory_scope_all_svm_devices);
+
 #else /* ENABLE_KERNEL_ATOMICS */
+
+// default type for sync flags
+typedef volatile int sync_flag_type;
 
 #define PUT_READY_TO_RECEIVE(_sync_flag) \
     if (thread_id == 0) { \
@@ -156,6 +182,13 @@ int get_right_rank(int rank, int comm_size) {
         LOG_OUTGOING_DATA_END(my_rank); \
         ++_desired; \
     }
+
+#define SET_PROXY_SIZE(_sync_flag, size) \
+    if (thread_id == 0) { \
+        *_sync_flag = size; \
+    }
+
+#define GET_PROXY_SIZE(_sync_flag, size) size = *_sync_flag;
 
 #endif /* ENABLE_KERNEL_ATOMICS */
 

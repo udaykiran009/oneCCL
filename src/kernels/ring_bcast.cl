@@ -19,14 +19,14 @@
         /* const __global T* input_buffer,*/ /* 3 */ /* __global T* output_buffer,*/ /* 4 */ \
         __global T* buffer, /* 3 */ \
 \
-        __global volatile int* left_wrote_to_me_flag, /* 5 */ \
-        __global volatile int* i_ready_to_receive_flag, /* 6 */ \
+        __global sync_flag_type* left_wrote_to_me_flag, /* 5 */ \
+        __global sync_flag_type* i_ready_to_receive_flag, /* 6 */ \
 \
         __global volatile int* local_barrier_flag, /* 7 */ \
 \
         __global T* right_buffer, /* 8 */ \
-        __global volatile int* i_send_to_right_flag, /* 9 */ \
-        __global volatile int* right_ready_to_recv_flag, /* 10 */ \
+        __global sync_flag_type* i_send_to_right_flag, /* 9 */ \
+        __global sync_flag_type* right_ready_to_recv_flag, /* 10 */ \
         int root /* 11 */ \
     ) { \
         elems_count = elems_count / VecSize; /*bcast by vector T*/ \

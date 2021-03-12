@@ -22,10 +22,10 @@
                                               __global T* output_buffer, \
                                               __global T* right_output_buffer, \
 \
-                                              __global volatile int* left_wrote_to_me_flag, \
-                                              __global volatile int* i_ready_to_receive_flag, \
-                                              __global volatile int* i_send_to_right_flag, \
-                                              __global volatile int* right_ready_to_recv_flag) { \
+                                              __global sync_flag_type* left_wrote_to_me_flag, \
+                                              __global sync_flag_type* i_ready_to_receive_flag, \
+                                              __global sync_flag_type* i_send_to_right_flag, \
+                                              __global sync_flag_type* right_ready_to_recv_flag) { \
         /*Known limitation                                                                                  \
         1) MUST: elems_count >= get_global_size(0) * VecSize * comm_size                                \
         2) MUST: elems_count be aligned with 'get_global_size(0) * VecSize'                             \

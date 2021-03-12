@@ -1,11 +1,5 @@
 #include "common.h"
 
-#define SET_PROXY_SIZE(size) \
-    if (thread_id == 0) { \
-        *right_proxy_size_flag = size; \
-    }
-#define GET_PROXY_SIZE(size) size = *proxy_size_flag;
-
 /**
  * @param left_wrote_to_me_flag  - located in the memory of the current kernel, left rank uses a pointer to it to notify that he has sent some data.
  * @param i_ready_to_receive_flag - located in the memory of the left peer, left rank uses a pointer to it to check if he can send some data to us
@@ -32,12 +26,12 @@
         __global T* tmp_buffer, /*8*/ \
         __global T* right_temp_buffer, /*9*/ \
 \
-        __global volatile int* left_wrote_to_me_flag, /*10*/ \
-        __global volatile int* i_ready_to_receive_flag, /*11*/ \
-        __global volatile int* proxy_size_flag, /*12*/ \
-        __global volatile int* i_send_to_right_flag, /*13*/ \
-        __global volatile int* right_ready_to_recv_flag, /*14*/ \
-        __global volatile int* right_proxy_size_flag /*15*/ \
+        __global sync_flag_type* left_wrote_to_me_flag, /*10*/ \
+        __global sync_flag_type* i_ready_to_receive_flag, /*11*/ \
+        __global sync_flag_type* proxy_size_flag, /*12*/ \
+        __global sync_flag_type* i_send_to_right_flag, /*13*/ \
+        __global sync_flag_type* right_ready_to_recv_flag, /*14*/ \
+        __global sync_flag_type* right_proxy_size_flag /*15*/ \
     ) { \
         size_t work_group_size = get_global_size(0); \
         int thread_id = get_global_id(0); \
@@ -87,7 +81,7 @@
         } \
 \
         barrier(CLK_LOCAL_MEM_FENCE); \
-        SET_PROXY_SIZE(proxy_size); \
+        SET_PROXY_SIZE(right_proxy_size_flag, proxy_size); \
         I_SENT(i_send_to_right_flag); \
         WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
         barrier(CLK_LOCAL_MEM_FENCE); \
@@ -103,7 +97,7 @@
             prev_segment_size = segment_size; \
 \
             barrier(CLK_LOCAL_MEM_FENCE); \
-            GET_PROXY_SIZE(proxy_size); \
+            GET_PROXY_SIZE(proxy_size_flag, proxy_size); \
             barrier(CLK_LOCAL_MEM_FENCE); \
 \
             proxy_size -= prev_segment_size; \
@@ -119,7 +113,7 @@
             WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
             barrier(CLK_LOCAL_MEM_FENCE); \
 \
-            SET_PROXY_SIZE(proxy_size); \
+            SET_PROXY_SIZE(right_proxy_size_flag, proxy_size); \
 \
             I_SENT(i_send_to_right_flag); \
             WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \

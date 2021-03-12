@@ -22,14 +22,14 @@
         __global T* output_buffer, /*4*/ \
 \
         __global T* tmp_buffer, /*5*/ \
-        __global volatile int* left_wrote_to_me_flag, /*6*/ \
-        __global volatile int* i_ready_to_receive_flag, /*7*/ \
+        __global sync_flag_type* left_wrote_to_me_flag, /*6*/ \
+        __global sync_flag_type* i_ready_to_receive_flag, /*7*/ \
 \
         __global volatile int* local_barrier_flag, /*8*/ \
 \
         __global T* right_temp_buffer, /*9*/ \
-        __global volatile int* i_send_to_right_flag, /*10*/ \
-        __global volatile int* right_ready_to_recv_flag, /*11*/ \
+        __global sync_flag_type* i_send_to_right_flag, /*10*/ \
+        __global sync_flag_type* right_ready_to_recv_flag, /*11*/ \
         int root /*12*/ \
     ) { \
         /* The RING based algorithm,                                                                        \
