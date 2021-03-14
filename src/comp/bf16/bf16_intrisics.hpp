@@ -81,9 +81,11 @@ BF16_INLINE_TARGET_ATTRIBUTE void ccl_fp32_store_as_bf16_avx512bf(const void* sr
         if (len == 0) \
             return; \
         uint16_t mask = ((uint16_t)0xFFFF) >> (CCL_BF16_IN_M256 - len); \
-        __m256i vbf16_out; \
-        ccl_bf16_reduce_inputs_##impl_type(in, inout, (void*)&vbf16_out, op); \
-        _mm256_mask_storeu_epi16(inout, (__mmask16)mask, vbf16_out); \
+        __m256i a = _mm256_maskz_loadu_epi16(mask, in); \
+        __m256i b = _mm256_maskz_loadu_epi16(mask, inout); \
+        __m256i res; \
+        ccl_bf16_reduce_inputs_##impl_type(&a, &b, &res, op); \
+        _mm256_mask_storeu_epi16(inout, (__mmask16)mask, res); \
     } \
 \
     BF16_INLINE_TARGET_ATTRIBUTE_ALL void ccl_bf16_reduce_impl_##impl_type( \
