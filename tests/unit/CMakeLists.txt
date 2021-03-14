@@ -136,8 +136,8 @@ if(MULTI_GPU_SUPPORT)
     # prepare interface library: dependencies only
     add_library(interface_library INTERFACE)
     target_include_directories(interface_library INTERFACE
-                               ${UPSTREAM_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/include
-                               ${UPSTREAM_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/src
+                               ${UPSTREAM_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/include
+                               ${UPSTREAM_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/src
                                ${CMAKE_CURRENT_BINARY_DIR}
                                ${UPSTREAM_SOURCE_DIR}/include
                                ${UPSTREAM_SOURCE_DIR}/src

@@ -4,8 +4,8 @@ enable_testing()
 
 set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 
-include_directories(${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/include
-                    ${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/src
+include_directories(${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/include
+                    ${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/src
                     ${CMAKE_CURRENT_BINARY_DIR}/..
                     ${CMAKE_CURRENT_BINARY_DIR}
                     ${PROJECT_SOURCE_DIR}/include

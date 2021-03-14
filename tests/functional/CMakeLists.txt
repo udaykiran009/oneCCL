@@ -23,11 +23,12 @@ endif()
 
 set(CCL_INSTALL_TESTS "$ENV{PWD}")
 enable_testing()
-ADD_SUBDIRECTORY (googletest-release-1.8.1/googletest/)
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/ gtest_build)
 
 set(INC_DIRS
-     ${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/include
-     ${PROJECT_SOURCE_DIR}/tests/functional/googletest-release-1.8.1/googletest/src
+     ${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/include
+     ${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/src
      ${PROJECT_SOURCE_DIR}/include)
 
 include_directories(${INC_DIRS})
