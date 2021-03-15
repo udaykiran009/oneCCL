@@ -1,8 +1,21 @@
 cmake_minimum_required (VERSION 2.8)
+
+if (POLICY CMP0048)
+    cmake_policy(SET CMP0048 OLD)
+endif (POLICY CMP0048)
+
 file(GLOB sources "*_test.c" "*_test.cpp")
 
-if (NOT DEFINED LP_ENV_DEFINED)
-    include(${PROJECT_SOURCE_DIR}/../../cmake/helpers.cmake)
+set(PROJECT_NAME "oneCCL functional tests")
+project(${PROJECT_NAME})
+
+message(STATUS "FT CMAKE_PROJECT_NAME: ${CMAKE_PROJECT_NAME}")
+message(STATUS "FT PROJECT_NAME: ${PROJECT_NAME}")
+
+set(COMMON_CMAKE_DIR ${PROJECT_SOURCE_DIR}/../../cmake)
+
+if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+    include(${COMMON_CMAKE_DIR}/helpers.cmake)
     set_lp_env()
 endif()
 
@@ -24,12 +37,11 @@ endif()
 set(CCL_INSTALL_TESTS "$ENV{PWD}")
 enable_testing()
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/ gtest_build)
-
+set(GTEST_DIR ${PROJECT_SOURCE_DIR}/../googletest-release-1.8.1/googletest)
+add_subdirectory(${GTEST_DIR} gtest_build)
 set(INC_DIRS
-     ${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/include
-     ${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googletest/src
-     ${PROJECT_SOURCE_DIR}/include)
+    ${GTEST_DIR}/include
+    ${GTEST_DIR}/src)
 
 include_directories(${INC_DIRS})
 
@@ -64,7 +76,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (COMPUTE_BACKEND)
-    activate_compute_backend("${CCL_ROOT}/lib;${PROJECT_SOURCE_DIR}/cmake" ${COMPUTE_BACKEND})
+    activate_compute_backend("${CCL_ROOT}/lib;${COMMON_CMAKE_DIR}" ${COMPUTE_BACKEND})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_BACKEND_FLAGS}")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${COMPUTE_BACKEND_LIBRARIES}")
 endif()
