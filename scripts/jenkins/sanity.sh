@@ -593,9 +593,13 @@ function run_ut_single_device ()
 
     if [ ${#platfrom_info[@]} -ne 0 ]; then
         index=$(echo "${platfrom_info[0]}" | sed 's/\:\*//g')
-        l0_affinity_mask='L0_CLUSTER_AFFINITY_MASK="'${index}','${index}','${index}','${index}'"'
-        run_ut_ctest ${l0_affinity_mask} ${ut_name}
-        check_command_exit_code $? "single_device ut is FAILED"
+        #TODO: insert it in array after fix this case 'L0_CLUSTER_AFFINITY_MASK="'${index}','${index}','${index}'"'
+        declare -a arr_l0_affinity_masks=('L0_CLUSTER_AFFINITY_MASK="'${index}','${index}','${index}','${index}'"'
+                                          'L0_CLUSTER_AFFINITY_MASK="'${index}','${index}'"')
+        for l0_affinity_mask in "${arr_l0_affinity_masks[@]}"; do
+            run_ut_ctest ${l0_affinity_mask} ${ut_name}
+            check_command_exit_code $? "single_device ut is FAILED"
+        done
     fi
 }
 
