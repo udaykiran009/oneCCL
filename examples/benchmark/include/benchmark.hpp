@@ -226,11 +226,8 @@ int set_datatypes(std::string option_value, int check_values, std::list<std::str
                 if ((dt == dtype_names[ccl::datatype::float16] ||
                      dt == dtype_names[ccl::datatype::bfloat16]) &&
                     check_values) {
-                    PRINT(
-                        "correctness checking is not implemented for '%s', try to disable checking with '-c 0' option",
-                        dt.c_str());
+                    PRINT("WARN: correctness checking is not implemented for '%s'", dt.c_str());
                 }
-                return -1;
             }
         }
     }
@@ -262,11 +259,8 @@ int set_reductions(std::string option_value, int check_values, std::list<std::st
         for (auto r : reductions) {
             if (check_supported_options(option_name, r, supported_option_values)) {
                 if ((r != reduction_names[ccl::reduction::sum]) && check_values) {
-                    PRINT(
-                        "correctness checking is not implemented for '%s', try to disable checking with '-c 0' option",
-                        r.c_str());
+                    PRINT("WARN: correctness checking is not implemented for '%s'", r.c_str());
                 }
-                return -1;
             }
         }
     }

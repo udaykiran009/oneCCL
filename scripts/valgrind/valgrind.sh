@@ -153,9 +153,9 @@ run_benchmark()
 
     if [[ ${VALGRIND_SCOPE} = "regular" ]]
     then
-        options=" -w 0 -i 2 -n 2 -y 256,16384,1048576"
+        options=" -w 0 -i 2 -n 2 -y 256,16384,32777,1048576"
     else
-        options=" -w 0 -i 2 -n 2 -y 256,1048576"
+        options=" -w 0 -i 2 -n 2 -y 256,32777,1048576"
     fi
 
     usm_list="none"
@@ -257,25 +257,33 @@ run()
 
     if [[ ${MODE} = "cpu" ]]
     then
-            dir_list="benchmark"
-            bench_backend_list="host"
+        dir_list="benchmark"
+        bench_backend_list="host"
     else
-            dir_list="benchmark"
-            bench_backend_list="sycl"
+        dir_list="benchmark"
+        bench_backend_list="sycl"
     fi
 
     if [[ ${VALGRIND_SCOPE} = "regular" ]]
     then
-        runtime_list="level_zero opencl"
-        dtype_list="int32 float32"
         transport_list="ofi mpi"
-    else
-        runtime_list="level_zero"
-        dtype_list="float32"
-        transport_list="mpi"
+        runtime_list="level_zero opencl"
         if [[ ${MODE} = "gpu" ]]
         then
+            dtype_list="int32 float32"
+        else
+            dtype_list="int32 float32 float16"
+        fi
+    else
+        transport_list="ofi"
+        runtime_list="level_zero"
+        if [[ ${MODE} = "gpu" ]]
+        then
+            dtype_list="float32"
             coll_list="allreduce"
+            transport_list="ofi"
+        else
+            dtype_list="float32 float16"
         fi
     fi
 
