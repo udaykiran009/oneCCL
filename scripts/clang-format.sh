@@ -6,7 +6,7 @@ SCOPE="all"
 DEPTH="1"
 
 LOG_FILE="clang_format.log"
-rm ${LOG_FILE}
+rm ${LOG_FILE} > /dev/null 2>&1
 
 echo_log()
 {
