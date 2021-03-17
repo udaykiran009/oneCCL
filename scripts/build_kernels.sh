@@ -29,14 +29,17 @@ function parse_options() {
         case $opt in
             a) has_a_option=true ;; # build all kernels
             d) has_d_option=${OPTARG}
-               if [ "$has_t_option" != "1" ] && [ "$has_t_option" != "0" ]; then
+               if [ "$has_d_option" != "1" ] && [ "$has_d_option" != "0" ]; then
                       echo "Error: -d option got an arg: $OPTARG. See help:"
+                      print_help
+                      exit 1
                fi
                ;; # build with debug logs
             t) has_t_option="${OPTARG}"
                if [ "$has_t_option" != "1" ] && [ "$has_t_option" != "0" ]; then
                     echo "Error: -t option got an incorrect arg: $OPTARG. See help:"
                     print_help
+                    exit 1
                fi
                ;; # support atomics enable
             h) print_help; exit ;;
@@ -96,6 +99,7 @@ function run_build() {
     # + some additional flags(-flto is used because clang complains when llvm-bc is emitted without the option)
     run_cmd "clang -cc1 ${defines} -triple spir64-unknown-unknown $fn.cl -O3 -flto -emit-llvm-bc -include opencl-c.h -x cl -cl-std=CL2.0 -o $fn.bc"
     run_cmd "llvm-spirv $fn.bc -o $fn.spv"
+    run_cmd "rm -f $fn.bc"
 }
 
 function run_all_build() {
