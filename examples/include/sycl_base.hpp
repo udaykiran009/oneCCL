@@ -58,7 +58,7 @@ inline bool check_sycl_usm(queue& q, usm::alloc alloc_type) {
     return ret;
 }
 
-std::string get_preferred_gpu_platform_name() {
+inline std::string get_preferred_gpu_platform_name() {
     std::string filter;
     std::string result;
 
@@ -115,7 +115,7 @@ std::string get_preferred_gpu_platform_name() {
     return result;
 }
 
-std::vector<sycl::device> create_sycl_gpu_devices() {
+inline std::vector<sycl::device> create_sycl_gpu_devices() {
     constexpr char dev_prefix[] = "-- ";
     constexpr char sub_dev_prefix[] = "---- ";
 
@@ -206,8 +206,8 @@ std::vector<sycl::device> create_sycl_gpu_devices() {
     return result;
 }
 
-std::vector<sycl::queue> create_sycl_queues(const std::string& device_type,
-                                            const std::vector<int>& ranks) {
+inline std::vector<sycl::queue> create_sycl_queues(const std::string& device_type,
+                                                   const std::vector<int>& ranks) {
     std::vector<sycl::device> devices;
 
     try {
@@ -323,7 +323,7 @@ inline bool create_sycl_queue(int argc, char* argv[], int rank, queue& q) {
     }
 }
 
-bool handle_exception(queue& q) {
+inline bool handle_exception(queue& q) {
     try {
         q.wait_and_throw();
     }
@@ -334,7 +334,7 @@ bool handle_exception(queue& q) {
     return true;
 }
 
-usm::alloc usm_alloc_type_from_string(const string& str) {
+inline usm::alloc usm_alloc_type_from_string(const string& str) {
     const map<string, usm::alloc> names{ {
         { "host", usm::alloc::host },
         { "device", usm::alloc::device },
@@ -353,7 +353,7 @@ usm::alloc usm_alloc_type_from_string(const string& str) {
     return it->second;
 }
 
-std::pair<usm::alloc, std::string> take_usm_type(const int argc, char* str_type) {
+inline std::pair<usm::alloc, std::string> take_usm_type(const int argc, char* str_type) {
     std::map<usm::alloc, std::string> map_usm_type;
     auto usm_alloc_type = usm::alloc::shared;
     auto str_usm_alloc_type = "shared";

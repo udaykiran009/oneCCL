@@ -2,11 +2,32 @@
 
 #include <math.h>
 
-#include "base.hpp"
 #include "lp.hpp"
+#include "test.hpp"
+#include "transport.hpp"
 
 #define FIRST_FP_COEFF  (0.1)
 #define SECOND_FP_COEFF (0.01)
+
+#ifdef CCL_ENABLE_SYCL
+void* alloc_buffer(size_t bytes) {
+    auto& allocator = transport_data::instance().get_allocator();
+    return allocator.allocate(bytes, sycl::usm::alloc::device);
+}
+
+void free_buffer(void* ptr) {
+    auto& allocator = transport_data::instance().get_allocator();
+    allocator.deallocate(static_cast<char*>(ptr));
+}
+
+void copy_buffer(void* dst, void* src, size_t bytes) {
+    transport_data::instance().get_stream().get_native().memcpy(dst, src, bytes).wait();
+}
+
+void fill_buffer(void* ptr, int value, size_t bytes) {
+    transport_data::instance().get_stream().get_native().memset(ptr, value, bytes).wait();
+}
+#endif /* CCL_ENABLE_SYCL */
 
 template <typename T>
 template <class coll_attr_type>
@@ -104,24 +125,6 @@ bool test_operation<T>::complete_event(ccl::event& e) {
 }
 
 template <typename T>
-void test_operation<T>::change_buffer_pointers() {
-    char* dynamic_pointer_env = getenv("CCL_TEST_DYNAMIC_POINTER");
-    if (dynamic_pointer_env && atoi(dynamic_pointer_env) == 1) {
-        /*
-            create deep copy of vector with buffers and swap it with original one
-            as result buffers in updated vector will have original content
-            but in new memory locations
-        */
-        if (comm_rank % 2) {
-            std::vector<std::vector<T>>(send_bufs.begin(), send_bufs.end()).swap(send_bufs);
-        }
-        else {
-            std::vector<std::vector<T>>(recv_bufs.begin(), recv_bufs.end()).swap(recv_bufs);
-        }
-    }
-}
-
-template <typename T>
 size_t test_operation<T>::generate_priority_value(size_t buf_idx) {
     return buf_idx++;
 }
@@ -137,8 +140,6 @@ void test_operation<T>::print(std::ostream& output) {
 
 template <typename T>
 base_test<T>::base_test() {
-    global_comm_rank = global_data::instance().comms[0].rank();
-    global_comm_size = global_data::instance().comms[0].size();
     memset(err_message, '\0', ERR_MESSAGE_MAX_LEN);
     rand_engine = std::default_random_engine{ rand_device() };
 }
@@ -190,37 +191,39 @@ int base_test<T>::check_error(test_operation<T>& op, T expected, size_t buf_idx,
 }
 
 template <typename T>
+void base_test<T>::free_buffers(test_operation<T>& op) {
+    op.send_bufs.clear();
+    op.recv_bufs.clear();
+
+#ifdef CCL_ENABLE_SYCL
+    for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
+        free_buffer(op.device_send_bufs[buf_idx]);
+        free_buffer(op.device_recv_bufs[buf_idx]);
+    }
+#endif /* CCL_ENABLE_SYCL */
+}
+
+template <typename T>
 void base_test<T>::alloc_buffers_base(test_operation<T>& op) {
     op.send_bufs.resize(op.buffer_count);
     op.recv_bufs.resize(op.buffer_count);
-    if (is_lp_datatype(op.param.datatype)) {
-        op.send_bufs_lp.resize(op.buffer_count);
-        op.recv_bufs_lp.resize(op.buffer_count);
-    }
-
     for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
         op.send_bufs[buf_idx].resize(op.elem_count * op.comm_size);
         op.recv_bufs[buf_idx].resize(op.elem_count * op.comm_size);
-
-        if (is_lp_datatype(op.param.datatype)) {
-            op.send_bufs_lp[buf_idx].resize(op.elem_count * op.comm_size);
-            op.recv_bufs_lp[buf_idx].resize(op.elem_count * op.comm_size);
-        }
     }
+
+#ifdef CCL_ENABLE_SYCL
+    op.device_send_bufs.resize(op.buffer_count);
+    op.device_recv_bufs.resize(op.buffer_count);
+    for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
+        op.device_send_bufs[buf_idx] = alloc_buffer(op.elem_count * sizeof(T) * op.comm_size);
+        op.device_recv_bufs[buf_idx] = alloc_buffer(op.elem_count * sizeof(T) * op.comm_size);
+    }
+#endif /* CCL_ENABLE_SYCL */
 }
 
 template <typename T>
 void base_test<T>::alloc_buffers(test_operation<T>& op) {}
-
-template <typename T>
-void base_test<T>::fill_send_buffers_base(test_operation<T>& op) {
-    if (!is_lp_datatype(op.param.datatype))
-        return;
-
-    for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
-        std::fill(op.send_bufs_lp[buf_idx].begin(), op.send_bufs_lp[buf_idx].end(), (T)SOME_VALUE);
-    }
-}
 
 template <typename T>
 void base_test<T>::fill_send_buffers(test_operation<T>& op) {
@@ -236,7 +239,7 @@ void base_test<T>::fill_send_buffers(test_operation<T>& op) {
 }
 
 template <typename T>
-void base_test<T>::fill_recv_buffers_base(test_operation<T>& op) {
+void base_test<T>::fill_recv_buffers(test_operation<T>& op) {
     for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
         if (op.param.place_type == PLACE_IN) {
             std::copy(op.send_bufs[buf_idx].begin(),
@@ -246,14 +249,8 @@ void base_test<T>::fill_recv_buffers_base(test_operation<T>& op) {
         else {
             std::fill(op.recv_bufs[buf_idx].begin(), op.recv_bufs[buf_idx].end(), (T)SOME_VALUE);
         }
-        if (is_lp_datatype(op.param.datatype)) {
-            std::fill(op.recv_bufs_lp[buf_idx].begin(), op.recv_bufs_lp[buf_idx].end(), SOME_VALUE);
-        }
     }
 }
-
-template <typename T>
-void base_test<T>::fill_recv_buffers(test_operation<T>& op) {}
 
 template <typename T>
 T base_test<T>::calculate_reduce_value(test_operation<T>& op, size_t buf_idx, size_t elem_idx) {
@@ -315,38 +312,129 @@ float base_test<float>::calculate_reduce_value(test_operation<float>& op,
 }
 
 template <typename T>
+void base_test<T>::change_buffers(test_operation<T>& op) {
+    char* dynamic_pointer_env = getenv("CCL_TEST_DYNAMIC_POINTER");
+    if (dynamic_pointer_env && atoi(dynamic_pointer_env) == 1) {
+        void* send_buf = op.send_bufs[0].data();
+        void* recv_buf = op.recv_bufs[0].data();
+        /*
+            create deep copy of vector with buffers and swap it with original one
+            as result buffers in updated vector will have original content
+            but in new memory locations
+        */
+        std::vector<std::vector<T>>(op.send_bufs.begin(), op.send_bufs.end()).swap(op.send_bufs);
+        std::vector<std::vector<T>>(op.recv_bufs.begin(), op.recv_bufs.end()).swap(op.recv_bufs);
+        void* new_send_buf = op.send_bufs[0].data();
+        void* new_recv_buf = op.recv_bufs[0].data();
+        ASSERT(send_buf != new_send_buf, "send buffers should differ");
+        ASSERT(recv_buf != new_recv_buf, "recv buffers should differ");
+
+#ifdef CCL_ENABLE_SYCL
+        /* do regular reallocation */
+        void* device_send_buf = op.device_send_bufs[0];
+        void* device_recv_buf = op.device_recv_bufs[0];
+        std::vector<void*> new_device_send_bufs(op.buffer_count);
+        std::vector<void*> new_device_recv_bufs(op.buffer_count);
+        for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
+            new_device_send_bufs[buf_idx] = alloc_buffer(op.elem_count * sizeof(T) * op.comm_size);
+            new_device_recv_bufs[buf_idx] = alloc_buffer(op.elem_count * sizeof(T) * op.comm_size);
+        }
+        for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
+            free_buffer(op.device_send_bufs[buf_idx]);
+            free_buffer(op.device_recv_bufs[buf_idx]);
+            op.device_send_bufs[buf_idx] = new_device_send_bufs[buf_idx];
+            op.device_recv_bufs[buf_idx] = new_device_recv_bufs[buf_idx];
+        }
+        void* new_device_send_buf = op.device_send_bufs[0];
+        void* new_device_recv_buf = op.device_recv_bufs[0];
+        ASSERT(device_send_buf != new_device_send_buf, "device send buffers should differ");
+        ASSERT(device_recv_buf != new_device_recv_buf, "device recv buffers should differ");
+#endif /* CCL_ENABLE_SYCL */
+    }
+}
+
+#ifdef CCL_ENABLE_SYCL
+
+template <typename T>
+void base_test<T>::copy_to_device_send_buffers(test_operation<T>& op) {
+    for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
+#ifdef TEST_CCL_BCAST
+        void* host_buf = op.send_bufs[buf_idx].data();
+        void* device_buf = op.device_send_bufs[buf_idx];
+#else /* TEST_CCL_BCAST */
+        void* host_buf = (op.param.place_type == PLACE_IN) ? op.recv_bufs[buf_idx].data()
+                                                           : op.send_bufs[buf_idx].data();
+        void* device_buf = (op.param.place_type == PLACE_IN) ? op.device_recv_bufs[buf_idx]
+                                                             : op.device_send_bufs[buf_idx];
+#endif /* TEST_CCL_BCAST */
+        size_t bytes = op.send_bufs[buf_idx].size() * sizeof(T);
+        copy_buffer(device_buf, host_buf, bytes);
+    }
+}
+
+template <typename T>
+void base_test<T>::copy_from_device_recv_buffers(test_operation<T>& op) {
+    for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
+        copy_buffer(op.recv_bufs[buf_idx].data(),
+                    op.device_recv_bufs[buf_idx],
+                    op.recv_bufs[buf_idx].size() * sizeof(T));
+    }
+}
+#endif /* CCL_ENABLE_SYCL */
+
+template <typename T>
 int base_test<T>::run(test_operation<T>& op) {
-    size_t result = 0;
+    size_t iter, result = 0;
 
     char* algo = getenv(ALGO_SELECTION_ENV);
     if (algo)
         std::cout << ALGO_SELECTION_ENV << " = " << algo << "\n";
     std::cout << op.param << "\n";
 
-    for (size_t iter = 0; iter < ITER_COUNT; iter++) {
-        try {
-            alloc_buffers_base(op);
-            alloc_buffers(op);
+    /*
+        Buffer management logic for single operation
+        SYCL-specific logic is marked with (*)
+        LP-specific logic is marked with (**)
 
-            fill_send_buffers_base(op);
-            fill_send_buffers(op);
+        1. alloc host send and recv buffers
+        2. alloc device send and recv buffers (*)
+        3. fill host send and recv buffers
+        4. do in-place FP32->LP cast for host send buffer (**)
+        5. copy from host send buffer into device send buffer (*)
+        6. invoke comm operation on host or device (*) send and recv buffers
+        7. copy device recv buffer into host recv buffer (*)
+        8. do in-place LP->FP32 cast for host recv buffer (**)
+        9. check result correctness on host recv buffer
+        10. free host send and recv buffers
+        11. free device send and recv buffers (*)
+    */
 
-            fill_recv_buffers_base(op);
-            fill_recv_buffers(op);
-
+    try {
+        alloc_buffers_base(op);
+        alloc_buffers(op);
+        for (iter = 0; iter < ITER_COUNT; iter++) {
             if (iter > 0) {
-                op.change_buffer_pointers();
+                change_buffers(op);
             }
 
-            op.define_start_order(rand_engine);
+            fill_send_buffers(op);
+            fill_recv_buffers(op);
 
             if (is_lp_datatype(op.param.datatype)) {
                 make_lp_prologue(op, op.comm_size * op.elem_count);
             }
 
-            run_derived(op);
+#ifdef CCL_ENABLE_SYCL
+            copy_to_device_send_buffers(op);
+#endif /* CCL_ENABLE_SYCL */
 
+            op.define_start_order(rand_engine);
+            run_derived(op);
             op.complete_events();
+
+#ifdef CCL_ENABLE_SYCL
+            copy_from_device_recv_buffers(op);
+#endif /* CCL_ENABLE_SYCL */
 
             if (is_lp_datatype(op.param.datatype)) {
                 make_lp_epilogue(op, op.comm_size * op.elem_count);
@@ -354,10 +442,11 @@ int base_test<T>::run(test_operation<T>& op) {
 
             result += check(op);
         }
-        catch (const std::exception& ex) {
-            result += TEST_FAILURE;
-            printf("WARNING! %s iter number: %zu", ex.what(), iter);
-        }
+        free_buffers(op);
+    }
+    catch (const std::exception& ex) {
+        result += TEST_FAILURE;
+        printf("WARNING! %s iter number: %zu", ex.what(), iter);
     }
 
     return result;

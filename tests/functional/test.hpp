@@ -8,24 +8,7 @@
 
 #include "oneapi/ccl.hpp"
 #include "conf.hpp"
-
-class global_data {
-public:
-    std::vector<ccl::communicator> comms;
-    ccl::shared_ptr_class<ccl::kvs> kvs;
-
-    global_data(global_data& gd) = delete;
-    void operator=(const global_data&) = delete;
-    static global_data& instance() {
-        static global_data gd;
-        return gd;
-    }
-
-protected:
-    global_data(){};
-    ~global_data(){};
-};
-
+#include "transport.hpp"
 #include "utils.hpp"
 
 bool is_lp_datatype(ccl_data_type dtype);
@@ -47,9 +30,10 @@ struct test_operation {
     std::vector<std::vector<T>> send_bufs;
     std::vector<std::vector<T>> recv_bufs;
 
-    // buffers for 16-bits low precision datatype
-    std::vector<std::vector<short>> send_bufs_lp;
-    std::vector<std::vector<short>> recv_bufs_lp;
+#ifdef CCL_ENABLE_SYCL
+    std::vector<void*> device_send_bufs;
+    std::vector<void*> device_recv_bufs;
+#endif /* CCL_ENABLE_SYCL */
 
     std::vector<ccl::event> events;
     ccl::string_class match_id;
@@ -60,8 +44,8 @@ struct test_operation {
               buffer_count(get_buffer_count(param)),
               datatype(get_ccl_datatype(param)),
               reduction(get_ccl_reduction(param)) {
-        comm_size = global_data::instance().comms[0].size();
-        comm_rank = global_data::instance().comms[0].rank();
+        comm_size = transport_data::instance().get_comm().size();
+        comm_rank = transport_data::instance().get_comm().rank();
         buf_indexes.resize(buffer_count);
     }
 
@@ -69,9 +53,7 @@ struct test_operation {
     void prepare_attr(coll_attr_type& coll_attr, size_t idx);
 
     std::string create_match_id(size_t buf_idx);
-    void change_buffer_pointers();
     size_t generate_priority_value(size_t buf_idx);
-
     void define_start_order(std::default_random_engine& rand_engine);
 
     bool complete_events();
@@ -84,17 +66,19 @@ struct test_operation {
     void print(std::ostream& output);
 
     void* get_send_buf(size_t buf_idx) {
-        if (is_lp_datatype(param.datatype))
-            return static_cast<void*>(send_bufs_lp[buf_idx].data());
-        else
-            return static_cast<void*>(send_bufs[buf_idx].data());
+#ifdef CCL_ENABLE_SYCL
+        return device_send_bufs[buf_idx];
+#else /* CCL_ENABLE_SYCL */
+        return send_bufs[buf_idx].data();
+#endif /* CCL_ENABLE_SYCL */
     }
 
     void* get_recv_buf(size_t buf_idx) {
-        if (is_lp_datatype(param.datatype))
-            return static_cast<void*>(recv_bufs_lp[buf_idx].data());
-        else
-            return static_cast<void*>(recv_bufs[buf_idx].data());
+#ifdef CCL_ENABLE_SYCL
+        return device_recv_bufs[buf_idx];
+#else /* CCL_ENABLE_SYCL */
+        return recv_bufs[buf_idx].data();
+#endif /* CCL_ENABLE_SYCL */
     }
 
     size_t get_check_step(size_t elem_idx) {
@@ -121,10 +105,7 @@ struct test_operation {
 template <typename T>
 class base_test {
 public:
-    int global_comm_rank;
-    int global_comm_size;
     char err_message[ERR_MESSAGE_MAX_LEN]{};
-
     std::random_device rand_device;
     std::default_random_engine rand_engine;
 
@@ -136,12 +117,16 @@ public:
 
     void alloc_buffers_base(test_operation<T>& op);
     virtual void alloc_buffers(test_operation<T>& op);
+    void free_buffers(test_operation<T>& op);
 
-    void fill_send_buffers_base(test_operation<T>& op);
     virtual void fill_send_buffers(test_operation<T>& op);
-
-    void fill_recv_buffers_base(test_operation<T>& op);
     virtual void fill_recv_buffers(test_operation<T>& op);
+    void change_buffers(test_operation<T>& op);
+
+#ifdef CCL_ENABLE_SYCL
+    void copy_to_device_send_buffers(test_operation<T>& op);
+    void copy_from_device_recv_buffers(test_operation<T>& op);
+#endif /* CCL_ENABLE_SYCL */
 
     virtual T calculate_reduce_value(test_operation<T>& op, size_t buf_idx, size_t elem_idx);
 

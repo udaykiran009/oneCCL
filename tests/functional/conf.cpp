@@ -288,10 +288,9 @@ std::ostream& operator<<(std::ostream& stream, const test_param& param) {
 }
 
 void print_err_message(char* message, std::ostream& output) {
-    ccl::communicator& comm = global_data::instance().comms[0];
+    auto& comm = transport_data::instance().get_service_comm();
     int comm_size = comm.size();
     int comm_rank = comm.rank();
-
     size_t message_len = strlen(message);
     std::vector<size_t> message_lens(comm_size, 0);
     std::vector<size_t> recv_counts(comm_size, 1);
@@ -310,12 +309,4 @@ void print_err_message(char* message, std::ostream& output) {
     if (comm_rank == 0) {
         output << messages.data();
     }
-}
-
-void mpi_finalize() {
-    int is_finalized = 0;
-    MPI_Finalized(&is_finalized);
-
-    if (!is_finalized)
-        MPI_Finalize();
 }

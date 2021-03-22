@@ -21,7 +21,8 @@ endif()
 
 set(SERVICE_SRC
     conf.cpp
-    lp.cpp)
+    lp.cpp
+    transport.cpp)
 
 if (DEFINED ENV{CCL_CONFIGURATION})
     set(CCL_CONFIGURATION "$ENV{CCL_CONFIGURATION}")
@@ -39,16 +40,19 @@ enable_testing()
 
 set(GTEST_DIR ${PROJECT_SOURCE_DIR}/../googletest-release-1.8.1/googletest)
 add_subdirectory(${GTEST_DIR} gtest_build)
+set(EXAMPLES_DIR ${PROJECT_SOURCE_DIR}/../../examples)
+
 set(INC_DIRS
     ${GTEST_DIR}/include
-    ${GTEST_DIR}/src)
+    ${GTEST_DIR}/src
+    ${EXAMPLES_DIR}/include)
 
 include_directories(${INC_DIRS})
 
 message(STATUS "CCL_ROOT: ${CCL_ROOT}")
 message(STATUS "CCL_CONFIGURATION: ${CCL_CONFIGURATION}")
-message(STATUS "tests/functional LIBFABRIC_LIB_DIR: ${LIBFABRIC_LIB_DIR}")
-message(STATUS "tests/functional LIBFABRIC_INCLUDE_DIR: ${LIBFABRIC_INCLUDE_DIR}")
+message(STATUS "FT LIBFABRIC_LIB_DIR: ${LIBFABRIC_LIB_DIR}")
+message(STATUS "FT LIBFABRIC_INCLUDE_DIR: ${LIBFABRIC_INCLUDE_DIR}")
 message(STATUS "INC_DIRS: ${INC_DIRS}")
 
 #include_directories(${CCL_ROOT}/include/${CCL_CONFIGURATION})

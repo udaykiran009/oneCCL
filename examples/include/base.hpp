@@ -11,14 +11,18 @@
 #include <mpi.h>
 #include <stdexcept>
 #include <stdio.h>
+#include <sys/syscall.h>
 #include <sys/time.h>
 #include <vector>
+#include <unistd.h>
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
 using namespace cl::sycl;
 using namespace cl::sycl::access;
 #endif /* CCL_ENABLE_SYCL */
+
+#define GETTID() syscall(SYS_gettid)
 
 #define ITERS                (16)
 #define COLL_ROOT            (0)
@@ -36,7 +40,15 @@ using namespace cl::sycl::access;
     do { \
         if (!(cond)) { \
             printf("FAILED\n"); \
-            fprintf(stderr, "ASSERT '%s' FAILED " fmt "\n", #cond, ##__VA_ARGS__); \
+            fprintf(stderr, \
+                    "(%ld): %s:%s:%d: ASSERT '%s' FAILED: " fmt "\n", \
+                    GETTID(), \
+                    __FILE__, \
+                    __FUNCTION__, \
+                    __LINE__, \
+                    #cond, \
+                    ##__VA_ARGS__); \
+            fflush(stderr); \
             throw std::runtime_error("ASSERT FAILED"); \
         } \
     } while (0)
@@ -78,9 +90,7 @@ using namespace cl::sycl::access;
         PRINT_BY_ROOT(comm, "PASSED"); \
     } while (0)
 
-double t1, t2, t;
-
-double when(void) {
+inline double when(void) {
     struct timeval tv;
     static struct timeval tv_base;
     static int is_first = 1;
@@ -98,7 +108,7 @@ double when(void) {
     return (double)(tv.tv_sec - tv_base.tv_sec) * 1.0e6 + (double)(tv.tv_usec - tv_base.tv_usec);
 }
 
-void mpi_finalize() {
+inline void mpi_finalize() {
     int is_finalized = 0;
     MPI_Finalized(&is_finalized);
 

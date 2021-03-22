@@ -9,16 +9,7 @@
     if (comm.rank() == 0) { \
         printf(fmt "\n", ##__VA_ARGS__); \
     }
-#endif //PRINT_BY_ROOT
-
-#define ASSERT(cond, fmt, ...) \
-    do { \
-        if (!(cond)) { \
-            printf("FAILED\n"); \
-            fprintf(stderr, "ASSERT '%s' FAILED " fmt "\n", #cond, ##__VA_ARGS__); \
-            throw std::runtime_error("ASSERT FAILED"); \
-        } \
-    } while (0)
+#endif /* PRINT_BY_ROOT */
 
 constexpr std::initializer_list<ccl::datatype> all_dtypes = {
     ccl::datatype::int8,    ccl::datatype::int32,   ccl::datatype::int64,   ccl::datatype::uint64,
