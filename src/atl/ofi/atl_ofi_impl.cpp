@@ -936,6 +936,19 @@ static atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
     setenv("HFI_NO_CPUAFFINITY", "1", 0);
     setenv("PSM2_MULTI_EP", "1", 0);
 
+    setenv("FI_PSM3_DELAY", "0", 0);
+    setenv("FI_PSM3_TIMEOUT", "0", 0);
+    setenv("FI_PSM3_LOCK_LEVEL", "1", 0);
+    setenv("FI_PSM3_NAME_SERVER", "0", 0);
+    setenv("PSM3_NO_CPUAFFINITY", "1", 0);
+    setenv("PSM3_MULTI_EP", "1", 0);
+
+    char* hydra_uuid_env = getenv("I_MPI_HYDRA_UUID");
+    if (hydra_uuid_env) {
+        setenv("FI_PSM2_UUID", hydra_uuid_env, 0);
+        setenv("FI_PSM3_UUID", hydra_uuid_env, 0);
+    }
+
     setenv("FI_OFI_RXM_USE_HASH", "0", 0);
     setenv("FI_OFI_RXM_RX_SIZE", "8192", 0);
     setenv("FI_OFI_RXM_TX_SIZE", "8192", 0);
@@ -1676,7 +1689,7 @@ static atl_status_t atl_ofi_init(int* argc,
     }
 
     if (coord->global_idx == 0)
-        LOG_INFO("prov_count ", ofi_ctx->prov_count);
+        LOG_INFO("prov_count: ", ofi_ctx->prov_count);
 
     for (idx = 0; idx < ofi_ctx->prov_count; idx++) {
         atl_ofi_prov_t* prov;
