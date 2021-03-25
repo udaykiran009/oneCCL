@@ -1,5 +1,9 @@
 #!/bin/bash -x
 
+# The script is only for Jenkins usage.
+# It is invoked by jenkins' jobs with separate parametres.
+# For the knobs - see help: sanity.sh -help
+
 echo "DEBUG: GIT_BRANCH = ${GIT_BRANCH}"
 echo "DEBUG: CCL_BUILD_ID = ${CCL_BUILD_ID}"
 
@@ -51,15 +55,16 @@ function log()
 # Print usage and help information
 function print_help()
 {
-    echo_log "Usage:"
-    echo_log "    ./${BASENAME}.sh <options>"
-    echo_log ""
-    echo_log "<options>:"
-    echo_log "   ------------------------------------------------------------"
-    echo_log "   ------------------------------------------------------------"
-    echo_log "    -h|-H|-help|--help"
-    echo_log "        Print help information"
-    echo_log ""
+    echo -e "Usage:\n" \
+    "    ./${BASENAME}.sh <options> \n" \
+    "<options>:\n" \
+    "-compatibility_tests: enbale compatibility tests\n" \
+    "-modulefile_tests:    enable modulefile tests\n" \
+    "-unit_tests -kernels: enable unit tests for kernels\n" \
+    "-functional_tests:    enable functional tests\n" \
+    "-valgrind_check:      enable valgrind check\n" \
+    "-help:                print this help information"
+    exit 0
 }
 
 # Echo with logging. Always echo and always log
@@ -67,6 +72,7 @@ function echo_log()
 {
     echo -e "$*" 2>&1 | tee -a ${LOG_FILE}
 }
+
 # echo the debug information
 function echo_debug()
 {
@@ -687,45 +693,50 @@ EOF
 #==============================================================================
 #                              MAIN
 #==============================================================================
-set_default_values
-set_environment
-set_impi_environment
 
-clean_nodes
-while [ $# -ne 0 ]
-do
-    case $1 in
-    "-compatibility_tests" )
-        run_compatibitily_tests
-        shift
-        ;;
-    "-modulefile_tests" )
-        run_modulefile_tests
-        shift
-        ;;
-    "-unit_tests" )
-            run_ut_tests $2
-            if [ $? -ne 0 ]; then
-                exit 1
-            else
-                exit 0
-            fi
-        ;;
-    "-functional_tests" )
-        make_tests
-        check_command_exit_code $? "Compilation of functional tests is FAILED"
-        run_tests
-        shift
-        ;;
-    "-valgrind_check" )
-        run_valgrind_check
-        shift
-        ;;
-    *)
-        echo "WARNING: example testing not started"
-        exit 0
-        shift
-        ;;
-    esac
-done
-clean_nodes
+if [ "$1" == "-help" ]; then
+    print_help
+else
+    clean_nodes
+    set_default_values
+    set_environment
+    set_impi_environment
+
+    while [ $# -ne 0 ]
+    do
+        case $1 in
+        "-compatibility_tests" )
+            run_compatibitily_tests
+            shift
+            ;;
+        "-modulefile_tests" )
+            run_modulefile_tests
+            shift
+            ;;
+        "-unit_tests" )
+                run_ut_tests $2
+                if [ $? -ne 0 ]; then
+                    exit 1
+                else
+                    exit 0
+                fi
+            ;;
+        "-functional_tests" )
+            make_tests
+            check_command_exit_code $? "Compilation of functional tests is FAILED"
+            run_tests
+            shift
+            ;;
+        "-valgrind_check" )
+            run_valgrind_check
+            shift
+            ;;
+        *)
+            echo "WARNING: example testing not started"
+            exit 0
+            shift
+            ;;
+        esac
+    done
+    clean_nodes
+fi
