@@ -84,12 +84,13 @@ void user_thread_idx(size_t thread_idx,
 
         /* create operation attributes */
         allocated_memory_array& mem_objects = memory_storage.find(rank)->second;
+        size_t recv_count = COUNT / comm.size();
         auto attr = ccl::create_operation_attr<ccl::reduce_scatter_attr>();
         auto& stream = streams.find(rank)->second;
 
         /* invoke operation */
         reqs.push_back(ccl::reduce_scatter(
-            mem_objects[0], mem_objects[1], COUNT, ccl::reduction::sum, comm, stream, attr));
+            mem_objects[0], mem_objects[1], recv_count, ccl::reduction::sum, comm, stream, attr));
     }
 
     /* wait */
@@ -224,9 +225,9 @@ int main(int argc, char** argv) {
 
     /* calculate total devices for cluster */
     std::cout << "Devices in cluster count: " << total_device_in_cluster
-              << ", for rank: " << mpi_rank << " devices count"
-              << total_devices_in_process[mpi_rank] << ", thread count"
-              << node_device_indices[mpi_rank].size() << std::endl;
+              << ", for rank: " << mpi_rank
+              << " devices count: " << total_devices_in_process[mpi_rank]
+              << ", thread count: " << node_device_indices[mpi_rank].size() << std::endl;
 
     auto devices_in_process = utils::set_union_devices_in_current_process(devices_for_mpi_rank);
 

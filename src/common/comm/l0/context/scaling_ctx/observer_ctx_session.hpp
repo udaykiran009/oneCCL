@@ -113,6 +113,5 @@ struct session_table {
     static size_t get_unique_tag();
 };
 
-using shared_session_table_ptr = std::shared_ptr<session_table>;
 } // namespace observer
 } // namespace native

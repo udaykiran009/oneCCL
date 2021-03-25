@@ -19,6 +19,8 @@ void sched_entry::do_progress() {
     if (status == ccl_sched_entry_status_complete && exec_mode == ccl_sched_entry_exec_once) {
         status = ccl_sched_entry_status_complete_once;
     }
+
+    // TODO: what if status is ccl_sched_entry_status_failed or ccl_sched_entry_status_invalid?
 }
 
 bool sched_entry::is_completed() {

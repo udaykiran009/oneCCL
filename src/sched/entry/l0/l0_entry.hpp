@@ -224,6 +224,7 @@ public:
         auto send_buf_ptr =
             reinterpret_cast<typename kernel_params::native_type *>(send_buf.get_ptr());
 
+        //bind data
         main_entry_function.template set_args<typename kernel_main_typed::common_entry_buf_arg>(
             send_buf_ptr);
 
@@ -239,6 +240,7 @@ public:
 
     virtual void update() override {
         if (!ready_to_exec) {
+            // TODO: what if submit_for_execution() return false?
             submit_for_execution();
         }
         else {
@@ -426,9 +428,12 @@ protected:
         assert(this->get_state() != gpu_entry_state::wait_for_completion);
 
         if (get_topology() == ccl::group_split_type::cluster) {
-            // TODO: implement process communicator case
-            throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
-                                 "TODO: implement process communicator case");
+            // TODO: in case of (vitual device + IPC) we can get the data race here
+            // How we can detect such case?
+            // In the case when we use one GPU queue per process, everything should be ok
+            // throw ccl::exception(std::string(__PRETTY_FUNCTION__) +
+            //                      "TODO: implement process communicator case");
+            cmd_list.close_and_execute(get_ctx(), this->get_fence());
         }
         else {
             // TODO: how to ensure that fence update is thread safe?

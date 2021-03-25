@@ -38,7 +38,6 @@ TYPED_TEST(ring_reduce_scatter_single_process_fixture, ring_reduce_scatter_singl
     // test case data
     const size_t comm_size = devices.size();
     const size_t recv_buffer_size = 128;
-    const size_t send_buffer_size = comm_size * recv_buffer_size;
     constexpr size_t comm_group_count = 3;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
@@ -50,7 +49,7 @@ TYPED_TEST(ring_reduce_scatter_single_process_fixture, ring_reduce_scatter_singl
         this->output << "device id: " << ccl::to_string(devices[rank]->get_device_path())
                      << ", rank: " << rank << std::endl;
 
-        this->register_shared_comm_data(rank, rank, comm_size, send_buffer_size);
+        this->register_shared_comm_data(rank, rank, comm_size, recv_buffer_size);
 
         // flags
         auto left_wrote_2_me_flag = devices[rank]->template alloc_memory<int>(1, sizeof(int), ctx);

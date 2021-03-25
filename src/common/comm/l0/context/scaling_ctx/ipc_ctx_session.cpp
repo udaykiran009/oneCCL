@@ -103,6 +103,7 @@ bool session::process(const ccl_ipc_gpu_comm* indexed_ipc_dst_devices,
             LOG_ERROR("Cannot recover IPC handle by index: ", num_handles, ", error:\n", ex.what());
             throw;
         }
+        num_handles++;
     }
 
     // handles received

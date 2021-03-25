@@ -104,17 +104,7 @@ public:
 
         // bind shared data to kernel
         const auto& out_ctx_params = params.get_ctx_params();
-        main_func.template set_arg<typename kernel_func_type::event_prod_chunk_mem_arg>(
-            out_ctx_params.numa_staged_memory->get());
-        main_func.template set_arg<typename kernel_func_type::event_prod_bytes_arg>(
-            out_ctx_params.staged_memory_size_counter->get());
-
-        main_func.template set_arg<typename kernel_func_type::event_consumed_bytes_offset_arg>(
-            out_ctx_params.producer_aggregated_memory_offset->get());
-        main_func.template set_arg<typename kernel_func_type::event_consumed_chunk_mem_arg>(
-            out_ctx_params.total_producers_aggregated_memory->get());
-        main_func.template set_arg<typename kernel_func_type::event_consumed_bytes_arg>(
-            out_ctx_params.total_producers_aggregated_size_counter->get());
+        main_func.bind_data(out_ctx_params);
 
         return main_func;
     }

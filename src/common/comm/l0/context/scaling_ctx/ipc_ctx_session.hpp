@@ -86,7 +86,6 @@ struct typed_ipc_session : public session {
         // get appropriate kernel
         auto& kernel = module_ptr->template get_class<typename module_t::main_class>()
                            .template get<kernel_params>();
-        using kernel_t = typename std::decay<decltype(kernel)>::type;
 
         // get recovered ipc handles
         auto data_it = data_to_recover.ipc_memory_storage.find(source);
@@ -95,22 +94,8 @@ struct typed_ipc_session : public session {
         }
 
         // bind data
-        const recovered_handles_storage::restored_ipc_memory_container& ipc_handles =
-            data_it->second;
-        typename kernel_t::tmp_recv_buf_arg_type tmp_recv_buf =
-            reinterpret_cast<typename kernel_t::tmp_recv_buf_arg_type>(
-                ipc_handles.at(0).get().pointer);
-        kernel.template set_arg<typename kernel_t::tmp_recv_buf_arg>(tmp_recv_buf);
-
-        typename kernel_t::income_data_flag_arg_type inc =
-            reinterpret_cast<typename kernel_t::income_data_flag_arg_type>(
-                ipc_handles.at(1).get().pointer);
-        kernel.template set_arg<typename kernel_t::income_data_flag_arg>(inc);
-
-        typename kernel_t::ready_to_recv_flag_arg_type ready =
-            reinterpret_cast<typename kernel_t::ready_to_recv_flag_arg_type>(
-                ipc_handles.at(2).get().pointer);
-        kernel.template set_arg<typename kernel_t::ready_to_recv_flag_arg>(ready);
+        const auto& ipc_handles = data_it->second;
+        kernel.bind_data(ipc_handles);
     }
 };
 
@@ -147,5 +132,4 @@ private:
                        const std::string& peer_addr);
 };
 
-using shared_session_table_ptr = std::shared_ptr<session_table>;
 } // namespace native

@@ -148,14 +148,20 @@ public:
             abort();
         }
 
+        // TODO: WA: destroy all sessions that were before
+        // (only one session is always active)
+        // without this WA, we hang in kernels when reusing sessions
+        // because other sessions have the same key accidentally.
+        // It will works for GPU cache enabled but invalid without cache
+        table->sessions.clear();
+
         std::shared_ptr<session> sess;
-        LOG_DEBUG("session_key: ",
-                  session_key.to_string(),
-                  ", current sessions count: ",
-                  table->sessions.size());
         auto session_it = table->sessions.find(session_key);
         if (session_it == table->sessions.end()) {
-            //create new session
+            LOG_DEBUG("Create new session: session_key: ",
+                      session_key.to_string(),
+                      ", current sessions count: ",
+                      table->sessions.size());
             const auto& comm_addr =
                 observer_ptr->template get_comm_data<ccl::group_split_type::cluster,
                                                      ccl::device_topology_type::ring>();
@@ -167,7 +173,10 @@ public:
                 session_key, observer_ptr, peer_addr, std::move(param), comm_addr.rank);
         }
         else {
-            //renew existing
+            LOG_DEBUG("Session reuse: session_key: ",
+                      session_key.to_string(),
+                      ", current sessions count: ",
+                      table->sessions.size());
             sess = session_it->second;
         }
 

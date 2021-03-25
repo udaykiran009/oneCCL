@@ -223,13 +223,16 @@ void ipc_ctx<TEMPLATE_DEF_ARG>::listener(ccl_ipc_gpu_comm* listener_device) {
         {
             std::unique_lock<std::mutex> lk(delivery_mutex);
             delivery_condition.wait(lk, [this]() {
-                return !processing_queue.empty();
+                return !processing_queue.empty() || stop.load();
             });
 
             sessions_to_execute.splice(sessions_to_execute.end(), processing_queue);
         }
 
-        LOG_DEBUG("Sessions for processing: ", sessions_to_execute.size());
+        LOG_DEBUG("Sessions for processing: ",
+                  sessions_to_execute.size(),
+                  " stop flag status: ",
+                  stop.load());
         for (auto sess_it = sessions_to_execute.begin();
              sess_it != sessions_to_execute.end() and !stop.load();) {
             shared_session_ptr sess = *sess_it;

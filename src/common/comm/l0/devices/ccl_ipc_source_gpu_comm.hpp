@@ -136,7 +136,7 @@ public:
         static_assert(group_id == ccl::group_split_type::cluster,
                       "ccl_ipc_source_gpu_comm available for ccl::group_split_type::cluster only");
         const topology_addr<group_id, class_id>& comm_addr =
-            base::template get_comm_data<group_id, class_id>();
+            inprocess_gpu_comm.template get_comm_data<group_id, class_id>();
         LOG_DEBUG("entry: ", gpu_entry::class_name(), " registered on: ", comm_addr.to_string());
 
         auto& main_func = get_gpu_kernel<gpu_entry::type(), group_id, class_id, kernel_params>();

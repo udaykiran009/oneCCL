@@ -164,11 +164,11 @@ struct execution_kernel : public kernel_data_storage<arg<main_kernel_args::rank_
     }
 };
 
-// ipc_kernel - used for GPU data synchronization only
+// base_ipc_kernel - used for GPU data synchronization only
 template <class Impl, class... arguments>
-struct ipc_kernel : public kernel_data_storage<arg<main_kernel_args::rank_index, int>,
-                                               arg<main_kernel_args::size_index, int>,
-                                               arguments...> {
+struct base_ipc_kernel : public kernel_data_storage<arg<main_kernel_args::rank_index, int>,
+                                                    arg<main_kernel_args::size_index, int>,
+                                                    arguments...> {
     using base = kernel_data_storage<arg<main_kernel_args::rank_index, int>,
                                      arg<main_kernel_args::size_index, int>,
                                      arguments...>;

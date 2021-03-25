@@ -39,7 +39,7 @@
       4) TBA: chunking                                                                              \
       5) TBA: multiple WGs; */ \
 \
-        elems_count = elems_count / VecSize; /*reduce by vectro float4 */ \
+        elems_count = elems_count / VecSize * comm_size; /*reduce by vectro float4 */ \
         size_t segment_size = elems_count / comm_size; \
         size_t work_group_size = get_global_size(0); \
         size_t segment_offset = my_rank * segment_size; \

@@ -36,7 +36,6 @@ TYPED_TEST(ring_reduce_scatter_single_process_fixture,
     // declare test case data
     const size_t comm_size = subdevices.size();
     const size_t recv_buffer_size = 64;
-    const size_t send_buffer_size = comm_size * recv_buffer_size;
     constexpr size_t comm_group_count = 3;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
@@ -50,7 +49,7 @@ TYPED_TEST(ring_reduce_scatter_single_process_fixture,
             this->output << "Create device memory & flags handles for device by index: "
                          << std::to_string(sub_device->get_device_id()) << ", as rank: (" << rank
                          << "/" << comm_size << ")" << std::endl;
-            this->register_shared_comm_data(rank, rank, comm_size, send_buffer_size);
+            this->register_shared_comm_data(rank, rank, comm_size, recv_buffer_size);
 
             // allocate flags & memory
             ze_device_mem_alloc_desc_t mem_uncached_descr{

@@ -288,14 +288,17 @@ ccl::event thread_device_group_ring_communicator::alltoallv_impl(
               comm_rank,
               ", ring_index :",
               ring_index);
-    size_t SIZE = 512;
+
+    size_t total_send_counts = std::accumulate(std::begin(send_counts), std::end(send_counts), 0);
     //TODO make const!
     ccl_buffer send_entry_buffer(const_cast<buffer_type**>(&send_buf),
-                                 SIZE * sizeof(buffer_type),
+                                 total_send_counts * sizeof(buffer_type),
                                  0,
                                  ccl_buffer_type::INDIRECT);
+
+    size_t total_recv_counts = std::accumulate(std::begin(recv_counts), std::end(recv_counts), 0);
     ccl_buffer recv_entry_buffer(
-        &recv_buf, SIZE * sizeof(buffer_type), 0, ccl_buffer_type::INDIRECT);
+        &recv_buf, total_recv_counts * sizeof(buffer_type), 0, ccl_buffer_type::INDIRECT);
 
     using community_t = typename device_community_container<class_id>::element_type;
     community_t community = device_community_impl.get_topology(ring_index);
@@ -310,8 +313,10 @@ ccl::event thread_device_group_ring_communicator::alltoallv_impl(
                                                       this->get_native_context(),
                                                       send_entry_buffer,
                                                       send_counts.data(),
+                                                      total_send_counts,
                                                       recv_entry_buffer,
                                                       recv_counts.data(),
+                                                      total_recv_counts,
                                                       stream);
 }
 

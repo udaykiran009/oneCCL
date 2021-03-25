@@ -1,5 +1,6 @@
 #pragma once
 #include "common/comm/l0/communicator/typed_base_communicator.hpp"
+#include "common/comm/usm_visitor/usm_visitors.hpp"
 
 namespace native {
 struct process_group_context;
@@ -8,7 +9,13 @@ struct process_group_context;
 class process_ring_communicator : public typed_base_communicator<process_ring_communicator,
                                                                  ccl::group_split_type::cluster,
                                                                  ccl::device_topology_type::ring,
-                                                                 ccl::gpu_communicator_traits> {
+                                                                 ccl::gpu_communicator_traits>,
+                                  public allgather_usm_visitor<process_ring_communicator>,
+                                  public allreduce_usm_visitor<process_ring_communicator>,
+                                  public alltoallv_usm_visitor<process_ring_communicator>,
+                                  public broadcast_usm_visitor<process_ring_communicator>,
+                                  public reduce_usm_visitor<process_ring_communicator>,
+                                  public reduce_scatter_usm_visitor<process_ring_communicator> {
 public:
     using base_t = typed_base_communicator<process_ring_communicator,
                                            ccl::group_split_type::cluster,
@@ -25,6 +32,12 @@ public:
                                  native::ccl_scaleout_proxy<native::ccl_gpu_comm>,
                                  native::ccl_scaleout_proxy<native::ccl_virtual_gpu_comm>>;
     using coll_request_t = ccl::event;
+    using allgather_visitor_t = allgather_usm_visitor<process_ring_communicator>;
+    using allreduce_visitor_t = allreduce_usm_visitor<process_ring_communicator>;
+    using alltoallv_visitor_t = alltoallv_usm_visitor<process_ring_communicator>;
+    using broadcast_visitor_t = broadcast_usm_visitor<process_ring_communicator>;
+    using reduce_visitor_t = reduce_usm_visitor<process_ring_communicator>;
+    using reduce_scatter_visitor_t = reduce_scatter_usm_visitor<process_ring_communicator>;
 
     process_ring_communicator(ccl::unified_device_type&& device,
                               ccl::unified_context_type&& ctx,

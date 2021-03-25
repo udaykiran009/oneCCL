@@ -49,7 +49,6 @@ TYPED_TEST(ring_reduce_scatter_multi_process_fixture,
         }
     }
     const size_t recv_buffer_size = 64;
-    const size_t send_buffer_size = world_size * recv_buffer_size;
     constexpr size_t comm_group_count = 3;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;
@@ -68,12 +67,11 @@ TYPED_TEST(ring_reduce_scatter_multi_process_fixture,
             //initialize communication params
             int rank = rank_device_idx + device_index_start_offset;
             int comm_size = world_size;
-            size_t send_elem_count = send_buffer_size;
 
             this->output << "Create device memory & flags handles for device by index: "
                          << std::to_string(device->get_device_id()) << ", as rank: ("
                          << rank_device_idx << "/" << comm_size << ")" << std::endl;
-            this->register_shared_comm_data(rank_device_idx, rank, comm_size, send_elem_count);
+            this->register_shared_comm_data(rank_device_idx, rank, comm_size, recv_buffer_size);
 
             // allocate flags & memory
             ze_device_mem_alloc_desc_t mem_uncached_descr{
