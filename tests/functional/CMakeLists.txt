@@ -12,6 +12,11 @@ project(${PROJECT_NAME})
 message(STATUS "FT CMAKE_PROJECT_NAME: ${CMAKE_PROJECT_NAME}")
 message(STATUS "FT PROJECT_NAME: ${PROJECT_NAME}")
 
+#set default build type
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release")
+endif()
+
 set(COMMON_CMAKE_DIR ${PROJECT_SOURCE_DIR}/../../cmake)
 
 if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
@@ -49,11 +54,12 @@ set(INC_DIRS
 
 include_directories(${INC_DIRS})
 
-message(STATUS "CCL_ROOT: ${CCL_ROOT}")
-message(STATUS "CCL_CONFIGURATION: ${CCL_CONFIGURATION}")
+message(STATUS "FT build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "FT CCL_ROOT: ${CCL_ROOT}")
+message(STATUS "FT CCL_CONFIGURATION: ${CCL_CONFIGURATION}")
 message(STATUS "FT LIBFABRIC_LIB_DIR: ${LIBFABRIC_LIB_DIR}")
 message(STATUS "FT LIBFABRIC_INCLUDE_DIR: ${LIBFABRIC_INCLUDE_DIR}")
-message(STATUS "INC_DIRS: ${INC_DIRS}")
+message(STATUS "FT INC_DIRS: ${INC_DIRS}")
 
 #include_directories(${CCL_ROOT}/include/${CCL_CONFIGURATION})
 #link_directories(${CCL_ROOT}/lib/${CCL_CONFIGURATION})
@@ -64,6 +70,7 @@ if (${CMAKE_VERSION} VERSION_LESS 3.1)
     set(CXX_COMPILER_FLAGS "-std=gnu++11")
     set(C_COMPILER_FLAGS "-std=gnu99")
 endif()
+
 #common release/debug compilation settings
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_COMPILER_FLAGS} -Wall -Werror -D_GNU_SOURCE -fvisibility=internal")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${C_COMPILER_FLAGS} -O0 -g -DENABLE_DEBUG")
@@ -100,7 +107,6 @@ foreach(src ${sources})
     target_link_libraries(${executable} PUBLIC rt)
     target_link_libraries(${executable} PUBLIC m)
     target_link_libraries(${executable} PUBLIC dl)
-    target_link_libraries(${executable} PRIVATE m)
     target_link_libraries(${executable} PUBLIC mpi)
     install(TARGETS ${executable} RUNTIME DESTINATION ${CCL_INSTALL_TESTS} OPTIONAL)
     add_test (NAME ${executable} CONFIGURATIONS default COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/${executable} --gtest_output=xml:${CCL_INSTALL_TESTS}/${executable}_default_report.junit.xml)

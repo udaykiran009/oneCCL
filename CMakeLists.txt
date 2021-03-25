@@ -14,8 +14,8 @@ include(${PROJECT_SOURCE_DIR}/cmake/helpers.cmake)
 
 check_compiler_version()
 
-#set default build types.
-#Available build types are: Debug, Release, RelWithDebInfo and MinSizeRel
+#set default build type
+#available build types are: Debug, Release, RelWithDebInfo and MinSizeRel
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
@@ -88,7 +88,6 @@ include_directories(${LIBFABRIC_INCLUDE_DIR})
 link_directories(${MPI_LIB_DIR})
 link_directories(${LIBFABRIC_LIB_DIR})
 
-
 set(CMAKE_SKIP_INSTALL_RPATH TRUE)
 set(CMAKE_SKIP_RPATH TRUE)
 
@@ -99,26 +98,31 @@ if (${CMAKE_VERSION} VERSION_LESS 3.1)
     set(C_COMPILER_FLAGS "-std=gnu99")
 endif()
 
+# special flags for CCL library only
+set(SRC_C_FLAGS "")
+set(SRC_CXX_FLAGS "")
+set(SRC_SHARED_LINKER_FLAGS "")
+
 #common settings of security options
 if(USE_SECURITY_FLAGS)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wformat -Wformat-security -D_FORTIFY_SOURCE=2 -fstack-protector")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat -Wformat-security -D_FORTIFY_SOURCE=2 -fstack-protector")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fPIE -fPIC -z noexecstack -z relro -z now")
+    set(SRC_C_FLAGS "${SRC_C_FLAGS} -Wformat -Wformat-security -D_FORTIFY_SOURCE=2 -fstack-protector")
+    set(SRC_CXX_FLAGS "${SRC_CXX_FLAGS} -Wformat -Wformat-security -D_FORTIFY_SOURCE=2 -fstack-protector")
+    set(SRC_SHARED_LINKER_FLAGS "${SRC_SHARED_LINKER_FLAGS} -fPIE -fPIC -z noexecstack -z relro -z now")
     if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
         if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9)
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fstack-protector-strong")
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstack-protector-strong")
+            set(SRC_C_FLAGS "${SRC_C_FLAGS} -fstack-protector-strong")
+            set(SRC_CXX_FLAGS "${SRC_CXX_FLAGS} -fstack-protector-strong")
         endif()
     endif()
 endif()
 
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--version-script=${PROJECT_SOURCE_DIR}/ccl.map")
+set(SRC_SHARED_LINKER_FLAGS "${SRC_SHARED_LINKER_FLAGS} -Wl,--version-script=${PROJECT_SOURCE_DIR}/ccl.map")
 
 if(${CMAKE_C_COMPILER_ID} STREQUAL "Intel" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-	if (USE_CODECOV_FLAGS)
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -prof-gen=srcpos -prof-src-root-cwd")
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -prof-gen=srcpos -prof-src-root-cwd")
-	endif()
+    if (USE_CODECOV_FLAGS)
+        set(SRC_C_FLAGS "${SRC_C_FLAGS} -prof-gen=srcpos -prof-src-root-cwd")
+        set(SRC_CXX_FLAGS "${SRC_CXX_FLAGS} -prof-gen=srcpos -prof-src-root-cwd")
+    endif()
 endif()
 
 #TODO: add -Wextra to c/cxx flags
@@ -147,17 +151,17 @@ if (COMPUTE_BACKEND)
     endif()
     message(STATUS "COMPUTE_BACKEND_TARGET_NAME: ${COMPUTE_BACKEND_TARGET_NAME}")
 
-	if (${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL" OR ${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL_level_zero")
-		option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
-		message(STATUS "Enable CCL SYCL runtime")
-		execute_process(COMMAND dpcpp -v
-			OUTPUT_VARIABLE DPCPP_VERSION
-			ERROR_VARIABLE DPCPP_VERSION
-			OUTPUT_STRIP_TRAILING_WHITESPACE
-			ERROR_STRIP_TRAILING_WHITESPACE
-		)
-		message(STATUS "DPC++ compiler version:\n" "${DPCPP_VERSION}")
-	endif()
+    if (${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL" OR ${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL_level_zero")
+        option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
+        message(STATUS "Enable CCL SYCL runtime")
+        execute_process(COMMAND dpcpp -v
+            OUTPUT_VARIABLE DPCPP_VERSION
+            ERROR_VARIABLE DPCPP_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_STRIP_TRAILING_WHITESPACE
+        )
+        message(STATUS "DPC++ compiler version:\n" "${DPCPP_VERSION}")
+    endif()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_BACKEND_FLAGS}")
     if (${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL_level_zero" OR ${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "ze_loader")
         set(MULTI_GPU_SUPPORT ON)

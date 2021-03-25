@@ -384,7 +384,7 @@ void base_test<T>::copy_from_device_recv_buffers(test_operation<T>& op) {
 
 template <typename T>
 int base_test<T>::run(test_operation<T>& op) {
-    size_t iter, result = 0;
+    size_t iter = 0, result = 0;
 
     char* algo = getenv(ALGO_SELECTION_ENV);
     if (algo)

@@ -145,6 +145,8 @@ print_help()
     echo_log "        Prepare CCL build with icc/icpc"
     echo_log "    -build-gpu|--build-gpu"
     echo_log "        Prepare CCL build with clang/clang++ with SYCL"
+    echo_log "    -post-build|--post-build"
+    echo_log "        Make post-build actions"
     echo_log "    -pack|--pack"
     echo_log "        Prepare CCL package (gzipped tar archive)"
     echo_log "    -swf-pre-drop|--swf-pre-drop"
@@ -185,6 +187,7 @@ CheckCommandExitCode() {
         exit $1
     fi
 }
+
 check_clang_path()
 {
     if [ -z "${SYCL_BUNDLE_ROOT}" ]
@@ -194,6 +197,7 @@ check_clang_path()
     fi
     source ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
 }
+
 check_gcc_path()
 {
     if [ -z "${GNU_BUNDLE_ROOT}" ]
@@ -202,6 +206,7 @@ check_gcc_path()
         echo "WARNING: GNU_BUNDLE_ROOT is not defined, will be used default: $GNU_BUNDLE_ROOT"
     fi
 }
+
 check_icc_path()
 {
     if [ -z "${ICC_BUNDLE_ROOT}" ]
@@ -211,12 +216,15 @@ check_icc_path()
     fi
     source ${ICC_BUNDLE_ROOT}/bin/compilervars.sh intel64
 }
+
 define_compiler()
 {
-    if [ -z "${compute_backend}" ]
+    if [ -z "${compiler}" ] && [ -z "${compute_backend}" ]
     then
         compiler="intel"
-    elif [ "${compute_backend}" == "dpcpp_level_zero" ]
+    fi
+
+    if [[ "${compute_backend}" == "dpcpp"* ]]
     then
         compiler="clang"
     fi
@@ -226,12 +234,12 @@ define_compiler()
         check_gcc_path
         C_COMPILER=${GNU_BUNDLE_ROOT}/gcc
         CXX_COMPILER=${GNU_BUNDLE_ROOT}/g++
-    elif [ "${compiler}" = "intel" ]
+    elif [ "${compiler}" == "intel" ]
     then
         check_icc_path
         C_COMPILER=${ICC_BUNDLE_ROOT}/bin/intel64/icc
         CXX_COMPILER=${ICC_BUNDLE_ROOT}/bin/intel64/icpc
-    elif [ "${compiler}" = "clang" ]
+    elif [ "${compiler}" == "clang" ]
     then
         check_clang_path
         C_COMPILER=${SYCL_BUNDLE_ROOT}/bin/clang
@@ -244,18 +252,14 @@ build()
     define_compiler
     export I_MPI_ROOT=$IMPI_DIR
 
-    if [ -z "${compute_backend}" ]
-    then
-        BUILD_FOLDER="build"
-    elif [ "${compute_backend}" == "dpcpp_level_zero" ]
+    BUILD_FOLDER="build"
+    # TODO: check by dpcpp* mask
+    # if [[ "${compute_backend}" == "dpcpp"* ]]
+    if [ "${compute_backend}" == "dpcpp_level_zero" ]
     then
         BUILD_FOLDER="build_gpu"
     fi
 
-    if [ -z "${BUILD_FOLDER}" ]
-    then
-        BUILD_FOLDER="build"
-    fi
     echo "compute_backend =" ${compute_backend}
     echo "compiler =" ${compiler}
     echo "BUILD_FOLDER =" ${BUILD_FOLDER}
@@ -792,8 +796,8 @@ run_build_gpu()
         echo_log "#\t\t\tBuilding dpcpp_level_zero..."
         echo_log_separator
         if [ -z "${compute_backend}" ]
-        then        
-        compute_backend="dpcpp_level_zero"
+        then
+            compute_backend="dpcpp_level_zero"
         fi
         build
         echo_log_separator
