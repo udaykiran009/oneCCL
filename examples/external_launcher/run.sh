@@ -1,7 +1,9 @@
 #!/bin/bash
 
 BASENAME=`basename $0 .sh`
-TIMEOUT=600
+
+cmd_timeout=600
+ssh_params="-q -o StrictHostKeyChecking=no -o BatchMode=yes"
 
 echo_log()
 {
@@ -136,7 +138,7 @@ cleanup_hosts()
     do
         echo "host ${host}"
         cmd="killall -9 external_launcher run_binary.sh"
-        ssh ${host} $cmd
+        ssh ${ssh_params} ${host} $cmd
     done
 }
 
@@ -165,7 +167,7 @@ run_binary()
         fi
     elif [ "$kvs_mode" == "ip_port" ]
     then
-        kvs_param=`ssh ${hostlist[0]} hostname -I | awk '{print $1}'`
+        kvs_param=`ssh ${ssh_params} ${hostlist[0]} hostname -I | awk '{print $1}'`
     fi
 
     host_idx=0
@@ -188,7 +190,7 @@ run_binary()
                 cmd="${cmd} -mv ${I_MPI_ROOT}/env/vars.sh"
             fi
 
-            timeout -k $((TIMEOUT))s $((TIMEOUT))s ssh ${host} $cmd&
+            timeout -k $((cmd_timeout))s $((cmd_timeout))s ssh ${ssh_params} ${host} $cmd&
         done
         host_idx=$((host_idx + 1))
     done
@@ -238,9 +240,9 @@ run()
         run_binary $mode
 
         exec_time="$((`date +%s`-$exec_time))"
-        if [ "$exec_time" -ge "$TIMEOUT" ];
+        if [ "$exec_time" -ge "$cmd_timeout" ];
         then
-             echo -e "${RED}FAILED: Timeout ($exec_time > $TIMEOUT)${NC}"
+             echo -e "${RED}FAILED: Timeout ($exec_time > $cmd_timeout)${NC}"
              exit 1
         fi
     done

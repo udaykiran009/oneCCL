@@ -486,7 +486,7 @@ run()
                     if [ -z "${I_MPI_HYDRA_HOST_FILE}" ];
                     then
                         echo "WARNING: I_MPI_HYDRA_HOST_FILE was not set."    
-                        echo $(hostname) > ${SCRIPT_DIR}/${dir_name}/hostfile
+                        echo localhost > ${SCRIPT_DIR}/${dir_name}/hostfile
                         export I_MPI_HYDRA_HOST_FILE=${SCRIPT_DIR}/${dir_name}/hostfile
                     fi
 
