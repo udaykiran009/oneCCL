@@ -78,6 +78,17 @@ info() {
 
 }
 
+create_perf_dir()
+(
+    ssh -q ${SYSTEM_LOGIN}@${SYSTEM} "cd ${PERF_WORK_DIR};
+    mkdir \
+    -p ccl \
+    -p logs/single/ATS_L0 \
+    -p logs/single/ATS_OCL \
+    -p oneapi/compiler \
+    -p oneapi/mpi_oneapi"
+)
+
 copy_hfl_scripts()
 (
     echo_log "MESSAGE: Copy ccl_benchmark_run.sh & installing_components.sh"
@@ -285,6 +296,7 @@ set_default_values
 parse_parameters $@
 check_def
 info
+create_perf_dir
 copy_hfl_scripts
 
 if $CHECK_COMPONENTS; then
