@@ -212,8 +212,10 @@ install(PROGRAMS ${PROJECT_SOURCE_DIR}/LICENSE DESTINATION ${CCL_INSTALL_LICENSE
 
 # copy kernels
 if(COMPUTE_BACKEND AND EXISTS "${PROJECT_SOURCE_DIR}/src/kernels")
-    file(GLOB spv_kernels "${PROJECT_SOURCE_DIR}/src/kernels/ring_*.spv")
-    install(PROGRAMS ${spv_kernels} DESTINATION ${CCL_INSTALL_KERNELS})
+file(GLOB spv_kernels "${PROJECT_SOURCE_DIR}/src/kernels/ring_*.spv")
+    install(PROGRAMS ${spv_kernels}
+            DESTINATION ${CCL_INSTALL_KERNELS}
+            PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 endif()
 
 set(CCL_MAJOR_VERSION     "2021")
