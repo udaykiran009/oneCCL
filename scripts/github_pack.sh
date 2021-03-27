@@ -5,13 +5,13 @@
 dstdir="_package"
 rm -rf $dstdir
 rm -rf $dstdir.tgz
+
 excluded=".git
 .gitignore
 .github
 ./oneccl_license.txt
 ./boms
 ./scripts
-./tests/cfgs
 ./doc/README.md
 ./doc/README.txt
 ./doc/cclEULA.txt
@@ -19,11 +19,13 @@ excluded=".git
 ./doc/copyright
 ./examples/run.sh
 ./internal
-./ofi/ofi_update.sh
+./ofi/update_ofi.sh
 ./ccl_public
 ./ccl_oneapi
 ./src/kernels
 ./src/kernels/rne.h
+./tests/cfgs
+./tests/reproducer
 ./tests/unit"
 
 count=0
@@ -54,7 +56,9 @@ do
     fi
     count=0
 done
+
 cd $dstdir
+
 for CUR_FILE in `find .  -type f | grep -e "\.hpp$" -e "\.cpp$" -e "\.h$" -e "\.c$" | grep -v "googletest"`; do
 	ed $CUR_FILE < ../scripts/copyright/copyright.c ; \
 done
