@@ -175,6 +175,6 @@ TYPED_TEST(ring_bcast_single_process_fixture, ring_bcast_single_device_multi_til
         index++;
     }
 
-    check_bcast_buffers<native_type>(this, comm_size, buffer_size);
+    check_bcast_buffers<native_type>(this, buffer_size);
 }
 } // namespace ring_single_device_multi_tile_case

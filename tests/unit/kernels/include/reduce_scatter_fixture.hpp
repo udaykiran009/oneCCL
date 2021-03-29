@@ -98,22 +98,22 @@ void alloc_and_fill_reduce_scatter_buffers(
 }
 
 template <class DType, class OpType, class Object>
-void check_reduce_scatter_buffers(Object obj, size_t comm_size, size_t recv_elem_count) {
+void check_reduce_scatter_buffers(Object obj, size_t recv_elem_count) {
     std::stringstream ss;
-    size_t send_elem_count = recv_elem_count * comm_size;
+    size_t send_elem_count = recv_elem_count * obj->get_comm_size();
     std::vector<DType> send_values = get_initial_send_values<DType>(send_elem_count);
     std::vector<DType> expected_buf(send_elem_count);
 
     for (size_t idx = 0; idx < send_elem_count; idx++) {
         constexpr auto op = OpType{};
         DType expected = op.init();
-        for (size_t rank = 0; rank < comm_size; rank++) {
+        for (size_t rank = 0; rank < obj->get_comm_size(); rank++) {
             expected = op(expected, static_cast<DType>(send_values[idx]));
         }
         expected_buf[idx] = expected;
     }
 
-    for (size_t rank = 0; rank < comm_size; rank++) {
+    for (size_t rank = 0; rank < obj->get_comm_size(); rank++) {
         ss << "\ncheck recv buffer for rank: " << rank;
         std::vector<DType> expected_chunk(expected_buf.begin() + rank * recv_elem_count,
                                           expected_buf.begin() + (rank + 1) * recv_elem_count);

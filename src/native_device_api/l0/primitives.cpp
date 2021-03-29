@@ -31,7 +31,7 @@ CCL_BE_API void copy_memory_sync_unsafe(void* dst,
     ze_command_queue_desc_t queue_description = device->get_default_queue_desc();
     //queue_description.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS;   TODO may be &= for flags???
 
-    auto queue = device->create_cmd_queue(ctx, queue_description);
+    auto& queue = device->get_cmd_queue(queue_description, ctx);
 
     //create list
     ze_command_list_desc_t list_description = device->get_default_list_desc();

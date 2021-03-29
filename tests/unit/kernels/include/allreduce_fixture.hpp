@@ -108,12 +108,12 @@ void alloc_and_fill_allreduce_buffers(
 
         /* FIXME: use 2x size for tmp buffer for parallel recv and reduce+send */
         /* consider to remove tmp buffer further */
+        size_t tmp_buf_count = 2 * elem_count / comm_size;
         auto temp_buf = devs[rank]->template alloc_memory<DType>(
-            2 * elem_count / comm_size, sizeof(DType), ctx, mem_uncached_descr);
+            tmp_buf_count, sizeof(DType), ctx, mem_uncached_descr);
 
         send_buf.enqueue_write_sync(send_values);
         recv_buf.enqueue_write_sync(recv_values);
-
         if (with_ipc)
             obj->template register_ipc_memories_data<DType>(ctx, rank, &temp_buf);
 
@@ -123,7 +123,7 @@ void alloc_and_fill_allreduce_buffers(
 }
 
 template <class DType, class OpType, class Object>
-void check_allreduce_buffers(Object obj, size_t comm_size, size_t elem_count) {
+void check_allreduce_buffers(Object obj, size_t elem_count) {
     std::stringstream ss;
 
     std::vector<DType> send_values = get_initial_send_values<DType>(elem_count);
@@ -132,13 +132,13 @@ void check_allreduce_buffers(Object obj, size_t comm_size, size_t elem_count) {
     for (size_t idx = 0; idx < elem_count; idx++) {
         constexpr auto op = OpType{};
         DType expected = op.init();
-        for (size_t rank = 0; rank < comm_size; rank++) {
+        for (size_t rank = 0; rank < obj->get_comm_size(); rank++) {
             expected = op(expected, static_cast<DType>(send_values[idx]));
         }
         expected_buf[idx] = expected;
     }
 
-    for (size_t rank = 0; rank < comm_size; rank++) {
+    for (size_t rank = 0; rank < obj->get_comm_size(); rank++) {
         ss << "\ncheck recv buffer for rank: " << rank;
         auto res = compare_buffers(expected_buf, obj->get_memory(rank, 1), ss);
         UT_ASSERT_OBJ(res, obj, ss.str());

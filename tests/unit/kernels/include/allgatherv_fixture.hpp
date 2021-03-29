@@ -85,12 +85,12 @@ void alloc_and_fill_allgatherv_buffers(
 }
 
 template <class DType, class Object>
-void check_allgatherv_buffers(Object obj, size_t comm_size, std::vector<size_t> recv_counts) {
+void check_allgatherv_buffers(Object obj, std::vector<size_t> recv_counts) {
     std::stringstream ss;
     size_t total_recv_count = std::accumulate(recv_counts.begin(), recv_counts.end(), 0);
     std::vector<DType> expected_buf = get_initial_send_values<DType>(total_recv_count);
 
-    for (size_t rank = 0; rank < comm_size; rank++) {
+    for (size_t rank = 0; rank < obj->get_comm_size(); rank++) {
         ss << "\ncheck recv buffer for rank: " << rank;
         auto res = compare_buffers(expected_buf, obj->get_memory(rank, 1), ss);
         UT_ASSERT_OBJ(res, obj, ss.str());

@@ -65,7 +65,7 @@ void multi_platform_fixture::SetUp() {
 
         // create local to child process driver & devices
         platform_fixture::SetUp();
-        const auto& local_affinity = cluster_device_indices[TO_CHILD];
+        const auto& local_affinity = cluster_device_indices[TO_PARENT];
         create_local_platform(local_affinity);
     }
     else {
@@ -80,7 +80,7 @@ void multi_platform_fixture::SetUp() {
 
         // create local to parent process driver & devices
         platform_fixture::SetUp();
-        const auto& local_affinity = cluster_device_indices[TO_PARENT];
+        const auto& local_affinity = cluster_device_indices[TO_CHILD];
         create_local_platform(local_affinity);
     }
 
@@ -115,7 +115,6 @@ void multi_platform_fixture::TearDown() {
     }
     else {
         std::cout << "PID: " << *my_pid << " exit" << std::endl;
-        quick_exit(0);
     }
 }
 
@@ -135,8 +134,6 @@ multi_platform_fixture::send_receive_ipc_impl(
     std::map<ccl_device*, ipc_handle_container> ipc_mem_storage_to_send;
     std::map<ccl_device*, ipc_handles_ptr_container> ipc_mem_storage_to_receive;
 
-    std::map<ccl_device*, ipc_handle_container> ipc_flags_storage_to_send;
-    std::map<ccl_device*, ipc_handles_ptr_container> ipc_flags_storage_to_receive;
     size_t thread_id = 0;
     for (auto device : devices) {
         ccl_device* device_ptr = device.get();
@@ -153,13 +150,11 @@ multi_platform_fixture::send_receive_ipc_impl(
             in_ipc_handles.reserve(memory_handles.size());
 
             // create ic handles to send it later
-            std::transform(
-                memory_handles.begin(),
-                memory_handles.end(),
-                std::back_inserter(out_ipc_handles),
-                [](std::shared_ptr<ccl_device::device_ipc_memory_handle>& memory_handle_ptr) {
-                    return std::move(*memory_handle_ptr);
-                });
+            for (auto& ptr : memory_handles) {
+                auto ret(std::move(*ptr));
+                ptr.reset();
+                out_ipc_handles.push_back(std::move(ret));
+            }
         }
         catch (const std::exception& ex) {
             std::stringstream ss;
@@ -228,6 +223,8 @@ multi_platform_fixture::send_receive_ipc_impl(
             }
             index++;
         }
+
+        thread_id++;
     }
     return ipc_client_memory;
 }
@@ -243,5 +240,5 @@ std::map<native::ccl_device*, multi_platform_fixture::ipc_remote_ptr_container>
 multi_platform_fixture::send_receive_ipc_flags(
     const std::vector<std::shared_ptr<native::ccl_device>>& devices,
     std::shared_ptr<native::ccl_context> ctx) {
-    return send_receive_ipc_impl(ipc_mem_per_thread_storage, devices, ctx);
+    return send_receive_ipc_impl(ipc_flag_per_thread_storage, devices, ctx);
 }

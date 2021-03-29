@@ -185,7 +185,7 @@ TYPED_TEST(ring_reduce_scatter_single_process_fixture, ring_reduce_scatter_singl
         index++;
     }
 
-    check_reduce_scatter_buffers<native_type, op_type>(this, comm_size, recv_buffer_size);
+    check_reduce_scatter_buffers<native_type, op_type>(this, recv_buffer_size);
 }
 
 } // namespace ring_single_device_case

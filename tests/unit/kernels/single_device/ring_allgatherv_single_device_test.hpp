@@ -211,6 +211,6 @@ TYPED_TEST(ring_allgatherv_single_process_fixture, ring_allgatherv_single_device
         index++;
     }
 
-    check_allgatherv_buffers<native_type>(this, comm_size, recv_counts);
+    check_allgatherv_buffers<native_type>(this, recv_counts);
 }
 } // namespace ring_single_device_case

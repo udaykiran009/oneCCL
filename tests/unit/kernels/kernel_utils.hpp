@@ -98,7 +98,7 @@ ze_result_t zeKernelSetArgumentValueWrap(
     Arr_t& offset,
     std::shared_ptr<native::ccl_device::device_ipc_memory>& handle) {
     auto h = handle->get_ptr();
-    ze_result_t result = zeKernelSetArgumentValue(kernel, offset, sizeof(*h), h);
+    ze_result_t result = zeKernelSetArgumentValue(kernel, offset, sizeof(*h), &(h->pointer));
     if (result != ZE_RESULT_SUCCESS) {
         const void* ptr_v = static_cast<const void*>(h);
         std::stringstream ss;

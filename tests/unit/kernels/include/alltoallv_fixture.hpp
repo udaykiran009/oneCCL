@@ -92,13 +92,13 @@ void alloc_and_fill_alltoallv_buffers(
 }
 
 template <class DType, class Object>
-void check_alltoallv_buffers(Object obj, size_t comm_size, size_t total_recv_count) {
+void check_alltoallv_buffers(Object obj, size_t total_recv_count) {
     std::stringstream ss;
 
     std::vector<DType> expected_buf(total_recv_count);
     std::iota(expected_buf.begin(), expected_buf.end(), 0);
 
-    for (size_t rank = 0; rank < comm_size; rank++) {
+    for (size_t rank = 0; rank < obj->get_comm_size(); rank++) {
         ss << "\ncheck recv buffer for rank: " << rank;
         auto res = compare_buffers(expected_buf, obj->get_memory(rank, 1), ss);
         UT_ASSERT_OBJ(res, obj, ss.str());

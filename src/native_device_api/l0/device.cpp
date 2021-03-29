@@ -498,10 +498,14 @@ void CCL_BE_API ccl_device::on_delete(ze_ipc_mem_handle_t& ipc_mem_handle,
     */
 
     //todo thread safety
-    for (auto ipc_it = ipc_storage.begin(); ipc_it != ipc_storage.end(); ++ipc_it) {
-        if (!strncmp(ipc_it->second->handle.data, ipc_mem_handle.data, ZE_MAX_IPC_HANDLE_SIZE)) {
-            ipc_storage.erase(ipc_it);
+    for (auto ipc_it = ipc_storage.begin(); ipc_it != ipc_storage.end();) {
+        if (ipc_it->second) {
+            if (!memcmp(ipc_it->second->handle.data, ipc_mem_handle.data, ZE_MAX_IPC_HANDLE_SIZE)) {
+                ipc_it = ipc_storage.erase(ipc_it);
+                continue;
+            }
         }
+        ++ipc_it;
     }
 }
 

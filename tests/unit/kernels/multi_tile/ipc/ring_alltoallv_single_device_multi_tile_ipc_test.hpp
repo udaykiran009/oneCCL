@@ -110,24 +110,24 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
                                                   ctx,
                                                   true);
 
-    int rank_device_idx = 0;
+    int local_rank = 0;
     size_t device_index_start_offset =
         this->is_child() * devices.size(); /* global cluster numeration */
-    this->output << "PID: " << this->pid << " calculated world size: " << world_size
+    this->output << "PID: " << *this->my_pid << " calculated world size: " << world_size
                  << ", device_index_start_offset: " << device_index_start_offset << std::endl;
     for (auto dev_it = devices.begin(); dev_it != devices.end(); ++dev_it) {
         try {
             std::shared_ptr<ccl_device> sub_device = *dev_it;
 
             // initialize communication params
-            int rank = rank_device_idx + device_index_start_offset;
+            int global_rank = local_rank + device_index_start_offset;
             int comm_size = world_size;
 
             this->output << "Create device memory & flags handles for device by index: "
-                         << std::to_string(sub_device->get_device_id()) << ", as rank: (" << rank
-                         << "/" << comm_size << ")" << std::endl;
+                         << std::to_string(sub_device->get_device_id()) << ", as global_rank: ("
+                         << global_rank << "/" << comm_size << ")" << std::endl;
 
-            this->register_shared_comm_data(rank_device_idx, rank, comm_size);
+            this->register_shared_comm_data(local_rank, global_rank, comm_size);
 
             // allocate flags & memory
             ze_device_mem_alloc_desc_t mem_uncached_descr{
@@ -146,11 +146,11 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
             auto mem_send_offsets =
                 sub_device->alloc_memory<size_t>(world_size, sizeof(size_t), ctx);
 
-            mem_send_counts.enqueue_write_sync(send_counts[rank]);
-            mem_send_offsets.enqueue_write_sync(send_offsets[rank]);
+            mem_send_counts.enqueue_write_sync(send_counts[global_rank]);
+            mem_send_offsets.enqueue_write_sync(send_offsets[global_rank]);
 
-            comm_param_mem_storage[rank].emplace_back(std::move(mem_send_counts));
-            comm_param_mem_storage[rank].emplace_back(std::move(mem_send_offsets));
+            comm_param_mem_storage[local_rank].emplace_back(std::move(mem_send_counts));
+            comm_param_mem_storage[local_rank].emplace_back(std::move(mem_send_offsets));
 
             // recv
             auto mem_recv_counts =
@@ -158,11 +158,11 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
             auto mem_recv_offsets =
                 sub_device->alloc_memory<size_t>(world_size, sizeof(size_t), ctx);
 
-            mem_recv_counts.enqueue_write_sync(recv_counts[rank]);
-            mem_recv_offsets.enqueue_write_sync(recv_offsets[rank]);
+            mem_recv_counts.enqueue_write_sync(recv_counts[global_rank]);
+            mem_recv_offsets.enqueue_write_sync(recv_offsets[global_rank]);
 
-            comm_param_mem_storage[rank].emplace_back(std::move(mem_recv_counts));
-            comm_param_mem_storage[rank].emplace_back(std::move(mem_recv_offsets));
+            comm_param_mem_storage[local_rank].emplace_back(std::move(mem_recv_counts));
+            comm_param_mem_storage[local_rank].emplace_back(std::move(mem_recv_offsets));
 
             // flags
             auto left_wrote_2_me_flag =
@@ -176,23 +176,23 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
             proxy_size.enqueue_write_sync({ (int)0 });
 
             this->register_ipc_flags_data(
-                ctx, rank_device_idx, &left_wrote_2_me_flag, &ready_for_receive_flag, &proxy_size);
+                ctx, local_rank, &left_wrote_2_me_flag, &ready_for_receive_flag, &proxy_size);
 
             /* fill array in specific order
              * Left: l_L, l_R, r_L, r_R
              * Right: r_L, r_R, l_L, L_R
              */
-            this->register_shared_flags_data(rank_device_idx,
+            this->register_shared_flags_data(local_rank,
                                              std::move(left_wrote_2_me_flag),
                                              std::move(ready_for_receive_flag),
                                              std::move(proxy_size));
 
-            rank_device_idx++;
+            local_rank++;
         }
         catch (const std::exception& ex) {
             UT_ASSERT(
                 false,
-                "Cannot allocate memory for rank: " << rank_device_idx << "\nError: " << ex.what());
+                "Cannot allocate memory for rank: " << local_rank << "\nError: " << ex.what());
         }
     }
 
@@ -213,8 +213,12 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
     // prepare queues & lists
     std::map<size_t, ccl_device::device_queue> rank_queues;
     std::map<size_t, ccl_device::device_cmd_list> rank_cmd_lists;
-    multi_tile_utils::prepare_queues_and_lists(
-        devices, ctx, rank_queues, rank_cmd_lists, this->output);
+    multi_tile_utils::prepare_queues_and_lists(devices,
+                                               ctx,
+                                               rank_queues,
+                                               rank_cmd_lists,
+                                               this->output,
+                                               device_index_start_offset /* cluster offset */);
 
     //printout memory handles
     this->dump_memory(this->output, true);
@@ -222,6 +226,10 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
     // launch kernel for each device in separate thread
     std::vector<std::thread> thread_group;
     std::vector<std::unique_ptr<std::stringstream>> thread_out_put;
+
+    //Sync before kernel launch
+    int sync_phase = 0;
+    this->wait_phase(sync_phase++);
     for (const auto& device : devices) {
         size_t rank = thread_group.size();
         ze_kernel_handle_t kernel = this->get_kernel(rank);
@@ -278,7 +286,7 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
 
                 // Bind IPC memory
                 std::array<int, ipc_mem_group_count> ipc_mem_offset{ 9 };
-                out << "PID: " << this->pid << ", rank: " << rank << ", ipc_mem_handles: \n";
+                out << "PID: " << *this->my_pid << ", rank: " << rank << ", ipc_mem_handles: \n";
                 bind_kernel_args(kernel, rank, ipc_mem_offset, ipc_mem_handles);
 
                 // bind left_wrote_2_me_flag, ready_for_receive_flag
@@ -289,7 +297,7 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
 
                 // Bind IPC flags
                 std::array<int, ipc_flag_group_count> ipc_flag_offset{ 13, 14, 15 };
-                out << "PID: " << this->pid << ", rank: " << rank << ", ipc_flag_handles: \n"
+                out << "PID: " << *this->my_pid << ", rank: " << rank << ", ipc_flag_handles: \n"
                     << std::endl;
                 bind_kernel_args(kernel, rank, ipc_flag_offset, ipc_flag_handles);
 
@@ -319,33 +327,26 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
     }
 
     size_t index = 0;
-    this->output << "PID: " << this->pid << ", wating threads" << std::endl;
+    this->output << "PID: " << *this->my_pid << ", wating threads" << std::endl;
     for (auto& t : thread_group) {
         try {
             t.join();
-            this->output << "PID: " << this->pid << "\n*************************\n"
+            this->output << "PID: " << *this->my_pid << "\n*************************\n"
                          << thread_out_put[index]->str() << "\n*************************\n"
                          << std::endl;
         }
         catch (const std::exception& ex) {
-            this->output << "PID: " << this->pid << "\n******ERROR*******************\n"
+            this->output << "PID: " << *this->my_pid << "\n******ERROR*******************\n"
                          << thread_out_put[index]->str() << "\n*************************\n"
                          << ex.what() << std::endl;
         }
         index++;
     }
 
-    check_alltoallv_buffers<native_type>(this, world_size, total_recv_size);
-
     // gracefull finalize
-    uint8_t ready = 0;
-    if (this->is_child()) {
-        utils::readFromSocket(this->communication_socket, &ready, sizeof(ready));
-    }
-    else {
-        ready = 1;
-        utils::writeToSocket(this->communication_socket, &ready, sizeof(ready));
-    }
-    this->output << "PID: " << this->pid << ", finished, status: " << ready << std::endl;
+    this->wait_phase(sync_phase++);
+    check_alltoallv_buffers<native_type>(this, total_recv_size);
+
+    this->output << "PID: " << *this->my_pid << ", finishe" << std::endl;
 }
 } // namespace ring_single_device_multi_tile_ipc_case

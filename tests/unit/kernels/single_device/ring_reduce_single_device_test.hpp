@@ -190,7 +190,7 @@ TYPED_TEST(ring_reduce_single_process_fixture, ring_reduce_single_device_mt) {
         index++;
     }
 
-    check_reduce_buffers<native_type, op_type>(this, comm_size, buffer_size, root);
+    check_reduce_buffers<native_type, op_type>(this, buffer_size, root);
 }
 
 } // namespace ring_single_device_case

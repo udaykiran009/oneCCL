@@ -93,7 +93,7 @@ void alloc_and_fill_reduce_buffers(Object obj,
 }
 
 template <class DType, class OpType, class Object>
-void check_reduce_buffers(Object obj, size_t comm_size, size_t elem_count, size_t root) {
+void check_reduce_buffers(Object obj, size_t elem_count, size_t root) {
     std::stringstream ss;
 
     std::vector<DType> send_values = get_initial_send_values<DType>(elem_count);
@@ -103,13 +103,13 @@ void check_reduce_buffers(Object obj, size_t comm_size, size_t elem_count, size_
     for (size_t idx = 0; idx < elem_count; idx++) {
         constexpr auto op = OpType{};
         DType expected = op.init();
-        for (size_t rank = 0; rank < comm_size; rank++) {
+        for (size_t rank = 0; rank < obj->get_comm_size(); rank++) {
             expected = op(expected, static_cast<DType>(send_values[idx]));
         }
         root_expected_buf[idx] = expected;
     }
 
-    for (size_t rank = 0; rank < comm_size; rank++) {
+    for (size_t rank = 0; rank < obj->get_comm_size(); rank++) {
         ss << "\ncheck recv buffer for rank: " << rank;
         auto res = compare_buffers((rank == root) ? root_expected_buf : nonroot_expected_buf,
                                    obj->get_memory(rank, 1),

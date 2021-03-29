@@ -266,7 +266,7 @@ TYPED_TEST(ring_alltoallv_single_process_fixture, ring_alltoallv_single_device_m
         index++;
     }
 
-    check_alltoallv_buffers<native_type>(this, comm_size, total_recv_size);
+    check_alltoallv_buffers<native_type>(this, total_recv_size);
 }
 
 } // namespace ring_single_device_case

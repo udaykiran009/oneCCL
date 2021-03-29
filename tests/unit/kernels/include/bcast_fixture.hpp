@@ -108,11 +108,11 @@ void alloc_and_fill_bcast_buffers(Object obj,
 }
 
 template <class DType, class Object>
-void check_bcast_buffers(Object obj, size_t comm_size, size_t elem_count) {
+void check_bcast_buffers(Object obj, size_t elem_count) {
     std::stringstream ss;
     std::vector<DType> expected_buf = get_initial_send_values<DType>(elem_count);
 
-    for (size_t rank = 0; rank < comm_size; rank++) {
+    for (size_t rank = 0; rank < obj->get_comm_size(); rank++) {
         ss << "\ncheck buffer for rank: " << rank;
         auto res = compare_buffers(expected_buf, obj->get_memory(rank, 0), ss);
         UT_ASSERT_OBJ(res, obj, ss.str());
