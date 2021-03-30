@@ -191,9 +191,19 @@ ccl::event host_communicator::allgatherv_impl(const void* send_buf,
                                               const ccl::stream::impl_value_t& stream,
                                               const ccl::allgatherv_attr& attr,
                                               const ccl::vector_class<ccl::event>& deps) {
-    // TODO not implemented
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-    return {};
+    ccl_coll_attr internal_attr(attr);
+    internal_attr.vector_buf = 1;
+
+    ccl_request* req = ccl_allgatherv_impl(reinterpret_cast<const void*>(send_buf),
+                                           send_count,
+                                           (void*)(recv_bufs.data()),
+                                           recv_counts.data(),
+                                           dtype,
+                                           internal_attr,
+                                           comm_impl.get(),
+                                           nullptr);
+
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
 /* allreduce */
