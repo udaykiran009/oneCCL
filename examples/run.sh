@@ -97,29 +97,6 @@ check_environment()
     fi
 }
 
-set_localhost_ssh_keys()
-{
-    ssh-keygen -q -f ${EXAMPLE_WORK_DIR}/${dir_name}/id_localhost -N '' -C "Used for SSH from localhost to localhost"
-    if [ -f ~/.ssh/authorized_keys ]
-    then
-        cat ~/.ssh/authorized_keys > ${EXAMPLE_WORK_DIR}/${dir_name}/backup_authorized_keys
-    fi
-    cat ${EXAMPLE_WORK_DIR}/${dir_name}/id_localhost.pub > ~/.ssh/authorized_keys
-    cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
-}
-
-cleanup_localhost_ssh_keys()
-{
-    if [ -f ${EXAMPLE_WORK_DIR}/${dir_name}/backup_authorized_keys ]
-    then
-        cat ${EXAMPLE_WORK_DIR}/${dir_name}/backup_authorized_keys > ~/.ssh/authorized_keys
-        rm  ${EXAMPLE_WORK_DIR}/${dir_name}/backup_authorized_keys
-    else
-        rm ~/.ssh/authorized_keys
-    fi
-    rm ${EXAMPLE_WORK_DIR}/${dir_name}/id_localhost*
-}
-
 # global variable for several use places
 # See: MLSL-675.
 supported_kernel_colls="allgatherv,allreduce,alltoallv,bcast,reduce"
@@ -511,7 +488,6 @@ run()
                         echo "WARNING: I_MPI_HYDRA_HOST_FILE was not set."    
                         echo localhost > ${SCRIPT_DIR}/${dir_name}/hostfile
                         export I_MPI_HYDRA_HOST_FILE=${SCRIPT_DIR}/${dir_name}/hostfile
-                        set_localhost_ssh_keys
                     fi
 
                     ccl_hosts=`echo $I_MPI_HYDRA_HOST_FILE`
@@ -526,11 +502,6 @@ run()
                     test_log="$EXAMPLE_WORK_DIR/$dir_name/log.txt"
                     ${EXAMPLE_WORK_DIR}/${dir_name}/run.sh -v $ccl_vars -h $ccl_hosts -s $ccl_world_size 2>&1 | tee ${test_log}
                     check_test ${test_log} "external_launcher"
-
-                    if [[ "${I_MPI_HYDRA_HOST_FILE}" ==  "${SCRIPT_DIR}/${dir_name}/hostfile" ]]
-                    then
-                        cleanup_localhost_ssh_keys
-                    fi
 
                 else
                     if [[ "${example}" == *"communicator"* ]]

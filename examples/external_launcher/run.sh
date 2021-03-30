@@ -3,7 +3,6 @@
 BASENAME=`basename $0 .sh`
 
 cmd_timeout=600
-ssh_params="-q -o StrictHostKeyChecking=no -o BatchMode=yes"
 
 echo_log()
 {
@@ -129,6 +128,20 @@ parse_arguments()
     echo_log "-----------------------------------------------------------"
 }
 
+run_cmd()
+{
+    host="$1"
+    cmd="$2"
+    timeout_prefix="$3"
+
+    if [[ "${host}" == "localhost" ]]
+    then
+        eval ${timeout_prefix} $cmd&
+    else
+        ${timeout_prefix} ssh ${host} $cmd&
+    fi
+}
+
 cleanup_hosts()
 {
     hostlist=$1
@@ -138,7 +151,7 @@ cleanup_hosts()
     do
         echo "host ${host}"
         cmd="killall -9 external_launcher run_binary.sh"
-        ssh ${ssh_params} ${host} $cmd
+        run_cmd ${host} "${cmd}"
     done
 }
 
@@ -167,7 +180,8 @@ run_binary()
         fi
     elif [ "$kvs_mode" == "ip_port" ]
     then
-        kvs_param=`ssh ${ssh_params} ${hostlist[0]} hostname -I | awk '{print $1}'`
+        cmd="hostname -I | sed -e 's/\s.*$//'"
+        kvs_param=`run_cmd ${hostlist[0]} "${cmd}"`
     fi
 
     host_idx=0
@@ -190,7 +204,8 @@ run_binary()
                 cmd="${cmd} -mv ${I_MPI_ROOT}/env/vars.sh"
             fi
 
-            timeout -k $((cmd_timeout))s $((cmd_timeout))s ssh ${ssh_params} ${host} $cmd&
+            timeout_prefix="timeout -k $((cmd_timeout))s $((cmd_timeout))s"
+            run_cmd ${host} "${cmd}" "${timeout_prefix}"
         done
         host_idx=$((host_idx + 1))
     done
