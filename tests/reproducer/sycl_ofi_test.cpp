@@ -386,9 +386,6 @@ void alloc_buffers() {
 
         memset(ch[i].sbuf, 'a' + i, MAX_MSG_SIZE);
         memset(ch[i].rbuf, 'o' + i, MAX_MSG_SIZE);
-
-        ch[i].sbuf[MAX_MSG_SIZE - 1] = '\0';
-        ch[i].rbuf[MAX_MSG_SIZE - 1] = '\0';
     }
 }
 
@@ -401,6 +398,33 @@ void free_buffers() {
         else {
             free(ch[i].sbuf);
             free(ch[i].rbuf);
+        }
+    }
+}
+
+void fill_buffers(int size) {
+    for (int i = 0; i < opt.channel_count; i++) {
+        memset(ch[i].sbuf, 'a' + i, size);
+        memset(ch[i].rbuf, 'o' + i, size);
+    }
+}
+
+void check_buffers(int size) {
+    for (int i = 0; i < opt.channel_count; i++) {
+        for (int j = 0; j < size; j++) {
+            char expected = 'a' + i;
+            ASSERT(ch[i].sbuf[j] == expected,
+                   "unexpected sbuf[%d][%d] = %c, expected %c\n",
+                   i,
+                   j,
+                   ch[i].sbuf[j],
+                   expected);
+            ASSERT(ch[i].rbuf[j] == expected,
+                   "unexpected rbuf[%d][%d] = %c, expected %c\n",
+                   i,
+                   j,
+                   ch[i].rbuf[j],
+                   expected);
         }
     }
 }
@@ -551,6 +575,8 @@ static void run_test() {
         printf("send/recv %-8d (x %4d): ", size, repeat);
         fflush(stdout);
 
+        fill_buffers(size);
+
         t1 = when();
         for (i = 0; i < repeat; i++) {
             if (opt.is_client) {
@@ -568,6 +594,8 @@ static void run_test() {
                t,
                size / t,
                size * opt.channel_count / t);
+
+        check_buffers(size);
     }
 }
 
