@@ -168,13 +168,13 @@ bool compare_buffers(std::vector<DType> expected,
         }
     }
 
-    // if (!res) {
-    //     ss << "\nfull content:\n";
-    //     ss << "\nexpected buffer:\n";
-    //     std::copy(expected.begin(), expected.end(), std::ostream_iterator<DType>(ss, " "));
-    //     ss << "\nactual buffer:\n";
-    //     std::copy(actual.begin(), actual.end(), std::ostream_iterator<DType>(ss, " "));
-    // }
+    if (!res) {
+        ss << "\nfull content:\n";
+        ss << "\nexpected buffer:\n";
+        std::copy(expected.begin(), expected.end(), std::ostream_iterator<DType>(ss, " "));
+        ss << "\nactual buffer:\n";
+        std::copy(actual.begin(), actual.end(), std::ostream_iterator<DType>(ss, " "));
+    }
 
     return res;
 }

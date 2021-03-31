@@ -12,6 +12,10 @@ public:
         throw std::runtime_error("IPC mem is unsupported");
     }
 
+    virtual size_t get_out_of_bound_payload_size() const {
+        return 0;
+    }
+
 protected:
     using thread_device_indices_t = ccl::process_device_indices_type;
 

@@ -17,22 +17,22 @@ ushort __fp32_to_bf16(float V) {
 #endif /* CCL_BF16_GPU_TRUNCATE */
 
 #define DEFINE_BF16SUM_OP(T) \
-    T __sum_##T(T lhs, T rhs) { \
+    T __bf16_sum_##T(T lhs, T rhs) { \
         return __fp32_to_bf16(__bf16_to_fp32(lhs) + __bf16_to_fp32(rhs)); \
     }
 
 #define DEFINE_BF16PROD_OP(T) \
-    T __prod_##T(T lhs, T rhs) { \
+    T __bf16_prod_##T(T lhs, T rhs) { \
         return __fp32_to_bf16(__bf16_to_fp32(lhs) * __bf16_to_fp32(rhs)); \
     }
 
 #define DEFINE_BF16MIN_OP(T) \
-    T __min_##T(T lhs, T rhs) { \
+    T __bf16_min_##T(T lhs, T rhs) { \
         return __fp32_to_bf16(min(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs))); \
     }
 
 #define DEFINE_BF16MAX_OP(T) \
-    T __max_##T(T lhs, T rhs) { \
+    T __bf16_max_##T(T lhs, T rhs) { \
         return __fp32_to_bf16(max(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs))); \
     }
 

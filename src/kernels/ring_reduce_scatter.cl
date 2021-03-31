@@ -149,7 +149,7 @@
     DEFINE_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName)
 
 #define DEFINE_KERNELS_WITH_LP_OP(OpName) \
-    DEFINE_KERNEL(bfloat16, ushort, 1, __##OpName##_##ushort, OpName) \
+    DEFINE_KERNEL(bfloat16, ushort, 1, __bf16_##OpName##_##ushort, OpName) \
     DEFINE_KERNEL(float16, half, 1, __##OpName##_##half, OpName)
 
 #define DEFINE_OPS(T) \

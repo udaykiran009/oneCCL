@@ -5,6 +5,7 @@
 
 #include "sched/entry/l0/l0_entry.hpp"
 #include "common/comm/l0/context/scaling_ctx/ipc_ctx_impl.hpp"
+#include "kernels/shared.h"
 
 namespace native {
 template <class kernel_params, class gpu_comm_impl, ccl::group_split_type topology>
@@ -70,7 +71,7 @@ public:
               temp_buffer(this->template alloc_memory_wrap(
                   typename ring::allreduce::tmp_recv_buf_arg<processing_type>{},
                   parent_communicator,
-                  cnt,
+                  ring_allreduce_get_tmp_buffer_size(cnt, base::comm_addr.size),
                   get_ctx())),
               income_data_flag(
                   this->template alloc_memory_wrap(typename ring::allreduce::income_data_flag_arg{},

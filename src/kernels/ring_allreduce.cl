@@ -1,4 +1,5 @@
 #include "common.h"
+#include "shared.h"
 
 /**
  * @param left_wrote_to_me_flag  - located in the memory of the current kernel, left rank uses a pointer to it to notify that he has sent some data.
@@ -31,14 +32,19 @@
         __global sync_flag_type* i_send_to_right_flag, \
         __global sync_flag_type* right_ready_to_recv_flag) { \
         /*Known limitation                                                                                      \
-      1) MUST: elems_count >= get_global_size(0) * 4 (vector size) * comm_size                              \
-      2) MUST: elems_count be aligned with 'get_global_size(0) * 4 (vector size)'                           \
-      3) TBA: double-buffering                                                                              \
-      4) TBA: chunking                                                                                      \
-      5) TBA: multiple WGs; */ \
-\
+      1) TBA: double-buffering                                                                              \
+      2) TBA: chunking                                                                                      \
+      3) TBA: multiple WGs; */ \
         elems_count = elems_count / VecSize; /*reduce by vectro T */ \
-        size_t segment_size = elems_count / comm_size; \
+        /* The algorithm is working on segments of data of size = segment_size - 1 for each rank, e.g if there are \
+           4 ranks, the data for each of them is split into 4 segments. It's possible that the last segment is smaller \
+           than the others in case if elems_count % comm_size != 0, This case is handled by adding a constraint for \
+           all operation on the segments, i.e. reads and writes. This is that offset + thread_id + i < elems_count \
+           checks below are for. \
+           Note: we only check offsets of input and output buffers(e.g. segment_offset) in the loop constraint. \
+           For tmp buffer we allocate and use at most 2 segments so its offset is always <= offset of input/output buffers \
+           therefore no need to introduce additional check */ \
+        size_t segment_size = ring_allreduce_get_segment_size(elems_count, comm_size); \
         size_t work_group_size = get_global_size(0); \
         int my_rank_buffer_start_idx = my_rank * segment_size; \
         int thread_id = get_global_id(0); \
@@ -65,7 +71,12 @@
         WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
         work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
-        for (size_t i = 0; i < segment_size; i += work_group_size) { \
+        /* As we do operations on segments in parallel and with step size = work_group_size, if segment_size % work_group_size \
+           we have a remainder such that some workitems still have a loop iteration to do, but there is no more data, we need \
+           to stop them earlyer by checking for thread_id + i < segment_size */ \
+        for (size_t i = 0; thread_id + i < segment_size && \
+                           my_rank_buffer_start_idx + thread_id + i < elems_count; \
+             i += work_group_size) { \
             right_temp_buffer[thread_id + i] = \
                 input_buffer[my_rank_buffer_start_idx + thread_id + i]; \
         } \
@@ -80,15 +91,18 @@
 \
         DEBUG_BLOCK(printf("kernel %d.%d send complete\n", my_rank, thread_id)); \
         /*2nd phase - reduce scatter                                                                            \
-      get data written by left rank to our temp buffer, reduce with our part and send to right rank*/ \
+          On this phase we do a reduce scatter operation among running ranks and after it we'll have \
+          1 correctly reduced(i.e. reduced from every rank) segment for each rank on position i + 1 for rank i \
+          of output buffer (e.g. comm_size == 3 for rank 0 we'll have 1st segment reduced, for 1st - 2nd and for 3rd - 0th) */ \
 \
+        /* Get data written by left rank to our temp buffer, reduce with our part and send to right rank.
+            Repeat until we get the reduced data from each rank */ \
         for (int iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx) { \
             work_rank = get_left_rank(work_rank, comm_size); \
             size_t segment_offset = work_rank * segment_size; \
 \
             /*left rank has written data to our temp buffer, reduce it with corresponding element               \
-              from our initial buffer                                                                             \
-              and send to the right rank  */ \
+              from our initial buffer and send to the right rank  */ \
 \
             PUT_READY_TO_RECEIVE(i_ready_to_receive_flag); \
             work_group_barrier(CLK_GLOBAL_MEM_FENCE, memory_scope_all_svm_devices); \
@@ -96,7 +110,9 @@
             WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
             work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
-            for (size_t i = 0; i < segment_size; i += work_group_size) { \
+            for (size_t i = 0; \
+                 thread_id + i < segment_size && thread_id + i + segment_offset < elems_count; \
+                 i += work_group_size) { \
                 DEBUG_BLOCK(printf("kernel %d.%d, phase 2.%d -- temp[%zu] = %f, this[%zu] = %d\n", \
                                    my_rank, \
                                    thread_id, \
@@ -133,11 +149,13 @@
         work_rank = get_left_rank(work_rank, comm_size); \
         size_t segment_offset = work_rank * segment_size; \
 \
-        /*left rank has written data to our temp buffer,                                                        \
-      reduce it with corresponding element from our initial buffer                                          \
-      and put to output buffer*/ \
+        /*left rank has written data to our temp buffer, reduce it with corresponding element from our initial buffer \
+          and put to output buffer*/ \
 \
-        for (size_t i = 0; i < segment_size; i += work_group_size) { \
+        for (size_t i = 0; \
+             thread_id + i < segment_size && segment_offset + thread_id + i < elems_count; \
+             i += work_group_size) { \
+            /* TODO: use private variable to store result, but must check whether this improves perf*/ \
             output_buffer[segment_offset + thread_id + i] = \
                 Op(tmp_buffer[thread_id + i + tmp_buffer_offset], \
                    input_buffer[segment_offset + thread_id + i]); \
@@ -161,8 +179,7 @@
 \
         work_rank = my_rank; \
         /*3rd phase - allgather                                                                                 \
-      copy ready data from temp buffer by [segment_offset] offset, reduce                                   \
-      and send data by [work_rank] offset */ \
+          Copy ready data from temp buffer by [segment_offset] offset, reduce and send data by [work_rank] offset */ \
         for (int iter_idx = 0; iter_idx < comm_size - 2; ++iter_idx) { \
             segment_offset = work_rank * segment_size; \
             /*copy reduced value to initial buffer*/ \
@@ -173,7 +190,10 @@
             /*aka send*/ \
             WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
             work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
-            for (size_t i = 0; i < segment_size; i += work_group_size) { \
+            for (size_t i = 0; \
+                 thread_id + i < segment_size && segment_offset + thread_id + i < elems_count; \
+                 i += work_group_size) { \
+                /* TODO: use private variable to store tmp, but must check whether this improves perf*/ \
                 output_buffer[segment_offset + thread_id + i] = \
                     tmp_buffer[thread_id + i + tmp_buffer_offset]; \
 \
@@ -184,7 +204,6 @@
                                    tmp_buffer[thread_id + i], \
                                    segment_offset + thread_id, \
                                    work_rank + i)); \
-                /*TODO optimize for local memory to avoid double read for global?*/ \
                 right_temp_buffer[thread_id + i + right_tmp_buffer_offset] = \
                     tmp_buffer[thread_id + i + tmp_buffer_offset]; \
             } \
@@ -207,8 +226,11 @@
         /*aka send*/ \
         WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
         work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
+\
         segment_offset = work_rank * segment_size; \
-        for (size_t i = 0; i < segment_size; i += work_group_size) { \
+        for (size_t i = 0; \
+             (i + thread_id) < segment_size && segment_offset + thread_id + i < elems_count; \
+             i += work_group_size) { \
             output_buffer[segment_offset + thread_id + i] = \
                 tmp_buffer[thread_id + i + tmp_buffer_offset]; \
         } \
@@ -216,27 +238,31 @@
         DEBUG_BLOCK(printf("kernel %d.%d completed\n", my_rank, thread_id)); \
     }
 
-// Macro to define kernels for a specific operation for all the supported types.
+// Define kernels for a specific operation for all the supported types.
 // Note: for op function we use convention __<OpName>_<type>, where type is the actual type(e.g. int4, float)
+// FIXME: Temporary use scalar types instead of vector ones. This is a workaround for issues in case when
+// elems_count % VecSize != 0. Need to find a proper fix with a good performance.
+#define VEC_SIZE RING_ALLREDUCE_VEC_SIZE
+
 #define DEFINE_KERNELS_WITH_OP(OpName) \
-    DEFINE_KERNEL(int8, char4, 4, __##OpName##_##char4, OpName) \
-    DEFINE_KERNEL(uint8, uchar4, 4, __##OpName##_##uchar4, OpName) \
+    DEFINE_KERNEL(int8, char, VEC_SIZE, __##OpName##_##char, OpName) \
+    DEFINE_KERNEL(uint8, uchar, VEC_SIZE, __##OpName##_##uchar, OpName) \
 \
-    DEFINE_KERNEL(int16, short4, 4, __##OpName##_##short4, OpName) \
-    DEFINE_KERNEL(uint16, ushort4, 4, __##OpName##_##ushort4, OpName) \
+    DEFINE_KERNEL(int16, short, VEC_SIZE, __##OpName##_##short, OpName) \
+    DEFINE_KERNEL(uint16, ushort, VEC_SIZE, __##OpName##_##ushort, OpName) \
 \
-    DEFINE_KERNEL(int32, int4, 4, __##OpName##_##int4, OpName) \
-    DEFINE_KERNEL(uint32, uint4, 4, __##OpName##_##uint4, OpName) \
+    DEFINE_KERNEL(int32, int, VEC_SIZE, __##OpName##_##int, OpName) \
+    DEFINE_KERNEL(uint32, uint, VEC_SIZE, __##OpName##_##uint, OpName) \
 \
-    DEFINE_KERNEL(int64, long4, 4, __##OpName##_##long4, OpName) \
-    DEFINE_KERNEL(uint64, ulong4, 4, __##OpName##_##ulong4, OpName) \
+    DEFINE_KERNEL(int64, long, VEC_SIZE, __##OpName##_##long, OpName) \
+    DEFINE_KERNEL(uint64, ulong, VEC_SIZE, __##OpName##_##ulong, OpName) \
 \
-    DEFINE_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName) \
-    DEFINE_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName)
+    DEFINE_KERNEL(float32, float, VEC_SIZE, __##OpName##_##float, OpName) \
+    DEFINE_KERNEL(float64, double, VEC_SIZE, __##OpName##_##double, OpName)
 
 #define DEFINE_KERNELS_WITH_LP_OP(OpName) \
-    DEFINE_KERNEL(bfloat16, ushort, 1, __##OpName##_##ushort, OpName) \
-    DEFINE_KERNEL(float16, half, 1, __##OpName##_##half, OpName)
+    DEFINE_KERNEL(bfloat16, ushort, VEC_SIZE, __bf16_##OpName##_##ushort, OpName) \
+    DEFINE_KERNEL(float16, half, VEC_SIZE, __##OpName##_##half, OpName)
 
 #define DEFINE_OPS(T) \
     DEFINE_SUM_OP(T) \
@@ -257,18 +283,23 @@
     DEFINE_FP16MAX_OP(T)
 
 // Define Op function for each supported type(use vector types for some of them as required by the kernel)
-DEFINE_OPS(char4)
-DEFINE_OPS(uchar4)
-DEFINE_OPS(short4)
-DEFINE_OPS(ushort4)
-DEFINE_OPS(int4)
-DEFINE_OPS(uint4)
-DEFINE_OPS(long4)
-DEFINE_OPS(ulong4)
-DEFINE_FP16OPS(half)
-DEFINE_OPS(float4)
-DEFINE_OPS(double4)
+DEFINE_OPS(char)
+DEFINE_OPS(uchar)
+
+DEFINE_OPS(short)
+DEFINE_OPS(ushort)
+
+DEFINE_OPS(int)
+DEFINE_OPS(uint)
+
+DEFINE_OPS(long)
+DEFINE_OPS(ulong)
+
+DEFINE_OPS(float)
+DEFINE_OPS(double)
+
 DEFINE_BF16OPS(ushort)
+DEFINE_FP16OPS(half)
 
 // Define the actual kernels
 DEFINE_KERNELS_WITH_OP(sum)

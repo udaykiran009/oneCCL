@@ -235,8 +235,18 @@ run_benchmark()
 
         if [ $use_kernels -eq 1 ]
         then
+            start_size="256"
+            end_size="512"
+
+            # FIXME: for now only allreduce kernel works with all sizes, so we enable all sizes only
+            # when it's specified alone without other collectives
+            if [ $coll -eq "allreduce" ]
+            then
+                start_size="1"
+            fi
+
             echo "Running benchmark with the kernels support:"
-            final_options="${options} -n 1 -k 4 -f 256 -t 512"
+            final_options="${options} -n 1 -k 4 -f ${start_size} -t ${end_size}"
             cmd=`echo $ccl_extra_env CCL_COMM_KERNELS=1 CCL_KVS_GET_TIMEOUT=10 ./$example ${final_options}`
             echo "Running: $cmd"
             eval $cmd 2>&1 | tee ${test_log}
@@ -485,7 +495,7 @@ run()
 
                     if [ -z "${I_MPI_HYDRA_HOST_FILE}" ];
                     then
-                        echo "WARNING: I_MPI_HYDRA_HOST_FILE was not set."    
+                        echo "WARNING: I_MPI_HYDRA_HOST_FILE was not set."
                         echo localhost > ${SCRIPT_DIR}/${dir_name}/hostfile
                         export I_MPI_HYDRA_HOST_FILE=${SCRIPT_DIR}/${dir_name}/hostfile
                     fi

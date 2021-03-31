@@ -209,6 +209,10 @@ struct my_max<float16> {
     DEFINE_KERNEL_TYPE_FOR_OP(float64, double, COLL, OP) \
     DEFINE_KERNEL_TYPE_FOR_OP(bfloat16, bfloat16, COLL, OP)
 
+// TODO: try to re-write tests using list of ccl::datatypes instead of having
+// types as template parameters. This should speedup compilation times.
+// Ideally they should be different testcases, check if gtest allows to do
+// that for runtime lists of values
 using TestTypes = ::testing::Types<int8_t,
                                    uint8_t,
                                    int16_t,
@@ -246,3 +250,25 @@ using TestTypesAndOps = ::testing::Types<DEFINE_PAIR(int8_t, my_sum<int8_t>),
                                          DEFINE_PAIR(bfloat16, my_max<bfloat16>),
                                          DEFINE_PAIR(float16, my_sum<float16>),
                                          DEFINE_PAIR(float16, my_max<float16>)>;
+
+/* Simple utility function to return value from the provided env variable if it's set or
+   some default_value otherwise */
+inline size_t get_from_env_or(const std::string& env_var, size_t default_value) {
+    const char* env_value = getenv(env_var.c_str());
+    if (!env_value) {
+        return default_value;
+    }
+
+    char* end = nullptr;
+    auto parsed_res = strtoul(env_value, &end, 10);
+    if (parsed_res == 0 && end == env_value) {
+        std::cerr << "Failed to parse value from " << env_var << " : " << env_value << std::endl;
+        std::abort();
+    }
+    else if (parsed_res == 0 && errno != 0) {
+        std::cerr << "Error during value parsing " << env_var << " : errno: " << errno << std::endl;
+        std::abort();
+    }
+
+    return parsed_res;
+}

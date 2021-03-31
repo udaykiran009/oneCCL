@@ -37,7 +37,7 @@ TYPED_TEST(ring_allreduce_single_process_fixture, ring_allreduce_single_device_m
               "Devices must not be unique to launch single device case");
 
     // test case data
-    const size_t buffer_size = 512 * 4;
+    const size_t buffer_size = get_from_env_or("UT_KERNEL_BUF_SIZE", 512 * 4);
     const size_t comm_size = devices.size();
     constexpr size_t comm_group_count = 3;
     constexpr size_t mem_group_count = 3;
