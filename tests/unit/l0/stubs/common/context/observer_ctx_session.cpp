@@ -1,6 +1,6 @@
 #include <sstream>
 
-#include "common/comm/l0/context/scaling_ctx/observer_ctx_session.hpp"
+#include "common/comm/l0/context/scale/base/base_session.hpp"
 
 namespace native {
 namespace observer {

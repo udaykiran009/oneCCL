@@ -1,7 +1,8 @@
 #pragma once
 #include "common/comm/l0/context/base_scaling_ctx.hpp"
-#include "common/comm/l0/context/scaling_ctx/observer_session_key.hpp"
-#include "common/comm/l0/context/scaling_ctx/observer_ctx_session.hpp"
+#include "common/comm/l0/context/scale/base/base_session_key.hpp"
+#include "common/comm/l0/context/scale/base/base_session_table.hpp"
+#include "common/comm/l0/context/scale/numa/numa_session.hpp"
 
 namespace native {
 
@@ -11,10 +12,12 @@ class ccl_virtual_gpu_comm;
 template <class device>
 class ccl_numa_proxy;
 
+#define NUMA_CTX_DEVICE_PROXY_TYPES(observer_type) \
+    observer_type<ccl_gpu_comm>, observer_type<ccl_virtual_gpu_comm>
+
 template <class Impl, ccl::device_topology_type... types>
 class numa_ctx : public observer::base_scaling_ctx<numa_ctx<Impl, types...>,
-                                                   ccl_numa_proxy<ccl_gpu_comm>,
-                                                   ccl_numa_proxy<ccl_virtual_gpu_comm>> {
+                                                   NUMA_CTX_DEVICE_PROXY_TYPES(ccl_numa_proxy)> {
 public:
     static_assert(sizeof...(types), "types must be not 0");
     using context_impl = Impl;
@@ -23,11 +26,14 @@ public:
     using observer_t = ccl_numa_proxy<device_t>;
 
     using scaling_ctx_base_t = observer::base_scaling_ctx<numa_ctx<Impl, types...>,
-                                                          observer_t<ccl_gpu_comm>,
-                                                          observer_t<ccl_virtual_gpu_comm>>;
+                                                          NUMA_CTX_DEVICE_PROXY_TYPES(observer_t)>;
 
-    using numa_actor = observer::subscribed_actor<std::shared_ptr<observer::session>,
-                                                  observer::session_notification>;
+    using session_t = observer::numa_session_iface; //TODO: numa_session
+    using session_ptr_t = std::shared_ptr<session_t>;
+    using base_session_table_t = observer::session_table<session_t>;
+    using base_session_table_ptr_t = std::shared_ptr<base_session_table_t>;
+
+    using numa_actor = observer::subscribed_actor<session_ptr_t, observer::session_notification>;
 
     using observable_scale_up_topologies =
         typename scaling_ctx_base_t::template observable_topologies<types...>;
@@ -41,25 +47,25 @@ public:
     // session data
     template <class NUMA_source_device_t, ccl_coll_type coll_type>
     struct device_session_data {
-        std::map<NUMA_source_device_t*, std::shared_ptr<observer::session_table>> source_sessions;
+        std::map<NUMA_source_device_t*, base_session_table_ptr_t> source_sessions;
     };
 
     //TODO make table PER thread!!!
-    template <ccl_coll_type coll_type>
-    using session_table_t =
-        std::tuple<device_session_data<observer_t<ccl_gpu_comm>, coll_type>,
-                   device_session_data<observer_t<ccl_virtual_gpu_comm>, coll_type>>;
+    template <ccl_coll_type coll_type, class... devices_types>
+    using session_table_t = std::tuple<device_session_data<devices_types, coll_type>...>;
 
     template <ccl_coll_type... coll_type>
-    using session_table_typed_storage_t = std::tuple<session_table_t<coll_type>...>;
+    using session_table_typed_storage_t =
+        std::tuple<session_table_t<coll_type, NUMA_CTX_DEVICE_PROXY_TYPES(observer_t)>...>;
 
     struct session_table_initializer {
         template <ccl_coll_type coll_type, class device_t>
-        void operator()(session_table_t<coll_type>& table, observer_t<device_t>* observer_ptr) {
+        void operator()(session_table_t<coll_type, NUMA_CTX_DEVICE_PROXY_TYPES(observer_t)>& table,
+                        observer_t<device_t>* observer_ptr) {
             auto& sessions_table =
                 ccl_tuple_get<device_session_data<observer_t<device_t>, coll_type>>(table);
             sessions_table.source_sessions.emplace(
-                observer_ptr, std::make_shared<observer::session_table>(observer::session_table{}));
+                observer_ptr, std::make_shared<base_session_table_t>(base_session_table_t{}));
         }
     };
 
@@ -97,6 +103,11 @@ public:
         //Try to find existing session owner for coll type
         auto& sessions_table = ccl_tuple_get<device_session_data<observer_t<device_t>, coll_type>>(
             std::get<coll_type>(collective_sessions));
+
+        // In general way sessions_table.source_sessions.find(observer_ptr) has multithreading access,
+        // But it has write access only in wire up-phase, when observers are inserted from topology construction
+        // Multithreading access here is served by model "multiple-readers - no writers"
+        // and can be used without mutex protection
         auto session_table_it = sessions_table.source_sessions.find(observer_ptr);
         if (session_table_it == sessions_table.source_sessions.end()) {
             std::stringstream ss;
@@ -113,13 +124,13 @@ public:
             abort();
         }
 
-        std::shared_ptr<observer::session_table> table = session_table_it->second;
+        base_session_table_ptr_t table = session_table_it->second;
         if (!table) {
             LOG_ERROR("session_key: ", sess_key.to_string(), ", session table is empty. Abort");
             abort();
         }
 
-        std::shared_ptr<observer::session> sess;
+        session_ptr_t sess;
         LOG_DEBUG("session_key: ",
                   sess_key.to_string(),
                   ", current sessions count: ",
@@ -127,7 +138,7 @@ public:
         auto session_it = table->sessions.find(sess_key);
         if (session_it == table->sessions.end()) {
             //create new session
-            sess = table->create_session<class_id>(
+            sess = table->template create_session<observer::numa_session, class_id>(
                 sess_key, param, registered_index, registered_devices_count);
         }
         else {
@@ -160,10 +171,9 @@ private:
     template <ccl::device_topology_type topology_type, class device_t>
     void register_observer_impl(size_t rank_addr, observer_t<device_t>* observer_ptr);
 
-    using devices_tuple_thread_map =
-        std::tuple<observer::device_thread_map<observer_t<ccl_gpu_comm>, numa_actor>,
-                   observer::device_thread_map<observer_t<ccl_virtual_gpu_comm>, numa_actor>>;
-    devices_tuple_thread_map numa_workers;
+    using specific_device_tuple_thread_map_t =
+        observer::multiple_device_thread_map_t<numa_actor, NUMA_CTX_DEVICE_PROXY_TYPES(observer_t)>;
+    specific_device_tuple_thread_map_t numa_workers;
 
     template <class device_t>
     void worker(observer_t<device_t>* device,

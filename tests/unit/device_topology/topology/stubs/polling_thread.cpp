@@ -1,4 +1,4 @@
-#include "common/comm/l0/context/scaling_ctx/polling_thread.hpp"
+#include "common/comm/l0/context/scale/polling_thread.hpp"
 
 namespace native {
 polling_thread::polling_thread(size_t idx, std::unique_ptr<ccl_sched_queue> queue)

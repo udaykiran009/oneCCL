@@ -7,7 +7,7 @@
 
 #include "common/comm/l0/devices/ccl_gpu_base_comm.hpp"
 #include "common/comm/l0/devices/proxy_observer_types.hpp"
-#include "common/comm/l0/context/scaling_ctx/observer_session_key.hpp"
+#include "common/comm/l0/context/scale/base/base_session_key.hpp"
 
 namespace native {
 
@@ -97,13 +97,15 @@ public:
         main_func.set_size(comm_addr.size);
 
         // alloc shared data structure to notify host side with device parital result
-        observer::invoke_params<gpu_entry::type(), kernel_params> params = entry.get_numa_data();
+        observer::invoke_params<gpu_entry::type(), kernel_params> params =
+            entry.get_scaleout_data();
 
         // invoke host-side context creation
-        this->template invoke<group_id, class_id>(entry.get_numa_session_key(), params);
+        this->template invoke<group_id, class_id>(entry.get_scaleout_session_key(), params);
 
         // bind shared data to kernel
         const auto& out_ctx_params = params.get_ctx_params();
+
         main_func.bind_data(out_ctx_params);
 
         return main_func;

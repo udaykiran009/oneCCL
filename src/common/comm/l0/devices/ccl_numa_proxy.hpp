@@ -7,7 +7,7 @@
 
 #include "common/comm/l0/devices/ccl_gpu_base_comm.hpp"
 #include "common/comm/l0/devices/proxy_observer_types.hpp"
-#include "common/comm/l0/context/scaling_ctx/observer_session_key.hpp"
+#include "common/comm/l0/context/scale/base/base_session_key.hpp"
 
 namespace native {
 
@@ -94,6 +94,7 @@ public:
 
         // bind shared data to kernel
         const auto& out_ctx_params = params.get_ctx_params();
+
         main_func.bind_data(out_ctx_params);
 
         return main_func;

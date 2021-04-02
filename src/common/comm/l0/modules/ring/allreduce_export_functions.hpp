@@ -153,15 +153,18 @@ struct numa_kernel : public execution_kernel<
 
     template <class ctx_params_t>
     void bind_data(const ctx_params_t& out_ctx_params) {
-        this->template set_arg<event_prod_chunk_mem_arg>(out_ctx_params.numa_staged_memory->get());
+        this->template set_arg<event_prod_chunk_mem_arg>(
+            static_cast<typename kernel_params::native_type*>(
+                static_cast<void*>(out_ctx_params.host_mem_producer->get())));
         this->template set_arg<event_prod_bytes_arg>(
-            out_ctx_params.staged_memory_size_counter->get());
+            out_ctx_params.host_mem_producer_counter->get());
         this->template set_arg<event_consumed_bytes_offset_arg>(
             out_ctx_params.producer_aggregated_memory_offset->get());
         this->template set_arg<event_consumed_chunk_mem_arg>(
-            out_ctx_params.total_producers_aggregated_memory->get());
+            static_cast<typename kernel_params::native_type*>(
+                static_cast<void*>(out_ctx_params.dev_mem_consumer->get())));
         this->template set_arg<event_consumed_bytes_arg>(
-            out_ctx_params.total_producers_aggregated_size_counter->get());
+            out_ctx_params.dev_mem_consumer_counter->get());
     }
 };
 
@@ -287,15 +290,18 @@ struct scale_out_cpu_gw_kernel
 
     template <class ctx_params_t>
     void bind_data(const ctx_params_t& out_ctx_params) {
-        this->template set_arg<event_prod_chunk_mem_arg>(out_ctx_params.numa_staged_memory->get());
+        this->template set_arg<event_prod_chunk_mem_arg>(
+            static_cast<typename kernel_params::native_type*>(
+                static_cast<void*>(out_ctx_params.host_mem_producer->get())));
         this->template set_arg<event_prod_bytes_arg>(
-            out_ctx_params.staged_memory_size_counter->get());
+            out_ctx_params.host_mem_producer_counter->get());
         this->template set_arg<event_consumed_bytes_offset_arg>(
             out_ctx_params.producer_aggregated_memory_offset->get());
         this->template set_arg<event_consumed_chunk_mem_arg>(
-            out_ctx_params.total_producers_aggregated_memory->get());
+            static_cast<typename kernel_params::native_type*>(
+                static_cast<void*>(out_ctx_params.dev_mem_consumer->get())));
         this->template set_arg<event_consumed_bytes_arg>(
-            out_ctx_params.total_producers_aggregated_size_counter->get());
+            out_ctx_params.dev_mem_consumer_counter->get());
     }
 };
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "common/comm/l0/context/scaling_ctx/scale_up_ctx.hpp"
+#include "common/comm/l0/context/scale/scale_up/scale_up_ctx.hpp"
 
 namespace native {
 #define TEMPLATE_DECL_ARG class Impl, ccl::device_topology_type... types

@@ -1,4 +1,4 @@
-#include "common/comm/l0/context/scaling_ctx/observer_session_key.hpp"
+#include "common/comm/l0/context/scale/base/base_session_key.hpp"
 
 namespace native {
 namespace observer {

@@ -1,5 +1,5 @@
 #include "common/log/log.hpp"
-#include "common/comm/l0/context/scaling_ctx/ipc_ctx_utils.hpp"
+#include "common/comm/l0/context/scale/ipc/ipc_ctx_utils.hpp"
 #include "common/comm/l0/devices/devices_declaration.hpp"
 
 namespace native {

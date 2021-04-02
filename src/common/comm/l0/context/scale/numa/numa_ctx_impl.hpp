@@ -1,5 +1,5 @@
 #pragma once
-#include "common/comm/l0/context/scaling_ctx/numa_ctx.hpp"
+#include "common/comm/l0/context/scale/numa/numa_ctx.hpp"
 #include "common/utils/tuple.hpp"
 #include "common/log/log.hpp"
 
@@ -92,10 +92,10 @@ void numa_ctx<TEMPLATE_DEF_ARG>::worker(observer_t<device_t>* listener_device,
         size_t partial_chunk_size = 0;
 
         // get own device partial chunk data
-        if ((*sess_it)->produce_data(&partial_chunk, partial_chunk_size)) {
+        (*sess_it)->produce_data(&partial_chunk, partial_chunk_size);
+        if (partial_chunk_size > 0) {
             // notify other actor for data_ready
-            observer::detail::actor_publisher<std::shared_ptr<observer::session>,
-                                              observer::session_notification>
+            observer::detail::actor_publisher<session_ptr_t, observer::session_notification>
                 visitor;
             ccl_tuple_for_each_args(numa_workers,
                                     visitor,
@@ -115,8 +115,9 @@ void numa_ctx<TEMPLATE_DEF_ARG>::worker(observer_t<device_t>* listener_device,
                 actor_index % total_actors_count, (*sess_it)->get_send_tag(), messages);
 
             for (auto mess_it = messages.begin(); mess_it != messages.end(); ++mess_it) {
-                session_finished = (*sess_it)->consume_data(
+                (*sess_it)->consume_data(
                     0 /*TODO !!!! */, mess_it->host_src_ptr, mess_it->src_size_bytes);
+                session_finished = (*sess_it)->is_consumed();
                 assert(not(session_finished && std::next(mess_it, 1) != messages.end()) &&
                        "Session are filled too early");
             }

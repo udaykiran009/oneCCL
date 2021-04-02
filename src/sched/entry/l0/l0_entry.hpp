@@ -15,8 +15,8 @@
 #include "common/global/global.hpp"
 #include "common/stream/stream.hpp"
 
-#include "common/comm/l0/context/scaling_ctx/ipc_session_key.hpp"
-#include "common/comm/l0/context/scaling_ctx/observer_session_key.hpp"
+#include "common/comm/l0/context/scale/ipc/ipc_session_key.hpp"
+#include "common/comm/l0/context/scale/base/base_session_key.hpp"
 
 //TODO L0 Workaround
 #include <unistd.h>
@@ -303,11 +303,21 @@ public:
         abort();
     }
 
+    virtual observer::invoke_params<type(), kernel_params> get_scaleout_data() {
+        //TODO make pure-virtual
+        ENTRY_LOG_ERROR("NOT implemented for that collective type");
+        abort();
+    }
+
     virtual native::ipc_session_key get_ipc_session_key() const {
         return native::ipc_session_key{ this };
     }
 
     virtual native::observer::session_key get_numa_session_key() const {
+        return native::observer::session_key{ this };
+    }
+
+    virtual native::observer::session_key get_scaleout_session_key() const {
         return native::observer::session_key{ this };
     }
 

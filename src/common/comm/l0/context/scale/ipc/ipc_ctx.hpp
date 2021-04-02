@@ -7,8 +7,8 @@
 #include <thread>
 #include <vector>
 #include "common/comm/l0/context/base_scaling_ctx.hpp"
-#include "common/comm/l0/context/scaling_ctx/ipc_session_key.hpp"
-#include "common/comm/l0/context/scaling_ctx/ipc_ctx_session.hpp"
+#include "common/comm/l0/context/scale/ipc/ipc_session_key.hpp"
+#include "common/comm/l0/context/scale/ipc/ipc_ctx_session.hpp"
 
 namespace ccl {
 class host_communicator;
@@ -158,7 +158,7 @@ public:
         std::shared_ptr<session> sess;
         auto session_it = table->sessions.find(session_key);
         if (session_it == table->sessions.end()) {
-            LOG_DEBUG("Create new session: session_key: ",
+            LOG_DEBUG("create new session session_key: ",
                       session_key.to_string(),
                       ", current sessions count: ",
                       table->sessions.size());
@@ -173,11 +173,12 @@ public:
                 session_key, observer_ptr, peer_addr, std::move(param), comm_addr.rank);
         }
         else {
-            LOG_DEBUG("Session reuse: session_key: ",
+            //renew existing
+            sess = session_it->second;
+            LOG_DEBUG("session reuse: session_key: ",
                       session_key.to_string(),
                       ", current sessions count: ",
                       table->sessions.size());
-            sess = session_it->second;
         }
 
         append_session_for_processing(session_key, sess);

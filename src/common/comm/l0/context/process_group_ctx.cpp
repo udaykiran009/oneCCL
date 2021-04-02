@@ -20,10 +20,10 @@
 #include "common/comm/l0/scheduler/allied_process_group_scheduler.hpp"
 
 #include "common/comm/host_communicator/host_communicator.hpp"
-#include "common/comm/l0/context/scaling_ctx/numa_ctx_impl.hpp"
-#include "common/comm/l0/context/scaling_ctx/scale_up_ctx_impl.hpp"
-#include "common/comm/l0/context/scaling_ctx/scale_out_ctx_impl.hpp"
-#include "common/comm/l0/context/scaling_ctx/ipc_ctx_impl.hpp"
+#include "common/comm/l0/context/scale/numa/numa_ctx_impl.hpp"
+#include "common/comm/l0/context/scale/scale_up/scale_up_ctx_impl.hpp"
+#include "common/comm/l0/context/scale/scale_out/scale_out_ctx_impl.hpp"
+#include "common/comm/l0/context/scale/ipc/ipc_ctx_impl.hpp"
 
 namespace native {
 
@@ -167,6 +167,9 @@ bool process_group_context::sync_barrier(const ccl::device_indices_type& thread_
 
     LOG_INFO("initialize IPC context");
     get_ipc_ctx().initialize_ctx(ccl_communicator);
+
+    LOG_INFO("initialize SCALE-OUT context");
+    get_scaleout_ctx().initialize_ctx(ccl_communicator);
 
     // dump topology
     std::stringstream out;

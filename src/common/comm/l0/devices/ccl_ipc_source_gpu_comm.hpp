@@ -7,7 +7,7 @@
 
 #include "common/comm/l0/devices/ccl_gpu_base_comm.hpp"
 #include "common/comm/l0/devices/proxy_observer_types.hpp"
-#include "common/comm/l0/context/scaling_ctx/ipc_session_key.hpp"
+#include "common/comm/l0/context/scale/ipc/ipc_session_key.hpp"
 
 #include "common/comm/l0/devices/communication_structs/ipc_client.hpp"
 namespace native {

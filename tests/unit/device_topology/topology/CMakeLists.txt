@@ -36,9 +36,8 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/common/comm/l0/devices/communication_structs/ipc_connection.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/l0/devices/communication_structs/ipc_server.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/l0/devices/communication_structs/ipc_client.cpp"
-             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scaling_ctx/observer_ctx_session.cpp"
-             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scaling_ctx/observer_ctx_session.cpp"
-             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scaling_ctx/observer_session_key.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scale/numa/numa_session.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scale/base/base_session_key.cpp"
 
              "${PROJECT_SOURCE_DIR}/tests/unit/l0/stubs/modules/module_source_data.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ipc_ctx_session.cpp"

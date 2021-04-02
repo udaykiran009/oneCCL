@@ -65,12 +65,14 @@ list (APPEND EXTENSIONS_SRC
                     common/comm/l0/topology/ring/process_group_ring_creator.cpp
                     common/comm/l0/topology/topology_construction_utils.cpp
 
-                    common/comm/l0/context/scaling_ctx/ipc_ctx_session.cpp
-                    common/comm/l0/context/scaling_ctx/ipc_ctx_utils.cpp
-                    common/comm/l0/context/scaling_ctx/ipc_session_key.cpp
+                    common/comm/l0/context/scale/ipc/ipc_ctx_session.cpp
+                    common/comm/l0/context/scale/ipc/ipc_ctx_utils.cpp
+                    common/comm/l0/context/scale/ipc/ipc_session_key.cpp
 
-                    common/comm/l0/context/scaling_ctx/observer_ctx_session.cpp
-                    common/comm/l0/context/scaling_ctx/observer_session_key.cpp
+                    common/comm/l0/context/scale/base/base_session_key.cpp
+
+                    common/comm/l0/context/scale/numa/numa_session.cpp
+                    common/comm/l0/context/scale/scale_out/scale_out_session.cpp
 
                     common/comm/l0/gpu_comm_attr.cpp
                     common/comm/l0/modules/base_entry_module.cpp

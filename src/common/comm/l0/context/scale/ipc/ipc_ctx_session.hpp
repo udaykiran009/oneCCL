@@ -2,8 +2,8 @@
 #include <atomic>
 #include <map>
 #include <memory>
-#include "common/comm/l0/context/scaling_ctx/ipc_ctx_utils.hpp"
-#include "common/comm/l0/context/scaling_ctx/ipc_session_key.hpp"
+#include "common/comm/l0/context/scale/ipc/ipc_ctx_utils.hpp"
+#include "common/comm/l0/context/scale/ipc/ipc_session_key.hpp"
 #include "common/comm/l0/modules/supported_modules.hpp"
 
 namespace ccl {
@@ -62,7 +62,7 @@ protected:
     std::atomic<bool> finished;
 };
 
-using shared_session_ptr = std::shared_ptr<session>;
+using shared_session_ptr_t = std::shared_ptr<session>;
 
 /* High level session
  * Contains collective communication data
@@ -122,7 +122,7 @@ struct session_table {
     }
 
     std::string to_string() const;
-    std::map<session_key_t, shared_session_ptr> sessions{};
+    std::map<session_key_t, shared_session_ptr_t> sessions{};
 
     static size_t get_unique_tag();
 

@@ -120,7 +120,7 @@ void memory<TEMPLATE_DEF_ARG>::enqueue_write_sync(const elem_t* src, size_t src_
             "\nCannot process 'enqueue_write_sync', because 'src' is 'nullptr'");
     }
 
-    if (count() < src_elem_count * sizeof(elem_t)) {
+    if (size() < src_elem_count * sizeof(elem_t)) {
         throw std::length_error(
             std::string(__PRETTY_FUNCTION__) +
             "\nCannot process 'enqueue_write_sync', because memory has not enough size" +

@@ -76,7 +76,7 @@ if(MULTI_GPU_SUPPORT)
              "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context_comm_addr.cpp"
 
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs//ipc_ctx_session.cpp"
-             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scaling_ctx/ipc_session_key.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scale/ipc/ipc_session_key.cpp"
 
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/single_device_communicator.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/device_topology_communicator.cpp"

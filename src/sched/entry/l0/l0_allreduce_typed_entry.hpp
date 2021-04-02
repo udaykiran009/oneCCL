@@ -4,7 +4,7 @@
 #include <atomic>
 
 #include "sched/entry/l0/l0_entry.hpp"
-#include "common/comm/l0/context/scaling_ctx/ipc_ctx_impl.hpp"
+#include "common/comm/l0/context/scale/ipc/ipc_ctx_impl.hpp"
 #include "kernels/shared.h"
 
 namespace native {
@@ -159,8 +159,8 @@ public:
 
     observer::invoke_params<type(), kernel_params> get_numa_data() override {
         observer::producer_description in_params{
-            .world_rank = comm_addr.rank, //TODO unused
-            .world_size = comm_addr.size, //TODO unused
+            .rank = comm_addr.rank, //TODO unused
+            .comm_size = comm_addr.size, //TODO unused
             .staged_buffer_elem_count = cnt_entry,
             .context = get_ctx(),
             .device = parent_communicator->get_device(),

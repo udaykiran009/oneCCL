@@ -1,8 +1,8 @@
 #pragma once
-#include "common/comm/l0/context/scaling_ctx/ipc_ctx.hpp"
+#include "common/comm/l0/context/scale/ipc/ipc_ctx.hpp"
 #include "common/utils/tuple.hpp"
 
-#include "common/comm/l0/context/scaling_ctx/ipc_ctx_session.hpp"
+#include "common/comm/l0/context/scale/ipc/ipc_ctx_session.hpp"
 #include "common/log/log.hpp"
 #include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/comm/l0/devices/communication_structs/ipc_client.hpp"
@@ -235,7 +235,7 @@ void ipc_ctx<TEMPLATE_DEF_ARG>::listener(ccl_ipc_gpu_comm* listener_device) {
                   stop.load());
         for (auto sess_it = sessions_to_execute.begin();
              sess_it != sessions_to_execute.end() and !stop.load();) {
-            shared_session_ptr sess = *sess_it;
+            shared_session_ptr_t sess = *sess_it;
 
             // try restore IPC handles
             LOG_DEBUG("process session: ", sess->to_string());

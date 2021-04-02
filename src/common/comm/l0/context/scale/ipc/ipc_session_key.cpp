@@ -1,4 +1,4 @@
-#include "common/comm/l0/context/scaling_ctx/ipc_session_key.hpp"
+#include "common/comm/l0/context/scale/ipc/ipc_session_key.hpp"
 
 namespace native {
 

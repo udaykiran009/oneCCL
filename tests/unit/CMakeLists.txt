@@ -172,8 +172,9 @@ if(MULTI_GPU_SUPPORT)
 
     # include UTs
     add_subdirectory(kernels)
-    add_subdirectory(device_topology)
+    #add_subdirectory(device_topology)
     add_subdirectory(native_api)
+    add_subdirectory(scaling)
 endif()
 add_subdirectory(api)
 

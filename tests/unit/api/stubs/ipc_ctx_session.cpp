@@ -1,5 +1,5 @@
-#include "common/comm/l0/context/scaling_ctx/ipc_ctx_session.hpp"
-#include "common/comm/l0/context/scaling_ctx/ipc_ctx_utils.hpp"
+#include "common/comm/l0/context/scale/ipc/ipc_ctx_session.hpp"
+#include "common/comm/l0/context/scale/ipc/ipc_ctx_utils.hpp"
 
 #include "oneapi/ccl/native_device_api/l0/primitives_impl.hpp"
 
