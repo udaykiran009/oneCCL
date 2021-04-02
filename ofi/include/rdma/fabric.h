@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013-2017 Intel Corporation. All rights reserved.
  * Copyright (c) 2016 Cisco Systems, Inc. All rights reserved.
+ * (C) Copyright 2020 Hewlett Packard Enterprise Development LP
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -38,6 +39,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <sys/uio.h>
+#include <rdma/fi_errno.h>
 
 #ifdef __GNUC__
 #define FI_DEPRECATED_FUNC __attribute__((deprecated))
@@ -77,7 +79,8 @@ extern "C" {
 #endif
 
 #define FI_MAJOR_VERSION 1
-#define FI_MINOR_VERSION 8
+#define FI_MINOR_VERSION 11
+#define FI_REVISION_VERSION 0
 
 enum {
 	FI_PATH_MAX		= 256,
@@ -85,7 +88,7 @@ enum {
 	FI_VERSION_MAX		= 64
 };
 
-#define FI_VERSION(major, minor) ((major << 16) | (minor))
+#define FI_VERSION(major, minor) (((major) << 16) | (minor))
 #define FI_MAJOR(version)	(version >> 16)
 #define FI_MINOR(version)	(version & 0xFFFF)
 #define FI_VERSION_GE(v1, v2)   ((FI_MAJOR(v1) > FI_MAJOR(v2)) || \
@@ -151,6 +154,7 @@ typedef struct fid *fid_t;
 #define FI_PEEK			(1ULL << 19)
 #define FI_TRIGGER		(1ULL << 20)
 #define FI_FENCE		(1ULL << 21)
+#define FI_PRIORITY		(1ULL << 22)
 
 #define FI_COMPLETION		(1ULL << 24)
 #define FI_EVENT		FI_COMPLETION
@@ -318,6 +322,28 @@ enum {
 	FI_PROTO_EFA
 };
 
+enum {
+	FI_TC_UNSPEC = 0,
+	FI_TC_DSCP = 0x100,
+	FI_TC_LABEL = 0x200,
+	FI_TC_BEST_EFFORT = FI_TC_LABEL,
+	FI_TC_LOW_LATENCY,
+	FI_TC_DEDICATED_ACCESS,
+	FI_TC_BULK_DATA,
+	FI_TC_SCAVENGER,
+	FI_TC_NETWORK_CTRL,
+};
+
+static inline uint32_t fi_tc_dscp_set(uint8_t dscp)
+{
+	return ((uint32_t) dscp) | FI_TC_DSCP;
+}
+
+static inline uint8_t fi_tc_dscp_get(uint32_t tclass)
+{
+	return tclass & FI_TC_DSCP ? (uint8_t) tclass : 0;
+}
+
 /* Mode bits */
 #define FI_CONTEXT		(1ULL << 59)
 #define FI_MSG_PREFIX		(1ULL << 58)
@@ -339,6 +365,7 @@ struct fi_tx_attr {
 	size_t			size;
 	size_t			iov_limit;
 	size_t			rma_iov_limit;
+	uint32_t		tclass;
 };
 
 struct fi_rx_attr {
@@ -395,6 +422,7 @@ struct fi_domain_attr {
 	size_t 			auth_key_size;
 	size_t			max_err_data;
 	size_t			mr_cnt;
+	uint32_t		tclass;
 };
 
 struct fi_fabric_attr {
@@ -505,6 +533,8 @@ struct fi_ops {
 	int	(*ops_open)(struct fid *fid, const char *name,
 			    uint64_t flags, void **ops, void *context);
 	int	(*tostr)(const struct fid *fid, char *buf, size_t len);
+	int	(*ops_set)(struct fid *fid, const char *name, uint64_t flags,
+			   void *ops, void *context);
 };
 
 /* All fabric interface descriptors must start with this structure */
@@ -601,6 +631,7 @@ enum {
 	FI_FLUSH_WORK,		/* NULL */
 	FI_REFRESH,		/* mr: fi_mr_modify */
 	FI_DUP,			/* struct fid ** */
+	FI_GETWAITOBJ,		/*enum fi_wait_obj * */
 };
 
 static inline int fi_control(struct fid *fid, int command, void *arg)
@@ -621,6 +652,14 @@ fi_open_ops(struct fid *fid, const char *name, uint64_t flags,
 	    void **ops, void *context)
 {
 	return fid->ops->ops_open(fid, name, flags, ops, context);
+}
+
+static inline int
+fi_set_ops(struct fid *fid, const char *name, uint64_t flags,
+	   void *ops, void *context)
+{
+	return FI_CHECK_OP(fid->ops, struct fi_ops, ops_set) ?
+		fid->ops->ops_set(fid, name, flags, ops, context) : -FI_ENOSYS;
 }
 
 enum fi_type {
@@ -648,6 +687,8 @@ enum fi_type {
 	FI_TYPE_MR_MODE,
 	FI_TYPE_OP_TYPE,
 	FI_TYPE_FID,
+	FI_TYPE_COLLECTIVE_OP,
+	FI_TYPE_HMEM_IFACE,
 };
 
 char *fi_tostr(const void *data, enum fi_type datatype);
@@ -668,7 +709,6 @@ struct fi_param {
 
 int fi_getparams(struct fi_param **params, int *count);
 void fi_freeparams(struct fi_param *params);
-
 
 #ifdef FABRIC_DIRECT
 #include <rdma/fi_direct.h>
