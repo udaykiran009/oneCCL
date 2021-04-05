@@ -475,7 +475,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
         { "sycl_mem_type", required_argument, 0, 'm' },
         { "sycl_usm_type", required_argument, 0, 'u' },
 #endif
-        { "ranks", required_argument, 0, 'k' },
+        { "ranks_per_proc", required_argument, 0, 'k' },
         { "coll", required_argument, 0, 'l' },
         { "dtype", required_argument, 0, 'd' },
         { "reduction", required_argument, 0, 'r' },

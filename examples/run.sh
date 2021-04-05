@@ -127,6 +127,8 @@ run_benchmark()
     echo "dtype: " $dtype
     local reduction=${10}
     echo "reduction: " $reduction
+    local ranks=${11}
+    echo "ranks per process: " ${ranks}
     echo "================ENVIRONMENT=================="
 
     log_idx=${log_idx}+1
@@ -187,7 +189,7 @@ run_benchmark()
             [ "$runtime" == "level_zero" ] &&  \
             [ "$loop" == "regular" ] &&        \
             [[ "$coll" == ${supported_kernel_colls} || "$coll" == ${supported_kernel_colls_with_dtypes} ]] && \
-            [[ "$dtype" == "float32" || "$dtype" == ${supported_kernel_dtypes} ]] &&       \
+            [[ "$dtype" == "float32" || "$dtype" == ${supported_kernel_dtypes} ]] && \
             [ "$reduction" == "sum" ]
         then
             echo "set flag use_kernels"
@@ -235,6 +237,15 @@ run_benchmark()
 
         if [ $use_kernels -eq 1 ]
         then
+            if [ -n "${ranks}" ];
+            then
+                options="${options} --ranks_per_proc ${ranks}"
+            else
+                #default --ranks_per_proc 4
+                echo "set --ranks_per_proc 4 by default"
+                options="${options} --ranks_per_proc 4"
+            fi
+
             start_size="256"
             end_size="512"
 
@@ -246,7 +257,7 @@ run_benchmark()
             fi
 
             echo "Running benchmark with the kernels support:"
-            final_options="${options} -n 1 -k 4 -f ${start_size} -t ${end_size}"
+            final_options="${options} -n 1 -f ${start_size} -t ${end_size}"
             cmd=`echo $ccl_extra_env CCL_COMM_KERNELS=1 CCL_KVS_GET_TIMEOUT=10 ./$example ${final_options}`
             echo "Running: $cmd"
             eval $cmd 2>&1 | tee ${test_log}
@@ -315,6 +326,9 @@ run()
     n=2
     dtype_list="int8,int32,float32"
     reduction_list="sum"
+    #TODO: when small msg size support will be applied
+    # for all colls set 2 3 4  ranks to test all use cases
+    ranks_per_proc="4"
     ccl_base_env="FI_PROVIDER=tcp"
 
     sycl_example_selector_list="none"
@@ -436,9 +450,9 @@ run()
 
                             # group of test scenarios for comm kernels
                             ccl_extra_env="${ccl_runtime_env}"
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernel_colls} float32 sum
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernel_colls_with_dtypes} ${supported_kernel_dtypes} sum
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${kernel_colls_with_reductions} ${supported_kernel_dtypes} sum
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernel_colls} float32 sum ${ranks_per_proc}
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernel_colls_with_dtypes} ${supported_kernel_dtypes} sum ${ranks_per_proc}
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${kernel_colls_with_reductions} ${supported_kernel_dtypes} sum ${ranks_per_proc}
 
                         done
                     done
