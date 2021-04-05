@@ -4,18 +4,19 @@
 #include <chrono>
 #include <cstring>
 #include <getopt.h>
+#include <fstream>
 #include <functional>
 #include <iostream>
 #include <iterator>
+#include <iomanip>
 #include <numeric>
 #include <map>
-#include <math.h>
+#include <cmath>
 #include <numeric>
 #include <stdexcept>
-#include <stdio.h>
+#include <cstdio>
 #include <sys/time.h>
 #include <vector>
-#include <fstream>
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
@@ -281,92 +282,110 @@ size_t get_iter_count(size_t bytes, size_t max_iter_count) {
     return res;
 }
 
+void store_to_csv(const user_options_t& options,
+                  size_t nranks,
+                  size_t elem_count,
+                  size_t iter_count,
+                  ccl::datatype dtype,
+                  ccl::reduction op,
+                  double min_time,
+                  double max_time,
+                  double avg_time,
+                  double stddev) {
+    std::ofstream csvf;
+    csvf.open(options.csv_filepath, std::ofstream::out | std::ofstream::app);
+
+    if (csvf.is_open()) {
+        const size_t buf_count = options.buf_count;
+
+        for (const auto& cop : options.coll_names) {
+            auto get_op_name = [&]() {
+                if (cop == "allreduce" || cop == "reduce_scatter" || cop == "reduce") {
+                    return reduction_names.at(op);
+                }
+                return std::string{};
+            };
+
+            csvf << nranks << "," << cop << "," << get_op_name() << "," << dtype_names.at(dtype)
+                 << "," << ccl::get_datatype_size(dtype) << "," << elem_count << "," << buf_count
+                 << "," << iter_count << "," << min_time << "," << max_time << "," << avg_time
+                 << "," << stddev << std::endl;
+        }
+        csvf.close();
+    }
+}
+
 /* timer array contains one number per collective, one collective corresponds to ranks_per_proc */
-void print_timings(ccl::communicator& comm,
+void print_timings(const ccl::communicator& comm,
                    const std::vector<double>& local_timers,
                    const user_options_t& options,
-                   const size_t elem_count,
-                   const size_t iter_count,
+                   size_t elem_count,
+                   size_t iter_count,
                    ccl::datatype dtype,
                    ccl::reduction op) {
     const size_t buf_count = options.buf_count;
     const size_t ncolls = options.coll_names.size();
-    std::vector<double> all_timers(ncolls * comm.size());
-    std::vector<size_t> recv_counts(comm.size());
+    const size_t nranks = comm.size();
 
-    int idx;
-    for (idx = 0; idx < comm.size(); idx++)
-        recv_counts[idx] = ncolls;
-
-    ccl::allgatherv(local_timers.data(), ncolls, all_timers.data(), recv_counts, comm).wait();
+    // get timers from other ranks
+    std::vector<double> all_ranks_timers(ncolls * nranks);
+    std::vector<size_t> recv_counts(nranks, ncolls);
+    ccl::allgatherv(local_timers.data(), ncolls, all_ranks_timers.data(), recv_counts, comm).wait();
 
     if (comm.rank() == 0) {
-        std::vector<double> timers(comm.size(), 0);
-        for (int r = 0; r < comm.size(); ++r) {
-            for (size_t c = 0; c < ncolls; ++c) {
-                timers[r] += all_timers[r * ncolls + c];
+        std::vector<double> timers(nranks, 0);
+        std::vector<double> min_timers(ncolls, 0);
+        std::vector<double> max_timers(ncolls, 0);
+
+        // parse timers from all ranks
+        for (size_t rank_idx = 0; rank_idx < nranks; ++rank_idx) {
+            for (size_t coll_idx = 0; coll_idx < ncolls; ++coll_idx) {
+                const double time = all_ranks_timers.at(rank_idx * ncolls + coll_idx);
+                timers.at(rank_idx) += time;
+
+                double& min = min_timers.at(coll_idx);
+                min = (min != 0) ? std::min(min, time) : time;
+
+                double& max = max_timers.at(coll_idx);
+                max = std::max(max, time);
             }
         }
 
-        double avg_timer(0);
-        double avg_timer_per_buf(0);
-        for (idx = 0; idx < comm.size(); idx++) {
-            avg_timer += timers[idx];
-        }
-        avg_timer /= (iter_count * comm.size());
-        avg_timer_per_buf = avg_timer / buf_count;
+        double avg_time = std::accumulate(timers.begin(), timers.end(), 0);
+        avg_time /= (iter_count * nranks);
 
-        double stddev_timer = 0;
         double sum = 0;
-        for (idx = 0; idx < comm.size(); idx++) {
-            double val = timers[idx] / iter_count;
-            sum += (val - avg_timer) * (val - avg_timer);
+        for (const double& timer : timers) {
+            double latency = (double)timer / iter_count;
+            sum += (latency - avg_time) * (latency - avg_time);
         }
+        double stddev = std::sqrt((double)sum / nranks) / avg_time * 100;
 
-        stddev_timer = sqrt(sum / comm.size()) / avg_timer * 100;
-        if (buf_count == 1) {
-            printf("%10zu %12.1lf %11.1lf\n",
-                   elem_count * ccl::get_datatype_size(dtype) * buf_count,
-                   avg_timer,
-                   stddev_timer);
-        }
-        else {
-            printf("%10zu %13.1lf %18.1lf %11.1lf\n",
-                   elem_count * ccl::get_datatype_size(dtype) * buf_count,
-                   avg_timer,
-                   avg_timer_per_buf,
-                   stddev_timer);
-        }
+        double min_time = std::accumulate(min_timers.begin(), min_timers.end(), 0);
+        min_time /= iter_count;
 
-        // in case csv export is requested
-        // we write one line per collop, dtype and reduction
-        // hence average is per collop, not the aggregate over all
+        double max_time = std::accumulate(max_timers.begin(), max_timers.end(), 0);
+        max_time /= iter_count;
+
+        size_t bytes = elem_count * ccl::get_datatype_size(dtype) * buf_count;
+        std::cout << std::right << std::fixed << std::setw(COL_WIDTH) << bytes
+                  << std::setw(COL_WIDTH) << iter_count << std::setw(COL_WIDTH)
+                  << std::setprecision(COL_PRECISION) << min_time << std::setw(COL_WIDTH)
+                  << std::setprecision(COL_PRECISION) << max_time << std::setw(COL_WIDTH)
+                  << std::setprecision(COL_PRECISION) << avg_time << std::setw(COL_WIDTH)
+                  << std::setprecision(COL_PRECISION) << stddev << std::endl;
+
         if (!options.csv_filepath.empty()) {
-            std::ofstream csvf;
-            csvf.open(options.csv_filepath, std::ios::app);
-
-            if (csvf.is_open()) {
-                std::vector<double> avg_timer(ncolls, 0);
-
-                for (int r = 0; r < comm.size(); ++r) {
-                    for (size_t c = 0; c < ncolls; ++c) {
-                        avg_timer[c] += all_timers[r * ncolls + c];
-                    }
-                }
-
-                for (size_t c = 0; c < ncolls; ++c) {
-                    avg_timer[c] /= (iter_count * comm.size());
-                }
-
-                int i = 0;
-                for (auto cop = options.coll_names.begin(); cop != options.coll_names.end();
-                     ++cop, ++i) {
-                    csvf << comm.size() << "," << (*cop) << "," << reduction_names[op] << ","
-                         << dtype_names[dtype] << "," << ccl::get_datatype_size(dtype) << ","
-                         << elem_count << "," << buf_count << "," << avg_timer[i] << std::endl;
-                }
-                csvf.close();
-            }
+            store_to_csv(options,
+                         nranks,
+                         elem_count,
+                         iter_count,
+                         dtype,
+                         op,
+                         min_time,
+                         max_time,
+                         avg_time,
+                         stddev);
         }
     }
 

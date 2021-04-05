@@ -1,7 +1,6 @@
 #pragma once
 
 #define ALIGNMENT (4096)
-#define DTYPE     float
 
 #define ALL_COLLS_LIST "allgatherv,allreduce,alltoall,alltoallv,bcast,reduce,reduce_scatter"
 
@@ -10,6 +9,9 @@
 
 #define ALL_REDUCTIONS_LIST            "sum,prod,min,max"
 #define ALL_REDUCTIONS_LIST_WITH_CHECK "sum"
+
+#define COL_WIDTH     (14)
+#define COL_PRECISION (2)
 
 #ifdef CCL_ENABLE_SYCL
 #define DEFAULT_BACKEND BACKEND_SYCL

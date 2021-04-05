@@ -63,21 +63,16 @@ void do_regular(ccl::communicator& service_comm,
             PRINT_BY_ROOT(service_comm,
                           "#------------------------------------------------------------\n"
                           "# Benchmarking: %s\n"
-                          "# processes: %d\n"
+                          "# #processes: %d\n"
                           "#------------------------------------------------------------\n",
                           scolls.str().c_str(),
                           service_comm.size());
 
-            if (options.buf_count == 1) {
-                PRINT_BY_ROOT(service_comm, "%10s %12s %11s", "#bytes", "avg[usec]", "stddev[%]");
-            }
-            else {
-                PRINT_BY_ROOT(service_comm,
-                              "%10s %13s %18s %11s",
-                              "#bytes",
-                              "avg[usec]",
-                              "avg_per_buf[usec]",
-                              "stddev[%]");
+            if (service_comm.rank() == 0) {
+                std::cout << std::right << std::setw(COL_WIDTH) << "#bytes" << std::setw(COL_WIDTH)
+                          << "#repetitions" << std::setw(COL_WIDTH) << "t_min[usec]"
+                          << std::setw(COL_WIDTH) << "t_max[usec]" << std::setw(COL_WIDTH)
+                          << "t_avg[usec]" << std::setw(COL_WIDTH) << "stddev[%]" << std::endl;
             }
 
             for (auto& count : options.elem_counts) {
@@ -143,6 +138,8 @@ void do_regular(ccl::communicator& service_comm,
             }
         }
     }
+
+    PRINT_BY_ROOT(service_comm, "\n# All done\n");
 }
 
 void do_unordered(ccl::communicator& service_comm,
@@ -510,15 +507,16 @@ int main(int argc, char* argv[]) {
             // open and truncate CSV file if csv-output is requested
             if (service_comm.rank() == 0 && !options.csv_filepath.empty()) {
                 std::ofstream csvf;
-                csvf.open(options.csv_filepath, std::ios::trunc);
+                csvf.open(options.csv_filepath, std::ofstream::out | std::ofstream::trunc);
                 if (!csvf.is_open()) {
                     std::cerr << "Cannot open CSV file for writing: " << options.csv_filepath
                               << std::endl;
-                    return -1;
+                    abort();
                 }
                 // write header (column names)
-                csvf << "#ranks,collective,reduction,type,typesize,#elements/buffer,#buffers,time"
-                     << std::endl;
+                csvf
+                    << "#ranks,collective,reduction,dtype,dtype_size,#elements/buffer,#buffers,#repetitions,t_min[usec],t_max[usec],t_avg[usec],stddev[%]"
+                    << std::endl;
                 csvf.close();
             }
             ccl::barrier(service_comm);
