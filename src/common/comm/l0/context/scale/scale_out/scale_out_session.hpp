@@ -26,8 +26,8 @@ public:
     virtual void produce_data(std::shared_ptr<ccl::host_communicator>& comm) = 0;
     virtual void consume_data(size_t observer_domain_index,
                               std::shared_ptr<ccl::host_communicator>& comm) = 0;
-    virtual bool is_consumed() = 0;
-    virtual bool is_produced() = 0;
+    virtual bool is_consumed() noexcept = 0;
+    virtual bool is_produced() noexcept = 0;
 
 private:
     size_t send_tag{};
@@ -130,11 +130,11 @@ struct scale_out_session : public scale_out_session_iface {
         }
     }
 
-    bool is_consumed() override {
+    bool is_consumed() noexcept override {
         return proxy_session.is_consumed();
     }
 
-    bool is_produced() override {
+    bool is_produced() noexcept override {
         return proxy_session.is_produced();
     }
 

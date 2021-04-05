@@ -17,7 +17,7 @@ TEST_F(scale_out_fixture, scale_out_iface_test) {
     // get local devices
     const auto& devices = this->get_local_devices();
     UT_ASSERT(devices.size() > 0,
-              "SingleDevice test scope require at least 1 device in local platform! Use correct \""
+              "ScaleOut test scope require at least 1 device in local platform! Use correct \""
                   << ut_device_affinity_mask_name << "\"");
 
     size_t comm_size = devices.size();
@@ -28,9 +28,9 @@ TEST_F(scale_out_fixture, scale_out_iface_test) {
     std::shared_ptr<ccl_context> ctx = driver.create_context();
 
     // create a session key for creating a full-fledged session
-    const int* key = new int(1);
-    const session_key_t sess_key(key);
-    size_t elem_count = 1024 * 10; //10 mb
+    const std::unique_ptr<int> key(new int(1));
+    const session_key_t sess_key(key.get());
+    size_t elem_count = 1024 * 10; //10 Kb
     size_t ring_idx = 0;
     size_t ring_count = 1;
 
@@ -70,7 +70,7 @@ TEST_F(scale_out_fixture, scale_out_iface_test) {
         host_mem_buff[i] = i;
     }
 
-    // 10mb / 43 chunks. 43 is just for testing
+    // 10Kb / 43 chunks. 43 is just for testing
     // We can handle any of number of chunks(even or odd)
     size_t chunk_counts = 43;
     size_t chunk_host_buff_size = 0;
@@ -111,6 +111,8 @@ TEST_F(scale_out_fixture, scale_out_iface_test) {
         // get mem buf and  mem buf size from a device
         auto check_dev_mem_buff = ctx_params.dev_mem_consumer->enqueue_read_sync();
         auto check_dev_mem_buff_size = ctx_params.dev_mem_consumer_counter->enqueue_read_sync();
+        UT_ASSERT(check_dev_mem_buff_size.size() == 1,
+                  "Error: could not get the device buffer size");
 
         // migrate data from device buffer to tmp buffers to check results
         // buff
@@ -138,11 +140,6 @@ TEST_F(scale_out_fixture, scale_out_iface_test) {
         }
         chunk_idx++;
         free(chunk_dev_buff);
-
-        if (numa_sess.is_produced()) {
-            this->output << "Test is passed!" << std::endl;
-            break;
-        }
     }
 }
 

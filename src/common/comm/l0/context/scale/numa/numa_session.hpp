@@ -20,8 +20,8 @@ public:
     virtual void consume_data(size_t observer_domain_index,
                               void* in_chunk,
                               size_t in_chunk_size) = 0;
-    virtual bool is_consumed() = 0;
-    virtual bool is_produced() = 0;
+    virtual bool is_consumed() noexcept = 0;
+    virtual bool is_produced() noexcept = 0;
 
 private:
     size_t send_tag{};
@@ -145,11 +145,11 @@ struct numa_session : public numa_session_iface {
         }
     }
 
-    bool is_consumed() override {
+    bool is_consumed() noexcept override {
         return get_ctx_descr().device_produced_bytes == get_ctx_descr().host_consumed_bytes;
     }
 
-    bool is_produced() override {
+    bool is_produced() noexcept override {
         return get_ctx_descr().host_expected_bytes == get_ctx_descr().host_consumed_bytes;
     }
 
