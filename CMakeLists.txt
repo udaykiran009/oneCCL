@@ -144,31 +144,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(TRY_ENABLE_SYCL_L0 ON)
 
+set(COMMON_CMAKE_DIR ${PROJECT_SOURCE_DIR}/cmake)
 if (COMPUTE_BACKEND)
-    activate_compute_backend("${CMAKE_CURRENT_LIST_DIR}/cmake" ${COMPUTE_BACKEND})
-    if (NOT COMPUTE_BACKEND_TARGET_NAME)
-        message(FATAL_ERROR "Failed to find requested compute runtime: ${COMPUTE_BACKEND}")
-    endif()
-    message(STATUS "COMPUTE_BACKEND_TARGET_NAME: ${COMPUTE_BACKEND_TARGET_NAME}")
-
-    if (${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL" OR ${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL_level_zero")
-        option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
-        message(STATUS "Enable CCL SYCL runtime")
-        execute_process(COMMAND dpcpp -v
-            OUTPUT_VARIABLE DPCPP_VERSION
-            ERROR_VARIABLE DPCPP_VERSION
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            ERROR_STRIP_TRAILING_WHITESPACE
-        )
-        message(STATUS "DPC++ compiler version:\n" "${DPCPP_VERSION}")
-    endif()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_BACKEND_FLAGS}")
-    if (${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL_level_zero" OR ${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "ze_loader")
-        set(MULTI_GPU_SUPPORT ON)
-    endif()
-    if (MULTI_GPU_SUPPORT)
-        message(STATUS "Enable multi GPU support using L0")
-    endif()
+    set_compute_backend(${COMMON_CMAKE_DIR})
 endif()
 
 if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")

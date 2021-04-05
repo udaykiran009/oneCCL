@@ -88,7 +88,6 @@ function(set_lp_env)
 
 endfunction(set_lp_env)
 
-
 function(check_compiler_version)
 
     set(GCC_MIN_SUPPORTED "4.8")
@@ -137,7 +136,6 @@ endfunction(get_vcs_properties)
 
 
 function(activate_compute_backend MODULES_PATH COMPUTE_BACKEND)
-
     string( TOLOWER "${COMPUTE_BACKEND}" COMPUTE_BACKEND)
 
     set(CCL_ENABLE_SYCL_V 0 PARENT_SCOPE)
@@ -192,7 +190,7 @@ function(activate_compute_backend MODULES_PATH COMPUTE_BACKEND)
         # remember current target for `target_link_libraries` in ccl
         set (COMPUTE_BACKEND_TARGET_NAME Intel::SYCL_level_zero)
         set (COMPUTE_BACKEND_TARGET_NAME Intel::SYCL_level_zero PARENT_SCOPE)
-        message ("___COMPUTE_BACKEND_TARGET_NAME=${COMPUTE_BACKEND_TARGET_NAME} requested. Using DPC++ provider")
+        message ("COMPUTE_BACKEND_TARGET_NAME=${COMPUTE_BACKEND_TARGET_NAME} requested. Using DPC++ provider")
 
     elseif(COMPUTE_BACKEND STREQUAL "level_zero")
         SET (COMPUTE_BACKEND_LOAD_MODULE "level_zero"
@@ -255,3 +253,36 @@ function(activate_compute_backend MODULES_PATH COMPUTE_BACKEND)
     set(COMPUTE_BACKEND_INCLUDE_DIRS ${COMPUTE_BACKEND_INCLUDE_DIRS_LOCAL}  PARENT_SCOPE)
 
 endfunction(activate_compute_backend)
+
+function(set_compute_backend COMMON_CMAKE_DIR)
+    activate_compute_backend("${COMMON_CMAKE_DIR}" ${COMPUTE_BACKEND})
+    if (NOT COMPUTE_BACKEND_TARGET_NAME)
+        message(FATAL_ERROR "Failed to find requested compute runtime: ${COMPUTE_BACKEND} in ${COMMON_CMAKE_DIR}")
+    endif()
+    message(STATUS "COMPUTE_BACKEND_TARGET_NAME: ${COMPUTE_BACKEND_TARGET_NAME}")
+
+    if (${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL" OR ${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL_level_zero")
+        option (CCL_ENABLE_SYCL "Enable CCL SYCL runtime" ON)
+        message(STATUS "Enable CCL SYCL runtime")
+        execute_process(COMMAND dpcpp -v
+            OUTPUT_VARIABLE DPCPP_VERSION
+            ERROR_VARIABLE DPCPP_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_STRIP_TRAILING_WHITESPACE
+        )
+        message(STATUS "DPC++ compiler version:\n" "${DPCPP_VERSION}")
+    endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_BACKEND_FLAGS}")
+    if (${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL_level_zero" OR ${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "ze_loader")
+        set(MULTI_GPU_SUPPORT ON PARENT_SCOPE)
+        set(MULTI_GPU_SUPPORT ON)
+    endif()
+    if (MULTI_GPU_SUPPORT)
+        message(STATUS "Enable multi GPU support using L0")
+    endif()
+    # need to pass these variables to overlying function
+    set (COMPUTE_BACKEND_TARGET_NAME ${COMPUTE_BACKEND_TARGET_NAME} PARENT_SCOPE)
+    set (COMPUTE_BACKEND_FLAGS ${COMPUTE_BACKEND_FLAGS} PARENT_SCOPE)
+    set (COMPUTE_BACKEND_LIBRARIES ${COMPUTE_BACKEND_LIBRARIES} PARENT_SCOPE)
+    set (COMPUTE_BACKEND_FLAGS ${COMPUTE_BACKEND_FLAGS} PARENT_SCOPE)
+endfunction(set_compute_backend)

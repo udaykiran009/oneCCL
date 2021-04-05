@@ -217,6 +217,12 @@ void init_test_dims() {
 void init_test_params() {
     init_test_dims();
 
+#ifdef CCL_ENABLE_SYCL
+    printf("FUNC_TESTS: CCL_ENABLE_SYCL ON\n");
+#endif
+    printf("FUNC_TESTS: BF16 enabled %d\n", is_bf16_enabled());
+    printf("FUNC_TESTS: FP16 enabled %d\n", is_fp16_enabled());
+
     for (auto data_type = first_data_type; data_type < last_data_type; data_type++) {
         if (should_skip_datatype(data_type))
             continue;

@@ -15,7 +15,6 @@ int is_fp16_enabled() {
                              : "a"(1));
         is_fp16_enabled = (reg[2] & (1 << 29)) >> 29;
     }
-    printf("FUNC_TESTS: FP16 compiler, is_fp16_enabled %d\n", is_fp16_enabled);
     return is_fp16_enabled;
 #else
     printf("FUNC_TESTS: no FP16 compiler\n");
@@ -35,7 +34,6 @@ int is_bf16_enabled() {
         is_bf16_enabled = ((reg[1] & (1 << 16)) >> 16) & ((reg[1] & (1 << 30)) >> 30) &
                           ((reg[1] & (1 << 31)) >> 31);
     }
-    printf("FUNC_TESTS: BF16 compiler, is_bf16_enabled %d\n", is_bf16_enabled);
     return is_bf16_enabled;
 #else
     printf("FUNC_TESTS: no BF16 compiler\n");

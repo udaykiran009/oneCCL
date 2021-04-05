@@ -22,6 +22,9 @@ set(COMMON_CMAKE_DIR ${PROJECT_SOURCE_DIR}/../../cmake)
 if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     include(${COMMON_CMAKE_DIR}/helpers.cmake)
     set_lp_env()
+    if (COMPUTE_BACKEND)
+        set_compute_backend(${COMMON_CMAKE_DIR})
+    endif()
 endif()
 
 set(SERVICE_SRC
@@ -60,9 +63,6 @@ message(STATUS "FT CCL_CONFIGURATION: ${CCL_CONFIGURATION}")
 message(STATUS "FT LIBFABRIC_LIB_DIR: ${LIBFABRIC_LIB_DIR}")
 message(STATUS "FT LIBFABRIC_INCLUDE_DIR: ${LIBFABRIC_INCLUDE_DIR}")
 message(STATUS "FT INC_DIRS: ${INC_DIRS}")
-
-#include_directories(${CCL_ROOT}/include/${CCL_CONFIGURATION})
-#link_directories(${CCL_ROOT}/lib/${CCL_CONFIGURATION})
 
 if (${CMAKE_VERSION} VERSION_LESS 3.1)
 #cmake version below 3.1 does not support CMAKE_C[XX}_STANDARD flags

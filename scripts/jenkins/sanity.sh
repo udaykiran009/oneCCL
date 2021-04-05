@@ -207,7 +207,8 @@ function set_environment()
         source ${SYCL_BUNDLE_ROOT}/../../../setvars.sh
         BUILD_COMPILER_PATH=${SYCL_BUNDLE_ROOT}/bin
         C_COMPILER=${BUILD_COMPILER_PATH}/clang
-        CXX_COMPILER=${BUILD_COMPILER_PATH}/clang++
+        CXX_COMPILER=${BUILD_COMPILER_PATH}/dpcpp
+        COMPUTE_BACKEND=dpcpp_level_zero
     fi
     
     if [ -z "$worker_count" ]
@@ -230,7 +231,7 @@ function set_environment()
         if [ -z  "${node_label}" ]
         then
             source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
-        elif [ $node_label == "mlsl2_test_gpu" ] || [ $node_label == "mlsl2_test_gpu_vlgd" ]
+        elif [ $node_label == "mlsl2_test_gpu" ] || [ $node_label == "mlsl2_test_gpu_vlgd" ] || [ $node_label == "mlsl2_test_gpu_ft" ]
         then
             source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
             export DASHBOARD_GPU_DEVICE_PRESENT="yes"
@@ -273,7 +274,7 @@ function make_tests()
     mkdir -p build
     cd ./build
     cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
-        -DCMAKE_CXX_COMPILER="${CXX_COMPILER}"
+        -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DCOMPUTE_BACKEND="${COMPUTE_BACKEND}"
     make all
 }
 
@@ -395,7 +396,12 @@ function run_tests()
     enable_default_test_scope
 
     set_external_env
-
+    if [ $node_label == "mlsl2_test_gpu_ft" ]
+    then
+        reduce_algo_list_ofi="rabenseifner tree"
+    else
+        reduce_algo_list_ofi="rabenseifner tree double_tree"
+    fi
     case "$runtime" in
            ofi )
                export CCL_ATL_TRANSPORT=ofi
@@ -515,7 +521,7 @@ function run_tests()
                     CCL_BCAST=$algo ctest -VV -C bcast_"$algo"
                 done
 
-                for algo in "rabenseifner" "tree" "double_tree"
+                for algo in $reduce_algo_list_ofi
                 do
                     CCL_REDUCE=$algo ctest -VV -C reduce_"$algo"
                 done

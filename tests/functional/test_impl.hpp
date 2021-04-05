@@ -359,8 +359,8 @@ template <typename T>
 void base_test<T>::copy_to_device_send_buffers(test_operation<T>& op) {
     for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
 #ifdef TEST_CCL_BCAST
-        void* host_buf = op.send_bufs[buf_idx].data();
-        void* device_buf = op.device_send_bufs[buf_idx];
+        void* host_buf = op.recv_bufs[buf_idx].data();
+        void* device_buf = op.device_recv_bufs[buf_idx];
 #else /* TEST_CCL_BCAST */
         void* host_buf = (op.param.place_type == PLACE_IN) ? op.recv_bufs[buf_idx].data()
                                                            : op.send_bufs[buf_idx].data();

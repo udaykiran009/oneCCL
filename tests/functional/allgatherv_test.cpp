@@ -35,12 +35,12 @@ public:
             offsets[rank] = recv_counts[rank - 1] + offsets[rank - 1];
         }
 
-        if (op.param.place_type == PLACE_OUT) {
-            size_t total_recv_count = std::accumulate(recv_counts.begin(), recv_counts.end(), 0);
-            for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
-                op.recv_bufs[buf_idx].resize(total_recv_count);
-            }
-        }
+        // if (op.param.place_type == PLACE_OUT) {
+        //     size_t total_recv_count = std::accumulate(recv_counts.begin(), recv_counts.end(), 0);
+        //     for (size_t buf_idx = 0; buf_idx < op.buffer_count; buf_idx++) {
+        //         op.recv_bufs[buf_idx].resize(total_recv_count);
+        //     }
+        // }
     }
 
     void fill_send_buffers(test_operation<T>& op) {
