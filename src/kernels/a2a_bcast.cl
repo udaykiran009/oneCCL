@@ -52,7 +52,7 @@
                            wg_id, \
                            thread_id, \
                            segment_start_idx); \
-                    printf("kernel %d.%zu.%zu send: %e by offset: %zu\n", \
+                    printf("kernel %d.%zu.%zu send: " FORMAT##_##T " by offset: %zu\n", \
                            my_rank, \
                            wg_id, \
                            thread_id, \

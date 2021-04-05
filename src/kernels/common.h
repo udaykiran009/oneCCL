@@ -21,6 +21,37 @@ typedef volatile int sync_flag_type;
 
 #include "lp.h"
 
+#define FORMAT_int8_t  "%hhd"
+#define FORMAT_int16_t "%d"
+#define FORMAT_int32_t "%d"
+#define FORMAT_int64_t "%ld"
+
+#define FORMAT_uint8_t  "%hhu"
+#define FORMAT_uint16_t "%u"
+#define FORMAT_uint32_t "%u"
+#define FORMAT_uint64_t "%lu"
+
+#define FORMAT_float  "%f"
+#define FORMAT_double "%f"
+
+#define FORMAT_ushort "%u"
+#define FORMAT_half   "%f"
+
+#define FORMAT_4(format) #format ", " #format ", " #format ", " #format
+#define FORMAT_char4     FORMAT_4(% hhd)
+#define FORMAT_uchar4    FORMAT_4(% hhu)
+#define FORMAT_short4    FORMAT_4(% d)
+#define FORMAT_ushort4   FORMAT_4(% u)
+#define FORMAT_int4      FORMAT_4(% d)
+#define FORMAT_uint4     FORMAT_4(% u)
+#define FORMAT_long4     FORMAT_4(% ld)
+#define FORMAT_ulong4    FORMAT_4(% lu)
+#define FORMAT_float4    FORMAT_4(% f)
+#define FORMAT_double4   FORMAT_4(% f)
+
+#define ELEMENTS_1(X) X
+#define ELEMENTS_4(X) (X)[0], (X)[1], (X)[2], (X)[3]
+
 // define aliases for OpenCL types
 typedef char int8_t;
 typedef uchar uint8_t;

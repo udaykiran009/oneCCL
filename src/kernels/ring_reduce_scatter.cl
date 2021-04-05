@@ -101,14 +101,15 @@
 \
             for (size_t i = 0; i < segment_size; i += work_group_size) { \
                 DEBUG_BLOCK( \
-                    printf("kernel %d.%d, phase 2.%zu -- temp[%zu] = %f, this[%zu] = %d\n", \
+                    printf("kernel %d.%d, phase 2.%zu -- temp[%zu] = " FORMAT##_##T \
+                           ", this[%zu] = " FORMAT##_##T "\n", \
                            my_rank, \
                            thread_id, \
                            iter_idx, \
                            segment_offset + thread_id + i, \
-                           tmp_buffer[thread_id + i], \
+                           ELEMENTS##_##VecSize(tmp_buffer[thread_id + i]), \
                            segment_offset + thread_id + i, \
-                           input_buffer[segment_offset + thread_id + i])); \
+                           ELEMENTS##_##VecSize(input_buffer[segment_offset + thread_id + i]))); \
                 right_buffer[thread_id + i + right_buffer_offset] = \
                     Op(tmp_buffer[thread_id + i + tmp_buffer_offset], \
                        input_buffer[segment_offset + thread_id + i]); \

@@ -68,13 +68,14 @@
             WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
             work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
             for (size_t i = 0; i < segment_count; i++) { \
-                DEBUG_BLOCK(printf("kernel %d.%d, phase 2. -- temp[%zu] = %f, this[%zu] = %f\n", \
+                DEBUG_BLOCK(printf("kernel %d.%d, phase 2. -- temp[%zu] = " FORMAT##_##T \
+                                   " this[%zu] = " FORMAT##_##T "\n", \
                                    my_rank, \
                                    thread_id, \
                                    i + thread_id, \
-                                   tmp_buffer[thread_id + i], \
+                                   ELEMENTS##_##VecSize(tmp_buffer[thread_id + i]), \
                                    i + thread_id, \
-                                   input_buffer[i + thread_id])); \
+                                   ELEMENTS##_##VecSize(input_buffer[i + thread_id]))); \
                 output_buffer[work_group_size * i + thread_id] = \
                     Op(input_buffer[work_group_size * i + thread_id], \
                        tmp_buffer[work_group_size * i + thread_id]); \

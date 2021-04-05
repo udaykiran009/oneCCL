@@ -113,14 +113,16 @@
             for (size_t i = 0; \
                  thread_id + i < segment_size && thread_id + i + segment_offset < elems_count; \
                  i += work_group_size) { \
-                DEBUG_BLOCK(printf("kernel %d.%d, phase 2.%d -- temp[%zu] = %f, this[%zu] = %d\n", \
-                                   my_rank, \
-                                   thread_id, \
-                                   iter_idx, \
-                                   segment_offset + thread_id + i, \
-                                   tmp_buffer[thread_id + i], \
-                                   segment_offset + thread_id + i, \
-                                   input_buffer[segment_offset + thread_id + i])); \
+                DEBUG_BLOCK( \
+                    printf("kernel %d.%d, phase 2.%d -- temp[%zu] = " FORMAT##_##T \
+                           ", this[%zu] = " FORMAT##_##T "\n", \
+                           my_rank, \
+                           thread_id, \
+                           iter_idx, \
+                           segment_offset + thread_id + i, \
+                           ELEMENTS##_##VecSize(tmp_buffer[thread_id + i]), \
+                           segment_offset + thread_id + i, \
+                           ELEMENTS##_##VecSize(input_buffer[segment_offset + thread_id + i]))); \
                 right_temp_buffer[thread_id + i + right_tmp_buffer_offset] = \
                     Op(tmp_buffer[thread_id + i + tmp_buffer_offset], \
                        input_buffer[segment_offset + thread_id + i]); \
@@ -197,11 +199,12 @@
                 output_buffer[segment_offset + thread_id + i] = \
                     tmp_buffer[thread_id + i + tmp_buffer_offset]; \
 \
-                DEBUG_BLOCK(printf("kernel %d.%d, phase 3.%d -- send %f to idx %zu, rank %zu\n", \
+                DEBUG_BLOCK(printf("kernel %d.%d, phase 3.%d -- send " FORMAT##_##T \
+                                   " to idx %zu, rank %zu\n", \
                                    my_rank, \
                                    thread_id, \
                                    iter_idx, \
-                                   tmp_buffer[thread_id + i], \
+                                   ELEMENTS##_##VecSize(tmp_buffer[thread_id + i]), \
                                    segment_offset + thread_id, \
                                    work_rank + i)); \
                 right_temp_buffer[thread_id + i + right_tmp_buffer_offset] = \
