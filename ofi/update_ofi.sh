@@ -7,6 +7,7 @@ cd ./libfabric
 ./autogen.sh
 ofi_install_path=`pwd`/_install
 ./configure --prefix=$ofi_install_path \
+    --enable-atomics=no \
     --enable-psm2=dl \
     --enable-psm3=dl \
     --enable-rxm=dl \
@@ -15,16 +16,20 @@ ofi_install_path=`pwd`/_install
     --enable-tcp=dl \
     --enable-verbs=dl \
     --disable-bgq \
+    --disable-efa \
     --disable-gni \
+    --disable-hook_debug \
     --disable-mlx \
     --disable-mrail \
+    --disable-perf \
     --disable-psm \
     --disable-rxd \
     --disable-rstream \
+    --disable-static \
     --disable-udp \
     --disable-usnic \
     --disable-xpmem \
-    --disable-static
+    --with-build_id='-ccl'
 
 make -j all && make install
 
