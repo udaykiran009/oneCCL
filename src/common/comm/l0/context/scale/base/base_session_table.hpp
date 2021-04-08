@@ -2,7 +2,7 @@
 #include <atomic>
 #include <map>
 #include <memory>
-#include "common/comm/l0/context/scale/base/base_session_key.hpp"
+
 #include "common/comm/l0/context/scale/base/base_session.hpp"
 #include "common/comm/l0/modules/supported_modules.hpp"
 
@@ -28,8 +28,11 @@ struct session_table {
         static_assert(std::is_base_of<session_interface_t, specific_session_impl>::value,
                       "Relationship IS-A `specific_session` for `session_interface_t` failed");
 
-        auto sess = std::make_shared<specific_session_impl>(
-            params.get_producer_params(), observer_domain_index, observer_domain_count, key);
+        auto sess = std::make_shared<specific_session_impl>(params.get_producer_params(),
+                                                            params.get_kernel_params(),
+                                                            observer_domain_index,
+                                                            observer_domain_count,
+                                                            key);
 
         params.set_out_params(sess->get_ctx_descr());
         sessions.emplace(key, sess);

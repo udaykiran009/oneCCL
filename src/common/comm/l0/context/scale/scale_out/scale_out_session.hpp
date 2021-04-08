@@ -15,7 +15,7 @@ class host_communicator;
 namespace native {
 namespace observer {
 
-class scale_out_session_iface : public base_session {
+class scale_out_session_iface {
 public:
     scale_out_session_iface() = default;
     virtual ~scale_out_session_iface() = default;
@@ -23,6 +23,9 @@ public:
     size_t get_send_tag() const;
     std::string to_string() const;
 
+    virtual void prepare(size_t observer_domain_index,
+                         size_t observer_domain_count,
+                         void* type_erased_param) = 0;
     virtual void produce_data(std::shared_ptr<ccl::host_communicator>& comm) = 0;
     virtual void consume_data(size_t observer_domain_index,
                               std::shared_ptr<ccl::host_communicator>& comm) = 0;
@@ -58,22 +61,25 @@ template <ccl::device_topology_type class_id, class session_invoke_params>
 struct scale_out_session : public scale_out_session_iface {
     using base_t = scale_out_session_iface;
     using invoke_params_t = session_invoke_params;
-    using kernel_params_t = typename invoke_params_t::kernel_params_t;
-    using native_type = typename kernel_params_t::native_type;
     using session_key_t = session_key;
 
     scale_out_session(producer_description& in_param,
+                      kernel_params_type& in_kernel_params,
                       size_t observer_domain_index,
                       size_t observer_domain_count,
                       const session_key_t& key)
             : base_t(),
-              proxy_session(in_param, observer_domain_index, observer_domain_count, key) {
+              proxy_session(in_param,
+                            in_kernel_params,
+                            observer_domain_index,
+                            observer_domain_count,
+                            key) {
         //TODO use `session_invoke_params` information to calculate possible `pending_notifications` reserve
         // based on chunk size
         pending_notifications.reserve(16);
     }
 
-    context_descr<kernel_params_t>& get_ctx_descr() {
+    context_descr& get_ctx_descr() {
         return proxy_session.get_ctx_descr();
     }
 
@@ -114,9 +120,11 @@ struct scale_out_session : public scale_out_session_iface {
             if (it->op_handle_ready) { // notice: not thread-safe
 
                 if (it->op_handle.test()) {
-                    proxy_session.consume_data(observer_domain_index,
-                                               it->output_buffer.data(),
-                                               it->output_buffer.size() * sizeof(native_type));
+                    proxy_session.consume_data(
+                        observer_domain_index,
+                        it->output_buffer.data(),
+                        it->output_buffer.size() *
+                            ccl::get_datatype_size(proxy_session.get_kernel_params().data_type));
 
                     // notice: not thread-safe
                     it->op_handle_ready = false;
@@ -141,7 +149,6 @@ struct scale_out_session : public scale_out_session_iface {
 private:
     void notify_data();
     numa_session<class_id, invoke_params_t> proxy_session;
-
     std::vector<session_notification_handle> pending_notifications;
 };
 } // namespace observer

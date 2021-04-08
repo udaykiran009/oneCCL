@@ -1,6 +1,6 @@
 #pragma once
 #include "common/comm/l0/context/base_scaling_ctx.hpp"
-#include "common/comm/l0/context/scale/base/base_session_key.hpp"
+#include "common/comm/l0/context/scale/base/base_session.hpp"
 #include "common/comm/l0/context/scale/scale_out/scale_out_session.hpp"
 #include "common/comm/l0/context/scale/base/base_session_table.hpp"
 

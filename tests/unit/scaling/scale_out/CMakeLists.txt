@@ -18,9 +18,9 @@ include_directories(${PROJECT_SOURCE_DIR}/tests/googletest-release-1.8.1/googlet
 
 file(GLOB sources "*.c" "*.cpp")
 set (dependencies_sources
-             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scale/numa/numa_session.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scale/scale_out/scale_out_session.cpp"
-             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scale/base/base_session_key.cpp"
+             "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scale/base/base_session.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/scaling/stubs/environment.cpp"
              )
 
 list(APPEND dependencies_sources ${specific_sources})

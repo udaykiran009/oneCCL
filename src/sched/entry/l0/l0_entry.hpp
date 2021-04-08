@@ -16,7 +16,7 @@
 #include "common/stream/stream.hpp"
 
 #include "common/comm/l0/context/scale/ipc/ipc_session_key.hpp"
-#include "common/comm/l0/context/scale/base/base_session_key.hpp"
+#include "common/comm/l0/context/scale/base/base_session.hpp"
 
 //TODO L0 Workaround
 #include <unistd.h>
@@ -297,13 +297,13 @@ public:
 
     //USE GPU cache binding
     virtual std::vector<ccl_device::device_ipc_memory_handle> get_ipc_data() = 0;
-    virtual observer::invoke_params<type(), kernel_params> get_numa_data() {
+    virtual observer::invoke_params<type()> get_numa_data() {
         //TODO make pure-virtual
         ENTRY_LOG_ERROR("NOT implemented for that collective type");
         abort();
     }
 
-    virtual observer::invoke_params<type(), kernel_params> get_scaleout_data() {
+    virtual observer::invoke_params<type()> get_scaleout_data() {
         //TODO make pure-virtual
         ENTRY_LOG_ERROR("NOT implemented for that collective type");
         abort();

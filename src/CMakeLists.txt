@@ -69,9 +69,7 @@ list (APPEND EXTENSIONS_SRC
                     common/comm/l0/context/scale/ipc/ipc_ctx_utils.cpp
                     common/comm/l0/context/scale/ipc/ipc_session_key.cpp
 
-                    common/comm/l0/context/scale/base/base_session_key.cpp
-
-                    common/comm/l0/context/scale/numa/numa_session.cpp
+                    common/comm/l0/context/scale/base/base_session.cpp
                     common/comm/l0/context/scale/scale_out/scale_out_session.cpp
 
                     common/comm/l0/gpu_comm_attr.cpp

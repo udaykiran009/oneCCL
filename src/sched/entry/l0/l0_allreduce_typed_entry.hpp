@@ -50,6 +50,10 @@ public:
         return ccl_coll_allreduce;
     }
 
+    ccl::reduction get_red_type() noexcept {
+        return op_typed_entry;
+    }
+
     l0_allreduce_typed_entry() = delete;
     l0_allreduce_typed_entry(
         ccl_sched* sched,
@@ -157,7 +161,7 @@ public:
         return ret;
     }
 
-    observer::invoke_params<type(), kernel_params> get_numa_data() override {
+    observer::invoke_params<type()> get_numa_data() override {
         observer::producer_description in_params{
             .rank = comm_addr.rank, //TODO unused
             .comm_size = comm_addr.size, //TODO unused
@@ -166,7 +170,13 @@ public:
             .device = parent_communicator->get_device(),
             .immediate_list = parent_communicator->get_device().create_immediate_cmd_list(get_ctx())
         };
-        return observer::invoke_params<type(), kernel_params>{ std::move(in_params) };
+
+        observer::kernel_params_type in_kernel_params{
+            .coll_type = type(),
+            .data_type = ccl::native_type_info<processing_type>::dtype,
+            .red_type = get_red_type()
+        };
+        return observer::invoke_params<type()>{ std::move(in_params), std::move(in_kernel_params) };
     }
 
 protected:

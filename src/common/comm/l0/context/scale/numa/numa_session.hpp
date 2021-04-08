@@ -1,20 +1,32 @@
 #pragma once
 
 #include "common/comm/l0/context/scale/base/base_session.hpp"
-#include "common/comm/l0/context/scale/base/base_session_key.hpp"
 
 namespace native {
 namespace observer {
 
-class numa_session_iface : public base_session {
+class numa_session_iface {
 public:
-    numa_session_iface(session_key key);
-
+    numa_session_iface(session_key key) : sess_key(key) {}
     virtual ~numa_session_iface() = default;
 
-    size_t get_send_tag() const;
-    const session_key& get_session_key() const;
-    std::string to_string() const;
+    size_t get_send_tag() const {
+        return send_tag;
+    }
+
+    const session_key& get_session_key() const {
+        return sess_key;
+    }
+
+    std::string to_string() const {
+        std::stringstream ss;
+        ss << "session key identifier: " << get_session_key();
+        return ss.str();
+    }
+
+    virtual void prepare(size_t observer_domain_index,
+                         size_t observer_domain_count,
+                         void* type_erased_param) = 0;
 
     virtual void produce_data(void** out_chunk, size_t& out_chunk_size) = 0;
     virtual void consume_data(size_t observer_domain_index,
@@ -34,18 +46,16 @@ private:
 template <ccl::device_topology_type class_id, class session_invoke_params>
 struct numa_session : public numa_session_iface {
     using invoke_params_t = session_invoke_params;
-    using kernel_params_t = typename invoke_params_t::kernel_params_t;
     using session_key_t = session_key;
 
     numa_session(producer_description& in_param,
+                 kernel_params_type& in_kernel_params,
                  size_t observer_domain_index,
                  size_t observer_domain_count,
                  const session_key_t& key)
             : numa_session_iface(key),
-              in_kernel_params{ invoke_params_t::get_coll_type(),
-                                get_params<kernel_params_t>::dtype,
-                                get_params<kernel_params_t>::red },
-              ctx_descr(),
+              kernel_params(in_kernel_params),
+              ctx_descr(kernel_params),
               copy_immediate_list(std::move(in_param.immediate_list)) {
         ctx_descr.init(in_param.staged_buffer_elem_count,
                        observer_domain_index,
@@ -54,17 +64,17 @@ struct numa_session : public numa_session_iface {
                        in_param.device);
     }
 
-    context_descr<kernel_params_t>& get_ctx_descr() {
+    context_descr& get_ctx_descr() {
         return ctx_descr;
     }
 
     kernel_params_type& get_kernel_params() {
-        return in_kernel_params;
+        return kernel_params;
     }
 
-    virtual void prepare(size_t observer_domain_index,
-                         size_t observer_domain_count,
-                         void* type_erased_param) override {
+    void prepare(size_t observer_domain_index,
+                 size_t observer_domain_count,
+                 void* type_erased_param) override {
         auto* out_param = static_cast<invoke_params_t*>(type_erased_param);
         ctx_descr.reset_counters(observer_domain_index, observer_domain_count);
 
@@ -86,9 +96,8 @@ struct numa_session : public numa_session_iface {
             std::atomic_thread_fence(std::memory_order::memory_order_seq_cst); // TODO: why?
 
             // do not read data here!
-            *out_chunk = (static_cast<typename kernel_params_t::native_type*>(
-                              static_cast<void*>(get_ctx_descr().host_mem_producer->get())) +
-                          old_consumed);
+            *out_chunk =
+                static_cast<void*>(get_ctx_descr().host_mem_producer->get() + old_consumed);
 
             // update host_consumed_bytes
             get_ctx_descr().host_consumed_bytes += to_consume;
@@ -103,7 +112,6 @@ struct numa_session : public numa_session_iface {
          * ze_event_handle_t mem_event {};
          */
 
-        void* device_consumer_total_memory = get_ctx_descr().dev_mem_consumer->get();
         auto device_consumer_ready_bytes = get_ctx_descr().dev_mem_consumer_counter->get();
         auto device_produced_bytes = get_ctx_descr().device_produced_bytes;
 
@@ -112,10 +120,9 @@ struct numa_session : public numa_session_iface {
         // copy buffer from host to device
         ze_result_t res = zeCommandListAppendMemoryCopy(
             copy_immediate_list.get(),
-            (static_cast<typename kernel_params_t::native_type*>(device_consumer_total_memory) +
-             device_produced_bytes),
+            static_cast<void*>(get_ctx_descr().dev_mem_consumer->get() + device_produced_bytes),
             in_chunk,
-            in_chunk_size * sizeof(typename kernel_params_t::native_type),
+            in_chunk_size,
             /*mem_event*/ nullptr,
             0,
             nullptr);
@@ -146,7 +153,9 @@ struct numa_session : public numa_session_iface {
     }
 
     bool is_consumed() noexcept override {
-        return get_ctx_descr().device_produced_bytes == get_ctx_descr().host_consumed_bytes;
+        return (get_ctx_descr().device_produced_bytes *
+                ccl::get_datatype_size(get_kernel_params().data_type)) ==
+               get_ctx_descr().host_consumed_bytes;
     }
 
     bool is_produced() noexcept override {
@@ -154,8 +163,8 @@ struct numa_session : public numa_session_iface {
     }
 
 private:
-    kernel_params_type in_kernel_params;
-    context_descr<kernel_params_t> ctx_descr;
+    kernel_params_type kernel_params;
+    context_descr ctx_descr;
     ccl_device::device_cmd_list copy_immediate_list;
 };
 

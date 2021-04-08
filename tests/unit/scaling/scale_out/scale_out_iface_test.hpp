@@ -43,17 +43,21 @@ TEST_F(scale_out_fixture, scale_out_iface_test) {
                                                 .immediate_list =
                                                     devices[0]->create_immediate_cmd_list(ctx) };
 
+    kernel_params_type in_kernel_params{ .coll_type = ccl_coll_bcast,
+                                         .data_type = ccl::native_type_info<int>::dtype,
+                                         .red_type = ccl::reduction::custom };
+
     // crate numa seesion
-    auto numa_sess = numa_session<ccl::device_topology_type::ring,
-                                  invoke_params<ccl_coll_bcast, kernel_params_default<int>>>(
+    auto numa_sess = numa_session<ccl::device_topology_type::ring, invoke_params<ccl_coll_bcast>>(
         producer_descr_params,
+        in_kernel_params,
         ring_idx, // index of a ring
         ring_count, // count of a ring
         sess_key);
 
     // create invoke session params
-    invoke_params<ccl_coll_bcast, kernel_params_default<int>> invoke_session_params(
-        std::move(producer_descr_params));
+    invoke_params<ccl_coll_bcast> invoke_session_params(std::move(producer_descr_params),
+                                                        std::move(in_kernel_params));
     // setting invoke session params
     invoke_session_params.set_out_params(numa_sess.get_ctx_descr());
     // getting invoke session params
@@ -62,12 +66,12 @@ TEST_F(scale_out_fixture, scale_out_iface_test) {
     // host side
     auto host_mem_buff = ctx_params.host_mem_producer->get(); // host mem buff
     auto host_mem_size = ctx_params.host_mem_producer_counter->get(); // host mem buff size
-    ctx_params.host_expected_bytes = elem_count; // host mem buff
+    ctx_params.host_expected_bytes = elem_count * sizeof(int); // host mem buff
     size_t host_mem_buff_size = elem_count;
     void* chunk_host_buff = nullptr;
 
     for (size_t i = 0; i < host_mem_buff_size; i++) {
-        host_mem_buff[i] = i;
+        ((int*)host_mem_buff)[i] = i;
     }
 
     // 10Kb / 43 chunks. 43 is just for testing
@@ -80,12 +84,16 @@ TEST_F(scale_out_fixture, scale_out_iface_test) {
         this->output << "-------------------------------------------------" << std::endl;
         // setting host mem buff size
         if (chunk_idx <= chunk_counts - 1)
-            *host_mem_size = (host_mem_buff_size / chunk_counts) * (chunk_idx + 1);
+            *host_mem_size = ((host_mem_buff_size / chunk_counts) * sizeof(int)) * (chunk_idx + 1);
 
-        offset_idx += chunk_host_buff_size;
+        if (chunk_host_buff_size == 0)
+            offset_idx += chunk_host_buff_size;
+        else
+            offset_idx += chunk_host_buff_size / sizeof(int);
+
         numa_sess.produce_data(&chunk_host_buff, chunk_host_buff_size);
         // checking results
-        for (size_t i = 0; i < chunk_host_buff_size; i++) {
+        for (size_t i = 0; i < chunk_host_buff_size / sizeof(int); i++) {
             UT_ASSERT(((int*)chunk_host_buff)[i] == ((int*)host_mem_buff)[i + offset_idx],
                       "Error: Gotten incorrect results after produce phase: "
                           << "At index " << i << ", gotten: " << ((int*)chunk_host_buff)[i]
@@ -95,9 +103,9 @@ TEST_F(scale_out_fixture, scale_out_iface_test) {
                      << ",checking results from host buffer:   PASSED" << std::endl;
 
         size_t chunk_dev_buff_size = chunk_host_buff_size;
-        void* chunk_dev_buff = malloc(chunk_dev_buff_size * sizeof(int));
-        memcpy(chunk_dev_buff, chunk_host_buff, chunk_dev_buff_size * sizeof(int));
-        for (size_t i = 0; i < chunk_dev_buff_size; i++) {
+        void* chunk_dev_buff = malloc(chunk_dev_buff_size);
+        memcpy(chunk_dev_buff, chunk_host_buff, chunk_dev_buff_size);
+        for (size_t i = 0; i < chunk_dev_buff_size / sizeof(int); i++) {
             ((int*)chunk_dev_buff)[i] = ((int*)chunk_dev_buff)[i] * 2;
         }
 
@@ -105,27 +113,24 @@ TEST_F(scale_out_fixture, scale_out_iface_test) {
         std::vector<int> res_dev_buff;
         std::vector<int> res_dev_buff_size;
 
-        numa_sess.consume_data(0, chunk_dev_buff, chunk_dev_buff_size);
+        numa_sess.consume_data(0, chunk_dev_buff, chunk_dev_buff_size / sizeof(int));
         UT_ASSERT(numa_sess.is_consumed(), "Invoke of consume data: FAILED");
 
         // get mem buf and  mem buf size from a device
-        auto check_dev_mem_buff = ctx_params.dev_mem_consumer->enqueue_read_sync();
+        auto dev_mem_buff = ctx_params.dev_mem_consumer->enqueue_read_sync();
+        auto check_dev_mem_buff = reinterpret_cast<int*>(dev_mem_buff.data());
         auto check_dev_mem_buff_size = ctx_params.dev_mem_consumer_counter->enqueue_read_sync();
         UT_ASSERT(check_dev_mem_buff_size.size() == 1,
                   "Error: could not get the device buffer size");
 
         // migrate data from device buffer to tmp buffers to check results
         // buff
-        std::copy(
-            check_dev_mem_buff.begin(), check_dev_mem_buff.end(), std::back_inserter(res_dev_buff));
-
-        // size
-        std::copy(check_dev_mem_buff_size.begin(),
-                  check_dev_mem_buff_size.end(),
-                  std::back_inserter(res_dev_buff_size));
+        std::copy(check_dev_mem_buff,
+                  check_dev_mem_buff + check_dev_mem_buff_size[0],
+                  std::back_inserter(res_dev_buff));
 
         // checking results with i * 2 pattern
-        for (int i = offset_idx; i < res_dev_buff_size[0]; i++) {
+        for (int i = offset_idx; i < (int)(check_dev_mem_buff_size[0] / sizeof(int)); i++) {
             UT_ASSERT(res_dev_buff[i] == i * 2,
                       "Error: Gotten inorrect results from device buffer after consume phase: "
                           << "At index " << i << ", gotten: " << res_dev_buff[i]
