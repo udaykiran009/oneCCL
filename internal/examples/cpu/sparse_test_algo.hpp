@@ -136,7 +136,7 @@ typedef enum {
 
 #define RUN_COLLECTIVE(start_cmd, comm, itype_name, vtype_name) \
     do { \
-        t = 0; \
+        size_t t, t1, t2 = 0; \
         for (size_t iter_idx = 0; iter_idx < 1; iter_idx++) { \
             t1 = when(); \
             start_cmd.wait(); \
