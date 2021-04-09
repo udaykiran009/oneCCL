@@ -62,7 +62,14 @@ if [ -z "${CCL_PACKAGE_PHASE}" ]
 then
     CCL_PACKAGE_PHASE="ENG"
 fi
-CCL_PACKAGE_SUFFIX="_${CCL_PACKAGE_PHASE}_ww`date +%V`.${DATE}.${TIME}"
+
+if [[ $(date -d "$(date +%Y)-01-01" +%W) -gt 0 ]]
+then
+    CCL_PACKAGE_SUFFIX="_${CCL_PACKAGE_PHASE}_ww$(date +%W).${DATE}.${TIME}"
+else
+    CCL_PACKAGE_SUFFIX="_${CCL_PACKAGE_PHASE}_ww$(printf '%02d' $(($(date +%-W) + 1))).${DATE}.${TIME}"
+fi
+
 CCL_PACKAGE_NAME="${CCL_PACKAGE_PREFIX}_${CCL_VERSION_FORMAT}${CCL_PACKAGE_SUFFIX}"
 SWF_PRE_DROP_ROOT_DIR="/p/pdsd/scratch/Drops/CCL/"
 SWF_PRE_DROP_DIR="${SWF_PRE_DROP_ROOT_DIR}/${CCL_VERSION_FORMAT}/Linux"
