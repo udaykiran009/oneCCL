@@ -136,19 +136,15 @@ bool process_group_context::sync_barrier(const ccl::device_indices_type& thread_
         detail::adjacency_matrix p2p_dependency_graph =
             ally_process_topology.build_p2p_capability_matrix(ss, node_mask);
         ss << "\nMatrix\n" << p2p_dependency_graph << std::endl;
-        /* TODO -S- enaled it later
-        if (!ally_process_topology.build_all(ss,
-                                             comm_addr,
-                                             thread_group_ctx->get_thread_group_device_indices(),
-                                             p2p_dependency_graph)) {
-            LOG_ERROR(ss.str(), "\nCannot build ipc ring! Abort. Build Log:\n", ss.str());
+
+        if (!ally_process_topology.build_all(
+                ss, thread_group_ctx->get_thread_group_device_indices(), p2p_dependency_graph)) {
+            LOG_ERROR(
+                ss.str(), "\nCannot build cluster global ring! Abort. Build Log:\n", ss.str());
             abort();
         }
-*/
-        if (!ally_process_topology.build_all(
-                ss, thread_group_ctx->get_thread_group_device_indices(), p2p_dependency_graph))
 
-            LOG_DEBUG("Build IPC ring succesfully. Log:\n", ss.str());
+        LOG_DEBUG("Build cluster global ring successfully. Log:\n", ss.str());
     }
 
     {
