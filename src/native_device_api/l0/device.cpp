@@ -516,7 +516,7 @@ CCL_BE_API ccl_device::device_ipc_memory ccl_device::get_ipc_memory(
     //, this,
     // ", expected device: ", ipc_handle.get_owner());
 
-    ze_ipc_memory_flag_t flag = ZE_IPC_MEMORY_FLAG_TBD;
+    ze_ipc_memory_flags_t flag = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED;
     ip_memory_elem_t ipc_memory{};
 
     if (!ctx) {
@@ -544,7 +544,7 @@ CCL_BE_API std::shared_ptr<ccl_device::device_ipc_memory> ccl_device::restore_sh
     std::shared_ptr<device_ipc_memory_handle>&& ipc_handle,
     std::shared_ptr<ccl_context> ctx) {
     assert(ipc_handle->get_owner().lock().get() == this && "IPC handle doesn't belong to device: ");
-    ze_ipc_memory_flag_t flag = ZE_IPC_MEMORY_FLAG_TBD;
+    ze_ipc_memory_flags_t flag = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED;
     ip_memory_elem_t ipc_memory{};
 
     if (!ctx) {

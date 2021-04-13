@@ -206,29 +206,6 @@ void env_data::parse() {
             comm_kernels_path = ccl_root + "/lib/kernels/";
         }
 
-        // TODO remove IPC workaround knobs
-        if (!getenv("DisableStatelessToStatefulOptimization")) {
-            setenv("DisableStatelessToStatefulOptimization", "1", 1);
-            LOG_WARN(
-                "environment variable 'DisableStatelessToStatefulOptimization' is not set, will be used DisableStatelessToStatefulOptimization=1");
-        }
-        if (!getenv("CFESingleSliceDispatchCCSMode")) {
-            setenv("CFESingleSliceDispatchCCSMode", "1", 1);
-            LOG_WARN(
-                "environment variable 'CFESingleSliceDispatchCCSMode' is not set, will be used CFESingleSliceDispatchCCSMode=1");
-        }
-        if (!getenv("OverrideStatelessMocsIndex")) {
-            setenv("OverrideStatelessMocsIndex", "2", 1);
-            LOG_WARN(
-                "environment variable 'OverrideStatelessMocsIndex' is not set, will be used OverrideStatelessMocsIndex=2");
-        }
-
-        if (!getenv("CCL_KVS_GET_TIMEOUT")) {
-            setenv("CCL_KVS_GET_TIMEOUT", "10", 1);
-            LOG_WARN(
-                "environment variable 'CCL_KVS_GET_TIMEOUT' is not set, will be used CCL_KVS_GET_TIMEOUT=10");
-        }
-
         env_2_type(CCL_COMM_KERNELS_DEBUG, comm_kernels_debug);
     }
     env_2_type(CCL_GPU_THREAD_COUNT, gpu_thread_count);
