@@ -49,8 +49,6 @@ rm -f ${LOG_FILE}
 
 HOSTNAME=`hostname -s`
 
-CCL_COPYRIGHT_YEAR="2021"
-
 CCL_VERSION_FORMAT="2021.3.0"
 
 if [ -z "${CCL_PACKAGE_PREFIX}" ]
@@ -904,7 +902,6 @@ add_copyrights()
     echo "#" >> ${COPYRIGHT_INTEL_SH}
     echo "." >> ${COPYRIGHT_INTEL_SH}
     echo "w" >> ${COPYRIGHT_INTEL_SH}
-    sed -i -e "s|CCL_SUBSTITUTE_COPYRIGHT_YEAR|${CCL_COPYRIGHT_YEAR}|g" ${COPYRIGHT_INTEL_SH}
     echo "Generate ${COPYRIGHT_INTEL_SH}... DONE"
 
     echo "Generate ${COPYRIGHT_INTEL_C}..."
@@ -914,7 +911,6 @@ add_copyrights()
     echo "*/" >> ${COPYRIGHT_INTEL_C}
     echo "." >> ${COPYRIGHT_INTEL_C}
     echo "w" >> ${COPYRIGHT_INTEL_C}
-    sed -i -e "s|CCL_SUBSTITUTE_COPYRIGHT_YEAR|${CCL_COPYRIGHT_YEAR}|g" ${COPYRIGHT_INTEL_C}
     echo "Generate ${COPYRIGHT_INTEL_C}... DONE"
 
     for CUR_FILE in `find ${PACKAGE_ENG_DIR}/include/ \( -name "*.h" -or -name "*.hpp" \) -type f`
