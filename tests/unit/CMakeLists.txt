@@ -96,6 +96,7 @@ if(MULTI_GPU_SUPPORT)
                  "${UPSTREAM_SOURCE_DIR}/src/coll/ccl_reduce_scatter_op_attr.cpp"
                  "${UPSTREAM_SOURCE_DIR}/src/coll/ccl_sparse_allreduce_op_attr.cpp"
                  "${UPSTREAM_SOURCE_DIR}/src/coll/ccl_barrier_op_attr.cpp"
+                 "${UPSTREAM_SOURCE_DIR}/src/coll/algorithms/algorithm_utils.cpp"
                  "${UPSTREAM_SOURCE_DIR}/src/common/log/log.cpp"
                  "${UPSTREAM_SOURCE_DIR}/src/common/event/ccl_event.cpp"
                  "${UPSTREAM_SOURCE_DIR}/src/common/event/impls/native_event.cpp"

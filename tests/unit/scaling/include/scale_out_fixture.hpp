@@ -11,7 +11,6 @@
 
 #include "common/comm/l0/context/scale/base/base_session.hpp"
 #include "common/comm/l0/context/scale/numa/numa_session.hpp"
-#include "common/comm/l0/modules/kernel_params.hpp"
 
 class scale_out_fixture : public platform_fixture {
 protected:

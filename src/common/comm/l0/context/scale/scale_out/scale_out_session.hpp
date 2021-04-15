@@ -54,7 +54,7 @@ struct ccl_worker_adapter {
     static void submit_coll_work(std::shared_ptr<ccl::host_communicator>& comm,
                                  const session_notification& in,
                                  session_notification_handle& out,
-                                 kernel_params_type& kernel_params);
+                                 const coll_param_gpu& kernel_params);
 };
 
 template <ccl::device_topology_type class_id, class session_invoke_params>
@@ -64,7 +64,7 @@ struct scale_out_session : public scale_out_session_iface {
     using session_key_t = session_key;
 
     scale_out_session(producer_description& in_param,
-                      kernel_params_type& in_kernel_params,
+                      const coll_param_gpu& in_kernel_params,
                       size_t observer_domain_index,
                       size_t observer_domain_count,
                       const session_key_t& key)
@@ -124,7 +124,8 @@ struct scale_out_session : public scale_out_session_iface {
                         observer_domain_index,
                         it->output_buffer.data(),
                         it->output_buffer.size() *
-                            ccl::get_datatype_size(proxy_session.get_kernel_params().data_type));
+                            ccl::get_datatype_size(
+                                proxy_session.get_kernel_params().get_datatype()));
 
                     // notice: not thread-safe
                     it->op_handle_ready = false;

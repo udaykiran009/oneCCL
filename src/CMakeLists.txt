@@ -74,7 +74,8 @@ list (APPEND EXTENSIONS_SRC
 
                     common/comm/l0/gpu_comm_attr.cpp
                     common/comm/l0/modules/base_entry_module.cpp
-                    common/comm/l0/modules/modules_source_data.cpp)
+                    common/comm/l0/modules/modules_source_data.cpp
+                    common/comm/l0/modules/kernel_utils.cpp)
 endif(MULTI_GPU_SUPPORT)
 
 set(CCL_SRC
@@ -132,10 +133,12 @@ set(CCL_SRC
     coll/ccl_reduce_scatter_op_attr.cpp
     coll/ccl_sparse_allreduce_op_attr.cpp
     coll/ccl_barrier_op_attr.cpp
+    coll/coll_param.hpp
     coll/algorithms/allgatherv.cpp
     coll/algorithms/allreduce/allreduce.cpp
     coll/algorithms/allreduce/allreduce_2d.cpp
     coll/algorithms/allreduce/allreduce_rma.cpp
+    coll/algorithms/algorithm_utils.cpp
     coll/algorithms/alltoall.cpp
     coll/algorithms/alltoallv.cpp
     coll/algorithms/barrier.cpp
@@ -240,7 +243,7 @@ add_library(ccl SHARED $<TARGET_OBJECTS:ccl-objects>)
 target_include_directories(ccl PUBLIC ${CCL_INC_DIRS})
 
 # link with release_mt libmpi.so for oneAPI Base toolkit
-# libccl.so -> cpu_icc/cpu_gpu_dpcpp -> lib -> latest -> ccl -> mpi -> ... 
+# libccl.so -> cpu_icc/cpu_gpu_dpcpp -> lib -> latest -> ccl -> mpi -> ...
 set(ONEAPI_IMPI_RPATH "'$ORIGIN'/../../../../mpi/latest/lib/release_mt/")
 set_target_properties(ccl PROPERTIES LINK_FLAGS "-Wl,-rpath,${ONEAPI_IMPI_RPATH}")
 

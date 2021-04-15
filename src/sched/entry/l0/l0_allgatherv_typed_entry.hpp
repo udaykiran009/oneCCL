@@ -7,9 +7,8 @@
 //TODO L0 Workaround
 
 namespace native {
-template <class kernel_params, class gpu_comm_impl, ccl::group_split_type topology>
-class l0_allgatherv_typed_entry : public base_gpu_entry<kernel_params,
-                                                        gpu_comm_impl,
+template <class gpu_comm_impl, ccl::group_split_type topology>
+class l0_allgatherv_typed_entry : public base_gpu_entry<gpu_comm_impl,
                                                         topology,
                                                         ccl::device_topology_type::ring,
                                                         ccl_coll_allgatherv> {
@@ -17,8 +16,7 @@ public:
     friend class ccl_gpu_comm;
     friend class ccl_virtual_gpu_comm;
 
-    using base = base_gpu_entry<kernel_params,
-                                gpu_comm_impl,
+    using base = base_gpu_entry<gpu_comm_impl,
                                 topology,
                                 ccl::device_topology_type::ring,
                                 ccl_coll_allgatherv>;
@@ -30,8 +28,8 @@ public:
     using base::kernel_router;
     using base::get_ctx;
     using base::get_local_kernel;
-    using kernel_main_typed = ring::allgatherv::main_kernel<kernel_params>;
-    using processing_type = typename kernel_params::native_type;
+    using kernel_main_typed = ring::allgatherv::main_kernel;
+    using processing_type = void;
 
     using income_data_flag_gpu_type =
         typename std::remove_pointer<typename ring::allgatherv::income_data_flag_arg_type>::type;
@@ -60,13 +58,9 @@ public:
         size_t send_count,
         ccl_buffer recv_buf,
         const size_t* recv_counts,
+        const coll_param_gpu& params,
         std::shared_ptr<ccl_stream> device_stream = std::shared_ptr<ccl_stream>())
-            : base(sched,
-                   comm,
-                   in_ctx,
-                   send_buf,
-                   ccl::native_type_info<processing_type>::dtype,
-                   device_stream),
+            : base(sched, comm, in_ctx, send_buf, params, device_stream),
               // left_wrote_to_me_flag
               income_data_flag(this->template alloc_memory_wrap(
                   typename ring::allgatherv::income_data_flag_arg{},
@@ -111,8 +105,8 @@ public:
 
         int next_rank = (comm_addr.rank + 1) % comm_addr.size;
         kernel_router = base::template create_kernel_router_for_rank<
-            l0_allgatherv_typed_entry<kernel_params, gpu_comm_impl, topology>>(
-            *this, next_rank, available_devices);
+            l0_allgatherv_typed_entry<gpu_comm_impl, topology>>(
+            *this, next_rank, available_devices, base::get_params());
 
         ENTRY_LOG_DEBUG("Init phase of current entry for ext_rank:", next_rank);
 
@@ -216,27 +210,27 @@ public:
             auto right_ready_to_recv_flag_arg =
                 right_kernel.template get_arg<typename ring::allgatherv::ready_to_recv_flag_arg>();
 
-            ENTRY_LOG_DEBUG("Bind right arguments from ",
-                            right_kernel_t::name(),
-                            " kernel",
-                            " to ",
-                            left_kernel_t::name(),
-                            " kernel. "
-                            "Right arguments:\n{ ",
-                            right_recv_buf_arg.first,
-                            ", ",
-                            right_recv_buf_arg.second,
-                            "}\n",
-                            "{ ",
-                            right_income_data_flag_arg.first,
-                            ", ",
-                            right_income_data_flag_arg.second,
-                            "}\n",
-                            "{ ",
-                            right_ready_to_recv_flag_arg.first,
-                            ", ",
-                            right_ready_to_recv_flag_arg.second,
-                            "}\n");
+            // ENTRY_LOG_DEBUG("Bind right arguments from ",
+            //                 right_kernel_t::name(),
+            //                 " kernel",
+            //                 " to ",
+            //                 left_kernel_t::name(),
+            //                 " kernel. "
+            //                 "Right arguments:\n{ ",
+            //                 right_recv_buf_arg.first,
+            //                 ", ",
+            //                 right_recv_buf_arg.second,
+            //                 "}\n",
+            //                 "{ ",
+            //                 right_income_data_flag_arg.first,
+            //                 ", ",
+            //                 right_income_data_flag_arg.second,
+            //                 "}\n",
+            //                 "{ ",
+            //                 right_ready_to_recv_flag_arg.first,
+            //                 ", ",
+            //                 right_ready_to_recv_flag_arg.second,
+            //                 "}\n");
 
             left_kernel
                 .template set_args<typename ring::allgatherv::right_output_buf_arg<processing_type>,

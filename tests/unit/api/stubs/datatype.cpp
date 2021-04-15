@@ -17,3 +17,15 @@ const ccl_datatype& ccl_datatype_storage::get(ccl::datatype idx) const {
     static ccl_datatype empty;
     return empty;
 }
+
+ccl::datatype& operator++(ccl::datatype& d) {
+    using IntType = typename std::underlying_type<ccl::datatype>::type;
+    d = static_cast<ccl::datatype>(static_cast<IntType>(d) + 1);
+    return d;
+}
+
+ccl::datatype operator++(ccl::datatype& d, int) {
+    ccl::datatype tmp(d);
+    ++d;
+    return tmp;
+}

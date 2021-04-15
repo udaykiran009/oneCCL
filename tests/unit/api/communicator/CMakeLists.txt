@@ -39,6 +39,7 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/coll/ccl_reduce_scatter_op_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/coll/ccl_sparse_allreduce_op_attr.cpp"
              "${PROJECT_SOURCE_DIR}/src/coll/ccl_barrier_op_attr.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/algorithms/algorithm_utils.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/log/log.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/device/device.cpp"
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_device.cpp"

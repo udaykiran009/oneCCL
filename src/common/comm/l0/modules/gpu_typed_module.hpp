@@ -11,11 +11,11 @@
 namespace native {
 
 template <ccl_coll_type type,
-          template <typename>
+          //   template <typename>
           class kernel_function_impl,
-          template <typename>
+          //   template <typename>
           class kernel_numa_function_impl,
-          template <typename>
+          //   template <typename>
           class kernel_scale_out_cpu_gw_function_impl>
 struct real_gpu_typed_module : private gpu_module_base,
                                public kernel_class<type, kernel_function_impl>,
@@ -34,11 +34,19 @@ struct real_gpu_typed_module : private gpu_module_base,
                   ccl_coll_type_to_str(type),
                   ", modules handle: ",
                   (void*)module);
-        ccl_tuple_for_each(main_class::value,
-                           detail::kernel_entry_initializer<type>(
-                               [this](const std::string& name) -> gpu_module_base::kernel_handle {
-                                   return this->import_kernel(name);
-                               }));
+
+        // TODO: is there a nicer way to iterate?
+        for (auto&& kernel_node : main_class::value) {
+            detail::kernel_entry_initializer<type>(
+                [this](const std::string& name) -> gpu_module_base::kernel_handle {
+                    return this->import_kernel(name);
+                })(kernel_node.second);
+        }
+        // ccl_tuple_for_each(main_class::value,
+        //                    detail::kernel_entry_initializer<type>(
+        //                        [this](const std::string& name) -> gpu_module_base::kernel_handle {
+        //                            return this->import_kernel(name);
+        //                        }));
 
         /*ccl_tuple_for_each(numa_class::value,
                            detail::kernel_entry_initializer<type>(
@@ -71,11 +79,11 @@ struct real_gpu_typed_module : private gpu_module_base,
 
 //2) virtual ipc_gpu_typed_module
 template <ccl_coll_type type,
-          template <typename>
+          //   template <typename>
           class kernel_function_impl,
-          template <typename>
+          //   template <typename>
           class kernel_numa_function_impl,
-          template <typename>
+          //   template <typename>
           class kernel_scale_out_cpu_gw_function_impl>
 struct ipc_gpu_typed_module : private gpu_module_base,
                               public kernel_class<type, kernel_function_impl> {
@@ -87,11 +95,17 @@ struct ipc_gpu_typed_module : private gpu_module_base,
 
     ipc_gpu_typed_module(handle module_handle) : gpu_module_base(nullptr) {
         LOG_DEBUG("Remote gpu module created: ", ccl_coll_type_to_str(type));
-        ccl_tuple_for_each(main_class::value,
-                           detail::kernel_entry_initializer<type>(
-                               [](const std::string& name) -> gpu_module_base::kernel_handle {
-                                   return nullptr;
-                               }));
+        // ccl_tuple_for_each(main_class::value,
+        //                    detail::kernel_entry_initializer<type>(
+        //                        [](const std::string& name) -> gpu_module_base::kernel_handle {
+        //                            return nullptr;
+        //                        }));
+        for (auto&& kernel : main_class::value) {
+            detail::kernel_entry_initializer<type>(
+                [](const std::string& name) -> gpu_module_base::kernel_handle {
+                    return nullptr;
+                })(kernel.second);
+        }
         LOG_DEBUG("No need to import functions");
     }
 
@@ -108,11 +122,11 @@ struct ipc_gpu_typed_module : private gpu_module_base,
 
 //3) virtual gpu module
 template <ccl_coll_type type,
-          template <typename>
+          //   template <typename>
           class kernel_function_impl,
-          template <typename>
+          //   template <typename>
           class kernel_numa_function_impl,
-          template <typename>
+          //   template <typename>
           class kernel_scale_out_cpu_gw_function_impl>
 struct virtual_gpu_typed_module : private gpu_module_base,
                                   public kernel_class<type, kernel_function_impl>,
@@ -136,11 +150,17 @@ struct virtual_gpu_typed_module : private gpu_module_base,
             : gpu_module_base(real_module->get()),
               real_module_ref(real_module) {
         LOG_DEBUG("Virtual gpu module created:", ccl_coll_type_to_str(type));
-        ccl_tuple_for_each(main_class::value,
-                           detail::kernel_entry_initializer<type>(
-                               [this](const std::string& name) -> gpu_module_base::kernel_handle {
-                                   return this->import_kernel(name);
-                               }));
+        // ccl_tuple_for_each(main_class::value,
+        //                    detail::kernel_entry_initializer<type>(
+        //                        [this](const std::string& name) -> gpu_module_base::kernel_handle {
+        //                            return this->import_kernel(name);
+        //                        }));
+        for (auto&& kernel : main_class::value) {
+            detail::kernel_entry_initializer<type>(
+                [this](const std::string& name) -> gpu_module_base::kernel_handle {
+                    return this->import_kernel(name);
+                })(kernel.second);
+        }
         /*ccl_tuple_for_each(numa_class::value,
                            detail::kernel_entry_initializer<type>(
                                [this](const std::string& name) -> gpu_module_base::kernel_handle {

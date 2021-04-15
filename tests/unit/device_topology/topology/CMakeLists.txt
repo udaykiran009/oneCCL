@@ -40,6 +40,7 @@ set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/tests/unit/l0/stubs/modules/module_source_data.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/ipc_ctx_session.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/l0/stubs/modules/base_entry_module.cpp"
+             "${PROJECT_SOURCE_DIR}/tests/unit/l0/stubs/modules/kernel_utils.cpp"
              )
 
 list(APPEND dependencies_sources ${specific_sources})

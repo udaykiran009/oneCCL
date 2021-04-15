@@ -9,6 +9,7 @@
 
 #include "coll/algorithms/algorithms_enum.hpp"
 #include "common/comm/l0/modules/supported_modules.hpp"
+#include "coll/coll_param.hpp"
 
 namespace native {
 namespace observer {
@@ -24,14 +25,8 @@ struct producer_description {
     ccl_device::device_cmd_list immediate_list; //TODO make persisten
 };
 
-struct kernel_params_type {
-    ccl_coll_type coll_type;
-    ccl::datatype data_type;
-    ccl::reduction red_type;
-};
-
 struct context_descr {
-    context_descr(kernel_params_type in_kernel_params) : kernel_params(in_kernel_params) {}
+    context_descr(const coll_param_gpu& kernel_params) : kernel_params(kernel_params) {}
 
     using host_mem_ptr_t = ccl_context::host_memory_ptr<uint8_t>;
     using host_mem_ptr_cntr_t = ccl_context::host_memory_ptr<counter_t>;
@@ -65,7 +60,9 @@ struct context_descr {
     void reset_counters(size_t observer_domain_index, size_t observer_domain_count);
 
 private:
-    kernel_params_type kernel_params;
+    // TODO: can we guarantee that this object is not destroyed before invoke_params and
+    // use const& here?
+    coll_param_gpu kernel_params;
 };
 
 template <ccl_coll_type coll_type>
@@ -74,9 +71,9 @@ struct invoke_params {
         return coll_type;
     }
 
-    invoke_params(producer_description&& in_producer_params, kernel_params_type&& in_kernel_params)
+    invoke_params(producer_description&& in_producer_params, const coll_param_gpu& kernel_params)
             : in_params(std::move(in_producer_params)),
-              kernel_params(std::move(in_kernel_params)),
+              kernel_params(kernel_params),
               out_params(kernel_params),
               valid(false) {}
 
@@ -97,11 +94,7 @@ struct invoke_params {
         return in_params;
     }
 
-    const kernel_params_type& get_kernel_params() const {
-        return kernel_params;
-    }
-
-    kernel_params_type& get_kernel_params() {
+    const coll_param_gpu& get_kernel_params() const {
         return kernel_params;
     }
 
@@ -114,7 +107,9 @@ struct invoke_params {
 
 private:
     producer_description in_params;
-    kernel_params_type kernel_params;
+    // TODO: can we guarantee that this object is not destroyed before l0 entry and
+    // use const& here?
+    coll_param_gpu kernel_params;
     context_descr out_params;
     bool valid;
 };

@@ -107,6 +107,47 @@ struct ccl_coll_param {
 #endif /* CCL_ENABLE_SYCL */
 };
 
+class coll_param_gpu {
+    ccl_coll_type ctype;
+    ccl::datatype dtype;
+    ccl::reduction red;
+
+public:
+    coll_param_gpu(ccl_coll_type ctype, ccl::datatype dtype, ccl::reduction red)
+            : ctype{ ctype },
+              dtype{ dtype },
+              red{ red } {}
+
+    coll_param_gpu(ccl_coll_type ctype, ccl::datatype dtype)
+            : ctype{ ctype },
+              dtype{ dtype },
+              red{ (ccl::reduction)-1 } {
+        assert(!is_reduction() && "This constructor is invalid for reduction types");
+    }
+
+    ccl_coll_type get_coll_type() const {
+        return ctype;
+    }
+
+    ccl::datatype get_datatype() const {
+        return dtype;
+    }
+
+    bool is_reduction() const {
+        return ccl_coll_type_is_reduction(get_coll_type());
+    }
+
+    ccl::reduction get_reduction() const {
+        if (!is_reduction()) {
+            throw ccl::exception(
+                "get_ruduction(): is not supported for non-reduction collective type, i.e. bcast");
+        }
+        return red;
+    }
+};
+
+bool operator==(const coll_param_gpu& lhs, const coll_param_gpu& rhs);
+
 /*
     explicitly split coll_param and coll_param_copy
     to separate coll_param structure which is used for interaction between different modules

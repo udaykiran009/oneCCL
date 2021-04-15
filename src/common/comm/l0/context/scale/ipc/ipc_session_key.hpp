@@ -5,21 +5,29 @@
 
 #include "oneapi/ccl/native_device_api/l0/device.hpp"
 #include "coll/algorithms/algorithms_enum.hpp"
+#include "coll/coll_param.hpp"
 
 namespace native {
 
-template <ccl_coll_type type, class kernel_params>
+template <ccl_coll_type type>
 struct ipc_invoke_params {
-    using kernel_params_t = kernel_params;
-
-    ipc_invoke_params(std::vector<ccl_device::device_ipc_memory_handle>&& h)
-            : handles(std::move(h)) {}
+    ipc_invoke_params(std::vector<ccl_device::device_ipc_memory_handle>&& h,
+                      const coll_param_gpu& params)
+            : handles(std::move(h)),
+              params{ params } {}
 
     static constexpr ccl_coll_type get_coll_type() {
         return type;
     }
 
+    const coll_param_gpu& get_kernel_params() const {
+        return params;
+    }
+
     std::vector<ccl_device::device_ipc_memory_handle> handles;
+    // TODO: can we guarantee that this object is not destroyed before l0 entry and
+    // use const& here?
+    coll_param_gpu params;
 };
 
 struct ipc_session_key {

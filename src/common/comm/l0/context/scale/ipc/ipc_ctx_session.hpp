@@ -2,6 +2,7 @@
 #include <atomic>
 #include <map>
 #include <memory>
+#include "coll/coll_param.hpp"
 #include "common/comm/l0/context/scale/ipc/ipc_ctx_utils.hpp"
 #include "common/comm/l0/context/scale/ipc/ipc_session_key.hpp"
 #include "common/comm/l0/modules/supported_modules.hpp"
@@ -67,11 +68,13 @@ using shared_session_ptr_t = std::shared_ptr<session>;
 /* High level session
  * Contains collective communication data
  */
-template <ccl_coll_type coll_type, class kernel_params, ccl::device_topology_type class_id>
+template <ccl_coll_type coll_type, ccl::device_topology_type class_id>
 struct typed_ipc_session : public session {
     typed_ipc_session(origin_ipc_memory_container&& ipc_src_memory_handles,
-                      size_t source_ipc_device_rank)
-            : session(std::move(ipc_src_memory_handles), source_ipc_device_rank) {}
+                      size_t source_ipc_device_rank,
+                      const coll_param_gpu& kernel_params)
+            : session(std::move(ipc_src_memory_handles), source_ipc_device_rank),
+              kernel_params(kernel_params) {}
 
     void visit(const ccl_ipc_gpu_comm* source,
                native::supported_device_modules<ipc_dst_device_coll_module>& ipc_modules) override {
@@ -84,8 +87,8 @@ struct typed_ipc_session : public session {
         assert(module_ptr);
 
         // get appropriate kernel
-        auto& kernel = module_ptr->template get_class<typename module_t::main_class>()
-                           .template get<kernel_params>();
+        auto& kernel =
+            module_ptr->template get_class<typename module_t::main_class>().get(kernel_params);
 
         // get recovered ipc handles
         auto data_it = data_to_recover.ipc_memory_storage.find(source);
@@ -97,6 +100,8 @@ struct typed_ipc_session : public session {
         const auto& ipc_handles = data_it->second;
         kernel.bind_data(ipc_handles);
     }
+
+    coll_param_gpu kernel_params;
 };
 
 // session owner
@@ -110,11 +115,10 @@ struct session_table {
                                             const std::string& peer_addr,
                                             ipc_invoke_params_type&& params,
                                             size_t source_device_rank) {
-        using specific_session = typed_ipc_session<ipc_invoke_params_type::get_coll_type(),
-                                                   typename ipc_invoke_params_type::kernel_params_t,
-                                                   class_id>;
-        auto sess =
-            std::make_shared<specific_session>(std::move(params.handles), source_device_rank);
+        using specific_session =
+            typed_ipc_session<ipc_invoke_params_type::get_coll_type(), class_id>;
+        auto sess = std::make_shared<specific_session>(
+            std::move(params.handles), source_device_rank, params.get_kernel_params());
         sessions.emplace(key, sess);
 
         start_session(sess, client, peer_addr);

@@ -42,18 +42,17 @@ using root_arg_type = typename root_arg::arg_type;
 
 // IMPORTANT: the number and types of arguments must be the same in all classes,
 // excluding arguments specific for numa/scaleout etc.
-template <class kernel_params>
-struct main_kernel : public execution_kernel<main_kernel<kernel_params>,
+struct main_kernel : public execution_kernel<main_kernel,
                                              buf_size_arg,
-                                             buf_arg<typename kernel_params::native_type>,
+                                             buf_arg<void>,
                                              income_data_flag_arg,
                                              ready_to_recv_flag_arg,
                                              local_barrier_flag_arg,
-                                             right_buf_arg<typename kernel_params::native_type>,
+                                             right_buf_arg<void>,
                                              right_income_data_flag_arg,
                                              right_ready_to_recv_flag_arg,
                                              root_arg> {
-    using processing_type = typename kernel_params::native_type;
+    using processing_type = void;
 
     static constexpr const char* specific_name() {
         return "bcast_execution";
@@ -62,7 +61,7 @@ struct main_kernel : public execution_kernel<main_kernel<kernel_params>,
     using common_entry_buf_size_arg = buf_size_arg;
     using common_entry_buf_arg = buf_arg<processing_type>;
 
-    using base = execution_kernel<main_kernel<kernel_params>,
+    using base = execution_kernel<main_kernel,
                                   buf_size_arg,
                                   buf_arg<processing_type>,
                                   income_data_flag_arg,
@@ -72,26 +71,26 @@ struct main_kernel : public execution_kernel<main_kernel<kernel_params>,
                                   right_income_data_flag_arg,
                                   right_ready_to_recv_flag_arg,
                                   root_arg>;
+
+    using base::base;
 };
 
-template <class kernel_params>
 struct numa_kernel
-        : public execution_kernel<numa_kernel<kernel_params>,
+        : public execution_kernel<numa_kernel,
                                   buf_size_arg,
-                                  buf_arg<typename kernel_params::native_type>,
+                                  buf_arg<void>,
                                   income_data_flag_arg,
                                   ready_to_recv_flag_arg,
                                   local_barrier_flag_arg,
-                                  right_buf_arg<typename kernel_params::native_type>,
+                                  right_buf_arg<void>,
                                   right_income_data_flag_arg,
                                   right_ready_to_recv_flag_arg,
                                   root_arg,
 
                                   // numa-specific args
-                                  permanent_arg<main_kernel_args::args_start_index + 9,
-                                                typename kernel_params::native_type*>,
+                                  permanent_arg<main_kernel_args::args_start_index + 9, void*>,
                                   permanent_arg<main_kernel_args::args_start_index + 10, int*>> {
-    using processing_type = typename kernel_params::native_type;
+    using processing_type = void;
 
     static constexpr const char* specific_name() {
         return "bcast_execution_numa";
@@ -100,14 +99,13 @@ struct numa_kernel
     using common_entry_buf_arg = buf_arg<processing_type>;
 
     // event data
-    using event_prod_chunk_mem_arg =
-        permanent_arg<main_kernel_args::args_start_index + 9, typename kernel_params::native_type*>;
+    using event_prod_chunk_mem_arg = permanent_arg<main_kernel_args::args_start_index + 9, void*>;
     using event_prod_chunk_mem_arg_type = typename event_prod_chunk_mem_arg::arg_type;
 
     using event_prod_bytes_arg = permanent_arg<main_kernel_args::args_start_index + 10, int*>;
     using event_prod_bytes_arg_type = typename event_prod_bytes_arg::arg_type;
 
-    using base = execution_kernel<numa_kernel<kernel_params>,
+    using base = execution_kernel<numa_kernel,
                                   buf_size_arg,
                                   buf_arg<processing_type>,
                                   income_data_flag_arg,
@@ -126,12 +124,13 @@ struct numa_kernel
         (void)out_ctx_params;
         throw ccl::exception(std::string(__FUNCTION__) + " - not implemented for that kernel type");
     }
+
+    using base::base;
 };
 
-template <class kernel_params>
-struct ipc_kernel : public base_ipc_kernel<ipc_kernel<kernel_params>,
+struct ipc_kernel : public base_ipc_kernel<ipc_kernel,
                                            stub_arg<main_kernel_args::args_start_index>,
-                                           buf_arg<typename kernel_params::native_type>,
+                                           buf_arg<void>,
                                            income_data_flag_arg,
                                            ready_to_recv_flag_arg,
                                            stub_arg<main_kernel_args::args_start_index + 4>,
@@ -139,7 +138,7 @@ struct ipc_kernel : public base_ipc_kernel<ipc_kernel<kernel_params>,
                                            stub_arg<main_kernel_args::args_start_index + 6>,
                                            stub_arg<main_kernel_args::args_start_index + 7>,
                                            stub_arg<main_kernel_args::args_start_index + 8>> {
-    using processing_type = typename kernel_params::native_type;
+    using processing_type = void;
 
     static constexpr const char* specific_name() {
         return "ring_bcast_ipc";
@@ -147,7 +146,7 @@ struct ipc_kernel : public base_ipc_kernel<ipc_kernel<kernel_params>,
 
     using common_entry_buf_arg = buf_arg<processing_type>;
 
-    using base = base_ipc_kernel<ipc_kernel<kernel_params>,
+    using base = base_ipc_kernel<ipc_kernel,
                                  stub_arg<main_kernel_args::args_start_index>,
                                  buf_arg<processing_type>,
                                  income_data_flag_arg,
@@ -172,27 +171,26 @@ struct ipc_kernel : public base_ipc_kernel<ipc_kernel<kernel_params>,
             reinterpret_cast<ready_to_recv_flag_arg_type>(ipc_handles.at(2).get().pointer);
         this->template set_arg<ready_to_recv_flag_arg>(ready_to_recv_flag);
     }
+
+    using base::base;
 };
 
-template <class kernel_params>
 struct scale_out_cpu_gw_kernel
-        : public execution_kernel<scale_out_cpu_gw_kernel<kernel_params>,
+        : public execution_kernel<scale_out_cpu_gw_kernel,
                                   buf_size_arg,
-                                  buf_arg<typename kernel_params::native_type>,
+                                  buf_arg<void>,
                                   income_data_flag_arg,
                                   ready_to_recv_flag_arg,
                                   local_barrier_flag_arg,
-                                  right_buf_arg<typename kernel_params::native_type>,
+                                  right_buf_arg<void>,
                                   right_income_data_flag_arg,
                                   right_ready_to_recv_flag_arg,
                                   root_arg,
 
                                   // scaleout-specific args
-                                  permanent_arg<main_kernel_args::args_start_index + 9,
-                                                typename kernel_params::native_type*>,
+                                  permanent_arg<main_kernel_args::args_start_index + 9, void*>,
                                   permanent_arg<main_kernel_args::args_start_index + 10, int*>> {
-    using param_t = kernel_params;
-    using processing_type = typename param_t::native_type;
+    using processing_type = void;
 
     static constexpr const char* specific_name() {
         return "bcast_execution_scale_out_cpu_gw";
@@ -208,7 +206,7 @@ struct scale_out_cpu_gw_kernel
     using event_prod_bytes_arg = permanent_arg<main_kernel_args::args_start_index + 10, int*>;
     using event_prod_bytes_arg_type = typename event_prod_bytes_arg::arg_type;
 
-    using base = execution_kernel<scale_out_cpu_gw_kernel<kernel_params>,
+    using base = execution_kernel<scale_out_cpu_gw_kernel,
                                   buf_size_arg,
                                   buf_arg<processing_type>,
                                   income_data_flag_arg,
@@ -227,6 +225,8 @@ struct scale_out_cpu_gw_kernel
         (void)out_ctx_params;
         throw ccl::exception(std::string(__FUNCTION__) + " - not implemented for that kernel type");
     }
+
+    using base::base;
 };
 
 } // namespace bcast

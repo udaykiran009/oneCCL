@@ -20,6 +20,7 @@ file(GLOB sources "*.c" "*.cpp")
 
 set (dependencies_sources
              "${PROJECT_SOURCE_DIR}/src/ccl_cpp_utils.cpp"
+             "${PROJECT_SOURCE_DIR}/src/coll/algorithms/algorithm_utils.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/global.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/env.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/cache.cpp"

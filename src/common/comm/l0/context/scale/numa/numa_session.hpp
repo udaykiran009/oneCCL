@@ -49,12 +49,12 @@ struct numa_session : public numa_session_iface {
     using session_key_t = session_key;
 
     numa_session(producer_description& in_param,
-                 kernel_params_type& in_kernel_params,
+                 const coll_param_gpu& kernel_params,
                  size_t observer_domain_index,
                  size_t observer_domain_count,
                  const session_key_t& key)
             : numa_session_iface(key),
-              kernel_params(in_kernel_params),
+              kernel_params(kernel_params),
               ctx_descr(kernel_params),
               copy_immediate_list(std::move(in_param.immediate_list)) {
         ctx_descr.init(in_param.staged_buffer_elem_count,
@@ -68,7 +68,7 @@ struct numa_session : public numa_session_iface {
         return ctx_descr;
     }
 
-    kernel_params_type& get_kernel_params() {
+    const coll_param_gpu& get_kernel_params() const {
         return kernel_params;
     }
 
@@ -154,7 +154,7 @@ struct numa_session : public numa_session_iface {
 
     bool is_consumed() noexcept override {
         return (get_ctx_descr().device_produced_bytes *
-                ccl::get_datatype_size(get_kernel_params().data_type)) ==
+                ccl::get_datatype_size(get_kernel_params().get_datatype())) ==
                get_ctx_descr().host_consumed_bytes;
     }
 
@@ -163,7 +163,7 @@ struct numa_session : public numa_session_iface {
     }
 
 private:
-    kernel_params_type kernel_params;
+    coll_param_gpu kernel_params;
     context_descr ctx_descr;
     ccl_device::device_cmd_list copy_immediate_list;
 };

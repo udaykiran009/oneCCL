@@ -8,9 +8,8 @@
 #include "kernels/shared.h"
 
 namespace native {
-template <class kernel_params, class gpu_comm_impl, ccl::group_split_type topology>
-class l0_allreduce_typed_entry : public base_gpu_entry<kernel_params,
-                                                       gpu_comm_impl,
+template <class gpu_comm_impl, ccl::group_split_type topology>
+class l0_allreduce_typed_entry : public base_gpu_entry<gpu_comm_impl,
                                                        topology,
                                                        ccl::device_topology_type::ring,
                                                        ccl_coll_allreduce> {
@@ -18,8 +17,7 @@ public:
     friend class ccl_gpu_comm;
     friend class ccl_virtual_gpu_comm;
 
-    using base = base_gpu_entry<kernel_params,
-                                gpu_comm_impl,
+    using base = base_gpu_entry<gpu_comm_impl,
                                 topology,
                                 ccl::device_topology_type::ring,
                                 ccl_coll_allreduce>;
@@ -32,8 +30,7 @@ public:
     using base::get_ctx;
     using base::alloc_memory_wrap;
     using base::get_local_kernel;
-    using kernel_main_typed = ring::allreduce::main_kernel<kernel_params>;
-    using processing_type = typename kernel_params::native_type;
+    using kernel_main_typed = ring::allreduce::main_kernel;
 
     using income_data_flag_gpu_type =
         typename std::remove_pointer<typename ring::allreduce::income_data_flag_arg_type>::type;
@@ -50,10 +47,6 @@ public:
         return ccl_coll_allreduce;
     }
 
-    ccl::reduction get_red_type() noexcept {
-        return op_typed_entry;
-    }
-
     l0_allreduce_typed_entry() = delete;
     l0_allreduce_typed_entry(
         ccl_sched* sched,
@@ -63,19 +56,16 @@ public:
         const ccl_buffer send_buf,
         ccl_buffer recv_buf,
         size_t cnt,
-        ccl::reduction op,
+        const coll_param_gpu& params,
         std::shared_ptr<ccl_stream> device_stream = std::shared_ptr<ccl_stream>())
-            : base(sched,
-                   comm,
-                   in_ctx,
-                   send_buf,
-                   ccl::native_type_info<processing_type>::dtype,
-                   device_stream),
+            : base(sched, comm, in_ctx, send_buf, params, device_stream),
 
               temp_buffer(this->template alloc_memory_wrap(
-                  typename ring::allreduce::tmp_recv_buf_arg<processing_type>{},
+                  typename ring::allreduce::tmp_recv_buf_arg<int8_t>{},
                   parent_communicator,
-                  ring_allreduce_get_tmp_buffer_size(cnt, base::comm_addr.size),
+                  ring_allreduce_get_tmp_buffer_size(
+                      ccl::get_datatype_size(params.get_datatype()) * cnt,
+                      base::comm_addr.size),
                   get_ctx())),
               income_data_flag(
                   this->template alloc_memory_wrap(typename ring::allreduce::income_data_flag_arg{},
@@ -93,13 +83,12 @@ public:
                                          sizeof(local_barrier_flag_gpu_type),
                                          get_ctx())) {
         recv_buf_typed_entry = recv_buf;
-        op_typed_entry = op;
         cnt_entry = cnt;
 
         int next_rank = (comm_addr.rank + 1) % comm_addr.size;
         kernel_router = base::template create_kernel_router_for_rank<
-            l0_allreduce_typed_entry<kernel_params, gpu_comm_impl, topology>>(
-            *this, next_rank, available_devices);
+            l0_allreduce_typed_entry<gpu_comm_impl, topology>>(
+            *this, next_rank, available_devices, base::get_params());
 
         ENTRY_LOG_DEBUG("Init phase of current entry for ext_rank:", next_rank);
 
@@ -120,15 +109,15 @@ public:
         auto& main_entry_function = get_local_kernel();
 
         // TODO: try to remove indirect buffer
-        auto recv_buf_ptr = reinterpret_cast<processing_type*>(recv_buf_typed_entry.get_ptr());
+        void* recv_buf_ptr = recv_buf_typed_entry.get_ptr();
 
         //create implementation specified primitives
         main_entry_function
-            .template set_args<typename ring::allreduce::tmp_recv_buf_arg<processing_type>,
+            .template set_args<typename ring::allreduce::tmp_recv_buf_arg<void>,
                                typename ring::allreduce::income_data_flag_arg,
                                typename ring::allreduce::ready_to_recv_flag_arg,
                                typename ring::allreduce::local_barrier_flag_arg,
-                               typename ring::allreduce::recv_buf_arg<processing_type>,
+                               typename ring::allreduce::recv_buf_arg<void>,
                                typename kernel_main_typed::common_entry_buf_size_arg>(
                 temp_buffer.get(),
                 income_data_flag.get(),
@@ -170,13 +159,8 @@ public:
             .device = parent_communicator->get_device(),
             .immediate_list = parent_communicator->get_device().create_immediate_cmd_list(get_ctx())
         };
-
-        observer::kernel_params_type in_kernel_params{
-            .coll_type = type(),
-            .data_type = ccl::native_type_info<processing_type>::dtype,
-            .red_type = get_red_type()
-        };
-        return observer::invoke_params<type()>{ std::move(in_params), std::move(in_kernel_params) };
+        // TODO: Should get_params() be a part of in_params?
+        return observer::invoke_params<type()>(std::move(in_params), base::get_params());
     }
 
 protected:
@@ -185,11 +169,10 @@ protected:
     }
 
 private:
-    ccl_device::device_memory<processing_type> temp_buffer;
+    ccl_device::device_memory<int8_t> temp_buffer;
     ccl_device::device_memory<income_data_flag_gpu_type> income_data_flag;
     ccl_device::device_memory<ready_to_recv_flag_gpu_type> ready_to_recv_flag;
     ccl_device::device_memory<local_barrier_flag_gpu_type> local_barrier_flag;
-    ccl::reduction op_typed_entry;
     ccl_buffer recv_buf_typed_entry;
     size_t cnt_entry;
 
@@ -197,10 +180,9 @@ public:
     template <class left_kernel_t, class right_kernel_t>
     bool execute(left_kernel_t& left_kernel, right_kernel_t& right_kernel) {
         bool is_right_kernel_ready =
-            right_kernel
-                .template test_args<typename ring::allreduce::tmp_recv_buf_arg<processing_type>,
-                                    typename ring::allreduce::income_data_flag_arg,
-                                    typename ring::allreduce::ready_to_recv_flag_arg>();
+            right_kernel.template test_args<typename ring::allreduce::tmp_recv_buf_arg<void>,
+                                            typename ring::allreduce::income_data_flag_arg,
+                                            typename ring::allreduce::ready_to_recv_flag_arg>();
 
         // Once we're sure that the parameters ready read them from the right kernel
         // Note: we not only read the parameters but also reset their 'ready' flag
@@ -211,14 +193,14 @@ public:
         // values from the previous run.
 
         if (is_right_kernel_ready) {
-            auto right_tmp_recv_buf_arg = right_kernel.template get_arg<
-                typename ring::allreduce::tmp_recv_buf_arg<processing_type>>();
+            auto right_tmp_recv_buf_arg =
+                right_kernel.template get_arg<typename ring::allreduce::tmp_recv_buf_arg<void>>();
             auto right_income_data_flag_arg =
                 right_kernel.template get_arg<typename ring::allreduce::income_data_flag_arg>();
             auto right_ready_to_recv_flag_arg =
                 right_kernel.template get_arg<typename ring::allreduce::ready_to_recv_flag_arg>();
 
-            ENTRY_LOG_DEBUG("Bind right arguments from ",
+            /*ENTRY_LOG_DEBUG("Bind right arguments from ",
                             right_kernel_t::name(),
                             " kernel",
                             " to ",
@@ -238,12 +220,11 @@ public:
                             right_ready_to_recv_flag_arg.first,
                             ", ",
                             right_ready_to_recv_flag_arg.second,
-                            "}\n");
+                            "}\n");*/
 
-            left_kernel.template set_args<
-                typename ring::allreduce::right_tmp_recv_buf_arg<processing_type>,
-                typename ring::allreduce::right_income_data_flag_arg,
-                typename ring::allreduce::right_ready_to_recv_flag_arg>(
+            left_kernel.template set_args<typename ring::allreduce::right_tmp_recv_buf_arg<void>,
+                                          typename ring::allreduce::right_income_data_flag_arg,
+                                          typename ring::allreduce::right_ready_to_recv_flag_arg>(
                 right_tmp_recv_buf_arg.second,
                 right_income_data_flag_arg.second,
                 right_ready_to_recv_flag_arg.second);

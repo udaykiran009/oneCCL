@@ -31,12 +31,8 @@ public:
     template <ccl_coll_type algo_type, ccl::group_split_type group, ccl::device_topology_type mode>
     using kernel_class_t = typename gpu_module_t<algo_type, group, mode>::numa_class;
 
-    template <ccl_coll_type algo_type,
-              ccl::group_split_type group,
-              ccl::device_topology_type mode,
-              class kernel_params>
-    using gpu_kernel_t =
-        typename kernel_class_t<algo_type, group, mode>::template kernel_t<kernel_params>;
+    template <ccl_coll_type algo_type, ccl::group_split_type group, ccl::device_topology_type mode>
+    using gpu_kernel_t = typename kernel_class_t<algo_type, group, mode>::kernel_t;
 
     static constexpr const char* name_impl() {
         return "NUMA_PROXY";
@@ -58,21 +54,16 @@ public:
 
     template <ccl_coll_type module_type,
               ccl::group_split_type group_id,
-              ccl::device_topology_type class_id,
-              class kernel_params>
-    gpu_kernel_t<module_type, group_id, class_id, kernel_params>& get_gpu_kernel() {
+              ccl::device_topology_type class_id>
+    gpu_kernel_t<module_type, group_id, class_id>& get_gpu_kernel(const coll_param_gpu& params) {
         auto& ptr = wrapped_gpu_comm.template get_gpu_module<module_type, group_id, class_id>();
 
         using requested_class = kernel_class_t<module_type, group_id, class_id>;
-        return ptr.template get_class<requested_class>().template get<kernel_params>();
+        return ptr.template get_class<requested_class>().get(params);
     }
 
-    template <class kernel_params,
-              ccl::group_split_type group_id,
-              ccl::device_topology_type class_id,
-              class gpu_entry>
-    gpu_kernel_t<gpu_entry::type(), group_id, class_id, kernel_params>& register_entry(
-        gpu_entry& entry) {
+    template <ccl::group_split_type group_id, ccl::device_topology_type class_id, class gpu_entry>
+    gpu_kernel_t<gpu_entry::type(), group_id, class_id>& register_entry(gpu_entry& entry) {
         static_assert(group_id == ccl::group_split_type::cluster,
                       "ccl_numa_proxy available for ccl::group_split_type::cluster only");
 
@@ -80,9 +71,9 @@ public:
             base::template get_comm_data<group_id, class_id>();
         LOG_DEBUG("entry: ", gpu_entry::class_name(), " registered on: ", comm_addr.to_string());
 
-        using kernel_func_type = gpu_kernel_t<gpu_entry::type(), group_id, class_id, kernel_params>;
+        using kernel_func_type = gpu_kernel_t<gpu_entry::type(), group_id, class_id>;
         kernel_func_type& main_func =
-            get_gpu_kernel<gpu_entry::type(), group_id, class_id, kernel_params>();
+            get_gpu_kernel<gpu_entry::type(), group_id, class_id>(entry.get_params());
         main_func.set_rank(comm_addr.rank);
         main_func.set_size(comm_addr.size);
 

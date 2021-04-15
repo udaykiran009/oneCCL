@@ -43,9 +43,7 @@ TEST_F(scale_out_fixture, scale_out_iface_test) {
                                                 .immediate_list =
                                                     devices[0]->create_immediate_cmd_list(ctx) };
 
-    kernel_params_type in_kernel_params{ .coll_type = ccl_coll_bcast,
-                                         .data_type = ccl::native_type_info<int>::dtype,
-                                         .red_type = ccl::reduction::custom };
+    coll_param_gpu in_kernel_params(ccl_coll_bcast, ccl::native_type_info<int>::dtype);
 
     // crate numa seesion
     auto numa_sess = numa_session<ccl::device_topology_type::ring, invoke_params<ccl_coll_bcast>>(

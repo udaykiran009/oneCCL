@@ -33,8 +33,8 @@ void context_descr::init(size_t staged_buffer_elem_count,
 
     // host mem buf
     host_mem_producer = context->template alloc_memory<uint8_t>(
-        staged_buffer_elem_count * ccl::get_datatype_size(kernel_params.data_type),
-        /*TODO use page size*/ ccl::get_datatype_size(kernel_params.data_type),
+        staged_buffer_elem_count * ccl::get_datatype_size(kernel_params.get_datatype()),
+        /*TODO use page size*/ ccl::get_datatype_size(kernel_params.get_datatype()),
         host_descr);
 
     // create staged mem counter in host context (host mem buf counter)
@@ -42,7 +42,7 @@ void context_descr::init(size_t staged_buffer_elem_count,
         1, /*TODO use page size*/ sizeof(counter_t), host_descr);
 
     host_expected_bytes =
-        staged_buffer_elem_count * ccl::get_datatype_size(kernel_params.data_type);
+        staged_buffer_elem_count * ccl::get_datatype_size(kernel_params.get_datatype());
 
     /* DEVICE */
     ze_device_mem_alloc_desc_t mem_descr = ccl_device::get_default_mem_alloc_desc();
@@ -51,8 +51,8 @@ void context_descr::init(size_t staged_buffer_elem_count,
     mem_descr.flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED;
     dev_mem_consumer = device.template alloc_memory_ptr<uint8_t>(
         (staged_buffer_elem_count * observer_domain_count) *
-            ccl::get_datatype_size(kernel_params.data_type),
-        ccl::get_datatype_size(kernel_params.data_type),
+            ccl::get_datatype_size(kernel_params.get_datatype()),
+        ccl::get_datatype_size(kernel_params.get_datatype()),
         context,
         mem_descr);
 
