@@ -54,6 +54,7 @@ void print_help_usage(const char* app) {
           "\t[-d,--dtype <datatypes list/all>]: %s\n"
           "\t[-r,--reduction <reductions list/all>]: %s\n"
           "\t[-o,--csv_filepath <file to store CSV-formatted data into>]: %s\n"
+          "\t[-x,--ext] show additional information\n"
           "\t[-h,--help]\n\n"
           "example:\n\t--coll allgatherv,allreduce --backend host --loop regular\n"
           "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n",
@@ -291,7 +292,8 @@ void store_to_csv(const user_options_t& options,
                   double min_time,
                   double max_time,
                   double avg_time,
-                  double stddev) {
+                  double stddev,
+                  double wait_avg_time) {
     std::ofstream csvf;
     csvf.open(options.csv_filepath, std::ofstream::out | std::ofstream::app);
 
@@ -309,7 +311,7 @@ void store_to_csv(const user_options_t& options,
             csvf << nranks << "," << cop << "," << get_op_name() << "," << dtype_names.at(dtype)
                  << "," << ccl::get_datatype_size(dtype) << "," << elem_count << "," << buf_count
                  << "," << iter_count << "," << min_time << "," << max_time << "," << avg_time
-                 << "," << stddev << std::endl;
+                 << "," << stddev << "," << wait_avg_time << std::endl;
         }
         csvf.close();
     }
@@ -317,7 +319,8 @@ void store_to_csv(const user_options_t& options,
 
 /* timer array contains one number per collective, one collective corresponds to ranks_per_proc */
 void print_timings(const ccl::communicator& comm,
-                   const std::vector<double>& local_timers,
+                   const std::vector<double>& local_total_timers,
+                   const std::vector<double>& local_wait_timers,
                    const user_options_t& options,
                    size_t elem_count,
                    size_t iter_count,
@@ -328,38 +331,54 @@ void print_timings(const ccl::communicator& comm,
     const size_t nranks = comm.size();
 
     // get timers from other ranks
-    std::vector<double> all_ranks_timers(ncolls * nranks);
+    std::vector<double> all_ranks_total_timers(ncolls * nranks);
+    std::vector<double> all_ranks_wait_timers(ncolls * nranks);
     std::vector<size_t> recv_counts(nranks, ncolls);
-    ccl::allgatherv(local_timers.data(), ncolls, all_ranks_timers.data(), recv_counts, comm).wait();
+
+    std::vector<ccl::event> events;
+    events.push_back(ccl::allgatherv(
+        local_total_timers.data(), ncolls, all_ranks_total_timers.data(), recv_counts, comm));
+    events.push_back(ccl::allgatherv(
+        local_wait_timers.data(), ncolls, all_ranks_wait_timers.data(), recv_counts, comm));
+
+    for (ccl::event& ev : events) {
+        ev.wait();
+    }
 
     if (comm.rank() == 0) {
-        std::vector<double> timers(nranks, 0);
+        std::vector<double> total_timers(nranks, 0);
+        std::vector<double> wait_timers(nranks, 0);
         std::vector<double> min_timers(ncolls, 0);
         std::vector<double> max_timers(ncolls, 0);
 
         // parse timers from all ranks
         for (size_t rank_idx = 0; rank_idx < nranks; ++rank_idx) {
             for (size_t coll_idx = 0; coll_idx < ncolls; ++coll_idx) {
-                const double time = all_ranks_timers.at(rank_idx * ncolls + coll_idx);
-                timers.at(rank_idx) += time;
+                double total_time = all_ranks_total_timers.at(rank_idx * ncolls + coll_idx);
+                double wait_time = all_ranks_wait_timers.at(rank_idx * ncolls + coll_idx);
+                total_timers.at(rank_idx) += total_time;
+                wait_timers.at(rank_idx) += wait_time;
 
                 double& min = min_timers.at(coll_idx);
-                min = (min != 0) ? std::min(min, time) : time;
+                min = (min != 0) ? std::min(min, total_time) : total_time;
 
                 double& max = max_timers.at(coll_idx);
-                max = std::max(max, time);
+                max = std::max(max, total_time);
             }
         }
 
-        double avg_time = std::accumulate(timers.begin(), timers.end(), 0);
-        avg_time /= (iter_count * nranks);
+        double total_avg_time = std::accumulate(total_timers.begin(), total_timers.end(), 0);
+        total_avg_time /= iter_count * nranks;
+
+        double wait_avg_time = std::accumulate(wait_timers.begin(), wait_timers.end(), 0);
+        wait_avg_time /= iter_count * nranks;
 
         double sum = 0;
-        for (const double& timer : timers) {
+        for (const double& timer : total_timers) {
             double latency = (double)timer / iter_count;
-            sum += (latency - avg_time) * (latency - avg_time);
+            sum += (latency - total_avg_time) * (latency - total_avg_time);
         }
-        double stddev = std::sqrt((double)sum / nranks) / avg_time * 100;
+        double stddev = std::sqrt((double)sum / nranks) / total_avg_time * 100;
 
         double min_time = std::accumulate(min_timers.begin(), min_timers.end(), 0);
         min_time /= iter_count;
@@ -368,12 +387,19 @@ void print_timings(const ccl::communicator& comm,
         max_time /= iter_count;
 
         size_t bytes = elem_count * ccl::get_datatype_size(dtype) * buf_count;
-        std::cout << std::right << std::fixed << std::setw(COL_WIDTH) << bytes
-                  << std::setw(COL_WIDTH) << iter_count << std::setw(COL_WIDTH)
-                  << std::setprecision(COL_PRECISION) << min_time << std::setw(COL_WIDTH)
-                  << std::setprecision(COL_PRECISION) << max_time << std::setw(COL_WIDTH)
-                  << std::setprecision(COL_PRECISION) << avg_time << std::setw(COL_WIDTH)
-                  << std::setprecision(COL_PRECISION) << stddev << std::endl;
+        std::stringstream ss;
+        ss << std::right << std::fixed << std::setw(COL_WIDTH) << bytes << std::setw(COL_WIDTH)
+           << iter_count << std::setw(COL_WIDTH) << std::setprecision(COL_PRECISION) << min_time
+           << std::setw(COL_WIDTH) << std::setprecision(COL_PRECISION) << max_time
+           << std::setw(COL_WIDTH) << std::setprecision(COL_PRECISION) << total_avg_time
+           << std::setw(COL_WIDTH - 3) << std::setprecision(COL_PRECISION) << stddev
+           << std::setw(COL_WIDTH + 3);
+
+        if (options.show_additional_info) {
+            ss << std::right << std::fixed << std::setprecision(COL_PRECISION) << wait_avg_time;
+        }
+        ss << std::endl;
+        printf("%s", ss.str().c_str());
 
         if (!options.csv_filepath.empty()) {
             store_to_csv(options,
@@ -384,8 +410,9 @@ void print_timings(const ccl::communicator& comm,
                          op,
                          min_time,
                          max_time,
-                         avg_time,
-                         stddev);
+                         total_avg_time,
+                         stddev,
+                         wait_avg_time);
         }
     }
 
@@ -453,38 +480,39 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
     bool should_parse_reductions = false;
 
 #ifdef CCL_ENABLE_SYCL
-    const char* const short_options = "b:e:i:w:n:f:t:c:p:o:a:m:u:k:l:d:r:y:h";
+    const char* const short_options = "b:e:i:w:n:f:t:c:p:o:a:m:u:k:l:d:r:y:xh";
 #else
-    const char* const short_options = "b:e:i:w:n:f:t:c:p:o:k:l:d:r:y:h";
+    const char* const short_options = "b:e:i:w:n:f:t:c:p:o:k:l:d:r:y:xh";
 #endif
 
     struct option getopt_options[] = {
-        { "backend", required_argument, 0, 'b' },
-        { "loop", required_argument, 0, 'e' },
-        { "iters", required_argument, 0, 'i' },
-        { "warmup_iters", required_argument, 0, 'w' },
-        { "buf_count", required_argument, 0, 'n' },
-        { "min_elem_count", required_argument, 0, 'f' },
-        { "max_elem_count", required_argument, 0, 't' },
-        { "elem_counts", required_argument, 0, 'y' },
-        { "check", required_argument, 0, 'c' },
-        { "cache", required_argument, 0, 'p' },
-    /*{ "v2i_ratio", required_argument, 0, 'v' },*/
+        { "backend", required_argument, nullptr, 'b' },
+        { "loop", required_argument, nullptr, 'e' },
+        { "iters", required_argument, nullptr, 'i' },
+        { "warmup_iters", required_argument, nullptr, 'w' },
+        { "buf_count", required_argument, nullptr, 'n' },
+        { "min_elem_count", required_argument, nullptr, 'f' },
+        { "max_elem_count", required_argument, nullptr, 't' },
+        { "elem_counts", required_argument, nullptr, 'y' },
+        { "check", required_argument, nullptr, 'c' },
+        { "cache", required_argument, nullptr, 'p' },
+    /*{ "v2i_ratio", required_argument, nullptr, 'v' },*/
 #ifdef CCL_ENABLE_SYCL
-        { "sycl_dev_type", required_argument, 0, 'a' },
-        { "sycl_mem_type", required_argument, 0, 'm' },
-        { "sycl_usm_type", required_argument, 0, 'u' },
+        { "sycl_dev_type", required_argument, nullptr, 'a' },
+        { "sycl_mem_type", required_argument, nullptr, 'm' },
+        { "sycl_usm_type", required_argument, nullptr, 'u' },
 #endif
-        { "ranks_per_proc", required_argument, 0, 'k' },
-        { "coll", required_argument, 0, 'l' },
-        { "dtype", required_argument, 0, 'd' },
-        { "reduction", required_argument, 0, 'r' },
-        { "csv_filepath", required_argument, 0, 'o' },
-        { "help", no_argument, 0, 'h' },
-        { 0, 0, 0, 0 } // required at end of array.
+        { "ranks_per_proc", required_argument, nullptr, 'k' },
+        { "coll", required_argument, nullptr, 'l' },
+        { "dtype", required_argument, nullptr, 'd' },
+        { "reduction", required_argument, nullptr, 'r' },
+        { "csv_filepath", required_argument, nullptr, 'o' },
+        { "ext", no_argument, nullptr, 'x' },
+        { "help", no_argument, nullptr, 'h' },
+        { nullptr, 0, nullptr, 0 } // required at end of array.
     };
 
-    while ((ch = getopt_long(argc, argv, short_options, getopt_options, NULL)) != -1) {
+    while ((ch = getopt_long(argc, argv, short_options, getopt_options, nullptr)) != -1) {
         switch (ch) {
             case 'b':
                 if (set_backend(optarg, options.backend)) {
@@ -596,6 +624,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
                 should_parse_reductions = true;
                 break;
             case 'o': options.csv_filepath = std::string(optarg); break;
+            case 'x': options.show_additional_info = true; break;
             case 'h': return -1;
             default:
                 PRINT("failed to parse unknown option");

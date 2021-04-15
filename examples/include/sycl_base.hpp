@@ -123,7 +123,8 @@ inline std::vector<sycl::device> create_sycl_gpu_devices() {
     auto plaform_list = sycl::platform::get_platforms();
     auto preferred_platform_name = get_preferred_gpu_platform_name();
 
-    cout << "preferred platform: [" << preferred_platform_name << "]\n";
+    std::stringstream ss;
+    ss << "preferred platform: [" << preferred_platform_name << "]\n";
 
     for (const auto& platform : plaform_list) {
         auto platform_name = platform.get_info<sycl::info::platform::name>();
@@ -131,7 +132,7 @@ inline std::vector<sycl::device> create_sycl_gpu_devices() {
         if (platform_name.compare(preferred_platform_name) != 0)
             continue;
 
-        cout << "platform: [" << platform_name << "]\n";
+        ss << "platform: [" << platform_name << "]\n";
 
         auto device_list = platform.get_devices();
 
@@ -139,7 +140,7 @@ inline std::vector<sycl::device> create_sycl_gpu_devices() {
             auto device_name = device.get_info<cl::sycl::info::device::name>();
 
             if (!device.is_gpu()) {
-                cout << dev_prefix << "device [" << device_name << "] is not GPU, skipping\n";
+                ss << dev_prefix << "device [" << device_name << "] is not GPU, skipping\n";
                 continue;
             }
 
@@ -149,9 +150,9 @@ inline std::vector<sycl::device> create_sycl_gpu_devices() {
                           part_props.end(),
                           info::partition_property::partition_by_affinity_domain) ==
                 part_props.end()) {
-                cout << dev_prefix << "device [" << device_name
-                     << "] does not support partition by affinity domain"
-                     << ", use root device\n";
+                ss << dev_prefix << "device [" << device_name
+                   << "] does not support partition by affinity domain"
+                   << ", use root device\n";
                 result.push_back(device);
                 continue;
             }
@@ -163,16 +164,16 @@ inline std::vector<sycl::device> create_sycl_gpu_devices() {
                           part_affinity_domains.end(),
                           info::partition_affinity_domain::next_partitionable) ==
                 part_affinity_domains.end()) {
-                cout << dev_prefix << "device [" << device_name
-                     << "] does not support next_partitionable affinity domain"
-                     << ", use root device\n";
+                ss << dev_prefix << "device [" << device_name
+                   << "] does not support next_partitionable affinity domain"
+                   << ", use root device\n";
                 result.push_back(device);
                 continue;
             }
 
-            cout << dev_prefix << "device [" << device_name << "] should provide "
-                 << device.template get_info<info::device::partition_max_sub_devices>()
-                 << " sub-devices\n";
+            ss << dev_prefix << "device [" << device_name << "] should provide "
+               << device.template get_info<info::device::partition_max_sub_devices>()
+               << " sub-devices\n";
 
             auto sub_devices =
                 device.create_sub_devices<info::partition_property::partition_by_affinity_domain>(
@@ -180,19 +181,19 @@ inline std::vector<sycl::device> create_sycl_gpu_devices() {
 
             if (sub_devices.empty()) {
                 /* TODO: remove when SYCL/L0 sub-devices will be supported */
-                cout << dev_prefix << "device [" << device_name << "] does not provide sub-devices"
-                     << ", use root device\n";
+                ss << dev_prefix << "device [" << device_name << "] does not provide sub-devices"
+                   << ", use root device\n";
                 result.push_back(device);
                 continue;
             }
 
-            cout << dev_prefix << "device [" << device_name << "] provides " << sub_devices.size()
-                 << " sub-devices\n";
+            ss << dev_prefix << "device [" << device_name << "] provides " << sub_devices.size()
+               << " sub-devices\n";
             result.insert(result.end(), sub_devices.begin(), sub_devices.end());
 
             for (auto idx = 0; idx < sub_devices.size(); idx++) {
-                cout << sub_dev_prefix << "sub-device " << idx << ": ["
-                     << sub_devices[idx].get_info<cl::sycl::info::device::name>() << "]\n";
+                ss << sub_dev_prefix << "sub-device " << idx << ": ["
+                   << sub_devices[idx].get_info<cl::sycl::info::device::name>() << "]\n";
             }
         }
     }
@@ -201,7 +202,8 @@ inline std::vector<sycl::device> create_sycl_gpu_devices() {
         throw std::runtime_error("no GPU devices found");
     }
 
-    cout << "found: " << result.size() << " GPU device(s)\n";
+    ss << "found: " << result.size() << " GPU device(s)\n";
+    printf("%s", ss.str().c_str());
 
     return result;
 }

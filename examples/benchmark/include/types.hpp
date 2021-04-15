@@ -111,6 +111,7 @@ typedef struct user_options_t {
     bool min_elem_count_set;
     bool max_elem_count_set;
     bool elem_counts_set;
+    bool show_additional_info;
 
     user_options_t() {
         backend = DEFAULT_BACKEND;
@@ -138,6 +139,7 @@ typedef struct user_options_t {
         min_elem_count_set = false;
         max_elem_count_set = false;
         elem_counts_set = false;
+        show_additional_info = false;
     }
 } user_options_t;
 
