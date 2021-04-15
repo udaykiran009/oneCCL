@@ -90,8 +90,17 @@ void alloc_and_fill_bcast_buffers(Object obj,
     std::vector<DType> send_values = get_initial_send_values<DType>(elem_count);
     std::vector<DType> recv_values(elem_count, 0);
 
+    obj->output << "Number of elements to test: " << elem_count << std::endl;
+
+    // As we work with different memory based on the rank(root/non-root) append out check data
+    // to each of them
+    append_out_of_bound_check_data(send_values);
+    append_out_of_bound_check_data(recv_values);
+
     for (size_t rank = 0; rank < devs.size(); rank++) {
-        auto buf = devs[rank]->template alloc_memory<DType>(elem_count, sizeof(DType), ctx);
+        size_t mem_size = (rank == root) ? send_values.size() : recv_values.size();
+
+        auto buf = devs[rank]->template alloc_memory<DType>(mem_size, sizeof(DType), ctx);
 
         if (rank == root) {
             buf.enqueue_write_sync(send_values);
@@ -112,9 +121,17 @@ void check_bcast_buffers(Object obj, size_t elem_count) {
     std::stringstream ss;
     std::vector<DType> expected_buf = get_initial_send_values<DType>(elem_count);
 
+    print_recv_data(obj, elem_count, 0);
+
     for (size_t rank = 0; rank < obj->get_comm_size(); rank++) {
         ss << "\ncheck buffer for rank: " << rank;
-        auto res = compare_buffers(expected_buf, obj->get_memory(rank, 0), ss);
+
+        auto mem = obj->get_memory(rank, 0);
+
+        auto p = check_out_of_bound_data(mem, elem_count, rank);
+        UT_ASSERT_OBJ(p.first, obj, p.second);
+
+        auto res = compare_buffers(expected_buf, mem, ss);
         UT_ASSERT_OBJ(res, obj, ss.str());
     }
 }

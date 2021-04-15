@@ -75,7 +75,7 @@ public:
                   get_ctx())),
               recv_counts_buf(parent_communicator->get_device()
                                   .template alloc_memory<recv_counts_typed_entry_type>(
-                                      send_count,
+                                      comm_addr.size,
                                       sizeof(recv_counts_typed_entry_type),
                                       get_ctx())),
 

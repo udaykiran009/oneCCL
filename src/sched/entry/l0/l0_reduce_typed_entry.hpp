@@ -62,7 +62,8 @@ public:
               temp_buffer(this->template alloc_memory_wrap(
                   typename ring::reduce::tmp_recv_buf_arg<uint8_t>{},
                   parent_communicator,
-                  cnt * ccl::get_datatype_size(params.get_datatype()),
+                  ring_reduce_tmp_buffer_size(cnt, comm_addr.size) *
+                      ccl::get_datatype_size(params.get_datatype()),
                   get_ctx())),
               income_data_flag(
                   this->template alloc_memory_wrap(typename ring::reduce::income_data_flag_arg{},

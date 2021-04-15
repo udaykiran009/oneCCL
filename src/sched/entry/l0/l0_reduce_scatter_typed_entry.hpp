@@ -4,6 +4,8 @@
 
 #include "sched/entry/l0/l0_entry.hpp"
 
+#include "kernels/shared.h"
+
 //TODO L0 Workaround
 
 namespace native {
@@ -61,7 +63,8 @@ public:
               temp_buffer(this->template alloc_memory_wrap(
                   typename ring::reduce_scatter::tmp_recv_buf_arg<uint8_t>{},
                   parent_communicator,
-                  cnt * ccl::get_datatype_size(params.get_datatype()),
+                  ring_reduce_scatter_tmp_buffer_size(cnt, base::comm_addr.size) *
+                      ccl::get_datatype_size(params.get_datatype()),
                   get_ctx())),
               income_data_flag(this->template alloc_memory_wrap(
                   typename ring::reduce_scatter::income_data_flag_arg{},

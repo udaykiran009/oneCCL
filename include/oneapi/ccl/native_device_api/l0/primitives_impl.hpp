@@ -124,7 +124,7 @@ void memory<TEMPLATE_DEF_ARG>::enqueue_write_sync(const elem_t* src, size_t src_
         throw std::length_error(
             std::string(__PRETTY_FUNCTION__) +
             "\nCannot process 'enqueue_write_sync', because memory has not enough size" +
-            ", expected: " + std::to_string(count()) +
+            ", expected: " + std::to_string(size()) +
             ", requested: " + std::to_string(src_elem_count * sizeof(elem_t)));
     }
 

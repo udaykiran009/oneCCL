@@ -1,4 +1,5 @@
 #include "common.h"
+#include "shared.h"
 
 /**
  * @param left_wrote_to_me_flag  - located in the memory of the current kernel, left rank uses a pointer to it to notify that he has sent some data.
@@ -57,7 +58,7 @@
         WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
         work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
-        for (size_t i = 0; i < segment_size; i += work_group_size) { \
+        for (size_t i = 0; thread_id + i < segment_size; i += work_group_size) { \
             right_output_buffer[thread_id + i + segment_offset] = input_buffer[thread_id + i]; \
         } \
         work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
@@ -82,7 +83,7 @@
             WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
             work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
-            for (size_t i = 0; i < segment_size; i += work_group_size) { \
+            for (size_t i = 0; thread_id + i < segment_size; i += work_group_size) { \
                 right_output_buffer[thread_id + i + segment_offset] = \
                     output_buffer[thread_id + i + segment_offset]; \
             } \
@@ -99,7 +100,7 @@
         segment_size = recv_elem_counts[work_rank] / VecSize; \
         segment_offset = recv_elem_offsets[work_rank] / VecSize; \
 \
-        for (size_t i = 0; i < segment_size; i += work_group_size) { \
+        for (size_t i = 0; thread_id + i < segment_size; i += work_group_size) { \
             output_buffer[thread_id + i + segment_offset] = input_buffer[thread_id + i]; \
         } \
         barrier(CLK_GLOBAL_MEM_FENCE); \
@@ -107,15 +108,17 @@
         DEBUG_BLOCK(printf("kernel %d.%d completed\n", my_rank, thread_id)); \
     }
 
-DEFINE_KERNEL(int8, char4, 4)
-DEFINE_KERNEL(uint8, uchar4, 4)
-DEFINE_KERNEL(int16, short4, 4)
-DEFINE_KERNEL(uint16, ushort4, 4)
-DEFINE_KERNEL(int32, int4, 4)
-DEFINE_KERNEL(uint32, uint4, 4)
-DEFINE_KERNEL(int64, long4, 4)
-DEFINE_KERNEL(uint64, ulong4, 4)
-DEFINE_KERNEL(float16, half, 1)
-DEFINE_KERNEL(float32, float4, 4)
-DEFINE_KERNEL(float64, double4, 4)
-DEFINE_KERNEL(bfloat16, ushort, 1)
+#define VEC_SIZE RING_ALLGATHERV_VEC_SIZE
+
+DEFINE_KERNEL(int8, char, VEC_SIZE)
+DEFINE_KERNEL(uint8, uchar, VEC_SIZE)
+DEFINE_KERNEL(int16, short, VEC_SIZE)
+DEFINE_KERNEL(uint16, ushort, VEC_SIZE)
+DEFINE_KERNEL(int32, int, VEC_SIZE)
+DEFINE_KERNEL(uint32, uint, VEC_SIZE)
+DEFINE_KERNEL(int64, long, VEC_SIZE)
+DEFINE_KERNEL(uint64, ulong, VEC_SIZE)
+DEFINE_KERNEL(float16, half, VEC_SIZE)
+DEFINE_KERNEL(float32, float, VEC_SIZE)
+DEFINE_KERNEL(float64, double, VEC_SIZE)
+DEFINE_KERNEL(bfloat16, ushort, VEC_SIZE)

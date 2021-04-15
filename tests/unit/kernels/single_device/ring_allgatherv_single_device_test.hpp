@@ -33,19 +33,14 @@ TYPED_TEST(ring_allgatherv_single_process_fixture, ring_allgatherv_single_device
 
     // test case data
     const size_t comm_size = devices.size();
-    const size_t send_buffer_base_size = 128;
+    const size_t send_buffer_base_size = get_from_env_or("UT_KERNEL_BUF_SIZE", 128);
+    ;
     const size_t recv_buffer_size = send_buffer_base_size * (comm_size / 2) * (1 + comm_size);
     constexpr size_t comm_group_count = 3;
     constexpr size_t mem_group_count = 2;
     constexpr size_t flag_group_count = 2;
 
     std::map<size_t, std::vector<ccl_device::device_memory<size_t>>> comm_param_mem_storage;
-
-    // device memory stencil data
-    std::vector<native_type> send_values(recv_buffer_size);
-    std::iota(send_values.begin(), send_values.end(), 1);
-
-    std::vector<native_type> recv_values(recv_buffer_size, 0);
 
     std::vector<size_t> recv_counts(comm_size, 0);
     std::vector<size_t> recv_offsets(comm_size, 0);
@@ -54,6 +49,9 @@ TYPED_TEST(ring_allgatherv_single_process_fixture, ring_allgatherv_single_device
         if (idx > 0)
             recv_offsets[idx] += recv_offsets[idx - 1] + recv_counts[idx - 1];
     }
+
+    this->output << "Number of elements to test, send: " << send_buffer_base_size
+                 << ", total recv: " << recv_buffer_size << std::endl;
 
     alloc_and_fill_allgatherv_buffers<native_type>(this, recv_counts, recv_offsets, devices, ctx);
 

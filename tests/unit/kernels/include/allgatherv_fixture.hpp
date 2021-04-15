@@ -68,14 +68,16 @@ void alloc_and_fill_allgatherv_buffers(
     std::vector<DType> send_values = get_initial_send_values<DType>(total_recv_count);
     std::vector<DType> recv_values(total_recv_count, 0);
 
+    append_out_of_bound_check_data(recv_values);
+
     for (size_t rank = 0; rank < devs.size(); rank++) {
         size_t send_count = recv_counts[rank];
         auto send_buf = devs[rank]->template alloc_memory<DType>(send_count, sizeof(DType), ctx);
         auto recv_buf =
-            devs[rank]->template alloc_memory<DType>(total_recv_count, sizeof(DType), ctx);
+            devs[rank]->template alloc_memory<DType>(recv_values.size(), sizeof(DType), ctx);
         send_buf.enqueue_write_sync(send_values.begin() + recv_offsets[rank],
                                     send_values.begin() + recv_offsets[rank] + send_count);
-        recv_buf.enqueue_write_sync(recv_values.begin(), recv_values.begin() + total_recv_count);
+        recv_buf.enqueue_write_sync(recv_values);
 
         if (with_ipc)
             obj->template register_ipc_memories_data<DType>(ctx, rank, &recv_buf);
@@ -90,9 +92,16 @@ void check_allgatherv_buffers(Object obj, std::vector<size_t> recv_counts) {
     size_t total_recv_count = std::accumulate(recv_counts.begin(), recv_counts.end(), 0);
     std::vector<DType> expected_buf = get_initial_send_values<DType>(total_recv_count);
 
+    print_recv_data(obj, total_recv_count, 0);
+
     for (size_t rank = 0; rank < obj->get_comm_size(); rank++) {
+        auto mem = obj->get_memory(rank, 1);
+
+        auto p = check_out_of_bound_data(mem, total_recv_count, rank);
+        UT_ASSERT_OBJ(p.first, obj, p.second);
+
         ss << "\ncheck recv buffer for rank: " << rank;
-        auto res = compare_buffers(expected_buf, obj->get_memory(rank, 1), ss);
+        auto res = compare_buffers(expected_buf, mem, ss);
         UT_ASSERT_OBJ(res, obj, ss.str());
     }
 }

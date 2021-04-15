@@ -37,7 +37,7 @@ TYPED_TEST(ring_reduce_scatter_single_process_fixture, ring_reduce_scatter_singl
 
     // test case data
     const size_t comm_size = devices.size();
-    const size_t recv_buffer_size = 128;
+    const size_t recv_buffer_size = get_from_env_or("UT_KERNEL_BUF_SIZE", 128);
     constexpr size_t comm_group_count = 3;
     constexpr size_t mem_group_count = 3;
     constexpr size_t flag_group_count = 3;

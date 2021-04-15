@@ -68,8 +68,14 @@ void alloc_and_fill_reduce_scatter_buffers(
     size_t comm_size = devs.size();
     size_t send_elem_count = comm_size * recv_elem_count;
 
+    obj->output << "Number of elements to test: " << recv_elem_count << std::endl;
+
     std::vector<DType> send_values = get_initial_send_values<DType>(send_elem_count);
     std::vector<DType> recv_values(recv_elem_count, 0);
+    auto tmp_values = get_temp_buffer_vec<DType>(
+        test_coll_type::reduce_scatter, recv_elem_count, obj->get_comm_size());
+
+    append_out_of_bound_check_data(recv_values, tmp_values);
 
     ze_device_mem_alloc_desc_t mem_uncached_descr{
         .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
@@ -82,12 +88,13 @@ void alloc_and_fill_reduce_scatter_buffers(
         auto send_buf =
             devs[rank]->template alloc_memory<DType>(send_elem_count, sizeof(DType), ctx);
         auto recv_buf =
-            devs[rank]->template alloc_memory<DType>(recv_elem_count, sizeof(DType), ctx);
+            devs[rank]->template alloc_memory<DType>(recv_values.size(), sizeof(DType), ctx);
         auto temp_buf = devs[rank]->template alloc_memory<DType>(
-            2 * recv_elem_count, sizeof(DType), ctx, mem_uncached_descr);
+            tmp_values.size(), sizeof(DType), ctx, mem_uncached_descr);
 
         send_buf.enqueue_write_sync(send_values);
         recv_buf.enqueue_write_sync(recv_values);
+        temp_buf.enqueue_write_sync(tmp_values);
 
         if (with_ipc)
             obj->template register_ipc_memories_data<DType>(ctx, rank, &recv_buf, &temp_buf);
@@ -113,11 +120,20 @@ void check_reduce_scatter_buffers(Object obj, size_t recv_elem_count) {
         expected_buf[idx] = expected;
     }
 
+    print_recv_data(obj, recv_elem_count, /* recv_mem idx */ 1);
+
     for (size_t rank = 0; rank < obj->get_comm_size(); rank++) {
         ss << "\ncheck recv buffer for rank: " << rank;
         std::vector<DType> expected_chunk(expected_buf.begin() + rank * recv_elem_count,
                                           expected_buf.begin() + (rank + 1) * recv_elem_count);
-        auto res = compare_buffers(expected_chunk, obj->get_memory(rank, 1), ss);
+
+        auto recv_mem = obj->get_memory(rank, 1);
+        auto tmp_mem = obj->get_memory(rank, 2);
+
+        auto p = check_out_of_bound_data(recv_mem, recv_elem_count, rank, tmp_mem);
+        UT_ASSERT_OBJ(p.first, obj, p.second);
+
+        auto res = compare_buffers(expected_chunk, recv_mem, ss);
         UT_ASSERT_OBJ(res, obj, ss.str());
     }
 }

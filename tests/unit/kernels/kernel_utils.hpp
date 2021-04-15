@@ -21,6 +21,8 @@
 
 #include "export_configuration.hpp"
 
+#include "kernels/shared.h"
+
 class check_on_exception : public std::exception {
     std::string m_msg;
 
@@ -553,3 +555,114 @@ struct ipc_client_handles_storage {
         return restored_handles;
     }
 };
+
+// Custom enum in order not to bring additional dependencies
+enum class test_coll_type { allgatherv, allreduce, alltoallv, bcast, reduce, reduce_scatter };
+
+template <class T>
+std::vector<T> get_temp_buffer_vec(test_coll_type coll_type, size_t elem_count, size_t comm_size) {
+    auto get_size = [coll_type, elem_count, comm_size]() {
+        switch (coll_type) {
+            case test_coll_type::allreduce:
+                return ring_allreduce_get_tmp_buffer_size(elem_count, comm_size);
+            case test_coll_type::reduce: return ring_reduce_tmp_buffer_size(elem_count, comm_size);
+            case test_coll_type::reduce_scatter:
+                return ring_reduce_scatter_tmp_buffer_size(elem_count, comm_size);
+            case test_coll_type::alltoallv: // TODO
+            default: throw std::runtime_error("Unsupported collective");
+        }
+    };
+
+    return std::vector<T>(get_size(), 0);
+}
+
+static constexpr size_t out_of_bound_data_size = 128;
+
+// NOTE: these functions(append and check) must be either called together or not called at all as one check functions
+// depends on the changes from append function
+template <class T>
+void append_out_of_bound_check_data(std::vector<T>& recv_values, std::vector<T>& tmp_values) {
+    // Fill recv_values and tmp_values with a predefined set of numbers, when the kernel is finished we check
+    // whether some of these numbers have changed. This way we can identify out of bound writes performed by
+    // GPU on recv and tmp buffers. This is really helpful to identify bug in our kernel since otherwise they
+    // will be hidden as the drivers usually allocates more memory than requested, but this is not always the case
+    for (size_t i = 0; i < out_of_bound_data_size; ++i) {
+        recv_values.push_back(i + 1);
+
+        // Append tmp_values only in case the kernel actually use them, otherwise we just provide here empty vector
+        if (tmp_values.size() > 0) {
+            // Make values distinct from recv_values just in case
+            tmp_values.push_back(2 * (i + 1));
+        }
+    }
+}
+
+// Overload for kernels that don't use tmp memory
+template <class T>
+void append_out_of_bound_check_data(std::vector<T>& recv_values) {
+    std::vector<T> dummy_tmp = {};
+
+    append_out_of_bound_check_data(recv_values, dummy_tmp);
+}
+
+template <class T>
+std::pair<bool, std::string> check_out_of_bound_data(std::vector<T>& recv_mem,
+                                                     size_t elem_count,
+                                                     size_t rank,
+                                                     const std::vector<T>& tmp_mem = {}) {
+    std::stringstream ss;
+    // Before comparing expected and received values make sure that
+    // we didn't have any out of bound writes on recv memory(i.e. make sure that
+    // our additional bytes at the end that we added hasn't been changed by the kernel)
+    for (size_t i = 0; i < out_of_bound_data_size; ++i) {
+        if (recv_mem[elem_count + i] != static_cast<T>(i + 1)) {
+            ss << "\nvalidation check failed for recv for rank: " << rank;
+            ss << "\ncheck value is changed at: " << (elem_count + i);
+            return { false, ss.str() };
+        }
+    }
+
+    // Remove our additional elements from the vector to do regular check in compare_buffers, we don't
+    // need them anymore
+    for (size_t i = 0; i < out_of_bound_data_size; ++i)
+        recv_mem.pop_back();
+
+    // tmp memory is not used, return
+    if (tmp_mem.size() == 0)
+        return { true, "" };
+
+    const size_t tmp_buffer_size = tmp_mem.size() - out_of_bound_data_size;
+
+    // Do a similar check for tmp_buffer
+    for (size_t i = 0; i < out_of_bound_data_size; ++i) {
+        if (tmp_mem[tmp_buffer_size + i] != static_cast<T>(2 * (i + 1))) {
+            ss << "\nvalidation check failed for tmp_buf for rank: " << rank;
+            ss << "\ncheck value is changed at: " << (tmp_buffer_size + i);
+            return { false, ss.str() };
+        }
+    }
+
+    return { true, "" };
+}
+
+template <class Obj>
+void print_recv_data(Obj* obj, size_t elem_count, size_t mem_idx) {
+    /* Additional printout for debug purpose: unconditionally print the recv buffer we've got
+       from the GPU */
+    if (std::getenv("UT_DEBUG_OUTPUT") != nullptr) {
+        std::stringstream out;
+
+        for (size_t rank = 0; rank < obj->get_comm_size(); ++rank) {
+            out << "Got from rank " << rank << " :";
+            auto recv_mem = obj->get_memory(rank, mem_idx);
+
+            for (auto it = recv_mem.begin(); it != recv_mem.begin() + elem_count; ++it) {
+                out << *it << " ";
+            }
+
+            out << "\n\n";
+        }
+
+        std::cout << out.str();
+    }
+}

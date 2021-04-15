@@ -1,4 +1,5 @@
 #include "common.h"
+#include "shared.h"
 
 /**
  * @param left_wrote_to_me_flag  - located in the memory of the current kernel, left rank uses a pointer to it to notify that he has sent some data.
@@ -67,7 +68,7 @@
         */ \
             WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
             work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
-            for (size_t i = 0; i < segment_count; i++) { \
+            for (size_t i = 0; thread_id + i < elems_count; i += work_group_size) { \
                 DEBUG_BLOCK(printf("kernel %d.%d, phase 2. -- temp[%zu] = " FORMAT##_##T \
                                    " this[%zu] = " FORMAT##_##T "\n", \
                                    my_rank, \
@@ -76,9 +77,8 @@
                                    ELEMENTS##_##VecSize(tmp_buffer[thread_id + i]), \
                                    i + thread_id, \
                                    ELEMENTS##_##VecSize(input_buffer[i + thread_id]))); \
-                output_buffer[work_group_size * i + thread_id] = \
-                    Op(input_buffer[work_group_size * i + thread_id], \
-                       tmp_buffer[work_group_size * i + thread_id]); \
+                output_buffer[i + thread_id] = \
+                    Op(input_buffer[i + thread_id], tmp_buffer[i + thread_id]); \
             } \
             barrier(CLK_GLOBAL_MEM_FENCE); \
         } \
@@ -86,9 +86,8 @@
             WAIT_SIGNAL_TO_SEND(right_ready_to_recv_flag, can_send_sync_count); \
             work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
-            for (size_t i = 0; i < segment_count; i++) { \
-                right_temp_buffer[work_group_size * i + thread_id] = \
-                    input_buffer[work_group_size * i + thread_id]; \
+            for (size_t i = 0; thread_id + i < elems_count; i += work_group_size) { \
+                right_temp_buffer[i + thread_id] = input_buffer[i + thread_id]; \
             } \
 \
             barrier(CLK_GLOBAL_MEM_FENCE); \
@@ -108,10 +107,9 @@
             WAIT_INPUT_DATA(left_wrote_to_me_flag, ready_to_recv_sync_count); \
             work_group_barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE); \
 \
-            for (size_t i = 0; i < segment_count; i++) { \
-                right_temp_buffer[work_group_size * i + thread_id] = \
-                    Op(tmp_buffer[work_group_size * i + thread_id], \
-                       input_buffer[work_group_size * i + thread_id]); \
+            for (size_t i = 0; thread_id + i < elems_count; i += work_group_size) { \
+                right_temp_buffer[i + thread_id] = \
+                    Op(tmp_buffer[i + thread_id], input_buffer[i + thread_id]); \
             } \
 \
             barrier(CLK_GLOBAL_MEM_FENCE); \
@@ -121,30 +119,32 @@
         DEBUG_BLOCK(printf("kernel %d.%d completed\n", my_rank, thread_id)); \
     }
 
+#define VEC_SIZE RING_REDUCE_VEC_SIZE
+
 // Macro to define kernels for a specific operation for all the supported types.
 // Note: for op function we use convention __<OpName>_<type>, where type is the actual type(e.g. int4, float)
 #define DEFINE_KERNELS_WITH_OP(OpName) \
-    DEFINE_KERNEL(int8, char4, 4, __##OpName##_##char4, OpName) \
-    DEFINE_KERNEL(uint8, uchar4, 4, __##OpName##_##uchar4, OpName) \
+    DEFINE_KERNEL(int8, char, VEC_SIZE, __##OpName##_##char, OpName) \
+    DEFINE_KERNEL(uint8, uchar, VEC_SIZE, __##OpName##_##uchar, OpName) \
 \
-    DEFINE_KERNEL(int16, short4, 4, __##OpName##_##short4, OpName) \
-    DEFINE_KERNEL(uint16, ushort4, 4, __##OpName##_##ushort4, OpName) \
+    DEFINE_KERNEL(int16, short, VEC_SIZE, __##OpName##_##short, OpName) \
+    DEFINE_KERNEL(uint16, ushort, VEC_SIZE, __##OpName##_##ushort, OpName) \
 \
-    DEFINE_KERNEL(int32, int4, 4, __##OpName##_##int4, OpName) \
-    DEFINE_KERNEL(uint32, uint4, 4, __##OpName##_##uint4, OpName) \
+    DEFINE_KERNEL(int32, int, VEC_SIZE, __##OpName##_##int, OpName) \
+    DEFINE_KERNEL(uint32, uint, VEC_SIZE, __##OpName##_##uint, OpName) \
 \
-    DEFINE_KERNEL(int64, long4, 4, __##OpName##_##long4, OpName) \
-    DEFINE_KERNEL(uint64, ulong4, 4, __##OpName##_##ulong4, OpName) \
+    DEFINE_KERNEL(int64, long, VEC_SIZE, __##OpName##_##long, OpName) \
+    DEFINE_KERNEL(uint64, ulong, VEC_SIZE, __##OpName##_##ulong, OpName) \
 \
-    DEFINE_KERNEL(float32, float4, 4, __##OpName##_##float4, OpName) \
-    DEFINE_KERNEL(float64, double4, 4, __##OpName##_##double4, OpName)
+    DEFINE_KERNEL(float32, float, VEC_SIZE, __##OpName##_##float, OpName) \
+    DEFINE_KERNEL(float64, double, VEC_SIZE, __##OpName##_##double, OpName)
 
 #define DEFINE_KERNELS_WITH_BF16OP(OpName) \
-    DEFINE_KERNEL(bfloat16, ushort, 1, __bf16_##OpName##_##ushort, OpName)
+    DEFINE_KERNEL(bfloat16, ushort, VEC_SIZE, __bf16_##OpName##_##ushort, OpName)
 
 #define DEFINE_KERNELS_WITH_LP_OP(OpName) \
-    DEFINE_KERNEL(bfloat16, ushort, 1, __bf16_##OpName##_##ushort, OpName) \
-    DEFINE_KERNEL(float16, half, 1, __##OpName##_##half, OpName)
+    DEFINE_KERNEL(bfloat16, ushort, VEC_SIZE, __bf16_##OpName##_##ushort, OpName) \
+    DEFINE_KERNEL(float16, half, VEC_SIZE, __##OpName##_##half, OpName)
 
 #define DEFINE_OPS(T) \
     DEFINE_SUM_OP(T) \
@@ -165,17 +165,17 @@
     DEFINE_FP16MAX_OP(T)
 
 // Define Op function for each supported type(use vector types for some of them as required by the kernel)
-DEFINE_OPS(char4)
-DEFINE_OPS(uchar4)
-DEFINE_OPS(short4)
-DEFINE_OPS(ushort4)
-DEFINE_OPS(int4)
-DEFINE_OPS(uint4)
-DEFINE_OPS(long4)
-DEFINE_OPS(ulong4)
+DEFINE_OPS(char)
+DEFINE_OPS(uchar)
+DEFINE_OPS(short)
+DEFINE_OPS(ushort)
+DEFINE_OPS(int)
+DEFINE_OPS(uint)
+DEFINE_OPS(long)
+DEFINE_OPS(ulong)
 DEFINE_FP16OPS(half)
-DEFINE_OPS(float4)
-DEFINE_OPS(double4)
+DEFINE_OPS(float)
+DEFINE_OPS(double)
 DEFINE_BF16OPS(ushort)
 
 // Define the actual kernels

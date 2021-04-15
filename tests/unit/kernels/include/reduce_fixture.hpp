@@ -65,8 +65,11 @@ void alloc_and_fill_reduce_buffers(Object obj,
                                    bool with_ipc = false) {
     std::vector<DType> send_values = get_initial_send_values<DType>(elem_count);
     std::vector<DType> recv_values(elem_count, 0);
-
     size_t comm_size = devs.size();
+
+    auto tmp_values = get_temp_buffer_vec<DType>(test_coll_type::reduce, elem_count, comm_size);
+
+    append_out_of_bound_check_data(recv_values, tmp_values);
 
     ze_device_mem_alloc_desc_t mem_uncached_descr{
         .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
@@ -77,12 +80,14 @@ void alloc_and_fill_reduce_buffers(Object obj,
 
     for (size_t rank = 0; rank < devs.size(); rank++) {
         auto send_buf = devs[rank]->template alloc_memory<DType>(elem_count, sizeof(DType), ctx);
-        auto recv_buf = devs[rank]->template alloc_memory<DType>(elem_count, sizeof(DType), ctx);
+        auto recv_buf =
+            devs[rank]->template alloc_memory<DType>(recv_values.size(), sizeof(DType), ctx);
         auto temp_buf = devs[rank]->template alloc_memory<DType>(
-            elem_count / comm_size, sizeof(DType), ctx, mem_uncached_descr);
+            tmp_values.size(), sizeof(DType), ctx, mem_uncached_descr);
 
         send_buf.enqueue_write_sync(send_values);
         recv_buf.enqueue_write_sync(recv_values);
+        temp_buf.enqueue_write_sync(tmp_values);
 
         if (with_ipc)
             obj->template register_ipc_memories_data<DType>(ctx, rank, &recv_buf, &temp_buf);
@@ -109,11 +114,18 @@ void check_reduce_buffers(Object obj, size_t elem_count, size_t root) {
         root_expected_buf[idx] = expected;
     }
 
+    print_recv_data(obj, elem_count, /* recv_mem idx */ 1);
+
     for (size_t rank = 0; rank < obj->get_comm_size(); rank++) {
+        auto recv_mem = obj->get_memory(rank, 1);
+        auto tmp_mem = obj->get_memory(rank, 2);
+
+        auto p = check_out_of_bound_data(recv_mem, elem_count, rank, tmp_mem);
+        UT_ASSERT_OBJ(p.first, obj, p.second);
+
         ss << "\ncheck recv buffer for rank: " << rank;
-        auto res = compare_buffers((rank == root) ? root_expected_buf : nonroot_expected_buf,
-                                   obj->get_memory(rank, 1),
-                                   ss);
+        auto res = compare_buffers(
+            (rank == root) ? root_expected_buf : nonroot_expected_buf, recv_mem, ss);
         UT_ASSERT_OBJ(res, obj, ss.str());
     }
 }
