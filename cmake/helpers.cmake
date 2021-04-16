@@ -233,7 +233,7 @@ function(activate_compute_backend MODULES_PATH COMPUTE_BACKEND)
         set (COMPUTE_BACKEND_TARGET_NAME Intel::SYCL)
         set (COMPUTE_BACKEND_TARGET_NAME Intel::SYCL PARENT_SCOPE)
     # elseif(COMPUTE_BACKEND STREQUAL "host")
-        # message ("COMPUTE_BACKEND=${COMPUTE_BACKEND} requested.")	
+        # message ("COMPUTE_BACKEND=${COMPUTE_BACKEND} requested.")
     # else()
          # message(FATAL_ERROR "Please provide one of the following compute runtime: dpcpp, level_zero, dpcpp_level_zero, host")
     endif()
@@ -243,6 +243,11 @@ function(activate_compute_backend MODULES_PATH COMPUTE_BACKEND)
                         ${COMPUTE_BACKEND_TARGET_NAME} INTERFACE_INCLUDE_DIRECTORIES)
     get_target_property(COMPUTE_BACKEND_LIBRARIES_LOCAL
                         ${COMPUTE_BACKEND_TARGET_NAME} INTERFACE_LINK_LIBRARIES)
+
+    # When we use dpcpp compiler(dpcpp/dpcpp_level_zero backends), use c++17 to be aligned with compiler
+    if (${COMPUTE_BACKEND_TARGET_NAME} MATCHES "^Intel::SYCL.*")
+        set(CMAKE_CXX_STANDARD 17 PARENT_SCOPE)
+    endif()
 
     # set output variables in the parent scope:
     # Only `COMPUTE_BACKEND_FLAGS` is actually required, because  the other flags are derived from
@@ -256,6 +261,14 @@ endfunction(activate_compute_backend)
 
 function(set_compute_backend COMMON_CMAKE_DIR)
     activate_compute_backend("${COMMON_CMAKE_DIR}" ${COMPUTE_BACKEND})
+
+    # When we use dpcpp compiler(dpcpp/dpcpp_level_zero backends), use c++17 to be aligned with compiler
+    # Although the same thing is done in activate_compute_backend we need to set the variable here as
+    # well bacause both set_compute_backend and activate_compute_backend can be called directly
+    if (${COMPUTE_BACKEND_TARGET_NAME} MATCHES "^Intel::SYCL.*")
+        set(CMAKE_CXX_STANDARD 17 PARENT_SCOPE)
+    endif()
+
     if (NOT COMPUTE_BACKEND_TARGET_NAME)
         message(FATAL_ERROR "Failed to find requested compute runtime: ${COMPUTE_BACKEND} in ${COMMON_CMAKE_DIR}")
     endif()
@@ -280,6 +293,7 @@ function(set_compute_backend COMMON_CMAKE_DIR)
     if (MULTI_GPU_SUPPORT)
         message(STATUS "Enable multi GPU support using L0")
     endif()
+
     # need to pass these variables to overlying function
     set (COMPUTE_BACKEND_TARGET_NAME ${COMPUTE_BACKEND_TARGET_NAME} PARENT_SCOPE)
     set (COMPUTE_BACKEND_FLAGS ${COMPUTE_BACKEND_FLAGS} PARENT_SCOPE)
