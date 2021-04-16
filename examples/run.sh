@@ -98,10 +98,9 @@ check_environment()
 }
 
 # global variable for several use places
-# See: MLSL-675.
-supported_kernel_colls="allgatherv,allreduce,alltoallv,bcast,reduce"
-supported_kernel_colls_with_dtypes="allreduce,reduce,allgatherv"
-kernel_colls_with_reductions="allreduce,reduce"
+# TODO: add alltoallv once it's fixed
+supported_kernel_colls="allgatherv,allreduce,bcast,reduce,reduce_scatter"
+kernel_colls_with_reductions="allreduce,reduce,reduce_scatter"
 supported_kernel_dtypes="int8,int32,float32"
 
 run_benchmark()
@@ -135,7 +134,7 @@ run_benchmark()
     base_test_log="$EXAMPLE_WORK_DIR/$dir_name/run"
     base_test_log="${base_test_log}_${transport}_${example}_b_${backend}_r_${runtime}_e_${loop}_l_${coll}_d_${dtype}_${log_idx}"
 
-    options="--min_elem_count 1 --max_elem_count 32"
+    options=""
     usm_list="none"
 
     if [ "${backend}" != "" ];
@@ -182,20 +181,22 @@ run_benchmark()
     if [ "${USE_KERNELS}" == "yes" ]
     then
         # these conditions check for benchmark with kernels
-        # coll are all there except alltoall,reduce_scatter
+        # coll are all there except alltoall
         if [ "$example" == "benchmark" ] &&   \
             [ "$backend" == "sycl" ] &&        \
             [ "$transport" == "ofi" ] &&       \
             [ "$runtime" == "level_zero" ] &&  \
             [ "$loop" == "regular" ] &&        \
-            [[ "$coll" == ${supported_kernel_colls} || "$coll" == ${supported_kernel_colls_with_dtypes} ]] && \
-            [[ "$dtype" == "float32" || "$dtype" == ${supported_kernel_dtypes} ]] && \
+            [[ "$coll" == ${supported_kernel_colls} ]] && \
+            [[ "$dtype" == ${supported_kernel_dtypes} ]] && \
             [ "$reduction" == "sum" ]
         then
             echo "set flag use_kernels"
             use_kernels=1
         fi
     fi
+    # Run kernels with arbitraty sizes that should cover all the cases
+    options="${options} -y 1,2,4,7,8,16,17,32,64,128,133,256,1077,16384,16387"
 
     for usm in $usm_list;
     do
@@ -246,18 +247,8 @@ run_benchmark()
                 options="${options} --ranks_per_proc 4"
             fi
 
-            start_size="256"
-            end_size="512"
-
-            # FIXME: for now only allreduce kernel works with all sizes, so we enable all sizes only
-            # when it's specified alone without other collectives
-            if [ $coll -eq "allreduce" ]
-            then
-                start_size="1"
-            fi
-
             echo "Running benchmark with the kernels support:"
-            final_options="${options} -n 1 -f ${start_size} -t ${end_size}"
+            final_options="${options} -n 1"
             cmd=`echo $ccl_extra_env CCL_COMM_KERNELS=1 CCL_KVS_GET_TIMEOUT=10 ./$example ${final_options}`
             echo "Running: $cmd"
             eval $cmd 2>&1 | tee ${test_log}
@@ -450,9 +441,8 @@ run()
 
                             # group of test scenarios for comm kernels
                             ccl_extra_env="${ccl_runtime_env}"
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernel_colls} float32 sum ${ranks_per_proc}
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernel_colls_with_dtypes} ${supported_kernel_dtypes} sum ${ranks_per_proc}
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${kernel_colls_with_reductions} ${supported_kernel_dtypes} sum ${ranks_per_proc}
+                            # TODO: currently benchmark supports only sum reduction, need to add support for other types and enable it here for reduction coll types
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernel_colls} ${supported_kernel_dtypes} sum ${ranks_per_proc}
 
                         done
                     done
