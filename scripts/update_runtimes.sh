@@ -10,6 +10,9 @@ INTEL_GRAPHICS_COMPILER_URL="https://api.github.com/repos/intel/intel-graphics-c
 COMPUTE_RUNTIME_URL="https://api.github.com/repos/intel/compute-runtime/releases/latest"
 LEVEL_ZERO_URL="https://api.github.com/repos/oneapi-src/level-zero/releases/latest"
 
+ARTEFACT_DIR="/p/pdsd/scratch/jenkins/artefacts"
+CCL_ONEAPI_DIR="/p/pdsd/scratch/Uploads/CCL_oneAPI/"
+
 print_help()
 {
     echo "Usage:"
@@ -169,6 +172,7 @@ load_neo() {
 install() {
     if [[ ! -z ${ENABLE_INSTALL} ]]; then
         print_header "INSTALL..."
+        chmod -R 755 ${RUNTIMES_DIR}
         cd ${RUNTIMES_DIR}
         for package in $(ls ${RUNTIMES_DIR})
         do
@@ -204,7 +208,26 @@ run_examples() {
             echo "${CCL_SRC_DIR} does not exists."
             exit 1
         fi
-        IMPI_PATH="/p/pdsd/scratch/Uploads/CCL_oneAPI/mpi_oneapi/last/mpi/latest/"
+
+        if [[ -d "${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi/" ]]
+        then
+            weekly_mpiexec_version=$(${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi/bin/mpiexec --version)
+            weekly_build_date=$(echo ${weekly_mpiexec_version#*Build} | awk '{print $1;}')
+
+            lkg_mpiexec_version=$(${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/bin/mpiexec --version)
+            lkg_build_date=$(echo ${lkg_mpiexec_version#*Build} | awk '{print $1;}')
+
+            if [ "$weekly_build_date" = "$lkg_build_date" ]; then
+                I_MPI_ROOT="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
+            elif expr "$weekly_build_date" "<" "$lkg_build_date" >/dev/null; then
+                I_MPI_ROOT="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
+            else
+                I_MPI_ROOT="${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi"
+            fi
+        else
+            I_MPI_ROOT="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
+        fi
+
         CCL_PATH="/p/pdsd/scratch/jenkins/artefacts/ccl-nightly/last/"
         SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/last/compiler/latest/linux/"
 
@@ -212,7 +235,7 @@ run_examples() {
         export I_MPI_HYDRA_HOST_FILE=${CCL_SRC_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts
 
         source ${SYCL_BUNDLE_ROOT}/../../../setvars.sh
-        source ${IMPI_PATH}/env/vars.sh -i_mpi_library_kind=release_mt
+        source ${I_MPI_ROOT}/env/vars.sh -i_mpi_library_kind=release_mt
         source ${CCL_PATH}/l_ccl_release*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
 
         ${CCL_SRC_DIR}/examples/run.sh gpu

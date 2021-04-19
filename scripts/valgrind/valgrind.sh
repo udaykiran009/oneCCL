@@ -5,6 +5,9 @@ exec | tee ./main_ouput.txt
 
 BASENAME=`basename $0 .sh`
 
+ARTEFACT_DIR="/p/pdsd/scratch/jenkins/artefacts"
+CCL_ONEAPI_DIR="/p/pdsd/scratch/Uploads/CCL_oneAPI/"
+
 set_example_work_dir()
 {
     SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
@@ -73,10 +76,26 @@ check_and_set_impi_path()
 {
     if [ -z "${I_MPI_ROOT}" ]
     then
-        I_MPI_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/mpi_oneapi/last/mpi/latest/"
-        echo "WARNING: I_MPI_ROOT is not defined, will be used default: $I_MPI_ROOT"
+        if [[ -d "${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi/" ]]
+        then
+            weekly_mpiexec_version=$(${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi/bin/mpiexec --version)
+            weekly_build_date=$(echo ${weekly_mpiexec_version#*Build} | awk '{print $1;}')
+
+            lkg_mpiexec_version=$(${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/bin/mpiexec --version)
+            lkg_build_date=$(echo ${lkg_mpiexec_version#*Build} | awk '{print $1;}')
+
+            if [ "$weekly_build_date" = "$lkg_build_date" ]; then
+                I_MPI_ROOT="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
+            elif expr "$weekly_build_date" "<" "$lkg_build_date" >/dev/null; then
+                I_MPI_ROOT="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
+            else
+                I_MPI_ROOT="${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi"
+            fi
+        else
+            I_MPI_ROOT="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
+        fi
     fi
-    source ${I_MPI_ROOT}/env/vars.sh intel64
+    source ${I_MPI_ROOT}/env/vars.sh -i_mpi_library_kind=release_mt
 }
 
 

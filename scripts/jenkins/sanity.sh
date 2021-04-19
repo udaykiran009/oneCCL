@@ -17,6 +17,8 @@ fi
 CURRENT_CCL_BUILD_DIR="${CCL_REPO_DIR}/${CCL_BUILD_ID}"
 BASENAME=`basename $0 .sh`
 CURRENT_WORK_DIR=`cd ${SCRIPT_DIR}/../../ && pwd -P`
+ARTEFACT_DIR="/p/pdsd/scratch/jenkins/artefacts"
+CCL_ONEAPI_DIR="/p/pdsd/scratch/Uploads/CCL_oneAPI/"
 if [ -z $CCL_INSTALL_DIR ]
 then
     CCL_INSTALL_DIR=`cd ${SCRIPT_DIR}/../../build/_install/ && pwd -P`
@@ -201,7 +203,7 @@ function set_environment()
     else
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
-            SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/last/compiler/latest/linux/"
+            SYCL_BUNDLE_ROOT="${CCL_ONEAPI_DIR}/compiler/last/compiler/latest/linux/"
             echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
         fi
         source ${SYCL_BUNDLE_ROOT}/../../../setvars.sh
@@ -262,8 +264,25 @@ function set_impi_environment()
     fi
     if [ -z "${IMPI_PATH}" ]
     then
-        echo "WARNING: IMPI_PATH isn't set, last oneAPI pack will be used."
-        export IMPI_PATH=/p/pdsd/scratch/Uploads/CCL_oneAPI/mpi_oneapi/last/mpi/latest/
+        echo "WARNING: IMPI_PATH isn't set"
+        if [[ -d "${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi/" ]]
+        then
+            weekly_mpiexec_version=$(${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi/bin/mpiexec --version)
+            weekly_build_date=$(echo ${weekly_mpiexec_version#*Build} | awk '{print $1;}')
+
+            lkg_mpiexec_version=$(${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/bin/mpiexec --version)
+            lkg_build_date=$(echo ${lkg_mpiexec_version#*Build} | awk '{print $1;}')
+
+            if [ "$weekly_build_date" = "$lkg_build_date" ]; then
+                export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
+            elif expr "$weekly_build_date" "<" "$lkg_build_date" >/dev/null; then
+                export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
+            else
+                export IMPI_PATH="${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi"
+            fi
+        else
+            export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
+        fi
     fi
     source ${IMPI_PATH}/env/vars.sh -i_mpi_library_kind=release_mt
 }
@@ -566,7 +585,7 @@ function build_ut_tests()
 
     if [ "${test_type}" == "-kernels" ]
     then
-        source /p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/last/compiler/latest/env/vars.sh intel64
+        source ${CCL_ONEAPI_DIR}/compiler/last/compiler/latest/env/vars.sh intel64
         cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCOMPUTE_BACKEND=level_zero ..
         LIST=`make help | grep "kernel_" | grep -Po '(?<=\.\.\. ).*'`
         echo "List to build: $LIST\n"
