@@ -685,6 +685,11 @@ size_t atl_mpi_get_ep_idx(size_t ep_idx) {
 atl_status_t atl_mpi_set_base_env(const atl_attr_t& attr) {
     setenv("PSM2_MULTI_EP", "1", 0);
     setenv("FI_OFI_RXM_USE_HASH", "0", 0);
+
+#ifdef CCL_ENABLE_SYCL
+    setenv("FI_SHM_DISABLE_CMA", "1", 0);
+#endif /* CCL_ENABLE_SYCL */
+
     setenv("MPIR_CVAR_DEFAULT_THREAD_LEVEL", "MPI_THREAD_MULTIPLE", 0);
 
     /* request IMPI level append library kind into MPI_Get_library_version output */

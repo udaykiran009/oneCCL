@@ -958,6 +958,10 @@ static atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
     setenv("FI_SHM_TX_SIZE", "8192", 0);
     setenv("FI_SHM_RX_SIZE", "8192", 0);
 
+#ifdef CCL_ENABLE_SYCL
+    setenv("FI_SHM_DISABLE_CMA", "1", 0);
+#endif /* CCL_ENABLE_SYCL */
+
     atl_ofi_adjust_env(attr);
 
     global_data.is_env_inited = 1;
