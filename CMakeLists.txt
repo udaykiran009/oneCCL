@@ -156,6 +156,15 @@ if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "
     endif()
 endif()
 
+# Clang doesn't automatically detects ninja processes as supporting colored output
+# due to the way they are spawned. In order to fix the issue we need to use the option
+# to force colored output
+if(${CMAKE_GENERATOR} STREQUAL "Ninja")
+    if (${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+        add_compile_options(-fcolor-diagnostics)
+    endif()
+endif()
+
 if(WITH_ASAN AND ${CMAKE_BUILD_TYPE_CASE_INSENSITIVE} STREQUAL "debug")
     message(STATUS "Compiling with address sanitizer")
     set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fno-omit-frame-pointer")
