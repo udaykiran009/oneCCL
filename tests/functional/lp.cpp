@@ -80,7 +80,7 @@ void convert_fp16_to_fp32(const void* src, void* dst) {
 void convert_fp32_to_bf16(const void* src, void* dst) {
 #ifdef CCL_BF16_AVX512BF_COMPILER
     if (is_avx512bf_enabled())
-        _mm256_storeu_si256((__m256i*)(dst), _mm512_cvtneps_pbh(_mm512_loadu_ps(src)));
+        _mm256_storeu_si256((__m256i*)(dst), (__m256i)_mm512_cvtneps_pbh(_mm512_loadu_ps(src)));
     else
 #endif
         _mm256_storeu_si256((__m256i*)(dst),

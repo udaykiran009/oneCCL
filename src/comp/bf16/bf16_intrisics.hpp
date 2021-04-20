@@ -56,7 +56,7 @@ BF16_INLINE_TARGET_ATTRIBUTE_BW void ccl_fp32_store_as_bf16_avx512f(const void* 
 
 #ifdef CCL_BF16_AVX512BF_COMPILER
 BF16_INLINE_TARGET_ATTRIBUTE void ccl_fp32_store_as_bf16_avx512bf(const void* src, void* dst) {
-    _mm256_storeu_si256((__m256i*)(dst), _mm512_cvtneps_pbh(_mm512_loadu_ps(src)));
+    _mm256_storeu_si256((__m256i*)(dst), (__m256i)_mm512_cvtneps_pbh(_mm512_loadu_ps(src)));
 }
 #endif
 

@@ -39,7 +39,7 @@ void ccl_bf16_reduce(const void* in_buf,
 void ccl_convert_fp32_to_bf16(const void* src, void* dst) {
 #ifdef CCL_BF16_AVX512BF_COMPILER
     if (ccl::global_data::env().bf16_impl_type == ccl_bf16_avx512bf) {
-        _mm256_storeu_si256((__m256i*)(dst), _mm512_cvtneps_pbh(_mm512_loadu_ps(src)));
+        _mm256_storeu_si256((__m256i*)(dst), (__m256i)_mm512_cvtneps_pbh(_mm512_loadu_ps(src)));
     }
     else
 #endif
