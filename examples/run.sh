@@ -325,19 +325,27 @@ run()
     sycl_example_selector_list="none"
     if [[ ${MODE} = "cpu" ]]
     then
-        dir_list="benchmark common cpu external_launcher"
+        dir_list="benchmark common cpu"
         bench_backend_list="host"
+
+        # additional mode for testing external_launcher in lab only due to unstable result
+        # in PV lab and https://jira.devtools.intel.com/browse/MLSL-808
+        if [[ ${SCOPE} != "pv" ]]; then
+            dir_list="${dir_list} external_launcher"
+        fi
     else
         common_dir_list="benchmark common"
         if [[ ${SCOPE} = "pr" ]]
         then
             dir_list="${common_dir_list}"
             bench_backend_list="sycl"
-        elif [[ ${SCOPE} = "abi" ]]; then
+        elif [[ ${SCOPE} = "abi" ]]
+        then
             dir_list="${common_dir_list} cpu sycl"
             bench_backend_list="host sycl"
             sycl_example_selector_list="cpu gpu"
-        else
+        elif [[ ${SCOPE} = "all" ]]
+        then
             dir_list="${common_dir_list} cpu sycl"
             bench_backend_list="host sycl"
             sycl_example_selector_list="cpu gpu"
@@ -587,7 +595,7 @@ print_help()
 {
     echo_log "Usage: ${BASENAME}.sh <options>"
     echo_log "  --mode mode             cpu|gpu mode"
-    echo_log "  --scope scope           pr reduces scope till minimal pre-merge scope"
+    echo_log "  --scope scope           pr|abi|pv|all scope (default: pv)"
     echo_log "  --build-only            build only"
     echo_log "  --use-kernels           run the benchmark with the kernels support"
     echo_log "  --help                  print help information"
@@ -687,13 +695,15 @@ check_scope()
     if [[ ! -z ${SCOPE} ]]
     then
         case $SCOPE in
-            "pr" | "abi") ;;
+            "pr" | "abi" | "pv" | "all") ;;
             *)
             echo "Unsupported scope: $SCOPE"
             print_help
             exit 1
             ;;
         esac
+    else
+        SCOPE="pv"
     fi
 }
 
