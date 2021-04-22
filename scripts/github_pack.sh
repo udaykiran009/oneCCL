@@ -19,7 +19,8 @@ excluded=".git
 ./doc/copyright
 ./examples/run.sh
 ./internal
-./ofi/update_ofi.sh
+./deps/hwloc/update_hwloc.sh
+./deps/ofi/update_ofi.sh
 ./ccl_public
 ./ccl_oneapi
 ./src/kernels

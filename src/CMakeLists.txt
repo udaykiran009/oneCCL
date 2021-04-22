@@ -1,4 +1,4 @@
-#builds ccl
+# builds CCL
 
 set (EXTENSIONS_SRC)
 
@@ -161,6 +161,7 @@ set(CCL_SRC
     comp/comp.cpp
     comp/fp16/fp16.cpp
     comp/fp16/fp16_intrisics.cpp
+    hwloc/hwloc_wrapper.c
     sched/sched.cpp
     sched/extra_sched.cpp
     sched/master_sched.cpp
@@ -208,11 +209,12 @@ set(CCL_SRC
     ${EXTENSIONS_SRC})
 
 list(APPEND CCL_INC_DIRS
-                 ${PROJECT_SOURCE_DIR}/include
-                 ${PROJECT_SOURCE_DIR}/mpi/include
-                 ${LIBFABRIC_INCLUDE_DIR}
-                 ${PROJECT_SOURCE_DIR}/src
-                 ${PROJECT_SOURCE_DIR}/src/atl)
+     ${PROJECT_SOURCE_DIR}/include
+     ${MPI_INCLUDE_DIR}
+     ${LIBFABRIC_INCLUDE_DIR}
+     ${HWLOC_INCLUDE_DIR}
+     ${PROJECT_SOURCE_DIR}/src
+     ${PROJECT_SOURCE_DIR}/src/atl)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SRC_C_FLAGS} -pthread")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SRC_CXX_FLAGS} -pthread")
@@ -222,8 +224,6 @@ message(STATUS "SRC C_FLAGS: ${CMAKE_C_FLAGS}")
 message(STATUS "SRC CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 message(STATUS "SRC SHARED_LINKER_FLAGS: ${CMAKE_SHARED_LINKER_FLAGS}")
 message(STATUS "SRC INC_DIRS: ${CCL_INC_DIRS}")
-message(STATUS "SRC LIBFABRIC_LIB_DIR: ${LIBFABRIC_LIB_DIR}")
-message(STATUS "SRC LIBFABRIC_INCLUDE_DIR: ${LIBFABRIC_INCLUDE_DIR}")
 
 #special library that holds objects only
 add_library(ccl-objects OBJECT ${CCL_SRC})
@@ -235,10 +235,10 @@ if(COMPUTE_BACKEND_TARGET_NAME)
 endif()
 
 # add library search directory
-link_directories(${PROJECT_SOURCE_DIR}/mpi/lib)
+link_directories(${MPI_LIB_DIR})
 link_directories(${LIBFABRIC_LIB_DIR})
 
-#shared library
+# shared library
 add_library(ccl SHARED $<TARGET_OBJECTS:ccl-objects>)
 target_include_directories(ccl PUBLIC ${CCL_INC_DIRS})
 
@@ -247,7 +247,15 @@ target_include_directories(ccl PUBLIC ${CCL_INC_DIRS})
 set(ONEAPI_IMPI_RPATH "'$ORIGIN'/../../../../mpi/latest/lib/release_mt/")
 set_target_properties(ccl PROPERTIES LINK_FLAGS "-Wl,-rpath,${ONEAPI_IMPI_RPATH}")
 
-target_link_libraries(ccl PUBLIC dl pthread ${EXTERNAL_LIBS} ${COMPUTE_BACKEND_TARGET_NAME} fabric mpi)
+target_link_libraries(ccl PUBLIC
+                      dl
+                      pthread
+                      fabric
+                      mpi
+                      ${HWLOC_LIB_DIR}/libhwloc.a
+                      ${EXTERNAL_LIBS}
+                      ${COMPUTE_BACKEND_TARGET_NAME})
+
 if (NOT LIB_SO_VERSION AND NOT LIB_MAJOR_VERSION)
         set_target_properties(ccl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
 else()
@@ -256,39 +264,39 @@ endif()
 
 install(TARGETS ccl LIBRARY DESTINATION ${CCL_INSTALL_LIB})
 install(FILES
-    "../cmake/FindOpenCL.cmake"
-    "../cmake/Findlevel_zero.cmake"
-    "../cmake/FindSYCL.cmake"
-    "../cmake/FindIntelSYCL.cmake"
-    "../cmake/FindIntelSYCL_level_zero.cmake"
-    "../cmake/FindComputeCpp.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/FindOpenCL.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/Findlevel_zero.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/FindSYCL.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/FindIntelSYCL.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/FindIntelSYCL_level_zero.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/FindComputeCpp.cmake"
     DESTINATION ${CCL_INSTALL_LIB})
 
-#static library
+# static library
 add_library(ccl-static STATIC $<TARGET_OBJECTS:ccl-objects>)
 set_target_properties(ccl-static PROPERTIES OUTPUT_NAME ccl)
 set_target_properties(ccl-static PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
 install(TARGETS ccl-static ARCHIVE DESTINATION ${CCL_INSTALL_LIB} OPTIONAL)
 
-#headers installation
+# API headers
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
         DESTINATION ${CCL_INSTALL_INCLUDE} FILES_MATCHING REGEX ".*\\.(h|hpp)$")
 
-#mpi & ofi rt
-file(GLOB mpi_bins "${PROJECT_SOURCE_DIR}/mpi/bin/*")
+# MPI and OFI runtimes
+file(GLOB mpi_bins "${DEPS_DIR}/mpi/bin/*")
 install(PROGRAMS ${mpi_bins} DESTINATION ${CCL_INSTALL_BIN})
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/ofi/lib/
+install(DIRECTORY ${DEPS_DIR}/ofi/lib/
         DESTINATION ${CCL_INSTALL_LIB})
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/mpi/include/
+install(DIRECTORY ${DEPS_DIR}/mpi/include/
         DESTINATION ${CCL_INSTALL_INCLUDE})
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/mpi/lib/
+install(DIRECTORY ${DEPS_DIR}/mpi/lib/
         DESTINATION ${CCL_INSTALL_LIB})
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/mpi/etc/
+install(DIRECTORY ${DEPS_DIR}/mpi/etc/
         DESTINATION ${CCL_INSTALL_ETC})
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/mpi/licensing/
+install(DIRECTORY ${DEPS_DIR}/mpi/licensing/
         DESTINATION ${CCL_INSTALL_LICENSE}/mpi/)

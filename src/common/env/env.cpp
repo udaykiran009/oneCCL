@@ -29,6 +29,12 @@ std::map<ccl_staging_buffer, std::string> env_data::staging_buffer_names = {
     std::make_pair(ccl_staging_usm, "usm")
 };
 
+std::map<atl_mnic_t, std::string> env_data::mnic_type_names = {
+    std::make_pair(ATL_MNIC_NONE, "none"),
+    std::make_pair(ATL_MNIC_LOCAL, "local"),
+    std::make_pair(ATL_MNIC_GLOBAL, "global")
+};
+
 env_data::env_data()
         : was_printed(false),
 
@@ -45,6 +51,9 @@ env_data::env_data()
           enable_shm(0),
           sync_coll(0),
           extra_ep(0),
+
+          mnic_type(ATL_MNIC_NONE),
+          mnic_count(4),
 
           enable_unordered_coll(0),
 
@@ -80,8 +89,8 @@ env_data::env_data()
 
           enable_comm_kernels(0),
           comm_kernels_path(),
-          gpu_thread_count(CCL_ENV_SIZET_NOT_SPECIFIED),
           comm_kernels_debug(0),
+          gpu_thread_count(CCL_ENV_SIZET_NOT_SPECIFIED),
 
           bf16_impl_type(ccl_bf16_no_compiler_support),
           fp16_impl_type(ccl_fp16_no_compiler_support) {}
@@ -123,6 +132,9 @@ void env_data::parse() {
     env_2_type(CCL_ATL_SHM, enable_shm);
     env_2_type(CCL_ATL_SYNC_COLL, sync_coll);
     env_2_type(CCL_ATL_EXTRA_EP, extra_ep);
+
+    env_2_enum(CCL_MNIC, mnic_type_names, mnic_type);
+    env_2_type(CCL_MNIC_COUNT, mnic_count);
 
     env_2_type(CCL_ALLGATHERV, allgatherv_algo_raw);
     env_2_type(CCL_ALLREDUCE, allreduce_algo_raw);
@@ -205,7 +217,6 @@ void env_data::parse() {
             CCL_THROW_IF_NOT(!ccl_root.empty(), "incorrect comm kernels path, CCL_ROOT not found!");
             comm_kernels_path = ccl_root + "/lib/kernels/";
         }
-
         env_2_type(CCL_COMM_KERNELS_DEBUG, comm_kernels_debug);
     }
     env_2_type(CCL_GPU_THREAD_COUNT, gpu_thread_count);
@@ -243,8 +254,25 @@ void env_data::print(int rank) {
     else
         was_printed = true;
 
-    auto& global_data = ccl::global_data::get();
+    if (rank == 0) {
+        auto version = utils::get_library_version();
+        LOG_INFO("library version: ", version.full);
+        LOG_INFO("specification version: ", ONECCL_SPEC_VERSION);
+#ifdef CCL_ENABLE_SYCL
+        LOG_INFO("compute backend: ", version.cl_backend_name);
+#endif /* CCL_ENABLE_SYCL */
 
+#ifdef ENABLE_DEBUG
+        const char* build_mode = "debug";
+#else /* ENABLE_DEBUG */
+        const char* build_mode = "release";
+#endif /* ENABLE_DEBUG */
+        LOG_INFO("build mode: ", build_mode);
+        LOG_INFO("C compiler: ", CCL_C_COMPILER);
+        LOG_INFO("C++ compiler: ", CCL_CXX_COMPILER);
+    }
+
+    auto& global_data = ccl::global_data::get();
     auto local_proc_idx = global_data.executor->get_local_proc_idx();
     auto local_proc_count = global_data.executor->get_local_proc_count();
 
@@ -278,6 +306,9 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_ATL_SHM, ": ", enable_shm);
     LOG_DEBUG(CCL_ATL_SYNC_COLL, ": ", sync_coll);
     LOG_DEBUG(CCL_ATL_EXTRA_EP, ": ", extra_ep);
+
+    LOG_INFO(CCL_MNIC, ": ", str_by_enum(mnic_type_names, mnic_type));
+    LOG_INFO(CCL_MNIC_COUNT, ": ", mnic_count);
 
     LOG_INFO(CCL_ALLGATHERV,
              ": ",
@@ -349,33 +380,20 @@ void env_data::print(int rank) {
                  : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_ALLTOALL_SCATTER_PLAIN, ": ", alltoall_scatter_plain);
 
+#ifdef CCL_ENABLE_SYCL
     LOG_INFO(CCL_COMM_KERNELS, ": ", enable_comm_kernels);
     LOG_INFO(CCL_COMM_KERNELS_PATH,
              ": ",
              (!comm_kernels_path.empty()) ? comm_kernels_path : CCL_ENV_STR_NOT_SPECIFIED);
+    LOG_INFO(CCL_COMM_KERNELS_DEBUG, ": ", comm_kernels_debug);
     LOG_INFO(CCL_GPU_THREAD_COUNT,
              ": ",
              (gpu_thread_count != CCL_ENV_SIZET_NOT_SPECIFIED) ? std::to_string(gpu_thread_count)
                                                                : CCL_ENV_STR_NOT_SPECIFIED);
-    LOG_INFO(CCL_COMM_KERNELS_DEBUG, ": ", comm_kernels_debug);
+#endif /* CCL_ENABLE_SYCL  */
 
     LOG_INFO(CCL_BF16, ": ", str_by_enum(bf16_impl_names, bf16_impl_type));
     LOG_INFO(CCL_FP16, ": ", str_by_enum(fp16_impl_names, fp16_impl_type));
-
-#ifdef ENABLE_DEBUG
-    const char* build_mode = "debug";
-#else
-    const char* build_mode = "release";
-#endif
-    LOG_INFO("build mode: ", build_mode);
-
-    LOG_INFO("C compiler: ", CCL_C_COMPILER);
-    LOG_INFO("C++ compiler: ", CCL_CXX_COMPILER);
-
-    auto version = utils::get_library_version();
-    LOG_INFO("library version: ", version.full);
-
-    LOG_INFO("specification version: ", ONECCL_SPEC_VERSION);
 
     char* ccl_root = getenv("CCL_ROOT");
     LOG_INFO("CCL_ROOT: ", (ccl_root) ? ccl_root : CCL_ENV_STR_NOT_SPECIFIED);
@@ -396,6 +414,9 @@ void env_data::print(int rank) {
 void env_data::set_internal_env() {
     auto attr = ccl_executor::generate_atl_attr(*this);
     atl_wrapper::set_internal_env(attr);
+    if (log_level >= ccl_log_level::info) {
+        setenv("I_MPI_DEBUG", "4", 0);
+    }
 }
 
 int env_data::env_2_worker_affinity_auto(size_t local_proc_idx, size_t workers_per_process) {

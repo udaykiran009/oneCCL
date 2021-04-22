@@ -32,7 +32,8 @@ else
 fi
 
 BOM_DIR="${WORKSPACE}/boms"
-IMPI_DIR="${WORKSPACE}/mpi"
+IMPI_DIR="${WORKSPACE}/deps/mpi"
+HWLOC_DIR="${WORKSPACE}/deps/hwloc"
 BOM_LIST_NAME="bom_lists.txt"
 TMP_DIR="${WORKSPACE}/_tmp"
 PACKAGE_DIR="${WORKSPACE}/_package"
@@ -75,7 +76,8 @@ PRE_DROP_DIR="${WORKSPACE}/_predrop/"
 
 if [ -z "${LIBFABRIC_INSTALL_DIR}" ]
 then
-    LIBFABRIC_INSTALL_DIR="/p/pdsd/scratch/Uploads/libfabric-1.5.3"
+    # OFI ABI 1.2
+    LIBFABRIC_INSTALL_DIR="/p/pdsd/scratch/Uploads/libfabric-1.8.1"
 fi
 
 LIBCCL_SO_VERSION="1.0"
@@ -309,6 +311,7 @@ post_build()
         LDFLAGS="-L${LIBFABRIC_INSTALL_DIR}/lib/"
     fi
     LDFLAGS="${LD_FLAGS} -Wl,-rpath,\$ORIGIN/../../../../mpi/latest/lib/release_mt/"
+    LDFLAGS="${LD_FLAGS} ${HWLOC_DIR}/lib/libhwloc.a"
 
     gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack \
         -Wl,--version-script=${WORKSPACE}/ccl.map -std=gnu99 -Wall -Werror \

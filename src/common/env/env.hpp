@@ -37,6 +37,9 @@ constexpr const char* CCL_ATL_SHM = "CCL_ATL_SHM";
 constexpr const char* CCL_ATL_SYNC_COLL = "CCL_ATL_SYNC_COLL";
 constexpr const char* CCL_ATL_EXTRA_EP = "CCL_ATL_EXTRA_EP";
 
+constexpr const char* CCL_MNIC = "CCL_MNIC";
+constexpr const char* CCL_MNIC_COUNT = "CCL_MNIC_COUNT";
+
 constexpr const char* CCL_ALLGATHERV = "CCL_ALLGATHERV";
 constexpr const char* CCL_ALLREDUCE = "CCL_ALLREDUCE";
 constexpr const char* CCL_ALLTOALL = "CCL_ALLTOALL";
@@ -80,33 +83,17 @@ constexpr const char* CCL_ALLTOALL_SCATTER_PLAIN = "CCL_ALLTOALL_SCATTER_PLAIN";
 
 constexpr const char* CCL_COMM_KERNELS = "CCL_COMM_KERNELS";
 constexpr const char* CCL_COMM_KERNELS_PATH = "CCL_COMM_KERNELS_PATH";
-constexpr const char* CCL_GPU_THREAD_COUNT = "CCL_GPU_THREAD_COUNT";
 constexpr const char* CCL_COMM_KERNELS_DEBUG = "CCL_COMM_KERNELS_DEBUG";
+constexpr const char* CCL_GPU_THREAD_COUNT = "CCL_GPU_THREAD_COUNT";
 
 constexpr const char* CCL_BF16 = "CCL_BF16";
 constexpr const char* CCL_FP16 = "CCL_FP16";
 
-enum ccl_priority_mode {
-    ccl_priority_none,
-    ccl_priority_direct,
-    ccl_priority_lifo,
+enum ccl_priority_mode { ccl_priority_none, ccl_priority_direct, ccl_priority_lifo };
 
-    ccl_priority_last_value
-};
+enum ccl_atl_transport { ccl_atl_ofi, ccl_atl_mpi };
 
-enum ccl_atl_transport {
-    ccl_atl_ofi,
-    ccl_atl_mpi,
-
-    ccl_atl_last_value
-};
-
-enum ccl_staging_buffer {
-    ccl_staging_regular,
-    ccl_staging_usm,
-
-    ccl_staging_last_value
-};
+enum ccl_staging_buffer { ccl_staging_regular, ccl_staging_usm };
 
 namespace ccl {
 
@@ -142,6 +129,9 @@ public:
     int enable_shm;
     int sync_coll;
     int extra_ep;
+
+    atl_mnic_t mnic_type;
+    size_t mnic_count;
 
     /*
        parsing logic can be quite complex
@@ -191,8 +181,8 @@ public:
 
     int enable_comm_kernels;
     std::string comm_kernels_path;
-    ssize_t gpu_thread_count;
     int comm_kernels_debug;
+    ssize_t gpu_thread_count;
 
     ccl_bf16_impl_type bf16_impl_type;
     ccl_fp16_impl_type fp16_impl_type;
@@ -267,6 +257,7 @@ public:
     static std::map<ccl_priority_mode, std::string> priority_mode_names;
     static std::map<ccl_atl_transport, std::string> atl_transport_names;
     static std::map<ccl_staging_buffer, std::string> staging_buffer_names;
+    static std::map<atl_mnic_t, std::string> mnic_type_names;
 
     int env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_count);
     void env_2_atl_transport();

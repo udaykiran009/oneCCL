@@ -39,6 +39,8 @@ atl_attr_t ccl_executor::generate_atl_attr(const ccl::env_data& env) {
     attr.enable_rma = 0; // env.enable_rma;
     attr.sync_coll = env.sync_coll;
     attr.extra_ep = env.extra_ep;
+    attr.mnic_type = env.mnic_type;
+    attr.mnic_count = env.mnic_count;
 
     return attr;
 }

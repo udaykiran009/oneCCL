@@ -74,19 +74,36 @@ set(CCL_INSTALL_KERNELS "${CMAKE_INSTALL_PREFIX}/lib/kernels")
 
 set(CCL_UNIT_TESTS_BUILD "${CMAKE_BINARY_DIR}/tests/unit")
 
-set(MPI_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/mpi/include/")
-set(MPI_LIB_DIR "${PROJECT_SOURCE_DIR}/mpi/lib/")
+
+# setup dependency directories
+
+set(DEPS_DIR "${PROJECT_SOURCE_DIR}/deps")
+
+set(MPI_INCLUDE_DIR "${DEPS_DIR}/mpi/include/")
+set(MPI_LIB_DIR "${DEPS_DIR}/mpi/lib/")
 if ( "${LIBFABRIC_DIR}" STREQUAL "")
-    set(LIBFABRIC_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/ofi/include")
-    set(LIBFABRIC_LIB_DIR "${PROJECT_SOURCE_DIR}/ofi/lib/")
+    set(LIBFABRIC_INCLUDE_DIR "${DEPS_DIR}/ofi/include")
+    set(LIBFABRIC_LIB_DIR "${DEPS_DIR}/ofi/lib/")
 else()
     set(LIBFABRIC_INCLUDE_DIR "${LIBFABRIC_DIR}/include/")
     set(LIBFABRIC_LIB_DIR "${LIBFABRIC_DIR}/lib")
 endif()
+set(HWLOC_INCLUDE_DIR "${DEPS_DIR}/hwloc/include/")
+set(HWLOC_LIB_DIR "${DEPS_DIR}/hwloc/lib/")
+
+message(STATUS "MPI_INCLUDE_DIR: ${MPI_INCLUDE_DIR}")
+message(STATUS "MPI_LIB_DIR: ${MPI_LIB_DIR}")
+message(STATUS "LIBFABRIC_LIB_DIR: ${LIBFABRIC_LIB_DIR}")
+message(STATUS "LIBFABRIC_INCLUDE_DIR: ${LIBFABRIC_INCLUDE_DIR}")
+message(STATUS "HWLOC_INCLUDE_DIR: ${HWLOC_INCLUDE_DIR}")
+message(STATUS "HWLOC_LIB_DIR: ${HWLOC_LIB_DIR}")
+
 include_directories(${MPI_INCLUDE_DIR})
 include_directories(${LIBFABRIC_INCLUDE_DIR})
+
 link_directories(${MPI_LIB_DIR})
 link_directories(${LIBFABRIC_LIB_DIR})
+
 
 set(CMAKE_SKIP_INSTALL_RPATH TRUE)
 set(CMAKE_SKIP_RPATH TRUE)
@@ -146,6 +163,7 @@ set(TRY_ENABLE_SYCL_L0 ON)
 
 set(COMMON_CMAKE_DIR ${PROJECT_SOURCE_DIR}/cmake)
 if (COMPUTE_BACKEND)
+    message(STATUS "COMPUTE_BACKEND: ${COMPUTE_BACKEND}")
     set_compute_backend(${COMMON_CMAKE_DIR})
 endif()
 
@@ -179,7 +197,7 @@ set(CCL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 enable_testing()
 
 set(EXTERNAL_LIBS "")
-set(EXAMPLES_INC_DIRS ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/examples/include ${PROJECT_SOURCE_DIR}/mpi/include)
+set(EXAMPLES_INC_DIRS ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/examples/include ${MPI_INCLUDE_DIR})
 
 # allow `deprecated`
 set(CMAKE_CLANG_FLAGS "${CMAKE_CLANG_FLAGS}")

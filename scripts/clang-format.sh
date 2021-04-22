@@ -117,8 +117,7 @@ process_files()
             grep -v "doc/"| \
             grep -v "examples/build/" | \
             grep -v "googletest/" | \
-            grep -v "mpi/include" | \
-            grep -v "ofi/include"| \
+            grep -v "deps/" | \
             grep -v "scripts/copyright" | \
             grep -P ".*\.(c|cpp|h|hpp|cl|i)$")
         do
