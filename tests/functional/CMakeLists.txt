@@ -105,6 +105,8 @@ foreach(src ${sources})
     target_link_libraries(${executable} PUBLIC rt)
     target_link_libraries(${executable} PUBLIC m)
     target_link_libraries(${executable} PUBLIC dl)
+    # w/a for ats with 2 mpi lib, should be fixed
+    target_link_libraries(${executable} -L${I_MPI_ROOT}/lib/release_mt/)
     target_link_libraries(${executable} PUBLIC mpi)
     install(TARGETS ${executable} RUNTIME DESTINATION ${CCL_INSTALL_TESTS} OPTIONAL)
     add_test (NAME ${executable} CONFIGURATIONS default COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/${executable} --gtest_output=xml:${CCL_INSTALL_TESTS}/${executable}_default_report.junit.xml)
