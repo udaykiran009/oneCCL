@@ -18,6 +18,7 @@ constexpr std::initializer_list<ccl::datatype> all_dtypes = {
 
 typedef enum { BACKEND_HOST, BACKEND_SYCL } backend_type_t;
 typedef enum { LOOP_REGULAR, LOOP_UNORDERED } loop_type_t;
+typedef enum { ITER_POLICY_OFF, ITER_POLICY_AUTO } iter_policy_t;
 
 typedef enum { SYCL_DEV_HOST, SYCL_DEV_CPU, SYCL_DEV_GPU } sycl_dev_type_t;
 typedef enum { SYCL_MEM_USM, SYCL_MEM_BUF } sycl_mem_type_t;
@@ -28,6 +29,10 @@ std::map<backend_type_t, std::string> backend_names = { std::make_pair(BACKEND_H
 
 std::map<loop_type_t, std::string> loop_names = { std::make_pair(LOOP_REGULAR, "regular"),
                                                   std::make_pair(LOOP_UNORDERED, "unordered") };
+
+std::map<iter_policy_t, std::string> iter_policy_names = { std::make_pair(ITER_POLICY_OFF, "off"),
+                                                           std::make_pair(ITER_POLICY_AUTO,
+                                                                          "auto") };
 
 #ifdef CCL_ENABLE_SYCL
 std::map<sycl_dev_type_t, std::string> sycl_dev_names = { std::make_pair(SYCL_DEV_HOST, "host"),
@@ -90,6 +95,7 @@ typedef struct user_options_t {
     loop_type_t loop;
     size_t iters;
     size_t warmup_iters;
+    iter_policy_t iter_policy;
     size_t buf_count;
     size_t min_elem_count;
     size_t max_elem_count;
@@ -118,6 +124,7 @@ typedef struct user_options_t {
         loop = DEFAULT_LOOP;
         iters = DEFAULT_ITERS;
         warmup_iters = DEFAULT_WARMUP_ITERS;
+        iter_policy = DEFAULT_ITER_POLICY;
         buf_count = DEFAULT_BUF_COUNT;
         min_elem_count = DEFAULT_MIN_ELEM_COUNT;
         max_elem_count = DEFAULT_MAX_ELEM_COUNT;

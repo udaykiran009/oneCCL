@@ -264,6 +264,7 @@ public:
 
 private:
     int env_2_worker_affinity_auto(size_t local_proc_idx, size_t workers_per_process);
+    int parse_core_id(const std::string& core_id_str, size_t& result);
 };
 
 } /* namespace ccl */

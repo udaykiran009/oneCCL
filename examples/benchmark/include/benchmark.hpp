@@ -30,6 +30,7 @@ using namespace cl::sycl::access;
 #include "coll.hpp"
 #include "sparse_allreduce/sparse_detail.hpp"
 
+/* free letters: f g q s z */
 void print_help_usage(const char* app) {
     PRINT("\nUSAGE:\n"
           "\t%s [OPTIONS]\n\n"
@@ -38,6 +39,7 @@ void print_help_usage(const char* app) {
           "\t[-e,--loop <execution loop>]: %s\n"
           "\t[-i,--iters <iteration count>]: %d\n"
           "\t[-w,--warmup_iters <warm up iteration count>]: %d\n"
+          "\t[-j,--iter_policy <iteration policy>]: %s\n"
           "\t[-n,--buf_count <number of parallel operations within single collective>]: %d\n"
           "\t[-f,--min_elem_count <minimum number of elements for single collective>]: %d\n"
           "\t[-t,--max_elem_count <maximum number of elements for single collective>]: %d\n"
@@ -54,7 +56,7 @@ void print_help_usage(const char* app) {
           "\t[-d,--dtype <datatypes list/all>]: %s\n"
           "\t[-r,--reduction <reductions list/all>]: %s\n"
           "\t[-o,--csv_filepath <file to store CSV-formatted data into>]: %s\n"
-          "\t[-x,--ext] show additional information\n"
+          "\t[-x,--ext <show additional information>]\n"
           "\t[-h,--help]\n\n"
           "example:\n\t--coll allgatherv,allreduce --backend host --loop regular\n"
           "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n",
@@ -63,6 +65,7 @@ void print_help_usage(const char* app) {
           loop_names[DEFAULT_LOOP].c_str(),
           DEFAULT_ITERS,
           DEFAULT_WARMUP_ITERS,
+          iter_policy_names[DEFAULT_ITER_POLICY].c_str(),
           DEFAULT_BUF_COUNT,
           DEFAULT_MIN_ELEM_COUNT,
           DEFAULT_MAX_ELEM_COUNT,
@@ -149,6 +152,20 @@ int set_loop(const std::string& option_value, loop_type_t& loop) {
     if (loop == LOOP_UNORDERED) {
         setenv("CCL_UNORDERED_COLL", "1", 1);
     }
+
+    return 0;
+}
+
+int set_iter_policy(const std::string& option_value, iter_policy_t& policy) {
+    std::string option_name = "iter_policy";
+    std::set<std::string> supported_option_values{ iter_policy_names[ITER_POLICY_OFF],
+                                                   iter_policy_names[ITER_POLICY_AUTO] };
+
+    if (check_supported_options(option_name, option_value, supported_option_values))
+        return -1;
+
+    policy =
+        (option_value == iter_policy_names[ITER_POLICY_OFF]) ? ITER_POLICY_OFF : ITER_POLICY_AUTO;
 
     return 0;
 }
@@ -269,12 +286,19 @@ int set_reductions(std::string option_value, int check_values, std::list<std::st
     return 0;
 }
 
-size_t get_iter_count(size_t bytes, size_t max_iter_count) {
+size_t get_iter_count(size_t bytes, size_t max_iter_count, iter_policy_t policy) {
     size_t n, res = max_iter_count;
-    n = bytes >> 18;
-    while (n) {
-        res >>= 1;
-        n >>= 1;
+
+    switch (policy) {
+        case ITER_POLICY_OFF: break;
+        case ITER_POLICY_AUTO:
+            n = bytes >> 18;
+            while (n) {
+                res >>= 1;
+                n >>= 1;
+            }
+            break;
+        default: ASSERT(0, "unknown iter_policy %d", policy); break;
     }
 
     if (!res && max_iter_count)
@@ -480,9 +504,9 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
     bool should_parse_reductions = false;
 
 #ifdef CCL_ENABLE_SYCL
-    const char* const short_options = "b:e:i:w:n:f:t:c:p:o:a:m:u:k:l:d:r:y:xh";
+    const char* const short_options = "b:e:i:w:j:n:f:t:c:p:o:a:m:u:k:l:d:r:y:xh";
 #else
-    const char* const short_options = "b:e:i:w:n:f:t:c:p:o:k:l:d:r:y:xh";
+    const char* const short_options = "b:e:i:w:j:n:f:t:c:p:o:k:l:d:r:y:xh";
 #endif
 
     struct option getopt_options[] = {
@@ -490,6 +514,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
         { "loop", required_argument, nullptr, 'e' },
         { "iters", required_argument, nullptr, 'i' },
         { "warmup_iters", required_argument, nullptr, 'w' },
+        { "iter_policy", required_argument, nullptr, 'j' },
         { "buf_count", required_argument, nullptr, 'n' },
         { "min_elem_count", required_argument, nullptr, 'f' },
         { "max_elem_count", required_argument, nullptr, 't' },
@@ -539,6 +564,12 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
                 }
                 else
                     errors++;
+                break;
+            case 'j':
+                if (set_iter_policy(optarg, options.iter_policy)) {
+                    PRINT("failed to parse 'iter_policy' option");
+                    errors++;
+                }
                 break;
             case 'n':
                 if (is_valid_integer_option(optarg)) {
@@ -598,7 +629,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
                     errors++;
                 }
                 break;
-#endif
+#endif /* CCL_ENABLE_SYCL */
             case 'k':
                 if (is_valid_integer_option(optarg)) {
                     options.ranks_per_proc = atoll(optarg);
@@ -700,6 +731,7 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
 
     std::string backend_str = find_str_val(backend_names, options.backend);
     std::string loop_str = find_str_val(loop_names, options.loop);
+    std::string iter_policy_str = find_str_val(iter_policy_names, options.iter_policy);
 
 #ifdef CCL_ENABLE_SYCL
     std::string sycl_dev_type_str = find_str_val(sycl_dev_names, options.sycl_dev_type);
@@ -714,6 +746,7 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   "\n  loop:           %s"
                   "\n  iters:          %zu"
                   "\n  warmup_iters:   %zu"
+                  "\n  iter_policy:    %s"
                   "\n  buf_count:      %zu"
                   "\n  min_elem_count: %zu"
                   "\n  max_elem_count: %zu"
@@ -736,6 +769,7 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   loop_str.c_str(),
                   options.iters,
                   options.warmup_iters,
+                  iter_policy_str.c_str(),
                   options.buf_count,
                   options.min_elem_count,
                   options.max_elem_count,

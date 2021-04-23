@@ -32,6 +32,7 @@ endif()
 option(BUILD_EXAMPLES "Build examples" TRUE)
 option(BUILD_FT "Build functional tests" TRUE)
 option(BUILD_UT "Build unit tests" TRUE)
+option(BUILD_CONFIG "Build cmake configs" TRUE)
 
 option(USE_CODECOV_FLAGS "Calculate code coverage" FALSE)
 option(WITH_ASAN "Use address sanitizer, can only be used in Debug build" FALSE)
@@ -51,6 +52,7 @@ message(STATUS "CXX compiler : ${CMAKE_CXX_COMPILER}")
 message(STATUS "Build examples: ${BUILD_EXAMPLES}")
 message(STATUS "Build functional tests: ${BUILD_FT}")
 message(STATUS "Build unit tests: ${BUILD_UT}")
+message(STATUS "Build cmake configs: ${BUILD_CONFIG}")
 
 add_definitions(-DCCL_C_COMPILER="${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 add_definitions(-DCCL_CXX_COMPILER="${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
@@ -234,16 +236,16 @@ configure_file(${PROJECT_SOURCE_DIR}/include/oneapi/ccl/config.h.in "${CMAKE_CUR
 file(COPY "${CMAKE_CURRENT_BINARY_DIR}/include/oneapi/ccl/config.h" DESTINATION ${PROJECT_SOURCE_DIR}/include/oneapi/ccl)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
-#generate oneCCLConfig*.cmake
-configure_file("cmake/templates/oneCCLConfig.cmake.in"
-               "${CCL_INSTALL_LIB}/cmake/oneCCL/oneCCLConfig.cmake"
-               COPYONLY)
-
 set(PROJECT_VERSION "${CCL_MAJOR_VERSION}.${CCL_MINOR_VERSION}.${CCL_UPDATE_VERSION}")
 
-configure_file("cmake/templates/oneCCLConfigVersion.cmake.in"
-               "${CCL_INSTALL_LIB}/cmake/oneCCL/oneCCLConfigVersion.cmake"
-               @ONLY)
+if (BUILD_CONFIG)
+    configure_file("cmake/templates/oneCCLConfig.cmake.in"
+                   "${CCL_INSTALL_LIB}/cmake/oneCCL/oneCCLConfig.cmake"
+                   COPYONLY)
+    configure_file("cmake/templates/oneCCLConfigVersion.cmake.in"
+                   "${CCL_INSTALL_LIB}/cmake/oneCCL/oneCCLConfigVersion.cmake"
+                   @ONLY)
+endif()
 
 #include other CMakeLists
 

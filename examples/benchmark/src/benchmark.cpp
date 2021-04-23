@@ -83,11 +83,12 @@ void do_regular(ccl::communicator& service_comm,
             }
 
             for (auto& count : options.elem_counts) {
-                size_t iter_count =
-                    get_iter_count(count * ccl::get_datatype_size(dtype), options.iters);
+                size_t iter_count = get_iter_count(
+                    count * ccl::get_datatype_size(dtype), options.iters, options.iter_policy);
 
-                size_t warmup_iter_count =
-                    get_iter_count(count * ccl::get_datatype_size(dtype), options.warmup_iters);
+                size_t warmup_iter_count = get_iter_count(count * ccl::get_datatype_size(dtype),
+                                                          options.warmup_iters,
+                                                          options.iter_policy);
 
                 try {
                     // we store times for each collective separately,
