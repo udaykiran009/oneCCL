@@ -344,7 +344,7 @@ run()
             dir_list="${common_dir_list} cpu sycl"
             bench_backend_list="host sycl"
             sycl_example_selector_list="cpu gpu"
-        elif [[ ${SCOPE} = "all" ]]
+        elif [[ ${SCOPE} = "all" || ${SCOPE} = "pv" ]]
         then
             dir_list="${common_dir_list} cpu sycl"
             bench_backend_list="host sycl"
