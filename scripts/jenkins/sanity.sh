@@ -333,9 +333,9 @@ function run_compatibitily_tests()
     if [ ${node_label} == "mlsl2_test_gpu" ]
     then
         export FI_TCP_IFACE=eno1
-        ${CURRENT_WORK_DIR}/examples/run.sh gpu ${scope} --use-kernels
+        ${CURRENT_WORK_DIR}/examples/run.sh --mode gpu --scope ${scope} --use-kernels
     else
-        ${CURRENT_WORK_DIR}/examples/run.sh cpu ${scope}
+        ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope ${scope}
     fi
     log_status_fail=${PIPESTATUS[0]}
     if [ "$log_status_fail" -eq 0 ]
@@ -394,7 +394,7 @@ function run_modulefile_tests()
     set_external_env
 
     cd ${EXAMPLE_WORK_DIR}
-    ${CURRENT_WORK_DIR}/examples/run.sh cpu $scope
+    ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope $scope
 
     log_status_fail=${PIPESTATUS[0]}
     if [ "$log_status_fail" -eq 0 ]

@@ -327,10 +327,10 @@ run()
     then
         dir_list="benchmark common cpu"
         bench_backend_list="host"
-
         # additional mode for testing external_launcher in lab only due to unstable result
         # in PV lab and https://jira.devtools.intel.com/browse/MLSL-808
-        if [[ ${SCOPE} != "pv" ]]; then
+        if [[ ${SCOPE} != "pv" ]]
+        then
             dir_list="${dir_list} external_launcher"
         fi
     else
@@ -619,6 +619,7 @@ parse_arguments()
         case $1 in
             "-h" | "--help" | "-help")                  print_help ; exit 0 ;;
             "--mode" | "-mode")                         MODE=$2 ; shift ;;
+            # ./run.sh cpu|gpu used for backward compatibility for PV 
             "gpu")                                      MODE="gpu" ;;
             "cpu")                                      MODE="cpu" ;;
             "pr")                                       SCOPE="pr" ;;
