@@ -310,8 +310,8 @@ post_build()
     then
         LDFLAGS="-L${LIBFABRIC_INSTALL_DIR}/lib/"
     fi
-    LDFLAGS="${LD_FLAGS} -Wl,-rpath,\$ORIGIN/../../../../mpi/latest/lib/release_mt/"
-    LDFLAGS="${LD_FLAGS} ${HWLOC_DIR}/lib/libhwloc.a"
+    LDFLAGS="${LDFLAGS} -Wl,-rpath,\$ORIGIN/../../../../mpi/latest/lib/release_mt/"
+    LDFLAGS="${LDFLAGS} ${HWLOC_DIR}/lib/libhwloc.a"
 
     gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack \
         -Wl,--version-script=${WORKSPACE}/ccl.map -std=gnu99 -Wall -Werror \
