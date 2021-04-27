@@ -130,9 +130,6 @@ struct sycl_copier {
                     out_buf_ptr,
                     static_cast<typename specific_sycl_buffer::value_type*>(in_buf_ptr) + offset,
                     count * dtype.size());
-
-                /* TODO: remove explicit wait */
-                e.wait();
             }
         }
         else {
