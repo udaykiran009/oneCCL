@@ -21,6 +21,14 @@
             abort(); \
         } \
     } while (0);
+
+#define UT_ASSERT_GLOBAL(cond, ...) \
+    do { \
+        if (!(cond)) { \
+            std::cerr << __VA_ARGS__ << std::endl; \
+            abort(); \
+        } \
+    } while (0);
 #else
 #define UT_ASSERT_OBJ(cond, obj, ...) \
     do { \
@@ -29,5 +37,11 @@
         } \
         { ASSERT_TRUE((cond)) << __VA_ARGS__ << std::endl; } \
     } while (0);
+
 #define UT_ASSERT(cond, ...) UT_ASSERT_OBJ(cond, this, __VA_ARGS__)
+
+#define UT_ASSERT_GLOBAL(cond, ...) \
+    do { \
+        { ASSERT_TRUE((cond)) << __VA_ARGS__ << std::endl; } \
+    } while (0);
 #endif

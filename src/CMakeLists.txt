@@ -21,6 +21,7 @@ list (APPEND EXTENSIONS_SRC
                     native_device_api/l0/base.cpp
                     native_device_api/l0/device.cpp
                     native_device_api/l0/context.cpp
+                    native_device_api/l0/event_pool.cpp
                     native_device_api/l0/subdevice.cpp
                     native_device_api/l0/driver.cpp
                     native_device_api/l0/export.cpp

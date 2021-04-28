@@ -36,6 +36,7 @@ if (MULTI_GPU_SUPPORT)
              "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/base.cpp"
              "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/device.cpp"
              "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/driver.cpp"
+             "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/event_pool.cpp"
              "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/export.cpp"
              "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/context.cpp"
              "${UPSTREAM_SOURCE_DIR}/src/native_device_api/l0/platform.cpp"
