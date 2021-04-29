@@ -134,7 +134,7 @@ set(CCL_SRC
     coll/ccl_reduce_scatter_op_attr.cpp
     coll/ccl_sparse_allreduce_op_attr.cpp
     coll/ccl_barrier_op_attr.cpp
-    coll/coll_param.hpp
+    coll/coll_param.cpp
     coll/algorithms/allgatherv.cpp
     coll/algorithms/allreduce/allreduce.cpp
     coll/algorithms/allreduce/allreduce_2d.cpp

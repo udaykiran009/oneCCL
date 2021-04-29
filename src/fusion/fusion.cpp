@@ -122,6 +122,7 @@ ccl_fusion_manager::~ccl_fusion_manager() {
 
 bool ccl_fusion_manager::can_fuse(ccl_master_sched* sched) {
     size_t bytes = sched->coll_param.count * sched->coll_param.dtype.size();
+
     if (bytes >= bytes_threshold) {
         LOG_DEBUG("can't fuse due to size ", bytes, ", max ", bytes_threshold);
         return false;
@@ -129,6 +130,11 @@ bool ccl_fusion_manager::can_fuse(ccl_master_sched* sched) {
 
     if (sched->coll_param.ctype != ccl_coll_allreduce) {
         LOG_DEBUG("can't fuse due to coll_type ", ccl_coll_type_to_str(sched->coll_param.ctype));
+        return false;
+    }
+
+    if (sched->coll_param.deps.size()) {
+        LOG_DEBUG("can't fuse due to deps size ", sched->coll_param.deps.size());
         return false;
     }
 
@@ -317,6 +323,8 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
                     exec_queue[global_copy_idx]->coll_param.count,
                     dtype);
 
+            part_scheds[idx]->add_barrier();
+
             offset += exec_queue[global_copy_idx]->coll_param.count * dtype_size;
         }
     }
@@ -353,6 +361,8 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
                                ccl_buffer_type::INDIRECT),
                     exec_queue[global_copy_idx]->coll_param.count,
                     dtype);
+
+            part_scheds[idx]->add_barrier();
 
             offset += exec_queue[global_copy_idx]->coll_param.count * dtype_size;
             entry_factory::make_entry<function_entry>(

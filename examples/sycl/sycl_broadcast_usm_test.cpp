@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     auto buf = allocator.allocate(count, usm_alloc_type);
 
     /* open buffers and modify them on the device side */
-    q.submit([&](auto &h) {
+    auto e = q.submit([&](auto &h) {
         h.parallel_for(count, [=](auto id) {
             if (rank == root_rank) {
                 buf[id] = root_rank + 10;
@@ -72,11 +72,13 @@ int main(int argc, char *argv[]) {
         });
     });
 
-    if (!handle_exception(q))
-        return -1;
+    /* do not wait completion of kernel and provide it as dependency for operation */
+    vector<ccl::event> deps;
+    deps.push_back(ccl::create_event(e));
 
     /* invoke broadcast */
-    ccl::broadcast(buf, count, root_rank, comm, stream).wait();
+    auto attr = ccl::create_operation_attr<ccl::broadcast_attr>();
+    ccl::broadcast(buf, count, root_rank, comm, stream, attr, deps).wait();
 
     /* open buf and check its correctness on the device side */
     buffer<int> check_buf(count * size);

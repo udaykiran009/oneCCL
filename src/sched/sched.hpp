@@ -124,6 +124,8 @@ public:
 
     ccl_request* start_subsched(ccl_extra_sched* subsched);
 
+    std::vector<ccl::event>& get_deps() const;
+
     ccl_sched_bin* bin = nullptr; /* valid only during execution */
     ccl_sched_queue* queue = nullptr; /* cached pointer to queue, valid even after execution */
     size_t start_idx = 0; /* index to start */

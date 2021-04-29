@@ -193,7 +193,6 @@ event allgatherv(const void* send_buf,
                  const stream& op_stream,
                  const allgatherv_attr& attr,
                  const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
         send_buf, send_count, recv_buf, recv_counts, dtype, disp(op_stream), attr, deps);
@@ -207,7 +206,6 @@ event allgatherv(const void* send_buf,
                  const communicator& comm,
                  const allgatherv_attr& attr,
                  const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
         send_buf, send_count, recv_buf, recv_counts, dtype, disp(default_stream), attr, deps);
@@ -222,7 +220,6 @@ event allgatherv(const void* send_buf,
                  const stream& op_stream,
                  const allgatherv_attr& attr,
                  const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
         send_buf, send_count, recv_bufs, recv_counts, dtype, disp(op_stream), attr, deps);
@@ -236,7 +233,6 @@ event allgatherv(const void* send_buf,
                  const communicator& comm,
                  const allgatherv_attr& attr,
                  const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
         send_buf, send_count, recv_bufs, recv_counts, dtype, disp(default_stream), attr, deps);
@@ -251,7 +247,6 @@ event allgatherv(const BufferType* send_buf,
                  const stream& op_stream,
                  const allgatherv_attr& attr,
                  const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
         send_buf, send_count, recv_buf, recv_counts, disp(op_stream), attr, deps);
@@ -265,7 +260,6 @@ event allgatherv(const BufferType* send_buf,
                  const communicator& comm,
                  const allgatherv_attr& attr,
                  const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
         send_buf, send_count, recv_buf, recv_counts, disp(default_stream), attr, deps);
@@ -280,7 +274,6 @@ event allgatherv(const BufferType* send_buf,
                  const stream& op_stream,
                  const allgatherv_attr& attr,
                  const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
         send_buf, send_count, recv_bufs, recv_counts, disp(op_stream), attr, deps);
@@ -294,7 +287,6 @@ event allgatherv(const BufferType* send_buf,
                  const communicator& comm,
                  const allgatherv_attr& attr,
                  const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
         send_buf, send_count, recv_bufs, recv_counts, disp(default_stream), attr, deps);
@@ -309,7 +301,6 @@ event allgatherv(const BufferObjectType& send_buf,
                  const stream& op_stream,
                  const allgatherv_attr& attr,
                  const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
         send_buf, send_count, recv_buf, recv_counts, disp(op_stream), attr, deps);
@@ -323,7 +314,6 @@ event allgatherv(const BufferObjectType& send_buf,
                  const communicator& comm,
                  const allgatherv_attr& attr,
                  const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
         send_buf, send_count, recv_buf, recv_counts, disp(default_stream), attr, deps);
@@ -338,7 +328,6 @@ event allgatherv(const BufferObjectType& send_buf,
                  const stream& op_stream,
                  const allgatherv_attr& attr,
                  const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
         send_buf, send_count, recv_bufs, recv_counts, disp(op_stream), attr, deps);
@@ -352,7 +341,6 @@ event allgatherv(const BufferObjectType& send_buf,
                  const communicator& comm,
                  const allgatherv_attr& attr,
                  const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allgatherv(
         send_buf, send_count, recv_bufs, recv_counts, disp(default_stream), attr, deps);
@@ -368,7 +356,6 @@ event allreduce(const void* send_buf,
                 const stream& op_stream,
                 const allreduce_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allreduce(
         send_buf, recv_buf, count, dtype, reduction, disp(op_stream), attr, deps);
@@ -382,7 +369,6 @@ event allreduce(const void* send_buf,
                 const communicator& comm,
                 const allreduce_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allreduce(
         send_buf, recv_buf, count, dtype, reduction, disp(default_stream), attr, deps);
@@ -397,7 +383,6 @@ event allreduce(const BufferType* send_buf,
                 const stream& op_stream,
                 const allreduce_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allreduce(send_buf, recv_buf, count, reduction, disp(op_stream), attr, deps);
 }
@@ -410,7 +395,6 @@ event allreduce(const BufferType* send_buf,
                 const communicator& comm,
                 const allreduce_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allreduce(
         send_buf, recv_buf, count, reduction, disp(default_stream), attr, deps);
@@ -425,7 +409,6 @@ event allreduce(const BufferObjectType& send_buf,
                 const stream& op_stream,
                 const allreduce_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allreduce(send_buf, recv_buf, count, reduction, disp(op_stream), attr, deps);
 }
@@ -438,7 +421,6 @@ event allreduce(const BufferObjectType& send_buf,
                 const communicator& comm,
                 const allreduce_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->allreduce(
         send_buf, recv_buf, count, reduction, disp(default_stream), attr, deps);
@@ -453,7 +435,6 @@ event alltoall(const void* send_buf,
                const stream& op_stream,
                const alltoall_attr& attr,
                const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, dtype, disp(op_stream), attr, deps);
 }
@@ -465,7 +446,6 @@ event alltoall(const void* send_buf,
                const communicator& comm,
                const alltoall_attr& attr,
                const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, dtype, disp(default_stream), attr, deps);
 }
@@ -478,7 +458,6 @@ event alltoall(const vector_class<void*>& send_buf,
                const stream& op_stream,
                const alltoall_attr& attr,
                const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, dtype, disp(op_stream), attr, deps);
 }
@@ -491,7 +470,6 @@ event alltoall(const BufferType* send_buf,
                const stream& op_stream,
                const alltoall_attr& attr,
                const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(op_stream), attr, deps);
 }
@@ -503,7 +481,6 @@ event alltoall(const BufferType* send_buf,
                const communicator& comm,
                const alltoall_attr& attr,
                const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(default_stream), attr, deps);
 }
@@ -516,7 +493,6 @@ event alltoall(const vector_class<BufferType*>& send_buf,
                const stream& op_stream,
                const alltoall_attr& attr,
                const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(op_stream), attr, deps);
 }
@@ -528,7 +504,6 @@ event alltoall(const vector_class<BufferType*>& send_buf,
                const communicator& comm,
                const alltoall_attr& attr,
                const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(default_stream), attr, deps);
 }
@@ -541,7 +516,6 @@ event alltoall(const BufferObjectType& send_buf,
                const stream& op_stream,
                const alltoall_attr& attr,
                const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(op_stream), attr, deps);
 }
@@ -553,7 +527,6 @@ event alltoall(const BufferObjectType& send_buf,
                const communicator& comm,
                const alltoall_attr& attr,
                const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(default_stream), attr, deps);
 }
@@ -566,7 +539,6 @@ event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& se
                const stream& op_stream,
                const alltoall_attr& attr,
                const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(op_stream), attr, deps);
 }
@@ -578,7 +550,6 @@ event alltoall(const vector_class<reference_wrapper_class<BufferObjectType>>& se
                const communicator& comm,
                const alltoall_attr& attr,
                const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoall(send_buf, recv_buf, count, disp(default_stream), attr, deps);
 }
@@ -593,7 +564,6 @@ event alltoallv(const void* send_buf,
                 const stream& op_stream,
                 const alltoallv_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
         send_buf, send_counts, recv_buf, recv_counts, dtype, disp(op_stream), attr, deps);
@@ -607,7 +577,6 @@ event alltoallv(const void* send_buf,
                 const communicator& comm,
                 const alltoallv_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
         send_buf, send_counts, recv_buf, recv_counts, dtype, disp(default_stream), attr, deps);
@@ -622,7 +591,6 @@ event alltoallv(const vector_class<void*>& send_bufs,
                 const stream& op_stream,
                 const alltoallv_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
         send_bufs, send_counts, recv_bufs, recv_counts, dtype, disp(op_stream), attr, deps);
@@ -636,7 +604,6 @@ event alltoallv(const vector_class<void*>& send_bufs,
                 const communicator& comm,
                 const alltoallv_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
         send_bufs, send_counts, recv_bufs, recv_counts, dtype, disp(default_stream), attr, deps);
@@ -651,7 +618,6 @@ event alltoallv(const BufferType* send_buf,
                 const stream& op_stream,
                 const alltoallv_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
         send_buf, send_counts, recv_buf, recv_counts, disp(op_stream), attr, deps);
@@ -665,7 +631,6 @@ event alltoallv(const BufferType* send_buf,
                 const communicator& comm,
                 const alltoallv_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
         send_buf, send_counts, recv_buf, recv_counts, disp(default_stream), attr, deps);
@@ -680,7 +645,6 @@ event alltoallv(const vector_class<BufferType*>& send_bufs,
                 const stream& op_stream,
                 const alltoallv_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
         send_bufs, send_counts, recv_bufs, recv_counts, disp(op_stream), attr, deps);
@@ -694,7 +658,6 @@ event alltoallv(const vector_class<BufferType*>& send_bufs,
                 const communicator& comm,
                 const alltoallv_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
         send_bufs, send_counts, recv_bufs, recv_counts, disp(default_stream), attr, deps);
@@ -709,7 +672,6 @@ event alltoallv(const BufferObjectType& send_buf,
                 const stream& op_stream,
                 const alltoallv_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
         send_buf, send_counts, recv_buf, recv_counts, disp(op_stream), attr, deps);
@@ -723,7 +685,6 @@ event alltoallv(const BufferObjectType& send_buf,
                 const communicator& comm,
                 const alltoallv_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
         send_buf, send_counts, recv_buf, recv_counts, disp(default_stream), attr, deps);
@@ -738,7 +699,6 @@ event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& s
                 const stream& op_stream,
                 const alltoallv_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
         send_bufs, send_counts, recv_bufs, recv_counts, disp(op_stream), attr, deps);
@@ -752,7 +712,6 @@ event alltoallv(const vector_class<reference_wrapper_class<BufferObjectType>>& s
                 const communicator& comm,
                 const alltoallv_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->alltoallv(
         send_bufs, send_counts, recv_bufs, recv_counts, disp(default_stream), attr, deps);
@@ -763,13 +722,11 @@ event barrier(const communicator& comm,
               const stream& op_stream,
               const barrier_attr& attr,
               const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->barrier(disp(op_stream), attr, deps);
 }
 
 event barrier(const communicator& comm, const barrier_attr& attr, const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->barrier(disp(default_stream), attr, deps);
 }
@@ -783,7 +740,6 @@ event broadcast(void* buf,
                 const stream& op_stream,
                 const broadcast_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->bcast(buf, count, dtype, root, disp(op_stream), attr, deps);
 }
@@ -795,7 +751,6 @@ event broadcast(void* buf,
                 const communicator& comm,
                 const broadcast_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->bcast(buf, count, dtype, root, disp(default_stream), attr, deps);
 }
@@ -810,7 +765,6 @@ event broadcast(BufferType* buf,
                 const vector_class<event>& deps)
 
 {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->bcast(buf, count, root, disp(op_stream), attr, deps);
 }
@@ -824,7 +778,6 @@ event broadcast(BufferType* buf,
                 const vector_class<event>& deps)
 
 {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->bcast(buf, count, root, disp(default_stream), attr, deps);
 }
@@ -837,7 +790,6 @@ event broadcast(BufferObjectType& buf,
                 const stream& op_stream,
                 const broadcast_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->bcast(buf, count, root, disp(op_stream), attr, deps);
 }
@@ -849,7 +801,6 @@ event broadcast(BufferObjectType& buf,
                 const communicator& comm,
                 const broadcast_attr& attr,
                 const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->bcast(buf, count, root, disp(default_stream), attr, deps);
 }
@@ -865,7 +816,6 @@ event reduce(const void* send_buf,
              const stream& op_stream,
              const reduce_attr& attr,
              const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce(
         send_buf, recv_buf, count, dtype, reduction, root, disp(op_stream), attr, deps);
@@ -880,7 +830,6 @@ event reduce(const void* send_buf,
              const communicator& comm,
              const reduce_attr& attr,
              const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce(
         send_buf, recv_buf, count, dtype, reduction, root, disp(default_stream), attr, deps);
@@ -896,7 +845,6 @@ event reduce(const BufferType* send_buf,
              const stream& op_stream,
              const reduce_attr& attr,
              const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce(
         send_buf, recv_buf, count, reduction, root, disp(op_stream), attr, deps);
@@ -911,7 +859,6 @@ event reduce(const BufferType* send_buf,
              const communicator& comm,
              const reduce_attr& attr,
              const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce(
         send_buf, recv_buf, count, reduction, root, disp(default_stream), attr, deps);
@@ -927,7 +874,6 @@ event reduce(const BufferObjectType& send_buf,
              const stream& op_stream,
              const reduce_attr& attr,
              const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce(
         send_buf, recv_buf, count, reduction, root, disp(op_stream), attr, deps);
@@ -942,7 +888,6 @@ event reduce(const BufferObjectType& send_buf,
              const communicator& comm,
              const reduce_attr& attr,
              const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce(
         send_buf, recv_buf, count, reduction, root, disp(default_stream), attr, deps);
@@ -958,7 +903,6 @@ event reduce_scatter(const void* send_buf,
                      const stream& op_stream,
                      const reduce_scatter_attr& attr,
                      const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce_scatter(
         send_buf, recv_buf, recv_count, dtype, reduction, disp(op_stream), attr, deps);
@@ -972,7 +916,6 @@ event reduce_scatter(const void* send_buf,
                      const communicator& comm,
                      const reduce_scatter_attr& attr,
                      const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce_scatter(
         send_buf, recv_buf, recv_count, dtype, reduction, disp(default_stream), attr, deps);
@@ -987,7 +930,6 @@ event reduce_scatter(const BufferType* send_buf,
                      const stream& op_stream,
                      const reduce_scatter_attr& attr,
                      const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce_scatter(
         send_buf, recv_buf, recv_count, reduction, disp(op_stream), attr, deps);
@@ -1001,7 +943,6 @@ event reduce_scatter(const BufferType* send_buf,
                      const communicator& comm,
                      const reduce_scatter_attr& attr,
                      const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce_scatter(
         send_buf, recv_buf, recv_count, reduction, disp(default_stream), attr, deps);
@@ -1016,7 +957,6 @@ event reduce_scatter(const BufferObjectType& send_buf,
                      const stream& op_stream,
                      const reduce_scatter_attr& attr,
                      const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce_scatter(
         send_buf, recv_buf, recv_count, reduction, disp(op_stream), attr, deps);
@@ -1030,7 +970,6 @@ event reduce_scatter(const BufferObjectType& send_buf,
                      const communicator& comm,
                      const reduce_scatter_attr& attr,
                      const vector_class<event>& deps) {
-    CHECK_DEPS(deps);
     impl_dispatch disp;
     return disp(comm)->reduce_scatter(
         send_buf, recv_buf, recv_count, reduction, disp(default_stream), attr, deps);
@@ -1056,7 +995,6 @@ ccl::event sparse_allreduce(const void* send_ind_buf,
                             const ccl::stream& op_stream,
                             const ccl::sparse_allreduce_attr& attr,
                             const ccl::vector_class<ccl::event>& deps) {
-    CHECK_DEPS(deps);
     ccl::impl_dispatch disp;
     return disp(comm)->sparse_allreduce(send_ind_buf,
                                         send_ind_count,
@@ -1088,7 +1026,6 @@ ccl::event sparse_allreduce(const void* send_ind_buf,
                             const ccl::communicator& comm,
                             const ccl::sparse_allreduce_attr& attr,
                             const ccl::vector_class<ccl::event>& deps) {
-    CHECK_DEPS(deps);
     ccl::impl_dispatch disp;
     return disp(comm)->sparse_allreduce(send_ind_buf,
                                         send_ind_count,
@@ -1120,7 +1057,6 @@ ccl::event sparse_allreduce(const IndexBufferType* send_ind_buf,
                             const ccl::stream& op_stream,
                             const ccl::sparse_allreduce_attr& attr,
                             const ccl::vector_class<ccl::event>& deps) {
-    CHECK_DEPS(deps);
     ccl::impl_dispatch disp;
     return disp(comm)->sparse_allreduce(send_ind_buf,
                                         send_ind_count,
@@ -1149,7 +1085,6 @@ ccl::event sparse_allreduce(const IndexBufferType* send_ind_buf,
                             const ccl::communicator& comm,
                             const ccl::sparse_allreduce_attr& attr,
                             const ccl::vector_class<ccl::event>& deps) {
-    CHECK_DEPS(deps);
     ccl::impl_dispatch disp;
     return disp(comm)->sparse_allreduce(send_ind_buf,
                                         send_ind_count,
@@ -1181,7 +1116,6 @@ ccl::event sparse_allreduce(const IndexBufferType* send_ind_buf,
 //                  const ccl::sparse_allreduce_attr& attr,
 //                  const ccl::vector_class<ccl::event>& deps)
 // {
-//     CHECK_DEPS(deps);
 //     ccl::impl_dispatch disp;
 //     return disp(comm)->sparse_allreduce(send_ind_buf, send_ind_count,
 //                                         send_val_buf, send_val_count,
@@ -1206,7 +1140,6 @@ ccl::event sparse_allreduce(const IndexBufferType* send_ind_buf,
 //                  const ccl::sparse_allreduce_attr& attr,
 //                  const ccl::vector_class<ccl::event>& deps)
 // {
-//     CHECK_DEPS(deps);
 //     ccl::impl_dispatch disp;
 //     return disp(comm)->sparse_allreduce(send_ind_buf, send_ind_count,
 //                                         send_val_buf, send_val_count,

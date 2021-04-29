@@ -27,7 +27,8 @@ ccl::event host_communicator::allgatherv_impl(const buffer_type* send_buf,
                                            ccl::native_type_info<buffer_type>::dtype,
                                            attr,
                                            comm_impl.get(),
-                                           nullptr);
+                                           nullptr,
+                                           deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
@@ -50,7 +51,8 @@ ccl::event host_communicator::allgatherv_impl(const buffer_type* send_buf,
                                            ccl::native_type_info<buffer_type>::dtype,
                                            internal_attr,
                                            comm_impl.get(),
-                                           nullptr);
+                                           nullptr,
+                                           deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
@@ -98,7 +100,8 @@ ccl::event host_communicator::allreduce_impl(const buffer_type* send_buf,
                                           reduction,
                                           attr,
                                           comm_impl.get(),
-                                          nullptr);
+                                          nullptr,
+                                          deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
@@ -130,7 +133,8 @@ ccl::event host_communicator::alltoall_impl(const buffer_type* send_buf,
                                          ccl::native_type_info<buffer_type>::dtype,
                                          attr,
                                          comm_impl.get(),
-                                         nullptr);
+                                         nullptr,
+                                         deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
@@ -188,7 +192,8 @@ ccl::event host_communicator::alltoallv_impl(const buffer_type* send_buf,
                                           ccl::native_type_info<buffer_type>::dtype,
                                           attr,
                                           comm_impl.get(),
-                                          nullptr);
+                                          nullptr,
+                                          deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
@@ -246,7 +251,8 @@ ccl::event host_communicator::broadcast_impl(buffer_type* buf,
                                           root,
                                           attr,
                                           comm_impl.get(),
-                                          nullptr);
+                                          nullptr,
+                                          deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
@@ -281,7 +287,8 @@ ccl::event host_communicator::reduce_impl(const buffer_type* send_buf,
                                        root,
                                        attr,
                                        comm_impl.get(),
-                                       nullptr);
+                                       nullptr,
+                                       deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
@@ -316,7 +323,8 @@ ccl::event host_communicator::reduce_scatter_impl(const buffer_type* send_buf,
                                                reduction,
                                                attr,
                                                comm_impl.get(),
-                                               nullptr);
+                                               nullptr,
+                                               deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
@@ -361,7 +369,8 @@ ccl::event host_communicator::sparse_allreduce_impl(const index_buffer_type* sen
                                                  reduction,
                                                  attr,
                                                  comm_impl.get(),
-                                                 nullptr);
+                                                 nullptr,
+                                                 deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }

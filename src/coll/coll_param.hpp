@@ -2,14 +2,7 @@
 
 #include "coll/algorithms/algorithms_enum.hpp"
 #include "common/datatype/datatype.hpp"
-
-#include "oneapi/ccl/type_traits.hpp"
-#include "oneapi/ccl/stream_attr_ids.hpp"
-#include "oneapi/ccl/stream_attr_ids_traits.hpp"
-#include "oneapi/ccl/stream.hpp"
-#include "oneapi/ccl/coll_attr_ids.hpp"
-#include "oneapi/ccl/coll_attr_ids_traits.hpp"
-#include "oneapi/ccl/coll_attr.hpp"
+#include "oneapi/ccl.hpp"
 
 class ccl_comm;
 
@@ -84,6 +77,8 @@ struct ccl_coll_sparse_param {
     ccl_datatype itype;
 };
 
+void copy_deps(const std::vector<ccl::event>& in, std::vector<ccl::event>& out);
+
 struct ccl_coll_param {
     ccl_coll_type ctype;
     void* buf;
@@ -97,6 +92,7 @@ struct ccl_coll_param {
     ccl::reduction reduction;
     int root;
     const ccl_stream* stream;
+    std::vector<ccl::event> deps;
     ccl_comm* comm;
     ccl_coll_sparse_param sparse_param;
 
@@ -105,6 +101,9 @@ struct ccl_coll_param {
     ccl_sycl_buffer_t* sycl_recv_buf;
     ccl_sycl_buffer_t* sycl_buf;
 #endif /* CCL_ENABLE_SYCL */
+
+    ccl_coll_param() {}
+    ccl_coll_param(const ccl_coll_param& other);
 };
 
 class coll_param_gpu {
