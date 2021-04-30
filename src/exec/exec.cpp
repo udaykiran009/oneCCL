@@ -134,9 +134,13 @@ ccl_executor::~ccl_executor() {
             }
             else
                 LOG_DEBUG("stopped worker # ", idx);
-
-            workers[idx].reset();
         }
+
+        while (!workers[idx]->can_reset()) {
+            ccl_yield(ccl::global_data::env().yield_type);
+        }
+
+        workers[idx].reset();
     }
 }
 
