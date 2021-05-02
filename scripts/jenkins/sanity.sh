@@ -454,7 +454,7 @@ function run_tests()
                 do
                     if [ "$algo" == "scatter_barrier" ];
                     then
-                        CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                        CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
                             CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"_chunked
                     fi
                     CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"
@@ -464,7 +464,7 @@ function run_tests()
                 do
                     if [ "$algo" == "scatter_barrier" ];
                     then
-                        CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                        CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
                             CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"_chunked
                     fi
                     CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"
@@ -519,7 +519,7 @@ function run_tests()
                 do
                     if [ "$algo" == "scatter_barrier" ];
                     then
-                        CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                        CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
                             CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"_chunked
                     fi
                     CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"
@@ -529,7 +529,7 @@ function run_tests()
                 do
                     if [ "$algo" == "scatter_barrier" ];
                     then
-                        CCL_ALLTOALL_SCATTER_MAX_OPS=1 CCL_ALLTOALL_SCATTER_PLAIN=1 CCL_CHUNK_COUNT=${worker_count} \
+                        CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
                             CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"_chunked
                     fi
                     CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"

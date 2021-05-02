@@ -1,4 +1,5 @@
 #include "sched/entry/entry.hpp"
+#include "sched/sched.hpp"
 #include "common/log/log.hpp"
 
 void sched_entry::do_progress() {
@@ -7,13 +8,23 @@ void sched_entry::do_progress() {
             status == ccl_sched_entry_status_not_started || status == ccl_sched_entry_status_again,
             "bad status ",
             status);
-        start();
-        CCL_ASSERT(status >= ccl_sched_entry_status_again, "bad status ", status);
+
+        if (sched->flow_control.take_credit()) {
+            start();
+            CCL_ASSERT(status >= ccl_sched_entry_status_again, "bad status ", status);
+        }
+        else {
+            status = ccl_sched_entry_status_again;
+        }
     }
     else if (status == ccl_sched_entry_status_started) {
         LOG_TRACE("update entry ", name());
         update();
         CCL_ASSERT(status >= ccl_sched_entry_status_started, "bad status ", status);
+    }
+
+    if (status == ccl_sched_entry_status_complete) {
+        sched->flow_control.return_credit();
     }
 
     if (status == ccl_sched_entry_status_complete && exec_mode == ccl_sched_entry_exec_once) {

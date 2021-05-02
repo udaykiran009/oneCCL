@@ -31,7 +31,7 @@ endif()
 
 option(BUILD_EXAMPLES "Build examples" TRUE)
 option(BUILD_FT "Build functional tests" TRUE)
-option(BUILD_UT "Build unit tests" TRUE)
+option(BUILD_UT "Build unit tests" FALSE)
 option(BUILD_CONFIG "Build cmake configs" TRUE)
 
 option(USE_CODECOV_FLAGS "Calculate code coverage" FALSE)

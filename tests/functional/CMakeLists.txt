@@ -17,9 +17,9 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
-set(COMMON_CMAKE_DIR ${PROJECT_SOURCE_DIR}/../../cmake)
-
+# standalone build
 if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+    set(COMMON_CMAKE_DIR ${PROJECT_SOURCE_DIR}/../../cmake)
     include(${COMMON_CMAKE_DIR}/helpers.cmake)
     set_lp_env()
     if (COMPUTE_BACKEND)
@@ -31,13 +31,6 @@ set(SERVICE_SRC
     conf.cpp
     lp.cpp
     transport.cpp)
-
-if (DEFINED ENV{CCL_CONFIGURATION})
-    set(CCL_CONFIGURATION "$ENV{CCL_CONFIGURATION}")
-    if(${CCL_CONFIGURATION} STREQUAL "cpu_gpu_dpcpp")
-        set(COMPUTE_BACKEND "dpcpp_level_zero")
-    endif()
-endif()
 
 if (DEFINED ENV{CCL_ROOT})
     set(CCL_ROOT "$ENV{CCL_ROOT}")
@@ -59,8 +52,8 @@ include_directories(${INC_DIRS})
 
 message(STATUS "FT build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "FT CCL_ROOT: ${CCL_ROOT}")
-message(STATUS "FT CCL_CONFIGURATION: ${CCL_CONFIGURATION}")
 message(STATUS "FT INC_DIRS: ${INC_DIRS}")
+message(STATUS "FT COMPUTE_BACKEND: ${COMPUTE_BACKEND}")
 
 if (${CMAKE_VERSION} VERSION_LESS 3.1)
 #cmake version below 3.1 does not support CMAKE_C[XX}_STANDARD flags
@@ -85,7 +78,6 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (COMPUTE_BACKEND)
-    activate_compute_backend("${CCL_ROOT}/lib;${COMMON_CMAKE_DIR}" ${COMPUTE_BACKEND})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPUTE_BACKEND_FLAGS}")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${COMPUTE_BACKEND_LIBRARIES}")
 endif()

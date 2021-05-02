@@ -169,6 +169,7 @@ set(CCL_SRC
     sched/sched_base.cpp
     sched/cache/cache.cpp
     sched/cache/key.cpp
+    sched/queue/flow_control.cpp
     sched/queue/strict_queue.cpp
     sched/queue/queue.cpp
     sched/entry/coll/coll_entry.cpp

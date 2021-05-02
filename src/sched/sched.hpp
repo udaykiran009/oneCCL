@@ -1,5 +1,7 @@
 #pragma once
+
 #include "sched/sched_base.hpp"
+#include "sched/queue/flow_control.hpp"
 #include "internal_types.hpp"
 
 //todo: sequence diagram
@@ -145,6 +147,12 @@ public:
     /* whether sched should be executed in the same order as in user code */
     /* currently applicable for start phase only */
     bool strict_order;
+
+    /*
+      limits number of active entries 
+      mostly makes sense for ATL entries
+    */
+    ccl::flow_control flow_control;
 
     void set_finalize_fn(ccl_sched_finalize_fn_t fn, void* ctx) {
         finalize_fn = fn;
