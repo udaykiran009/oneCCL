@@ -3,6 +3,9 @@
 #include "common/log/log.hpp"
 
 void sched_entry::do_progress() {
+    if (is_completed())
+        return;
+
     if (status < ccl_sched_entry_status_started) {
         CCL_ASSERT(
             status == ccl_sched_entry_status_not_started || status == ccl_sched_entry_status_again,

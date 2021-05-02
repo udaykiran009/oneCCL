@@ -66,8 +66,7 @@ void ccl_sched::do_progress() {
                       "]");
         }
 
-        if (!entry->is_completed())
-            entry->do_progress();
+        entry->do_progress();
 
         if (entry->get_status() == ccl_sched_entry_status_again) {
             LOG_DEBUG("entry ",
