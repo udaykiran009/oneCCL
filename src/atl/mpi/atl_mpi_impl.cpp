@@ -712,6 +712,10 @@ atl_status_t atl_mpi_set_impi_env(const atl_attr_t& attr) {
     if (attr.ep_count)
         setenv("I_MPI_OFI_ISEND_INJECT_THRESHOLD", "0", 0);
 
+#ifdef CCL_ENABLE_SYCL
+    setenv("I_MPI_SHM_CMA", "0", 0);
+#endif /* CCL_ENABLE_SYCL */
+
     return ATL_STATUS_SUCCESS;
 }
 

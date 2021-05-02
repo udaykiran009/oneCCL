@@ -59,22 +59,18 @@ int main(int argc, char *argv[]) {
     /* create buffers */
     auto buf = allocator.allocate(count, usm_alloc_type);
 
-    /* open buffers and modify them on the device side */
-    auto e = q.submit([&](auto &h) {
-        h.parallel_for(count, [=](auto id) {
-            if (rank == root_rank) {
-                buf[id] = root_rank + 10;
-            }
-            else {
-                buf[id] = 0;
-            }
-            buf[id] += 1;
-        });
-    });
-
     /* do not wait completion of kernel and provide it as dependency for operation */
     vector<ccl::event> deps;
-    deps.push_back(ccl::create_event(e));
+
+    if (rank == root_rank) {
+        /* open buffers and modify them on the device side */
+        auto e = q.submit([&](auto &h) {
+            h.parallel_for(count, [=](auto id) {
+                buf[id] = 10;
+            });
+        });
+        deps.push_back(ccl::create_event(e));
+    }
 
     /* invoke broadcast */
     auto attr = ccl::create_operation_attr<ccl::broadcast_attr>();
@@ -85,7 +81,7 @@ int main(int argc, char *argv[]) {
     q.submit([&](auto &h) {
         accessor check_buf_acc(check_buf, h, write_only);
         h.parallel_for(count, [=](auto id) {
-            if (buf[id] != root_rank + 11) {
+            if (buf[id] != 10) {
                 check_buf_acc[id] = -1;
             }
         });

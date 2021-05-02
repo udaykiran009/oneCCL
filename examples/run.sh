@@ -151,7 +151,7 @@ run_benchmark()
                 buf_count=1
             fi
             options="${options} --iters 8 --buf_count ${buf_count} --sycl_mem_type usm"
-            usm_list="device" #shared (MLSL-779)
+            usm_list="device shared"
         else
             options="${options} --iters 16 --buf_count 8"
         fi
@@ -236,19 +236,16 @@ run_benchmark()
             fi
         fi
 
-        if [ $use_kernels -eq 1 ]
+        if [ $use_kernels -eq 1 ] && [ "${usm}" == "device" ];
         then
+            ranks_per_proc=4
             if [ -n "${ranks}" ];
             then
-                options="${options} --ranks_per_proc ${ranks}"
-            else
-                #default --ranks_per_proc 4
-                echo "set --ranks_per_proc 4 by default"
-                options="${options} --ranks_per_proc 4"
+                ranks_per_proc=${ranks}
             fi
 
             echo "Running benchmark with the kernels support:"
-            final_options="${options} -n 1"
+            final_options="${options} -n 1 --ranks_per_proc ${ranks_per_proc}"
             cmd=`echo $ccl_extra_env CCL_COMM_KERNELS=1 CCL_KVS_GET_TIMEOUT=10 ./$example ${final_options}`
             echo "Running: $cmd"
             eval $cmd 2>&1 | tee ${test_log}
@@ -404,13 +401,9 @@ run()
                         for runtime in $runtime_list
                         do
                             ccl_runtime_env="${ccl_transport_env}"
-
-                            if [ "$runtime" == "opencl" ];
+                            if [ "$runtime" != "none" ]
                             then
-                                ccl_runtime_env="SYCL_DEVICE_FILTER=opencl:*:0 ${ccl_runtime_env}"
-                            elif [ "$runtime" == "level_zero" ];
-                            then
-                                ccl_runtime_env="SYCL_DEVICE_FILTER=level_zero:*:0 ${ccl_runtime_env}"
+                                ccl_runtime_env="SYCL_DEVICE_FILTER=${runtime} ${ccl_runtime_env}"
                             fi
 
                             ccl_extra_env="${ccl_runtime_env}"
@@ -458,44 +451,39 @@ run()
                 then
                     for selector in $sycl_example_selector_list
                     do
+                        if [ "$selector" == "gpu" ];
+                        then
+                            runtime_list="opencl level_zero"
+                        else
+                            runtime_list="opencl"
+                        fi
+
                         if [[ "${example}" == *"_usm_"* ]]
                         then
-                            usm_list="host device" # shared (MLSL-779)
+                            if [ "$selector" == "gpu" ];
+                            then
+                                usm_list="device shared"
+                            else
+                                usm_list="host shared"
+                            fi
                         else
                             usm_list="default"
                         fi
 
-                        echo "usm_list: $usm_list"
-
-                        for usm in $usm_list
+                        for runtime in $runtime_list
                         do
-                            if [ "$usm" == "host" ] && [ "$selector" == "gpu" ];
+                            if [ "$selector" == "cpu" ] && [ "$runtime" == "opencl" ] && [ "$usm_list" != "default" ];
                             then
+                                # MLSL-856
                                 continue
                             fi
 
-                            if [ "$usm" == "device" ] && [ "$selector" != "gpu" ];
-                            then
-                                continue
-                            fi
-
-                            # MLSL-779
-                            if [ "$selector" == "gpu" ];
-                            then
-                                ccl_staging_buffer="CCL_STAGING_BUFFER=regular"
-                            else
-                                ccl_staging_buffer=""
-                            fi
-
-                            echo "selector $selector, usm $usm"
-
-                            if [ "$selector" == "gpu" ];
-                            then
-                                ccl_extra_env="SYCL_DEVICE_FILTER=level_zero:*:0 ${ccl_transport_env} ${ccl_staging_buffer}"
+                            for usm in $usm_list
+                            do
+                                echo "selector $selector, runtime $runtime, usm $usm"
+                                ccl_extra_env="SYCL_DEVICE_FILTER=${runtime} ${ccl_transport_env}"
                                 run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} "${selector} ${usm}"
-                            fi
-                            ccl_extra_env="SYCL_DEVICE_FILTER=opencl:*:0 ${ccl_transport_env} ${ccl_staging_buffer}"
-                            run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} "${selector} ${usm}"
+                            done
                         done
                     done
                 elif [ "$dir_name" == "external_launcher" ];
