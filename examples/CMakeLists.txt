@@ -72,6 +72,10 @@ if (CCL_BF16_COMPILER)
     endif()
 endif()
 
+if (DEFINED ENV{I_MPI_ROOT})
+    set(I_MPI_ROOT "$ENV{I_MPI_ROOT}")
+endif()
+
 include_directories(include)
 
 add_subdirectory(cpu)
