@@ -27,7 +27,6 @@ files=(
     "ccl ${WORKSPACE}/cmake"
     "vars.sh.in ${WORKSPACE}/cmake"
     "third-party-programs.txt ${WORKSPACE}"
-    "CMakeLists.txt ${WORKSPACE}/examples"
 )
 
 for item in "${files[@]}"

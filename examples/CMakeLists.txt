@@ -1,17 +1,25 @@
 cmake_minimum_required (VERSION 2.8)
 
+if (DEFINED ENV{CCL_CONFIGURATION})
+    set(CCL_CONFIGURATION "$ENV{CCL_CONFIGURATION}")
+    if(${CCL_CONFIGURATION} STREQUAL "cpu_gpu_dpcpp")
+        set(COMPUTE_BACKEND_TARGET_NAME "sycl")
+    endif()
+endif()
+
 if (DEFINED ENV{CCL_ROOT})
     set(CCL_ROOT "$ENV{CCL_ROOT}")
 else()
     message(FATAL_ERROR "Please define CCL_ROOT environment variable")
 endif()
 
-if (DEFINED ENV{CCL_CONFIGURATION})
-    set(CCL_CONFIGURATION "$ENV{CCL_CONFIGURATION}")
+if (DEFINED ENV{I_MPI_ROOT})
+    set(I_MPI_ROOT "$ENV{I_MPI_ROOT}")
+    set(CMAKE_INSTALL_RPATH "${I_MPI_ROOT}/lib/release_mt/")
 endif()
 
-message(STATUS "EXAMPLES CCL_ROOT: ${CCL_ROOT}")
-message(STATUS "EXAMPLES CCL_CONFIGURATION: ${CCL_CONFIGURATION}")
+message(STATUS "CCL_ROOT: ${CCL_ROOT}")
+message(STATUS "CCL_CONFIGURATION: ${CCL_CONFIGURATION}")
 
 if (NOT DEFINED ${CCL_INSTALL_BENCHMARKS})
     set(CCL_INSTALL_BENCHMARKS "$ENV{PWD}")
@@ -70,10 +78,6 @@ if (CCL_BF16_COMPILER)
     else()
         message(STATUS "BF16 target attributes: no")
     endif()
-endif()
-
-if (DEFINED ENV{I_MPI_ROOT})
-    set(I_MPI_ROOT "$ENV{I_MPI_ROOT}")
 endif()
 
 include_directories(include)
