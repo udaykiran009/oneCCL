@@ -1,5 +1,10 @@
 #include "sched/extra_sched.hpp"
+#include "sched/queue/flow_control.hpp"
 #include "sched/sched.hpp"
+
+ccl::flow_control::flow_control() {}
+
+ccl::flow_control::~flow_control() {}
 
 ccl_sched::ccl_sched(const ccl_coll_param& coll_param, ccl_request* master_request)
         : ccl_sched_base() {}
