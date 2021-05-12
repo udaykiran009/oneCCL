@@ -58,6 +58,7 @@ message(STATUS "FT COMPUTE_BACKEND: ${COMPUTE_BACKEND}")
 if (${CMAKE_VERSION} VERSION_LESS 3.1)
 #cmake version below 3.1 does not support CMAKE_C[XX}_STANDARD flags
 #set manually
+# TODO: Need to handle c++17 option for older cmake
     set(CXX_COMPILER_FLAGS "-std=gnu++11")
     set(C_COMPILER_FLAGS "-std=gnu99")
 endif()
@@ -74,7 +75,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMPILER_FLAGS} -Wall -Werror -D_G
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${CXX_COMPILER_FLAGS} -O0 -g -DENABLE_DEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CXX_COMPILER_FLAGS} -O3")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${CXX_COMPILER_FLAGS} -O2 -g")
-set(CMAKE_CXX_STANDARD 11)
+# C++ standard version is set by set_compute_backend/activate_compute_backend, so no need to set it here
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (COMPUTE_BACKEND)
