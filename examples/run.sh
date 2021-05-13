@@ -140,21 +140,6 @@ run_benchmark()
     if [ "${backend}" != "" ];
     then
         options="${options} --backend ${backend}"
-
-        if [ "${backend}" == "sycl" ];
-        then
-            buf_count=2
-            if [ "${runtime}" == "level_zero" ];
-            then
-                # FIXME: enable back buf_count > 1 after USM fix in L0
-                # https://jira.devtools.intel.com/browse/CMPLRLLVM-22660
-                buf_count=1
-            fi
-            options="${options} --iters 8 --buf_count ${buf_count} --sycl_mem_type usm"
-            usm_list="device shared"
-        else
-            options="${options} --iters 16 --buf_count 8"
-        fi
     fi
 
     if [ "${loop}" != "" ];
@@ -176,6 +161,23 @@ run_benchmark()
     then
         options="${options} --reduction ${reduction}"
     fi
+
+    buf_count=16
+    if [ "${backend}" == "sycl" ];
+    then
+        buf_count=2
+        if [ "${runtime}" == "level_zero" ];
+        then
+            # FIXME: enable back buf_count > 1 after USM fix in L0
+            # https://jira.devtools.intel.com/browse/CMPLRLLVM-22660
+            buf_count=1
+        fi
+        options="${options} --iters 8 --sycl_mem_type usm"
+        usm_list="device shared"
+    else
+        options="${options} --iters 16"
+    fi
+    options="${options} --buf_count ${buf_count}"
 
     use_kernels=0
     if [ "${USE_KERNELS}" == "yes" ]
