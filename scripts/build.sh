@@ -152,6 +152,8 @@ print_help()
     echo_log "        Prepare CCL build with icc/icpc"
     echo_log "    -build-gpu|--build-gpu"
     echo_log "        Prepare CCL build with clang/clang++ with SYCL"
+    echo_log "    -conf|--conf"
+    echo_log "        Run configure the library"
     echo_log "    -post-build|--post-build"
     echo_log "        Make post-build actions"
     echo_log "    -pack|--pack"
@@ -270,12 +272,16 @@ build()
     echo "compute_backend =" ${compute_backend}
     echo "compiler =" ${compiler}
     echo "BUILD_FOLDER =" ${BUILD_FOLDER}
-    log mkdir ${WORKSPACE}/${BUILD_FOLDER} && cd ${WORKSPACE}/${BUILD_FOLDER} && echo ${PWD}
-    log cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-    -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
-    -DCOMPUTE_BACKEND="${compute_backend}" -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" \
-    -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}" \
-    "${CMAKE_ADDITIONAL_OPTIONS}"
+
+    log mkdir -p ${WORKSPACE}/${BUILD_FOLDER} && cd ${WORKSPACE}/${BUILD_FOLDER} && echo ${PWD}
+
+    if [[ ${ENABLE_CONF} = "yes" ]]; then
+        log cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+        -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
+        -DCOMPUTE_BACKEND="${compute_backend}" -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" \
+        -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}" \
+        "${CMAKE_ADDITIONAL_OPTIONS}"
+    fi
 
     log make -j$MAKE_JOB_COUNT VERBOSE=1 install
     CheckCommandExitCode $? "build failed"
@@ -371,6 +377,7 @@ prepare_staging()
     echo_debug "PRE_DROP_DIR = ${PRE_DROP_DIR}"
     echo_debug "SWF_PRE_DROP_DIR = ${SWF_PRE_DROP_DIR}"
     echo_debug "ENABLE_NIGHTLY_DROP = ${ENABLE_NIGHTLY_DROP}"
+    cd ${WORKSPACE}
 
     rm -rf ${TMP_DIR} ${TARGET_DIR}
     mkdir -p ${TMP_DIR}
@@ -666,6 +673,7 @@ make_package()
         cp -r ${PACKAGE_ENG_DIR}/* ${TMP_DIR}/${CCL_PACKAGE_NAME}/package
 
         cd ${TMP_DIR}/${CCL_PACKAGE_NAME}/package && tar czf ${TMP_DIR}/${CCL_PACKAGE_NAME}/files.tar.gz * --owner=root --group=root
+        cd ${WORKSPACE}
         rm -rf ${TMP_DIR}/${CCL_PACKAGE_NAME}/package
         sed -i -e "s|CCL_SUBSTITUTE_OFFICIAL_VERSION|${CCL_VERSION_FORMAT}|g" ${WORKSPACE}/scripts/install.sh
         cp ${WORKSPACE}/scripts/install.sh ${TMP_DIR}/${CCL_PACKAGE_NAME}
@@ -690,6 +698,8 @@ parse_arguments()
             "--eng-package"|"-eng-package")
                 ENABLE_BUILD_CPU="yes"
                 ENABLE_BUILD_GPU="yes"
+                ENABLE_PREPARE_FILES="yes"
+                ENABLE_CONF="yes"
                 ENABLE_POST_BUILD="yes"
                 ENABLE_PACK="yes"
                 ENABLE_INSTALL="yes"
@@ -702,6 +712,10 @@ parse_arguments()
                 ;;
             "-build-gpu"|"--build-gpu")
                 ENABLE_BUILD_GPU="yes"
+                ;;
+            "-conf"|"--conf")
+                ENABLE_PREPARE_FILES="yes"
+                ENABLE_CONF="yes"
                 ;;
             "-post-build"|"--post-build")
                 ENABLE_POST_BUILD="yes"
@@ -752,6 +766,7 @@ parse_arguments()
     echo_log "-----------------------------------------------------------"
     echo_log "ENABLE_BUILD_CPU          = ${ENABLE_BUILD_CPU}"
     echo_log "ENABLE_BUILD_GPU          = ${ENABLE_BUILD_GPU}"
+    echo_log "ENABLE_CONF               = ${ENABLE_CONF}"
     echo_log "ENABLE_POST_BUILD         = ${ENABLE_POST_BUILD}"
     echo_log "ENABLE_PACK               = ${ENABLE_PACK}"
     echo_log "ENABLE_DEBUG_BUILD        = ${ENABLE_DEBUG_BUILD}"
@@ -770,14 +785,16 @@ parse_arguments()
 #==============================================================================
 preparing_files()
 {
-    echo_log_separator
-    echo_log "#\t\t\tPreparing files..."
-    echo_log_separator
-    ${SCRIPT_DIR}/prepare_files.sh ccl_oneapi
-    CheckCommandExitCode $? "ERROR: preparing files failed"
-    echo_log_separator
-    echo_log "#\t\t\tPreparing files...DONE"
-    echo_log_separator
+    if [[ ${ENABLE_PREPARE_FILES} = "yes" ]]; then
+        echo_log_separator
+        echo_log "#\t\t\tPreparing files..."
+        echo_log_separator
+        ${SCRIPT_DIR}/prepare_files.sh ccl_oneapi
+        CheckCommandExitCode $? "ERROR: preparing files failed"
+        echo_log_separator
+        echo_log "#\t\t\tPreparing files...DONE"
+        echo_log_separator
+    fi
 }
 
 #==============================================================================
@@ -785,7 +802,7 @@ preparing_files()
 #==============================================================================
 run_build_cpu()
 {
-    if [ "${ENABLE_BUILD_CPU}" = "yes" ]
+    if [[ "${ENABLE_BUILD_CPU}" = "yes" ]]
     then
         echo_log_separator
         echo_log "#\t\t\tBuilding host..."
@@ -798,7 +815,7 @@ run_build_cpu()
 }
 run_build_gpu()
 {
-    if [ "${ENABLE_BUILD_GPU}" = "yes" ]
+    if [[ "${ENABLE_BUILD_GPU}" = "yes" ]]
     then
         echo_log_separator
         echo_log "#\t\t\tBuilding dpcpp_level_zero..."
@@ -1009,3 +1026,11 @@ run_pack
 install_package
 run_pre_drop
 run_swf_pre_drop
+
+TIMESTAMP_FINISH=`date +%s`
+DURATION=`expr ${TIMESTAMP_FINISH} - ${TIMESTAMP_START}`
+
+echo_log "#=============================================================================="
+echo_log "Building duration     = ${DURATION} sec"
+echo_log "Log file              = ${LOG_FILE}"
+echo_log "#=============================================================================="
