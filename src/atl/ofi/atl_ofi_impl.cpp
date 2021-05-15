@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <dlfcn.h>
 #include <inttypes.h>
 #include <math.h>
 #include <rdma/fabric.h>
@@ -197,9 +198,10 @@ typedef struct {
 typedef struct atl_ofi_global_data {
     size_t ctx_count;
     int is_env_inited;
+    void* dlhandle;
     char prov_env_copy[ATL_OFI_MAX_PROV_ENV_LEN];
 
-    atl_ofi_global_data() : ctx_count(0), is_env_inited(0) {
+    atl_ofi_global_data() : ctx_count(0), is_env_inited(0), dlhandle(NULL) {
         memset(prov_env_copy, 0, sizeof(prov_env_copy));
     }
 } atl_ofi_global_data_t;
@@ -1003,6 +1005,16 @@ static atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
 
     atl_ofi_adjust_env(attr);
 
+    /*
+       load libfabric symbols into global namespace
+       to workaround issue with undefined symbols
+       in case of out-of-tree providers, like OFI/PSM3
+    */
+    global_data.dlhandle = dlopen("libfabric.so", RTLD_GLOBAL | RTLD_NOW);
+    if (global_data.dlhandle == NULL) {
+        CCL_THROW("dlopen (libfabric.so): ", dlerror());
+    }
+
     global_data.is_env_inited = 1;
 
     return ATL_STATUS_SUCCESS;
@@ -1030,6 +1042,10 @@ static atl_status_t atl_ofi_finalize(atl_ctx_t* ctx) {
     }
 
     if (global_data.ctx_count == 0) {
+        if (global_data.dlhandle) {
+            dlclose(global_data.dlhandle);
+        }
+
         if (hwloc_is_initialized()) {
             CCL_THROW_IF_NOT(hwloc_finalize() == HWLOC_SUCCESS, "failed to finalize hwloc");
         }
