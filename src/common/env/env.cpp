@@ -72,7 +72,7 @@ env_data::env_data()
           max_short_size(0),
           bcast_part_count(CCL_ENV_SIZET_NOT_SPECIFIED),
           cache_key_type(ccl_cache_key_match_id),
-          enable_cache_flush(1),
+          enable_cache_flush(0),
           enable_strict_order(0),
           staging_buffer(ccl_staging_usm),
 

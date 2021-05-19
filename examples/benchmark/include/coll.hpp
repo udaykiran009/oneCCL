@@ -73,12 +73,13 @@ private:
 typedef struct bench_init_attr {
     size_t buf_count;
     size_t max_elem_count;
+    int inplace;
     size_t ranks_per_proc;
+    int numa_node;
 #ifdef CCL_ENABLE_SYCL
     sycl_mem_type_t sycl_mem_type;
     sycl_usm_type_t sycl_usm_type;
 #endif
-    size_t v2i_ratio;
 } bench_init_attr;
 
 /* base polymorph collective wrapper class */
@@ -168,6 +169,14 @@ struct base_coll {
 
     size_t get_ranks_per_proc() const noexcept {
         return init_attr.ranks_per_proc;
+    }
+
+    int get_inplace() const noexcept {
+        return init_attr.inplace;
+    }
+
+    int get_numa_node() const noexcept {
+        return init_attr.numa_node;
     }
 
     // first dim - per buf_count, second dim - per local rank

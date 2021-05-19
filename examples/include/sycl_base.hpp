@@ -391,7 +391,11 @@ struct buf_allocator {
         else if (alloc_type == usm::alloc::shared)
             ptr = aligned_alloc_shared<T>(alignment, count, q);
         else
-            throw std::runtime_error(string(__PRETTY_FUNCTION__) + "unexpected alloc_type");
+            throw std::runtime_error(string(__PRETTY_FUNCTION__) + " - unexpected alloc_type");
+
+        if (!ptr) {
+            throw std::runtime_error(string(__PRETTY_FUNCTION__) + " - failed to allocate buffer");
+        }
 
         auto it = memory_storage.find(ptr);
         if (it != memory_storage.end()) {
@@ -402,9 +406,10 @@ struct buf_allocator {
 
         auto pointer_type = sycl::get_pointer_type(ptr, q.get_context());
         if (pointer_type != alloc_type)
-            throw std::runtime_error(
-                string(__PRETTY_FUNCTION__) + "pointer_type " + std::to_string((int)pointer_type) +
-                " doesn't match with requested " + std::to_string((int)alloc_type));
+            throw std::runtime_error(string(__PRETTY_FUNCTION__) + " - pointer_type " +
+                                     std::to_string((int)pointer_type) +
+                                     " doesn't match with requested " +
+                                     std::to_string((int)alloc_type));
 
         return ptr;
     }

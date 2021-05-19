@@ -30,7 +30,7 @@ using namespace cl::sycl::access;
 #include "coll.hpp"
 #include "sparse_allreduce/sparse_detail.hpp"
 
-/* free letters: f g q s z */
+/* free letters: f g v z */
 void print_help_usage(const char* app) {
     PRINT("\nUSAGE:\n"
           "\t%s [OPTIONS]\n\n"
@@ -46,20 +46,23 @@ void print_help_usage(const char* app) {
           "\t[-y,--elem_counts <list of element counts for single collective>]: [%d-%d]\n"
           "\t[-c,--check <check result correctness>]: %d\n"
           "\t[-p,--cache <use persistent operations>]: %d\n"
+          "\t[-q,--inplace <use same buffer as send and recv buffer>]: %d\n"
+          "\t[-k,--ranks_per_proc <number of ranks per process>]: %d\n"
+#ifdef CCL_ENABLE_NUMA
+          "\t[-s,--numa_node <numa node for allocation of send and recv buffers>]: %s\n"
+#endif /* CCL_ENABLE_NUMA */
 #ifdef CCL_ENABLE_SYCL
           "\t[-a,--sycl_dev_type <sycl device type>]: %s\n"
           "\t[-m,--sycl_mem_type <sycl memory type>]: %s\n"
           "\t[-u,--sycl_usm_type <sycl usm type>]: %s\n"
-#endif
-          "\t[-k,--ranks_per_proc <number of ranks per process>]: %d\n"
+#endif /* CCL_ENABLE_SYCL */
           "\t[-l,--coll <collectives list/all>]: %s\n"
           "\t[-d,--dtype <datatypes list/all>]: %s\n"
           "\t[-r,--reduction <reductions list/all>]: %s\n"
           "\t[-o,--csv_filepath <file to store CSV-formatted data into>]: %s\n"
           "\t[-x,--ext <show additional information>]\n"
           "\t[-h,--help]\n\n"
-          "example:\n\t--coll allgatherv,allreduce --backend host --loop regular\n"
-          "example:\n\t--coll bcast,reduce --backend sycl --loop unordered \n",
+          "example:\n\t--coll allgatherv,allreduce --backend host --elem_counts 64,1024\n",
           app,
           backend_names[DEFAULT_BACKEND].c_str(),
           loop_names[DEFAULT_LOOP].c_str(),
@@ -73,12 +76,16 @@ void print_help_usage(const char* app) {
           DEFAULT_MAX_ELEM_COUNT,
           DEFAULT_CHECK_VALUES,
           DEFAULT_CACHE_OPS,
+          DEFAULT_INPLACE,
+          DEFAULT_RANKS_PER_PROC,
+#ifdef CCL_ENABLE_NUMA
+          DEFAULT_NUMA_NODE_STR,
+#endif /* CCL_ENABLE_NUMA */
 #ifdef CCL_ENABLE_SYCL
           sycl_dev_names[DEFAULT_SYCL_DEV_TYPE].c_str(),
           sycl_mem_names[DEFAULT_SYCL_MEM_TYPE].c_str(),
           sycl_usm_names[DEFAULT_SYCL_USM_TYPE].c_str(),
-#endif
-          DEFAULT_RANKS_PER_PROC,
+#endif /* CCL_ENABLE_SYCL */
           DEFAULT_COLL_LIST,
           DEFAULT_DTYPES_LIST,
           DEFAULT_REDUCTIONS_LIST,
@@ -503,11 +510,20 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
     bool should_parse_datatypes = false;
     bool should_parse_reductions = false;
 
+    char short_options[1024] = { 0 };
+
+    const char* base_options = "b:e:i:w:j:n:f:t:c:p:q:o:k:s:l:d:r:y:xh";
+    memcpy(short_options, base_options, strlen(base_options));
+
+#ifdef CCL_ENABLE_NUMA
+    const char* numa_options = "s:";
+    memcpy(short_options + strlen(short_options), numa_options, strlen(numa_options));
+#endif /* CCL_ENABLE_NUMA */
+
 #ifdef CCL_ENABLE_SYCL
-    const char* const short_options = "b:e:i:w:j:n:f:t:c:p:o:a:m:u:k:l:d:r:y:xh";
-#else
-    const char* const short_options = "b:e:i:w:j:n:f:t:c:p:o:k:l:d:r:y:xh";
-#endif
+    const char* sycl_options = "a:m:u:";
+    memcpy(short_options + strlen(short_options), sycl_options, strlen(sycl_options));
+#endif /* CCL_ENABLE_SYCL */
 
     struct option getopt_options[] = {
         { "backend", required_argument, nullptr, 'b' },
@@ -521,13 +537,16 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
         { "elem_counts", required_argument, nullptr, 'y' },
         { "check", required_argument, nullptr, 'c' },
         { "cache", required_argument, nullptr, 'p' },
-    /*{ "v2i_ratio", required_argument, nullptr, 'v' },*/
+        { "inplace", required_argument, nullptr, 'q' },
+        { "ranks_per_proc", required_argument, nullptr, 'k' },
+#ifdef CCL_ENABLE_NUMA
+        { "numa_node", required_argument, nullptr, 's' },
+#endif /* CCL_ENABLE_NUMA */
 #ifdef CCL_ENABLE_SYCL
         { "sycl_dev_type", required_argument, nullptr, 'a' },
         { "sycl_mem_type", required_argument, nullptr, 'm' },
         { "sycl_usm_type", required_argument, nullptr, 'u' },
-#endif
-        { "ranks_per_proc", required_argument, nullptr, 'k' },
+#endif /* CCL_ENABLE_SYCL */
         { "coll", required_argument, nullptr, 'l' },
         { "dtype", required_argument, nullptr, 'd' },
         { "reduction", required_argument, nullptr, 'r' },
@@ -606,10 +625,22 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
                     errors++;
                 break;
             case 'c': options.check_values = atoi(optarg); break;
-            case 'p':
-                options.cache_ops = atoi(optarg);
+            case 'p': options.cache_ops = atoi(optarg); break;
+            case 'q': options.inplace = atoi(optarg); break;
+            case 'k':
+                if (is_valid_integer_option(optarg)) {
+                    options.ranks_per_proc = atoll(optarg);
+                }
+                else
+                    errors++;
                 break;
-                /*case 'v': options.v2i_ratio = atoll(optarg); break;*/
+            case 's':
+                if (is_valid_integer_option(optarg)) {
+                    options.numa_node = atoll(optarg);
+                }
+                else
+                    errors++;
+                break;
 #ifdef CCL_ENABLE_SYCL
             case 'a':
                 if (set_sycl_dev_type(optarg, options.sycl_dev_type)) {
@@ -630,13 +661,6 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
                 }
                 break;
 #endif /* CCL_ENABLE_SYCL */
-            case 'k':
-                if (is_valid_integer_option(optarg)) {
-                    options.ranks_per_proc = atoll(optarg);
-                }
-                else
-                    errors++;
-                break;
             case 'l':
                 if (strcmp("all", optarg) == 0) {
                     options.coll_names = tokenize<std::string>(ALL_COLLS_LIST, ',');
@@ -678,6 +702,21 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
     if (should_parse_reductions &&
         set_reductions(options.reductions.back(), options.check_values, options.reductions)) {
         PRINT("failed to parse 'reduction' option");
+        errors++;
+    }
+
+    if (options.inplace) {
+        for (auto name : options.coll_names) {
+            if (name != "allreduce") {
+                PRINT("inplace is not supported for %s yet", name.c_str());
+                errors++;
+                break;
+            }
+        }
+    }
+
+    if (options.coll_names.empty()) {
+        PRINT("empty coll list");
         errors++;
     }
 
@@ -753,13 +792,16 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   "\n  elem_counts:    %s"
                   "\n  check:          %d"
                   "\n  cache:          %d"
-    /*"\n  v2i_ratio:      %zu"*/
+                  "\n  inplace:        %d"
+                  "\n  ranks_per_proc: %zu"
+#ifdef CCL_ENABLE_NUMA
+                  "\n  numa_node:      %s"
+#endif /* CCL_ENABLE_NUMA */
 #ifdef CCL_ENABLE_SYCL
                   "\n  sycl_dev_type:  %s"
                   "\n  sycl_mem_type:  %s"
                   "\n  sycl_usm_type:  %s"
-#endif
-                  "\n  ranks_per_proc: %zu"
+#endif /* CCL_ENABLE_SYCL */
                   "\n  collectives:    %s"
                   "\n  datatypes:      %s"
                   "\n  reductions:     %s"
@@ -776,13 +818,18 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   elem_counts_str.c_str(),
                   options.check_values,
                   options.cache_ops,
-    /*options.v2i_ratio,*/
+                  options.inplace,
+                  options.ranks_per_proc,
+#ifdef CCL_ENABLE_NUMA
+                  (options.numa_node == DEFAULT_NUMA_NODE)
+                      ? DEFAULT_NUMA_NODE_STR
+                      : std::to_string(options.numa_node).c_str(),
+#endif /* CCL_ENABLE_NUMA */
 #ifdef CCL_ENABLE_SYCL
                   sycl_dev_type_str.c_str(),
                   sycl_mem_type_str.c_str(),
                   sycl_usm_type_str.c_str(),
-#endif
-                  options.ranks_per_proc,
+#endif /* CCL_ENABLE_SYCL */
                   collectives_str.c_str(),
                   datatypes_str.c_str(),
                   reductions_str.c_str(),

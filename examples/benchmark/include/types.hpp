@@ -102,13 +102,14 @@ typedef struct user_options_t {
     std::list<size_t> elem_counts;
     int check_values;
     int cache_ops;
-    size_t v2i_ratio;
+    int inplace;
+    size_t ranks_per_proc;
+    int numa_node;
 #ifdef CCL_ENABLE_SYCL
     sycl_dev_type_t sycl_dev_type;
     sycl_mem_type_t sycl_mem_type;
     sycl_usm_type_t sycl_usm_type;
 #endif
-    size_t ranks_per_proc;
     std::list<std::string> coll_names;
     std::list<std::string> dtypes;
     std::list<std::string> reductions;
@@ -131,13 +132,14 @@ typedef struct user_options_t {
         generate_counts(elem_counts, min_elem_count, max_elem_count);
         check_values = DEFAULT_CHECK_VALUES;
         cache_ops = DEFAULT_CACHE_OPS;
-        v2i_ratio = DEFAULT_V2I_RATIO;
+        inplace = DEFAULT_INPLACE;
+        ranks_per_proc = DEFAULT_RANKS_PER_PROC;
+        numa_node = DEFAULT_NUMA_NODE;
 #ifdef CCL_ENABLE_SYCL
         sycl_dev_type = DEFAULT_SYCL_DEV_TYPE;
         sycl_mem_type = DEFAULT_SYCL_MEM_TYPE;
         sycl_usm_type = DEFAULT_SYCL_USM_TYPE;
 #endif
-        ranks_per_proc = DEFAULT_RANKS_PER_PROC;
         coll_names = tokenize<std::string>(DEFAULT_COLL_LIST, ',');
         dtypes = tokenize<std::string>(DEFAULT_DTYPES_LIST, ',');
         reductions = tokenize<std::string>(DEFAULT_REDUCTIONS_LIST, ',');

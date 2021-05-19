@@ -97,21 +97,22 @@ void do_regular(ccl::communicator& service_comm,
                     std::vector<double> wait_timers(colls.size(), 0);
                     for (size_t coll_idx = 0; coll_idx < colls.size(); coll_idx++) {
                         auto& coll = colls[coll_idx];
-
                         double coll_time = 0, wait_time = 0;
-
-                        if (options.check_values) {
-                            coll->prepare(count);
-                        }
 
                         ccl::barrier(service_comm);
 
                         for (size_t iter_idx = 0; iter_idx < (iter_count + warmup_iter_count);
                              iter_idx++) {
+                            if (options.check_values) {
+                                coll->prepare(count);
+                                ccl::barrier(service_comm);
+                            }
+
                             double coll_start_time = when();
                             for (size_t buf_idx = 0; buf_idx < options.buf_count; buf_idx++) {
                                 match_id_stream << "coll_" << coll->name() << "_" << coll_idx
-                                                << "_count_" << count << "_buf_" << buf_idx;
+                                                << "_count_" << count << "_buf_" << buf_idx
+                                                << "_dt_" << dtype_name << "_rt_" << reduction;
                                 bench_attr.set<ccl::operation_attr_id::match_id>(
                                     ccl::string_class(match_id_stream.str()));
                                 match_id_stream.str("");
@@ -130,10 +131,10 @@ void do_regular(ccl::communicator& service_comm,
                                 coll_time += coll_end_time - coll_start_time;
                                 wait_time += wait_end_time - wait_start_time;
                             }
-                        }
 
-                        if (options.check_values) {
-                            coll->finalize(count);
+                            if (options.check_values) {
+                                coll->finalize(count);
+                            }
                         }
 
                         total_timers[coll_idx] += coll_time + wait_time;
@@ -159,6 +160,7 @@ void do_regular(ccl::communicator& service_comm,
     PRINT_BY_ROOT(service_comm, "\n# All done\n");
 }
 
+/* TODO: merge with do_regular */
 void do_unordered(ccl::communicator& service_comm,
                   bench_exec_attr& bench_attr,
                   coll_list_t& all_colls,
@@ -486,14 +488,17 @@ int main(int argc, char* argv[]) {
 
     ccl::communicator& service_comm = transport.get_service_comm();
 
+    print_user_options(options, service_comm);
+
     init_attr.buf_count = options.buf_count;
     init_attr.max_elem_count = options.max_elem_count;
     init_attr.ranks_per_proc = options.ranks_per_proc;
+    init_attr.inplace = options.inplace;
+    init_attr.numa_node = options.numa_node;
 #ifdef CCL_ENABLE_SYCL
     init_attr.sycl_mem_type = options.sycl_mem_type;
     init_attr.sycl_usm_type = options.sycl_usm_type;
-#endif
-    init_attr.v2i_ratio = options.v2i_ratio;
+#endif /* CCL_ENABLE_SYCL */
 
     try {
         create_all_colls(init_attr, options, colls);
@@ -508,14 +513,6 @@ int main(int argc, char* argv[]) {
 
     bench_exec_attr bench_attr{};
     bench_attr.init_all();
-
-    print_user_options(options, service_comm);
-
-    if (options.coll_names.empty()) {
-        PRINT_BY_ROOT(service_comm, "empty coll list");
-        print_help_usage(argv[0]);
-        return -1;
-    }
 
     ccl::barrier(service_comm);
 
@@ -559,6 +556,7 @@ int main(int argc, char* argv[]) {
         default: ASSERT(0, "unknown loop %d", options.loop); break;
     }
 
+    colls.clear();
     transport.reset_comms();
 
     return 0;

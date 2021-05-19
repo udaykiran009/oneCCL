@@ -128,6 +128,9 @@ function enable_default_env()
 {
     echo "Use default env"
     export CCL_LOG_LEVEL=info
+    # flush cache inside ccl::barrier to avoid OOM
+    # in case of caching and large number of different match_ids
+    export CCL_CACHE_FLUSH=1
     export I_MPI_DEBUG=12
 }
 

@@ -93,7 +93,7 @@ ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes) {
     CCL_THROW_IF_NOT(bytes > 0, "incorrect buffer size: ", bytes);
 
     ccl_buffer buffer =
-        ccl_buffer(CCL_CALLOC(bytes, "sched_buffer"), bytes, 0, ccl_buffer_type::DIRECT);
+        ccl_buffer(CCL_MALLOC(bytes, "sched_buffer"), bytes, 0, ccl_buffer_type::DIRECT);
     memory.buf_list.emplace_back(buffer, bytes);
     CCL_THROW_IF_NOT(buffer.get_ptr(), "null ptr");
 

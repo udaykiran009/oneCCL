@@ -266,12 +266,13 @@ endif()
 
 install(TARGETS ccl LIBRARY DESTINATION ${CCL_INSTALL_LIB})
 install(FILES
-    "${PROJECT_SOURCE_DIR}/cmake/FindOpenCL.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Findlevel_zero.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/FindSYCL.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/FindComputeCpp.cmake"
     "${PROJECT_SOURCE_DIR}/cmake/FindIntelSYCL.cmake"
     "${PROJECT_SOURCE_DIR}/cmake/FindIntelSYCL_level_zero.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/FindComputeCpp.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/Findlevel_zero.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/FindNUMA.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/FindOpenCL.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/FindSYCL.cmake"
     DESTINATION ${CCL_INSTALL_LIB})
 
 # static library
