@@ -1,5 +1,5 @@
 /*
-    Copyright 2003-2021 Intel Corporation.
+    Copyright Intel Corporation.
     
     This software and the related documents are Intel copyrighted materials, and
     your use of them is governed by the express license under which they were
@@ -580,8 +580,8 @@ typedef int (MPI_Delete_function) ( MPI_Comm, int, void *, void * );
  * digits for REV, 1 digit for EXT and 2 digits for EXT_NUMBER. So,
  * 2019.0.0b0 will have the numeric version 20190000100.
  */
-#define I_MPI_VERSION "2021.2.0"
-#define I_MPI_NUMVERSION 20210200300
+#define I_MPI_VERSION "2021.3.0"
+#define I_MPI_NUMVERSION 20210300300
 
 /* for the datatype decoders */
 enum MPIR_Combiner_enum {
