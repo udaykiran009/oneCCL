@@ -319,12 +319,12 @@ post_build()
     LDFLAGS="${LDFLAGS} -Wl,-rpath,\$ORIGIN/../../../../mpi/latest/lib/release_mt/"
     LDFLAGS="${LDFLAGS} ${HWLOC_DIR}/lib/libhwloc.a"
 
-    gcc -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack \
-        -Wl,--version-script=${WORKSPACE}/ccl.map -std=gnu99 -Wall -Werror \
+    g++ -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack \
+        -Wl,--version-script=${WORKSPACE}/ccl.map -Wl,--no-undefined -std=gnu99 -Wall -Werror \
         -D_GNU_SOURCE -fvisibility=hidden -O3 -DNDEBUG \
         -std=gnu99 -O3 -shared -Wl,-soname=${LIBCCL_SONAME} \
         -o libccl.so.${LIBCCL_SO_VERSION} *.o ${LDFLAGS} \
-        -L${WORKSPACE}/build/_install/lib/ -lmpi -lm -lfabric
+        -L${WORKSPACE}/build/_install/lib/ -lmpi -lm -lfabric -ldl -pthread
 
     CheckCommandExitCode $? "post build failed"
     rm -rf *.o
