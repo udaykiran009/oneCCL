@@ -27,7 +27,7 @@
 #define DEFAULT_BUF_COUNT      (1)
 #define DEFAULT_MIN_ELEM_COUNT (1)
 #define DEFAULT_MAX_ELEM_COUNT (128)
-#define DEFAULT_CHECK_VALUES   (1)
+#define DEFAULT_CHECK_VALUES   (0)
 #define DEFAULT_CACHE_OPS      (1)
 #define DEFAULT_INPLACE        (0)
 #define DEFAULT_RANKS_PER_PROC (1)
