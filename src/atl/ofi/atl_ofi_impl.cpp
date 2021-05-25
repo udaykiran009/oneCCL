@@ -980,6 +980,7 @@ static atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
     setenv("FI_PSM3_NAME_SERVER", "0", 0);
     setenv("PSM3_NO_CPUAFFINITY", "1", 0);
     setenv("PSM3_RDMA", "2", 0);
+    setenv("PSM3_MR_CACHE_MODE", "0", 0); //TODO temporary
     setenv("PSM3_MULTI_EP", "1", 0);
     if (attr.mnic_type == ATL_MNIC_NONE)
         setenv("PSM3_NIC", "any", 0);
