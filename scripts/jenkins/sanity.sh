@@ -19,6 +19,7 @@ BASENAME=`basename $0 .sh`
 CURRENT_WORK_DIR=`cd ${SCRIPT_DIR}/../../ && pwd -P`
 ARTEFACT_DIR="/p/pdsd/scratch/jenkins/artefacts"
 CCL_ONEAPI_DIR="/p/pdsd/scratch/Uploads/CCL_oneAPI/"
+ONEAPI_DIR="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/oneAPI/"
 if [ -z $CCL_INSTALL_DIR ]
 then
     CCL_INSTALL_DIR=`cd ${SCRIPT_DIR}/../../build/_install/ && pwd -P`
@@ -347,6 +348,22 @@ function run_compatibitily_tests()
         exit 0
     else
         echo "compatibitily testing ... NOK"
+        exit 1
+    fi
+}
+
+function run_horovod_tests()
+{
+    pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
+    ./test_build_horovod.sh
+    log_status_fail=${PIPESTATUS[0]}
+    popd
+    if [ "$log_status_fail" -eq 0 ]
+    then
+        echo "Horovod testing ... OK"
+        exit 0
+    else
+        echo "Horovod testing ... NOK"
         exit 1
     fi
 }
@@ -735,6 +752,10 @@ else
         case $1 in
         "-compatibility_tests" )
             run_compatibitily_tests
+            shift
+            ;;
+        "-horovod_tests" )
+            run_horovod_tests
             shift
             ;;
         "-modulefile_tests" )
