@@ -265,6 +265,6 @@ if (BUILD_FT)
     add_subdirectory(tests/functional)
 endif()
 
-if (BUILD_UT)
+if (BUILD_UT AND EXISTS "${PROJECT_SOURCE_DIR}/tests/unit")
     add_subdirectory(tests/unit)
 endif()
