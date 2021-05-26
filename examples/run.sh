@@ -173,7 +173,8 @@ run_benchmark()
             buf_count=1
         fi
         options="${options} --iters 8 --sycl_mem_type usm"
-        usm_list="device shared"
+        #usm_list="device shared" https://jira.devtools.intel.com/browse/MLSL-902
+        usm_list="device"
     else
         options="${options} --iters 16"
     fi
@@ -464,7 +465,8 @@ run()
                         then
                             if [ "$selector" == "gpu" ];
                             then
-                                usm_list="device shared"
+                                #usm_list="device shared" https://jira.devtools.intel.com/browse/MLSL-902
+                                usm_list="device"
                             else
                                 usm_list="host shared"
                             fi
