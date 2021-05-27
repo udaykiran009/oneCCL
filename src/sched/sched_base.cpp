@@ -1,3 +1,4 @@
+#include "coll/algorithms/algorithms_enum.hpp"
 #include "coll/coll_param.hpp"
 #include "common/global/global.hpp"
 #include "sched/sched_base.hpp"
@@ -255,10 +256,31 @@ void ccl_sched_base::alloc_buffers_for_sycl_copy() {
               ", count ",
               param.count);
 
-    void* ptr_to_check = (param.ctype == ccl_coll_bcast) ? param.buf : (void*)param.send_buf;
-    auto ptr_type =
-        sycl::get_pointer_type(ptr_to_check, param.stream->get_native_stream().get_context());
-    if (ptr_type == sycl::usm::alloc::shared) {
+    void* recv_ptr_to_check;
+    void* send_ptr_to_check;
+
+    if (param.ctype == ccl_coll_bcast) {
+        // for consistency with the other algorithms just reference param.buf, these pointers are not used
+        // except for USM type checking
+        recv_ptr_to_check = (void*)param.buf;
+        send_ptr_to_check = (void*)param.buf;
+    }
+    else {
+        recv_ptr_to_check = (void*)param.recv_buf;
+        send_ptr_to_check = (void*)param.send_buf;
+    }
+
+    // check both recv and send buffers, for some algorithms(i.e. alltoallv) one of them is allowed to
+    // be invalid(i.e. unknown return type) as long as the corresponding count is 0 so we won't dereference it.
+    // TODO: should we add a special handling for case when both buffers are invalid?
+    auto recv_ptr_type =
+        sycl::get_pointer_type(recv_ptr_to_check, param.stream->get_native_stream().get_context());
+    auto send_ptr_type =
+        sycl::get_pointer_type(send_ptr_to_check, param.stream->get_native_stream().get_context());
+
+    // TODO: we currently don't correctly handle cases when there are 2 different types at the same time
+    // i.e. device memory for send buffer and shared memory for recv buffer
+    if (recv_ptr_type == sycl::usm::alloc::shared || send_ptr_type == sycl::usm::alloc::shared) {
         param.sycl_send_buf = static_cast<ccl_sycl_buffer_t*>((void*)param.send_buf);
         param.sycl_recv_buf = static_cast<ccl_sycl_buffer_t*>(param.recv_buf);
         param.sycl_buf = static_cast<ccl_sycl_buffer_t*>(param.buf);
@@ -299,8 +321,11 @@ void ccl_sched_base::alloc_buffers_for_sycl_copy() {
                 send_count += param.send_counts[idx];
                 recv_count += param.recv_counts[idx];
             }
-            param.send_buf = alloc_staging_buffer(send_count * param.dtype.size()).get_ptr();
-            param.recv_buf = alloc_staging_buffer(recv_count * param.dtype.size()).get_ptr();
+            if (send_count)
+                param.send_buf = alloc_staging_buffer(send_count * param.dtype.size()).get_ptr();
+
+            if (recv_count)
+                param.recv_buf = alloc_staging_buffer(recv_count * param.dtype.size()).get_ptr();
             break;
         case ccl_coll_bcast:
             param.sycl_buf = static_cast<ccl_sycl_buffer_t*>(param.buf);

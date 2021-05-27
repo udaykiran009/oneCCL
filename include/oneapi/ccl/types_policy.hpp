@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 namespace ccl {
 template <class impl_t>
 class non_copyable {

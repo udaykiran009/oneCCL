@@ -216,7 +216,7 @@ function set_environment()
         CXX_COMPILER=${BUILD_COMPILER_PATH}/dpcpp
         COMPUTE_BACKEND=dpcpp_level_zero
     fi
-    
+
     if [ -z "$worker_count" ]
     then
         worker_count="2"
@@ -445,14 +445,16 @@ function run_tests()
            ofi )
                export CCL_ATL_TRANSPORT=ofi
                ctest -VV -C default
+               ctest -VV -C regression
                ;;
            mpi )
                 export CCL_ATL_TRANSPORT=mpi
                 ctest -VV -C default
+                ctest -VV -C regression
                 ;;
            mpi_adjust )
                 export CCL_ATL_TRANSPORT=mpi
-                
+
                 for algo in "direct" "naive" "flat" "ring"
                 do
                     CCL_ALLGATHERV=$algo ctest -VV -C allgatherv_"$algo"

@@ -95,6 +95,7 @@ struct ccl_coll_param {
     std::vector<ccl::event> deps;
     ccl_comm* comm;
     ccl_coll_sparse_param sparse_param;
+    bool skip_validation;
 
 #ifdef CCL_ENABLE_SYCL
     ccl_sycl_buffer_t* sycl_send_buf;

@@ -151,6 +151,7 @@ struct sycl_copier {
                     for (size_t idx = 0; idx < deps.size(); idx++) {
                         deps[idx].wait();
                     }
+
                     /* TODO */
                     // e = q->submit_barrier(deps);
                 }

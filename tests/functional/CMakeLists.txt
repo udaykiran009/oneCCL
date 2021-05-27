@@ -149,3 +149,8 @@ endforeach()
 foreach(algo direct; ring)
 add_test (NAME reduce_scatter_${algo} CONFIGURATIONS reduce_scatter_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/reduce_scatter_test --gtest_output=xml:${CCL_INSTALL_TESTS}/reduce_scatter_${algo}_report.junit.xml)
 endforeach()
+
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    # right now all regression tests require dpcpp, might be changed in the future
+    add_subdirectory(regression)
+endif()

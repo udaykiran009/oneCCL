@@ -79,7 +79,8 @@ ccl::event single_device_communicator::allgatherv_impl(const buffer_type& send_b
                                            attr,
                                            comm_impl.get(),
                                            stream.get(),
-                                           deps);
+                                           deps,
+                                           true);
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 template <class buffer_type>
@@ -130,7 +131,8 @@ ccl::event single_device_communicator::allreduce_impl(const buffer_type& send_bu
                                           attr,
                                           comm_impl.get(),
                                           stream.get(),
-                                          deps);
+                                          deps,
+                                          true);
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
@@ -172,7 +174,8 @@ ccl::event single_device_communicator::alltoall_impl(const buffer_type& send_buf
                                          attr,
                                          comm_impl.get(),
                                          stream.get(),
-                                         deps);
+                                         deps,
+                                         true);
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
@@ -236,7 +239,8 @@ ccl::event single_device_communicator::alltoallv_impl(const buffer_type& send_bu
                                           attr,
                                           comm_impl.get(),
                                           stream.get(),
-                                          deps);
+                                          deps,
+                                          true);
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
@@ -279,7 +283,8 @@ ccl::event single_device_communicator::broadcast_impl(buffer_type& buf,
                                           attr,
                                           comm_impl.get(),
                                           stream.get(),
-                                          deps);
+                                          deps,
+                                          true);
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
@@ -324,7 +329,8 @@ ccl::event single_device_communicator::reduce_impl(const buffer_type& send_buf,
                                        attr,
                                        comm_impl.get(),
                                        stream_ptr,
-                                       deps);
+                                       deps,
+                                       true);
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
@@ -366,7 +372,8 @@ ccl::event single_device_communicator::reduce_scatter_impl(
                                                attr,
                                                comm_impl.get(),
                                                stream_ptr,
-                                               deps);
+                                               deps,
+                                               true);
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
@@ -432,6 +439,7 @@ ccl::event single_device_communicator::sparse_allreduce_impl(
                                   attr,
                                   comm_impl.get(),
                                   stream_ptr,
-                                  deps);
+                                  deps,
+                                  true);
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }

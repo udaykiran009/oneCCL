@@ -796,7 +796,8 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
         case ccl_coll_alltoallv: {
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
-            if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
+            if (coll_param.stream && coll_param.stream->is_sycl_device_stream() &&
+                a2av_send_count > 0) {
                 entry_factory::make_entry<sycl_copy_entry<sycl_copy_direction::d2h>>(
                     part_scheds[0].get(),
                     ccl_buffer(
@@ -808,7 +809,6 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
                 sched->sync_partial_scheds();
             }
 #endif /* CCL_ENABLE_SYCL */
-
             if (a2a_algo == ccl_coll_alltoall_naive || a2av_algo == ccl_coll_alltoallv_naive) {
                 ccl_coll_build_naive_alltoallv(sched, part_scheds_vector, coll_param);
             }
@@ -844,7 +844,8 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
             }
 #ifdef CCL_ENABLE_SYCL
             /* convert sycl buffer */
-            if (coll_param.stream && coll_param.stream->is_sycl_device_stream()) {
+            if (coll_param.stream && coll_param.stream->is_sycl_device_stream() &&
+                a2av_recv_count > 0) {
                 sched->sync_partial_scheds();
                 entry_factory::make_entry<sycl_copy_entry<sycl_copy_direction::h2d>>(
                     part_scheds[0].get(),
