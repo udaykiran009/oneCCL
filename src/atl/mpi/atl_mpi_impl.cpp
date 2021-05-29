@@ -31,6 +31,11 @@ typedef enum { ATL_MPI_LIB_IMPI, ATL_MPI_LIB_MPICH, ATL_MPI_LIB_NONE } atl_mpi_l
 
 typedef struct {
     atl_mpi_lib_type_t type;
+    int device_buf;
+} atl_mpi_lib_attr_t;
+
+typedef struct {
+    atl_mpi_lib_type_t type;
     const char* name;
 
     /* string prefix before numerical version of library, mandatory */
@@ -42,6 +47,9 @@ typedef struct {
     /* minimal expected version of library, mandatory */
     int min_version_value;
 
+    /* minimal expected version of library with device_buf support, mandatory */
+    int min_device_buf_version_value;
+
     /* string prefix before library kind, optional */
     const char* kind_prefix;
 
@@ -52,9 +60,16 @@ typedef struct {
 #define MPI_LIB_INFO_MAX_COUNT 3
 
 static atl_mpi_lib_info_t mpi_lib_infos[MPI_LIB_INFO_MAX_COUNT] = {
-    { ATL_MPI_LIB_IMPI, "impi", "Intel(R) MPI Library", NULL, 2019, "library kind:", "release_mt" },
-    { ATL_MPI_LIB_MPICH, "mpich", "MPICH Custom Information:", "drop", 34, NULL, NULL },
-    { ATL_MPI_LIB_NONE, "none", "", NULL, 0, NULL, NULL },
+    { ATL_MPI_LIB_IMPI,
+      "impi",
+      "Intel(R) MPI Library",
+      NULL,
+      2019,
+      2021,
+      "library kind:",
+      "release_mt" },
+    { ATL_MPI_LIB_MPICH, "mpich", "MPICH Custom Information:", "drop", 34, -1, NULL, NULL },
+    { ATL_MPI_LIB_NONE, "none", "", NULL, 0, -1, NULL, NULL },
 };
 
 #ifdef CCL_BF16_COMPILER
@@ -88,20 +103,22 @@ typedef struct {
 typedef struct atl_mpi_global_data {
     int is_external_init;
     size_t ctx_count;
-    atl_mpi_lib_type_t mpi_lib_type;
     int extra_ep;
     atl_mnic_t mnic_type;
     size_t mnic_count;
+    atl_mpi_lib_attr_t mpi_lib_attr;
     atl_mpi_bf16_data_t bf16;
     atl_mpi_fp16_data_t fp16;
 
     atl_mpi_global_data()
             : is_external_init(0),
               ctx_count(0),
-              mpi_lib_type(ATL_MPI_LIB_NONE),
               extra_ep(0),
               mnic_type(ATL_MNIC_NONE),
               mnic_count(1) {
+        mpi_lib_attr.type = ATL_MPI_LIB_NONE;
+        mpi_lib_attr.device_buf = 0;
+
         bf16.dtype = MPI_DATATYPE_NULL;
         bf16.sum_op = MPI_OP_NULL;
         bf16.prod_op = MPI_OP_NULL;
@@ -522,8 +539,9 @@ static MPI_Op atl2mpi_op(atl_reduction_t rtype, MPI_Datatype dtype) {
     }
 }
 
-atl_mpi_lib_type_t atl_mpi_get_lib_type() {
-    atl_mpi_lib_type_t lib_type = ATL_MPI_LIB_NONE;
+atl_mpi_lib_attr_t atl_mpi_get_lib_attr() {
+    atl_mpi_lib_attr_t lib_attr = { ATL_MPI_LIB_NONE, 0 };
+
     char mpi_version[MPI_MAX_LIBRARY_VERSION_STRING] = { 0 };
     int mpi_version_len = -1, i;
     atl_mpi_lib_info_t* final_info = NULL;
@@ -534,7 +552,7 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
     if ((ret != MPI_SUCCESS) || (mpi_version_len < 0) ||
         (mpi_version_len > MPI_MAX_LIBRARY_VERSION_STRING)) {
         LOG_WARN("can not retrieve MPI version, mpi_version_len ", mpi_version_len, ", ret", ret);
-        return ATL_MPI_LIB_NONE;
+        return lib_attr;
     }
 
     /* remove trailing spaces at the end for more compact log */
@@ -543,11 +561,24 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
 
     LOG_DEBUG("MPI version: ", mpi_version);
 
+    /* for filtering */
+    char* lib_type_env = getenv("CCL_ATL_MPI");
+
     for (i = 0; i < MPI_LIB_INFO_MAX_COUNT; i++) {
         atl_mpi_lib_info_t* info = &(mpi_lib_infos[i]);
 
         if (info->type == ATL_MPI_LIB_NONE)
             continue;
+
+        if (lib_type_env) {
+            if (strcmp(lib_type_env, info->name)) {
+                LOG_DEBUG("library ", info->name, " is filtered out by user input ", lib_type_env);
+                continue;
+            }
+            else {
+                LOG_DEBUG("use lib_type = ", lib_type_env, " because it is requested explicitly");
+            }
+        }
 
         CCL_THROW_IF_NOT(info->version_prefix_1, "empty version_prefix_1");
         CCL_THROW_IF_NOT(info->min_version_value >= 0, "unexpected minimal version");
@@ -637,41 +668,29 @@ atl_mpi_lib_type_t atl_mpi_get_lib_type() {
                       info->min_version_value,
                       ") "
                       "and kind matches with expected kind");
+
+            lib_attr.type = final_info->type;
+            lib_attr.device_buf =
+                (final_info->min_device_buf_version_value >= version_value) ? 1 : 0;
+
             break;
-        }
-    }
-
-    /* user input has higher priority */
-    char* lib_type_env = NULL;
-    if ((lib_type_env = getenv("CCL_ATL_MPI")) != NULL) {
-        final_info = NULL;
-        for (i = 0; i < MPI_LIB_INFO_MAX_COUNT; i++) {
-            atl_mpi_lib_info_t* info = &(mpi_lib_infos[i]);
-
-            if (!strcmp(lib_type_env, info->name)) {
-                final_info = info;
-                LOG_DEBUG("set lib_type = ", lib_type_env, " because it is requested explicitly");
-                break;
-            }
         }
     }
 
     if (final_info) {
         LOG_DEBUG("MPI library type: ", final_info->name);
-        lib_type = final_info->type;
     }
     else {
         LOG_DEBUG("MPI library type: none");
-        lib_type = ATL_MPI_LIB_NONE;
     }
 
-    return lib_type;
+    return lib_attr;
 }
 
 size_t atl_mpi_get_ep_count(const atl_attr_t& attr) {
-    size_t mpi_ep_count = attr.ep_count;
-    if (attr.extra_ep)
-        mpi_ep_count += attr.extra_ep;
+    size_t mpi_ep_count = attr.in.ep_count;
+    if (attr.in.enable_extra_ep)
+        mpi_ep_count += attr.in.enable_extra_ep;
     return mpi_ep_count;
 }
 
@@ -699,22 +718,33 @@ atl_status_t atl_mpi_set_base_env(const atl_attr_t& attr) {
     return ATL_STATUS_SUCCESS;
 }
 
-atl_status_t atl_mpi_set_impi_env(const atl_attr_t& attr) {
+atl_status_t atl_mpi_set_impi_env(const atl_attr_t& attr, const atl_mpi_lib_attr_t& lib_attr) {
     char ep_count_str[MPI_MAX_INFO_VAL] = { 0 };
     snprintf(ep_count_str, MPI_MAX_INFO_VAL, "%zu", atl_mpi_get_ep_count(attr));
+
+    if (attr.in.ep_count)
+        setenv("I_MPI_OFI_ISEND_INJECT_THRESHOLD", "0", 0);
+
+#ifdef CCL_ENABLE_SYCL
+    setenv("I_MPI_SHM_CMA", "0", 0);
+    if (attr.in.enable_device_buf && lib_attr.device_buf) {
+        setenv("I_MPI_OFFLOAD", "2", 0);
+        setenv("I_MPI_OFFLOAD_TOPOLIB", "l0", 0);
+        setenv("I_MPI_OFFLOAD_QUEUE_CACHE", "1", 0);
+        setenv("I_MPI_OFFLOAD_LIST_CACHE", "1", 0);
+        if (attr.in.ep_count > 1) {
+            /* try to set global lock level before vci level
+               because setenv is invoked with overwrite=0 */
+            setenv("I_MPI_THREAD_LOCK_LEVEL", "global", 0);
+        }
+    }
+#endif /* CCL_ENABLE_SYCL */
 
     setenv("I_MPI_THREAD_SPLIT", "1", 0);
     setenv("I_MPI_THREAD_RUNTIME", "generic", 0);
     setenv("I_MPI_THREAD_MAX", ep_count_str, 0);
     setenv("I_MPI_THREAD_ID_KEY", EP_IDX_KEY, 0);
     setenv("I_MPI_THREAD_LOCK_LEVEL", "vci", 0);
-
-    if (attr.ep_count)
-        setenv("I_MPI_OFI_ISEND_INJECT_THRESHOLD", "0", 0);
-
-#ifdef CCL_ENABLE_SYCL
-    setenv("I_MPI_SHM_CMA", "0", 0);
-#endif /* CCL_ENABLE_SYCL */
 
     return ATL_STATUS_SUCCESS;
 }
@@ -754,7 +784,7 @@ atl_status_t atl_mpi_set_mpich_env(const atl_attr_t& attr) {
     setenv("MPIR_CVAR_CH4_ASYNC_PROGRESS_ID_KEY", EP_IDX_KEY, 0);
     setenv("MPIR_CVAR_CH4_OFI_ENABLE_SCALABLE_ENDPOINTS", "1", 0);
 
-    if (attr.mnic_type != ATL_MNIC_NONE) {
+    if (attr.in.mnic_type != ATL_MNIC_NONE) {
         setenv("MPIR_CVAR_CH4_OFI_ENABLE_NIC_SELECTION", "1", 0);
         auto& env = ccl::global_data::env();
         if (env.log_level >= ccl_log_level::info) {
@@ -780,12 +810,12 @@ atl_status_t atl_mpi_check_mpich_env(const atl_attr_t& attr) {
 }
 
 atl_status_t atl_mpi_set_env(const atl_attr_t& attr) {
-    if (global_data.mpi_lib_type != ATL_MPI_LIB_NONE) {
+    if (global_data.mpi_lib_attr.type != ATL_MPI_LIB_NONE) {
         /* library type was already detected and env was set, make sanity check */
-        if (global_data.mpi_lib_type == ATL_MPI_LIB_IMPI) {
+        if (global_data.mpi_lib_attr.type == ATL_MPI_LIB_IMPI) {
             return atl_mpi_check_impi_env(attr);
         }
-        else if (global_data.mpi_lib_type == ATL_MPI_LIB_MPICH) {
+        else if (global_data.mpi_lib_attr.type == ATL_MPI_LIB_MPICH) {
             return atl_mpi_check_mpich_env(attr);
         }
         return ATL_STATUS_SUCCESS;
@@ -793,18 +823,17 @@ atl_status_t atl_mpi_set_env(const atl_attr_t& attr) {
 
     atl_mpi_set_base_env(attr);
 
-    atl_mpi_lib_type_t type = atl_mpi_get_lib_type();
+    atl_mpi_lib_attr_t mpi_lib_attr = atl_mpi_get_lib_attr();
 
-    if (type == ATL_MPI_LIB_NONE) {
-        /* nothing to do */
+    if (mpi_lib_attr.type == ATL_MPI_LIB_NONE) {
         return ATL_STATUS_SUCCESS;
     }
 
-    if (type == ATL_MPI_LIB_IMPI) {
-        atl_mpi_set_impi_env(attr);
+    if (mpi_lib_attr.type == ATL_MPI_LIB_IMPI) {
+        atl_mpi_set_impi_env(attr, mpi_lib_attr);
         atl_mpi_check_impi_env(attr);
     }
-    else if (type == ATL_MPI_LIB_MPICH) {
+    else if (mpi_lib_attr.type == ATL_MPI_LIB_MPICH) {
         atl_mpi_set_mpich_env(attr);
         atl_mpi_check_mpich_env(attr);
     }
@@ -818,7 +847,7 @@ atl_status_t atl_mpi_set_env(const atl_attr_t& attr) {
         LOG_DEBUG("set CCL-MPI specific environment");
     }
 
-    global_data.mpi_lib_type = type;
+    global_data.mpi_lib_attr = mpi_lib_attr;
 
     return ATL_STATUS_SUCCESS;
 }
@@ -863,7 +892,7 @@ void atl_mpi_check_comm_info(MPI_Comm comm, const char* key, const char* expecte
 }
 
 void atl_mpi_check_comm_ep_idx(MPI_Comm comm, size_t expected_idx) {
-    if (global_data.mpi_lib_type == ATL_MPI_LIB_NONE)
+    if (global_data.mpi_lib_attr.type == ATL_MPI_LIB_NONE)
         return;
 
     char expected_idx_str[MPI_MAX_INFO_VAL] = { 0 };
@@ -1083,6 +1112,7 @@ static atl_status_t atl_mpi_ep_allreduce(atl_ep_t* ep,
         mpi_req->native_req = MPI_REQUEST_NULL;
     }
     else {
+        //printf("atl_mpi: send_buf %p, recv_buf %p\n", send_buf, recv_buf);
         ret = MPI_Iallreduce((send_buf && (send_buf == recv_buf)) ? MPI_IN_PLACE : send_buf,
                              recv_buf,
                              count,
@@ -1562,13 +1592,13 @@ static atl_status_t atl_mpi_init(int* argc,
         if (ret)
             goto err_init;
 
-        if (global_data.mpi_lib_type == ATL_MPI_LIB_NONE)
-            global_data.mpi_lib_type = atl_mpi_get_lib_type();
+        if (global_data.mpi_lib_attr.type == ATL_MPI_LIB_NONE)
+            global_data.mpi_lib_attr = atl_mpi_get_lib_attr();
 
-        global_data.extra_ep = attr->extra_ep;
+        global_data.extra_ep = attr->in.enable_extra_ep;
 
-        global_data.mnic_type = attr->mnic_type;
-        if (global_data.mpi_lib_type != ATL_MPI_LIB_MPICH) {
+        global_data.mnic_type = attr->in.mnic_type;
+        if (global_data.mpi_lib_attr.type != ATL_MPI_LIB_MPICH) {
             /* only MPICH supports multi-NIC */
             global_data.mnic_type = ATL_MNIC_NONE;
         }
@@ -1579,8 +1609,11 @@ static atl_status_t atl_mpi_init(int* argc,
         else if (global_data.mnic_type == ATL_MNIC_GLOBAL) {
             global_data.mnic_count = atl_mpi_get_nic_count(GLOBAL_NIC_IDX_KEY);
         }
-        global_data.mnic_count = std::min(global_data.mnic_count, attr->mnic_count);
-        global_data.mnic_count = std::min(global_data.mnic_count, attr->ep_count);
+        else if (global_data.mnic_type == ATL_MNIC_NONE) {
+            global_data.mnic_count = 1;
+        }
+        global_data.mnic_count = std::min(global_data.mnic_count, attr->in.mnic_count);
+        global_data.mnic_count = std::min(global_data.mnic_count, attr->in.ep_count);
         global_data.mnic_count = std::max(global_data.mnic_count, (size_t)(1));
 
         if (atl_mpi_bf16_init() == ATL_STATUS_FAILURE) {
@@ -1610,8 +1643,8 @@ static atl_status_t atl_mpi_init(int* argc,
 
     ctx->ops = &atl_mpi_ops;
     ctx->mr_ops = &atl_mpi_mr_ops;
-    ctx->ep_count = attr->ep_count;
-    ctx->eps = (atl_ep_t**)calloc(1, sizeof(void*) * attr->ep_count);
+    ctx->ep_count = attr->in.ep_count;
+    ctx->eps = (atl_ep_t**)calloc(1, sizeof(void*) * attr->in.ep_count);
     if (!ctx->eps)
         goto err_after_init;
 
@@ -1623,23 +1656,25 @@ static atl_status_t atl_mpi_init(int* argc,
     else {
         mpi_ctx->progress_mode = ATL_PROGRESS_CHECK;
     }
-    mpi_ctx->sync_coll = attr->sync_coll;
+    mpi_ctx->sync_coll = attr->in.enable_sync_coll;
 
     if (coord->global_idx == 0) {
         if (global_data.ctx_count == 1) {
             LOG_INFO("atl-mpi-global:")
             LOG_INFO("  is_external_init: ", global_data.is_external_init);
-            LOG_INFO("  mpi_lib_type: ", mpi_lib_infos[global_data.mpi_lib_type].name);
+            LOG_INFO("  mpi_lib_attr.type: ", mpi_lib_infos[global_data.mpi_lib_attr.type].name);
+            LOG_INFO("  mpi_lib_attr.device_buf: ", global_data.mpi_lib_attr.device_buf);
             LOG_INFO("  extra_ep: ", global_data.extra_ep);
             LOG_INFO("  mnic_type: ", global_data.mnic_type);
-            LOG_INFO("  mnic_count: ", global_data.mnic_count);
+            if (global_data.mnic_type != ATL_MNIC_NONE)
+                LOG_INFO("  mnic_count: ", global_data.mnic_count);
         }
         LOG_INFO("atl-mpi-ctx: ", (global_data.ctx_count - 1));
         LOG_INFO("  progress_mode: ", mpi_ctx->progress_mode);
         LOG_INFO("  sync_coll: ", mpi_ctx->sync_coll);
     }
 
-    for (i = 0; i < attr->ep_count; i++) {
+    for (i = 0; i < attr->in.ep_count; i++) {
         ret = atl_mpi_ep_init(mpi_ctx, i, &(ctx->eps[i]));
         if (ret)
             goto err_ep_dup;
@@ -1649,15 +1684,20 @@ static atl_status_t atl_mpi_init(int* argc,
 
     MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_TAG_UB, &tag_ub_ptr, &is_tag_ub_set);
 
-    attr->tag_bits = 32;
-    attr->max_tag = (is_tag_ub_set) ? *((int*)tag_ub_ptr) : 0;
-    attr->enable_rma = 0;
-    attr->max_order_waw_size = 0;
+    /* report actual attributes back to upper level */
+    attr->out.enable_shm = 0;
+    attr->out.enable_rma = 0;
+    attr->out.enable_device_buf = attr->in.enable_device_buf & global_data.mpi_lib_attr.device_buf;
+    attr->out.mnic_type = global_data.mnic_type;
+    attr->out.mnic_count = global_data.mnic_count;
+    attr->out.tag_bits = 32;
+    attr->out.max_tag = (is_tag_ub_set) ? *((int*)tag_ub_ptr) : 0;
+    attr->out.max_order_waw_size = 0;
 
     return ATL_STATUS_SUCCESS;
 
 err_ep_dup:
-    for (i = 0; i < attr->ep_count; i++) {
+    for (i = 0; i < attr->in.ep_count; i++) {
         atl_mpi_ep_t* mpi_ep = container_of(ctx->eps[i], atl_mpi_ep_t, ep);
 
         if (ctx->eps[i] && mpi_ep) {

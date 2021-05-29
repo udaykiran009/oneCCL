@@ -104,7 +104,6 @@ set(CCL_SRC
     ccl_empty_stream.cpp
     native_device_api/sycl_l0/export.cpp
     native_device_api/empty/export.cpp
-    atl/atl.cpp
     atl/atl_wrapper.cpp
     atl/mpi/atl_mpi.cpp
     atl/ofi/atl_ofi.cpp
@@ -174,9 +173,9 @@ set(CCL_SRC
     sched/queue/queue.cpp
     sched/entry/coll/coll_entry.cpp
     sched/entry/coll/coll_entry_helper.cpp
+    sched/entry/copy/copy_helper.cpp
     sched/entry/entry.cpp
     sched/entry/factory/chunked_entry_factory.cpp
-    sched/entry/sycl_entry_helper.cpp
     exec/exec.cpp
     exec/thread/base_thread.cpp
     exec/thread/listener.cpp

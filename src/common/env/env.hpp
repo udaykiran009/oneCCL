@@ -34,6 +34,8 @@ constexpr const char* I_MPI_AVAILABLE_CORES_DELIMS = ",x";
 
 constexpr const char* CCL_ATL_TRANSPORT = "CCL_ATL_TRANSPORT";
 constexpr const char* CCL_ATL_SHM = "CCL_ATL_SHM";
+constexpr const char* CCL_ATL_RMA = "CCL_ATL_RMA";
+constexpr const char* CCL_ATL_DEVICE_BUF = "CCL_ATL_DEVICE_BUF";
 constexpr const char* CCL_ATL_SYNC_COLL = "CCL_ATL_SYNC_COLL";
 constexpr const char* CCL_ATL_EXTRA_EP = "CCL_ATL_EXTRA_EP";
 
@@ -57,7 +59,6 @@ constexpr const char* CCL_FUSION_COUNT_THRESHOLD = "CCL_FUSION_COUNT_THRESHOLD";
 constexpr const char* CCL_FUSION_CHECK_URGENT = "CCL_FUSION_CHECK_URGENT";
 constexpr const char* CCL_FUSION_CYCLE_MS = "CCL_FUSION_CYCLE_MS";
 
-constexpr const char* CCL_RMA = "CCL_RMA";
 constexpr const char* CCL_PRIORITY = "CCL_PRIORITY";
 constexpr const char* CCL_SPIN_COUNT = "CCL_SPIN_COUNT";
 constexpr const char* CCL_YIELD = "CCL_YIELD";
@@ -127,8 +128,10 @@ public:
 
     ccl_atl_transport atl_transport;
     int enable_shm;
-    int sync_coll;
-    int extra_ep;
+    int enable_rma;
+    int enable_device_buf;
+    int enable_sync_coll;
+    int enable_extra_ep;
 
     atl_mnic_t mnic_type;
     size_t mnic_count;
@@ -155,7 +158,6 @@ public:
     int fusion_check_urgent;
     float fusion_cycle_ms;
 
-    int enable_rma;
     ccl_priority_mode priority_mode;
     size_t spin_count;
     ccl_yield_type yield_type;

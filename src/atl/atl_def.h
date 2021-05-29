@@ -97,16 +97,26 @@ typedef enum {
 typedef enum { ATL_MNIC_NONE, ATL_MNIC_LOCAL, ATL_MNIC_GLOBAL } atl_mnic_t;
 
 typedef struct {
-    size_t ep_count;
-    int enable_shm;
-    size_t tag_bits;
-    uint64_t max_tag;
-    int enable_rma;
-    size_t max_order_waw_size;
-    int sync_coll;
-    int extra_ep;
-    atl_mnic_t mnic_type;
-    size_t mnic_count;
+    struct {
+        int enable_shm;
+        int enable_rma;
+        int enable_device_buf;
+        int enable_sync_coll;
+        int enable_extra_ep;
+        size_t ep_count;
+        atl_mnic_t mnic_type;
+        size_t mnic_count;
+    } in;
+    struct {
+        int enable_shm;
+        int enable_rma;
+        int enable_device_buf;
+        atl_mnic_t mnic_type;
+        size_t mnic_count;
+        size_t tag_bits;
+        uint64_t max_tag;
+        size_t max_order_waw_size;
+    } out;
 } atl_attr_t;
 
 typedef struct {

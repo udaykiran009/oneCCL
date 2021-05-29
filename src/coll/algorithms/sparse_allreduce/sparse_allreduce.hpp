@@ -318,7 +318,8 @@ ccl::status sparse_reduce_ring(const void* ctx) {
     for (size_t idx = 0; idx < sa_handler->send_count[0]; idx++) {
         auto it = sa_handler->iv_map->find(rcv_i[idx]);
         if (it != sa_handler->iv_map->end()) {
-            ccl_comp_reduce((void*)(rcv_v + idx * sa_handler->val_dim_cnt),
+            ccl_comp_reduce(sa_handler->sched,
+                            (void*)(rcv_v + idx * sa_handler->val_dim_cnt),
                             sa_handler->val_dim_cnt,
                             snd_v + it->second[0],
                             nullptr,

@@ -521,7 +521,7 @@ function run_tests()
                 do
                     if [ "$algo" == "ring_rma" ];
                     then
-                        CCL_RMA=1 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"
+                        CCL_ATL_RMA=1 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"
                     else
                         if [ "$algo" == "starlike" ];
                         then

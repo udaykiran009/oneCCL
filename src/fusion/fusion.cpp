@@ -130,6 +130,11 @@ void ccl_fusion_manager::reset() {
 }
 
 bool ccl_fusion_manager::can_fuse(ccl_master_sched* sched) {
+    if (atl_wrapper::attr.out.enable_device_buf) {
+        /* TODO: implement fusion with D2D copies */
+        return false;
+    }
+
     size_t bytes = sched->coll_param.count * sched->coll_param.dtype.size();
 
     if (bytes >= bytes_threshold) {
@@ -320,9 +325,10 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
             size_t global_copy_idx = idx * copies_per_part + copy_idx;
 #ifdef CCL_ENABLE_SYCL
             if (stream && stream->is_sycl_device_stream())
-                entry_factory::make_entry<sycl_copy_entry<sycl_copy_direction::d2h>>(
+                entry_factory::make_entry<sycl_copy_entry>(
                     part_scheds[idx].get(),
-                    ccl_buffer(&(exec_queue[global_copy_idx]->coll_param.sycl_send_buf),
+                    copy_direction::d2h,
+                    ccl_buffer(&(exec_queue[global_copy_idx]->coll_param.device_send_buf),
                                exec_queue[global_copy_idx]->coll_param.count * dtype_size,
                                ccl_buffer_type::INDIRECT),
                     ccl_buffer(fusion_buf, buf_cache.get_buf_size(), offset),
@@ -357,10 +363,11 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
             size_t global_copy_idx = idx * copies_per_part + copy_idx;
 #ifdef CCL_ENABLE_SYCL
             if (stream && stream->is_sycl_device_stream())
-                entry_factory::make_entry<sycl_copy_entry<sycl_copy_direction::h2d>>(
+                entry_factory::make_entry<sycl_copy_entry>(
                     part_scheds[idx].get(),
+                    copy_direction::h2d,
                     ccl_buffer(fusion_buf, buf_cache.get_buf_size(), offset),
-                    ccl_buffer(&(exec_queue[global_copy_idx]->coll_param.sycl_recv_buf),
+                    ccl_buffer(&(exec_queue[global_copy_idx]->coll_param.device_recv_buf),
                                exec_queue[global_copy_idx]->coll_param.count * dtype_size,
                                ccl_buffer_type::INDIRECT),
                     exec_queue[global_copy_idx]->coll_param.count,

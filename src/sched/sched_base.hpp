@@ -87,10 +87,14 @@ struct ccl_sched_base {
 
     void add_memory_region(atl_mr_t* mr);
 
-    void alloc_buffers_for_sycl_copy();
+    void alloc_buffers_for_pre_post_copy();
 
     void set_entry_exec_mode(ccl_sched_entry_exec_mode mode) {
         exec_mode = mode;
+    }
+
+    ccl_sched_add_mode get_add_mode() {
+        return add_mode;
     }
 
     void set_add_mode(ccl_sched_add_mode mode) {

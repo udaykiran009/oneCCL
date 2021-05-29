@@ -81,7 +81,6 @@ void copy_deps(const std::vector<ccl::event>& in, std::vector<ccl::event>& out);
 
 struct ccl_coll_param {
     ccl_coll_type ctype;
-    void* buf;
     const void* send_buf;
     void* recv_buf;
     size_t count;
@@ -98,9 +97,8 @@ struct ccl_coll_param {
     bool skip_validation;
 
 #ifdef CCL_ENABLE_SYCL
-    ccl_sycl_buffer_t* sycl_send_buf;
-    ccl_sycl_buffer_t* sycl_recv_buf;
-    ccl_sycl_buffer_t* sycl_buf;
+    ccl_sycl_buffer_t* device_send_buf;
+    ccl_sycl_buffer_t* device_recv_buf;
 #endif /* CCL_ENABLE_SYCL */
 
     ccl_coll_param() {}

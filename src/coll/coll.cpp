@@ -105,13 +105,13 @@ ccl_coll_attr::ccl_coll_attr(const ccl::sparse_allreduce_attr& attr) {
     sparse_coalesce_mode = attr.get<ccl::sparse_allreduce_attr_id::coalesce_mode>();
 }
 
-static void ccl_coll_validate_and_adjust(ccl_coll_param& param) {
+static void ccl_coll_validate_and_adjust(const ccl_coll_param& param) {
     // not SYCL, don't need validation
     if (param.stream == nullptr) {
         return;
     }
 
-    // We don't actually need parameter validation(e.g. when sycl::buffer is used)
+    // skip validation if it was requested explicitly (e.g. for sycl::buffer)
     if (param.skip_validation) {
         return;
     }
@@ -140,7 +140,7 @@ static void ccl_coll_validate_and_adjust(ccl_coll_param& param) {
         case ccl_coll_reduce_scatter:
             bufs = { (void*)param.send_buf, (void*)param.recv_buf };
             break;
-        case ccl_coll_bcast: bufs = { (void*)param.buf }; break;
+        case ccl_coll_bcast: bufs = { (void*)param.recv_buf }; break;
         case ccl_coll_sparse_allreduce:
             bufs = { (void*)param.sparse_param.send_ind_buf,
                      (void*)param.sparse_param.send_val_buf,
@@ -153,18 +153,11 @@ static void ccl_coll_validate_and_adjust(ccl_coll_param& param) {
     }
 
     auto q = param.stream->get_native_stream();
-    auto mode = native::detail::check_assoc_device_memory(
-        bufs, q.get_device(), q.get_context(), !param.deps.empty());
-    // we can access memory directly, set stream to nullptr to indicate that don't need copy
-    // TODO: does it make sense to have a separate "to_copy" field for that purpose?
-    if ((mode == native::detail::usm_support_mode::direct) ||
-        (mode == native::detail::usm_support_mode::shared)) {
-        param.stream = nullptr;
-    }
-    else if (mode == native::detail::usm_support_mode::need_conversion) {
-        // do nothing to propagate stream parameter
-    }
-#endif // CCL_ENABLE_SYCL
+    CCL_THROW_IF_NOT(
+        native::detail::check_assoc_device_memory(bufs, q.get_device(), q.get_context()) !=
+            native::detail::usm_support_mode::prohibited,
+        "unsupported usm type");
+#endif /* CCL_ENABLE_SYCL */
 }
 
 /* param is not const because param.comm can be updated for unordered colls */
@@ -912,7 +905,7 @@ ccl_request* ccl_broadcast_impl(void* buf,
     ccl_coll_param param{};
 
     param.ctype = ccl_coll_bcast;
-    param.buf = buf;
+    param.send_buf = param.recv_buf = buf;
     param.count = count;
     param.dtype = ccl::global_data::get().dtypes->get(dtype);
     param.root = root;

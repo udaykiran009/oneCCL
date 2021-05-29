@@ -321,6 +321,7 @@ run()
     # for all colls set 2 3 4  ranks to test all use cases
     ranks_per_proc="4"
     ccl_base_env="FI_PROVIDER=tcp"
+    transport_list="ofi mpi"
 
     sycl_example_selector_list="none"
     if [[ ${MODE} = "cpu" ]]
@@ -334,6 +335,7 @@ run()
             dir_list="${dir_list} external_launcher"
         fi
     else
+        transport_list="${transport_list} mpi_gpu"
         common_dir_list="benchmark common"
         if [[ ${SCOPE} = "pr" ]]
         then
@@ -363,11 +365,22 @@ run()
 
         cd $dir_name
         pwd
-        for transport in "ofi" "mpi";
+        for transport in $transport_list
         do
-            ccl_transport_env="CCL_ATL_TRANSPORT=${transport} ${ccl_base_env}"
+            ccl_transport_env="${ccl_base_env}"
+            transport_name=${transport}
+            if [ "$transport" == "mpi_gpu" ];
+            then
+                if [ "$dir_name" != "sycl" ] && [ "$dir_name" != "benchmark" ]
+                then
+                    continue
+                fi
+                transport_name="mpi"
+                ccl_transport_env="CCL_ATL_DEVICE_BUF=1 ${ccl_transport_env}"
+            fi
+            ccl_transport_env="CCL_ATL_TRANSPORT=${transport_name} ${ccl_transport_env}"
 
-            if [ "$transport" == "mpi" ];
+            if [[ "${transport}" == *"mpi"* ]]
             then
                 examples_to_run=`find . -type f -executable -printf '%P\n' |
                     grep -v 'unordered_allreduce' |
@@ -397,6 +410,10 @@ run()
                         if [ "$backend" == "sycl" ];
                         then
                             runtime_list="opencl level_zero"
+                            if [ "$transport" == "mpi_gpu" ];
+                            then
+                                runtime_list="level_zero"
+                            fi 
                         else
                             runtime_list="none"
                         fi
@@ -416,7 +433,7 @@ run()
                             do
                                 if [ "$loop" == "unordered" ]
                                 then
-                                    if [ "$transport" == "mpi" ] || [ "$runtime" == "opencl" ];
+                                    if [[ "${transport}" == *"mpi"* ]] || [ "$runtime" == "opencl" ];
                                     then
                                         continue
                                     fi
@@ -459,6 +476,16 @@ run()
                             runtime_list="opencl level_zero"
                         else
                             runtime_list="opencl"
+                        fi
+
+                        if [ "$transport" == "mpi_gpu" ];
+                        then
+                            if [ "$selector" != "gpu" ];
+                            then
+                                continue
+                            else
+                                runtime_list="level_zero"
+                            fi
                         fi
 
                         if [[ "${example}" == *"_usm_"* ]]

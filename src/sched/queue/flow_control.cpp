@@ -9,7 +9,7 @@ flow_control::flow_control()
           credits(CCL_MAX_FLOW_CREDITS) {}
 
 flow_control::~flow_control() {
-    LOG_DEBUG("max used credits: %zu", (max_credits - min_credits));
+    LOG_DEBUG("max used credits: ", (max_credits - min_credits));
 }
 
 void flow_control::set_max_credits(size_t value) {

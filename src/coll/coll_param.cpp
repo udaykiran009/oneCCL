@@ -32,7 +32,6 @@ void copy_deps(const std::vector<ccl::event>& in, std::vector<ccl::event>& out) 
 
 ccl_coll_param::ccl_coll_param(const ccl_coll_param& other) {
     ctype = other.ctype;
-    buf = other.buf;
     send_buf = other.send_buf;
     recv_buf = other.recv_buf;
     count = other.count;
@@ -48,8 +47,7 @@ ccl_coll_param::ccl_coll_param(const ccl_coll_param& other) {
     sparse_param = other.sparse_param;
 
 #ifdef CCL_ENABLE_SYCL
-    sycl_send_buf = other.sycl_send_buf;
-    sycl_recv_buf = other.sycl_recv_buf;
-    sycl_buf = other.sycl_buf;
+    device_send_buf = other.device_send_buf;
+    device_recv_buf = other.device_recv_buf;
 #endif /* CCL_ENABLE_SYCL */
 }

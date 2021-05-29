@@ -51,8 +51,10 @@ env_data::env_data()
 
           atl_transport(ccl_atl_mpi),
           enable_shm(0),
-          sync_coll(0),
-          extra_ep(0),
+          enable_rma(0),
+          enable_device_buf(0),
+          enable_sync_coll(0),
+          enable_extra_ep(0),
 
           mnic_type(ATL_MNIC_NONE),
           mnic_count(4),
@@ -65,7 +67,6 @@ env_data::env_data()
           fusion_check_urgent(1),
           fusion_cycle_ms(0.2),
 
-          enable_rma(0),
           priority_mode(ccl_priority_none),
           spin_count(100),
           yield_type(ccl_yield_pause),
@@ -120,8 +121,8 @@ void env_data::parse() {
 
     if (fw_type == ccl_framework_horovod) {
         worker_wait = 1;
-        sync_coll = 1;
-        extra_ep = 1;
+        enable_sync_coll = 1;
+        enable_extra_ep = 1;
         yield_type = ccl_yield_sched_yield;
     }
 
@@ -132,8 +133,10 @@ void env_data::parse() {
 
     env_2_atl_transport();
     env_2_type(CCL_ATL_SHM, enable_shm);
-    env_2_type(CCL_ATL_SYNC_COLL, sync_coll);
-    env_2_type(CCL_ATL_EXTRA_EP, extra_ep);
+    env_2_type(CCL_ATL_RMA, enable_rma);
+    env_2_type(CCL_ATL_DEVICE_BUF, enable_device_buf);
+    env_2_type(CCL_ATL_SYNC_COLL, enable_sync_coll);
+    env_2_type(CCL_ATL_EXTRA_EP, enable_extra_ep);
 
     env_2_enum(CCL_MNIC, mnic_type_names, mnic_type);
     env_2_type(CCL_MNIC_COUNT, mnic_count);
@@ -176,7 +179,6 @@ void env_data::parse() {
     if (worker_wait)
         spin_count = 1000;
 
-    env_2_type(CCL_RMA, enable_rma);
     env_2_enum(CCL_PRIORITY, priority_mode_names, priority_mode);
     env_2_type(CCL_SPIN_COUNT, spin_count);
     env_2_enum(CCL_YIELD, ccl_yield_type_names, yield_type);
@@ -306,8 +308,10 @@ void env_data::print(int rank) {
 
     LOG_INFO(CCL_ATL_TRANSPORT, ": ", str_by_enum(atl_transport_names, atl_transport));
     LOG_INFO(CCL_ATL_SHM, ": ", enable_shm);
-    LOG_DEBUG(CCL_ATL_SYNC_COLL, ": ", sync_coll);
-    LOG_DEBUG(CCL_ATL_EXTRA_EP, ": ", extra_ep);
+    LOG_INFO(CCL_ATL_RMA, ": ", enable_rma);
+    LOG_INFO(CCL_ATL_DEVICE_BUF, ": ", enable_device_buf);
+    LOG_DEBUG(CCL_ATL_SYNC_COLL, ": ", enable_sync_coll);
+    LOG_DEBUG(CCL_ATL_EXTRA_EP, ": ", enable_extra_ep);
 
     LOG_INFO(CCL_MNIC, ": ", str_by_enum(mnic_type_names, mnic_type));
     LOG_INFO(CCL_MNIC_COUNT, ": ", mnic_count);
@@ -347,7 +351,6 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_FUSION_CHECK_URGENT, ": ", fusion_check_urgent);
     LOG_INFO(CCL_FUSION_CYCLE_MS, ": ", fusion_cycle_ms);
 
-    LOG_INFO(CCL_RMA, ": ", enable_rma);
     LOG_INFO(CCL_PRIORITY, ": ", str_by_enum(priority_mode_names, priority_mode));
     LOG_INFO(CCL_SPIN_COUNT, ": ", spin_count);
     LOG_INFO(CCL_YIELD, ": ", str_by_enum(ccl_yield_type_names, yield_type));

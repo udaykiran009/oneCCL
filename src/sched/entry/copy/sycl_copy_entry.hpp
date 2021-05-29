@@ -2,18 +2,20 @@
 
 #ifdef CCL_ENABLE_SYCL
 
+#include "sched/entry/copy/copy_helper.hpp"
 #include "sched/entry/entry.hpp"
-#include "sched/entry/sycl_entry_helper.hpp"
 
 #include <CL/sycl.hpp>
 
-template <sycl_copy_direction direction>
 class sycl_copy_entry : public sched_entry {
 public:
-    static constexpr const char* class_name() noexcept;
+    static constexpr const char* class_name() noexcept {
+        return "SYCL_COPY";
+    }
 
     sycl_copy_entry() = delete;
     sycl_copy_entry(ccl_sched* sched,
+                    copy_direction direction,
                     ccl_buffer in_buf,
                     ccl_buffer out_buf,
                     size_t count,
@@ -21,20 +23,19 @@ public:
                     const ccl_stream* stream,
                     size_t offset = 0)
             : sched_entry(sched),
+              direction(direction),
               in_buf(in_buf),
               out_buf(out_buf),
               count(count),
               dtype(dtype),
               stream(stream),
               offset(offset),
-              copier(sycl_copier<direction>(in_buf, out_buf, count, dtype, offset)) {}
+              copier(sycl_copier(direction, in_buf, out_buf, count, dtype, offset)) {}
 
     void start() override {
         LOG_DEBUG(class_name(), ": in_buf ", in_buf, ", out_buf ", out_buf, ", count ", count);
 
         copier.set_queue(((ccl_stream*)stream)->get_native_stream(sched->queue->get_idx()));
-        if (direction == sycl_copy_direction::d2h)
-            copier.set_deps(sched->get_deps());
         ccl_tuple_for_each_indexed<ccl_sycl_buffer_one_dim_types>(copier);
         status = ccl_sched_entry_status_started;
     }
@@ -52,7 +53,9 @@ public:
 protected:
     void dump_detail(std::stringstream& str) const override {
         ccl_logger::format(str,
-                           "  dtype ",
+                           "direction ",
+                           to_string(direction),
+                           ", dtype ",
                            ccl::global_data::get().dtypes->name(dtype),
                            ", count ",
                            count,
@@ -68,23 +71,14 @@ protected:
     }
 
 private:
+    copy_direction direction;
     ccl_buffer in_buf;
     ccl_buffer out_buf;
     size_t count;
     ccl_datatype dtype;
     const ccl_stream* stream;
     size_t offset;
-    sycl_copier<direction> copier;
+    sycl_copier copier;
 };
-
-template <>
-constexpr const char* sycl_copy_entry<sycl_copy_direction::d2h>::class_name() noexcept {
-    return "SYCL_COPY_D2H";
-}
-
-template <>
-constexpr const char* sycl_copy_entry<sycl_copy_direction::h2d>::class_name() noexcept {
-    return "SYCL_COPY_H2D";
-}
 
 #endif /* CCL_ENABLE_SYCL */
