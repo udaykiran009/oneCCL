@@ -645,7 +645,6 @@ atl_mpi_lib_attr_t atl_mpi_get_lib_attr() {
                                  " (min version) ",
                                  (info->kind_value ? info->kind_value : ""),
                                  "\n");
-                        continue;
                     }
                 }
                 else {
@@ -666,8 +665,7 @@ atl_mpi_lib_attr_t atl_mpi_get_lib_attr() {
                       version_value,
                       ") is higher or equal to minimal expected version (",
                       info->min_version_value,
-                      ") "
-                      "and kind matches with expected kind");
+                      ")");
 
             lib_attr.type = final_info->type;
             lib_attr.device_buf =
