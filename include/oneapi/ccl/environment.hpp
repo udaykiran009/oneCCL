@@ -197,15 +197,6 @@ public:
     }
 
     /******************** COMMUNICATOR ********************/
-
-#ifdef CCL_ENABLE_SYCL
-    communicator create_single_device_communicator(int comm_size,
-                                                   int rank,
-                                                   const cl::sycl::device& device,
-                                                   const cl::sycl::context& context,
-                                                   shared_ptr_class<kvs_interface> kvs) const;
-#endif
-
     template <class... attr_val_type>
     static comm_split_attr create_comm_split_attr(attr_val_type&&... avs) {
         auto split_attr = create_postponed_api_type<comm_split_attr>();

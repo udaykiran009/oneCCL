@@ -7,9 +7,6 @@ if (CCL_ENABLE_SYCL)
                     native_device_api/l0/utils.cpp
                     native_device_api/sycl/export.cpp
                     native_device_api/interop_utils.cpp
-                    #common/comm/l0/comm_context.cpp
-                    #common/comm/l0/comm_context_storage.cpp
-                    common/comm/single_device_communicator/single_device_communicator.cpp
         )
 endif(CCL_ENABLE_SYCL)
 
@@ -47,7 +44,6 @@ list (APPEND EXTENSIONS_SRC
                     common/comm/l0/devices/communication_structs/ipc_server.cpp
                     common/comm/l0/devices/communication_structs/ipc_client.cpp
 
-                    common/comm/single_device_communicator/single_device_communicator.cpp
                     common/comm/l0/communicator/device_group/device_ring_communicator.cpp
                     common/comm/l0/communicator/device_group/device_a2a_communicator.cpp
                     common/comm/l0/communicator/thread_group/thread_ring_communicator.cpp
@@ -147,6 +143,7 @@ set(CCL_SRC
     coll/algorithms/reduce.cpp
     coll/algorithms/reduce_scatter.cpp
     coll/coll.cpp
+    coll/coll_check.cpp
     coll/selection/selector_allgatherv.cpp
     coll/selection/selector_allreduce.cpp
     coll/selection/selector_alltoall.cpp

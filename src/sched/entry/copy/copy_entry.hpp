@@ -1,5 +1,6 @@
 #pragma once
 
+#include "coll/coll_check.hpp"
 #include "sched/entry/copy/copy_helper.hpp"
 #include "sched/entry/entry.hpp"
 
@@ -48,9 +49,9 @@ public:
         auto out_ptr_type = sycl::get_pointer_type(out_buf.get_ptr(), q->get_context());
 
         LOG_DEBUG("in_ptr_type: ",
-                  native::detail::usm_to_string(in_ptr_type),
+                  ccl_usm_type_to_str(in_ptr_type),
                   ", out_ptr_type: ",
-                  native::detail::usm_to_string(out_ptr_type),
+                  ccl_usm_type_to_str(out_ptr_type),
                   ", native_stream: ",
                   stream->to_string(),
                   ", count: ",
@@ -77,7 +78,7 @@ public:
             direction = copy_direction::d2h;
         }
 
-        copier = sycl_copier(direction, in_buf, out_buf, count, dtype, 0);
+        copier = sycl_copier(direction, in_buf, out_buf, count, dtype);
         copier.set_queue(q);
         ccl_tuple_for_each_indexed<ccl_sycl_buffer_one_dim_types>(copier);
         status = ccl_sched_entry_status_started;

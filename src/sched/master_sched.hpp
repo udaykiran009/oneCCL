@@ -26,7 +26,7 @@ public:
 
     ~ccl_master_sched() override;
 
-    void add_partial_sched(ccl_coll_param& param);
+    void add_partial_sched(const ccl_coll_param& param);
     void commit(ccl_parallelizer* parallelizer = nullptr);
     ccl_request* start(ccl_executor* exec, bool reset_sched = true);
 

@@ -18,9 +18,10 @@ public:
             selector_param.recv_counts = param.recv_counts;
             selector_param.dtype = param.dtype;
             selector_param.comm = param.comm;
+            selector_param.vector_buf = sched->coll_attr.vector_buf;
+
             if (param.ctype == ccl_coll_allgatherv) {
                 selector_param.count = param.send_count;
-                selector_param.vector_buf = sched->coll_attr.vector_buf;
             }
 
             bool is_direct_algo =

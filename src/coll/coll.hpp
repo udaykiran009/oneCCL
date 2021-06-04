@@ -94,8 +94,7 @@ ccl_request* ccl_allgatherv_impl(const void* send_buf,
                                  const ccl_coll_attr& attr,
                                  ccl_comm* comm,
                                  const ccl_stream* stream,
-                                 const std::vector<ccl::event>& deps,
-                                 bool skip_validation = false);
+                                 const std::vector<ccl::event>& deps);
 
 ccl_request* ccl_allreduce_impl(const void* send_buf,
                                 void* recv_buf,
@@ -105,18 +104,7 @@ ccl_request* ccl_allreduce_impl(const void* send_buf,
                                 const ccl_coll_attr& attr,
                                 ccl_comm* comm,
                                 const ccl_stream* stream,
-                                const std::vector<ccl::event>& deps,
-                                bool skip_validation = false);
-template <class gpu_device_type>
-ccl_request* ccl_allreduce_gpu_impl(const void* send_buf,
-                                    void* recv_buf,
-                                    size_t count,
-                                    ccl::datatype dtype,
-                                    ccl::reduction reduction,
-                                    const ccl_coll_attr& attr,
-                                    ccl_comm* comm,
-                                    const ccl_stream* stream,
-                                    const std::vector<ccl::event>& deps);
+                                const std::vector<ccl::event>& deps);
 
 ccl_request* ccl_alltoall_impl(const void* send_buf,
                                void* recv_buf,
@@ -125,8 +113,7 @@ ccl_request* ccl_alltoall_impl(const void* send_buf,
                                const ccl_coll_attr& attr,
                                ccl_comm* comm,
                                const ccl_stream* stream,
-                               const std::vector<ccl::event>& deps,
-                               bool skip_validation = false);
+                               const std::vector<ccl::event>& deps);
 
 ccl_request* ccl_alltoallv_impl(const void* send_buf,
                                 const size_t* send_counts,
@@ -136,13 +123,11 @@ ccl_request* ccl_alltoallv_impl(const void* send_buf,
                                 const ccl_coll_attr& attr,
                                 ccl_comm* comm,
                                 const ccl_stream* stream,
-                                const std::vector<ccl::event>& deps,
-                                bool skip_validation = false);
+                                const std::vector<ccl::event>& deps);
 
 void ccl_barrier_impl(ccl_comm* comm,
                       const ccl_stream* stream,
-                      const std::vector<ccl::event>& deps,
-                      bool skip_validation = false);
+                      const std::vector<ccl::event>& deps);
 
 ccl_request* ccl_broadcast_impl(void* buf,
                                 size_t count,
@@ -151,8 +136,7 @@ ccl_request* ccl_broadcast_impl(void* buf,
                                 const ccl_coll_attr& attr,
                                 ccl_comm* comm,
                                 const ccl_stream* stream,
-                                const std::vector<ccl::event>& deps,
-                                bool skip_validation = false);
+                                const std::vector<ccl::event>& deps);
 
 ccl_request* ccl_reduce_impl(const void* send_buf,
                              void* recv_buf,
@@ -163,8 +147,7 @@ ccl_request* ccl_reduce_impl(const void* send_buf,
                              const ccl_coll_attr& attr,
                              ccl_comm* comm,
                              const ccl_stream* stream,
-                             const std::vector<ccl::event>& deps,
-                             bool skip_validation = false);
+                             const std::vector<ccl::event>& deps);
 
 ccl_request* ccl_reduce_scatter_impl(const void* send_buf,
                                      void* recv_buf,
@@ -174,8 +157,7 @@ ccl_request* ccl_reduce_scatter_impl(const void* send_buf,
                                      const ccl_coll_attr& attr,
                                      ccl_comm* comm,
                                      const ccl_stream* stream,
-                                     const std::vector<ccl::event>& deps,
-                                     bool skip_validation = false);
+                                     const std::vector<ccl::event>& deps);
 
 ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf,
                                        size_t send_ind_count,
@@ -191,5 +173,4 @@ ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf,
                                        const ccl_coll_attr& attr,
                                        ccl_comm* comm,
                                        const ccl_stream* stream,
-                                       const std::vector<ccl::event>& deps,
-                                       bool skip_validation = false);
+                                       const std::vector<ccl::event>& deps);

@@ -1,6 +1,5 @@
 #include "oneapi/ccl/exception.hpp"
 #include "common/comm/comm_interface.hpp"
-#include "common/comm/single_device_communicator/single_device_communicator.hpp"
 
 #include "common/env/env.hpp"
 
@@ -285,9 +284,6 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
                                                                   atl,
                                                                   ccl::group_split_type::single);
 
-        //TODO use gpu_comm_attr to automatically visit()
-        //auto single_dev_comm = std::dynamic_pointer_cast<single_device_communicator>(impl);
-        //single_dev_comm->set_context(context);
         ccl::vector_class<ccl::communicator> ret;
         ret.push_back(ccl::communicator(std::move(impl)));
         return ret;

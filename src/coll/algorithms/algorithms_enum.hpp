@@ -99,7 +99,10 @@ enum ccl_coll_type {
     ccl_coll_reduce,
     ccl_coll_reduce_scatter,
     ccl_coll_sparse_allreduce,
+    ccl_coll_last_regular = ccl_coll_sparse_allreduce,
+
     ccl_coll_internal,
+    ccl_coll_partial,
 
     ccl_coll_last_value
 };

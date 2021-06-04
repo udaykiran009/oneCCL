@@ -17,7 +17,7 @@ protected:
     }
 
     void TearDown() override {
-        // Don't do finalize if the case has failed, this
+        // don't do finalize if the case has failed, this
         // could lead to a deadlock due to inconsistent state.
         if (HasFatalFailure()) {
             return;
@@ -46,26 +46,37 @@ TEST_F(alltoallv_test, alltoallv_empty_recv_count) {
 
     int i = 0;
 
-    ASSERT_EQ(size, 3) << "Test expects 3 ranks";
+    ASSERT_GE(size, 3) << "test expects >= 3 ranks";
 
     sycl::queue q;
     ASSERT_TRUE(q.get_device().is_gpu())
-        << "Test expects gpu device, please use SYCL_DEVICE_FILTER accordingly";
+        << "test expects GPU device, please use SYCL_DEVICE_FILTER accordingly";
+
+    /* create kvs */
+    ccl::shared_ptr_class<ccl::kvs> kvs;
+    ccl::kvs::address_type main_addr;
+    if (rank == 0) {
+        kvs = ccl::create_main_kvs();
+        main_addr = kvs->get_address();
+        MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+    }
+    else {
+        MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        kvs = ccl::create_kvs(main_addr);
+    }
 
     /* create communicator */
     auto dev = ccl::create_device(q.get_device());
     auto ctx = ccl::create_context(q.get_context());
-    auto comm = ccl::create_communicator(size, rank, dev, ctx, /*kvs*/ {});
+    auto comm = ccl::create_communicator(size, rank, dev, ctx, kvs);
 
     /* create stream */
     auto stream = ccl::create_stream(q);
 
-    // TODO: find a proper way to choose between shared and device pointers(i.e. env variable)
-    /* create buffers */
     auto send_buf = sycl::malloc_device<int>(count * size, q);
     auto recv_buf = sycl::malloc_device<int>(count * size, q);
 
-    // we have 2 ranks in total: rank 1 doesn't receive anything, rank 2 - doesn't send anything
+    // 3 ranks: rank 1 doesn't receive anything, rank 2 - doesn't send anything
     int empty_recv_rank = 1;
     int empty_send_rank = 2;
 
@@ -104,6 +115,7 @@ TEST_F(alltoallv_test, alltoallv_empty_recv_count) {
 
     // invoke alltoall
     auto attr = ccl::create_operation_attr<ccl::alltoallv_attr>();
+
     int* invalid_ptr = (int*)0x00ffff;
     // pass an invalid pointer to make sure it's correctly handled and not dereferenced due to 0 count
     if (rank == empty_recv_rank) {
@@ -140,7 +152,7 @@ TEST_F(alltoallv_test, alltoallv_empty_recv_count) {
     {
         sycl::host_accessor check_buf_acc(check_buf, sycl::read_only);
         for (i = 0; i < total_recv; i++) {
-            ASSERT_NE(check_buf_acc[i], -1) << "Check failed for receive buffer";
+            ASSERT_NE(check_buf_acc[i], -1) << "check failed for receive buffer";
         }
     }
 

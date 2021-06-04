@@ -9,7 +9,7 @@ void coll_entry::start() {
 
     if (!coll_sched) {
         ccl_coll_param coll_param{};
-        coll_param.ctype = param.ctype;
+        coll_param.ctype = sched->coll_param.ctype;
         coll_param.comm = sched->coll_param.comm;
         coll_param.stream = sched->coll_param.stream;
         coll_sched.reset(new ccl_extra_sched(coll_param, sched->sched_id));

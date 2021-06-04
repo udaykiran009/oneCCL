@@ -87,16 +87,6 @@ vector_class<communicator> CCL_API environment::create_communicators(
     shared_ptr_class<kvs_interface> kvs,
     const comm_attr& attr) const {
     return communicator::create_communicators(comm_size, local_rank_device_map, context, kvs);
-    /*
-    (void)context;
-    vector_class<communicator> ret;
-    ret.push_back(create_single_device_communicator(comm_size,
-                                                    local_rank_device_map.begin()->first,
-                                                    local_rank_device_map.begin()->second,
-                                                    context,
-                                                    kvs));
-    return ret;
-*/
 }
 
 template <class DeviceType, class ContextType>
@@ -107,16 +97,6 @@ environment::create_communicators(const int comm_size,
                                   shared_ptr_class<kvs_interface> kvs,
                                   const comm_attr& attr) const {
     return communicator::create_communicators(comm_size, local_rank_device_map, context, kvs);
-    /*
-    (void)context;
-    vector_class<communicator> ret;
-    ret.push_back(create_single_device_communicator(comm_size,
-                                                    local_rank_device_map.begin()->first,
-                                                    local_rank_device_map.begin()->second,
-                                                    context,
-                                                    kvs));
-    return ret;
-*/
 }
 
 } // namespace detail

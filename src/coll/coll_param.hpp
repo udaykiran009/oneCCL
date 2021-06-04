@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "coll/algorithms/algorithms_enum.hpp"
 #include "common/datatype/datatype.hpp"
 #include "oneapi/ccl.hpp"
@@ -8,7 +10,6 @@ class ccl_comm;
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
-typedef cl::sycl::buffer<int8_t, 1> ccl_sycl_buffer_t;
 
 template <class native_type>
 using ccl_sycl_typed_buffer_t = cl::sycl::buffer<native_type, 1>;
@@ -35,7 +36,6 @@ struct ccl_coll_attr {
     ccl_coll_attr(const ccl_coll_attr&) = default;
     ccl_coll_attr& operator=(const ccl_coll_attr&) = default;
 
-    //TODO temporary solution for type convertation, ccl_coll_attr would be depreacated
     ccl_coll_attr(const ccl::allgatherv_attr& attr);
     ccl_coll_attr(const ccl::allreduce_attr& attr);
     ccl_coll_attr(const ccl::alltoall_attr& attr);
@@ -56,8 +56,11 @@ struct ccl_coll_attr {
     size_t priority = 0;
     int synchronous = 0;
     int to_cache = 0;
-    int vector_buf = 0;
     std::string match_id{};
+
+    /* change how user-supplied buffers have to be interpreted */
+    int vector_buf = 0;
+    int is_sycl_buffer = 0;
 
     ccl::sparse_allreduce_completion_fn sparse_allreduce_completion_fn = nullptr;
     ccl::sparse_allreduce_alloc_fn sparse_allreduce_alloc_fn = nullptr;
@@ -77,32 +80,130 @@ struct ccl_coll_sparse_param {
     ccl_datatype itype;
 };
 
-void copy_deps(const std::vector<ccl::event>& in, std::vector<ccl::event>& out);
-
 struct ccl_coll_param {
+    enum class buf_type { regular, device };
+
     ccl_coll_type ctype;
-    const void* send_buf;
-    void* recv_buf;
-    size_t count;
-    size_t send_count;
-    const size_t* send_counts;
-    const size_t* recv_counts;
+
+    std::vector<void*> send_bufs;
+    std::vector<void*> recv_bufs;
+
+    /*
+        filled if pre-post copy is used
+        to keep original send/recv buffers
+        send_buf and recv_buf fields are replaced by staging buffers
+    */
+    std::vector<void*> device_send_bufs;
+    std::vector<void*> device_recv_bufs;
+
+    std::vector<size_t> send_counts;
+    std::vector<size_t> recv_counts;
+
     ccl_datatype dtype;
     ccl::reduction reduction;
     int root;
-    const ccl_stream* stream;
-    std::vector<ccl::event> deps;
+    ccl_stream* stream;
     ccl_comm* comm;
+    std::vector<ccl::event> deps;
+
     ccl_coll_sparse_param sparse_param;
-    bool skip_validation;
 
-#ifdef CCL_ENABLE_SYCL
-    ccl_sycl_buffer_t* device_send_buf;
-    ccl_sycl_buffer_t* device_recv_buf;
-#endif /* CCL_ENABLE_SYCL */
-
-    ccl_coll_param() {}
+    ccl_coll_param();
     ccl_coll_param(const ccl_coll_param& other);
+
+    void* get_send_buf(size_t idx = 0, buf_type type = buf_type::regular) const;
+    void* get_recv_buf(size_t idx = 0, buf_type type = buf_type::regular) const;
+
+    void* get_send_buf_ptr(size_t idx = 0, buf_type type = buf_type::regular) const;
+    void* get_recv_buf_ptr(size_t idx = 0, buf_type type = buf_type::regular) const;
+
+    size_t get_send_count(size_t idx = 0) const;
+    size_t get_recv_count(size_t idx = 0) const;
+
+    bool is_inplace(buf_type type = buf_type::regular) const;
+
+    std::vector<void*> get_all_non_zero_bufs() const;
+
+    void validate() const;
+
+    void copy_deps(const std::vector<ccl::event>& d);
+    void set_common_fields(ccl::datatype dtype,
+                           ccl_comm* comm,
+                           const ccl_stream* stream,
+                           const std::vector<ccl::event>& deps);
+
+    static ccl_coll_param create_allgatherv_param(const void* send_buf,
+                                                  size_t send_count,
+                                                  void* recv_buf,
+                                                  const size_t* recv_counts,
+                                                  ccl::datatype dtype,
+                                                  const ccl_coll_attr& attr,
+                                                  ccl_comm* comm,
+                                                  const ccl_stream* stream,
+                                                  const std::vector<ccl::event>& deps = {});
+
+    static ccl_coll_param create_allreduce_param(const void* send_buf,
+                                                 void* recv_buf,
+                                                 size_t count,
+                                                 ccl::datatype dtype,
+                                                 ccl::reduction reduction,
+                                                 const ccl_coll_attr& attr,
+                                                 ccl_comm* comm,
+                                                 const ccl_stream* stream,
+                                                 const std::vector<ccl::event>& deps = {});
+
+    static ccl_coll_param create_alltoall_param(const void* send_buf,
+                                                void* recv_buf,
+                                                size_t count,
+                                                ccl::datatype dtype,
+                                                const ccl_coll_attr& attr,
+                                                ccl_comm* comm,
+                                                const ccl_stream* stream,
+                                                const std::vector<ccl::event>& deps = {});
+
+    static ccl_coll_param create_alltoallv_param(const void* send_buf,
+                                                 const size_t* send_counts,
+                                                 void* recv_buf,
+                                                 const size_t* recv_counts,
+                                                 ccl::datatype dtype,
+                                                 const ccl_coll_attr& attr,
+                                                 ccl_comm* comm,
+                                                 const ccl_stream* stream,
+                                                 const std::vector<ccl::event>& deps = {});
+
+    static ccl_coll_param create_barrier_param(ccl_comm* comm,
+                                               const ccl_stream* stream,
+                                               const std::vector<ccl::event>& deps = {});
+
+    static ccl_coll_param create_broadcast_param(void* buf,
+                                                 size_t count,
+                                                 ccl::datatype dtype,
+                                                 int root,
+                                                 const ccl_coll_attr& attr,
+                                                 ccl_comm* comm,
+                                                 const ccl_stream* stream,
+                                                 const std::vector<ccl::event>& deps = {});
+
+    static ccl_coll_param create_reduce_param(const void* send_buf,
+                                              void* recv_buf,
+                                              size_t count,
+                                              ccl::datatype dtype,
+                                              ccl::reduction reduction,
+                                              int root,
+                                              const ccl_coll_attr& attr,
+                                              ccl_comm* comm,
+                                              const ccl_stream* stream,
+                                              const std::vector<ccl::event>& deps = {});
+
+    static ccl_coll_param create_reduce_scatter_param(const void* send_buf,
+                                                      void* recv_buf,
+                                                      size_t recv_count,
+                                                      ccl::datatype dtype,
+                                                      ccl::reduction reduction,
+                                                      const ccl_coll_attr& attr,
+                                                      ccl_comm* comm,
+                                                      const ccl_stream* stream,
+                                                      const std::vector<ccl::event>& deps = {});
 };
 
 class coll_param_gpu {
@@ -145,18 +246,3 @@ public:
 };
 
 bool operator==(const coll_param_gpu& lhs, const coll_param_gpu& rhs);
-
-/*
-    explicitly split coll_param and coll_param_copy
-    to separate coll_param structure which is used for interaction between different modules
-    and coll_param_copy which is used as storage for user options
-*/
-struct ccl_coll_param_copy {
-    /* keep copy of user options which can be invalidated after collective call */
-
-    std::vector<void*> ag_recv_bufs;
-    std::vector<size_t> ag_recv_counts;
-
-    std::vector<size_t> a2av_send_counts;
-    std::vector<size_t> a2av_recv_counts;
-};

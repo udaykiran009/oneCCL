@@ -79,14 +79,11 @@ if(MULTI_GPU_SUPPORT)
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs//ipc_ctx_session.cpp"
              "${PROJECT_SOURCE_DIR}/src/common/comm/l0/context/scale/ipc/ipc_session_key.cpp"
 
-             "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/single_device_communicator.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/device_topology_communicator.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/thread_topology_communicator.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/process_topology_communicator.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/process_group_context.cpp"
              "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/thread_group_context.cpp")
-elseif(CCL_ENABLE_SYCL)
-    set(specific_sources "${PROJECT_SOURCE_DIR}/tests/unit/api/stubs/single_device_communicator.cpp")
 endif()
 
 list(APPEND dependencies_sources ${specific_sources})

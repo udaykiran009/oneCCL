@@ -23,10 +23,17 @@ namespace ccl {
 
 using ccl::preview::create_comm_split_attr;
 
-host_communicator::host_communicator() : comm_attr(create_comm_split_attr()) {}
+host_communicator::host_communicator()
+        : device(ccl::device_index_type(ccl::unused_index_value,
+                                        ccl::unused_index_value,
+                                        ccl::unused_index_value)),
+          comm_attr(create_comm_split_attr()) {}
 
 host_communicator::host_communicator(int size, shared_ptr_class<ikvs_wrapper> kvs)
-        : comm_attr(create_comm_split_attr()),
+        : device(ccl::device_index_type(ccl::unused_index_value,
+                                        ccl::unused_index_value,
+                                        ccl::unused_index_value)),
+          comm_attr(create_comm_split_attr()),
           comm_rank(0),
           comm_size(size) {
     if (size <= 0) {
@@ -35,7 +42,10 @@ host_communicator::host_communicator(int size, shared_ptr_class<ikvs_wrapper> kv
 }
 
 host_communicator::host_communicator(int size, int rank, shared_ptr_class<ikvs_wrapper> kvs)
-        : comm_attr(create_comm_split_attr()),
+        : device(ccl::device_index_type(ccl::unused_index_value,
+                                        ccl::unused_index_value,
+                                        ccl::unused_index_value)),
+          comm_attr(create_comm_split_attr()),
           comm_rank(rank),
           comm_size(size) {
     if (rank > size || size <= 0) {
@@ -51,17 +61,25 @@ host_communicator::host_communicator(int size, int rank, shared_ptr_class<ikvs_w
         std::shared_ptr<ccl_comm>(new ccl_comm(rank, size, data.comm_ids->acquire(), atl_tmp));
 }
 
+host_communicator::host_communicator(ccl::unified_device_type&& d,
+                                     ccl::unified_context_type&& c,
+                                     std::shared_ptr<atl_wrapper> atl)
+        : host_communicator(atl) {}
+
 host_communicator::host_communicator(std::shared_ptr<atl_wrapper> atl)
-        : comm_attr(create_comm_split_attr()),
+        : device(ccl::device_index_type(ccl::unused_index_value,
+                                        ccl::unused_index_value,
+                                        ccl::unused_index_value)),
+          comm_attr(create_comm_split_attr()),
           comm_rank(atl->get_rank()),
           comm_size(atl->get_size()) {
     int rank = atl->get_rank();
     int size = atl->get_size();
 
     if (rank > size || size <= 0) {
-        throw ccl::exception("Incorrect rank or size value when creating \
-                             a host communicator: rank" +
-                             std::to_string(rank) + " size: " + std::to_string(size));
+        throw ccl::exception("incorrect rank or size when creating \
+                             a host communicator: rank: " +
+                             std::to_string(rank) + ", size: " + std::to_string(size));
     }
 
     LOG_DEBUG("ctor");
@@ -72,6 +90,9 @@ host_communicator::host_communicator(std::shared_ptr<atl_wrapper> atl)
 
 host_communicator::host_communicator(std::shared_ptr<ccl_comm> impl)
         : comm_impl(impl),
+          device(ccl::device_index_type(ccl::unused_index_value,
+                                        ccl::unused_index_value,
+                                        ccl::unused_index_value)),
           comm_attr(create_comm_split_attr()),
           comm_rank(impl->rank()),
           comm_size(impl->size()) {}
@@ -150,22 +171,17 @@ ccl::communicator_interface_ptr host_communicator::split(const comm_split_attr& 
         new host_communicator(std::shared_ptr<ccl_comm>(new_comm)));
 }
 
-ccl::event host_communicator::barrier(const ccl::stream::impl_value_t& op_stream,
+ccl::event host_communicator::barrier(const ccl::stream::impl_value_t& stream,
                                       const ccl::barrier_attr& attr,
                                       const ccl::vector_class<ccl::event>& deps) {
-    return get_impl()->barrier_impl(op_stream, attr, deps);
+    return get_impl()->barrier_impl(stream, attr, deps);
 }
 
-ccl::event host_communicator::barrier_impl(const ccl::stream::impl_value_t& op_stream,
+ccl::event host_communicator::barrier_impl(const ccl::stream::impl_value_t& stream,
                                            const ccl::barrier_attr& attr,
                                            const ccl::vector_class<ccl::event>& deps) {
-    // TODO what exactly we need to do with 'attr' here?
-
-    ccl_barrier_impl(comm_impl.get(), op_stream.get(), deps);
-
-    // TODO what exactly we need to return here? ccl_barrier_impl() is void func
-    ccl_request* req = nullptr;
-    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
+    ccl_barrier_impl(comm_impl.get(), stream.get(), deps);
+    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(nullptr));
 }
 
 /* allgatherv */
@@ -184,7 +200,7 @@ ccl::event host_communicator::allgatherv_impl(const void* send_buf,
                                            dtype,
                                            attr,
                                            comm_impl.get(),
-                                           nullptr,
+                                           get_stream_ptr(stream),
                                            deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
@@ -208,7 +224,7 @@ ccl::event host_communicator::allgatherv_impl(const void* send_buf,
                                            dtype,
                                            internal_attr,
                                            comm_impl.get(),
-                                           nullptr,
+                                           get_stream_ptr(stream),
                                            deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
@@ -223,8 +239,15 @@ ccl::event host_communicator::allreduce_impl(const void* send_buf,
                                              const ccl::stream::impl_value_t& stream,
                                              const ccl::allreduce_attr& attr,
                                              const ccl::vector_class<ccl::event>& deps) {
-    ccl_request* req = ccl_allreduce_impl(
-        send_buf, recv_buf, count, dtype, reduction, attr, comm_impl.get(), nullptr, deps);
+    ccl_request* req = ccl_allreduce_impl(send_buf,
+                                          recv_buf,
+                                          count,
+                                          dtype,
+                                          reduction,
+                                          attr,
+                                          comm_impl.get(),
+                                          get_stream_ptr(stream),
+                                          deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
@@ -237,8 +260,8 @@ ccl::event host_communicator::alltoall_impl(const void* send_buf,
                                             const ccl::stream::impl_value_t& stream,
                                             const ccl::alltoall_attr& attr,
                                             const ccl::vector_class<ccl::event>& deps) {
-    ccl_request* req =
-        ccl_alltoall_impl(send_buf, recv_buf, count, dtype, attr, comm_impl.get(), nullptr, deps);
+    ccl_request* req = ccl_alltoall_impl(
+        send_buf, recv_buf, count, dtype, attr, comm_impl.get(), get_stream_ptr(stream), deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
@@ -271,7 +294,7 @@ ccl::event host_communicator::alltoallv_impl(const void* send_buf,
                                           dtype,
                                           attr,
                                           comm_impl.get(),
-                                          nullptr,
+                                          get_stream_ptr(stream),
                                           deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
@@ -298,8 +321,8 @@ ccl::event host_communicator::broadcast_impl(void* buf,
                                              const ccl::stream::impl_value_t& stream,
                                              const ccl::broadcast_attr& attr,
                                              const ccl::vector_class<ccl::event>& deps) {
-    ccl_request* req =
-        ccl_broadcast_impl(buf, count, dtype, root, attr, comm_impl.get(), nullptr, deps);
+    ccl_request* req = ccl_broadcast_impl(
+        buf, count, dtype, root, attr, comm_impl.get(), get_stream_ptr(stream), deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
@@ -314,8 +337,16 @@ ccl::event host_communicator::reduce_impl(const void* send_buf,
                                           const ccl::stream::impl_value_t& stream,
                                           const ccl::reduce_attr& attr,
                                           const ccl::vector_class<ccl::event>& deps) {
-    ccl_request* req = ccl_reduce_impl(
-        send_buf, recv_buf, count, dtype, reduction, root, attr, comm_impl.get(), nullptr, deps);
+    ccl_request* req = ccl_reduce_impl(send_buf,
+                                       recv_buf,
+                                       count,
+                                       dtype,
+                                       reduction,
+                                       root,
+                                       attr,
+                                       comm_impl.get(),
+                                       get_stream_ptr(stream),
+                                       deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
@@ -329,8 +360,15 @@ ccl::event host_communicator::reduce_scatter_impl(const void* send_buf,
                                                   const ccl::stream::impl_value_t& stream,
                                                   const ccl::reduce_scatter_attr& attr,
                                                   const ccl::vector_class<ccl::event>& deps) {
-    ccl_request* req = ccl_reduce_scatter_impl(
-        send_buf, recv_buf, recv_count, dtype, reduction, attr, comm_impl.get(), nullptr, deps);
+    ccl_request* req = ccl_reduce_scatter_impl(send_buf,
+                                               recv_buf,
+                                               recv_count,
+                                               dtype,
+                                               reduction,
+                                               attr,
+                                               comm_impl.get(),
+                                               get_stream_ptr(stream),
+                                               deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
@@ -363,7 +401,7 @@ ccl::event host_communicator::sparse_allreduce_impl(const void* send_ind_buf,
                                                  reduction,
                                                  attr,
                                                  comm_impl.get(),
-                                                 nullptr,
+                                                 get_stream_ptr(stream),
                                                  deps);
 
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));

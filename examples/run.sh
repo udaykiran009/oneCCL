@@ -407,15 +407,20 @@ run()
 
                     for backend in $bench_backend_list
                     do
+                        runtime_list="none"
                         if [ "$backend" == "sycl" ];
                         then
                             runtime_list="opencl level_zero"
-                            if [ "$transport" == "mpi_gpu" ];
+                        fi
+
+                        if [ "$transport" == "mpi_gpu" ];
+                        then
+                            if [ "$backend" != "sycl" ];
                             then
+                                continue
+                            else
                                 runtime_list="level_zero"
-                            fi 
-                        else
-                            runtime_list="none"
+                            fi
                         fi
 
                         for runtime in $runtime_list

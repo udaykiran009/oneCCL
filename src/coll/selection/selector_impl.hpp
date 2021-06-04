@@ -247,7 +247,9 @@ algo_group_type ccl_algorithm_selector_base<algo_group_type>::get(
                          ", selection_count ",
                          count);
         CCL_THROW_IF_NOT(ccl_algorithm_selector_helper<algo_group_type>::can_use(
-            elem_algo, param, fallback_table));
+                             elem_algo, param, fallback_table),
+                         "can't select algorithm in fallback_table: coll_type ",
+                         ccl_coll_type_to_str(param.ctype));
     }
 
     LOG_DEBUG("selected algo: coll_type ",

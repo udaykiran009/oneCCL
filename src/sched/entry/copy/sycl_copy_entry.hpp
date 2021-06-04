@@ -21,6 +21,7 @@ public:
                     size_t count,
                     const ccl_datatype& dtype,
                     const ccl_stream* stream,
+                    bool is_sycl_buffer = false,
                     size_t offset = 0)
             : sched_entry(sched),
               direction(direction),
@@ -29,8 +30,10 @@ public:
               count(count),
               dtype(dtype),
               stream(stream),
+              is_sycl_buffer(is_sycl_buffer),
               offset(offset),
-              copier(sycl_copier(direction, in_buf, out_buf, count, dtype, offset)) {}
+              copier(
+                  sycl_copier(direction, in_buf, out_buf, count, dtype, is_sycl_buffer, offset)) {}
 
     void start() override {
         LOG_DEBUG(class_name(), ": in_buf ", in_buf, ", out_buf ", out_buf, ", count ", count);
@@ -38,6 +41,12 @@ public:
         copier.set_queue(((ccl_stream*)stream)->get_native_stream(sched->queue->get_idx()));
         ccl_tuple_for_each_indexed<ccl_sycl_buffer_one_dim_types>(copier);
         status = ccl_sched_entry_status_started;
+
+        // while (!copier.is_completed()) {
+        //   ccl_yield(ccl_yield_sleep);
+        // }
+
+        // status = ccl_sched_entry_status_complete;
     }
 
     void update() override {
@@ -65,6 +74,8 @@ protected:
                            out_buf,
                            ", native_stream ",
                            stream->to_string(),
+                           ", is_sycl_buffer ",
+                           is_sycl_buffer,
                            ", offset ",
                            offset,
                            "\n");
@@ -77,6 +88,7 @@ private:
     size_t count;
     ccl_datatype dtype;
     const ccl_stream* stream;
+    bool is_sycl_buffer;
     size_t offset;
     sycl_copier copier;
 };

@@ -1,6 +1,8 @@
 #pragma once
 
+#include "atl/atl_wrapper.h"
 #include "common/comm/comm.hpp"
+#include "common/stream/stream.hpp"
 #include "oneapi/ccl/types.hpp"
 #include "oneapi/ccl/types_policy.hpp"
 #include "oneapi/ccl/comm_split_attr_ids.hpp"
@@ -9,7 +11,6 @@
 #include "oneapi/ccl/types.hpp"
 #include "oneapi/ccl/type_traits.hpp"
 #include "oneapi/ccl/types_policy.hpp"
-
 #include "oneapi/ccl/event.hpp"
 #include "oneapi/ccl/coll_attr_ids.hpp"
 #include "oneapi/ccl/coll_attr_ids_traits.hpp"
@@ -18,10 +19,16 @@
 #include "common/comm/communicator_traits.hpp"
 #include "common/comm/comm_interface.hpp"
 #include "types_generator_defines.hpp"
-#include "atl/atl_wrapper.h"
 
 class ikvs_wrapper;
 namespace ccl {
+
+inline ccl_stream* get_stream_ptr(const ccl::stream::impl_value_t& stream) {
+    if (stream.get() && stream->is_sycl_device_stream())
+        return stream.get();
+    else
+        return nullptr;
+}
 
 class host_communicator : public ccl::communicator_interface {
 public:
@@ -106,6 +113,9 @@ public:
     host_communicator();
     host_communicator(int size, shared_ptr_class<ikvs_wrapper> kvs);
     host_communicator(int size, int rank, shared_ptr_class<ikvs_wrapper> kvs);
+    host_communicator(ccl::unified_device_type&& device,
+                      ccl::unified_context_type&& context,
+                      std::shared_ptr<atl_wrapper> atl);
     host_communicator(std::shared_ptr<atl_wrapper> atl);
     host_communicator(std::shared_ptr<ccl_comm> impl);
     host_communicator(host_communicator& src) = delete;
@@ -120,13 +130,16 @@ public:
 
 private:
     friend struct group_context;
+
     std::shared_ptr<ccl_comm> comm_impl;
+
+    ccl::unified_device_type device;
+    //ccl::unified_context_type context;
+
     ccl::comm_split_attr comm_attr;
     int comm_rank;
     int comm_size;
     ccl::group_unique_key owner_id;
-    // ccl::unified_device_type device;
-    // ccl::unified_context_type context;
 
     host_communicator* get_impl() {
         return this;

@@ -75,7 +75,7 @@ ccl_request* ccl_master_sched::reset_request() {
     return this;
 }
 
-void ccl_master_sched::add_partial_sched(ccl_coll_param& coll_param) {
+void ccl_master_sched::add_partial_sched(const ccl_coll_param& coll_param) {
     partial_scheds.emplace_back(std::make_shared<ccl_sched>(coll_param, this));
     partial_scheds.back()->internal_type = internal_type;
 }
@@ -161,54 +161,6 @@ void ccl_master_sched::dump(std::ostream& out) const {
 
 ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_param& param,
                                                                 const ccl_coll_attr& attr) {
-    /* check contracts at first */
-
-    CCL_THROW_IF_NOT(ccl::global_data::env().atl_transport == ccl_atl_ofi || !(attr.reduction_fn),
-                     "custom reduction is supported for OFI transport only");
-
-    CCL_THROW_IF_NOT(ccl_datatype_storage::is_predefined_datatype(param.dtype.idx()) ||
-                         ccl::global_data::env().atl_transport == ccl_atl_ofi,
-                     "custom datatype is supported for OFI transport only");
-
-    CCL_THROW_IF_NOT((param.ctype != ccl_coll_allreduce && param.ctype != ccl_coll_reduce &&
-                      param.ctype != ccl_coll_sparse_allreduce) ||
-                         ccl_datatype_storage::is_predefined_datatype(param.dtype.idx()) ||
-                         attr.reduction_fn,
-                     "custom datatype requires custom reduction");
-
-    CCL_THROW_IF_NOT(param.ctype == ccl_coll_allreduce ||
-                         !(attr.prologue_fn || attr.epilogue_fn || attr.reduction_fn),
-                     "prologue/epilogue/custom reduction is supported for allreduce only");
-
-    CCL_THROW_IF_NOT(param.ctype == ccl_coll_allgatherv || !(attr.vector_buf),
-                     "vector buffer is supported for allgatherv only");
-
-    if (param.ctype == ccl_coll_sparse_allreduce) {
-        CCL_THROW_IF_NOT(
-            ccl::global_data::env().sparse_allreduce_algo_raw != "mask" || !(attr.reduction_fn),
-            "mask algorithm for sparse_allreduce does not support custom reduction");
-
-        CCL_THROW_IF_NOT(
-            (attr.sparse_allreduce_completion_fn || attr.sparse_allreduce_alloc_fn) &&
-                !(reinterpret_cast<uintptr_t>(attr.sparse_allreduce_completion_fn) &
-                  reinterpret_cast<uintptr_t>(attr.sparse_allreduce_alloc_fn)),
-            "sparse_allreduce requires completion callback only or allocation callback only");
-    }
-
-    if (param.dtype.idx() == ccl::datatype::float16) {
-        CCL_THROW_IF_NOT(ccl::global_data::env().fp16_impl_type != ccl_fp16_no_compiler_support,
-                         "FP16 datatype is requested but not supported by CCL compiler");
-        CCL_THROW_IF_NOT(ccl::global_data::env().fp16_impl_type != ccl_fp16_no_hardware_support,
-                         "FP16 datatype is requested but not supported by hardware");
-    }
-
-    if (param.dtype.idx() == ccl::datatype::bfloat16) {
-        CCL_THROW_IF_NOT(ccl::global_data::env().bf16_impl_type != ccl_bf16_no_compiler_support,
-                         "BF16 datatype is requested but not supported by CCL compiler");
-        CCL_THROW_IF_NOT(ccl::global_data::env().bf16_impl_type != ccl_bf16_no_hardware_support,
-                         "BF16 datatype is requested but not supported by hardware");
-    }
-
     ccl_sched_key key;
     ccl_master_sched_ptr sched;
     bool is_created = false;
