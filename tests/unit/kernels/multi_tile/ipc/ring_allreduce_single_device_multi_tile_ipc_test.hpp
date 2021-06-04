@@ -65,7 +65,7 @@ TYPED_TEST(ring_allreduce_multi_process_fixture, ring_single_device_multi_tile_i
     ze_device_mem_alloc_desc_t mem_uncached_descr{
         .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
         .pNext = NULL,
-        .flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED,
+        .flags = 0,
         .ordinal = 0,
     };
 

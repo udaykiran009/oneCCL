@@ -18,6 +18,8 @@
 #include "common/comm/l0/context/scale/ipc/ipc_session_key.hpp"
 #include "common/comm/l0/context/scale/base/base_session.hpp"
 
+#include "mpi.h"
+
 //TODO L0 Workaround
 #include <unistd.h>
 static std::mutex global_fence_mutex;
@@ -232,42 +234,66 @@ public:
         return ready_to_exec;
     }
 
+    void common_update() {
+        //wait execution
+        auto &cmd_queue = get_dev_queue();
+
+        ENTRY_LOG_TRACE(" waiting for finished execution, queue: ", cmd_queue.get());
+
+        ze_result_t ret;
+
+        // Quering fence doesn't sync kernel output with the host, so if we need this
+        // we use QuerySyncronize API.
+        if (ccl::global_data::env().comm_kernels_debug == 0) {
+            ret = get_fence_impl().query_status();
+        }
+        else {
+            ret = zeCommandQueueSynchronize(cmd_queue.get(), 0);
+        }
+
+        ENTRY_LOG_TRACE(
+            "Fence query status: ", native::to_string(ret), ", queue: ", cmd_queue.get());
+        if (ret == ZE_RESULT_SUCCESS) {
+            this->set_state(gpu_entry_state::completed);
+
+            // Once all the ranks in the group got the notification, reset the state for further launches
+            reset_state();
+
+            status = ccl_sched_entry_status_complete;
+            ENTRY_LOG_DEBUG(" Completed on queue: ", cmd_queue.get());
+
+            if (type() == ccl_coll_allreduce) {
+                barrier_flag = true;
+                MPI_Send(&barrier_flag, 1, MPI_C_BOOL, 1, 0, MPI_COMM_WORLD);
+                ENTRY_LOG_DEBUG("MPI_SEND done");
+            }
+        }
+        else if (ret == ZE_RESULT_NOT_READY) {
+            // Just return in case if the kernel is not ready yet, will check again on the next iteration
+            return;
+        }
+    }
+
     virtual void update() override {
         if (!ready_to_exec) {
             // TODO: what if submit_for_execution() return false?
             submit_for_execution();
         }
         else {
-            //wait execution
-            auto &cmd_queue = get_dev_queue();
-
-            ENTRY_LOG_TRACE(" waiting for finished execution, queue: ", cmd_queue.get());
-
-            ze_result_t ret;
-
-            // Quering fence doesn't sync kernel output with the host, so if we need this
-            // we use QuerySyncronize API.
-            if (ccl::global_data::env().comm_kernels_debug == 0) {
-                ret = get_fence_impl().query_status();
+            // allreduce handling
+            if (type() == ccl_coll_allreduce) {
+                if (comm_addr.rank == 0) {
+                    common_update();
+                }
+                else {
+                    MPI_Recv(&barrier_flag, 1, MPI_C_BOOL, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    ENTRY_LOG_DEBUG("MPI_RECV done");
+                    status = ccl_sched_entry_status_complete;
+                }
+                // for all collectives except allreduce
             }
             else {
-                ret = zeCommandQueueSynchronize(cmd_queue.get(), 0);
-            }
-
-            ENTRY_LOG_TRACE(
-                "Fence query status: ", native::to_string(ret), ", queue: ", cmd_queue.get());
-            if (ret == ZE_RESULT_SUCCESS) {
-                this->set_state(gpu_entry_state::completed);
-
-                // Once all the ranks in the group got the notification, reset the state for further launches
-                reset_state();
-
-                status = ccl_sched_entry_status_complete;
-                ENTRY_LOG_DEBUG(" Completed on queue: ", cmd_queue.get());
-            }
-            else if (ret == ZE_RESULT_NOT_READY) {
-                // Just return in case if the kernel is not ready yet, will check again on the next iteration
-                return;
+                common_update();
             }
         }
     }
@@ -320,74 +346,84 @@ public:
     }
 
 protected:
-    size_t get_work_group_size(size_t buffer_size, ccl_device &device) {
-        size_t group_size;
-        size_t val_vector_size;
+    inline int get_elem_count(size_t buffer_size) {
         auto dtype = params.get_datatype();
-
-        if (ccl::global_data::env().gpu_thread_count != CCL_ENV_SIZET_NOT_SPECIFIED) {
-            group_size = ccl::global_data::env().gpu_thread_count;
-
-            ENTRY_LOG_DEBUG(
-                "Set group size for x dimension by CCL_GPU_THREAD_COUNT=", group_size, " by user");
-        }
-        else {
-            if (dtype == ccl::datatype::bfloat16) {
-                val_vector_size = 1;
-            }
-            else {
-                // For comm kernels, we have float4 {float x, float y, float z, float w};
-                // data type, that's why we set a divider for group_size, wchich equals to 4.
-                // The vecsize of 4 goes with all data types except bfloat16
-                val_vector_size = 4;
-            }
-
-            group_size = buffer_size / val_vector_size;
-
-            ENTRY_LOG_DEBUG("Set group size for x dimension: ", group_size);
-        }
-        if (group_size > device.get_compute_properties().maxGroupSizeX || group_size == 0) {
-            group_size = device.get_compute_properties().maxGroupSizeX;
-            ENTRY_LOG_DEBUG(
-                "Group size is limited by compute_properties.maxGroupSizeX and should NOT equal to 0, set group_size: ",
-                group_size,
-                " by default");
-        }
-
-        //TODO: remove 'return 1' and retrun 'group_size', when fix small msg sizes issue
-        return 1; //group_size;
+        return buffer_size / ccl::get_datatype_size(dtype);
     }
 
-    void get_suggested_group_size(ze_kernel_handle_t &kernel, size_t buffer_size) {
-        // zeKernelSuggestGroupSize ignores the group size that is set using zeKernelSetGroupSize
+    void set_group_count(ze_group_count_t *group_count, uint32_t group_size_x) {
+        // set ze_group_count_t
+        uint32_t group_count_x = 0;
+        if (ccl::global_data::env().gpu_group_count != CCL_ENV_SIZET_NOT_SPECIFIED) {
+            group_count_x = ccl::global_data::env().gpu_group_count;
+            ENTRY_LOG_DEBUG("Set group thread count for x dimension by CCL_GPU_GROUP_COUNT=",
+                            group_count_x,
+                            " by user");
+
+            if (group_count_x == 0) {
+                group_count_x = 1;
+                ENTRY_LOG_DEBUG("Group thread count X should NOT equal to 0, set group_count_x: ",
+                                group_count_x,
+                                " by default");
+            }
+            group_count->groupCountX = group_count_x;
+        }
+        else {
+            group_count->groupCountX = get_elem_count(send_buf.get_size()) / group_size_x;
+        }
+        group_count->groupCountY = 1u;
+        group_count->groupCountZ = 1u;
+
+        ENTRY_LOG_DEBUG("Set kernel thread group count successfully: groupCountX: ",
+                        group_count->groupCountX,
+                        " groupCountY: ",
+                        group_count->groupCountY,
+                        " groupCountZ: ",
+                        group_count->groupCountZ);
+    }
+
+    uint32_t set_group_size(ze_kernel_handle_t &kernel) {
+        uint32_t elem_count = get_elem_count(send_buf.get_size());
         uint32_t group_size_x = 1u;
         uint32_t group_size_y = 1u;
         uint32_t group_size_z = 1u;
-        ze_result_t result = zeKernelSuggestGroupSize(
-            kernel, buffer_size, 1u, 1u, &group_size_x, &group_size_y, &group_size_z);
-        if (result != ZE_RESULT_SUCCESS) {
-            throw std::runtime_error(
-                std::string(__FUNCTION__) +
-                " - zeKernelSuggestGroupSize failed. Result: " + native::to_string(result));
+
+        if (ccl::global_data::env().gpu_group_size != CCL_ENV_SIZET_NOT_SPECIFIED) {
+            group_size_x = ccl::global_data::env().gpu_group_size;
+            ENTRY_LOG_DEBUG(
+                "Set group size for x dimension by CCL_GPU_GROUP_SIZE=", group_size_x, " by user");
+
+            if (group_size_x >
+                    parent_communicator->get_device().get_compute_properties().maxGroupSizeX ||
+                group_size_x == 0) {
+                group_size_x =
+                    parent_communicator->get_device().get_compute_properties().maxGroupSizeX;
+                ENTRY_LOG_DEBUG(
+                    "Group size is limited by compute_properties.maxGroupSizeX and should NOT equal to 0, set group_size: ",
+                    group_size_x,
+                    " by default");
+            }
         }
-        ENTRY_LOG_DEBUG("Suggested kernel group sizes, which is based on buffer_size: ",
-                        buffer_size,
-                        ", are: groupSizeX: ",
-                        group_size_x,
-                        " groupSizeY: ",
-                        group_size_y,
-                        " groupSizeZ: ",
-                        group_size_z);
-    }
+        else {
+            ze_result_t result = zeKernelSuggestGroupSize(
+                kernel, elem_count, 1u, 1u, &group_size_x, &group_size_y, &group_size_z);
+            if (result != ZE_RESULT_SUCCESS) {
+                throw std::runtime_error(
+                    std::string(__FUNCTION__) +
+                    " - zeKernelSuggestGroupSize failed. Result: " + native::to_string(result));
+            }
 
-    void set_group_size(ze_kernel_handle_t &kernel, size_t buffer_size) {
-        // setting the group size to control resource consumption
-        // assuming that group_size_x can be adjusted by changing the value or CCL_GPU_THREAD_COUNT knob
-        // group_size_y / group_size_z shouldn't be > 1
-        uint32_t group_size_x = get_work_group_size(buffer_size, parent_communicator->get_device());
-        uint32_t group_size_y = 1u;
-        uint32_t group_size_z = 1u;
+            ENTRY_LOG_DEBUG("Suggested kernel group sizes, which is based on elem_count: ",
+                            elem_count,
+                            ", are: groupSizeX: ",
+                            group_size_x,
+                            " groupSizeY: ",
+                            group_size_y,
+                            " groupSizeZ: ",
+                            group_size_z);
+        }
 
+        // set group size
         ze_result_t result = zeKernelSetGroupSize(kernel, group_size_x, group_size_y, group_size_z);
         if (result != ZE_RESULT_SUCCESS) {
             throw std::runtime_error(
@@ -404,6 +440,7 @@ protected:
                         group_size_y,
                         " groupSizeZ: ",
                         group_size_z);
+        return group_size_x;
     }
 
     bool finalize_entry() {
@@ -420,13 +457,15 @@ protected:
 
         auto &&cmd_list = get_dev_cmd_list();
 
-        // setting group size
-        set_group_size(main_entry_function.handle, send_buf.get_size());
+        // set group_size
+        uint32_t group_size_x = set_group_size(main_entry_function.handle);
 
-        // get suggested group size for info usage only
-        get_suggested_group_size(main_entry_function.handle, send_buf.get_size());
+        // set group_count
+        ze_group_count_t group_count;
+        set_group_count(&group_count, group_size_x);
 
-        cmd_list.append_kernel(main_entry_function.handle, &launch_args);
+        if (comm_addr.rank == 0 && type() == ccl_coll_allreduce)
+            cmd_list.append_kernel(main_entry_function.handle, &group_count);
 
         ENTRY_LOG_DEBUG("Append kernel successfully: ",
                         main_entry_function.to_string(),
@@ -477,8 +516,6 @@ protected:
         ze_device_mem_alloc_desc_t mem_descr = ccl_device::get_default_mem_alloc_desc();
         // Explicitly reset flags to avoid potential conflicts with the default value
         mem_descr.flags = 0;
-        mem_descr.flags |= (opt.is_uncached() ? ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED
-                                              : ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_CACHED);
 
         return mem_descr;
     }
@@ -538,9 +575,6 @@ protected:
     gpu_entry_state get_state() const noexcept {
         return entry_state;
     }
-
-    //TODO
-    ze_group_count_t launch_args = { 1, 1, 1 };
 
     template <class executor>
     static std::unique_ptr<base_connector_interface<kernel_main_typed>>
@@ -725,6 +759,7 @@ private:
     ze_command_list_desc_t list_descr;
     ccl_device::device_queue &dev_queue;
     decltype(parent_communicator->get_cmd_list(ctx, list_descr)) dev_cmd_list;
+    bool barrier_flag;
 
     // initialize
     ze_command_queue_desc_t init_queue_descr(ccl_device &device) {

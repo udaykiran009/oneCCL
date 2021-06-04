@@ -15,7 +15,19 @@
 // Op - A operation parameter(e.g. add(x, y))
 // OpName - Operator name which goes to the kernel name, e.g. OpName = add, Op = __add_int(actual function)
 #define DEFINE_KERNEL(Name, T, VecSize, Op, OpName) \
-    __kernel void allreduce_execution_##Name##_##OpName( \
+    __kernel void allreduce_execution_##Name##_##OpName(int my_rank, \
+                                                        int comm_size, \
+                                                        const __global T* input_buffer, \
+                                                        __global T* output_buffer, \
+                                                        const __global T* right_input_buffer, \
+                                                        __global T* right_output_buffer) { \
+        size_t idx = get_global_id(0); \
+        output_buffer[idx] = Op(input_buffer[idx], right_input_buffer[idx]); \
+        right_output_buffer[idx] = output_buffer[idx]; \
+    }
+
+#define DEFINE_KERNEL_MONOLITHIC(Name, T, VecSize, Op, OpName) \
+    __kernel void allreduce_execution_monolithic##Name##_##OpName( \
         int my_rank, \
         int comm_size, \
         ulong elems_count, \

@@ -93,7 +93,8 @@ env_data::env_data()
           enable_comm_kernels(0),
           comm_kernels_path(),
           comm_kernels_debug(0),
-          gpu_thread_count(CCL_ENV_SIZET_NOT_SPECIFIED),
+          gpu_group_size(CCL_ENV_SIZET_NOT_SPECIFIED),
+          gpu_group_count(CCL_ENV_SIZET_NOT_SPECIFIED),
 
           bf16_impl_type(ccl_bf16_no_compiler_support),
           fp16_impl_type(ccl_fp16_no_compiler_support) {}
@@ -221,9 +222,16 @@ void env_data::parse() {
             CCL_THROW_IF_NOT(!ccl_root.empty(), "incorrect comm kernels path, CCL_ROOT not found!");
             comm_kernels_path = ccl_root + "/lib/kernels/";
         }
+        // TODO remove IPC workaround knobs
+        if (!getenv("SYCL_PI_LEVEL_ZERO_DISABLE_USM_ALLOCATOR")) {
+            setenv("SYCL_PI_LEVEL_ZERO_DISABLE_USM_ALLOCATOR", "1", 1);
+            LOG_WARN(
+                "environment variable 'SYCL_PI_LEVEL_ZERO_DISABLE_USM_ALLOCATOR' is not set, will be used SYCL_PI_LEVEL_ZERO_DISABLE_USM_ALLOCATOR=1");
+        }
         env_2_type(CCL_COMM_KERNELS_DEBUG, comm_kernels_debug);
     }
-    env_2_type(CCL_GPU_THREAD_COUNT, gpu_thread_count);
+    env_2_type(CCL_GPU_GROUP_SIZE, gpu_group_size);
+    env_2_type(CCL_GPU_GROUP_COUNT, gpu_group_count);
 
     auto bf16_impl_types = ccl_bf16_get_impl_types();
     ccl_bf16_impl_type bf16_env_impl_type;
@@ -391,10 +399,14 @@ void env_data::print(int rank) {
              ": ",
              (!comm_kernels_path.empty()) ? comm_kernels_path : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_COMM_KERNELS_DEBUG, ": ", comm_kernels_debug);
-    LOG_INFO(CCL_GPU_THREAD_COUNT,
+    LOG_INFO(CCL_GPU_GROUP_SIZE,
              ": ",
-             (gpu_thread_count != CCL_ENV_SIZET_NOT_SPECIFIED) ? std::to_string(gpu_thread_count)
-                                                               : CCL_ENV_STR_NOT_SPECIFIED);
+             (gpu_group_size != CCL_ENV_SIZET_NOT_SPECIFIED) ? std::to_string(gpu_group_size)
+                                                             : CCL_ENV_STR_NOT_SPECIFIED);
+    LOG_INFO(CCL_GPU_GROUP_COUNT,
+             ": ",
+             (gpu_group_count != CCL_ENV_SIZET_NOT_SPECIFIED) ? std::to_string(gpu_group_count)
+                                                              : CCL_ENV_STR_NOT_SPECIFIED);
 #endif /* CCL_ENABLE_SYCL  */
 
     LOG_INFO(CCL_BF16, ": ", str_by_enum(bf16_impl_names, bf16_impl_type));

@@ -133,7 +133,7 @@ TYPED_TEST(ring_alltoallv_multi_process_fixture, ring_alltoallv_single_device_mu
             ze_device_mem_alloc_desc_t mem_uncached_descr{
                 .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
                 .pNext = NULL,
-                .flags = ZE_DEVICE_MEM_ALLOC_FLAG_BIAS_UNCACHED,
+                .flags = 0,
                 .ordinal = 0,
             };
 

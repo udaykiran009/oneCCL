@@ -21,7 +21,6 @@ public:
     using base::comm_addr;
     using base::req;
     using base::status;
-    using base::launch_args;
     using base::kernel_router;
     using base::get_ctx;
     using base::get_local_kernel;

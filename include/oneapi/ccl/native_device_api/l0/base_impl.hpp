@@ -43,12 +43,13 @@ cl_base<TEMPLATE_DEF_ARG>& cl_base<TEMPLATE_DEF_ARG>::operator=(cl_base&& src) n
 
 template <TEMPLATE_DECL_ARG>
 CCL_API cl_base<TEMPLATE_DEF_ARG>::~cl_base() noexcept {
-    auto lock = owner.lock();
-    auto ctx = context.lock();
-    if (lock && ctx) {
-        auto ref = ctx->get();
-        lock->on_delete(handle, ref);
-    }
+    // TODO: fix it
+    // auto lock = owner.lock();
+    // auto ctx = context.lock();
+    // if (lock && ctx) {
+    //     auto ref = ctx->get();
+    //     lock->on_delete(handle, ref);
+    // }
 }
 
 template <TEMPLATE_DECL_ARG>
