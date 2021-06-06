@@ -120,15 +120,11 @@ struct sycl_copier {
             }
             else {
                 /* don't do special cast, provided USM pointer can be used as is in copy kernel */
-                e = q->submit([&](sycl::handler& h) {
-                    h.memcpy(out_buf_ptr,
-                             static_cast<typename specific_sycl_buffer::value_type*>(in_buf_ptr) +
-                                 in_buf_offset,
-                             bytes);
-                });
+                e = q->memcpy(out_buf_ptr,
+                              static_cast<typename specific_sycl_buffer::value_type*>(in_buf_ptr) +
+                                  in_buf_offset,
+                              bytes);
             }
-
-            e.wait();
         }
         else {
             LOG_TRACE("visitor skipped index: ",

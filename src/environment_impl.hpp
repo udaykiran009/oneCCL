@@ -61,12 +61,6 @@ stream CCL_API environment::create_stream(native_stream_type& native_stream) {
     return stream::create_stream(native_stream);
 }
 
-template <class native_stream_type, class native_context_type, typename T>
-stream CCL_API environment::create_stream(native_stream_type& native_stream,
-                                          native_context_type& native_ctx) {
-    return stream::create_stream(native_stream, native_ctx);
-}
-
 /******************** COMMUNICATOR ********************/
 
 template <class DeviceType, class ContextType>
@@ -105,7 +99,7 @@ environment::create_communicators(const int comm_size,
 
 /******************** TypeGenerations ********************/
 
-#define CREATE_DEV_COMM_INSTANTIATION(DeviceType, ContextType) \
+#define CREATE_COMM_INSTANTIATION(DeviceType, ContextType) \
     template ccl::vector_class<ccl::communicator> CCL_API \
     ccl::detail::environment::create_communicators<DeviceType, ContextType>( \
         const int comm_size, \

@@ -139,11 +139,26 @@ void ccl_coll_validate_user_input(const ccl_coll_param& param, const ccl_coll_at
                          "BF16 datatype is requested but not supported by hardware");
     }
 
-    /* SYCL specific validation */
-    if (param.stream && !attr.is_sycl_buffer) {
+    if (param.ctype == ccl_coll_bcast || param.ctype == ccl_coll_reduce) {
+        CCL_THROW_IF_NOT(param.root < param.comm->size(),
+                         "unexpected root ",
+                         param.root,
+                         ", comm size ",
+                         param.comm->size());
+    }
+
+    if (param.stream) {
 #ifdef CCL_ENABLE_SYCL
-        /* check whether USM pointers have expected type */
-        ccl_check_usm_pointers(param);
+        /* SYCL specific validation */
+
+        /* TODO: compare stream dev/ctx and comm dev/ctx */
+        // sycl::device stream_dev = param.stream->get_native().get_context();
+        // sycl::device stream_ctx = param.stream->get_native().get_device();
+
+        if (!attr.is_sycl_buffer) {
+            /* check whether USM pointers have expected type */
+            ccl_check_usm_pointers(param);
+        }
 #endif /* CCL_ENABLE_SYCL */
     }
 }

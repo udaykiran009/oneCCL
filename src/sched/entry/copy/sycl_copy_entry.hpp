@@ -41,12 +41,6 @@ public:
         copier.set_queue(((ccl_stream*)stream)->get_native_stream(sched->queue->get_idx()));
         ccl_tuple_for_each_indexed<ccl_sycl_buffer_one_dim_types>(copier);
         status = ccl_sched_entry_status_started;
-
-        // while (!copier.is_completed()) {
-        //   ccl_yield(ccl_yield_sleep);
-        // }
-
-        // status = ccl_sched_entry_status_complete;
     }
 
     void update() override {
@@ -72,7 +66,7 @@ protected:
                            in_buf,
                            ", out_buf ",
                            out_buf,
-                           ", native_stream ",
+                           ", stream ",
                            stream->to_string(),
                            ", is_sycl_buffer ",
                            is_sycl_buffer,
