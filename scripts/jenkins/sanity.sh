@@ -20,6 +20,8 @@ CURRENT_WORK_DIR=`cd ${SCRIPT_DIR}/../../ && pwd -P`
 ARTEFACT_DIR="/p/pdsd/scratch/jenkins/artefacts"
 CCL_ONEAPI_DIR="/p/pdsd/scratch/Uploads/CCL_oneAPI/"
 ONEAPI_DIR="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/oneAPI/"
+SOFTWARE_DIR="/nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Software/"
+
 if [ -z $CCL_INSTALL_DIR ]
 then
     CCL_INSTALL_DIR=`cd ${SCRIPT_DIR}/../../build/_install/ && pwd -P`
@@ -355,7 +357,7 @@ function run_compatibitily_tests()
 function run_horovod_tests()
 {
     pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
-    ./test_build_horovod.sh
+    ./test_build_horovod.sh --tf "${SOFTWARE_DIR}/Tensorflow/latest" --itex "${SOFTWARE_DIR}/ITEX/latest"
     log_status_fail=${PIPESTATUS[0]}
     popd
     if [ "$log_status_fail" -eq 0 ]

@@ -1,11 +1,13 @@
 #!/bin/bash -x
 
 CONDA_DEFAULT_ENV_NAME="test_horovod"
-TF_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww16/compiler_20210408/itex/ubuntu/tensorflow-2.5.0-cp37-cp37m-linux_x86_64.whl"
-ITEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww16/compiler_20210408/itex/ubuntu/intel_extension_for_tensorflow-0.1.0-cp37-cp37m-linux_x86_64.whl"
+TF_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww23/compiler-20210527/itex/ubuntu/tensorflow-2.5.0-cp37-cp37m-linux_x86_64.whl"
+ITEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww23/compiler-20210527/itex/ubuntu/intel_extension_for_tensorflow-0.1.0-cp37-cp37m-linux_x86_64.whl"
 
 TF_NAME=`basename $TF_LINK`
 ITEX_NAME=`basename $ITEX_LINK`
+
+BASENAME=`basename $0 .sh`
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -17,6 +19,55 @@ CheckCommandExitCode()
         echo_log "TEST FAILED"
         exit $1
     fi
+}
+
+print_help()
+{
+    echo_log "Usage: ${BASENAME}.sh <options>"
+    echo_log "  --tf <path>"
+    echo_log "  --itex <path>"
+    echo_log ""
+    echo_log "Usage examples:"
+    echo_log "  ${BASENAME}.sh "
+    echo_log "  ${BASENAME}.sh --tf /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Software/Tensorflow/latest"
+    echo_log "  ${BASENAME}.sh --itex /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Software/ITEX/latest"
+    echo_log ""
+}
+
+parse_arguments()
+{
+    while [ $# -ne 0 ]
+    do
+        case $1 in
+            "-h" | "--help" | "-help")                  
+                print_help
+                exit 0 
+                ;;
+            "--tf" | "-tf")                         
+                TF_NAME=${2}
+                DOWNLOAD_TF="no"
+                shift 
+                ;;
+            "--itex" | "-itex")                       
+                ITEX_NAME=${2}
+                DOWNLOAD_ITEX="no"
+                shift
+                ;;
+            *)
+                echo "$(basename $0): ERROR: unknown option ($1)"
+                print_help
+                exit 1
+            ;;
+        esac
+        shift
+    done
+
+
+    echo_log "-----------------------------------------------------------"
+    echo_log "PARAMETERS"
+    echo_log "-----------------------------------------------------------"
+    echo_log "ITEX_NAME          = ${ITEX_NAME}"
+    echo_log "TF_NAME            = ${TF_NAME}"
 }
 
 echo_log()
@@ -43,8 +94,13 @@ hvd_test() {
 prepare_env() {
     mkdir -p tmp
     pushd tmp
-    wget -e use_proxy=no ${TF_LINK}
-    wget -e use_proxy=no ${ITEX_LINK}
+
+    if [[ ${DOWNLOAD_TF} != "no" ]]; then
+        wget -e use_proxy=no ${TF_LINK}
+    fi
+    if [[ ${DOWNLOAD_ITEX} != "no" ]]; then
+        wget -e use_proxy=no ${ITEX_LINK}
+    fi
 
     conda env list | grep ${CONDA_DEFAULT_ENV_NAME} || rc=$?
     if [[ $rc -ne 0 ]]; then
@@ -62,7 +118,7 @@ prepare_env() {
 
     python3 -m pip install --upgrade pip
 
-    pip install ${TF_NAME} ${ITEX_NAME}
+    pip install $(realpath ${TF_NAME}) $(realpath ${ITEX_NAME})
 
     export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib"
 
@@ -109,6 +165,7 @@ build_horovod()
     CheckCommandExitCode $? "Horovod test failed"
 }
 
+parse_arguments $@
 prepare_env
 build_horovod
 clean_env
