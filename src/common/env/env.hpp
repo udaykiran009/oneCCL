@@ -135,7 +135,7 @@ public:
     int enable_extra_ep;
 
     atl_mnic_t mnic_type;
-    size_t mnic_count;
+    ssize_t mnic_count;
 
     /*
        parsing logic can be quite complex

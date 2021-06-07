@@ -57,7 +57,7 @@ env_data::env_data()
           enable_extra_ep(0),
 
           mnic_type(ATL_MNIC_NONE),
-          mnic_count(4),
+          mnic_count(CCL_ENV_SIZET_NOT_SPECIFIED),
 
           enable_unordered_coll(0),
 
@@ -141,6 +141,9 @@ void env_data::parse() {
 
     env_2_enum(CCL_MNIC, mnic_type_names, mnic_type);
     env_2_type(CCL_MNIC_COUNT, mnic_count);
+    if (mnic_count == CCL_ENV_SIZET_NOT_SPECIFIED) {
+        mnic_count = worker_count;
+    }
 
     env_2_type(CCL_ALLGATHERV, allgatherv_algo_raw);
     env_2_type(CCL_ALLREDUCE, allreduce_algo_raw);
