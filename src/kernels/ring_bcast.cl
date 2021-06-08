@@ -12,7 +12,18 @@
 // VecSize is the vector size of the type. E.g. if float4 is used, VecSize is 4. Note: if just float is used,
 // the value must be one as it's used for division inside the kernel.
 #define DEFINE_KERNEL(Name, T, VecSize) \
-    __kernel void bcast_execution_##Name( \
+    __kernel void bcast_execution_##Name(int my_rank, \
+                                         int comm_size, /* 1 */ \
+                                         __global T* buffer, /* 2 */ \
+                                         __global T* right_buffer, /* 3 */ \
+                                         int root /* 4 */ \
+    ) { \
+        size_t idx = get_global_id(0); \
+        right_buffer[idx] = buffer[idx]; \
+    }
+
+#define DEFINE_KERNELL_MONOLITHIC(Name, T, VecSize) \
+    __kernel void bcast_execution_monolithic##Name( \
         int my_rank, \
         int comm_size, /* 1 */ \
         ulong elems_count, /* 2 */ \

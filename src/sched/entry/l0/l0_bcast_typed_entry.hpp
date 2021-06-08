@@ -27,13 +27,6 @@ public:
     using kernel_main_typed = ring::bcast::main_kernel;
     using processing_type = void;
 
-    using income_data_flag_gpu_type =
-        typename std::remove_pointer<typename ring::bcast::income_data_flag_arg_type>::type;
-    using ready_to_recv_flag_gpu_type =
-        typename std::remove_pointer<typename ring::bcast::ready_to_recv_flag_arg_type>::type;
-    using local_barrier_flag_gpu_type =
-        typename std::remove_pointer<typename ring::bcast::local_barrier_flag_arg_type>::type;
-
     static constexpr const char* class_name() noexcept {
         return "L0_BCAST_TYPED";
     }
@@ -52,23 +45,7 @@ public:
                          int root,
                          const coll_param_gpu& params,
                          std::shared_ptr<ccl_stream> device_stream = std::shared_ptr<ccl_stream>())
-            : base(sched, comm, in_ctx, buf, params, device_stream),
-
-              income_data_flag(
-                  this->template alloc_memory_wrap(typename ring::bcast::income_data_flag_arg{},
-                                                   parent_communicator,
-                                                   1,
-                                                   get_ctx())),
-              ready_to_recv_flag(
-                  this->template alloc_memory_wrap(typename ring::bcast::ready_to_recv_flag_arg{},
-                                                   parent_communicator,
-                                                   1,
-                                                   get_ctx())),
-              local_barrier_flag(parent_communicator->get_device()
-                                     .template alloc_memory<local_barrier_flag_gpu_type>(
-                                         1,
-                                         sizeof(local_barrier_flag_gpu_type),
-                                         get_ctx())) {
+            : base(sched, comm, in_ctx, buf, params, device_stream) {
         root_typed_entry = root;
         cnt_entry = cnt;
 
@@ -98,17 +75,7 @@ public:
         auto& main_entry_function = get_local_kernel();
 
         //create implementation specified primitives
-        main_entry_function
-            .template set_args<typename ring::bcast::income_data_flag_arg,
-                               typename ring::bcast::ready_to_recv_flag_arg,
-                               typename ring::bcast::local_barrier_flag_arg,
-                               typename ring::bcast::root_arg,
-                               typename kernel_main_typed::common_entry_buf_size_arg>(
-                income_data_flag.get(),
-                ready_to_recv_flag.get(),
-                local_barrier_flag.get(),
-                root_typed_entry,
-                cnt_entry);
+        main_entry_function.template set_args<typename ring::bcast::root_arg>(root_typed_entry);
 
         // Once we filled our local parameters, we go wait for another entry to set its
         // parameters so we can use them
@@ -129,10 +96,8 @@ public:
         auto recv_buf_ptr = reinterpret_cast<processing_type*>(base::send_buf.get_ptr());
 
         std::vector<ccl_device::device_ipc_memory_handle> ret;
-        ret.reserve(3);
+        ret.reserve(1);
         ret.push_back(owned_device.create_ipc_memory_handle(recv_buf_ptr, get_ctx()));
-        ret.push_back(owned_device.create_ipc_memory_handle(income_data_flag.get(), get_ctx()));
-        ret.push_back(owned_device.create_ipc_memory_handle(ready_to_recv_flag.get(), get_ctx()));
         return ret;
     }
 
@@ -142,9 +107,6 @@ protected:
     }
 
 private:
-    ccl_device::device_memory<income_data_flag_gpu_type> income_data_flag;
-    ccl_device::device_memory<ready_to_recv_flag_gpu_type> ready_to_recv_flag;
-    ccl_device::device_memory<local_barrier_flag_gpu_type> local_barrier_flag;
     int root_typed_entry;
     size_t cnt_entry;
     std::shared_ptr<ccl_context> ctx;
@@ -153,54 +115,14 @@ public:
     template <class left_kernel_t, class right_kernel_t>
     bool execute(left_kernel_t& left_kernel, right_kernel_t& right_kernel) {
         bool is_right_kernel_ready =
-            right_kernel.template test_args<typename ring::bcast::buf_arg<processing_type>,
-                                            typename ring::bcast::income_data_flag_arg,
-                                            typename ring::bcast::ready_to_recv_flag_arg>();
-
-        // Once we're sure that the parameters ready read them from the right kernel
-        // Note: we not only read the parameters but also reset their 'ready' flag
-        // (since we're using a destructive-copying policy) meaning that they must be stored
-        // in order to be read again.
-        // This is a protection to a case of multiple kernel launches
-        // (i.e. the collective is ran multiple times) where we might read not up-to-date
-        // values from the previous run.
+            right_kernel.template test_args<typename ring::bcast::buf_arg<processing_type>>();
 
         if (is_right_kernel_ready) {
             auto right_buf_arg =
                 right_kernel.template get_arg<typename ring::bcast::buf_arg<processing_type>>();
-            auto right_income_data_flag_arg =
-                right_kernel.template get_arg<typename ring::bcast::income_data_flag_arg>();
-            auto right_ready_to_recv_flag_arg =
-                right_kernel.template get_arg<typename ring::bcast::ready_to_recv_flag_arg>();
 
-            // ENTRY_LOG_DEBUG("Bind right arguments from ",
-            //                 right_kernel_t::name(),
-            //                 " kernel",
-            //                 " to ",
-            //                 left_kernel_t::name(),
-            //                 " kernel. "
-            //                 "Right arguments:\n{ ",
-            //                 right_buf_arg.first,
-            //                 ", ",
-            //                 right_buf_arg.second,
-            //                 "}\n",
-            //                 "{ ",
-            //                 right_income_data_flag_arg.first,
-            //                 ", ",
-            //                 right_income_data_flag_arg.second,
-            //                 "}\n",
-            //                 "{ ",
-            //                 right_ready_to_recv_flag_arg.first,
-            //                 ", ",
-            //                 right_ready_to_recv_flag_arg.second,
-            //                 "}\n");
-
-            left_kernel.template set_args<typename ring::bcast::right_buf_arg<processing_type>,
-                                          typename ring::bcast::right_income_data_flag_arg,
-                                          typename ring::bcast::right_ready_to_recv_flag_arg>(
-                right_buf_arg.second,
-                right_income_data_flag_arg.second,
-                right_ready_to_recv_flag_arg.second);
+            left_kernel.template set_args<typename ring::bcast::right_buf_arg<processing_type>>(
+                right_buf_arg.second);
 
             ENTRY_LOG_DEBUG("Binding arguments between kernels is complete. ",
                             "Arguments of the left kernel after binding:\n",

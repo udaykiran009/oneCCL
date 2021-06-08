@@ -262,7 +262,7 @@ public:
             status = ccl_sched_entry_status_complete;
             ENTRY_LOG_DEBUG(" Completed on queue: ", cmd_queue.get());
 
-            if (type() == ccl_coll_allreduce) {
+            if (is_single_rank_kernel()) {
                 barrier_flag = true;
                 MPI_Send(&barrier_flag, 1, MPI_C_BOOL, 1, 0, MPI_COMM_WORLD);
                 ENTRY_LOG_DEBUG("MPI_SEND done");
@@ -281,7 +281,7 @@ public:
         }
         else {
             // allreduce handling
-            if (type() == ccl_coll_allreduce) {
+            if (is_single_rank_kernel()) {
                 if (comm_addr.rank == 0) {
                     common_update();
                 }
@@ -346,6 +346,10 @@ public:
     }
 
 protected:
+    bool is_single_rank_kernel() const {
+        return type() == ccl_coll_allreduce || type() == ccl_coll_bcast;
+    }
+
     inline int get_elem_count(size_t buffer_size) {
         auto dtype = params.get_datatype();
         return buffer_size / ccl::get_datatype_size(dtype);
@@ -464,8 +468,14 @@ protected:
         ze_group_count_t group_count;
         set_group_count(&group_count, group_size_x);
 
-        if (comm_addr.rank == 0 && type() == ccl_coll_allreduce)
+        if (is_single_rank_kernel()) {
+            if (comm_addr.rank == 0) {
+                cmd_list.append_kernel(main_entry_function.handle, &group_count);
+            }
+        }
+        else {
             cmd_list.append_kernel(main_entry_function.handle, &group_count);
+        }
 
         ENTRY_LOG_DEBUG("Append kernel successfully: ",
                         main_entry_function.to_string(),
