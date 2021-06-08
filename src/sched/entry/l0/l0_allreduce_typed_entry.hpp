@@ -81,8 +81,9 @@ public:
         void* recv_buf_ptr = recv_buf_typed_entry.get_ptr();
 
         //create implementation specified primitives
-        main_entry_function.template set_args<typename ring::allreduce::recv_buf_arg<void>>(
-            recv_buf_ptr);
+        main_entry_function.template set_args<typename ring::allreduce::recv_buf_arg<void>,
+                                              typename ring::allreduce::send_buf_size_arg>(
+            recv_buf_ptr, cnt_entry);
 
         // Once we filled our local parameters, we go wait for another entry to set its
         // parameters so we can use them

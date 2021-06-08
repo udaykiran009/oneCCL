@@ -17,13 +17,19 @@
 #define DEFINE_KERNEL(Name, T, VecSize, Op, OpName) \
     __kernel void allreduce_execution_##Name##_##OpName(int my_rank, \
                                                         int comm_size, \
+                                                        ulong count, \
                                                         const __global T* input_buffer, \
                                                         __global T* output_buffer, \
                                                         const __global T* right_input_buffer, \
                                                         __global T* right_output_buffer) { \
-        size_t idx = get_global_id(0); \
-        output_buffer[idx] = Op(input_buffer[idx], right_input_buffer[idx]); \
-        right_output_buffer[idx] = output_buffer[idx]; \
+        size_t work_group_size = get_global_size(0); \
+        size_t thread_id = get_global_id(0); \
+\
+        for (size_t i = 0; thread_id + i < count; i += work_group_size) { \
+            const size_t idx = thread_id + i; \
+            output_buffer[idx] = Op(input_buffer[idx], right_input_buffer[idx]); \
+            right_output_buffer[idx] = output_buffer[idx]; \
+        } \
     }
 
 #define DEFINE_KERNEL_MONOLITHIC(Name, T, VecSize, Op, OpName) \

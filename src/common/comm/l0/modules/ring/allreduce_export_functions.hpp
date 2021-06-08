@@ -12,21 +12,25 @@ namespace allreduce {
  */
 
 // own
-template <class native_t>
-using send_buf_arg = arg<main_kernel_args::args_start_index, native_t*>;
+using send_buf_size_arg = arg<main_kernel_args::args_start_index, size_t>;
+using send_buf_size_arg_type = typename send_buf_size_arg::arg_type;
 
 template <class native_t>
-using recv_buf_arg = arg<main_kernel_args::args_start_index + 1, native_t*>;
+using send_buf_arg = arg<main_kernel_args::args_start_index + 1, native_t*>;
 
 template <class native_t>
-using right_send_buf_arg = arg<main_kernel_args::args_start_index + 2, native_t*>;
+using recv_buf_arg = arg<main_kernel_args::args_start_index + 2, native_t*>;
 
 template <class native_t>
-using right_recv_buf_arg = arg<main_kernel_args::args_start_index + 3, native_t*>;
+using right_send_buf_arg = arg<main_kernel_args::args_start_index + 3, native_t*>;
+
+template <class native_t>
+using right_recv_buf_arg = arg<main_kernel_args::args_start_index + 4, native_t*>;
 
 // IMPORTANT: the number and types of arguments must be the same in all classes,
 // excluding arguments specific for numa/scaleout etc.
 struct main_kernel : public execution_kernel<main_kernel,
+                                             send_buf_size_arg,
                                              send_buf_arg<void>,
                                              recv_buf_arg<void>,
                                              right_send_buf_arg<void>,
@@ -37,9 +41,11 @@ struct main_kernel : public execution_kernel<main_kernel,
         return "allreduce_execution";
     }
 
+    using common_entry_buf_size_arg = send_buf_size_arg;
     using common_entry_buf_arg = send_buf_arg<processing_type>;
 
     using base = execution_kernel<main_kernel,
+                                  send_buf_size_arg,
                                   send_buf_arg<void>,
                                   recv_buf_arg<void>,
                                   right_send_buf_arg<void>,
@@ -49,6 +55,7 @@ struct main_kernel : public execution_kernel<main_kernel,
 };
 
 struct numa_kernel : public execution_kernel<numa_kernel,
+                                             send_buf_size_arg,
                                              send_buf_arg<void>,
                                              recv_buf_arg<void>,
                                              right_send_buf_arg<void>,
@@ -59,9 +66,11 @@ struct numa_kernel : public execution_kernel<numa_kernel,
         return "allreduce_execution_numa";
     }
 
+    using common_entry_buf_size_arg = send_buf_size_arg;
     using common_entry_buf_arg = send_buf_arg<processing_type>;
 
     using base = execution_kernel<numa_kernel,
+                                  send_buf_size_arg,
                                   send_buf_arg<void>,
                                   recv_buf_arg<void>,
                                   right_send_buf_arg<void>,
@@ -78,12 +87,14 @@ struct numa_kernel : public execution_kernel<numa_kernel,
 };
 
 struct ipc_kernel : public base_ipc_kernel<ipc_kernel,
+                                           stub_arg<main_kernel_args::args_start_index>,
                                            send_buf_arg<void>,
                                            recv_buf_arg<void>,
                                            stub_arg<main_kernel_args::args_start_index + 2>,
                                            stub_arg<main_kernel_args::args_start_index + 3>> {
     using processing_type = void;
 
+    using common_entry_buf_size_arg = send_buf_size_arg;
     using common_entry_buf_arg = send_buf_arg<processing_type>;
 
     static constexpr const char* specific_name() {
@@ -91,6 +102,7 @@ struct ipc_kernel : public base_ipc_kernel<ipc_kernel,
     }
 
     using base = base_ipc_kernel<ipc_kernel,
+                                 stub_arg<main_kernel_args::args_start_index>,
                                  send_buf_arg<processing_type>,
                                  recv_buf_arg<processing_type>,
                                  stub_arg<main_kernel_args::args_start_index + 2>,
@@ -111,6 +123,7 @@ struct ipc_kernel : public base_ipc_kernel<ipc_kernel,
 };
 
 struct scale_out_cpu_gw_kernel : public execution_kernel<scale_out_cpu_gw_kernel,
+                                                         send_buf_size_arg,
                                                          send_buf_arg<void>,
                                                          recv_buf_arg<void>,
                                                          right_send_buf_arg<void>,
@@ -121,9 +134,11 @@ struct scale_out_cpu_gw_kernel : public execution_kernel<scale_out_cpu_gw_kernel
         return "allreduce_execution_scale_out_cpu_gw";
     }
 
+    using common_entry_buf_size_arg = send_buf_size_arg;
     using common_entry_buf_arg = send_buf_arg<processing_type>;
 
     using base = execution_kernel<scale_out_cpu_gw_kernel,
+                                  send_buf_size_arg,
                                   send_buf_arg<processing_type>,
                                   recv_buf_arg<processing_type>,
                                   right_send_buf_arg<processing_type>,
