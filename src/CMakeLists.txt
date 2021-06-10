@@ -158,7 +158,7 @@ set(CCL_SRC
     comp/comp.cpp
     comp/fp16/fp16.cpp
     comp/fp16/fp16_intrisics.cpp
-    hwloc/hwloc_wrapper.c
+    hwloc/hwloc_wrapper.cpp
     sched/sched.cpp
     sched/extra_sched.cpp
     sched/master_sched.cpp

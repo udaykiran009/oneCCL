@@ -17,7 +17,8 @@
 #include <errno.h>
 
 #include "atl.h"
-#include "hwloc/hwloc_wrapper.h"
+#include "common/global/global.hpp"
+#include "hwloc/hwloc_wrapper.hpp"
 
 #define ATL_OFI_BASE_PM_KEY     "atl-ofi"
 #define ATL_OFI_FI_ADDR_PM_KEY  ATL_OFI_BASE_PM_KEY "-fiaddr"
@@ -1047,10 +1048,6 @@ static atl_status_t atl_ofi_finalize(atl_ctx_t* ctx) {
             dlclose(global_data.dlhandle);
         }
 
-        if (hwloc_is_initialized()) {
-            CCL_THROW_IF_NOT(hwloc_finalize() == HWLOC_SUCCESS, "failed to finalize hwloc");
-        }
-
         if (ctx->coord.global_idx == 0) {
             LOG_INFO("finalized last atl-ofi ctx");
         }
@@ -1755,7 +1752,8 @@ static int atl_ofi_nic_already_used(const struct fi_info* prov,
 static int atl_ofi_is_nic_local(struct fi_info* info) {
     if (info->nic->bus_attr->bus_type == FI_BUS_PCI) {
         struct fi_pci_attr pci = info->nic->bus_attr->attr.pci;
-        return hwloc_is_dev_close_by_pci(pci.domain_id, pci.bus_id, pci.device_id, pci.function_id);
+        return ccl::global_data::get().hwloc_wrapper->is_dev_close_by_pci(
+            pci.domain_id, pci.bus_id, pci.device_id, pci.function_id);
     }
     return 0;
 }
@@ -1976,13 +1974,11 @@ static atl_status_t atl_ofi_init(int* argc,
     ofi_ctx->mnic_count = std::min(ofi_ctx->mnic_count, attr->in.ep_count);
     ofi_ctx->mnic_count = std::max(ofi_ctx->mnic_count, (size_t)(1));
 
-    if ((ofi_ctx->mnic_type != ATL_MNIC_NONE) && !hwloc_is_initialized()) {
-        hwloc_status_t hwloc_status = hwloc_init();
-        if (hwloc_status != HWLOC_SUCCESS) {
-            ofi_ctx->mnic_type = ATL_MNIC_NONE;
-            ofi_ctx->mnic_count = 1;
-            LOG_WARN("can't init hwloc, disable multi-nic")
-        }
+    if ((ofi_ctx->mnic_type != ATL_MNIC_NONE) &&
+        !ccl::global_data::get().hwloc_wrapper->is_initialized()) {
+        ofi_ctx->mnic_type = ATL_MNIC_NONE;
+        ofi_ctx->mnic_count = 1;
+        LOG_WARN("hwloc is not initialized, disable multi-nic")
     }
 
     /* open SHM provider */

@@ -71,6 +71,7 @@ void ccl_executor::start_workers(size_t proc_idx, size_t proc_count) {
     set_local_coord(proc_idx, proc_count);
     auto& env = ccl::global_data::env();
     CCL_THROW_IF_NOT(env.env_2_worker_affinity(get_local_proc_idx(), get_local_proc_count()));
+    CCL_THROW_IF_NOT(env.env_2_worker_mem_affinity());
     start_workers();
 }
 
@@ -101,18 +102,23 @@ void ccl_executor::start_workers() {
         }
 
         if (env.worker_offload) {
-            size_t affinity = env.worker_affinity[get_local_proc_idx() * worker_count + idx];
+            size_t cpu_affinity = env.worker_affinity[get_local_proc_idx() * worker_count + idx];
+            size_t mem_affinity =
+                env.worker_mem_affinity[get_local_proc_idx() * worker_count + idx];
 
-            CCL_THROW_IF_NOT(workers.back()->start(affinity) == ccl::status::success,
-                             "failed to start worker # ",
-                             idx);
+            CCL_THROW_IF_NOT(
+                workers.back()->start(cpu_affinity, mem_affinity) == ccl::status::success,
+                "failed to start worker # ",
+                idx);
 
             LOG_DEBUG("started worker: local_proc_idx ",
                       get_local_proc_idx(),
                       ", worker_idx ",
                       idx,
-                      ", affinity ",
-                      affinity);
+                      ", cpu: ",
+                      cpu_affinity,
+                      ", numa: ",
+                      mem_affinity);
         }
     }
     workers_started = true;

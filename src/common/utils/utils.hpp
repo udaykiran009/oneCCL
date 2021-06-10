@@ -41,6 +41,9 @@
 #define container_of(ptr, type, field) ((type*)((char*)ptr - offsetof(type, field)))
 #endif
 
+#define CCL_UNDEFINED_CPU_ID    (-1)
+#define CCL_UNDEFINED_NUMA_NODE (-1)
+
 #define CACHELINE_SIZE 64
 
 #define CCL_REG_MSG_ALIGNMENT   (4096)

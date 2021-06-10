@@ -28,6 +28,7 @@ constexpr const char* CCL_WORKER_COUNT = "CCL_WORKER_COUNT";
 constexpr const char* CCL_WORKER_OFFLOAD = "CCL_WORKER_OFFLOAD";
 constexpr const char* CCL_WORKER_WAIT = "CCL_WORKER_WAIT";
 constexpr const char* CCL_WORKER_AFFINITY = "CCL_WORKER_AFFINITY";
+constexpr const char* CCL_WORKER_MEM_AFFINITY = "CCL_WORKER_MEM_AFFINITY";
 
 constexpr const char* I_MPI_AVAILABLE_CORES_ENV = "I_MPI_PIN_INFO";
 constexpr const char* I_MPI_AVAILABLE_CORES_DELIMS = ",x";
@@ -125,7 +126,8 @@ public:
     size_t worker_count;
     int worker_offload;
     int worker_wait;
-    std::vector<size_t> worker_affinity;
+    std::vector<ssize_t> worker_affinity;
+    std::vector<ssize_t> worker_mem_affinity;
 
     ccl_atl_transport atl_transport;
     int enable_shm;
@@ -264,11 +266,16 @@ public:
     static std::map<atl_mnic_t, std::string> mnic_type_names;
 
     int env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_count);
+    int env_2_worker_mem_affinity();
     void env_2_atl_transport();
 
 private:
     int env_2_worker_affinity_auto(size_t local_proc_idx, size_t workers_per_process);
-    int parse_core_id(const std::string& core_id_str, size_t& result);
+
+    int parse_affinity(const std::string& input,
+                       std::vector<ssize_t>& output,
+                       size_t expected_output_size);
+    int parse_number(const std::string& number_str, size_t& result);
 };
 
 } /* namespace ccl */

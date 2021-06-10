@@ -269,6 +269,8 @@ void env_data::print(int rank) {
     else
         was_printed = true;
 
+    auto& global_data = ccl::global_data::get();
+
     if (rank == 0) {
         auto version = utils::get_library_version();
         LOG_INFO("library version: ", version.full);
@@ -285,23 +287,24 @@ void env_data::print(int rank) {
         LOG_INFO("build mode: ", build_mode);
         LOG_INFO("C compiler: ", CCL_C_COMPILER);
         LOG_INFO("C++ compiler: ", CCL_CXX_COMPILER);
+        LOG_INFO(global_data.hwloc_wrapper->to_string());
     }
 
-    auto& global_data = ccl::global_data::get();
     auto local_proc_idx = global_data.executor->get_local_proc_idx();
     auto local_proc_count = global_data.executor->get_local_proc_count();
 
     if (rank < (int)local_proc_count) {
         for (size_t w_idx = 0; w_idx < worker_count; w_idx++) {
-            LOG_INFO(CCL_WORKER_AFFINITY,
-                     ": local process [",
+            LOG_INFO("local process [",
                      local_proc_idx,
                      ":",
                      local_proc_count,
                      "]: worker: ",
                      w_idx,
-                     ", core: ",
-                     worker_affinity[local_proc_idx * worker_count + w_idx]);
+                     ", cpu: ",
+                     worker_affinity[local_proc_idx * worker_count + w_idx],
+                     ", numa: ",
+                     worker_mem_affinity[local_proc_idx * worker_count + w_idx]);
         }
     }
 
@@ -494,28 +497,91 @@ int env_data::env_2_worker_affinity_auto(size_t local_proc_idx, size_t workers_p
     return 1;
 }
 
-int env_data::parse_core_id(const std::string& core_id_str, size_t& result) {
+int env_data::parse_number(const std::string& number_str, size_t& result) {
     char* end_ptr;
-    const char* core_id_str_ptr = core_id_str.c_str();
+    const char* number_str_ptr = number_str.c_str();
 
     errno = 0;
-    auto core_id = std::strtol(core_id_str_ptr, &end_ptr, 10);
+    auto core_id = std::strtol(number_str_ptr, &end_ptr, 10);
 
     if ((errno == ERANGE && (core_id == LONG_MAX || core_id == LONG_MIN)) ||
         (errno != 0 && core_id == 0)) {
-        LOG_ERROR("core id value is invalid in string: ", core_id_str);
+        LOG_ERROR("core id value is invalid in string: ", number_str);
         return 0;
     }
-    if (end_ptr == core_id_str_ptr) {
-        LOG_ERROR("no digits were found in string: ", core_id_str);
+    if (end_ptr == number_str_ptr) {
+        LOG_ERROR("no digits were found in string: ", number_str);
         return 0;
     }
     if (core_id < 0) {
-        LOG_ERROR(
-            "core id cannot be less than zero but got ", core_id, " in string: ", core_id_str);
+        LOG_ERROR("core id cannot be less than zero but got ", core_id, " in string: ", number_str);
         return 0;
     }
     result = core_id;
+    return 1;
+}
+
+int env_data::parse_affinity(const std::string& input,
+                             std::vector<ssize_t>& output,
+                             size_t expected_output_size) {
+    size_t idx;
+    char* range_str;
+
+    /* create copy of input string because it will be modified in strsep */
+    std::string input_copy(input.c_str());
+    char* input_str = (char*)input_copy.c_str();
+
+    output.clear();
+
+    while (input_str) {
+        range_str = strsep(&input_str, ",");
+        if (!range_str) {
+            break;
+        }
+
+        auto range = tokenize<std::vector<std::string>>(std::string(range_str), '-');
+
+        if ((range.size() != 2) && (range.size() != 1)) {
+            LOG_ERROR(
+                "unexpected format in input: ",
+                input,
+                ", specify range values using <first_value>-<last_value> or single value using <value>");
+            return 0;
+        }
+
+        if (range.size() == 1) {
+            /* to unify logic below */
+            range.push_back(*range.begin());
+        }
+
+        CCL_ASSERT(range.size() == 2, "unexpected number of values in range");
+
+        size_t first_value, last_value;
+        if (!parse_number(range[0], first_value) || !parse_number(range[1], last_value)) {
+            return 0;
+        }
+
+        if (first_value > last_value) {
+            LOG_ERROR("unexpected first and last values in range: ",
+                      range_str,
+                      ", first value should be less or equal to last value");
+            return 0;
+        }
+
+        for (idx = first_value; idx <= last_value; idx++) {
+            output.push_back(idx);
+        }
+    }
+
+    if (output.size() < expected_output_size) {
+        LOG_ERROR("unexpected number of values in input: ",
+                  input,
+                  ", expected at least ",
+                  expected_output_size,
+                  " values");
+        return 0;
+    }
+
     return 1;
 }
 
@@ -523,17 +589,12 @@ int env_data::env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_cou
     CCL_THROW_IF_NOT(local_proc_count > 0);
 
     size_t idx;
-    std::unique_ptr<char> affinity_copy;
-    char* affinity_to_parse = getenv(CCL_WORKER_AFFINITY);
-    char* core_range_str;
-    char* tmp;
+    char* env_to_parse = getenv(CCL_WORKER_AFFINITY);
     size_t system_core_count;
-
     size_t affinity_size = local_proc_count * worker_count;
 
-    if (!affinity_to_parse || (strlen(affinity_to_parse) == 0) ||
-        (strcmp(affinity_to_parse, "auto") == 0)) {
-        worker_affinity.assign(affinity_size, 0);
+    if (!env_to_parse || (strlen(env_to_parse) == 0) || (strcmp(env_to_parse, "auto") == 0)) {
+        worker_affinity.assign(affinity_size, CCL_UNDEFINED_CPU_ID);
         if (std::getenv(I_MPI_AVAILABLE_CORES_ENV)) {
             /* generate auto affinity based on IMPI process pinning */
             return env_2_worker_affinity_auto(local_proc_idx, worker_count);
@@ -553,59 +614,32 @@ int env_data::env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_cou
         }
     }
 
-    /* create copy of original buffer because it will be modified in strsep */
-    size_t affinity_len = strlen(affinity_to_parse);
-    affinity_copy =
-        std::unique_ptr<char>(static_cast<char*>(CCL_CALLOC(affinity_len + 1, "affinity_copy")));
-    CCL_MEMCPY(affinity_copy.get(), affinity_to_parse, affinity_len);
-    tmp = affinity_copy.get();
+    CCL_THROW_IF_NOT(parse_affinity(env_to_parse, worker_affinity, affinity_size),
+                     "failed to parse worker affinity");
 
-    while (tmp) {
-        core_range_str = strsep(&tmp, ",");
-        if (!core_range_str) {
-            break;
+    return 1;
+}
+
+int env_data::env_2_worker_mem_affinity() {
+    CCL_THROW_IF_NOT(worker_affinity.size() > 0);
+
+    size_t idx;
+    char* env_to_parse = getenv(CCL_WORKER_MEM_AFFINITY);
+    size_t affinity_size = worker_affinity.size();
+
+    if (!env_to_parse || (strlen(env_to_parse) == 0) || (strcmp(env_to_parse, "auto") == 0)) {
+        worker_mem_affinity.assign(affinity_size, CCL_UNDEFINED_NUMA_NODE);
+        /* generate list of default numa nodes, local wrt worker cores */
+        for (idx = 0; idx < affinity_size; idx++) {
+            worker_mem_affinity[idx] =
+                ccl::global_data::get().hwloc_wrapper->get_numa_node_by_cpu(worker_affinity[idx]);
         }
-
-        auto core_range = tokenize<std::vector<std::string>>(std::string(core_range_str), '-');
-
-        if ((core_range.size() != 2) && (core_range.size() != 1)) {
-            LOG_ERROR(
-                "unexpected format in affinity: ",
-                affinity_to_parse,
-                ", specify core range using <first_core>-<last_core> or single core using <core>");
-            return 0;
-        }
-
-        if (core_range.size() == 1) {
-            /* to unify logic below */
-            core_range.push_back(*core_range.begin());
-        }
-
-        CCL_ASSERT(core_range.size() == 2, "unexpected number of cores in range");
-
-        size_t first_core, last_core;
-        if (!parse_core_id(core_range[0], first_core) || !parse_core_id(core_range[1], last_core)) {
-            return 0;
-        }
-
-        if (first_core > last_core) {
-            LOG_ERROR("unexpected first and last cores in range: ",
-                      core_range_str,
-                      ", first core should be less or equal to last core");
-            return 0;
-        }
-
-        for (idx = first_core; idx <= last_core; idx++) {
-            worker_affinity.push_back(idx);
-        }
+        return 1;
     }
 
-    if (worker_affinity.size() < affinity_size) {
-        LOG_ERROR("unexpected number of cores in affinity: ",
-                  affinity_to_parse,
-                  ", specify 1 core per 1 worker thread");
-        return 0;
-    }
+    CCL_THROW_IF_NOT(parse_affinity(env_to_parse, worker_mem_affinity, affinity_size),
+                     "failed to parse worker memory affinity");
+
     return 1;
 }
 

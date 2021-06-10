@@ -79,8 +79,9 @@ void global_data::init_resize_independent_objects() {
 
     algorithm_selector = std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>>(
         new ccl_algorithm_selector_wrapper<CCL_COLL_LIST>());
-
     algorithm_selector->init();
+
+    hwloc_wrapper = std::unique_ptr<ccl_hwloc_wrapper>(new ccl_hwloc_wrapper());
 }
 
 void global_data::reset_resize_dependent_objects() {
@@ -93,6 +94,7 @@ void global_data::reset_resize_dependent_objects() {
 void global_data::reset_resize_independent_objects() {
     parallelizer.reset();
     algorithm_selector.reset();
+    hwloc_wrapper.reset();
 }
 
 } /* namespace ccl */

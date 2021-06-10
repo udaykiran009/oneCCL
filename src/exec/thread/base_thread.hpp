@@ -8,8 +8,6 @@
 #include "common/log/log.hpp"
 #include "internal_types.hpp"
 
-#define CCL_UNDEFINED_CPU_ID (-1)
-
 class ccl_base_thread {
 public:
     ccl_base_thread(size_t idx, void* (*thread_function)(void*))
@@ -17,7 +15,8 @@ public:
               started(false),
               wait(0),
               idx(idx),
-              start_affinity(CCL_UNDEFINED_CPU_ID),
+              start_cpu_affinity(CCL_UNDEFINED_CPU_ID),
+              start_mem_affinity(CCL_UNDEFINED_NUMA_NODE),
               thread_function(thread_function) {}
 
     ccl_base_thread() = delete;
@@ -29,7 +28,7 @@ public:
     ccl_base_thread& operator=(const ccl_base_thread&) = delete;
     ccl_base_thread& operator=(ccl_base_thread&&) = delete;
 
-    ccl::status start(int affinity);
+    ccl::status start(int cpu_affinity, int mem_affinity);
     ccl::status stop();
 
     virtual bool can_reset() {
@@ -43,10 +42,15 @@ public:
         return static_cast<void*>(this);
     };
 
-    int get_start_affinity() {
-        return start_affinity;
+    int get_start_cpu_affinity() {
+        return start_cpu_affinity;
     }
-    int get_affinity();
+
+    int get_real_cpu_affinity();
+
+    int get_start_mem_affinity() {
+        return start_mem_affinity;
+    }
 
     virtual const std::string& name() const {
         static const std::string name("base_thread");
@@ -75,11 +79,13 @@ public:
     wait_data wait;
 
 private:
-    ccl::status set_affinity(int affinity);
+    ccl::status set_cpu_affinity(int cpu_affinity);
 
     const size_t idx;
 
-    int start_affinity;
+    int start_cpu_affinity;
+    int start_mem_affinity;
+
     void* (*thread_function)(void*);
     pthread_t thread{};
 };

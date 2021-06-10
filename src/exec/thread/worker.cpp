@@ -264,15 +264,15 @@ bool ccl_worker::check_stop_condition(size_t iter) {
 
 bool ccl_worker::check_affinity_condition(size_t iter) {
     if ((iter % CCL_WORKER_CHECK_AFFINITY_ITERS) == 0) {
-        int start_affinity = get_start_affinity();
-        int affinity = get_affinity();
-        if (start_affinity != affinity) {
+        int start_cpu_affinity = get_start_cpu_affinity();
+        int real_cpu_affinity = get_real_cpu_affinity();
+        if (start_cpu_affinity != real_cpu_affinity) {
             LOG_ERROR("worker ",
                       get_idx(),
-                      " unexpectedly changed affinity from ",
-                      start_affinity,
+                      " unexpectedly changed CPU affinity from ",
+                      start_cpu_affinity,
                       " to ",
-                      affinity);
+                      real_cpu_affinity);
         }
     }
 
@@ -284,7 +284,18 @@ static void* ccl_worker_func(void* args) {
 
     auto worker_idx = worker->get_idx();
 
-    LOG_DEBUG("worker_idx ", worker_idx);
+    int cpu_core = worker->get_start_cpu_affinity();
+    int numa_node = worker->get_start_mem_affinity();
+
+    LOG_INFO("worker: ",
+             "idx: ",
+             worker_idx,
+             ", cpu: ",
+             cpu_core,
+             ", numa: ",
+             ccl::global_data::get().hwloc_wrapper->get_numa_node(numa_node).to_string());
+
+    ccl::global_data::get().hwloc_wrapper->membind_thread(numa_node);
 
     size_t iter = 0;
     size_t processed_count = 0;

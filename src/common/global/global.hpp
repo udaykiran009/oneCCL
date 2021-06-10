@@ -4,6 +4,7 @@
 #include "common/env/env.hpp"
 #include "common/utils/utils.hpp"
 #include "common/comm/l0/comm_context_storage.hpp"
+#include "hwloc/hwloc_wrapper.hpp"
 #include "internal_types.hpp"
 
 #include <memory>
@@ -84,6 +85,7 @@ public:
     std::unique_ptr<ccl_parallelizer> parallelizer;
     std::unique_ptr<ccl_fusion_manager> fusion_manager;
     std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>> algorithm_selector;
+    std::unique_ptr<ccl_hwloc_wrapper> hwloc_wrapper;
     std::unique_ptr<group_context> global_ctx;
 
     static thread_local bool is_worker_thread;

@@ -483,7 +483,7 @@ CCL_WORKER_AFFINITY
 
 :: 
 
-  CCL_WORKER_AFFINITY=<proclist>
+  CCL_WORKER_AFFINITY=<cpulist>
 
 **Arguments**
 
@@ -492,7 +492,7 @@ CCL_WORKER_AFFINITY
    :header-rows: 1
    :align: left
    
-   * - <proclist> 
+   * - <cpulist> 
      - Description
    * - ``auto``
      - Workers are automatically pinned to last cores of pin domain.
@@ -505,6 +505,33 @@ CCL_WORKER_AFFINITY
 **Description**
 
 Set this environment variable to specify cpu affinity for |product_short| worker threads.
+
+
+CCL_WORKER_MEM_AFFINITY
+#######################
+**Syntax**
+
+:: 
+
+  CCL_WORKER_MEM_AFFINITY=<nodelist>
+
+**Arguments**
+
+.. list-table:: 
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+   
+   * - <nodelist> 
+     - Description
+   * - ``auto``
+     - Workers are automatically pinned to NUMA nodes that correspond to CPU affinity of workers.
+   * - ``n1,n2,..``
+     - NUMA nodes are explicitly specified for all local workers.
+
+**Description**
+
+Set this environment variable to specify memory affinity for |product_short| worker threads.
 
 
 CCL_LOG_LEVEL
