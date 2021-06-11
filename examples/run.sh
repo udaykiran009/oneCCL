@@ -38,14 +38,19 @@ check_test()
 {
     local test_log=$1
     local test_file=$2
-    test_passed=`grep -E -c -i 'PASSED' ${test_log}`
+
+    passed_pattern="passed"
+    failed_pattern="abort|^bad$|fail|^fault$|invalid|kill|runtime_error|terminate|timed|unexpected"
     if [[ "${test_file}" != *"communicator"* ]] && [[ "${test_file}" != *"datatype"* ]];
     then
-        test_failed=`grep -E -c -i 'error|invalid|Aborted|fail|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
-    else
-        test_failed=`grep -E -c -i 'Aborted|invalid|fail|failed|^BAD$|KILLED|^fault$|cl::sycl::runtime_error|terminate' ${test_log}`
+        failed_pattern="${failed_pattern}|error|exception"
     fi
-    test_skipped=`grep -E -c -i 'unavailable|skipped|skip' ${test_log}`
+    skipped_pattern="skip|unavailable"
+
+    test_passed=`grep -E -c -i ${passed_pattern} ${test_log}`
+    test_failed=`grep -E -c -i ${failed_pattern} ${test_log}`
+    test_skipped=`grep -E -c -i ${skipped_pattern} ${test_log}`
+
     if ([ ${test_passed} -eq 0 ] || [ ${test_skipped} -eq 0 ]) && [ ${test_failed} -ne 0 ]
     then
         echo "Error: example $test_file testing failed"

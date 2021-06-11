@@ -45,9 +45,9 @@ private:
     hwloc_obj_t get_first_non_io_obj_by_pci(int domain, int bus, int dev, int func);
     std::string obj_to_string(hwloc_obj_t obj);
 
-    bool initialized;
-    bool membind_thread_supported;
     std::vector<ccl_numa_node> numa_nodes;
+
+    bool membind_thread_supported;
     hwloc_cpuset_t bindset;
     hwloc_topology_t topology;
 };

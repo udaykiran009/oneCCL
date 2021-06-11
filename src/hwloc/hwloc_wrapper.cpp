@@ -32,15 +32,10 @@ std::string ccl_numa_node::to_string() {
     return ss.str();
 }
 
-ccl_hwloc_wrapper::ccl_hwloc_wrapper() {
-    /*
-        assume initialized = true and set it to false
-        in case of issue with initialization
-    */
-    initialized = true;
-
-    membind_thread_supported = false;
-
+ccl_hwloc_wrapper::ccl_hwloc_wrapper()
+        : membind_thread_supported(false),
+          bindset(nullptr),
+          topology(nullptr) {
     /* mandatory checks */
 
     if (hwloc_topology_init(&topology) < 0) {
@@ -52,7 +47,6 @@ ccl_hwloc_wrapper::ccl_hwloc_wrapper() {
 
     if (hwloc_topology_load(topology) < 0) {
         LOG_WARN("hwloc_topology_load failed (", strerror(errno), ")");
-        initialized = false;
         return;
     }
 
@@ -62,12 +56,10 @@ ccl_hwloc_wrapper::ccl_hwloc_wrapper() {
     bindset = hwloc_bitmap_alloc();
     if (hwloc_get_proc_cpubind(topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS) < 0) {
         LOG_WARN("hwloc_get_proc_cpubind failed (", strerror(errno), ")");
-        initialized = false;
-    }
-
-    if (!initialized) {
         return;
     }
+
+    CCL_THROW_IF_NOT(topology && bindset);
 
     /* optional checks */
 
@@ -107,15 +99,15 @@ ccl_hwloc_wrapper::ccl_hwloc_wrapper() {
 ccl_hwloc_wrapper::~ccl_hwloc_wrapper() {
     hwloc_bitmap_free(bindset);
     hwloc_topology_destroy(topology);
-    initialized = false;
 }
 
 bool ccl_hwloc_wrapper::is_initialized() {
-    return initialized;
+    return (topology && bindset) ? true : false;
 }
 
 std::string ccl_hwloc_wrapper::to_string() {
     std::stringstream ss;
+    bool initialized = is_initialized();
     ss << "hwloc initialized: " << initialized << "\n";
     if (initialized) {
         ss << "membind_thread_supported: " << membind_thread_supported << "\n";
@@ -147,6 +139,7 @@ bool ccl_hwloc_wrapper::is_dev_close_by_pci(int domain, int bus, int dev, int fu
     }
 
     hwloc_obj_t first_non_io = get_first_non_io_obj_by_pci(domain, bus, dev, func);
+    CCL_THROW_IF_NOT(first_non_io);
 
     LOG_DEBUG("first_non_io object: ", obj_to_string(first_non_io));
 
