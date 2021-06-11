@@ -8,7 +8,7 @@
 enum class ccl_buffer_type { DIRECT, INDIRECT };
 
 inline std::ostream& operator<<(std::ostream& os, const ccl_buffer_type& type) {
-    os << static_cast<std::underlying_type<ccl_buffer_type>::type>(type);
+    os << static_cast<typename std::underlying_type<ccl_buffer_type>::type>(type);
     return os;
 }
 

@@ -106,7 +106,7 @@ static std::mutex global_fence_mutex;
 
 // This is a internal gpu entry state to keep track of the progress
 // filling and submitting a kernel as well as its execution
-enum class gpu_entry_state {
+enum class gpu_entry_state : int {
     // default state
     initial,
     // Entry is fully constructed
@@ -129,7 +129,8 @@ enum class gpu_entry_state {
 };
 
 inline std::string to_string(gpu_entry_state state) {
-    return utils::enum_to_str<static_cast<int>(gpu_entry_state::last)>{
+    return utils::enum_to_str<static_cast<typename std::underlying_type<gpu_entry_state>::type>(
+        gpu_entry_state::last)>{
         "initial", "created", "wait_for_entry", "wait_for_completion", "completed"
     }
         .choose(state);
