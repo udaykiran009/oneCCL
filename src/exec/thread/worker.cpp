@@ -287,13 +287,13 @@ static void* ccl_worker_func(void* args) {
     int cpu_core = worker->get_start_cpu_affinity();
     int numa_node = worker->get_start_mem_affinity();
 
-    LOG_INFO("worker: ",
-             "idx: ",
-             worker_idx,
-             ", cpu: ",
-             cpu_core,
-             ", numa: ",
-             ccl::global_data::get().hwloc_wrapper->get_numa_node(numa_node).to_string());
+    LOG_DEBUG("worker: ",
+              "idx: ",
+              worker_idx,
+              ", cpu: ",
+              cpu_core,
+              ", numa: ",
+              ccl::global_data::get().hwloc_wrapper->get_numa_node(numa_node).to_string());
 
     ccl::global_data::get().hwloc_wrapper->membind_thread(numa_node);
 

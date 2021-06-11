@@ -153,42 +153,52 @@ bool ccl_hwloc_wrapper::is_dev_close_by_pci(int domain, int bus, int dev, int fu
 
 void ccl_hwloc_wrapper::membind_thread(int numa_node) {
     if (!is_initialized()) {
-        LOG_WARN("hwloc is not initialized, skip membind for node ", numa_node);
+        LOG_WARN("hwloc is not initialized, skip thread membind for NUMA node ", numa_node);
         return;
     }
 
     if (!membind_thread_supported) {
-        LOG_WARN("no support for memory binding of current thread, skip membind for node ",
-                 numa_node);
+        LOG_WARN(
+            "no support for memory binding of current thread, skip thread membind for NUMA node ",
+            numa_node);
         return;
     }
 
-    if (numa_node == CCL_UNDEFINED_NUMA_NODE) {
-        LOG_WARN("invalid numa node, skip membind");
+    if (!is_valid_numa_node(numa_node)) {
+        LOG_WARN("invalid NUMA node ",
+                 numa_node,
+                 ", NUMA node count ",
+                 get_numa_node_count(),
+                 ", skip thread membind");
         return;
     }
 
-    CCL_THROW_IF_NOT(is_valid_numa_node(numa_node));
+    if (!get_numa_node(numa_node).membind_support) {
+        LOG_WARN("no membind support for NUMA node ", numa_node, ", skip thread membind");
+        return;
+    }
 
     hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
     hwloc_bitmap_only(nodeset, unsigned(numa_node));
     CCL_THROW_IF_NOT(hwloc_bitmap_isset(nodeset, numa_node) == 1, "hwloc_bitmap_isset failed");
 
-    CCL_THROW_IF_NOT(hwloc_set_membind(topology,
-                                       nodeset,
-                                       HWLOC_MEMBIND_BIND,
-                                       HWLOC_MEMBIND_THREAD | HWLOC_MEMBIND_STRICT |
-                                           HWLOC_MEMBIND_BYNODESET) >= 0,
-                     "hwloc_set_membind failed (",
-                     strerror(errno),
-                     ")");
+    if (hwloc_set_membind(topology,
+                          nodeset,
+                          HWLOC_MEMBIND_BIND,
+                          HWLOC_MEMBIND_THREAD | HWLOC_MEMBIND_STRICT | HWLOC_MEMBIND_BYNODESET) <
+        0) {
+        LOG_WARN("failed to bind thread to NUMA node ", numa_node, " (", strerror(errno), ")");
+    }
+    else {
+        LOG_DEBUG("bound thread to NUMA node ", numa_node);
+    }
 
     hwloc_bitmap_free(nodeset);
 }
 
 int ccl_hwloc_wrapper::get_numa_node_by_cpu(int cpu) {
     if (!is_initialized()) {
-        LOG_WARN("hwloc is not initialized, can't get numa node for cpu ", cpu);
+        LOG_WARN("hwloc is not initialized, can't get numa NUMA for CPU ", cpu);
         return CCL_UNDEFINED_NUMA_NODE;
     }
 
@@ -209,16 +219,21 @@ int ccl_hwloc_wrapper::get_numa_node_by_cpu(int cpu) {
 
 ccl_numa_node ccl_hwloc_wrapper::get_numa_node(int numa_node) {
     if (!is_initialized()) {
-        LOG_WARN("hwloc is not initialized, can't get info for numa node ", numa_node);
+        LOG_WARN("hwloc is not initialized, can't get info for NUMA node ", numa_node);
         return {};
     }
-    CCL_THROW_IF_NOT(is_valid_numa_node(numa_node));
+
+    if (!is_valid_numa_node(numa_node)) {
+        LOG_WARN("invalid NUMA node ", numa_node, ", NUMA node count ", get_numa_node_count());
+        return {};
+    }
+
     return numa_nodes[numa_node];
 }
 
 bool ccl_hwloc_wrapper::is_valid_numa_node(int numa_node) {
-    if ((numa_node < 0) || (numa_node >= static_cast<int>(get_numa_node_count()))) {
-        LOG_WARN("unexpected NUMA node ", numa_node, ", NUMA node count ", get_numa_node_count());
+    if ((numa_node == CCL_UNDEFINED_NUMA_NODE) || (numa_node < 0) ||
+        (numa_node >= static_cast<int>(get_numa_node_count()))) {
         return false;
     }
     return true;
