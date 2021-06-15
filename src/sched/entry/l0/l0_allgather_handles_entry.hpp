@@ -25,6 +25,10 @@ public:
         return "L0_ALLGATHER_HANDLES";
     }
 
+    bool is_gpu_entry() const noexcept override {
+        return true;
+    }
+
     static constexpr ccl_coll_type type() noexcept {
         return ccl_coll_allgatherv; //TODO
     }

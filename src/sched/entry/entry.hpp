@@ -62,6 +62,10 @@ public:
 
     static const char* status_to_str(ccl_sched_entry_status status);
 
+    virtual bool is_gpu_entry() const noexcept {
+        return false;
+    }
+
 protected:
     virtual void start() = 0;
     virtual void update();

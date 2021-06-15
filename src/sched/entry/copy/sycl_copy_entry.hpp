@@ -13,6 +13,10 @@ public:
         return "SYCL_COPY";
     }
 
+    bool is_gpu_entry() const noexcept override {
+        return true;
+    }
+
     sycl_copy_entry() = delete;
     sycl_copy_entry(ccl_sched* sched,
                     copy_direction direction,

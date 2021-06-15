@@ -6,15 +6,7 @@ void sched_entry::do_progress() {
     if (is_completed())
         return;
 
-    // TODO: fix this tempropary workaround
-    // For l0 entry take_credit & return_credit isn't needed
-    // That's why we'd skip it
-    bool is_l0_entry = false;
-    const char* name_entry = this->name();
-
-    //  in case if entry is empty name or its  length = 1
-    if (strlen(name_entry) >= 2)
-        is_l0_entry = name_entry[0] == 'L' && name_entry[1] == '0';
+    bool is_gpu_entry = this->is_gpu_entry();
 
     if (status < ccl_sched_entry_status_started) {
         CCL_ASSERT(
@@ -22,7 +14,9 @@ void sched_entry::do_progress() {
             "bad status ",
             status);
 
-        if (is_l0_entry || sched->flow_control.take_credit()) {
+        // For l0 entry take_credit & return_credit isn't needed
+        // That's why we'd skip it
+        if (is_gpu_entry || sched->flow_control.take_credit()) {
             start();
             CCL_ASSERT(status >= ccl_sched_entry_status_again, "bad status ", status);
         }
@@ -36,7 +30,7 @@ void sched_entry::do_progress() {
         CCL_ASSERT(status >= ccl_sched_entry_status_started, "bad status ", status);
     }
 
-    if (status == ccl_sched_entry_status_complete && !is_l0_entry) {
+    if (status == ccl_sched_entry_status_complete && !is_gpu_entry) {
         sched->flow_control.return_credit();
     }
 

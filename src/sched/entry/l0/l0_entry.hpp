@@ -156,6 +156,11 @@ public:
     static constexpr const char *class_name() noexcept {
         return ccl_coll_type_to_str(type_op);
     }
+
+    bool is_gpu_entry() const noexcept override {
+        return true;
+    }
+
     static constexpr ccl_coll_type type() noexcept {
         return type_op;
     }
