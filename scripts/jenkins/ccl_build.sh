@@ -42,7 +42,7 @@ then
     export compiler="gnu" 
     run_in_fake_container /build/ccl/scripts/build.sh --conf --build-cpu $BUILD_OPTIONS
     CheckCommandExitCode $? "build with gnu_4.8.5 compiler failed"
-    (cd ${WORKSPACE} && tar cf ${ARTEFACT_DIR}/${BUILD_FOLDER}_$build_type.tar build)
+    (cd ${WORKSPACE} && tar cfz ${ARTEFACT_DIR}/${BUILD_FOLDER}_$build_type.tgz build)
 )
 elif [ $compiler == "ccl_build_gnu_l0" ] 
 then
@@ -51,14 +51,14 @@ then
     export compiler="gnu" 
     run_in_fake_container /build/ccl/scripts/build.sh --conf --build-gpu $BUILD_OPTIONS
     CheckCommandExitCode $? "build with gnu compiler failed"
-    (cd ${WORKSPACE} && tar cf ${ARTEFACT_DIR}/${BUILD_FOLDER}_$build_type.tar build)
+    (cd ${WORKSPACE} && tar cfz ${ARTEFACT_DIR}/${BUILD_FOLDER}_$build_type.tgz build)
 )
 elif [ $compiler == "ccl_build_dpcpp_l0" ]
 then
     export compute_backend="dpcpp_level_zero"
     run_in_fake_container /build/ccl/scripts/build.sh --conf --build-gpu $BUILD_OPTIONS
     CheckCommandExitCode $? "build with dpcpp_level_zero compiler failed"
-    (cd ${WORKSPACE} && tar cf ${ARTEFACT_DIR}/build_gpu_$build_type.tar build_gpu)
+    (cd ${WORKSPACE} && tar cfz ${ARTEFACT_DIR}/build_gpu_$build_type.tgz build_gpu)
 elif [ $compiler == "ccl_build_dpcpp" ]
 then
 (
@@ -66,7 +66,7 @@ then
     export compiler="clang"
     run_in_fake_container /build/ccl/scripts/build.sh --conf --build-gpu $BUILD_OPTIONS
     CheckCommandExitCode $? "build with dpcpp compiler failed"
-    (cd ${WORKSPACE} && tar cf ${ARTEFACT_DIR}/${BUILD_FOLDER}_$build_type.tar build)
+    (cd ${WORKSPACE} && tar cfz ${ARTEFACT_DIR}/${BUILD_FOLDER}_$build_type.tgz build)
 )
 elif [ $compiler == "ccl_build_intel" ]  
 then
@@ -74,6 +74,6 @@ then
     export compiler="intel"
     run_in_fake_container /build/ccl/scripts/build.sh --conf --build-cpu $BUILD_OPTIONS
     CheckCommandExitCode $? "build with intel compiler failed"
-    (cd ${WORKSPACE} && tar cf ${ARTEFACT_DIR}/build_$build_type.tar build)
+    (cd ${WORKSPACE} && tar cfz ${ARTEFACT_DIR}/build_$build_type.tgz build)
 )
 fi

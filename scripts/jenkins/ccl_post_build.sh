@@ -20,8 +20,8 @@ echo "DEBUG: ARTEFACT_DIR = ${ARTEFACT_DIR}"
 
 #debug
 export CCL_PACKAGE_PREFIX=l_ccl_debug_
-tar xf ${ARTEFACT_DIR}/build_gpu_debug.tar
-tar xf ${ARTEFACT_DIR}/build_debug.tar
+tar xf ${ARTEFACT_DIR}/build_gpu_debug.tgz
+tar xf ${ARTEFACT_DIR}/build_debug.tgz
 
 source ${WORKSPACE}/scripts/jenkins/fake_container.sh
 
@@ -37,8 +37,8 @@ rm -rf ${WORKSPACE}/*
 tar xfz ${ARTEFACT_DIR}/ccl_src.tgz
 
 export CCL_PACKAGE_PREFIX=l_ccl_release_
-tar xf ${ARTEFACT_DIR}/build_gpu_release.tar
-tar xf ${ARTEFACT_DIR}/build_release.tar
+tar xf ${ARTEFACT_DIR}/build_gpu_release.tgz
+tar xf ${ARTEFACT_DIR}/build_release.tgz
 
 if [ "$ENABLE_PRE_DROP_STAGE" == "true" ]
 then
@@ -49,13 +49,9 @@ else
     CheckCommandExitCode $? "build.sh failed"
 fi
 
-tar -zcf buildspace_$CCL_PACKAGE_PREFIX.tgz --exclude buildspace_$CCL_PACKAGE_PREFIX.tgz ./*
-
-mv buildspace_$CCL_PACKAGE_PREFIX.tgz ${ARTEFACT_DIR}
-
-cd ${ARTEFACT_DIR}
-tar -xzf buildspace_$CCL_PACKAGE_PREFIX.tgz
-CheckCommandExitCode $? "post build failed"
+mv ${CCL_PACKAGE_PREFIX}* ${ARTEFACT_DIR}
+cp -r ${WORKSPACE}/_log ${ARTEFACT_DIR}
+cp -r ${WORKSPACE}/_predrop ${ARTEFACT_DIR}
 
 if [ ${BUILDER_NAME} == "ccl-nightly" ]
 then

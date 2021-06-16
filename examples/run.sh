@@ -39,7 +39,7 @@ check_test()
     local test_log=$1
     local test_file=$2
 
-    passed_pattern="passed"
+    passed_pattern="passed|# all done"
     failed_pattern="abort|^bad$|fail|^fault$|invalid|kill|runtime_error|terminate|timed|unexpected"
     if [[ "${test_file}" != *"communicator"* ]] && [[ "${test_file}" != *"datatype"* ]];
     then
@@ -47,9 +47,9 @@ check_test()
     fi
     skipped_pattern="skip|unavailable"
 
-    test_passed=`grep -E -c -i ${passed_pattern} ${test_log}`
-    test_failed=`grep -E -c -i ${failed_pattern} ${test_log}`
-    test_skipped=`grep -E -c -i ${skipped_pattern} ${test_log}`
+    test_passed=`grep -E -c -i "${passed_pattern}" ${test_log}`
+    test_failed=`grep -E -c -i "${failed_pattern}" ${test_log}`
+    test_skipped=`grep -E -c -i "${skipped_pattern}" ${test_log}`
 
     if ([ ${test_passed} -eq 0 ] || [ ${test_skipped} -eq 0 ]) && [ ${test_failed} -ne 0 ]
     then
@@ -62,6 +62,13 @@ check_test()
         echo "Test $test_file has been skipped."
         echo "See log ${test_log} for details"
         total_skipped=${total_skipped}+1
+    fi
+    if [[ ${ENABLE_CLEANUP} == "yes" ]]
+    then
+        if [[ ${test_skipped} -eq 0 ]] && [[ ${test_failed} -eq 0 ]]
+        then
+            rm -f ${test_log}
+        fi
     fi
 }
 
@@ -657,6 +664,7 @@ parse_arguments()
             "--build-only" | "-build-only")             BUILD_ONLY="yes" ;;
             "--run-only" | "-run-only")                 RUN_ONLY="yes" ;;
             "--use-kernels" | "-use-kernels")           USE_KERNELS="yes" ;;
+            "--cleanup" | "-cleanup")                   ENABLE_CLEANUP="yes" ;;
             *)
             echo "$(basename $0): ERROR: unknown option ($1)"
             print_help

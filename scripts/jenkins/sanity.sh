@@ -305,7 +305,7 @@ function make_tests()
 
 function run_valgrind_check()
 {
-    export EXAMPLE_WORK_DIR="${CCL_ROOT}/examples/build"
+    export EXAMPLE_WORK_DIR="${CURRENT_WORK_DIR}/examples/build"
     unset I_MPI_HYDRA_HOST_FILE
     mkdir -p ${EXAMPLE_WORK_DIR}
     echo "EXAMPLE_WORK_DIR =" $EXAMPLE_WORK_DIR
@@ -331,17 +331,13 @@ function run_valgrind_check()
 
 function run_compatibitily_tests()
 {
-    export EXAMPLE_WORK_DIR="${CCL_ROOT}/examples/build"
-    mkdir -p ${EXAMPLE_WORK_DIR}
-    echo "EXAMPLE_WORK_DIR =" $EXAMPLE_WORK_DIR
     set_external_env
-    cd ${EXAMPLE_WORK_DIR}
     if [ ${node_label} == "mlsl2_test_gpu" ]
     then
         export FI_TCP_IFACE=eno1
-        ${CURRENT_WORK_DIR}/examples/run.sh --mode gpu --scope ${scope}
+        ${CURRENT_WORK_DIR}/examples/run.sh --mode gpu --scope ${scope} --cleanup
     else
-        ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope ${scope}
+        ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope ${scope} --cleanup
     fi
     log_status_fail=${PIPESTATUS[0]}
     if [ "$log_status_fail" -eq 0 ]
@@ -408,14 +404,8 @@ function unset_modulefile_environment()
 function run_modulefile_tests()
 {
     set_modulefile_environment
-
-    export EXAMPLE_WORK_DIR="${CCL_ROOT}/examples/build"
-    mkdir -p ${EXAMPLE_WORK_DIR}
-    echo "EXAMPLE_WORK_DIR =" $EXAMPLE_WORK_DIR
-
     set_external_env
 
-    cd ${EXAMPLE_WORK_DIR}
     ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope $scope
 
     log_status_fail=${PIPESTATUS[0]}
