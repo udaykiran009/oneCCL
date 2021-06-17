@@ -218,7 +218,12 @@ void env_data::parse() {
     env_2_type(CCL_ALLTOALL_SCATTER_PLAIN, alltoall_scatter_plain);
 
     env_2_type(CCL_COMM_KERNELS, enable_comm_kernels);
+
     if (enable_comm_kernels) {
+#ifndef MULTI_GPU_SUPPORT
+        CCL_THROW("comm kernels are requested but not supported in this version of CCL");
+#endif
+
         env_2_type(CCL_COMM_KERNELS_PATH, comm_kernels_path);
         if (comm_kernels_path.empty()) {
             std::string ccl_root = getenv("CCL_ROOT");

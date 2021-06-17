@@ -53,11 +53,11 @@ ccl_ipc_gpu_comm::ccl_ipc_gpu_comm(ccl_device& assigned_device,
         }
     }
 
-    LOG_INFO("Created ", name_impl(), ", addr: ", reinterpret_cast<void*>(this));
+    LOG_DEBUG("Created ", name_impl(), ", addr: ", reinterpret_cast<void*>(this));
 }
 
 ccl_ipc_gpu_comm::~ccl_ipc_gpu_comm() {
-    LOG_INFO("Destroyed ", name_impl(), ", addr: ", reinterpret_cast<void*>(this));
+    LOG_DEBUG("Destroyed ", name_impl(), ", addr: ", reinterpret_cast<void*>(this));
 }
 
 ccl_ipc_gpu_comm::supported_modules& ccl_ipc_gpu_comm::get_registered_modules() {

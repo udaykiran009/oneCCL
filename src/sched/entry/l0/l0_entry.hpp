@@ -503,7 +503,7 @@ protected:
             cmd_list.close_and_execute(get_ctx(), this->get_fence());
         }
 
-        ENTRY_LOG_INFO("List closed:", cmd_list.get(), ", go to submit entry");
+        ENTRY_LOG_DEBUG("List closed:", cmd_list.get(), ", go to submit entry");
         this->set_state(gpu_entry_state::wait_for_completion);
         return true;
     }
