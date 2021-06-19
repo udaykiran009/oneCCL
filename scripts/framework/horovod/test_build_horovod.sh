@@ -25,12 +25,22 @@ print_help()
 {
     echo_log "Usage: ${BASENAME}.sh <options>"
     echo_log "  --tf <path>"
+    echo_log "      Path to the TensorFlow package (*.whl)"
     echo_log "  --itex <path>"
+    echo_log "      Path to the Intel Extension for TensorFlow package (*.whl)"
+    echo_log "  --clone-hvd"
+    echo_log "      Enable Horovod cloning. If this parameter is missed, the Horovod source files will"
+    echo_log "      be searched in the path that is set in the HVD_DPCPP_DIR variable"
+    echo_log "  --token"
+    echo_log "      Path to file with github credentials"
+    echo_log "  --username"
+    echo_log "      Github username with access to Horovod repo"
     echo_log ""
     echo_log "Usage examples:"
     echo_log "  ${BASENAME}.sh "
     echo_log "  ${BASENAME}.sh --tf /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Software/Tensorflow/latest"
     echo_log "  ${BASENAME}.sh --itex /nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Software/ITEX/latest"
+    echo_log "  ${BASENAME}.sh --clone-hvd"
     echo_log ""
 }
 
@@ -53,6 +63,18 @@ parse_arguments()
                 DOWNLOAD_ITEX="no"
                 shift
                 ;;
+            "--clone-hvd" | "-clone-hvd")                       
+                ENABLE_CLONE_HOROVOD="yes"
+                HVD_DPCPP_DIR=${SCRIPT_DIR}/horovod_dpcpp
+                ;;
+            "--token" | "-token")                       
+                PATH_TO_TOKEN_FILE_1S=${2}
+                shift
+                ;;
+            "--username" | "-username")                       
+                USERNAME_1S="${2}@"
+                shift
+                ;;
             *)
                 echo "$(basename $0): ERROR: unknown option ($1)"
                 print_help
@@ -66,8 +88,9 @@ parse_arguments()
     echo_log "-----------------------------------------------------------"
     echo_log "PARAMETERS"
     echo_log "-----------------------------------------------------------"
-    echo_log "ITEX_NAME          = ${ITEX_NAME}"
-    echo_log "TF_NAME            = ${TF_NAME}"
+    echo_log "ITEX_NAME             = ${ITEX_NAME}"
+    echo_log "TF_NAME               = ${TF_NAME}"
+    echo_log "ENABLE_CLONE_HOROVOD  = ${ENABLE_CLONE_HOROVOD}"
 }
 
 echo_log()
@@ -115,7 +138,6 @@ prepare_env() {
 
     CONDA_BIN_DIR=$(dirname $(which python))
     source ${CONDA_BIN_DIR}/activate ${CONDA_ENV_NAME}
-
     python3 -m pip install --upgrade pip
 
     pip install $(realpath ${TF_NAME}) $(realpath ${ITEX_NAME})
@@ -126,6 +148,16 @@ prepare_env() {
     CheckCommandExitCode $? "TF test failed"
     popd
     rm -rf tmp
+}
+
+clone_horovod() {
+    if [[ ${ENABLE_CLONE_HOROVOD} = "yes" ]]
+    then
+        GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S} git clone --branch xpu https://${USERNAME_1S}github.com/intel-innersource/frameworks.ai.horovod.git ${HVD_DPCPP_DIR}
+        pushd ${HVD_DPCPP_DIR}
+        git submodule init && git submodule update
+        popd
+    fi
 }
 
 clean_env() {
@@ -167,6 +199,7 @@ build_horovod()
 
 parse_arguments $@
 prepare_env
+clone_horovod
 build_horovod
 clean_env
 

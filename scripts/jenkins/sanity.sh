@@ -353,7 +353,9 @@ function run_compatibitily_tests()
 function run_horovod_tests()
 {
     pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
-    ./test_build_horovod.sh --tf "${SOFTWARE_DIR}/Tensorflow/latest" --itex "${SOFTWARE_DIR}/ITEX/latest"
+    ./test_build_horovod.sh --tf "${SOFTWARE_DIR}/Tensorflow/latest" --itex "${SOFTWARE_DIR}/ITEX/latest" \
+                            --token "${CURRENT_WORK_DIR}/gitpass.sh" --username ${USERNAME_1S} \
+                            --clone-hvd
     log_status_fail=${PIPESTATUS[0]}
     popd
     if [ "$log_status_fail" -eq 0 ]
