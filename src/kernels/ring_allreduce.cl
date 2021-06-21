@@ -22,6 +22,7 @@
                                                         __global T* output_buffer, \
                                                         const __global T* right_input_buffer, \
                                                         __global T* right_output_buffer) { \
+        DEBUG_BLOCK(printf("rank: %d, comm size: %d, count: %zu\n", my_rank, comm_size, count)); \
         size_t work_group_size = get_global_size(0); \
         size_t thread_id = get_global_id(0); \
 \
