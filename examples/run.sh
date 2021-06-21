@@ -146,7 +146,7 @@ run_benchmark()
     base_test_log="$EXAMPLE_WORK_DIR/$dir_name/run"
     base_test_log="${base_test_log}_${transport}_${example}_b_${backend}_r_${runtime}_e_${loop}_l_${coll}_d_${dtype}_${log_idx}"
 
-    options="--check 1"
+    options="--check last"
     usm_list="none"
 
     if [ "${backend}" != "" ];

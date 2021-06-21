@@ -44,7 +44,7 @@ void print_help_usage(const char* app) {
           "\t[-f,--min_elem_count <minimum number of elements for single collective>]: %d\n"
           "\t[-t,--max_elem_count <maximum number of elements for single collective>]: %d\n"
           "\t[-y,--elem_counts <list of element counts for single collective>]: [%d-%d]\n"
-          "\t[-c,--check <check result correctness>]: %d\n"
+          "\t[-c,--check <check result correctness>]: %s\n"
           "\t[-p,--cache <use persistent operations>]: %d\n"
           "\t[-q,--inplace <use same buffer as send and recv buffer>]: %d\n"
           "\t[-k,--ranks_per_proc <number of ranks per process>]: %d\n"
@@ -74,7 +74,7 @@ void print_help_usage(const char* app) {
           DEFAULT_MAX_ELEM_COUNT,
           DEFAULT_MIN_ELEM_COUNT,
           DEFAULT_MAX_ELEM_COUNT,
-          DEFAULT_CHECK_VALUES,
+          check_values_names[DEFAULT_CHECK_VALUES].c_str(),
           DEFAULT_CACHE_OPS,
           DEFAULT_INPLACE,
           DEFAULT_RANKS_PER_PROC,
@@ -110,6 +110,13 @@ bool find_key_val(ccl::reduction& key, Container& mp, const Dtype& val) {
         }
     }
     return false;
+}
+
+bool is_check_values_enabled(check_values_t check_values) {
+    bool ret = false;
+    if (check_values == CHECK_LAST_ITER || check_values == CHECK_ALL_ITERS)
+        return true;
+    return ret;
 }
 
 int check_supported_options(const std::string& option_name,
@@ -177,6 +184,29 @@ int set_iter_policy(const std::string& option_value, iter_policy_t& policy) {
     return 0;
 }
 
+int set_check_values(const std::string& option_value, check_values_t& check) {
+    std::string option_name = "check";
+
+    std::set<std::string> supported_option_values{ check_values_names[CHECK_OFF],
+                                                   check_values_names[CHECK_LAST_ITER],
+                                                   check_values_names[CHECK_ALL_ITERS] };
+
+    if (check_supported_options(option_name, option_value, supported_option_values))
+        return -1;
+
+    if (option_value == check_values_names[CHECK_OFF]) {
+        check = CHECK_OFF;
+    }
+    else if (option_value == check_values_names[CHECK_LAST_ITER]) {
+        check = CHECK_LAST_ITER;
+    }
+    else if (option_value == check_values_names[CHECK_ALL_ITERS]) {
+        check = CHECK_ALL_ITERS;
+    }
+
+    return 0;
+}
+
 #ifdef CCL_ENABLE_SYCL
 int set_sycl_dev_type(const std::string& option_value, sycl_dev_type_t& dev) {
     std::string option_name = "sycl_dev_type";
@@ -224,10 +254,12 @@ int set_sycl_usm_type(const std::string& option_value, sycl_usm_type_t& usm) {
 }
 #endif /* CCL_ENABLE_SYCL */
 
-int set_datatypes(std::string option_value, int check_values, std::list<std::string>& datatypes) {
+int set_datatypes(std::string option_value,
+                  check_values_t check_values,
+                  std::list<std::string>& datatypes) {
     datatypes.clear();
     if (option_value == "all") {
-        if (check_values) {
+        if (is_check_values_enabled(check_values)) {
             datatypes = tokenize<std::string>(ALL_DTYPES_LIST_WITH_CHECK, ',');
         }
         else {
@@ -242,7 +274,7 @@ int set_datatypes(std::string option_value, int check_values, std::list<std::str
 
         for (auto p : dtype_names) {
             if ((p.first == ccl::datatype::float16 || p.first == ccl::datatype::bfloat16) &&
-                check_values)
+                is_check_values_enabled(check_values))
                 continue;
             supported_option_values.insert(p.second);
         }
@@ -251,7 +283,7 @@ int set_datatypes(std::string option_value, int check_values, std::list<std::str
             if (check_supported_options(option_name, dt, supported_option_values)) {
                 if ((dt == dtype_names[ccl::datatype::float16] ||
                      dt == dtype_names[ccl::datatype::bfloat16]) &&
-                    check_values) {
+                    is_check_values_enabled(check_values)) {
                     PRINT("WARN: correctness checking is not implemented for '%s'", dt.c_str());
                 }
             }
@@ -260,10 +292,12 @@ int set_datatypes(std::string option_value, int check_values, std::list<std::str
     return 0;
 }
 
-int set_reductions(std::string option_value, int check_values, std::list<std::string>& reductions) {
+int set_reductions(std::string option_value,
+                   check_values_t check_values,
+                   std::list<std::string>& reductions) {
     reductions.clear();
     if (option_value == "all") {
-        if (check_values) {
+        if (is_check_values_enabled(check_values)) {
             reductions = tokenize<std::string>(ALL_REDUCTIONS_LIST_WITH_CHECK, ',');
         }
         else {
@@ -277,14 +311,15 @@ int set_reductions(std::string option_value, int check_values, std::list<std::st
         std::set<std::string> supported_option_values;
 
         for (auto p : reduction_names) {
-            if ((p.first != ccl::reduction::sum) && check_values)
+            if ((p.first != ccl::reduction::sum) && is_check_values_enabled(check_values))
                 continue;
             supported_option_values.insert(p.second);
         }
 
         for (auto r : reductions) {
             if (check_supported_options(option_name, r, supported_option_values)) {
-                if ((r != reduction_names[ccl::reduction::sum]) && check_values) {
+                if ((r != reduction_names[ccl::reduction::sum]) &&
+                    is_check_values_enabled(check_values)) {
                     PRINT("WARN: correctness checking is not implemented for '%s'", r.c_str());
                 }
             }
@@ -624,7 +659,12 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
                 else
                     errors++;
                 break;
-            case 'c': options.check_values = atoi(optarg); break;
+            case 'c':
+                if (set_check_values(optarg, options.check_values)) {
+                    PRINT("failed to parse 'check' option");
+                    errors++;
+                }
+                break;
             case 'p': options.cache_ops = atoi(optarg); break;
             case 'q': options.inplace = atoi(optarg); break;
             case 'k':
@@ -771,6 +811,7 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
     std::string backend_str = find_str_val(backend_names, options.backend);
     std::string loop_str = find_str_val(loop_names, options.loop);
     std::string iter_policy_str = find_str_val(iter_policy_names, options.iter_policy);
+    std::string check_values_str = find_str_val(check_values_names, options.check_values);
 
 #ifdef CCL_ENABLE_SYCL
     std::string sycl_dev_type_str = find_str_val(sycl_dev_names, options.sycl_dev_type);
@@ -790,7 +831,7 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   "\n  min_elem_count: %zu"
                   "\n  max_elem_count: %zu"
                   "\n  elem_counts:    %s"
-                  "\n  check:          %d"
+                  "\n  check:          %s"
                   "\n  cache:          %d"
                   "\n  inplace:        %d"
                   "\n  ranks_per_proc: %zu"
@@ -816,7 +857,7 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   options.min_elem_count,
                   options.max_elem_count,
                   elem_counts_str.c_str(),
-                  options.check_values,
+                  check_values_str.c_str(),
                   options.cache_ops,
                   options.inplace,
                   options.ranks_per_proc,
