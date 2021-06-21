@@ -45,7 +45,7 @@ check_test()
     then
         failed_pattern="${failed_pattern}|error|exception"
     fi
-    skipped_pattern="skip|unavailable"
+    skipped_pattern="skip test|unavailable"
 
     test_passed=`grep -E -c -i "${passed_pattern}" ${test_log}`
     test_failed=`grep -E -c -i "${failed_pattern}" ${test_log}`

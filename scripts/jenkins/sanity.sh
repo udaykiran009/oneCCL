@@ -17,15 +17,11 @@ fi
 CURRENT_CCL_BUILD_DIR="${CCL_REPO_DIR}/${CCL_BUILD_ID}"
 BASENAME=`basename $0 .sh`
 CURRENT_WORK_DIR=`cd ${SCRIPT_DIR}/../../ && pwd -P`
-ARTEFACT_DIR="/p/pdsd/scratch/jenkins/artefacts"
+ARTEFACT_ROOT_DIR="/p/pdsd/scratch/jenkins/artefacts"
+ARTEFACT_DIR="${ARTEFACT_ROOT_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}/"
 CCL_ONEAPI_DIR="/p/pdsd/scratch/Uploads/CCL_oneAPI/"
 ONEAPI_DIR="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/oneAPI/"
 SOFTWARE_DIR="/nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Software/"
-
-if [ -z $CCL_INSTALL_DIR ]
-then
-    CCL_INSTALL_DIR=`cd ${SCRIPT_DIR}/../../build/_install/ && pwd -P`
-fi
 HOSTNAME=`hostname -s`
 
 echo "SCRIPT_DIR = $SCRIPT_DIR"
@@ -40,8 +36,6 @@ function set_default_values()
 {
     ENABLE_DEBUG="no"
     ENABLE_VERBOSE="yes"
-    ENABLE_BUILD_TESTS="yes"
-    ENABLE_RUN_TESTS="yes"
 }
 #==============================================================================
 #                                Functions
@@ -116,6 +110,17 @@ function set_external_env(){
         CCL_TEST_CACHE_TYPE=1 \
         CCL_TEST_SYNC_TYPE=1 \
         CCL_TEST_REDUCTION_TYPE=1"
+    elif [[ ${TEST_CONFIGURATIONS} == "test:pr" ]]
+    then
+        export scope="pr"
+    else
+        export scope="all"
+    fi
+    if [[ ${BUILDER_NAME} == "ccl-nightly" ]] || [[ ${BUILDER_NAME} == "ccl-weekly" ]]
+    then
+        export valgrind_scope="regular"
+    else
+        export valgrind_scope="short"
     fi
     if [ -n "${TESTING_ENVIRONMENT}" ]
     then
@@ -177,18 +182,18 @@ function set_environment()
     # $BUILD_COMPILER_TYPE may be set up by user: clang/gnu/intel
     if [ -z "${BUILD_COMPILER_TYPE}" ]
     then
-        if [ $node_label == "mlsl2_test_gpu" ] || [ $node_label == "mlsl2_test_gpu_vlgd" ] ||[ ${build_compiler} == "sycl" ]
+        if [ $node_label == "mlsl2_test_gpu" ] || [ $node_label == "mlsl2_test_gpu_vlgd" ] || [ ${build_compiler} == "sycl" ]
         then
             BUILD_COMPILER_TYPE="clang"
-            source ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
         elif [ ${node_label} == "mlsl2_test_cpu" ] || [ ${build_compiler} == "gnu" ]
         then
             BUILD_COMPILER_TYPE="gnu"
-            source ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_icc
+            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_icc
         elif [ ${build_compiler} == "intel" ]
         then
             BUILD_COMPILER_TYPE="intel"
-            source ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_icc
+            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_icc
         else
             echo "WARNING: the 'node_label' variable is not set. Clang will be used by default."
             BUILD_COMPILER_TYPE="clang"
@@ -238,13 +243,13 @@ function set_environment()
     then
         if [ -z  "${node_label}" ]
         then
-            source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
+            source ${ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
         elif [ $node_label == "mlsl2_test_gpu" ] || [ $node_label == "mlsl2_test_gpu_vlgd" ] || [ $node_label == "mlsl2_test_gpu_ft" ]
         then
-            source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+            source ${ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
             export DASHBOARD_GPU_DEVICE_PRESENT="yes"
         else
-            source ${CCL_INSTALL_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
+            source ${ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
         fi
     fi
 
@@ -271,9 +276,9 @@ function set_impi_environment()
     if [ -z "${IMPI_PATH}" ]
     then
         echo "WARNING: IMPI_PATH isn't set"
-        if [[ -d "${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi/" ]]
+        if [[ -d "${ARTEFACT_ROOT_DIR}/impi-ch4-weekly/last/oneapi_impi/" ]]
         then
-            weekly_mpiexec_version=$(${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi/bin/mpiexec --version)
+            weekly_mpiexec_version=$(${ARTEFACT_ROOT_DIR}/impi-ch4-weekly/last/oneapi_impi/bin/mpiexec --version)
             weekly_build_date=$(echo ${weekly_mpiexec_version#*Build} | awk '{print $1;}')
 
             lkg_mpiexec_version=$(${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/bin/mpiexec --version)
@@ -284,7 +289,7 @@ function set_impi_environment()
             elif expr "$weekly_build_date" "<" "$lkg_build_date" >/dev/null; then
                 export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
             else
-                export IMPI_PATH="${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi"
+                export IMPI_PATH="${ARTEFACT_ROOT_DIR}/impi-ch4-weekly/last/oneapi_impi"
             fi
         else
             export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
@@ -335,6 +340,7 @@ function run_compatibitily_tests()
     if [ ${node_label} == "mlsl2_test_gpu" ]
     then
         export FI_TCP_IFACE=eno1
+        export DASHBOARD_GPU_DEVICE_PRESENT=1
         ${CURRENT_WORK_DIR}/examples/run.sh --mode gpu --scope ${scope} --cleanup
     else
         ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope ${scope} --cleanup
@@ -377,7 +383,7 @@ function set_modulefile_environment()
         build_type="release"
     fi
 
-    module load ${CCL_INSTALL_DIR}/l_ccl_${build_type}*/modulefiles/ccl
+    module load ${ARTEFACT_DIR}/l_ccl_${build_type}*/modulefiles/ccl
 
     log_status_fail=${PIPESTATUS[0]}
     if [ "$log_status_fail" -eq 0 ]
@@ -769,6 +775,10 @@ else
         "-functional_tests" )
             make_tests
             check_command_exit_code $? "Compilation of functional tests is FAILED"
+            if [[ $(hostname) == *"nnlmpiclx04"* ]] || [[ $(hostname) == *"nnlmpiclx06"* ]]
+            then
+                export FI_PROVIDER="^mlx"	
+            fi  
             run_tests
             shift
             ;;
