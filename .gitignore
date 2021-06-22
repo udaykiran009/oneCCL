@@ -20,3 +20,4 @@ doc/doxygen/*
 .vscode
 include/oneapi/ccl/config.h
 *.bc
+tools/ze_info/ze_info

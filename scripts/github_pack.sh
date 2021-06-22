@@ -22,7 +22,8 @@ excluded=".git
 ./src/kernels
 ./tests/cfgs
 ./tests/reproducer
-./tests/unit"
+./tests/unit
+.tools"
 
 count=0
 mkdir -p $dstdir
