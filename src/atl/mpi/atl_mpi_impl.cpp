@@ -961,7 +961,7 @@ static atl_status_t atl_mpi_finalize(atl_ctx_t* ctx) {
             free(mpi_ep);
         }
         if ((global_data.ctx_count == 0) && (ctx->coord.global_idx == 0)) {
-            LOG_WARN("MPI_Finalize has been called");
+            LOG_WARN("MPI_Finalize has been called before CCL finalization");
         }
     }
 
