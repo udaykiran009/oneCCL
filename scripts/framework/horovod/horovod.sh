@@ -764,7 +764,7 @@ install_hvd() {
 
     cd ${HVD_SRC_DIR}
 
-    rm -rf build
+    # rm -rf build
 
     cmd="$cmd HOROVOD_CPU_OPERATIONS=CCL"
     cmd="$cmd HOROVOD_WITH_MPI=1"
