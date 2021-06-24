@@ -494,9 +494,6 @@ echo_log() {
 }
 
 hvd_test() {
-    # TODO: fix OFI env in CCL jenkins
-    return
-
     if [[ ${INSTALL_TF} = "1" ]]
     then
         echo_log "============================= Basic Horovod/TF test =================================="
@@ -507,7 +504,7 @@ hvd_test() {
         echo_log "============================= ****************** =================================="
 
         # TODO: remove after comm kernels correctness fix
-        if [[ ${CCL_COMM_KERNELS} = "0" ]] || [[ ${CCL_CONFIGURATION} != "" ]]
+        if [[ ${CCL_COMM_KERNELS} = "0" ]] && [[ ${CCL_CONFIGURATION} = "" ]]
         then
             echo_log "============================= Horovod/TF bench =================================="
             cmd="mpiexec -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_tf_bench.py --xpu gpu"
@@ -662,7 +659,7 @@ create_conda() {
     activate_conda
 
     echo_log "\n=== install packages in conda env ${CONDA_ENV_NAME} ===\n"
-    python3 -m pip install --upgrade pip
+    python -m pip install --upgrade pip
 
     echo_log "\n=== CONDA_PREFIX ${CONDA_PREFIX} ===\n"
 
@@ -681,6 +678,8 @@ activate_conda() {
 
     activate_script="${CONDA_BIN_DIR}/activate"
 
+    echo_log "CONDA_BIN_DIR = ${CONDA_BIN_DIR}"
+
     if [[ ! -f ${activate_script} ]]
     then
         echo "ERROR: activate_script (${activate_script}) is not a file, try to run script with \"-download_conda 1 -create_conda 1\""
@@ -688,6 +687,10 @@ activate_conda() {
     fi
 
     source ${activate_script} ${CONDA_ENV_NAME}
+    conda install pip
+
+    echo_log "PYTHON = $(which python)"
+    echo_log "PIP = $(which pip)"
 }
 
 deactivate_conda() {
