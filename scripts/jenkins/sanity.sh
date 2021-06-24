@@ -362,7 +362,7 @@ function run_horovod_tests()
     ./horovod.sh -install_tf 1 -tf_path "${SOFTWARE_DIR}/Tensorflow/latest" \
                  -install_itex 1 -itex_path "${SOFTWARE_DIR}/ITEX/latest" \
                  -download_hvd 1 -install_hvd 1 \
-                 -create_conda 1 -remove_conda 1 \
+                 -download_conda 1 -create_conda 1 -remove_conda 1 \
                  -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
 
     log_status_fail=${PIPESTATUS[0]}

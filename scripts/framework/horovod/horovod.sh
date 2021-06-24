@@ -38,17 +38,22 @@ set_run_env() {
     export CCL_COMM_KERNELS=0
     export CCL_WORKER_COUNT=1
     export CCL_WORKER_AFFINITY=4-19
+    export CCL_ATL_TRANSPORT=mpi
     vars_file="${CCL_SRC_DIR}/build/_install/env/setvars.sh"
     if [[ -f ${vars_file} ]]
     then
         source ${vars_file}
+        unset CCL_CONFIGURATION
     fi
-    unset CCL_CONFIGURATION
 
     # IMPI
     export I_MPI_DEBUG=12
     export I_MPI_PIN_PROCESSOR_EXCLUDE_LIST=${HOROVOD_THREAD_AFFINITY}
     export I_MPI_PIN_PROCESSOR_LIST=2,3
+
+    # OFI
+    export FI_PROVIDER=tcp
+    export FI_LOG_LEVEL=debug
 
     # SYCL
     export SYCL_PI_LEVEL_ZERO_BATCH_SIZE=1
@@ -68,7 +73,8 @@ set_run_env() {
     export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib"
 }
 
-CONDA_LINK="https://repo.anaconda.com/miniconda/Miniconda3-py39_4.9.2-Linux-x86_64.sh"
+CONDA_LINK="https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux-x86_64.sh"
+CONDA_INSTALL_DIR=""
 
 CCL_LINK="https://gitlab.devtools.intel.com/ict/ccl-team/ccl.git"
 HOROVOD_BASE_LINK="github.com/intel-innersource/frameworks.ai.horovod.git"
@@ -89,13 +95,13 @@ IPEX_NAME=`basename $IPEX_LINK`
 DEFAULT_SCRIPT_WORK_DIR="${SCRIPT_DIR}/work_dir_${current_date}"
 DEFAULT_FULL_SCOPE="0"
 
+DEFAULT_DOWNLOAD_CCL="0"
+DEFAULT_INSTALL_CCL="0"
+
 DEFAULT_DOWNLOAD_CONDA="0"
 DEFAULT_CREATE_CONDA="0"
 DEFAULT_REMOVE_CONDA="0"
 DEFAULT_CONDA_ENV_NAME="test_horovod"
-
-DEFAULT_DOWNLOAD_CCL="0"
-DEFAULT_INSTALL_CCL="0"
 
 DEFAULT_DOWNLOAD_TF="0"
 DEFAULT_INSTALL_TF="0"
@@ -115,6 +121,12 @@ DEFAULT_INSTALL_HVD="0"
 
 DEFAULT_DOWNLOAD_MODEL="0"
 DEFAULT_RUN_MODEL="0"
+DEFAULT_BATCH_SIZE="128"
+DEFAULT_ITER_COUNT="200"
+
+DEFAULT_PATH_TO_TOKEN_FILE_1S=""
+DEFAULT_USERNAME_1S=""
+DEFAULT_PROXY="http://proxy-us.intel.com:912"
 
 CheckCommandExitCode() {
     if [ $1 -ne 0 ]
@@ -181,10 +193,16 @@ print_help() {
     echo_log "      Download repository with models"
     echo_log "  -run_model <bool_flag>"
     echo_log "      Run few iterations of RN50 training on 2 ranks"
+    echo_log "  -batch_size <size>"
+    echo_log "      Batch size for RN50 training"
+    echo_log "  -iter_count <count>"
+    echo_log "      Iteration count for RN50 training"
     echo_log "  -token <path>"
     echo_log "      Path to file with github credentials"
     echo_log "  -username <name>"
     echo_log "      Github username with access to Horovod repo"
+    echo_log "  -proxy <url>"
+    echo_log "      https proxy"
     echo_log ""
     echo_log "Usage examples:"
     echo_log "  ${BASENAME}.sh "
@@ -194,16 +212,16 @@ print_help() {
 }
 
 parse_arguments() {
-    FULL_SCOPE=${DEFAULT_FULL_SCOPE}
     SCRIPT_WORK_DIR=${DEFAULT_SCRIPT_WORK_DIR}
+    FULL_SCOPE=${DEFAULT_FULL_SCOPE}
+
+    DOWNLOAD_CCL=${DEFAULT_DOWNLOAD_CCL}
+    INSTALL_CCL=${DEFAULT_INSTALL_CCL}
 
     DOWNLOAD_CONDA=${DEFAULT_DOWNLOAD_CONDA}
     CREATE_CONDA=${DEFAULT_CREATE_CONDA}
     REMOVE_CONDA=${DEFAULT_REMOVE_CONDA}
     CONDA_ENV_NAME=${DEFAULT_CONDA_ENV_NAME}
-
-    DOWNLOAD_CCL=${DEFAULT_DOWNLOAD_CCL}
-    INSTALL_CCL=${DEFAULT_INSTALL_CCL}
 
     DOWNLOAD_TF=${DEFAULT_DOWNLOAD_TF}
     INSTALL_TF=${DEFAULT_INSTALL_TF}
@@ -223,6 +241,12 @@ parse_arguments() {
 
     DOWNLOAD_MODEL=${DEFAULT_DOWNLOAD_MODEL}
     RUN_MODEL=${DEFAULT_RUN_MODEL}
+    BATCH_SIZE=${DEFAULT_BATCH_SIZE}
+    ITER_COUNT=${DEFAULT_ITER_COUNT}
+
+    PATH_TO_TOKEN_FILE_1S=${DEFAULT_PATH_TO_TOKEN_FILE_1S}
+    USERNAME_1S=${DEFAULT_USERNAME_1S}
+    PROXY=${DEFAULT_PROXY}
 
     while [ $# -ne 0 ]
     do
@@ -239,6 +263,14 @@ parse_arguments() {
                 FULL_SCOPE=$2
                 shift
                 ;;
+            "-download_ccl")
+                DOWNLOAD_CCL=${2}
+                shift
+                ;;
+            "-install_ccl")
+                INSTALL_CCL=${2}
+                shift
+                ;;
             "-download_conda")
                 DOWNLOAD_CONDA=${2}
                 shift
@@ -253,14 +285,6 @@ parse_arguments() {
                 ;;
             "-env")
                 CONDA_ENV_NAME=${2}
-                shift
-                ;;
-            "-download_ccl")
-                DOWNLOAD_CCL=${2}
-                shift
-                ;;
-            "-install_ccl")
-                INSTALL_CCL=${2}
                 shift
                 ;;
             "-download_tf")
@@ -327,12 +351,24 @@ parse_arguments() {
                 RUN_MODEL=${2}
                 shift
                 ;;
+            "-batch_size")
+                BATCH_SIZE="${2}"
+                shift
+                ;;
+            "-iter_count")
+                ITER_COUNT="${2}"
+                shift
+                ;;
             "-token")
                 PATH_TO_TOKEN_FILE_1S=${2}
                 shift
                 ;;
             "-username")
                 USERNAME_1S="${2}@"
+                shift
+                ;;
+            "-proxy")
+                PROXY="${2}@"
                 shift
                 ;;
             *)
@@ -353,11 +389,11 @@ parse_arguments() {
 
     if [[ ${FULL_SCOPE} = "1" ]]
     then
-        DOWNLOAD_CONDA="1"
-        CREATE_CONDA="1"
-
         DOWNLOAD_CCL="1"
         INSTALL_CCL="1"
+
+        DOWNLOAD_CONDA="1"
+        CREATE_CONDA="1"
 
         DOWNLOAD_TF="1"
         INSTALL_TF="1"
@@ -365,10 +401,10 @@ parse_arguments() {
         INSTALL_ITEX="1"
 
         # TODO: enable PT tests
-        #DOWNLOAD_PT="1"
-        #INSTALL_PT="1"
-        #DOWNLOAD_IPEX="1"
-        #INSTALL_IPEX="1"
+        # DOWNLOAD_PT="1"
+        # INSTALL_PT="1"
+        # DOWNLOAD_IPEX="1"
+        # INSTALL_IPEX="1"
 
         DOWNLOAD_HVD="1"
         INSTALL_HVD="1"
@@ -419,13 +455,13 @@ parse_arguments() {
     echo_log "SCRIPT_WORK_DIR    = ${SCRIPT_WORK_DIR}"
     echo_log "FULL_SCOPE         = ${FULL_SCOPE}"
 
+    echo_log "DOWNLOAD_CCL       = ${DOWNLOAD_CCL}"
+    echo_log "INSTALL_CCL        = ${INSTALL_CCL}"
+
     echo_log "DOWNLOAD_CONDA     = ${DOWNLOAD_CONDA}"
     echo_log "CREATE_CONDA       = ${CREATE_CONDA}"
     echo_log "REMOVE_CONDA       = ${REMOVE_CONDA}"
     echo_log "CONDA_ENV_NAME     = ${CONDA_ENV_NAME}"
-
-    echo_log "DOWNLOAD_CCL       = ${DOWNLOAD_CCL}"
-    echo_log "INSTALL_CCL        = ${INSTALL_CCL}"
 
     echo_log "DOWNLOAD_TF        = ${DOWNLOAD_TF}"
     echo_log "INSTALL_TF         = ${INSTALL_TF}"
@@ -446,6 +482,11 @@ parse_arguments() {
 
     echo_log "DOWNLOAD_MODEL     = ${DOWNLOAD_MODEL}"
     echo_log "RUN_MODEL          = ${RUN_MODEL}"
+    echo_log "BATCH_SIZE         = ${BATCH_SIZE}"
+    echo_log "ITER_COUNT         = ${ITER_COUNT}"
+
+    echo_log "USERNAME_1S        = ${USERNAME_1S}"
+    echo_log "PROXY              = ${PROXY}"
 }
 
 echo_log() {
@@ -453,6 +494,9 @@ echo_log() {
 }
 
 hvd_test() {
+    # TODO: fix OFI env in CCL jenkins
+    return
+
     if [[ ${INSTALL_TF} = "1" ]]
     then
         echo_log "============================= Basic Horovod/TF test =================================="
@@ -463,7 +507,7 @@ hvd_test() {
         echo_log "============================= ****************** =================================="
 
         # TODO: remove after comm kernels correctness fix
-        if [[ ${CCL_COMM_KERNELS} = "0" ]]
+        if [[ ${CCL_COMM_KERNELS} = "0" ]] || [[ ${CCL_CONFIGURATION} != "" ]]
         then
             echo_log "============================= Horovod/TF bench =================================="
             cmd="mpiexec -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_tf_bench.py --xpu gpu"
@@ -524,78 +568,6 @@ check_horovod_env() {
     CheckCommandExitCode $? "MPICXX was not found"
 }
 
-download_conda() {
-    if [[ ${DOWNLOAD_CONDA} != "1" ]]
-    then
-        return
-    fi
-
-    cd ${SCRIPT_WORK_DIR}
-    CONDA_FILENAME="conda.sh"
-    wget -O ${CONDA_FILENAME} ${CONDA_LINK}
-    chmod +x ${CONDA_FILENAME}
-    ./${CONDA_FILENAME} -b
-}
-
-create_conda() {
-    if [[ ${CREATE_CONDA} != "1" ]]
-    then
-        return
-    fi
-
-    cd ${SCRIPT_WORK_DIR}
-
-    echo_log "\n=== create conda env ===\n"
-    env_count=`conda env list | grep "${CONDA_ENV_NAME} " | wc -l`
-    if [[ $env_count -ne 0 ]]
-    then
-        echo_log "found conda env ${CONDA_ENV_NAME}"
-    else
-        echo_log "didn't find conda env ${CONDA_ENV_NAME}, create new one"
-        conda create -y -n ${CONDA_ENV_NAME} python=3.7
-    fi
-
-    echo_log "\n=== activate conda env ${CONDA_ENV_NAME} ===\n"
-    CONDA_BIN_DIR=$(dirname $(which python))
-    source ${CONDA_BIN_DIR}/activate ${CONDA_ENV_NAME}
-
-    echo_log "\n=== install packages in conda env ${CONDA_ENV_NAME} ===\n"
-    python3 -m pip install --upgrade pip
-
-    echo_log "\n=== CONDA_PREFIX ${CONDA_PREFIX} ===\n"
-
-    conda deactivate
-}
-
-activate_conda() {
-    echo_log "\n=== activate conda env ${CONDA_ENV_NAME} ===\n"
-    CONDA_BIN_DIR=$(dirname $(which python))
-
-    activate_script="${CONDA_BIN_DIR}/activate"
-
-    if [[ ! -f ${activate_script} ]]
-    then
-        echo "ERROR: activate_script (${activate_script}) is not a file, try to run script with \"-download_conda 1 -create_conda 1\""
-        CheckCommandExitCode 1 "Install CCL failed"
-    fi
-
-    source ${activate_script} ${CONDA_ENV_NAME}
-}
-
-deactivate_conda() {
-    echo_log "\n=== deactivate conda env ${CONDA_ENV_NAME} ===\n"
-    conda deactivate
-}
-
-remove_conda() {
-    if [[ ${REMOVE_CONDA} != "1" ]]
-    then
-        return
-    fi
-
-    conda env remove -y --name ${CONDA_ENV_NAME}
-}
-
 download_ccl() {
     if [[ ${DOWNLOAD_CCL} != "1" ]]
     then
@@ -637,6 +609,99 @@ install_ccl() {
 
     vars_file="${CCL_SRC_DIR}/build/_install/env/setvars.sh"
     source ${vars_file}
+}
+
+download_conda() {
+    if [[ ${DOWNLOAD_CONDA} != "1" ]]
+    then
+        return
+    fi
+
+    cd ${SCRIPT_WORK_DIR}
+    CONDA_FILENAME="conda.sh"
+    wget -O ${CONDA_FILENAME} ${CONDA_LINK}
+    chmod +x ${CONDA_FILENAME}
+    CONDA_INSTALL_DIR="${SCRIPT_WORK_DIR}/conda"
+    ./${CONDA_FILENAME} -b -p ${CONDA_INSTALL_DIR}
+    export CONDA_ENVS_PATH="${CONDA_INSTALL_DIR}/envs"
+    export CONDA_PKGS_DIRS="${CONDA_INSTALL_DIR}/pkgs"
+    export PIP_CACHE_DIR="${CONDA_INSTALL_DIR}/pip"
+    mkdir -p ${PIP_CACHE_DIR}
+}
+
+create_conda() {
+    if [[ ${CREATE_CONDA} != "1" ]]
+    then
+        return
+    fi
+
+    cd ${SCRIPT_WORK_DIR}
+
+    if [ -d "${CONDA_INSTALL_DIR}" ]
+    then
+        if [ -f "${CONDA_INSTALL_DIR}/etc/profile.d/conda.sh" ]
+        then
+            source "${CONDA_INSTALL_DIR}/etc/profile.d/conda.sh"
+        else
+            export PATH="${CONDA_INSTALL_DIR}/bin:$PATH"
+        fi
+    fi
+
+    echo_log `which conda`
+
+    echo_log "\n=== create conda env ===\n"
+    env_count=`conda env list | grep "${CONDA_ENV_NAME} " | wc -l`
+    if [[ $env_count -ne 0 ]]
+    then
+        echo_log "found conda env ${CONDA_ENV_NAME}"
+    else
+        echo_log "didn't find conda env ${CONDA_ENV_NAME}, create new one"
+        https_proxy=${PROXY} conda create -y -n ${CONDA_ENV_NAME} python=3.7
+    fi
+
+    activate_conda
+
+    echo_log "\n=== install packages in conda env ${CONDA_ENV_NAME} ===\n"
+    python3 -m pip install --upgrade pip
+
+    echo_log "\n=== CONDA_PREFIX ${CONDA_PREFIX} ===\n"
+
+    deactivate_conda
+}
+
+activate_conda() {
+    echo_log "\n=== activate conda env ${CONDA_ENV_NAME} ===\n"
+
+    if [ -d "${CONDA_INSTALL_DIR}" ]
+    then
+        CONDA_BIN_DIR="${CONDA_INSTALL_DIR}/bin"
+    else
+        CONDA_BIN_DIR=$(dirname $(which python))
+    fi
+
+    activate_script="${CONDA_BIN_DIR}/activate"
+
+    if [[ ! -f ${activate_script} ]]
+    then
+        echo "ERROR: activate_script (${activate_script}) is not a file, try to run script with \"-download_conda 1 -create_conda 1\""
+        CheckCommandExitCode 1 "Install CCL failed"
+    fi
+
+    source ${activate_script} ${CONDA_ENV_NAME}
+}
+
+deactivate_conda() {
+    echo_log "\n=== deactivate conda env ${CONDA_ENV_NAME} ===\n"
+    conda deactivate
+}
+
+remove_conda() {
+    if [[ ${REMOVE_CONDA} != "1" ]]
+    then
+        return
+    fi
+
+    conda env remove -y --name ${CONDA_ENV_NAME}
 }
 
 download_fw() {
@@ -700,6 +765,9 @@ install_fw() {
 
     if [[ ${INSTALL_PT} = "1" ]]
     then
+        echo_log "\n=== uninstall PT ===\n"
+        pip uninstall torch
+
         echo_log "\n=== install PT ===\n"
         if [[ -f ${PT_PATH} ]]
         then
@@ -722,6 +790,22 @@ install_fw() {
         fi
         pip install ${install_name}
         CheckCommandExitCode $? "IPEX install failed"
+    fi
+}
+
+check_fw() {
+    cd ${SCRIPT_WORK_DIR}
+
+    if [[ ${INSTALL_TF} = "1" ]]
+    then
+        tf_test
+        CheckCommandExitCode $? "TF test failed"
+    fi
+
+    if [[ ${INSTALL_PT} = "1" ]]
+    then
+        pt_test
+        CheckCommandExitCode $? "PT test failed"
     fi
 }
 
@@ -791,26 +875,15 @@ install_hvd() {
     CheckCommandExitCode $? "Install Horovod failed"
 }
 
-check_packages() {
+check_hvd() {
+    if [[ ${INSTALL_HVD} != "1" ]]
+    then
+        return
+    fi
+
     cd ${SCRIPT_WORK_DIR}
-
-    if [[ ${INSTALL_TF} = "1" ]]
-    then
-        tf_test
-        CheckCommandExitCode $? "TF test failed"
-    fi
-
-    if [[ ${INSTALL_PT} = "1" ]]
-    then
-        pt_test
-        CheckCommandExitCode $? "PT test failed"
-    fi
-
-    if [[ ${INSTALL_HVD} = "1" ]]
-    then
-        hvd_test
-        CheckCommandExitCode $? "Horovod test failed"
-    fi
+    hvd_test
+    CheckCommandExitCode $? "Horovod test failed"
 }
 
 download_model() {
@@ -852,10 +925,10 @@ run_model() {
     rm -r ${RN50_MODEL_DIR}/mlperf_resnet/__pycache__
 
     cmd="GPU=1 mpiexec -n 2 -l python ${RN50_MODEL_DIR}/mlperf_resnet/imagenet_main.py 2 \
-      --max_train_steps=200 --train_epochs=10 --epochs_between_evals=10 \
+      --max_train_steps=${ITER_COUNT} --train_epochs=10 --epochs_between_evals=10 \
       --inter_op_parallelism_threads 1 --intra_op_parallelism_threads 24  \
       --version 1 --resnet_size 50 --model_dir=${RN50_OUTPUT_DIR} \
-      --use_synthetic_data --batch_size=128 --use_bfloat16 2>&1 | tee ${rn50_log_file}"
+      --use_synthetic_data --batch_size=${BATCH_SIZE} --use_bfloat16 2>&1 | tee ${rn50_log_file}"
 
     echo_log "\nrn50 cmd:\n${cmd}\n"
     eval ${cmd}
@@ -870,22 +943,23 @@ parse_arguments $@
 
 check_base_env
 
+download_ccl
+install_ccl
+
 download_conda
 create_conda
 activate_conda
-
-download_ccl
-install_ccl
 
 download_fw
 install_fw
 
 set_run_env
 
+check_fw
+
 download_hvd
 install_hvd
-
-check_packages
+check_hvd
 
 download_model
 run_model
