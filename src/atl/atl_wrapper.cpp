@@ -3,7 +3,9 @@
 #include "atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.h"
 #include "atl/util/pm/pmi_resizable_rt/pmi_resizable.h"
 #include "atl/ofi/atl_ofi.hpp"
+#ifdef CCL_ENABLE_MPI
 #include "atl/mpi/atl_mpi.hpp"
+#endif /* CCL_ENABLE_MPI */
 #include "atl_wrapper.h"
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
@@ -32,10 +34,12 @@ atl_attr_t atl_wrapper::attr = {
 void atl_wrapper::set_internal_env(const atl_attr_t& attr) {
     auto transport_type = ccl::global_data::env().atl_transport;
 
-    if (transport_type == ccl_atl_mpi)
-        atl_mpi::atl_set_env(attr);
-    else if (transport_type == ccl_atl_ofi)
+    if (transport_type == ccl_atl_ofi)
         atl_ofi::atl_set_env(attr);
+#ifdef CCL_ENABLE_MPI
+    else if (transport_type == ccl_atl_mpi)
+        atl_mpi::atl_set_env(attr);
+#endif /* CCL_ENABLE_MPI */
 }
 
 void atl_wrapper::set_exec(ccl_executor* exec) {
@@ -66,7 +70,9 @@ atl_wrapper::atl_wrapper() {
             }
             transport = std::shared_ptr<iatl>(new atl_ofi());
             break;
+#ifdef CCL_ENABLE_MPI
         case ccl_atl_mpi: transport = std::shared_ptr<iatl>(new atl_mpi()); break;
+#endif /* CCL_ENABLE_MPI */
         default: LOG_ERROR("Unsupported yet"); break;
     }
 
@@ -96,7 +102,9 @@ atl_wrapper::atl_wrapper(std::shared_ptr<ikvs_wrapper> k) {
             }
             transport = std::shared_ptr<iatl>(new atl_ofi());
             break;
+#ifdef CCL_ENABLE_MPI
         case ccl_atl_mpi: transport = std::shared_ptr<iatl>(new atl_mpi()); break;
+#endif /* CCL_ENABLE_MPI */
         default: LOG_ERROR("Unsupported yet"); break;
     }
 
@@ -133,7 +141,9 @@ atl_wrapper::atl_wrapper(int total_rank_count,
                 transport = transports.back();
             }
         } break;
+#ifdef CCL_ENABLE_MPI
         case ccl_atl_mpi: transport = std::shared_ptr<iatl>(new atl_mpi()); break;
+#endif /* CCL_ENABLE_MPI */
         default: LOG_ERROR("Unsupported yet"); break;
     }
 
@@ -159,12 +169,14 @@ void atl_wrapper::init_transport() {
         rank = pmi->get_rank();
         size = pmi->get_size();
     }
+#ifdef CCL_ENABLE_MPI
     else {
         threads_per_process = 1;
         ranks_per_process = 1;
         rank = static_cast<atl_mpi*>(transport.get())->get_rank();
         size = static_cast<atl_mpi*>(transport.get())->get_size();
     }
+#endif /* CCL_ENABLE_MPI */
 
     if (rank == 0) {
         tag->print();

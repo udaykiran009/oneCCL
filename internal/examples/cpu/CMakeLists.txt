@@ -3,6 +3,8 @@ file(GLOB sources "*.c" "*.cpp")
 add_library(MPI SHARED IMPORTED)
 set_target_properties(MPI  PROPERTIES IMPORTED_LOCATION ${I_MPI_ROOT}/lib/libmpi.so)
 
+link_directories(${EXAMPLES_LIB_DIRS})
+
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)
     add_executable(${executable} ${src})

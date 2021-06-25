@@ -22,8 +22,11 @@ std::map<ccl_priority_mode, std::string> env_data::priority_mode_names = {
 };
 
 std::map<ccl_atl_transport, std::string> env_data::atl_transport_names = {
-    std::make_pair(ccl_atl_ofi, "ofi"),
+    std::make_pair(ccl_atl_ofi, "ofi")
+#ifdef CCL_ENABLE_MPI
+        ,
     std::make_pair(ccl_atl_mpi, "mpi")
+#endif /* CCL_ENABLE_MPI */
 };
 
 std::map<ccl_staging_buffer, std::string> env_data::staging_buffer_names = {
@@ -48,8 +51,11 @@ env_data::env_data()
           worker_count(1),
           worker_offload(1),
           worker_wait(1),
-
+#ifdef CCL_ENABLE_MPI
           atl_transport(ccl_atl_mpi),
+#else /* CCL_ENABLE_MPI */
+          atl_transport(ccl_atl_ofi),
+#endif /* CCL_ENABLE_MPI */
           enable_shm(0),
           enable_rma(0),
           enable_device_buf(0),
@@ -97,7 +103,8 @@ env_data::env_data()
           gpu_group_count(CCL_ENV_SIZET_NOT_SPECIFIED),
 
           bf16_impl_type(ccl_bf16_no_compiler_support),
-          fp16_impl_type(ccl_fp16_no_compiler_support) {}
+          fp16_impl_type(ccl_fp16_no_compiler_support) {
+}
 
 void env_data::parse() {
     env_2_enum(CCL_LOG_LEVEL, ccl_logger::level_names, log_level);
@@ -649,6 +656,7 @@ int env_data::env_2_worker_mem_affinity() {
 }
 
 void env_data::env_2_atl_transport() {
+#ifdef CCL_ENABLE_MPI
     if (!getenv(CCL_ATL_TRANSPORT) && !with_mpirun()) {
         LOG_WARN("did not find MPI-launcher specific variables, switch to ATL/OFI, "
                  "to force enable ATL/MPI set CCL_ATL_TRANSPORT=mpi");
@@ -656,6 +664,7 @@ void env_data::env_2_atl_transport() {
         atl_transport = ccl_atl_ofi;
     }
     else
+#endif /* CCL_ENABLE_MPI */
         env_2_enum(CCL_ATL_TRANSPORT, atl_transport_names, atl_transport);
 }
 

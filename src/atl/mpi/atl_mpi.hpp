@@ -1,3 +1,5 @@
+#ifdef CCL_ENABLE_MPI
+
 #include "atl.h"
 
 class atl_mpi final : public iatl {
@@ -144,3 +146,5 @@ private:
     bool is_finalized{ false };
     bool inited{ false };
 };
+
+#endif /* CCL_ENABLE_MPI */

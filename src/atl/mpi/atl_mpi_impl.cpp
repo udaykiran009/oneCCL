@@ -1,3 +1,5 @@
+#ifdef CCL_ENABLE_MPI
+
 #include <assert.h>
 #include <ctype.h>
 #include <inttypes.h>
@@ -1726,3 +1728,5 @@ err_init:
 atl_status_t atl_mpi_main_addr_reserve(char* main_addr) {
     return ATL_STATUS_UNSUPPORTED;
 }
+
+#endif /* CCL_ENABLE_MPI */
