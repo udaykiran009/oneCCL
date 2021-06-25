@@ -747,7 +747,8 @@ EOF
 if [ "$1" == "-help" ]; then
     print_help
 else
-    clean_nodes
+    # INFRA-1449
+    #clean_nodes
     set_default_values
     set_environment
     set_impi_environment
@@ -796,5 +797,6 @@ else
             ;;
         esac
     done
-    clean_nodes
+    # INFRA-1449
+    #clean_nodes
 fi
