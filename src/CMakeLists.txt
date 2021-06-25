@@ -26,8 +26,11 @@ list (APPEND EXTENSIONS_SRC
                     native_device_api/l0/utils.cpp
                     native_device_api/l0/primitives.cpp
                     native_device_api/interop_utils.cpp
+
                     sched/gpu_sched.cpp
                     sched/gpu_concurrent_sched.cpp
+                    sched/entry/gpu/ze_handle_exchange_entry.cpp
+
                     common/event/impls/gpu_event.cpp
 
                     common/comm/l0/comm_context.cpp

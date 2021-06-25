@@ -32,6 +32,8 @@
 #include "sched/entry/sync_entry.hpp"
 #include "sched/entry/wait_value_entry.hpp"
 #include "sched/entry/write_entry.hpp"
+// gpu
+#include "sched/entry/gpu/ze_handle_exchange_entry.hpp"
 
 #include "sched/sched.hpp"
 
