@@ -63,7 +63,7 @@ ccl_request* ccl_master_sched::start(ccl_executor* exec, bool reset_sched) {
     if (ccl::global_data::env().sched_dump) {
         std::stringstream ostream;
         dump(ostream);
-        LOG_INFO(ostream.str());
+        logger.info(ostream.str());
     }
 
     exec->start(this);

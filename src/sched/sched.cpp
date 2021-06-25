@@ -113,7 +113,9 @@ void ccl_sched::complete() {
 #ifdef ENABLE_TIMERS
     exec_complete_time = timer_type::now();
     if (ccl::global_data::env().sched_dump) {
-        dump(std::cout);
+        std::stringstream ostream;
+        subsched->dump(ostream);
+        logger.info(ostream.str());
     }
 #endif
     CCL_ASSERT(req, "ccl_sched must have req");
@@ -161,7 +163,7 @@ ccl_request* ccl_sched::start_subsched(ccl_extra_sched* subsched) {
     if (ccl::global_data::env().sched_dump) {
         std::stringstream ostream;
         subsched->dump(ostream);
-        LOG_INFO(ostream.str());
+        logger.info(ostream.str());
     }
 
     return subsched->req;
