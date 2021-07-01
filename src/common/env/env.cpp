@@ -237,12 +237,6 @@ void env_data::parse() {
             CCL_THROW_IF_NOT(!ccl_root.empty(), "incorrect comm kernels path, CCL_ROOT not found!");
             comm_kernels_path = ccl_root + "/lib/kernels/";
         }
-        // TODO remove IPC workaround knobs
-        if (!getenv("SYCL_PI_LEVEL_ZERO_DISABLE_USM_ALLOCATOR")) {
-            setenv("SYCL_PI_LEVEL_ZERO_DISABLE_USM_ALLOCATOR", "1", 1);
-            LOG_WARN(
-                "environment variable 'SYCL_PI_LEVEL_ZERO_DISABLE_USM_ALLOCATOR' is not set, will be used SYCL_PI_LEVEL_ZERO_DISABLE_USM_ALLOCATOR=1");
-        }
         env_2_type(CCL_COMM_KERNELS_DEBUG, comm_kernels_debug);
     }
     env_2_type(CCL_GPU_GROUP_SIZE, gpu_group_size);

@@ -64,7 +64,6 @@ set_run_env() {
     then
         ulimit -n 1048576
         export CCL_WORKER_OFFLOAD=0
-        export SYCL_PI_LEVEL_ZERO_DISABLE_USM_ALLOCATOR=1
     else
         export SYCL_PI_LEVEL_ZERO_TRACK_INDIRECT_ACCESS_MEMORY=1
     fi
@@ -503,16 +502,12 @@ hvd_test() {
         CheckCommandExitCode $? "Basic Horovod/TF test failed"
         echo_log "============================= ****************** =================================="
 
-        # TODO: remove after comm kernels correctness fix
-        if [[ ${CCL_COMM_KERNELS} = "0" ]] && [[ ${CCL_CONFIGURATION} = "" ]]
-        then
-            echo_log "============================= Horovod/TF bench =================================="
-            cmd="mpiexec -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_tf_bench.py --xpu gpu"
-            echo_log ${cmd}
-            eval ${cmd}
-            CheckCommandExitCode $? "Basic Horovod/TF test failed"
-            echo_log "============================= ****************** =================================="
-        fi
+        echo_log "============================= Horovod/TF bench =================================="
+        cmd="mpiexec -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_tf_bench.py --xpu gpu"
+        echo_log ${cmd}
+        eval ${cmd}
+        CheckCommandExitCode $? "Basic Horovod/TF test failed"
+        echo_log "============================= ****************** =================================="
     fi
 
     if [[ ${INSTALL_PT} = "1" ]]

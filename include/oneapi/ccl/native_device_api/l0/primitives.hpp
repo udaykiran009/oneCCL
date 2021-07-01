@@ -4,6 +4,7 @@
 #include <ze_api.h>
 
 #include "oneapi/ccl/native_device_api/l0/base.hpp"
+#include "common/log/log.hpp"
 
 namespace native {
 
@@ -42,7 +43,24 @@ template <class resource_owner, class cl_context>
 using module = cl_base<ze_module_handle_t, resource_owner, cl_context>;
 
 template <class resource_owner, class cl_context>
-using ipc_memory_handle = cl_base<ze_ipc_mem_handle_t, resource_owner, cl_context>;
+class ipc_memory_handle : public cl_base<ze_ipc_mem_handle_t, resource_owner, cl_context> {
+    using base = cl_base<ze_ipc_mem_handle_t, resource_owner, cl_context>;
+
+public:
+    ipc_memory_handle(ze_ipc_mem_handle_t handle,
+                      std::weak_ptr<resource_owner> owner,
+                      std::weak_ptr<cl_context> ctx,
+                      size_t offset = 0)
+            : base(handle, owner, ctx),
+              offset(offset) {}
+
+    size_t get_offset() const {
+        return offset;
+    }
+
+private:
+    size_t offset;
+};
 
 template <class resource_owner, class cl_context>
 using queue_fence = cl_base<ze_fence_handle_t, resource_owner, cl_context>;
@@ -125,6 +143,7 @@ private:
 
 struct ip_memory_elem_t {
     void* pointer = nullptr;
+    size_t offset = 0;
 };
 
 template <class resource_owner, class cl_context>
