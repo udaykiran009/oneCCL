@@ -157,7 +157,7 @@ int ze_handle_exchange_entry::create_server_socket(const std::string socket_name
     }
 
     socket_addr->sun_family = AF_UNIX;
-    strcpy(socket_addr->sun_path, socket_name.c_str());
+    strncpy(socket_addr->sun_path, socket_name.c_str(), sizeof(socket_addr->sun_path) - 1);
     *addr_len = sizeof((*socket_addr));
 
     ret = bind(sock, ((struct sockaddr *)&(*socket_addr)), *addr_len);
@@ -189,7 +189,7 @@ int ze_handle_exchange_entry::create_client_socket(const std::string socket_name
     }
 
     socket_addr->sun_family = AF_UNIX;
-    strcpy(socket_addr->sun_path, socket_name.c_str());
+    strncpy(socket_addr->sun_path, socket_name.c_str(), sizeof(socket_addr->sun_path) - 1);
     *addr_len = sizeof((*socket_addr));
 
     return sock;
@@ -246,7 +246,6 @@ int ze_handle_exchange_entry::sendmsg_fd(int sock, int fd) {
     struct cmsghdr *cmsg;
     char ctrl_buf[CMSG_SPACE(sizeof(fd))];
     struct iovec iov;
-    int ret;
 
     iov.iov_base = &tmp;
     iov.iov_len = 1;
@@ -262,9 +261,9 @@ int ze_handle_exchange_entry::sendmsg_fd(int sock, int fd) {
     cmsg->cmsg_len = CMSG_LEN(sizeof(fd));
     cmsg->cmsg_level = SOL_SOCKET;
     cmsg->cmsg_type = SCM_RIGHTS;
-    *(int *)CMSG_DATA(cmsg) = fd;
+    *reinterpret_cast<int *>(CMSG_DATA(cmsg)) = fd;
 
-    ret = sendmsg(sock, &msg, 0);
+    ssize_t ret = sendmsg(sock, &msg, 0);
     if (ret == -1) {
         CCL_THROW("sendmsg get error: ", ret, ", errno: ", strerror(errno));
         return ret;
@@ -287,7 +286,7 @@ int ze_handle_exchange_entry::recvmsg_fd(int sock, int *fd) {
     msg.msg_iov = &iov;
     msg.msg_iovlen = 1;
 
-    int ret = recvmsg(sock, &msg, 0);
+    ssize_t ret = recvmsg(sock, &msg, 0);
     if (ret == -1) {
         LOG_ERROR("recvmsg error: ", ret, ", errno: ", strerror(errno));
         return ret;
@@ -309,10 +308,8 @@ int ze_handle_exchange_entry::recvmsg_fd(int sock, int *fd) {
 }
 
 void ze_handle_exchange_entry::sendmsg_call(int socket_fd, int fd) {
-    int ret = 0;
-
-    ret = sendmsg_fd(socket_fd, fd);
-    if (ret) {
+    ssize_t ret = sendmsg_fd(socket_fd, fd);
+    if (ret == -1) {
         CCL_THROW("could not send socket_fd",
                   socket_fd,
                   "fd: ",
@@ -326,9 +323,8 @@ void ze_handle_exchange_entry::sendmsg_call(int socket_fd, int fd) {
 }
 
 void ze_handle_exchange_entry::recvmsg_call(int socket_fd, int *fd) {
-    int ret = 0;
-    ret = recvmsg_fd(socket_fd, fd);
-    if (ret) {
+    int ret = recvmsg_fd(socket_fd, fd);
+    if (ret == -1) {
         CCL_THROW("cannot recv data from socket: ",
                   socket_fd,
                   ", from: ",
@@ -347,7 +343,7 @@ int ze_handle_exchange_entry::get_fd_from_handle(const ze_ipc_mem_handle_t *hand
 }
 
 int ze_handle_exchange_entry::get_handle_from_fd(int *fd, ze_ipc_mem_handle_t *handle) {
-    memcpy(handle, (void *)fd, sizeof(*fd));
+    memcpy(handle, static_cast<void *>(fd), sizeof(*fd));
     return 0;
 }
 
