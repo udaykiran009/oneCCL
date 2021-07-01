@@ -16,16 +16,18 @@ using send_buf_size_arg = arg<main_kernel_args::args_start_index, size_t>;
 using send_buf_size_arg_type = typename send_buf_size_arg::arg_type;
 
 template <class native_t>
-using send_buf_arg = arg<main_kernel_args::args_start_index + 1, native_t*>;
+using send_buf_arg = thread_exchangable_arg<main_kernel_args::args_start_index + 1, native_t*>;
 
 template <class native_t>
-using recv_buf_arg = arg<main_kernel_args::args_start_index + 2, native_t*>;
+using recv_buf_arg = thread_exchangable_arg<main_kernel_args::args_start_index + 2, native_t*>;
 
 template <class native_t>
-using right_send_buf_arg = arg<main_kernel_args::args_start_index + 3, native_t*>;
+using right_send_buf_arg =
+    thread_exchangable_arg<main_kernel_args::args_start_index + 3, native_t*>;
 
 template <class native_t>
-using right_recv_buf_arg = arg<main_kernel_args::args_start_index + 4, native_t*>;
+using right_recv_buf_arg =
+    thread_exchangable_arg<main_kernel_args::args_start_index + 4, native_t*>;
 
 // IMPORTANT: the number and types of arguments must be the same in all classes,
 // excluding arguments specific for numa/scaleout etc.
