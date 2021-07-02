@@ -4,7 +4,6 @@
 #include <ze_api.h>
 
 #include "oneapi/ccl/native_device_api/l0/base.hpp"
-#include "common/log/log.hpp"
 
 namespace native {
 
