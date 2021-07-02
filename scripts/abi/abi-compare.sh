@@ -1,7 +1,7 @@
 #!/bin/bash
 set -o pipefail
 
-readonly ARGS=( "$@" )
+readonly ARGS="$@"
 readonly BASENAME=$(basename $0)
 
 readonly EXIT_FAILURE=1
