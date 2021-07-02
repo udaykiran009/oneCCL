@@ -44,11 +44,15 @@ then
     CheckCommandExitCode $? "build with gnu_4.8.5 compiler failed"
     (cd ${WORKSPACE} && tar cfz ${ARTEFACT_DIR}/${BUILD_FOLDER}_$build_type.tgz build)
 )
-elif [ $compiler == "ccl_build_gnu_l0" ] 
+elif [ $compiler == "ccl_build_gnu_10.2.0_l0" ]
 then
 (
     export compute_backend="level_zero" 
-    export compiler="gnu" 
+    export compiler="gnu"
+    # w/a for Ubuntu 20.4 and GCC 10.2
+    export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LIBRARY_PATH
+    export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
+    export GNU_BUNDLE_ROOT="/p/pdsd/opt/EM64T-LIN/compilers/gnu/gcc-10.2.0/bin"
     run_in_fake_container /build/ccl/scripts/build.sh --conf --build-gpu $BUILD_OPTIONS
     CheckCommandExitCode $? "build with gnu compiler failed"
     (cd ${WORKSPACE} && tar cfz ${ARTEFACT_DIR}/${BUILD_FOLDER}_$build_type.tgz build)
