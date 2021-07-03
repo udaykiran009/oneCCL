@@ -367,7 +367,7 @@ parse_arguments() {
                 shift
                 ;;
             "-proxy")
-                PROXY="${2}@"
+                PROXY="${2}"
                 shift
                 ;;
             *)
