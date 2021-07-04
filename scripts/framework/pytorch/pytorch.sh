@@ -12,7 +12,9 @@ fi
 
 current_date=`date "+%Y%m%d%H%M%S"`
 LOG_FILE="${SCRIPT_DIR}/log_${current_date}.txt"
+TESTS_LOG_FILE="${SCRIPT_DIR}/tests_log_${current_date}.txt"
 touch ${LOG_FILE}
+touch ${TESTS_LOG_FILE}
 
 set_run_env() {
     # UCC
@@ -372,12 +374,14 @@ download_ofi() {
         rm -rf ${PSM3_SRC_DIR}
     fi
     https_proxy="" git clone --branch ${PSM3_BRANCH} --single-branch ${PSM3_LINK} ${PSM3_SRC_DIR}
+    check_exit_code $? "Download PSM3 failed"
 
     if [[ -d ${OFI_SRC_DIR} ]]
     then
         rm -rf ${OFI_SRC_DIR}
     fi
     https_proxy="" git clone --branch ${OFI_BRANCH} --single-branch ${OFI_LINK} ${OFI_SRC_DIR}
+    check_exit_code $? "Download OFI failed"
 }
 
 install_ofi() {
@@ -388,7 +392,7 @@ install_ofi() {
 
     if [[ ! -d ${PSM3_SRC_DIR} ]] || [[ ! -d ${OFI_SRC_DIR} ]]
     then
-        echo "ERROR: PSM3_SRC_DIR (${PSM3_SRC_DIR}) or OFI_SRC_DIR (${OFI_SRC_DIR}) is not directory, try to run script with \"-download_ofi 1\""
+        echo_log "ERROR: PSM3_SRC_DIR (${PSM3_SRC_DIR}) or OFI_SRC_DIR (${OFI_SRC_DIR}) is not directory, try to run script with \"-download_ofi 1\""
         check_exit_code 1 "Install OFI failed"
     fi
 
@@ -431,6 +435,7 @@ download_ccl() {
 
     cd ${SCRIPT_WORK_DIR}
     https_proxy="" git clone --branch ${CCL_BRANCH} --single-branch ${CCL_LINK} ${CCL_SRC_DIR}
+    check_exit_code $? "Download CCL failed"
 }
 
 install_ccl() {
@@ -441,7 +446,7 @@ install_ccl() {
 
     if [[ ! -d ${CCL_SRC_DIR} ]]
     then
-        echo "ERROR: CCL_SRC_DIR (${CCL_SRC_DIR}) is not directory, try to run script with \"-download_ccl 1\""
+        echo_log "ERROR: CCL_SRC_DIR (${CCL_SRC_DIR}) is not directory, try to run script with \"-download_ccl 1\""
         check_exit_code 1 "Install CCL failed"
     fi
 
@@ -474,12 +479,14 @@ download_ucc() {
         rm -rf ${UCX_SRC_DIR}
     fi
     https_proxy="" git clone --branch ${UCX_BRANCH} --single-branch ${UCX_LINK} ${UCX_SRC_DIR}
+    check_exit_code $? "Download UCX failed"
 
     if [[ -d ${UCC_SRC_DIR} ]]
     then
         rm -rf ${UCC_SRC_DIR}
     fi
     https_proxy="" git clone --branch ${UCC_BRANCH} --single-branch ${UCC_LINK} ${UCC_SRC_DIR}
+    check_exit_code $? "Download UCC failed"
 }
 
 install_ucc() {
@@ -490,7 +497,7 @@ install_ucc() {
 
     if [[ ! -d ${UCX_SRC_DIR} ]] || [[ ! -d ${UCC_SRC_DIR} ]]
     then
-        echo "ERROR: UCX_SRC_DIR (${UCX_SRC_DIR}) or UCC_SRC_DIR (${UCC_SRC_DIR}) is not directory, try to run script with \"-download_ucc 1\""
+        echo_log "ERROR: UCX_SRC_DIR (${UCX_SRC_DIR}) or UCC_SRC_DIR (${UCC_SRC_DIR}) is not directory, try to run script with \"-download_ucc 1\""
         check_exit_code 1 "Install UCC failed"
     fi
 
@@ -548,9 +555,9 @@ create_conda() {
 
     cd ${SCRIPT_WORK_DIR}
 
-    if [ -d "${CONDA_INSTALL_DIR}" ]
+    if [[ -d "${CONDA_INSTALL_DIR}" ]]
     then
-        if [ -f "${CONDA_INSTALL_DIR}/etc/profile.d/conda.sh" ]
+        if [[ -f "${CONDA_INSTALL_DIR}/etc/profile.d/conda.sh" ]]
         then
             source "${CONDA_INSTALL_DIR}/etc/profile.d/conda.sh"
         else
@@ -583,7 +590,7 @@ create_conda() {
 activate_conda() {
     echo_log "\n=== activate conda env ${CONDA_ENV_NAME} ===\n"
 
-    if [ -d "${CONDA_INSTALL_DIR}" ]
+    if [[ -d "${CONDA_INSTALL_DIR}" ]]
     then
         CONDA_BIN_DIR="${CONDA_INSTALL_DIR}/bin"
     else
@@ -596,7 +603,7 @@ activate_conda() {
 
     if [[ ! -f ${activate_script} ]]
     then
-        echo "ERROR: activate_script (${activate_script}) is not a file, try to run script with \"-download_conda 1 -create_conda 1\""
+        echo_log "ERROR: activate_script (${activate_script}) is not a file, try to run script with \"-download_conda 1 -create_conda 1\""
         check_exit_code 1 "Install CCL failed"
     fi
 
@@ -621,7 +628,7 @@ remove_conda() {
 
     conda env remove -y --name ${CONDA_ENV_NAME}
 
-    if [ -d "${CONDA_INSTALL_DIR}" ]
+    if [[ -d "${CONDA_INSTALL_DIR}" ]]
     then
         rm -rf ${CONDA_INSTALL_DIR}
     fi
@@ -659,6 +666,7 @@ download_torch_ucc() {
         rm -rf ${TORCH_UCC_SRC_DIR}
     fi
     https_proxy="" git clone --branch ${TORCH_UCC_BRANCH} --single-branch ${TORCH_UCC_LINK} ${TORCH_UCC_SRC_DIR}
+    check_exit_code $? "Download torch-ucc failed"
 }
 
 install_torch_ucc() {
@@ -669,7 +677,7 @@ install_torch_ucc() {
 
     if [[ ! -d ${TORCH_UCC_SRC_DIR} ]]
     then
-        echo "ERROR: TORCH_UCC_SRC_DIR (${TORCH_UCC_SRC_DIR}) is not directory, try to run script with \"-download_torch_ucc 1\""
+        echo_log "ERROR: TORCH_UCC_SRC_DIR (${TORCH_UCC_SRC_DIR}) is not directory, try to run script with \"-download_torch_ucc 1\""
         check_exit_code 1 "Install torch-ucc failed"
     fi
 
@@ -697,56 +705,80 @@ run_tests() {
 
     cd ${SCRIPT_WORK_DIR}
 
-    current_date=`date "+%Y%m%d%H%M%S"`
-    tests_log=${SCRIPT_WORK_DIR}"/tests_"${current_date}".txt"
-
-    echo "================ UCC test ================" | tee -a ${tests_log}
+    echo "================ UCC test ================" | tee -a ${TESTS_LOG_FILE}
     cd ${UCC_SRC_DIR}/test/mpi
     make
     check_exit_code $? "Build UCC test failed"
     cmd="mpirun -n 2 ./ucc_test_mpi --colls allgather,allgatherv,allreduce,alltoall,alltoallv,bcast \
-        --teams world --dtypes float32 --ops sum --inplace 2 --msgsize 64:1024 2>&1 | tee -a ${tests_log}"
+        --teams world --dtypes float32 --ops sum --inplace 2 --msgsize 64:1024 2>&1 | tee -a ${TESTS_LOG_FILE}"
     echo_log "exec cmd: $cmd"
     eval ${cmd}
     check_exit_code $? "Run UCC test failed"
-    echo "================ ****************** ================" | tee -a ${tests_log}""
+    echo "================ ****************** ================" | tee -a ${TESTS_LOG_FILE}
 
-    echo "================ torch-ucc test ================" | tee -a ${tests_log}
+    echo "================ torch-ucc test ================" | tee -a ${TESTS_LOG_FILE}
     cd ${TORCH_UCC_SRC_DIR}/test
     chmod +x start_test.sh
-    cmd="./start_test.sh torch_alltoall_bench.py --backend ucc --max-size 1024 --iter 2 2>&1 | tee -a ${tests_log}"
+    cmd="./start_test.sh torch_alltoall_bench.py --backend ucc --max-size 1024 --iter 2 2>&1 | tee -a ${TESTS_LOG_FILE}"
     echo_log "exec cmd: $cmd"
     eval ${cmd}
     check_exit_code $? "Run torch-ucc test failed"
-    echo "================ ****************** ================" | tee -a ${tests_log}""
+    echo "================ ****************** ================" | tee -a ${TESTS_LOG_FILE}
 
-    echo "================ PARAM test ================" | tee -a ${tests_log}
+    echo "================ PARAM test ================" | tee -a ${TESTS_LOG_FILE}
+    if [[ -d ${PARAM_SRC_DIR} ]]
+    then
+        rm -rf ${PARAM_SRC_DIR}
+    fi
     cmd="https_proxy=\"\" git clone --branch ${PARAM_BRANCH} --single-branch ${PARAM_LINK} ${PARAM_SRC_DIR}"
     echo_log "exec cmd: $cmd"
     eval ${cmd}
+    check_exit_code $? "Download PARAM failed"
 
     cd ${PARAM_SRC_DIR}/train/comms/pt
-    MASTER_IP_VALUE=`ifconfig | grep "inet " | head -n 1 | awk '{print $2}'`
-    MASTER_IP="--master-ip ${MASTER_IP_VALUE}"
+    echo "I_MPI_HYDRA_HOST_FILE ${I_MPI_HYDRA_HOST_FILE}"
+    first_host="localhost"
+    if [[ -f ${I_MPI_HYDRA_HOST_FILE} ]]
+    then
+        first_host=`cat ${I_MPI_HYDRA_HOST_FILE} | head -n 1`
+    fi
+    echo "first_host: ${first_host}"
+
+    master_ip_value=`ssh ${first_host} ifconfig | grep "inet " | head -n 1 | awk '{print $2}'`
+    echo_log "master_ip: ${master_ip_value}"
+
+    MASTER_IP="--master-ip ${master_ip_value}"
     N="-n 2"
     PPN="-ppn 1"
-    HOSTS=""
 
-    cmd="mpirun ${N} ${PPN} ${HOSTS} python ./comms.py ${MASTER_IP} \
-        --b 8 --e 256M --n 100 --f 2 --z 1 \
-        --collective all_reduce --backend ucc --log INFO 2>&1 | tee -a ${tests_log}"
+    cmd="mpirun ${N} ${PPN} python ./comms.py ${MASTER_IP} \
+        --b 8 --e 8M --n 64 --f 2 --z 1 \
+        --collective all_reduce --backend ucc --log INFO 2>&1 | tee -a ${TESTS_LOG_FILE}"
     echo_log "exec cmd: $cmd"
     eval ${cmd}
-    check_exit_code $? "Run PARAM/comms failed"
-    echo "================ ****************** ================" | tee -a ${tests_log}""
-
+    check_exit_code $? "Run PARAM failed"
+    echo "================ ****************** ================" | tee -a ${TESTS_LOG_FILE}
 
     fail_pattern="abort|^bad$|corrupt|^fault$|invalid|kill|runtime_error|terminate|timed|unexpected"
-    fail_count=`grep -E -c -i "${fail_pattern}" ${tests_log}`
-    if [ ${fail_count} -ne 0 ]
+    ignore_fail_pattern="UCX  DEBUG"
+
+    fail_strings=`grep -E -i "${fail_pattern}" ${TESTS_LOG_FILE}`
+    if [[ ! -z ${ignore_fail_pattern} ]]
     then
+        fail_strings=`echo "${fail_strings}" | grep -E -i -v "${ignore_fail_pattern}"`
+    fi
+    fail_count=`echo "${fail_strings}" | sed '/^$/d' | wc -l`
+
+    if [[ ${fail_count} -ne 0 ]]
+    then
+        echo_log ""
+        echo_log "fail strings:"
+        echo_log ""
+        echo_log "${fail_strings}"
+        echo_log ""
+        echo_log "see full log ${TESTS_LOG_FILE} for details"
+        echo_log ""
         echo_log "TEST FAILED"
-        echo "see log ${tests_log} for details"
     else
         echo_log "TEST PASSED"
     fi
