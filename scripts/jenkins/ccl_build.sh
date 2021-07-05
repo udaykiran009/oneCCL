@@ -39,15 +39,16 @@ source ${WORKSPACE}/scripts/jenkins/fake_container.sh
 if [ $compiler == "ccl_build_gnu_4.8.5" ] 
 then
 (
-    export compiler="gnu" 
+    export compute_backend=
+    export compiler="gnu"
     run_in_fake_container /build/ccl/scripts/build.sh --conf --build-cpu $BUILD_OPTIONS
     CheckCommandExitCode $? "build with gnu_4.8.5 compiler failed"
     (cd ${WORKSPACE} && tar cfz ${ARTEFACT_DIR}/${BUILD_FOLDER}_$build_type.tgz build)
 )
-elif [ $compiler == "ccl_build_gnu_10.2.0_l0" ]
+elif [ $compiler == "ccl_build_gnu_10.2.0" ]
 then
 (
-    export compute_backend="level_zero" 
+    export compute_backend= 
     export compiler="gnu"
     # w/a for Ubuntu 20.4 and GCC 10.2
     export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LIBRARY_PATH
