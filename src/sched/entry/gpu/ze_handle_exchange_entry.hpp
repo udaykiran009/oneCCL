@@ -1,6 +1,8 @@
 #pragma once
 
-#if defined(MULTI_GPU_SUPPORT)
+#include "oneapi/ccl/config.h"
+
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
 
 #include <iostream>
 #include <limits>
@@ -34,8 +36,7 @@ public:
     ze_handle_exchange_entry(ccl_sched* sched,
                              ccl_comm* comm,
                              std::vector<void*> in_buffers,
-                             ze_context_handle_t context,
-                             std::vector<std::vector<ze_ipc_mem_handle_t>>& out_handles);
+                             ze_context_handle_t context);
 
     void start() override;
     void update() override;
@@ -59,8 +60,6 @@ protected:
                            context,
                            ", in_buffers size ",
                            in_buffers.size(),
-                           ", out_handles_ptr",
-                           out_handles_ptr,
                            ", handles size",
                            handles.size());
     }
@@ -75,7 +74,6 @@ private:
 
     std::vector<void*> in_buffers;
     ze_context_handle_t context;
-    std::vector<std::vector<ze_ipc_mem_handle_t>>* out_handles_ptr;
     std::vector<std::vector<ze_ipc_mem_handle_t>> handles;
 
     const int rank;

@@ -1,18 +1,15 @@
 #include "ze_handle_exchange_entry.hpp"
 
-#if defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
 
-ze_handle_exchange_entry::ze_handle_exchange_entry(
-    ccl_sched* sched,
-    ccl_comm* comm,
-    std::vector<void*> in_buffers,
-    ze_context_handle_t context,
-    std::vector<std::vector<ze_ipc_mem_handle_t>>& out_handles)
+ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
+                                                   ccl_comm* comm,
+                                                   std::vector<void*> in_buffers,
+                                                   ze_context_handle_t context)
         : sched_entry(sched),
           comm(comm),
           in_buffers(in_buffers),
           context(context),
-          out_handles_ptr(&out_handles),
           rank(comm->rank()),
           comm_size(comm->size()),
           start_buf_idx(0),
@@ -20,10 +17,6 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(
           is_connected(false),
           is_accepted(false) {
     poll_fds.reserve(max_pfds);
-
-    if (out_handles.empty()) {
-        CCL_THROW("out_handles vector is empty");
-    }
 
     handles.resize(comm_size);
 
@@ -136,9 +129,7 @@ void ze_handle_exchange_entry::update() {
         start_buf_idx++;
     }
 
-    if (out_handles_ptr != nullptr) {
-        *out_handles_ptr = handles;
-    }
+    sched->get_ccl_sched_memory().handle_manager.set(handles);
     status = ccl_sched_entry_status_complete;
     unlink_sockets();
     LOG_DEBUG("completed: ", name());

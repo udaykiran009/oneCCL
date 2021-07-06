@@ -71,6 +71,10 @@ public:
         return in_bin_status;
     }
 
+    ccl_sched_memory& get_ccl_sched_memory() {
+        return memory;
+    }
+
     /**
      * Reset runtime parameters and all entries
      */

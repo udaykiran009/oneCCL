@@ -7,6 +7,7 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "common/stream/stream.hpp"
 
@@ -27,21 +28,35 @@ public:
 
         device = sycl_device.template get_native<cl::sycl::backend::level_zero>();
         context = sycl_context.template get_native<cl::sycl::backend::level_zero>();
+        LOG_DEBUG("initialization of ze_handle_manager is completed");
     }
 
     void clear() {
+        int res = 0;
         ze_result_t ret = ZE_RESULT_SUCCESS;
-        for (size_t handle_idx = 0; handle_idx < opened_mem_handles.size(); handle_idx++) {
-            ret = zeMemCloseIpcHandle(context, opened_mem_handles[handle_idx]);
+        for (auto pair_idx : opened_mem_handles) {
+            int fd;
+            void* handle_ptr = pair_idx.first;
+            ze_ipc_mem_handle_t handle = pair_idx.second;
+
+            ret = zeMemCloseIpcHandle(context, handle_ptr);
             if (ret != ZE_RESULT_SUCCESS) {
-                CCL_FATAL("unable to close memory handle: ", ret, ", handle index:", handle_idx);
+                CCL_FATAL("unable to close memory handle: ", ret);
+            }
+
+            memcpy(&fd, handle.data, sizeof(fd));
+            res = close(fd);
+            if (res) {
+                CCL_FATAL("unable to close fd of a handle: ", res);
             }
         }
+        LOG_DEBUG("handles are cleared successfully");
     }
 
     void set(std::vector<std::vector<ze_ipc_mem_handle_t>>& handles_arg) {
         CCL_THROW_IF_NOT(!handles_arg.empty(), "handles argument is empty");
         handles = handles_arg;
+        LOG_DEBUG("handles are set successfully");
     }
 
     void get(const int rank, const size_t buf_idx, ccl_buffer& buf) {
@@ -60,7 +75,7 @@ public:
         }
         LOG_DEBUG("open memory: ", memory);
 
-        opened_mem_handles.push_back(memory);
+        opened_mem_handles.push_back(std::make_pair(memory, handle));
         buf.set(memory);
     }
 
@@ -68,6 +83,6 @@ private:
     ze_context_handle_t context;
     ze_device_handle_t device;
     std::vector<std::vector<ze_ipc_mem_handle_t>> handles;
-    std::vector<void*> opened_mem_handles;
+    std::vector<std::pair<void*, ze_ipc_mem_handle_t>> opened_mem_handles;
 };
 #endif /* CCL_ENABLE_SYCL and MULTI_GPU_SUPPORT */
