@@ -359,22 +359,38 @@ function run_compatibitily_tests()
 function run_horovod_tests()
 {
     pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
-    ./horovod.sh -install_tf 1 -tf_path "${SOFTWARE_DIR}/Tensorflow/latest" \
-                 -install_itex 1 -itex_path "${SOFTWARE_DIR}/ITEX/latest" \
+    ./horovod.sh -download_pt 1 -install_pt 1 \
+                 -download_ipex 1 -install_ipex 1 \
                  -download_hvd 1 -install_hvd 1 \
                  -download_conda 1 -create_conda 1 -remove_conda 1 \
                  -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
-
     log_status_fail=${PIPESTATUS[0]}
     popd
     if [ "$log_status_fail" -eq 0 ]
     then
         echo "Horovod testing ... OK"
-        exit 0
     else
         echo "Horovod testing ... NOK"
         exit 1
     fi
+
+    pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
+    ./horovod.sh -install_tf 1 -tf_path "${SOFTWARE_DIR}/Tensorflow/latest" \
+                 -install_itex 1 -itex_path "${SOFTWARE_DIR}/ITEX/latest" \
+                 -download_hvd 1 -install_hvd 1 \
+                 -download_conda 1 -create_conda 1 -remove_conda 1 \
+                 -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
+    log_status_fail=${PIPESTATUS[0]}
+    popd
+    if [ "$log_status_fail" -eq 0 ]
+    then
+        echo "Horovod testing ... OK"
+    else
+        echo "Horovod testing ... NOK"
+        exit 1
+    fi
+
+    exit 0
 }
 
 function set_modulefile_environment()

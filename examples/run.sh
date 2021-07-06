@@ -40,7 +40,7 @@ check_test()
     local test_file=$2
 
     passed_pattern="passed|# all done"
-    failed_pattern="abort|^bad$|fail|^fault$|invalid|kill|runtime_error|terminate|timed|unexpected"
+    failed_pattern="abort|^bad$|corrupt|fail|^fault$|invalid|kill|runtime_error|terminate|timed|unexpected"
     if [[ "${test_file}" != *"communicator"* ]] && [[ "${test_file}" != *"datatype"* ]];
     then
         failed_pattern="${failed_pattern}|error|exception"

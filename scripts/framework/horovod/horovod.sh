@@ -87,7 +87,8 @@ TF_NAME=`basename $TF_LINK`
 ITEX_NAME=`basename $ITEX_LINK`
 
 PT_LINK="http://10.165.58.120:8080/ipexgpu/latest/torch-1.7.0a0-cp37-cp37m-linux_x86_64.whl"
-IPEX_LINK="http://10.165.58.120:8080/ipexgpu/latest/torch_ipex-0.1+7d6e91e-cp37-cp37m-linux_x86_64.whl"
+IPEX_LINK="http://10.165.58.120:8080/ipexgpu/latest/ipex_nomkl/torch_ipex-0.1+de4f215-cp37-cp37m-linux_x86_64.whl"
+
 PT_NAME=`basename $PT_LINK`
 IPEX_NAME=`basename $IPEX_LINK`
 
@@ -399,11 +400,10 @@ parse_arguments() {
         DOWNLOAD_ITEX="1"
         INSTALL_ITEX="1"
 
-        # TODO: enable PT tests
-        # DOWNLOAD_PT="1"
-        # INSTALL_PT="1"
-        # DOWNLOAD_IPEX="1"
-        # INSTALL_IPEX="1"
+        DOWNLOAD_PT="1"
+        INSTALL_PT="1"
+        DOWNLOAD_IPEX="1"
+        INSTALL_IPEX="1"
 
         DOWNLOAD_HVD="1"
         INSTALL_HVD="1"
@@ -502,12 +502,15 @@ hvd_test() {
         CheckCommandExitCode $? "Basic Horovod/TF test failed"
         echo_log "============================= ****************** =================================="
 
-        echo_log "============================= Horovod/TF bench =================================="
-        cmd="mpiexec -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_tf_bench.py --xpu gpu"
-        echo_log ${cmd}
-        eval ${cmd}
-        CheckCommandExitCode $? "Basic Horovod/TF test failed"
-        echo_log "============================= ****************** =================================="
+        if [[ ${CCL_CONFIGURATION} = "" ]]
+        then
+            echo_log "============================= Horovod/TF bench =================================="
+            cmd="mpiexec -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_tf_bench.py --xpu gpu"
+            echo_log ${cmd}
+            eval ${cmd}
+            CheckCommandExitCode $? "Basic Horovod/TF test failed"
+            echo_log "============================= ****************** =================================="
+        fi
     fi
 
     if [[ ${INSTALL_PT} = "1" ]]
@@ -682,7 +685,7 @@ activate_conda() {
     fi
 
     source ${activate_script} ${CONDA_ENV_NAME}
-    conda install pip
+    https_proxy=${PROXY} conda install pip
 
     echo_log "PYTHON = $(which python)"
     echo_log "PIP = $(which pip)"
@@ -700,6 +703,11 @@ remove_conda() {
     fi
 
     conda env remove -y --name ${CONDA_ENV_NAME}
+
+    if [ -d "${CONDA_INSTALL_DIR}" ]
+    then
+        rm -rf ${CONDA_INSTALL_DIR}
+    fi
 }
 
 download_fw() {
@@ -763,8 +771,8 @@ install_fw() {
 
     if [[ ${INSTALL_PT} = "1" ]]
     then
-        echo_log "\n=== uninstall PT ===\n"
-        pip uninstall torch
+        echo_log "\n=== install pybind11 ===\n"
+        pip install pybind11
 
         echo_log "\n=== install PT ===\n"
         if [[ -f ${PT_PATH} ]]
