@@ -48,19 +48,19 @@ protected:
     void dump_detail(std::stringstream& str) const override {
         ccl_logger::format(str,
                            "rank ",
-                           my_rank,
+                           rank,
                            ", comm_size ",
                            comm_size,
                            "right_peer_socket_name ",
-                           right_peer_socket_name.c_str(),
+                           right_peer_socket_name,
                            ", left_peer_socket_name ",
-                           left_peer_socket_name.c_str(),
+                           left_peer_socket_name,
                            ", context ",
-                           &context,
+                           context,
                            ", in_buffers size ",
                            in_buffers.size(),
                            ", out_handles_ptr",
-                           &out_handles_ptr,
+                           out_handles_ptr,
                            ", handles size",
                            handles.size());
     }
@@ -71,15 +71,15 @@ private:
     static const int timeout_ms = 1;
     static const size_t max_pfds = 1;
 
-    ccl_comm* comm;
+    const ccl_comm* comm;
 
     std::vector<void*> in_buffers;
     ze_context_handle_t context;
     std::vector<std::vector<ze_ipc_mem_handle_t>>* out_handles_ptr;
     std::vector<std::vector<ze_ipc_mem_handle_t>> handles;
 
-    int my_rank;
-    int comm_size;
+    const int rank;
+    const int comm_size;
 
     int start_buf_idx;
     int start_peer_idx;
@@ -102,23 +102,23 @@ private:
     int get_fd_from_handle(const ze_ipc_mem_handle_t* handle, int* fd);
     int get_handle_from_fd(int* fd, ze_ipc_mem_handle_t* handle);
 
-    int create_server_socket(const std::string socket_name,
+    int create_server_socket(const std::string& socket_name,
                              struct sockaddr_un* socket_addr,
                              int* addr_len,
-                             const int comm_size);
-    int create_client_socket(const std::string left_peer_socket_name,
+                             int comm_size);
+    int create_client_socket(const std::string& left_peer_socket_name,
                              struct sockaddr_un* sockaddr_cli,
                              int* len);
 
     int accept_call(int connect_socket,
                     struct sockaddr_un* socket_addr,
                     int* addr_len,
-                    const std::string socket_name,
+                    const std::string& socket_name,
                     int& sock);
     int connect_call(int sock,
                      struct sockaddr_un* socket_addr,
                      int addr_len,
-                     const std::string socket_name);
+                     const std::string& socket_name);
 
     int sendmsg_fd(int sock, int fd);
     int recvmsg_fd(int sock, int* fd);
@@ -126,7 +126,7 @@ private:
     void sendmsg_call(int sock, int fd);
     void recvmsg_call(int sock, int* fd);
 
-    int get_handle(ze_context_handle_t context, ze_ipc_mem_handle_t* handle, void* buffer);
+    int get_handle(ze_context_handle_t context, const void* buffer, ze_ipc_mem_handle_t* handle);
 
     void unlink_sockets();
     void close_sockets();
