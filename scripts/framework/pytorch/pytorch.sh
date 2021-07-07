@@ -27,6 +27,7 @@ set_run_env() {
 
     # UCX
     export UCX_LOG_LEVEL=INFO
+    export UCX_TLS=tcp,shm,self
 
     # CCL
     export CCL_LOG_LEVEL=INFO
@@ -41,7 +42,7 @@ set_run_env() {
     export I_MPI_DEBUG=12
 
     # OFI
-    export FI_LOG_LEVEL=INFO
+    #export FI_LOG_LEVEL=INFO
     export FI_PROVIDER=psm3
     export PSM3_MULTI_EP=1 # to handle case when MPI initializes PSM3 before CCL
     export PSM3_RDMA=2 # enables user space RC QP RDMA
