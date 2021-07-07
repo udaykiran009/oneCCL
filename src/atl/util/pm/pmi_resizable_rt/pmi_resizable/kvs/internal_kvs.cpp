@@ -294,16 +294,13 @@ size_t internal_kvs::init_main_server_by_k8s() {
     char port_str[MAX_KVS_VAL_LENGTH];
     request_k8s_kvs_init();
 
-    SET_STR(port_str, INT_STR_SIZE, "%d", local_server_address.sin_port);
+    SET_STR(port_str, INT_STR_SIZE, "%d", local_server_address->get_sin_port());
 
     request_k8s_kvs_get_master(local_host_ip, main_host_ip, port_str);
 
     main_port = safe_strtol(port_str, nullptr, 10);
-    main_server_address.sin_port = main_port;
-    if (inet_pton(AF_INET, main_host_ip, &(main_server_address.sin_addr)) <= 0) {
-        LOG_ERROR("invalid address/ address not supported: ", main_host_ip);
-        return 1;
-    }
+    main_server_address->set_sin_port(main_port);
+    main_server_address->set_sin_addr(main_host_ip);
     return 0;
 }
 
@@ -330,32 +327,26 @@ size_t internal_kvs::init_main_server_by_env() {
     port++;
 
     main_port = safe_strtol(port, nullptr, 10);
-    main_server_address.sin_port = main_port;
-
-    if (inet_pton(AF_INET, main_host_ip, &(main_server_address.sin_addr)) <= 0) {
-        LOG_ERROR("ivalid address / address not supported: ", main_host_ip);
-        return 1;
-    }
+    main_server_address->set_sin_port(main_port);
+    main_server_address->set_sin_addr(main_host_ip);
     return 0;
 }
 
 size_t internal_kvs::init_main_server_by_string(const char* main_addr) {
     char* port = nullptr;
-    local_server_address.sin_family = AF_INET;
-    local_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
-    local_server_address.sin_port = default_start_port;
+    local_server_address->set_sin_addr(local_host_ip);
 
-    main_server_address.sin_family = AF_INET;
-
-    if ((server_listen_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((server_listen_sock = socket(address_family, SOCK_STREAM, 0)) < 0) {
         LOG_ERROR("init_main_server_by_string: server_listen_sock init");
         exit(EXIT_FAILURE);
     }
 
+    size_t sin_port = local_server_address->get_sin_port();
     while (bind(server_listen_sock,
-                (const struct sockaddr*)&local_server_address,
-                sizeof(local_server_address)) < 0) {
-        local_server_address.sin_port++;
+                local_server_address->get_sock_addr_ptr(),
+                local_server_address->size()) < 0) {
+        sin_port++;
+        local_server_address->set_sin_port(sin_port);
     }
 
     memset(main_host_ip, 0, CCL_IP_LEN);
@@ -372,14 +363,8 @@ size_t internal_kvs::init_main_server_by_string(const char* main_addr) {
     port++;
 
     main_port = safe_strtol(port, nullptr, 10);
-    main_server_address.sin_port = main_port;
-
-    if (inet_pton(AF_INET, main_host_ip, &(main_server_address.sin_addr)) <= 0) {
-        LOG_ERROR("init_main_server_by_string: invalid address / address not supported: ",
-                  main_host_ip);
-        LOG_ERROR("init_main_server_by_string: inet_pton");
-        return 1;
-    }
+    main_server_address->set_sin_port(main_port);
+    main_server_address->set_sin_addr(main_host_ip);
     return 0;
 }
 
@@ -394,6 +379,7 @@ int internal_kvs::fill_local_host_ip() {
 
     const char iface_name[] = "lo";
     local_host_ips.clear();
+    local_host_ipv6s.clear();
 
     for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
         if (ifa->ifa_addr == NULL)
@@ -417,6 +403,8 @@ int internal_kvs::fill_local_host_ip() {
                     return -1;
                 }
                 local_host_ips.push_back(local_ip);
+                if (family == AF_INET6)
+                    local_host_ipv6s.push_back(local_ip);
             }
         }
     }
@@ -426,7 +414,27 @@ int internal_kvs::fill_local_host_ip() {
     }
 
     memset(local_host_ip, 0, CCL_IP_LEN);
-    kvs_str_copy(local_host_ip, local_host_ips.front().c_str(), CCL_IP_LEN);
+
+    char* kvs_prefer_ipv6 = std::getenv(CCL_KVS_PREFER_IPV6_ENV.c_str());
+    size_t is_kvs_prefer_ipv6 = kvs_prefer_ipv6 ? safe_strtol(kvs_prefer_ipv6, nullptr, 10) : 0;
+
+    kvs_str_copy(local_host_ip,
+                 (is_kvs_prefer_ipv6 && !local_host_ipv6s.empty())
+                     ? local_host_ipv6s.front().c_str()
+                     : local_host_ips.front().c_str(),
+                 CCL_IP_LEN);
+    address_family = (is_kvs_prefer_ipv6 && !local_host_ipv6s.empty()) ? AF_INET6 : AF_INET;
+    if (address_family == AF_INET) {
+        if (is_kvs_prefer_ipv6) {
+            LOG_WARN("ipv6 addresses are not found, fallback to ipv4");
+        }
+        main_server_address = std::shared_ptr<isockaddr>(new sockaddr_v4());
+        local_server_address = std::shared_ptr<isockaddr>(new sockaddr_v4());
+    }
+    else {
+        main_server_address = std::shared_ptr<isockaddr>(new sockaddr_v6());
+        local_server_address = std::shared_ptr<isockaddr>(new sockaddr_v6());
+    }
 
     freeifaddrs(ifaddr);
     return 0;
@@ -441,30 +449,29 @@ size_t internal_kvs::kvs_main_server_address_reserve(char* main_address) {
         exit(EXIT_FAILURE);
     }
 
-    if ((server_listen_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((server_listen_sock = socket(address_family, SOCK_STREAM, 0)) < 0) {
         LOG_ERROR("reserve_main_address: server_listen_sock init");
         exit(EXIT_FAILURE);
     }
 
-    main_server_address.sin_family = AF_INET;
-    main_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
-    main_server_address.sin_port = default_start_port;
-    local_server_address.sin_family = AF_INET;
-    local_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
+    main_server_address->set_sin_addr(local_host_ip);
+    local_server_address->set_sin_addr(local_host_ip);
+    size_t sin_port = main_server_address->get_sin_port();
 
     while (bind(server_listen_sock,
-                (const struct sockaddr*)&main_server_address,
-                sizeof(main_server_address)) < 0) {
-        main_server_address.sin_port++;
+                main_server_address->get_sock_addr_ptr(),
+                main_server_address->size()) < 0) {
+        sin_port++;
+        main_server_address->set_sin_port(sin_port);
     }
-    local_server_address.sin_port = main_server_address.sin_port;
+    local_server_address->set_sin_port(main_server_address->get_sin_port());
 
     memset(main_address, '\0', CCL_IP_LEN);
     snprintf(main_address, CCL_IP_LEN, "%s", local_host_ip);
     snprintf(main_address + strlen(local_host_ip),
              INT_STR_SIZE + 1,
              "_%d",
-             main_server_address.sin_port);
+             main_server_address->get_sin_port());
 
     return 0;
 }
@@ -472,10 +479,11 @@ size_t internal_kvs::kvs_main_server_address_reserve(char* main_address) {
 size_t internal_kvs::init_main_server_address(const char* main_addr) {
     char* ip_getting_type = std::getenv(CCL_KVS_IP_EXCHANGE_ENV.c_str());
 
-    memset(local_host_ip, 0, CCL_IP_LEN);
-    if (fill_local_host_ip() < 0) {
-        LOG_ERROR("init_main_server_address: failed to get local host IP");
-        exit(EXIT_FAILURE);
+    if (local_host_ips.empty()) {
+        if (fill_local_host_ip() < 0) {
+            LOG_ERROR("init_main_server_address: failed to get local host ip");
+            exit(EXIT_FAILURE);
+        }
     }
 
     if (ip_getting_type) {
@@ -503,13 +511,9 @@ size_t internal_kvs::init_main_server_address(const char* main_addr) {
         ip_getting_mode = IGT_ENV;
     }
 
-    local_server_address.sin_family = AF_INET;
-    local_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
-    local_server_address.sin_port = default_start_port;
+    local_server_address->set_sin_addr(local_host_ip);
 
-    main_server_address.sin_family = AF_INET;
-
-    if ((server_listen_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((server_listen_sock = socket(address_family, SOCK_STREAM, 0)) < 0) {
         ;
         LOG_ERROR("init_main_server_address: server_listen_sock init");
         exit(EXIT_FAILURE);
@@ -517,13 +521,15 @@ size_t internal_kvs::init_main_server_address(const char* main_addr) {
 
     switch (ip_getting_mode) {
         case IGT_K8S: {
+            size_t sin_port = local_server_address->get_sin_port();
             while (bind(server_listen_sock,
-                        (const struct sockaddr*)&local_server_address,
-                        sizeof(local_server_address)) < 0) {
-                local_server_address.sin_port++;
+                        local_server_address->get_sock_addr_ptr(),
+                        local_server_address->size()) < 0) {
+                sin_port++;
+                local_server_address->set_sin_port(sin_port);
             }
 
-            local_port = local_server_address.sin_port;
+            local_port = local_server_address->get_sin_port();
             return init_main_server_by_k8s();
         }
         case IGT_ENV: {
@@ -543,32 +549,34 @@ size_t internal_kvs::init_main_server_address(const char* main_addr) {
                     is_master_node = 1;
                     memset(local_host_ip, 0, CCL_IP_LEN);
                     kvs_str_copy_known_sizes(local_host_ip, main_host_ip, CCL_IP_LEN);
-                    local_server_address.sin_addr.s_addr = inet_addr(local_host_ip);
+                    local_server_address->set_sin_addr(local_host_ip);
                 }
             }
             if (is_master_node) {
                 if (bind(server_listen_sock,
-                         (const struct sockaddr*)&main_server_address,
-                         sizeof(main_server_address)) < 0) {
-                    printf("port [%d] is busy\n", main_server_address.sin_port);
+                         main_server_address->get_sock_addr_ptr(),
+                         main_server_address->size()) < 0) {
+                    LOG_INFO("port [", main_server_address->get_sin_port(), "] is busy");
+                    local_port = local_server_address->get_sin_port();
                     while (bind(server_listen_sock,
-                                (const struct sockaddr*)&local_server_address,
-                                sizeof(local_server_address)) < 0) {
-                        local_server_address.sin_port++;
+                                local_server_address->get_sock_addr_ptr(),
+                                local_server_address->size()) < 0) {
+                        local_port++;
+                        local_server_address->set_sin_port(local_port);
                     }
-                    local_port = local_server_address.sin_port;
                 }
                 else {
-                    local_port = main_server_address.sin_port;
+                    local_port = main_server_address->get_sin_port();
                 }
             }
             else {
+                local_port = local_server_address->get_sin_port();
                 while (bind(server_listen_sock,
-                            (const struct sockaddr*)&local_server_address,
-                            sizeof(local_server_address)) < 0) {
-                    local_server_address.sin_port++;
+                            local_server_address->get_sock_addr_ptr(),
+                            local_server_address->size()) < 0) {
+                    local_port++;
+                    local_server_address->set_sin_port(local_port);
                 }
-                local_port = local_server_address.sin_port;
             }
 
             return res;
@@ -583,24 +591,10 @@ size_t internal_kvs::init_main_server_address(const char* main_addr) {
 size_t internal_kvs::kvs_init(const char* main_addr) {
     int err;
     socklen_t len = 0;
-    struct sockaddr_in addr;
+    std::shared_ptr<isockaddr> addr;
+
     time_t start_time;
     time_t connection_time = 0;
-    memset(&addr, 0, sizeof(struct sockaddr_in));
-
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    addr.sin_port = default_start_port;
-
-    if ((client_op_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        LOG_ERROR("kvs_init: client_op_sock init");
-        return 1;
-    }
-
-    if ((server_control_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        LOG_ERROR("kvs_init: server_control_sock init");
-        return 1;
-    }
 
     if (init_main_server_address(main_addr)) {
         LOG_ERROR("kvs_init: init main server address error");
@@ -611,8 +605,29 @@ size_t internal_kvs::kvs_init(const char* main_addr) {
         return 1;
     }
 
-    while (bind(server_control_sock, (const struct sockaddr*)&addr, sizeof(addr)) < 0) {
-        addr.sin_port++;
+    if (address_family == AF_INET) {
+        addr = std::shared_ptr<isockaddr>(new sockaddr_v4());
+        addr->set_sin_addr("127.0.0.1");
+    }
+    else {
+        addr = std::shared_ptr<isockaddr>(new sockaddr_v6());
+        addr->set_sin_addr("::1");
+    }
+
+    if ((client_op_sock = socket(address_family, SOCK_STREAM, 0)) < 0) {
+        LOG_ERROR("kvs_init: client_op_sock init");
+        return 1;
+    }
+
+    if ((server_control_sock = socket(address_family, SOCK_STREAM, 0)) < 0) {
+        LOG_ERROR("kvs_init: server_control_sock init");
+        return 1;
+    }
+
+    size_t sin_port = addr->get_sin_port();
+    while (bind(server_control_sock, addr->get_sock_addr_ptr(), addr->size()) < 0) {
+        sin_port++;
+        addr->set_sin_port(sin_port);
     }
 
     if (listen(server_control_sock, 1) < 0) {
@@ -620,9 +635,9 @@ size_t internal_kvs::kvs_init(const char* main_addr) {
         exit(EXIT_FAILURE);
     }
 
-    getsockname(server_control_sock, (struct sockaddr*)&addr, &len);
+    getsockname(server_control_sock, addr->get_sock_addr_ptr(), &len);
     server_args args;
-    args.args = &addr;
+    args.args = addr;
     args.sock_listener = server_listen_sock;
     err = pthread_create(&kvs_thread, nullptr, kvs_server_init, &args);
     if (err) {
@@ -639,7 +654,7 @@ size_t internal_kvs::kvs_init(const char* main_addr) {
     start_time = time(nullptr);
     do {
         err = connect(
-            client_op_sock, (struct sockaddr*)&main_server_address, sizeof(main_server_address));
+            client_op_sock, main_server_address->get_sock_addr_ptr(), main_server_address->size());
         connection_time = time(nullptr) - start_time;
     } while ((err < 0) && (connection_time < CONNECTION_TIMEOUT));
 
@@ -703,7 +718,22 @@ size_t internal_kvs::kvs_finalize(void) {
 
     return 0;
 }
+
 internal_kvs::~internal_kvs() {
     if (is_inited)
         kvs_finalize();
+}
+
+void sockaddr_v4::set_sin_addr(const char* src) {
+    if (inet_pton(addr.sin_family, src, &(addr.sin_addr)) <= 0) {
+        LOG_ERROR("invalid address/address not supported: ", src);
+        exit(1);
+    }
+}
+
+void sockaddr_v6::set_sin_addr(const char* src) {
+    if (inet_pton(addr.sin6_family, src, &(addr.sin6_addr)) <= 0) {
+        LOG_ERROR("invalid address/address not supported: ", src);
+        exit(1);
+    }
 }

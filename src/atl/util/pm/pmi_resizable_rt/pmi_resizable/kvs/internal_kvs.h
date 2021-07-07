@@ -4,8 +4,24 @@
 #include <list>
 #include <mutex>
 #include <netinet/ip.h>
+#include <memory>
 
 #include "ikvs_wrapper.h"
+
+class isockaddr {
+public:
+    virtual in_port_t get_sin_port() = 0;
+    virtual void set_sin_port(in_port_t) = 0;
+    virtual const void* get_sin_addr_ptr() = 0;
+    virtual void set_sin_addr(const char*) = 0;
+    virtual struct sockaddr* get_sock_addr_ptr() = 0;
+    virtual sa_family_t sin_family() = 0;
+    virtual size_t size() = 0;
+    virtual ~isockaddr() = default;
+
+protected:
+    const size_t default_start_port = 4096;
+};
 
 class internal_kvs final : public ikvs_wrapper {
 public:
@@ -58,6 +74,7 @@ private:
 
     char main_host_ip[CCL_IP_LEN];
     std::list<std::string> local_host_ips;
+    std::list<std::string> local_host_ipv6s;
     char local_host_ip[CCL_IP_LEN];
 
     size_t main_port;
@@ -65,8 +82,8 @@ private:
     size_t is_master = 0;
     std::mutex client_memory_mutex;
 
-    struct sockaddr_in main_server_address;
-    struct sockaddr_in local_server_address;
+    std::shared_ptr<isockaddr> main_server_address;
+    std::shared_ptr<isockaddr> local_server_address;
 
     int client_op_sock; /* used on client side to send commands and to recv result to/from server */
 
@@ -82,11 +99,79 @@ private:
 
     const std::string CCL_KVS_IP_PORT_ENV = "CCL_KVS_IP_PORT";
     const std::string CCL_KVS_IP_EXCHANGE_ENV = "CCL_KVS_IP_EXCHANGE";
+    const std::string CCL_KVS_PREFER_IPV6_ENV = "CCL_KVS_PREFER_IPV6";
+
     const std::string CCL_KVS_IP_EXCHANGE_VAL_ENV = "env";
     const std::string CCL_KVS_IP_EXCHANGE_VAL_K8S = "k8s";
 
     const int CONNECTION_TIMEOUT = 120;
     int server_listen_sock; /* used on server side to handle new incoming connect requests from clients */
     std::string server_address{};
-    const size_t default_start_port = 4096;
+
+    sa_family_t address_family{ AF_UNSPEC };
+};
+
+class sockaddr_v4 : public isockaddr {
+public:
+    sockaddr_v4() {
+        memset(&addr, 0, sizeof(sockaddr_in));
+        addr.sin_addr.s_addr = INADDR_ANY;
+        addr.sin_family = AF_INET;
+        addr.sin_port = default_start_port;
+    }
+    in_port_t get_sin_port() override {
+        return addr.sin_port;
+    }
+    void set_sin_port(in_port_t sin_port) override {
+        addr.sin_port = sin_port;
+    }
+    struct sockaddr* get_sock_addr_ptr() override {
+        return (struct sockaddr*)&addr;
+    }
+    const void* get_sin_addr_ptr() override {
+        return &(addr.sin_addr);
+    }
+    void set_sin_addr(const char* src) override;
+    sa_family_t sin_family() override {
+        return addr.sin_family;
+    }
+    size_t size() override {
+        return sizeof(addr);
+    }
+    ~sockaddr_v4() override = default;
+
+private:
+    struct sockaddr_in addr;
+};
+class sockaddr_v6 : public isockaddr {
+public:
+    sockaddr_v6() {
+        memset(&addr, 0, sizeof(sockaddr_in6));
+        addr.sin6_addr = in6addr_any;
+        addr.sin6_family = AF_INET6;
+        addr.sin6_port = default_start_port;
+    }
+    in_port_t get_sin_port() override {
+        return addr.sin6_port;
+    }
+    void set_sin_port(in_port_t sin_port) override {
+        addr.sin6_port = sin_port;
+    }
+    const void* get_sin_addr_ptr() override {
+        return &(addr.sin6_addr);
+    }
+    void set_sin_addr(const char* src) override;
+    struct sockaddr* get_sock_addr_ptr() override {
+        return (struct sockaddr*)&addr;
+    }
+    sa_family_t sin_family() override {
+        return addr.sin6_family;
+    }
+    size_t size() override {
+        return sizeof(addr);
+    }
+    ~sockaddr_v6() override = default;
+
+private:
+    struct sockaddr_in6 addr;
 };
