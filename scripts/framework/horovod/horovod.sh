@@ -87,7 +87,7 @@ TF_NAME=`basename $TF_LINK`
 ITEX_NAME=`basename $ITEX_LINK`
 
 PT_LINK="http://10.165.58.120:8080/ipexgpu/latest/torch-1.7.0a0-cp37-cp37m-linux_x86_64.whl"
-IPEX_LINK="http://10.165.58.120:8080/ipexgpu/latest/ipex_nomkl/torch_ipex-0.1+de4f215-cp37-cp37m-linux_x86_64.whl"
+IPEX_LINK="http://10.165.58.120:8080/whls_063021_dpcpp060321/torch_ipex-0.1+3f77413-cp37-cp37m-linux_x86_64.whl"
 
 PT_NAME=`basename $PT_LINK`
 IPEX_NAME=`basename $IPEX_LINK`
