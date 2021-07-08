@@ -51,7 +51,7 @@ set_run_env() {
     export LD_LIBRARY_PATH=${OFI_INSTALL_DIR}/lib:${OFI_INSTALL_DIR}/lib64:${LD_LIBRARY_PATH}
 }
 
-PSM3_LINK="https://github.com/otcshare/psm3.git"
+PSM3_BASE_LINK="github.com/otcshare/psm3.git"
 PSM3_BRANCH="v11.1.0.0.84"
 
 OFI_LINK="https://github.com/ofiwg/libfabric.git"
@@ -63,7 +63,7 @@ CCL_BRANCH="main"
 UCX_LINK="https://github.com/openucx/ucx.git"
 UCX_BRANCH="master"
 
-UCC_LINK="https://github.com/otcshare/ucc.git"
+UCC_BASE_LINK="github.com/otcshare/ucc.git"
 UCC_BRANCH="ccl-master"
 
 CONDA_LINK="https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux-x86_64.sh"
@@ -100,6 +100,8 @@ DEFAULT_INSTALL_TORCH_UCC="0"
 
 DEFAULT_RUN_TESTS="0"
 
+DEFAULT_PATH_TO_TOKEN_FILE_1S=""
+DEFAULT_USERNAME_1S=""
 DEFAULT_PROXY=""
 
 check_exit_code() {
@@ -151,6 +153,10 @@ print_help() {
     echo_log "      Install torch-ucc"
     echo_log "  -run_tests <bool_flag>"
     echo_log "      Run UCC, torch-ucc and PARAM tests on 2 ranks"
+    echo_log "  -token <path>"
+    echo_log "      Path to file with github credentials"
+    echo_log "  -username <name>"
+    echo_log "      Github username with access to Horovod repo"
     echo_log "  -proxy <url>"
     echo_log "      https proxy"
     echo_log ""
@@ -184,6 +190,8 @@ parse_arguments() {
 
     RUN_TESTS=${DEFAULT_RUN_TESTS}
 
+    PATH_TO_TOKEN_FILE_1S=${DEFAULT_PATH_TO_TOKEN_FILE_1S}
+    USERNAME_1S=${DEFAULT_USERNAME_1S}
     PROXY=${DEFAULT_PROXY}
 
     while [ $# -ne 0 ]
@@ -255,6 +263,14 @@ parse_arguments() {
                 ;;
             "-run_tests")
                 RUN_TESTS=${2}
+                shift
+                ;;
+            "-token")
+                PATH_TO_TOKEN_FILE_1S=${2}
+                shift
+                ;;
+            "-username")
+                USERNAME_1S="${2}@"
                 shift
                 ;;
             "-proxy")
@@ -374,14 +390,15 @@ download_ofi() {
     then
         rm -rf ${PSM3_SRC_DIR}
     fi
-    https_proxy="" git clone --branch ${PSM3_BRANCH} --single-branch ${PSM3_LINK} ${PSM3_SRC_DIR}
+    GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S} git clone --branch ${PSM3_BRANCH} --single-branch \
+        https://${USERNAME_1S}${PSM3_BASE_LINK} ${PSM3_SRC_DIR}
     check_exit_code $? "Download PSM3 failed"
 
     if [[ -d ${OFI_SRC_DIR} ]]
     then
         rm -rf ${OFI_SRC_DIR}
     fi
-    https_proxy="" git clone --branch ${OFI_BRANCH} --single-branch ${OFI_LINK} ${OFI_SRC_DIR}
+    git clone --branch ${OFI_BRANCH} --single-branch ${OFI_LINK} ${OFI_SRC_DIR}
     check_exit_code $? "Download OFI failed"
 }
 
@@ -435,7 +452,7 @@ download_ccl() {
     fi
 
     cd ${SCRIPT_WORK_DIR}
-    https_proxy="" git clone --branch ${CCL_BRANCH} --single-branch ${CCL_LINK} ${CCL_SRC_DIR}
+    git clone --branch ${CCL_BRANCH} --single-branch ${CCL_LINK} ${CCL_SRC_DIR}
     check_exit_code $? "Download CCL failed"
 }
 
@@ -479,14 +496,15 @@ download_ucc() {
     then
         rm -rf ${UCX_SRC_DIR}
     fi
-    https_proxy="" git clone --branch ${UCX_BRANCH} --single-branch ${UCX_LINK} ${UCX_SRC_DIR}
+    git clone --branch ${UCX_BRANCH} --single-branch ${UCX_LINK} ${UCX_SRC_DIR}
     check_exit_code $? "Download UCX failed"
 
     if [[ -d ${UCC_SRC_DIR} ]]
     then
         rm -rf ${UCC_SRC_DIR}
     fi
-    https_proxy="" git clone --branch ${UCC_BRANCH} --single-branch ${UCC_LINK} ${UCC_SRC_DIR}
+    GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S} git clone --branch ${UCC_BRANCH} --single-branch \
+        https://${USERNAME_1S}${UCC_BASE_LINK} ${UCC_SRC_DIR}
     check_exit_code $? "Download UCC failed"
 }
 
@@ -610,6 +628,7 @@ activate_conda() {
 
     source ${activate_script} ${CONDA_ENV_NAME}
     https_proxy=${PROXY} conda install -y pip
+    conda config --set offline false
     check_exit_code $? "Install pip failed"
 
     echo_log "PYTHON = $(which python)"
@@ -666,7 +685,7 @@ download_torch_ucc() {
     then
         rm -rf ${TORCH_UCC_SRC_DIR}
     fi
-    https_proxy="" git clone --branch ${TORCH_UCC_BRANCH} --single-branch ${TORCH_UCC_LINK} ${TORCH_UCC_SRC_DIR}
+    git clone --branch ${TORCH_UCC_BRANCH} --single-branch ${TORCH_UCC_LINK} ${TORCH_UCC_SRC_DIR}
     check_exit_code $? "Download torch-ucc failed"
 }
 
@@ -731,7 +750,7 @@ run_tests() {
     then
         rm -rf ${PARAM_SRC_DIR}
     fi
-    cmd="https_proxy=\"\" git clone --branch ${PARAM_BRANCH} --single-branch ${PARAM_LINK} ${PARAM_SRC_DIR}"
+    cmd="git clone --branch ${PARAM_BRANCH} --single-branch ${PARAM_LINK} ${PARAM_SRC_DIR}"
     echo_log "exec cmd: $cmd"
     eval ${cmd}
     check_exit_code $? "Download PARAM failed"
@@ -780,6 +799,7 @@ run_tests() {
         echo_log "see full log ${TESTS_LOG_FILE} for details"
         echo_log ""
         echo_log "TEST FAILED"
+        check_exit_code ${fail_count} "TEST FAILED"
     else
         echo_log "TEST PASSED"
     fi

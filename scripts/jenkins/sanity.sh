@@ -23,6 +23,7 @@ CCL_ONEAPI_DIR="/p/pdsd/scratch/Uploads/CCL_oneAPI/"
 ONEAPI_DIR="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/oneAPI/"
 SOFTWARE_DIR="/nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Software/"
 HOSTNAME=`hostname -s`
+US_PROXY="http://proxy-us.intel.com:912"
 
 echo "SCRIPT_DIR = $SCRIPT_DIR"
 echo "CURRENT_WORK_DIR = $CURRENT_WORK_DIR"
@@ -387,6 +388,24 @@ function run_horovod_tests()
         echo "Horovod testing ... OK"
     else
         echo "Horovod testing ... NOK"
+        exit 1
+    fi
+
+    exit 0
+}
+
+function run_pytorch_tests()
+{
+    pushd ${CURRENT_WORK_DIR}/scripts/framework/pytorch/
+    ./pytorch.sh -full 1 -proxy ${US_PROXY} -remove_conda 1\
+                 -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
+    log_status_fail=${PIPESTATUS[0]}
+    popd
+    if [ "$log_status_fail" -eq 0 ]
+    then
+        echo "PyTorch testing ... OK"
+    else
+        echo "PyTorch testing ... NOK"
         exit 1
     fi
 
@@ -778,6 +797,10 @@ else
             ;;
         "-horovod_tests" )
             run_horovod_tests
+            shift
+            ;;
+        "-pytorch_tests" )
+            run_pytorch_tests
             shift
             ;;
         "-modulefile_tests" )
