@@ -155,6 +155,7 @@ ccl::status ccl_coll_build_allreduce(ccl_sched* sched,
                                      const ccl_datatype& dtype,
                                      ccl::reduction reduction,
                                      ccl_comm* comm) {
+    CCL_ASSERT(sched != nullptr && comm != nullptr);
     ccl::status status = ccl::status::success;
 
     ccl_selector_param param;
@@ -162,6 +163,7 @@ ccl::status ccl_coll_build_allreduce(ccl_sched* sched,
     param.count = count;
     param.dtype = dtype;
     param.comm = comm;
+    param.stream = sched->coll_param.stream;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_allreduce>(param);
 
@@ -205,6 +207,12 @@ ccl::status ccl_coll_build_allreduce(ccl_sched* sched,
             CCL_CALL(comm->allreduce_2d_builder->build(
                 sched, send_buf, recv_buf, count, dtype, reduction));
             break;
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+        case ccl_coll_allreduce_gpu:
+            CCL_CALL(ccl_coll_build_gpu_allreduce(
+                sched, send_buf, recv_buf, count, dtype, reduction, comm));
+            break;
+#endif /* CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT */
         default:
             CCL_FATAL("unexpected allreduce_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl::status::invalid_arguments;

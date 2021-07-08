@@ -27,10 +27,6 @@ list (APPEND EXTENSIONS_SRC
                     native_device_api/l0/primitives.cpp
                     native_device_api/interop_utils.cpp
 
-                    sched/gpu_sched.cpp
-                    sched/gpu_concurrent_sched.cpp
-                    sched/entry/gpu/ze_handle_exchange_entry.cpp
-
                     common/event/impls/gpu_event.cpp
 
                     common/comm/l0/comm_context.cpp
@@ -75,8 +71,19 @@ list (APPEND EXTENSIONS_SRC
                     common/comm/l0/gpu_comm_attr.cpp
                     common/comm/l0/modules/base_entry_module.cpp
                     common/comm/l0/modules/modules_source_data.cpp
-                    common/comm/l0/modules/kernel_utils.cpp)
+                    common/comm/l0/modules/kernel_utils.cpp
+
+                    sched/gpu_sched.cpp
+                    sched/gpu_concurrent_sched.cpp
+                    sched/entry/gpu/ze_primitives.cpp)
 endif(MULTI_GPU_SUPPORT)
+
+if (CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)
+    list (APPEND EXTENSIONS_SRC
+                    sched/entry/gpu/ze_allreduce_entry.cpp
+                    sched/entry/gpu/ze_handle_exchange_entry.cpp
+        )
+endif(CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)
 
 set(CCL_SRC
     ccl_cpp_communicator.cpp

@@ -27,6 +27,7 @@ enum ccl_coll_allreduce_algo {
     ccl_coll_allreduce_double_tree,
     ccl_coll_allreduce_recursive_doubling,
     ccl_coll_allreduce_2d,
+    ccl_coll_allreduce_gpu,
 
     ccl_coll_allreduce_last_value
 };

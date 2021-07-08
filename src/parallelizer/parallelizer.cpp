@@ -71,10 +71,25 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
     process_base(sched);
 
 #ifdef CCL_ENABLE_SYCL
-    ccl_coll_param& param = sched->coll_param;
-    if (param.stream && param.stream->is_sycl_device_stream() &&
-        (!param.device_send_bufs.empty() || !param.device_recv_bufs.empty())) {
-        process_pre_post_copies(sched);
+    // TODO: WA skip sycl copy entry for allreduce gpu algo
+    ccl::global_data& data = ccl::global_data::get();
+    ccl_selector_param selector_param;
+    selector_param.ctype = sched->coll_param.ctype;
+    selector_param.count = sched->coll_param.get_send_count();
+    selector_param.dtype = sched->coll_param.dtype;
+    selector_param.comm = sched->coll_param.comm;
+    selector_param.stream = sched->coll_param.stream;
+
+    ccl_coll_allreduce_algo allreduce_algo = ccl_coll_allreduce_last_value;
+    if (selector_param.ctype == ccl_coll_allreduce)
+        allreduce_algo = data.algorithm_selector->get<ccl_coll_allreduce>(selector_param);
+
+    if (allreduce_algo != ccl_coll_allreduce_gpu) {
+        ccl_coll_param& param = sched->coll_param;
+        if (param.stream && param.stream->is_sycl_device_stream() &&
+            (!param.device_send_bufs.empty() || !param.device_recv_bufs.empty())) {
+            process_pre_post_copies(sched);
+        }
     }
 #endif /* CCL_ENABLE_SYCL */
 
@@ -234,6 +249,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
     selector_param.dtype = dtype;
     selector_param.comm = comm;
     selector_param.vector_buf = coll_attr.vector_buf;
+    selector_param.stream = coll_param.stream;
 
     switch (coll_type) {
         case ccl_coll_barrier: part_count = max_data_partition_count; break;
@@ -537,6 +553,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
                 }
                 param.reduction = coll_param.reduction;
                 param.comm = comm;
+                param.stream = coll_param.stream;
 
                 auto entry = coll_entry_helper::add_coll_entry<ccl_coll_allreduce>(
                     part_scheds[idx].get(), param);

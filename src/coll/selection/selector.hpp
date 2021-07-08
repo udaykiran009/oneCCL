@@ -25,6 +25,7 @@ struct ccl_selector_param {
     size_t count;
     ccl_datatype dtype;
     ccl_comm* comm;
+    ccl_stream* stream;
 
     const size_t* send_counts;
     const size_t* recv_counts;
@@ -39,6 +40,7 @@ struct ccl_selector_param {
               count(0),
               dtype(ccl_datatype_int8),
               comm(nullptr),
+              stream(nullptr),
               send_counts(nullptr),
               recv_counts(nullptr),
               vector_buf(0) {}

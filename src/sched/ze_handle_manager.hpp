@@ -19,10 +19,11 @@ public:
     ze_handle_manager() {}
 
     ~ze_handle_manager() {
-        clear();
+        // TODO: fix cleanup. it throw when close fd
+        // clear();
     }
 
-    void init(ccl_stream* stream) {
+    void init(const ccl_stream* stream) {
         auto sycl_device = stream->get_native_stream().get_device();
         auto sycl_context = stream->get_native_stream().get_context();
 

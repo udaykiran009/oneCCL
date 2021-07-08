@@ -2,6 +2,7 @@
 
 #include "coll/algorithms/algorithms_enum.hpp"
 #include "coll/coll_param.hpp"
+#include "coll/selection/selection.hpp"
 #include "common/global/global.hpp"
 #include "sched/sched_base.hpp"
 
@@ -319,8 +320,24 @@ void ccl_sched_base::alloc_buffers_for_pre_post_copy() {
     param.device_send_bufs.clear();
     param.device_recv_bufs.clear();
 
-    if (!param.stream || (!param.stream->is_sycl_device_stream()))
+    // TODO: WA skip sycl pre_post_copy for allreduce gpu algo
+    ccl::global_data& data = ccl::global_data::get();
+    ccl_selector_param selector_param;
+    selector_param.ctype = param.ctype;
+    selector_param.count = param.get_send_count();
+    selector_param.dtype = param.dtype;
+    selector_param.comm = param.comm;
+    selector_param.stream = param.stream;
+
+    ccl_coll_allreduce_algo allreduce_algo = ccl_coll_allreduce_last_value;
+    if (param.ctype == ccl_coll_allreduce) {
+        allreduce_algo = data.algorithm_selector->get<ccl_coll_allreduce>(selector_param);
+    }
+
+    if (!param.stream || !param.stream->is_sycl_device_stream() ||
+        allreduce_algo == ccl_coll_allreduce_gpu) {
         return;
+    }
 
     bool should_alloc_buffers = true;
 

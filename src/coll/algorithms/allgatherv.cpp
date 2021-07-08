@@ -285,6 +285,7 @@ ccl::status ccl_coll_build_multi_bcast_allgatherv(ccl_master_sched* main_sched,
         param.dtype = dtype;
         param.root = idx;
         param.comm = comm;
+        param.stream = coll_param.stream;
         coll_entry_helper::add_coll_entry<ccl_coll_bcast>(scheds[idx % sched_count], param);
     }
 
