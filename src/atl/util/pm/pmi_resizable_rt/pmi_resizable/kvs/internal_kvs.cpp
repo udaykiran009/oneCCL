@@ -402,9 +402,16 @@ int internal_kvs::fill_local_host_ip() {
                     LOG_ERROR(s.c_str());
                     return -1;
                 }
+
                 local_host_ips.push_back(local_ip);
-                if (family == AF_INET6)
+                if (family == AF_INET6) {
+                    char* scope_id_ptr = nullptr;
+                    if ((scope_id_ptr = strchr(local_ip, SCOPE_ID_DELIM))) {
+                        uint32_t scope_id = ((struct sockaddr_in6*)(ifa->ifa_addr))->sin6_scope_id;
+                        sprintf(scope_id_ptr + 1, "%u", scope_id);
+                    }
                     local_host_ipv6s.push_back(local_ip);
+                }
             }
         }
     }
@@ -725,15 +732,52 @@ internal_kvs::~internal_kvs() {
 }
 
 void sockaddr_v4::set_sin_addr(const char* src) {
-    if (inet_pton(addr.sin_family, src, &(addr.sin_addr)) <= 0) {
-        LOG_ERROR("invalid address/address not supported: ", src);
+    int ret = inet_pton(addr.sin_family, src, &(addr.sin_addr));
+    if (ret <= 0) {
+        if (ret == 0) {
+            LOG_ERROR(
+                "inet_pton error - invalid network address, af: ", addr.sin_family, ", src: ", src);
+        }
+        else if (ret < 0) {
+            LOG_ERROR("inet_pton error - af: ",
+                      addr.sin_family,
+                      ", src: ",
+                      src,
+                      ", error: ",
+                      strerror(errno));
+        }
         exit(1);
     }
 }
 
 void sockaddr_v6::set_sin_addr(const char* src) {
-    if (inet_pton(addr.sin6_family, src, &(addr.sin6_addr)) <= 0) {
-        LOG_ERROR("invalid address/address not supported: ", src);
+    char src_copy[internal_kvs::CCL_IP_LEN] = { 0 };
+    memcpy(src_copy, src, strlen(src));
+
+    char* scope_id_ptr = nullptr;
+    if ((scope_id_ptr = strchr(src_copy, internal_kvs::SCOPE_ID_DELIM))) {
+        addr.sin6_scope_id = safe_strtol(scope_id_ptr + 1, nullptr, 10);
+        *scope_id_ptr = '\0';
+    }
+
+    int ret = inet_pton(addr.sin6_family, src_copy, &(addr.sin6_addr));
+    if (ret <= 0) {
+        if (ret == 0) {
+            LOG_ERROR("inet_pton error - invalid network address, af: ",
+                      addr.sin6_family,
+                      ", src_copy: ",
+                      src_copy);
+        }
+        else if (ret < 0) {
+            LOG_ERROR("inet_pton error - af: ",
+                      addr.sin6_family,
+                      ", src_copy: ",
+                      src_copy,
+                      ", error: ",
+                      strerror(errno));
+        }
         exit(1);
     }
+
+    LOG_DEBUG("addr: ", src_copy, ", scope_id: ", addr.sin6_scope_id);
 }

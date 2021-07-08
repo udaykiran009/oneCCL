@@ -61,8 +61,10 @@ public:
         server_address = server_addr;
     }
 
-private:
     static const int CCL_IP_LEN = 128;
+    static const char SCOPE_ID_DELIM = '%';
+
+private:
     size_t init_main_server_by_string(const char* main_addr);
     size_t init_main_server_by_env();
     size_t init_main_server_by_k8s();
@@ -105,6 +107,7 @@ private:
     const std::string CCL_KVS_IP_EXCHANGE_VAL_K8S = "k8s";
 
     const int CONNECTION_TIMEOUT = 120;
+
     int server_listen_sock; /* used on server side to handle new incoming connect requests from clients */
     std::string server_address{};
 
@@ -147,7 +150,7 @@ class sockaddr_v6 : public isockaddr {
 public:
     sockaddr_v6() {
         memset(&addr, 0, sizeof(sockaddr_in6));
-        addr.sin6_addr = in6addr_any;
+        addr.sin6_addr = IN6ADDR_ANY_INIT;
         addr.sin6_family = AF_INET6;
         addr.sin6_port = default_start_port;
     }
