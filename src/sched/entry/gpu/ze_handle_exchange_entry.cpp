@@ -4,7 +4,7 @@
 
 ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
                                                    ccl_comm* comm,
-                                                   std::vector<void*> in_buffers,
+                                                   const std::vector<void*>& in_buffers,
                                                    ze_context_handle_t context)
         : sched_entry(sched),
           comm(comm),
@@ -23,6 +23,9 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
     for (size_t idx = 0; idx < comm_size; idx++) {
         handles[idx].resize(in_buffers.size());
     }
+
+    LOG_DEBUG(
+        name(), "entry: handles size: ", handles.size(), ", in_buffers size: ", in_buffers.size());
 }
 
 void ze_handle_exchange_entry::start() {
@@ -129,9 +132,13 @@ void ze_handle_exchange_entry::update() {
         start_buf_idx++;
     }
 
+    LOG_DEBUG(
+        name(), "entry: handles size: ", handles.size(), ", in_buffers size: ", in_buffers.size());
+
     sched->get_ccl_sched_memory().handle_manager.set(handles);
     status = ccl_sched_entry_status_complete;
     unlink_sockets();
+
     LOG_DEBUG("completed: ", name());
 }
 
@@ -144,11 +151,12 @@ int ze_handle_exchange_entry::create_server_socket(const std::string& socket_nam
 
     int sock = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sock < 0) {
-        CCL_THROW("cannot create a server socket: ", sock);
+        CCL_THROW("cannot create a server socket: ", sock, ", errno: ", strerror(errno));
     }
 
     socket_addr->sun_family = AF_UNIX;
     strncpy(socket_addr->sun_path, socket_name.c_str(), sizeof(socket_addr->sun_path) - 1);
+    socket_addr->sun_path[sizeof(socket_addr->sun_path) - 1] = '\0';
     *addr_len = sizeof((*socket_addr));
 
     ret = bind(sock, ((struct sockaddr*)&(*socket_addr)), *addr_len);
@@ -176,11 +184,12 @@ int ze_handle_exchange_entry::create_client_socket(const std::string& socket_nam
 
     int sock = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sock < 0) {
-        CCL_THROW("cannot create a client socket: ", sock);
+        CCL_THROW("cannot create a client socket: ", sock, ", errno: ", strerror(errno));
     }
 
     socket_addr->sun_family = AF_UNIX;
     strncpy(socket_addr->sun_path, socket_name.c_str(), sizeof(socket_addr->sun_path) - 1);
+    socket_addr->sun_path[sizeof(socket_addr->sun_path) - 1] = '\0';
     *addr_len = sizeof((*socket_addr));
 
     return sock;

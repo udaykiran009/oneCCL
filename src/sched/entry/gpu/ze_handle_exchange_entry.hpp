@@ -35,7 +35,7 @@ public:
     ze_handle_exchange_entry() = delete;
     ze_handle_exchange_entry(ccl_sched* sched,
                              ccl_comm* comm,
-                             std::vector<void*> in_buffers,
+                             const std::vector<void*>& in_buffers,
                              ze_context_handle_t context);
 
     void start() override;
@@ -52,7 +52,7 @@ protected:
                            rank,
                            ", comm_size ",
                            comm_size,
-                           "right_peer_socket_name ",
+                           ", right_peer_socket_name ",
                            right_peer_socket_name,
                            ", left_peer_socket_name ",
                            left_peer_socket_name,
@@ -60,15 +60,16 @@ protected:
                            context,
                            ", in_buffers size ",
                            in_buffers.size(),
-                           ", handles size",
-                           handles.size());
+                           ", handles size ",
+                           handles.size(),
+                           "\n");
     }
 
 private:
-    static const size_t socket_max_str_len = 100;
-    static const int poll_expire_err_code = 0;
-    static const int timeout_ms = 1;
-    static const size_t max_pfds = 1;
+    static constexpr size_t socket_max_str_len = 100;
+    static constexpr int poll_expire_err_code = 0;
+    static constexpr int timeout_ms = 1;
+    static constexpr size_t max_pfds = 1;
 
     const ccl_comm* comm;
 
