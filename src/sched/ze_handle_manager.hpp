@@ -14,6 +14,11 @@
 #include <ze_api.h>
 #include <CL/sycl/backend/level_zero.hpp>
 
+struct ipc_handle_info {
+    ze_ipc_mem_handle_t handle;
+    size_t mem_offset;
+};
+
 class ze_handle_manager {
 public:
     ze_handle_manager() {}
@@ -34,15 +39,26 @@ public:
 
     void clear() {
         int res = 0;
-        ze_result_t ret = ZE_RESULT_SUCCESS;
-        for (auto pair_idx : opened_mem_handles) {
+        for (const auto& handle_pack : opened_handles) {
             int fd;
-            void* handle_ptr = pair_idx.first;
-            ze_ipc_mem_handle_t handle = pair_idx.second;
+            void* mem_ptr = handle_pack.first;
+            const auto& ipc_info = handle_pack.second;
 
-            ret = zeMemCloseIpcHandle(context, handle_ptr);
+            ze_ipc_mem_handle_t handle = ipc_info.handle;
+            size_t mem_offset = ipc_info.mem_offset;
+
+            // when closing the handle we need to take care of pointers that points to the
+            // same level zero allocation. They're simply offsetted from some base pointer
+            // although represented by different FDs. If we close this base pointer,
+            // all the derived pointers are closed(unmapped) as well. To handle this case
+            // we ignore the result of close function which would fail if we close a pointer
+            // which is already closed. The function has semantic of free() call, so the result
+            // is not much useful anyway.
+            void* base_alloc_ptr = static_cast<char*>(mem_ptr) - mem_offset;
+
+            auto ret = zeMemCloseIpcHandle(context, base_alloc_ptr);
             if (ret != ZE_RESULT_SUCCESS) {
-                CCL_FATAL("unable to close memory handle: ", ret);
+                LOG_WARN("unable to close memory handle: ", ret);
             }
 
             memcpy(&fd, handle.data, sizeof(fd));
@@ -54,7 +70,7 @@ public:
         LOG_DEBUG("handles are cleared successfully");
     }
 
-    void set(std::vector<std::vector<ze_ipc_mem_handle_t>>& handles_arg) {
+    void set(const std::vector<std::vector<ipc_handle_info>>& handles_arg) {
         CCL_THROW_IF_NOT(!handles_arg.empty(), "handles argument is empty");
         handles = handles_arg;
         LOG_DEBUG("handles are set successfully");
@@ -67,7 +83,7 @@ public:
         CCL_THROW_IF_NOT(rank < handles.size(), "rank is not valid value: ", rank);
         CCL_THROW_IF_NOT(buf_idx < handles[rank].size(), "buf_idx is not valid value: ", buf_idx);
 
-        ze_ipc_mem_handle_t handle = handles[rank][buf_idx];
+        ze_ipc_mem_handle_t handle = handles[rank][buf_idx].handle;
 
         LOG_DEBUG("context: ", context, "device: ", device, "rank: ", rank, "buf_idx: ", buf_idx);
         ret = zeMemOpenIpcHandle(context, device, handle, 0 /*cache allocation*/, &memory);
@@ -76,14 +92,18 @@ public:
         }
         LOG_DEBUG("open memory: ", memory);
 
-        opened_mem_handles.push_back(std::make_pair(memory, handle));
+        size_t mem_offset = handles[rank][buf_idx].mem_offset;
+        // add offset that we received along with the handle
+        memory = static_cast<void*>(static_cast<char*>(memory) + mem_offset);
+
+        opened_handles.push_back({ memory, { handle, mem_offset } });
         buf.set(memory);
     }
 
 private:
     ze_context_handle_t context;
     ze_device_handle_t device;
-    std::vector<std::vector<ze_ipc_mem_handle_t>> handles;
-    std::vector<std::pair<void*, ze_ipc_mem_handle_t>> opened_mem_handles;
+    std::vector<std::vector<ipc_handle_info>> handles;
+    std::vector<std::pair<void*, ipc_handle_info>> opened_handles;
 };
 #endif /* CCL_ENABLE_SYCL and MULTI_GPU_SUPPORT */

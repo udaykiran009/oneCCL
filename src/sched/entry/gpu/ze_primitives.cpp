@@ -108,7 +108,9 @@ std::string to_string(const ze_kernel_args_t& kernel_args) {
     ss << "{\n";
     size_t idx = 0;
     for (const auto& arg : kernel_args) {
-        ss << "  idx: " << idx << ", { " << arg.first << ", " << arg.second << " },\n";
+        // TODO: can we distinguish argument types in order to properly print them instead of printing
+        // as a void* ptr?
+        ss << "  idx: " << idx << ", { " << arg.first << ", " << *(void**)arg.second << " },\n";
         ++idx;
     }
     ss << "}";
@@ -118,7 +120,15 @@ std::string to_string(const ze_kernel_args_t& kernel_args) {
 void set_kernel_args(ze_kernel_handle_t kernel, const ze_kernel_args_t& kernel_args) {
     uint32_t idx = 0;
     for (const auto& arg : kernel_args) {
-        ZE_CALL(zeKernelSetArgumentValue(kernel, idx, arg.first, arg.second));
+        auto res = zeKernelSetArgumentValue(kernel, idx, arg.first, arg.second);
+        if (res != ZE_RESULT_SUCCESS) {
+            CCL_THROW("zeKernelSetArgumentValue falied with error ",
+                      res,
+                      " on idx ",
+                      idx,
+                      " with value ",
+                      *((void**)arg.second));
+        }
         ++idx;
     }
 }

@@ -34,8 +34,6 @@ void ze_allreduce_entry::init() {
     // TODO: can we to check that ze is allready initialized?
     ze_init::instance();
 
-    ze_driver_handle_t driver;
-
     if (sched && sched->coll_param.stream) {
         LOG_DEBUG(name(), " entry: getting a native stream");
         auto native_stream = sched->coll_param.stream->get_native_stream(sched->queue->get_idx());
@@ -48,9 +46,6 @@ void ze_allreduce_entry::init() {
 
         auto sycl_context = native_stream->get_context();
         context = sycl_context.template get_native<cl::sycl::backend::level_zero>();
-
-        auto sycl_platform = sycl_context.get_platform();
-        driver = sycl_platform.template get_native<cl::sycl::backend::level_zero>();
     }
     else {
         CCL_THROW(name(), " entry: algo without stream is unsupported");

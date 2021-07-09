@@ -26,6 +26,10 @@
 #include "sched/entry/entry.hpp"
 #include "sched/sched.hpp"
 
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#include "sched/ze_handle_manager.hpp"
+#endif /* CCL_ENABLE_SYCL and MULTI_GPU_SUPPORT */
+
 class ze_handle_exchange_entry : public sched_entry {
 public:
     static constexpr const char* class_name() noexcept {
@@ -75,7 +79,8 @@ private:
 
     std::vector<void*> in_buffers;
     ze_context_handle_t context;
-    std::vector<std::vector<ze_ipc_mem_handle_t>> handles;
+
+    std::vector<std::vector<ipc_handle_info>> handles;
 
     const int rank;
     const int comm_size;
@@ -119,13 +124,14 @@ private:
                      int addr_len,
                      const std::string& socket_name);
 
-    int sendmsg_fd(int sock, int fd);
-    int recvmsg_fd(int sock, int* fd);
+    int sendmsg_fd(int sock, int fd, size_t mem_offset);
+    int recvmsg_fd(int sock, int& fd, size_t& mem_offset);
 
-    void sendmsg_call(int sock, int fd);
-    void recvmsg_call(int sock, int* fd);
+    void sendmsg_call(int sock, int fd, size_t mem_offset);
+    void recvmsg_call(int sock, int& fd, size_t& mem_offset);
 
-    int get_handle(ze_context_handle_t context, const void* buffer, ze_ipc_mem_handle_t* handle);
+    void get_handle(ze_context_handle_t context, const void* buffer, ze_ipc_mem_handle_t* handle);
+    size_t get_mem_offset(ze_context_handle_t context, void* ptr);
 
     void unlink_sockets();
     void close_sockets();
