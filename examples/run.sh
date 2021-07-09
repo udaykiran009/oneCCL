@@ -211,7 +211,8 @@ run_benchmark()
         fi
     fi
     # Run kernels with arbitraty sizes that should cover all the cases
-    options="${options} -y 1,2,4,7,8,16,17,32,64,128,133,256,1077,16384,16387"
+    # options="${options} -y 1,2,4,7,8,16,17,32,64,128,133,256,1077,16384,16387" (XDEPS-2222)
+    options="${options} -y 1,2,4,8,16,17,32,64,128,133,256,1077,16384"
 
     for usm in $usm_list;
     do
