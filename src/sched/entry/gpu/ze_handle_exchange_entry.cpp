@@ -139,6 +139,7 @@ void ze_handle_exchange_entry::update() {
     sched->get_ccl_sched_memory().handle_manager.set(handles);
     status = ccl_sched_entry_status_complete;
     unlink_sockets();
+    close_sockets();
 
     LOG_DEBUG("completed: ", name());
 }
@@ -401,4 +402,4 @@ void ze_handle_exchange_entry::close_sockets() {
     close(left_peer_connect_socket);
 }
 
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT

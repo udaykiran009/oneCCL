@@ -137,4 +137,4 @@ private:
     void close_sockets();
 };
 
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
