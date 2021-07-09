@@ -16,7 +16,7 @@ touch ${LOG_FILE}
 
 set_run_env() {
     # model
-    export PYTHONPATH=${RN50_MODEL_DIR}:${PYTHONPATH}
+    export PYTHONPATH=${RN50_MODEL_TF_DIR}:${PYTHONPATH}
 
     # Tensorflow
     export TF_ENABLE_LAYOUT_OPT=0
@@ -25,6 +25,7 @@ set_run_env() {
 
     # PyTorch
     export IPEX_TILE_AS_DEVICE=1
+    export IPEX_LAZY_REORDER=1
 
     # HVD
     export HOROVOD_LOG_LEVEL=INFO
@@ -77,15 +78,19 @@ CONDA_INSTALL_DIR=""
 
 CCL_LINK="https://gitlab.devtools.intel.com/ict/ccl-team/ccl.git"
 HOROVOD_BASE_LINK="github.com/intel-innersource/frameworks.ai.horovod.git"
-MODEL_BASE_LINK="github.com/intel-innersource/frameworks.ai.models.intel-models"
-MODEL_SRC_BRANCH="yang/resnet50-training-tmp"
-MODEL_SRC_COMMIT="3713f6d531685b509a0fbb5eee7f7836dd37f8b8"
+MODEL_TF_BASE_LINK="github.com/intel-innersource/frameworks.ai.models.intel-models"
+MODEL_TF_SRC_BRANCH="yang/resnet50-training-tmp"
+MODEL_TF_SRC_COMMIT="74b72acf1436255987a238afb414185008631d09"
 
-TF_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww23/compiler-20210527/itex/ubuntu/tensorflow-2.5.0-cp37-cp37m-linux_x86_64.whl"
-ITEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww23/compiler-20210527/itex/ubuntu/intel_extension_for_tensorflow-0.1.0-cp37-cp37m-linux_x86_64.whl"
+MODEL_PT_FILE="bench_pt.py"
+MODEL_PT_BASE_LINK="https://gitlab.devtools.intel.com/aemani/dlutils/-/raw/master"
+
+TF_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww27/compiler-20210624/itex/ubuntu/tensorflow-2.5.0-cp37-cp37m-linux_x86_64.whl"
+ITEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww27/compiler-20210624/itex/ubuntu/intel_extension_for_tensorflow-0.1.0-cp37-cp37m-linux_x86_64.whl"
 TF_NAME=`basename $TF_LINK`
 ITEX_NAME=`basename $ITEX_LINK`
 
+#PT_LINK="http://10.165.58.120:8080/whls_063021_dpcpp060321/torch-1.7.0a0-cp37-cp37m-linux_x86_64.whl"
 PT_LINK="http://10.165.58.120:8080/ipexgpu/latest/torch-1.7.0a0-cp37-cp37m-linux_x86_64.whl"
 IPEX_LINK="http://10.165.58.120:8080/whls_063021_dpcpp060321/torch_ipex-0.1+3f77413-cp37-cp37m-linux_x86_64.whl"
 
@@ -118,9 +123,12 @@ DEFAULT_IPEX_PATH=""
 
 DEFAULT_DOWNLOAD_HVD="0"
 DEFAULT_INSTALL_HVD="0"
+DEFAULT_HVD_BRANCH="xpu"
 
-DEFAULT_DOWNLOAD_MODEL="0"
-DEFAULT_RUN_MODEL="0"
+DEFAULT_DOWNLOAD_MODEL_TF="0"
+DEFAULT_RUN_MODEL_TF="0"
+DEFAULT_DOWNLOAD_MODEL_PT="0"
+DEFAULT_RUN_MODEL_PT="0"
 DEFAULT_BATCH_SIZE="128"
 DEFAULT_ITER_COUNT="200"
 
@@ -189,10 +197,16 @@ print_help() {
     echo_log "      Download Horovod"
     echo_log "  -install_hvd <bool_flag>"
     echo_log "      Install Horovod"
-    echo_log "  -download_model <bool_flag>"
-    echo_log "      Download repository with models"
-    echo_log "  -run_model <bool_flag>"
-    echo_log "      Run few iterations of RN50 training on 2 ranks"
+    echo_log "  -hvd_branch <branch_name>"
+    echo_log "      Set Horovod branch name to download"
+    echo_log "  -download_model_tf <bool_flag>"
+    echo_log "      Download repository with models to run with Tensorflow"
+    echo_log "  -run_model_tf <bool_flag>"
+    echo_log "      Run few iterations of RN50 training on 2 ranks with Tensorflow"
+    echo_log "  -download_model_pt <bool_flag>"
+    echo_log "      Download model to run with PyTorch"
+    echo_log "  -run_model_pt <bool_flag>"
+    echo_log "      Run few iterations of RN50 training on 2 ranks with PyTorch"
     echo_log "  -batch_size <size>"
     echo_log "      Batch size for RN50 training"
     echo_log "  -iter_count <count>"
@@ -238,9 +252,12 @@ parse_arguments() {
 
     DOWNLOAD_HVD=${DEFAULT_DOWNLOAD_HVD}
     INSTALL_HVD=${DEFAULT_INSTALL_HVD}
+    HVD_BRANCH=${DEFAULT_HVD_BRANCH}
 
     DOWNLOAD_MODEL=${DEFAULT_DOWNLOAD_MODEL}
-    RUN_MODEL=${DEFAULT_RUN_MODEL}
+    RUN_MODEL_TF=${DEFAULT_RUN_MODEL_TF}
+    DOWNLOAD_MODEL_PT=${DEFAULT_DOWNLOAD_MODEL_PT}
+    RUN_MODEL_PT=${DEFAULT_RUN_MODEL_PT}
     BATCH_SIZE=${DEFAULT_BATCH_SIZE}
     ITER_COUNT=${DEFAULT_ITER_COUNT}
 
@@ -343,12 +360,24 @@ parse_arguments() {
                 INSTALL_HVD=${2}
                 shift
                 ;;
-            "-download_model")
-                DOWNLOAD_MODEL=${2}
+            "-hvd_branch")
+                HVD_BRANCH=${2}
                 shift
                 ;;
-            "-run_model")
-                RUN_MODEL=${2}
+            "-download_model_tf")
+                DOWNLOAD_MODEL_TF=${2}
+                shift
+                ;;
+            "-run_model_tf")
+                RUN_MODEL_TF=${2}
+                shift
+                ;;
+            "-download_model_pt")
+                DOWNLOAD_MODEL_PT=${2}
+                shift
+                ;;
+            "-run_model_pt")
+                RUN_MODEL_PT=${2}
                 shift
                 ;;
             "-batch_size")
@@ -383,9 +412,10 @@ parse_arguments() {
     mkdir -p ${SCRIPT_WORK_DIR}
     CCL_SRC_DIR=${SCRIPT_WORK_DIR}/ccl
     HVD_SRC_DIR=${SCRIPT_WORK_DIR}/horovod
-    MODEL_SRC_DIR=${SCRIPT_WORK_DIR}/model
-    RN50_MODEL_DIR=${MODEL_SRC_DIR}/models/image_recognition/tensorflow/resnet50v1_5/training
-    RN50_OUTPUT_DIR=${MODEL_SRC_DIR}/resnet50_chk
+    MODEL_TF_SRC_DIR=${SCRIPT_WORK_DIR}/model
+    RN50_MODEL_TF_DIR=${MODEL_TF_SRC_DIR}/models/image_recognition/tensorflow/resnet50v1_5/training
+    RN50_OUTPUT_DIR=${MODEL_TF_SRC_DIR}/resnet50_chk
+    MODEL_PT_SRC=${SCRIPT_WORK_DIR}/${MODEL_PT_FILE}
 
     if [[ ${FULL_SCOPE} = "1" ]]
     then
@@ -408,8 +438,11 @@ parse_arguments() {
         DOWNLOAD_HVD="1"
         INSTALL_HVD="1"
 
-        DOWNLOAD_MODEL="1"
-        RUN_MODEL="1"
+        DOWNLOAD_MODEL_TF="1"
+        RUN_MODEL_TF="1"
+
+        DOWNLOAD_MODEL_PT="1"
+        RUN_MODEL_PT="1"
 
         remove_conda
         if [[ -d ${SCRIPT_WORK_DIR} ]]
@@ -478,9 +511,12 @@ parse_arguments() {
 
     echo_log "DOWNLOAD_HVD       = ${DOWNLOAD_HVD}"
     echo_log "INSTALL_HVD        = ${INSTALL_HVD}"
+    echo_log "HVD_BRANCH         = ${HVD_BRANCH}"
 
-    echo_log "DOWNLOAD_MODEL     = ${DOWNLOAD_MODEL}"
-    echo_log "RUN_MODEL          = ${RUN_MODEL}"
+    echo_log "DOWNLOAD_MODEL_TF  = ${DOWNLOAD_MODEL_TF}"
+    echo_log "RUN_MODEL_TF       = ${RUN_MODEL_TF}"
+    echo_log "DOWNLOAD_MODEL_PT  = ${DOWNLOAD_MODEL_PT}"
+    echo_log "RUN_MODEL_PT       = ${RUN_MODEL_PT}"
     echo_log "BATCH_SIZE         = ${BATCH_SIZE}"
     echo_log "ITER_COUNT         = ${ITER_COUNT}"
 
@@ -827,7 +863,7 @@ download_hvd() {
     fi
 
     cd ${SCRIPT_WORK_DIR}
-    GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S} git clone --recursive --branch xpu --single-branch \
+    GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S} git clone --recursive --branch ${HVD_BRANCH} --single-branch \
         https://${USERNAME_1S}${HOROVOD_BASE_LINK} ${HVD_SRC_DIR}
 }
 
@@ -892,33 +928,48 @@ check_hvd() {
     CheckCommandExitCode $? "Horovod test failed"
 }
 
-download_model() {
-    if [[ ${DOWNLOAD_MODEL} != "1" ]]
+download_model_tf() {
+    if [[ ${DOWNLOAD_MODEL_TF} != "1" ]]
     then
         return
     fi
 
-    if [[ -d ${MODEL_SRC_DIR} ]]
+    if [[ -f ${MODEL_TF_SRC_DIR} ]]
     then
-        rm -rf ${MODEL_SRC_DIR}
+        rm -rf ${MODEL_TF_SRC_DIR}
     fi
 
     cd ${SCRIPT_WORK_DIR}
-    GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S} git clone --branch ${MODEL_SRC_BRANCH} --single-branch \
-        https://${USERNAME_1S}${MODEL_BASE_LINK} ${MODEL_SRC_DIR}
-    cd ${MODEL_SRC_DIR}
-    git checkout ${MODEL_SRC_COMMIT}
+    GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S} git clone --branch ${MODEL_TF_SRC_BRANCH} --single-branch \
+        https://${USERNAME_1S}${MODEL_TF_BASE_LINK} ${MODEL_TF_SRC_DIR}
+    cd ${MODEL_TF_SRC_DIR}
+    git checkout ${MODEL_TF_SRC_COMMIT}
 }
 
-run_model() {
-    if [[ ${RUN_MODEL} != "1" ]]
+download_model_pt() {
+    if [[ ${DOWNLOAD_MODEL_PT} != "1" ]]
     then
         return
     fi
 
-    if [[ ! -d ${MODEL_SRC_DIR} ]]
+    if [[ -f ${MODEL_PT_SRC} ]]
     then
-        echo "ERROR: MODEL_SRC_DIR (${MODEL_SRC_DIR}) is not directory, try to run script with \"-download_model 1\""
+        rm ${MODEL_PT_SRC}
+    fi
+
+    cd ${SCRIPT_WORK_DIR}
+    curl -kLO ${MODEL_PT_BASE_LINK}/${MODEL_PT_FILE}
+}
+
+run_model_tf() {
+    if [[ ${RUN_MODEL_TF} != "1" ]]
+    then
+        return
+    fi
+
+    if [[ ! -d ${MODEL_TF_SRC_DIR} ]]
+    then
+        echo "ERROR: MODEL_TF_SRC_DIR (${MODEL_TF_SRC_DIR}) is not directory, try to run script with \"-download_model_tf 1\""
         CheckCommandExitCode 1 "Run model failed"
     fi
 
@@ -927,10 +978,10 @@ run_model() {
     current_date=`date "+%Y%m%d%H%M%S"`
     rn50_log_file="rn50_"$current_date".txt"
 
-    rm -rf ${MODEL_SRC_DIR}/resnet50_chk/*
-    rm -r ${RN50_MODEL_DIR}/mlperf_resnet/__pycache__
+    rm -rf ${MODEL_TF_SRC_DIR}/resnet50_chk/*
+    rm -r ${RN50_MODEL_TF_DIR}/mlperf_resnet/__pycache__
 
-    cmd="GPU=1 mpiexec -n 2 -l python ${RN50_MODEL_DIR}/mlperf_resnet/imagenet_main.py 2 \
+    cmd="GPU=1 mpiexec -n 2 -l python ${RN50_MODEL_TF_DIR}/mlperf_resnet/imagenet_main.py 2 \
       --max_train_steps=${ITER_COUNT} --train_epochs=10 --epochs_between_evals=10 \
       --inter_op_parallelism_threads 1 --intra_op_parallelism_threads 24  \
       --version 1 --resnet_size 50 --model_dir=${RN50_OUTPUT_DIR} \
@@ -943,6 +994,32 @@ run_model() {
     # calculate avg performance
     python ${SCRIPT_WORK_DIR}/../get_perf.py ${rn50_log_file}
     CheckCommandExitCode $? "Model perf test failed"
+}
+
+run_model_pt() {
+    if [[ ${RUN_MODEL_PT} != "1" ]]
+    then
+        return
+    fi
+
+    if [[ ! -f ${MODEL_PT_SRC} ]]
+    then
+        echo "ERROR: MODEL_PT_SRC (${MODEL_PT_SRC}) does not exist, try to run script with \"-download_model_pt 1\""
+        CheckCommandExitCode 1 "Run model failed"
+    fi
+
+    cd ${SCRIPT_WORK_DIR}
+
+    current_date=`date "+%Y%m%d%H%M%S"`
+    rn50_log_file="rn50_"$current_date".txt"
+    rn50_log_file_pt="pt_rn50_"$current_date".txt"
+    
+    cmd="mpiexec -n 2 -l python ${MODEL_PT_FILE} --iter=${ITER_COUNT} --warm=2 --bs ${BATCH_SIZE} \
+         --arch resnet50 --sycl 2>&1 | tee ${rn50_log_file_pt}"
+    
+    echo_log "\nIPEX rn50 cmd:\n${cmd}\n"
+    eval ${cmd}
+    CheckCommandExitCode $? "IPEX Model test failed"
 }
 
 parse_arguments $@
@@ -967,8 +1044,11 @@ download_hvd
 install_hvd
 check_hvd
 
-download_model
-run_model
+download_model_tf
+run_model_tf
+
+download_model_pt
+run_model_pt
 
 deactivate_conda
 remove_conda
