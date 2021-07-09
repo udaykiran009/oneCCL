@@ -372,19 +372,28 @@ int internal_kvs::fill_local_host_ip() {
     struct ifaddrs *ifaddr, *ifa;
     int family = AF_UNSPEC;
     char local_ip[CCL_IP_LEN];
+    bool is_supported_iface = false;
     if (getifaddrs(&ifaddr) < 0) {
         LOG_ERROR("fill_local_host_ip: can not get host IP");
         return -1;
     }
 
     const char iface_name[] = "lo";
+    char* iface_name_env = std::getenv(CCL_KVS_IFACE_ENV.c_str());
     local_host_ips.clear();
     local_host_ipv6s.clear();
+    local_host_ipv4s.clear();
 
     for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
         if (ifa->ifa_addr == NULL)
             continue;
-        if (strstr(ifa->ifa_name, iface_name) == NULL) {
+        if (iface_name_env) {
+            is_supported_iface = strstr(ifa->ifa_name, iface_name_env);
+        }
+        else {
+            is_supported_iface = strstr(ifa->ifa_name, iface_name) == NULL;
+        }
+        if (is_supported_iface) {
             family = ifa->ifa_addr->sa_family;
             if (family == AF_INET || family == AF_INET6) {
                 memset(local_ip, 0, CCL_IP_LEN);
@@ -412,11 +421,16 @@ int internal_kvs::fill_local_host_ip() {
                     }
                     local_host_ipv6s.push_back(local_ip);
                 }
+                else {
+                    local_host_ipv4s.push_back(local_ip);
+                }
             }
         }
     }
     if (local_host_ips.empty()) {
-        LOG_ERROR("fill_local_host_ip: can't find interface to get host IP");
+        LOG_ERROR("fill_local_host_ip: can't find interface ",
+                  iface_name_env ? iface_name_env : "",
+                  " to get host IP");
         return -1;
     }
 
@@ -425,23 +439,30 @@ int internal_kvs::fill_local_host_ip() {
     char* kvs_prefer_ipv6 = std::getenv(CCL_KVS_PREFER_IPV6_ENV.c_str());
     size_t is_kvs_prefer_ipv6 = kvs_prefer_ipv6 ? safe_strtol(kvs_prefer_ipv6, nullptr, 10) : 0;
 
-    kvs_str_copy(local_host_ip,
-                 (is_kvs_prefer_ipv6 && !local_host_ipv6s.empty())
-                     ? local_host_ipv6s.front().c_str()
-                     : local_host_ips.front().c_str(),
-                 CCL_IP_LEN);
-    address_family = (is_kvs_prefer_ipv6 && !local_host_ipv6s.empty()) ? AF_INET6 : AF_INET;
-    if (address_family == AF_INET) {
-        if (is_kvs_prefer_ipv6) {
-            LOG_WARN("ipv6 addresses are not found, fallback to ipv4");
+    if (is_kvs_prefer_ipv6) {
+        if (!local_host_ipv6s.empty()) {
+            address_family = AF_INET6;
         }
+        else {
+            LOG_WARN("ipv6 addresses are not found, fallback to ipv4");
+            address_family = AF_INET;
+        }
+    }
+    else {
+        address_family = (!local_host_ipv4s.empty()) ? AF_INET : AF_INET6;
+    }
+
+    if (address_family == AF_INET) {
         main_server_address = std::shared_ptr<isockaddr>(new sockaddr_v4());
         local_server_address = std::shared_ptr<isockaddr>(new sockaddr_v4());
+        kvs_str_copy(local_host_ip, local_host_ipv4s.front().c_str(), CCL_IP_LEN);
     }
     else {
         main_server_address = std::shared_ptr<isockaddr>(new sockaddr_v6());
         local_server_address = std::shared_ptr<isockaddr>(new sockaddr_v6());
+        kvs_str_copy(local_host_ip, local_host_ipv6s.front().c_str(), CCL_IP_LEN);
     }
+    LOG_DEBUG("use ", address_family == AF_INET ? "ipv4" : "ipv6", ": ", local_host_ip);
 
     freeifaddrs(ifaddr);
     return 0;

@@ -72,11 +72,9 @@ void server::try_to_connect_new() {
         std::shared_ptr<isockaddr> addr;
 
         if (address_family == AF_INET) {
-            LOG_INFO("try to connect using ipv4 address");
             addr = std::shared_ptr<isockaddr>(new sockaddr_v4());
         }
         else {
-            LOG_INFO("try to connect using ipv6 address");
             addr = std::shared_ptr<isockaddr>(new sockaddr_v6());
         }
 

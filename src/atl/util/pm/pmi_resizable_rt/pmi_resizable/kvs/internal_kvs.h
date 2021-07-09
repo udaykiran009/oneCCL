@@ -76,6 +76,7 @@ private:
 
     char main_host_ip[CCL_IP_LEN];
     std::list<std::string> local_host_ips;
+    std::list<std::string> local_host_ipv4s;
     std::list<std::string> local_host_ipv6s;
     char local_host_ip[CCL_IP_LEN];
 
@@ -102,6 +103,7 @@ private:
     const std::string CCL_KVS_IP_PORT_ENV = "CCL_KVS_IP_PORT";
     const std::string CCL_KVS_IP_EXCHANGE_ENV = "CCL_KVS_IP_EXCHANGE";
     const std::string CCL_KVS_PREFER_IPV6_ENV = "CCL_KVS_PREFER_IPV6";
+    const std::string CCL_KVS_IFACE_ENV = "CCL_KVS_IFACE";
 
     const std::string CCL_KVS_IP_EXCHANGE_VAL_ENV = "env";
     const std::string CCL_KVS_IP_EXCHANGE_VAL_K8S = "k8s";
