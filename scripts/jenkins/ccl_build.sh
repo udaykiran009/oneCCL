@@ -54,7 +54,7 @@ then
     export LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LIBRARY_PATH
     export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/:$LD_LIBRARY_PATH
     export GNU_BUNDLE_ROOT="/p/pdsd/opt/EM64T-LIN/compilers/gnu/gcc-10.2.0/bin"
-    run_in_fake_container /build/ccl/scripts/build.sh --conf --build-gpu $BUILD_OPTIONS
+    run_in_fake_container /build/ccl/scripts/build.sh --conf --build-cpu $BUILD_OPTIONS
     CheckCommandExitCode $? "build with gnu compiler failed"
     (cd ${WORKSPACE} && tar cfz ${ARTEFACT_DIR}/${BUILD_FOLDER}_$build_type.tgz build)
 )
