@@ -438,6 +438,8 @@ install_ofi() {
 
     make -j all && make install
     check_exit_code $? "Install OFI failed"
+
+    export LD_LIBRARY_PATH=${OFI_INSTALL_DIR}/lib:${OFI_INSTALL_DIR}/lib64:${LD_LIBRARY_PATH}
 }
 
 download_ccl() {
