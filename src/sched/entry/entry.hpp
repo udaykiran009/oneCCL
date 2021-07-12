@@ -3,10 +3,10 @@
 #include "atl/atl.h"
 #include "common/datatype/datatype.hpp"
 #include "common/utils/utils.hpp"
+#include "sched/sched_timer.hpp"
 #include "sched/entry/postponed_fields.hpp"
 #include "internal_types.hpp"
 
-#include <chrono>
 #include <memory>
 
 typedef ccl::status (*ccl_sched_entry_function_t)(const void*);
@@ -46,7 +46,7 @@ public:
     void do_progress();
     bool is_completed();
 
-    virtual void reset(size_t start_idx);
+    virtual void reset(size_t idx);
 
     virtual bool is_strict_order_satisfied();
 
@@ -65,6 +65,8 @@ public:
     virtual bool is_gpu_entry() const noexcept {
         return false;
     }
+
+    ccl::sched_timer timer;
 
 protected:
     virtual void start() = 0;

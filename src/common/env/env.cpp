@@ -45,6 +45,7 @@ env_data::env_data()
 
           log_level(ccl_log_level::warn),
           sched_dump(0),
+          sched_profile(0),
 
           fw_type(ccl_framework_none),
 
@@ -110,6 +111,7 @@ void env_data::parse() {
     env_2_enum(CCL_LOG_LEVEL, ccl_logger::level_names, log_level);
     ccl_logger::set_log_level(log_level);
     env_2_type(CCL_SCHED_DUMP, sched_dump);
+    env_2_type(CCL_SCHED_PROFILE, sched_profile);
 
     if (fw_type == ccl_framework_none) {
         /* try to automatically detect framework */
@@ -323,6 +325,7 @@ void env_data::print(int rank) {
 
     LOG_INFO(CCL_LOG_LEVEL, ": ", str_by_enum(ccl_logger::level_names, log_level));
     LOG_INFO(CCL_SCHED_DUMP, ": ", sched_dump);
+    LOG_INFO(CCL_SCHED_PROFILE, ": ", sched_profile);
 
     LOG_INFO(CCL_FRAMEWORK, ": ", str_by_enum(ccl_framework_type_names, fw_type));
 

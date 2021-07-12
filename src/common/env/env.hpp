@@ -21,6 +21,7 @@ constexpr const ssize_t CCL_ENV_SIZET_NOT_SPECIFIED = -1;
 
 constexpr const char* CCL_LOG_LEVEL = "CCL_LOG_LEVEL";
 constexpr const char* CCL_SCHED_DUMP = "CCL_SCHED_DUMP";
+constexpr const char* CCL_SCHED_PROFILE = "CCL_SCHED_PROFILE";
 
 constexpr const char* CCL_FRAMEWORK = "CCL_FRAMEWORK";
 
@@ -120,6 +121,7 @@ public:
 
     ccl_log_level log_level;
     int sched_dump;
+    int sched_profile;
 
     ccl_framework_type fw_type;
 

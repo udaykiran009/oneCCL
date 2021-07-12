@@ -110,15 +110,24 @@ bool ccl_sched::is_strict_order_satisfied() {
 }
 
 void ccl_sched::complete() {
-#ifdef ENABLE_TIMERS
-    exec_complete_time = timer_type::now();
-    if (ccl::global_data::env().sched_dump) {
-        std::stringstream ostream;
-        subsched->dump(ostream);
-        logger.info(ostream.str());
-    }
-#endif
     CCL_ASSERT(req, "ccl_sched must have req");
+    if (ccl::global_data::env().sched_profile) {
+        timer.stop();
+        if (entries.size() > 0) {
+            const char* coll_name =
+                ccl_coll_type_to_str(static_cast<ccl_master_sched*>(req)->coll_param.ctype);
+            std::stringstream ss;
+            ss << "\n--- sched"
+               << " (" << coll_name << ") timers, usec ---\n";
+            ss << "total: " << timer.str() << "\n";
+            for (size_t idx = 0; idx < entries.size(); ++idx) {
+                ss << "[" << idx << "] " << entries[idx]->name() << ": "
+                   << entries[idx]->timer.str() << "\n";
+            }
+            ss << "--------------------------------";
+            logger.info(ss.str());
+        }
+    }
     req->complete();
 }
 
@@ -126,10 +135,9 @@ void ccl_sched::renew(bool need_update_id /* = false*/) {
     if (need_update_id) {
         update_id();
     }
-#ifdef ENABLE_TIMERS
-    exec_start_time = timer_type::now();
-    exec_complete_time = exec_start_time;
-#endif
+    if (ccl::global_data::env().sched_profile) {
+        timer.start();
+    }
     start_idx = 0;
     for (size_t idx = 0; idx < entries.size(); idx++) {
         entries[idx].get()->reset(idx);

@@ -145,17 +145,6 @@ void ccl_master_sched::dump(std::ostream& out) const {
         sched->dump(out);
     }
 
-#ifdef ENABLE_TIMERS
-    ccl_logger::format(
-        out,
-        "\nlife time [us] ",
-        std::setw(5),
-        std::setbase(10),
-        std::chrono::duration_cast<std::chrono::microseconds>(exec_complete_time - exec_start_time)
-            .count(),
-        "\n");
-#endif
-
     ccl_logger::format(out, "--------------------------------\n");
 }
 

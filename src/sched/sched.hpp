@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sched/sched_base.hpp"
+#include "sched/sched_timer.hpp"
 #include "sched/queue/flow_control.hpp"
 #include "internal_types.hpp"
 
@@ -170,9 +171,5 @@ private:
     ccl_sched_finalize_fn_t finalize_fn = nullptr;
     void* finalize_fn_ctx = nullptr;
 
-#ifdef ENABLE_TIMERS
-    using timer_type = std::chrono::system_clock;
-    timer_type::time_point exec_start_time{};
-    timer_type::time_point exec_complete_time{};
-#endif
+    ccl::sched_timer timer;
 };

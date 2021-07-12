@@ -174,6 +174,7 @@ set(CCL_SRC
     sched/extra_sched.cpp
     sched/master_sched.cpp
     sched/sched_base.cpp
+    sched/sched_timer.cpp
     sched/cache/cache.cpp
     sched/cache/key.cpp
     sched/queue/flow_control.cpp

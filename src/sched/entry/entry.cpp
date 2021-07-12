@@ -1,6 +1,7 @@
+#include "common/global/global.hpp"
+#include "common/log/log.hpp"
 #include "sched/entry/entry.hpp"
 #include "sched/sched.hpp"
-#include "common/log/log.hpp"
 
 void sched_entry::do_progress() {
     if (is_completed())
@@ -17,6 +18,9 @@ void sched_entry::do_progress() {
         // For l0 entry take_credit & return_credit isn't needed
         // That's why we'd skip it
         if (is_gpu_entry || sched->flow_control.take_credit()) {
+            if (ccl::global_data::env().sched_profile) {
+                timer.start();
+            }
             start();
             CCL_ASSERT(status >= ccl_sched_entry_status_again, "bad status ", status);
         }
@@ -30,12 +34,18 @@ void sched_entry::do_progress() {
         CCL_ASSERT(status >= ccl_sched_entry_status_started, "bad status ", status);
     }
 
-    if (status == ccl_sched_entry_status_complete && !is_gpu_entry) {
-        sched->flow_control.return_credit();
-    }
+    if (status == ccl_sched_entry_status_complete) {
+        if (ccl::global_data::env().sched_profile) {
+            timer.stop();
+        }
 
-    if (status == ccl_sched_entry_status_complete && exec_mode == ccl_sched_entry_exec_once) {
-        status = ccl_sched_entry_status_complete_once;
+        if (!is_gpu_entry) {
+            sched->flow_control.return_credit();
+        }
+
+        if (exec_mode == ccl_sched_entry_exec_once) {
+            status = ccl_sched_entry_status_complete_once;
+        }
     }
 
     // TODO: what if status is ccl_sched_entry_status_failed or ccl_sched_entry_status_invalid?
