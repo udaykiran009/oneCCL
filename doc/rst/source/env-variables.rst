@@ -499,8 +499,12 @@ CCL_WORKER_AFFINITY
        Pin domain depends from process launcher.
        If ``mpirun`` from |product_short| package is used then pin domain is MPI process pin domain.
        Otherwise, pin domain is all cores on the node.
-   * - ``n1,n2,..``
-     - Affinity is explicitly specified for all local workers.
+   * - ``<cpulist>``
+     - A comma-separated list of core numbers and/or ranges of core numbers for all local workers, one number per worker.
+       The i-th local worker is pinned to the i-th core in the list.
+       For example <a>,<b>-<c> defines list of cores contaning core with number <a>
+       and range of cores with numbers from <b> to <c>.
+       The number should not exceed the number of cores available on the system.
 
 **Description**
 
@@ -526,8 +530,10 @@ CCL_WORKER_MEM_AFFINITY
      - Description
    * - ``auto``
      - Workers are automatically pinned to NUMA nodes that correspond to CPU affinity of workers.
-   * - ``n1,n2,..``
-     - NUMA nodes are explicitly specified for all local workers.
+   * - ``<nodelist>``
+     - A comma-separated list of NUMA node numbers for all local workers, one number per worker.
+       The i-th local worker is pinned to the i-th NUMA node in the list.
+       The number should not exceed the number of NUMA nodes available on the system.
 
 **Description**
 
