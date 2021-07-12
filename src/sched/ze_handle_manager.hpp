@@ -23,7 +23,7 @@ struct ipc_handle_info {
 
 class ze_handle_manager {
 public:
-    ze_handle_manager() {}
+    ze_handle_manager() : context(nullptr), device(nullptr) {}
 
     ~ze_handle_manager() {
         // TODO: fix cleanup. it throw when close fd

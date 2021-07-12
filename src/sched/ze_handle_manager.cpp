@@ -10,6 +10,10 @@ void ze_handle_manager::init(const ccl_stream* stream) {
 
     device = sycl_device.template get_native<cl::sycl::backend::level_zero>();
     context = sycl_context.template get_native<cl::sycl::backend::level_zero>();
+
+    CCL_THROW_IF_NOT(device != nullptr, "device is not valid");
+    CCL_THROW_IF_NOT(context != nullptr, "context is not valid");
+
     LOG_DEBUG("initialization of ze_handle_manager is completed");
 }
 
@@ -48,6 +52,7 @@ void ze_handle_manager::clear() {
 
 void ze_handle_manager::set(const std::vector<std::vector<ipc_handle_info>>& handles_arg) {
     CCL_THROW_IF_NOT(!handles_arg.empty(), "handles argument is empty");
+
     handles = handles_arg;
     LOG_DEBUG("handles are set successfully");
 }
