@@ -28,7 +28,7 @@
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
 #include "sched/ze_handle_manager.hpp"
-#endif /* CCL_ENABLE_SYCL and MULTI_GPU_SUPPORT */
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
 
 class ze_handle_exchange_entry : public sched_entry {
 public:

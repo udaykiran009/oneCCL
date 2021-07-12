@@ -11,9 +11,9 @@
 #include "common/utils/buffer.hpp"
 #include "sched/entry/entry.hpp"
 
-#if defined(CCL_ENABLE_SYCL) and defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
 #include "sched/ze_handle_manager.hpp"
-#endif /* CCL_ENABLE_SYCL and MULTI_GPU_SUPPORT */
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
 
 class ccl_sched_queue;
 class ccl_sched_bin;
@@ -133,11 +133,11 @@ protected:
     }
 
     ccl_sched_base(const ccl_coll_param& coll_param) : coll_param(coll_param) {
-#if defined(CCL_ENABLE_SYCL) and defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
         if (coll_param.stream != nullptr) {
             memory.handle_manager.init(coll_param.stream);
         }
-#endif /* CCL_ENABLE_SYCL and MULTI_GPU_SUPPORT */
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
     }
 
     void update_id();
