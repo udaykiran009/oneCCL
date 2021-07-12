@@ -773,7 +773,7 @@ void sockaddr_v4::set_sin_addr(const char* src) {
 
 void sockaddr_v6::set_sin_addr(const char* src) {
     char src_copy[internal_kvs::CCL_IP_LEN] = { 0 };
-    memcpy(src_copy, src, strlen(src));
+    kvs_str_copy(src_copy, src, internal_kvs::CCL_IP_LEN);
 
     char* scope_id_ptr = nullptr;
     if ((scope_id_ptr = strchr(src_copy, internal_kvs::SCOPE_ID_DELIM))) {
