@@ -10,4 +10,4 @@ namespace ccl {
 
 env_data::env_data() : log_level(ccl_log_level::debug) {}
 void env_data::print(int rank) {}
-} /* namespace ccl */
+} // namespace ccl

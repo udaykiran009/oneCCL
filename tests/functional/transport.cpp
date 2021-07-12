@@ -2,7 +2,7 @@
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
 #include "transport.hpp"
 
@@ -74,12 +74,12 @@ void transport_data::init_comms() {
         devices.push_back(ccl::create_device(sycl_queues[idx].get_device()));
         allocators.push_back(buf_allocator<char>(streams[0].get_native()));
     }
-#else /* CCL_ENABLE_SYCL */
+#else // CCL_ENABLE_SYCL
     for (int idx = 0; idx < ranks_per_proc; idx++) {
         streams.push_back(ccl::create_stream());
         devices.push_back(ccl::create_device());
     }
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
     for (int idx = 0; idx < ranks_per_proc; idx++) {
         r2d_map.emplace(local_ranks[idx], devices[idx]);
@@ -126,4 +126,4 @@ ccl::stream& transport_data::get_stream() {
 buf_allocator<char>& transport_data::get_allocator() {
     return allocators[0];
 }
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL

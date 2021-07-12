@@ -91,7 +91,7 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
             process_pre_post_copies(sched);
         }
     }
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
     /* should be the last call in the sequence of process_* calls
        because it sets dependencies for all partial schedules
@@ -203,7 +203,7 @@ ccl::status ccl_parallelizer::process_pre_post_copies(ccl_master_sched* sched) {
 
     return ccl::status::success;
 }
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
 ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
     /* TODO: split on per-collective classes */

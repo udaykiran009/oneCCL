@@ -21,7 +21,7 @@ float bf16_to_fp32(bfloat16 val) {
     return ret;
 }
 
-#else /* CCL_BF16_GPU_TRUNCATE */
+#else // CCL_BF16_GPU_TRUNCATE
 
 #include "comp/bf16/bf16.hpp"
 
@@ -44,7 +44,7 @@ float bf16_to_fp32(bfloat16 val) {
     return res;
 }
 
-#endif /* CCL_BF16_GPU_TRUNCATE */
+#endif // CCL_BF16_GPU_TRUNCATE
 
 #ifdef CCL_FP16_GPU_TRUNCATE
 
@@ -102,7 +102,7 @@ float fp16_to_fp32(float16 val) {
     return ans;
 }
 
-#else /* CCL_FP16_GPU_TRUNCATE */
+#else // CCL_FP16_GPU_TRUNCATE
 
 #include "comp/fp16/fp16.hpp"
 
@@ -122,7 +122,7 @@ float fp16_to_fp32(float16 val) {
     return ans_holder[0];
 }
 
-#endif /* CCL_FP16_GPU_TRUNCATE */
+#endif // CCL_FP16_GPU_TRUNCATE
 
 namespace ccl {
 namespace v1 {

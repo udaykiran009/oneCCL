@@ -23,7 +23,7 @@ void ccl_sched_base::update_coll_param_and_attr(const ccl_coll_param& param,
                                                 const ccl_coll_attr& attr) {
 #ifdef CCL_ENABLE_SYCL
     coll_param.copy_deps(param.deps);
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
     bool has_pre_post_copies =
         (!coll_param.device_send_bufs.empty() || !coll_param.device_recv_bufs.empty()) ? true
@@ -128,7 +128,7 @@ ccl_buffer ccl_sched_base::alloc_staging_buffer(size_t bytes) {
 
     return buffer;
 }
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
 void ccl_sched_base::free_buffers() {
     std::list<ccl_sched_buffer_handler>::iterator it;
@@ -145,7 +145,7 @@ void ccl_sched_base::free_buffers() {
         free(sycl_it->buffer.get_ptr(), sycl_it->ctx);
     }
     memory.sycl_buf_list.clear();
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 }
 
 ccl_buffer ccl_sched_base::update_buffer(ccl_buffer buffer, size_t new_size) {
@@ -424,7 +424,7 @@ void ccl_sched_base::alloc_buffers_for_pre_post_copy() {
                      " vs ",
                      param.device_recv_bufs.size());
 
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 }
 
 void ccl_sched_base::update_id() {

@@ -86,4 +86,4 @@ struct sycl_bcast_coll : sycl_base_coll<Dtype, bcast_strategy_impl> {
         }
     }
 };
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL

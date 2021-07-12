@@ -112,4 +112,4 @@ private:
         } while (0); \
     }
 
-} /* namespace ccl */
+} // namespace ccl

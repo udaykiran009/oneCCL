@@ -91,4 +91,4 @@ private:
     sycl_copier copier;
 };
 
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL

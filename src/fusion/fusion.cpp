@@ -339,7 +339,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
                     stream,
                     first_sched->coll_attr.is_sycl_buffer);
             else
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
                 entry_factory::make_entry<copy_entry>(
                     part_scheds[idx].get(),
                     ccl_buffer(
@@ -381,7 +381,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
                     stream,
                     first_sched->coll_attr.is_sycl_buffer);
             else
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
                 entry_factory::make_entry<copy_entry>(
                     part_scheds[idx].get(),
                     ccl_buffer(fusion_buf, buf_cache.get_buf_size(), offset),

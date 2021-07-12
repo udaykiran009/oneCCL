@@ -147,4 +147,4 @@ private:
     bool inited{ false };
 };
 
-#endif /* CCL_ENABLE_MPI */
+#endif // CCL_ENABLE_MPI

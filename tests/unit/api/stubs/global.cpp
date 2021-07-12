@@ -37,4 +37,4 @@ global_data& global_data::get() {
 env_data& global_data::env() {
     return get().env_object;
 }
-} /* namespace ccl */
+} // namespace ccl

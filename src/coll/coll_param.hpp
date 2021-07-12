@@ -27,7 +27,7 @@ using ccl_sycl_buffer_one_dim_types = std::tuple<ccl_sycl_typed_buffer_t<int8_t>
                                                  ccl_sycl_typed_buffer_t<float>,
                                                  ccl_sycl_typed_buffer_t<double>,
                                                  ccl_sycl_typed_buffer_t<uint16_t>>;
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
 #define CCL_INVALID_PROC_IDX (-1)
 

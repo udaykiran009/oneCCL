@@ -3,7 +3,7 @@
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
 #include "sycl_coll.hpp"
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
 #include "transport.hpp"
 
@@ -113,7 +113,7 @@ void transport_data::init_comms(user_options_t& options) {
             //    "all sycl queues should be from the same sycl context");
         }
     }
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
     else {
         ASSERT(0, "unknown backend %d", (int)options.backend);
     }

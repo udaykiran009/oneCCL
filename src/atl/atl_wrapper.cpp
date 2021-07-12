@@ -5,7 +5,7 @@
 #include "atl/ofi/atl_ofi.hpp"
 #ifdef CCL_ENABLE_MPI
 #include "atl/mpi/atl_mpi.hpp"
-#endif /* CCL_ENABLE_MPI */
+#endif // CCL_ENABLE_MPI
 #include "atl_wrapper.h"
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
@@ -39,7 +39,7 @@ void atl_wrapper::set_internal_env(const atl_attr_t& attr) {
 #ifdef CCL_ENABLE_MPI
     else if (transport_type == ccl_atl_mpi)
         atl_mpi::atl_set_env(attr);
-#endif /* CCL_ENABLE_MPI */
+#endif // CCL_ENABLE_MPI
 }
 
 void atl_wrapper::set_exec(ccl_executor* exec) {
@@ -72,7 +72,7 @@ atl_wrapper::atl_wrapper() {
             break;
 #ifdef CCL_ENABLE_MPI
         case ccl_atl_mpi: transport = std::shared_ptr<iatl>(new atl_mpi()); break;
-#endif /* CCL_ENABLE_MPI */
+#endif // CCL_ENABLE_MPI
         default: LOG_ERROR("Unsupported yet"); break;
     }
 
@@ -104,7 +104,7 @@ atl_wrapper::atl_wrapper(std::shared_ptr<ikvs_wrapper> k) {
             break;
 #ifdef CCL_ENABLE_MPI
         case ccl_atl_mpi: transport = std::shared_ptr<iatl>(new atl_mpi()); break;
-#endif /* CCL_ENABLE_MPI */
+#endif // CCL_ENABLE_MPI
         default: LOG_ERROR("Unsupported yet"); break;
     }
 
@@ -143,7 +143,7 @@ atl_wrapper::atl_wrapper(int total_rank_count,
         } break;
 #ifdef CCL_ENABLE_MPI
         case ccl_atl_mpi: transport = std::shared_ptr<iatl>(new atl_mpi()); break;
-#endif /* CCL_ENABLE_MPI */
+#endif // CCL_ENABLE_MPI
         default: LOG_ERROR("Unsupported yet"); break;
     }
 
@@ -176,7 +176,7 @@ void atl_wrapper::init_transport() {
         rank = static_cast<atl_mpi*>(transport.get())->get_rank();
         size = static_cast<atl_mpi*>(transport.get())->get_size();
     }
-#endif /* CCL_ENABLE_MPI */
+#endif // CCL_ENABLE_MPI
 
     if (rank == 0) {
         tag->print();

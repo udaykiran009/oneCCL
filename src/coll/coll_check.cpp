@@ -90,7 +90,7 @@ void ccl_check_usm_pointers(const ccl_coll_param& param) {
                      " for device type: ",
                      ccl_sycl_device_to_str(dev));
 }
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
 void ccl_coll_validate_user_input(const ccl_coll_param& param, const ccl_coll_attr& attr) {
     CCL_THROW_IF_NOT(ccl::global_data::env().atl_transport == ccl_atl_ofi || !(attr.reduction_fn),
@@ -159,6 +159,6 @@ void ccl_coll_validate_user_input(const ccl_coll_param& param, const ccl_coll_at
             /* check whether USM pointers have expected type */
             ccl_check_usm_pointers(param);
         }
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
     }
 }

@@ -520,4 +520,4 @@ ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
     return ccl::status::success;
 }
 
-#endif /* CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT */
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT

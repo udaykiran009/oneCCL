@@ -33,4 +33,4 @@ ushort __fp32_to_bf16(float V) {
     return as_ushort(__builtin_IB_ftobf_1(V));
 }
 
-#endif /* RNE_H */
+#endif // RNE_H

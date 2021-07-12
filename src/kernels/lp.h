@@ -12,9 +12,9 @@ ushort __fp32_to_bf16(float V) {
     ushort2 temp = as_ushort2(V);
     return temp.s1;
 }
-#else /* CCL_BF16_GPU_TRUNCATE */
+#else // CCL_BF16_GPU_TRUNCATE
 #include "rne.h"
-#endif /* CCL_BF16_GPU_TRUNCATE */
+#endif // CCL_BF16_GPU_TRUNCATE
 
 #define DEFINE_BF16SUM_OP(T) \
     T __bf16_sum_##T(T lhs, T rhs) { \
@@ -124,7 +124,7 @@ half __fp32_to_fp16(float V) {
     T __max_##T(T lhs, T rhs) { \
         return __fp32_to_fp16(max(__fp16_to_fp32(lhs), __fp16_to_fp32(rhs))); \
     }
-#else /* CCL_FP16_GPU_TRUNCATE */
+#else // CCL_FP16_GPU_TRUNCATE
 #define DEFINE_FP16SUM_OP(T) \
     T __sum_##T(T lhs, T rhs) { \
         return lhs + rhs; \
@@ -144,4 +144,4 @@ half __fp32_to_fp16(float V) {
     T __max_##T(T lhs, T rhs) { \
         return max(lhs, rhs); \
     }
-#endif /* CCL_FP16_GPU_TRUNCATE */
+#endif // CCL_FP16_GPU_TRUNCATE

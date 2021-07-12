@@ -97,4 +97,4 @@ void global_data::reset_resize_independent_objects() {
     hwloc_wrapper.reset();
 }
 
-} /* namespace ccl */
+} // namespace ccl

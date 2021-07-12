@@ -278,4 +278,4 @@ private:
     int parse_number(const std::string& number_str, size_t& result);
 };
 
-} /* namespace ccl */
+} // namespace ccl

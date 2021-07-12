@@ -17,9 +17,9 @@ public:
 #ifdef CCL_ENABLE_SYCL
             /* TODO: detect pure sycl::event and ccl::event for device op */
             deps[idx].get_native().wait();
-#else /* CCL_ENABLE_SYCL */
+#else // CCL_ENABLE_SYCL
             deps[idx].wait();
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
         }
         status = ccl_sched_entry_status_complete;
     }

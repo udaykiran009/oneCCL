@@ -50,7 +50,7 @@ public:
     COMM_INTERFACE_COLL_METHODS(DEFINITION);
 #ifdef CCL_ENABLE_SYCL
     SYCL_COMM_INTERFACE_COLL_METHODS(DEFINITION);
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
     // troubleshooting
     std::string to_string() const;

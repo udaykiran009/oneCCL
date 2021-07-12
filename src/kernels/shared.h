@@ -53,4 +53,4 @@ static inline size_t ring_reduce_scatter_tmp_buffer_size(size_t elems_count, siz
     return 2 * ring_reduce_scatter_get_segment_size(elems_count, comm_size);
 }
 
-#endif /* SHARED_H */
+#endif // SHARED_H

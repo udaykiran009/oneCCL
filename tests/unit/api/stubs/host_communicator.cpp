@@ -480,6 +480,6 @@ std::string host_communicator::to_string() const {
 COMM_INTERFACE_COLL_INSTANTIATION(host_communicator);
 #ifdef CCL_ENABLE_SYCL
 SYCL_COMM_INTERFACE_COLL_INSTANTIATION(host_communicator);
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
 } // namespace ccl

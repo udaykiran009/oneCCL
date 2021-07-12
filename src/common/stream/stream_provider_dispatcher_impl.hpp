@@ -4,7 +4,7 @@
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
 // creation from sycl::queue
 std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
@@ -44,9 +44,9 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
              ", device: ",
              native_stream.get_device().template get_info<cl::sycl::info::device::name>());
 
-#else /* CCL_ENABLE_SYCL */
+#else // CCL_ENABLE_SYCL
     std::unique_ptr<ccl_stream> ret(new ccl_stream(type, native_stream, version));
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
     return ret;
 }
@@ -63,4 +63,4 @@ stream_provider_dispatcher::stream_native_t* stream_provider_dispatcher::get_nat
     }
     return &(native_streams[idx]);
 }
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL

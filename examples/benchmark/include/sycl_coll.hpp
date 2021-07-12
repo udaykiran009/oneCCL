@@ -192,4 +192,4 @@ private:
     std::vector<buf_allocator<Dtype>> allocators;
 };
 
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL

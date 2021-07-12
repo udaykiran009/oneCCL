@@ -212,7 +212,7 @@ ccl::status ccl_coll_build_allreduce(ccl_sched* sched,
             CCL_CALL(ccl_coll_build_gpu_allreduce(
                 sched, send_buf, recv_buf, count, dtype, reduction, comm));
             break;
-#endif /* CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT */
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
         default:
             CCL_FATAL("unexpected allreduce_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl::status::invalid_arguments;

@@ -26,7 +26,7 @@ std::map<ccl_atl_transport, std::string> env_data::atl_transport_names = {
 #ifdef CCL_ENABLE_MPI
         ,
     std::make_pair(ccl_atl_mpi, "mpi")
-#endif /* CCL_ENABLE_MPI */
+#endif // CCL_ENABLE_MPI
 };
 
 std::map<ccl_staging_buffer, std::string> env_data::staging_buffer_names = {
@@ -53,9 +53,9 @@ env_data::env_data()
           worker_wait(1),
 #ifdef CCL_ENABLE_MPI
           atl_transport(ccl_atl_mpi),
-#else /* CCL_ENABLE_MPI */
+#else // CCL_ENABLE_MPI
           atl_transport(ccl_atl_ofi),
-#endif /* CCL_ENABLE_MPI */
+#endif // CCL_ENABLE_MPI
           enable_shm(0),
           enable_rma(0),
           enable_device_buf(0),
@@ -283,13 +283,13 @@ void env_data::print(int rank) {
         LOG_INFO("specification version: ", ONECCL_SPEC_VERSION);
 #ifdef CCL_ENABLE_SYCL
         LOG_INFO("compute backend: ", version.cl_backend_name);
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
 #ifdef ENABLE_DEBUG
         const char* build_mode = "debug";
-#else /* ENABLE_DEBUG */
+#else // ENABLE_DEBUG
         const char* build_mode = "release";
-#endif /* ENABLE_DEBUG */
+#endif // ENABLE_DEBUG
         LOG_INFO("build mode: ", build_mode);
         LOG_INFO("C compiler: ", CCL_C_COMPILER);
         LOG_INFO("C++ compiler: ", CCL_CXX_COMPILER);
@@ -419,7 +419,7 @@ void env_data::print(int rank) {
              ": ",
              (gpu_group_count != CCL_ENV_SIZET_NOT_SPECIFIED) ? std::to_string(gpu_group_count)
                                                               : CCL_ENV_STR_NOT_SPECIFIED);
-#endif /* CCL_ENABLE_SYCL  */
+#endif // CCL_ENABLE_SYCL
 
     LOG_INFO(CCL_BF16, ": ", str_by_enum(bf16_impl_names, bf16_impl_type));
     LOG_INFO(CCL_FP16, ": ", str_by_enum(fp16_impl_names, fp16_impl_type));
@@ -658,7 +658,7 @@ void env_data::env_2_atl_transport() {
         atl_transport = ccl_atl_ofi;
     }
     else
-#endif /* CCL_ENABLE_MPI */
+#endif // CCL_ENABLE_MPI
         env_2_enum(CCL_ATL_TRANSPORT, atl_transport_names, atl_transport);
 }
 
@@ -669,4 +669,4 @@ bool env_data::with_mpirun() {
                : false;
 }
 
-} /* namespace ccl */
+} // namespace ccl

@@ -518,4 +518,4 @@ ccl::event single_device_communicator::sparse_allreduce_impl(
 COMM_INTERFACE_COLL_INSTANTIATION(single_device_communicator);
 #ifdef CCL_ENABLE_SYCL
 SYCL_COMM_INTERFACE_COLL_INSTANTIATION(single_device_communicator);
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL

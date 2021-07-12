@@ -22,7 +22,7 @@
 #include <CL/sycl.hpp>
 using namespace cl::sycl;
 using namespace cl::sycl::access;
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
 #include "base.hpp"
 #include "base_utils.hpp"
@@ -50,12 +50,12 @@ void print_help_usage(const char* app) {
           "\t[-k,--ranks_per_proc <number of ranks per process>]: %d\n"
 #ifdef CCL_ENABLE_NUMA
           "\t[-s,--numa_node <numa node for allocation of send and recv buffers>]: %s\n"
-#endif /* CCL_ENABLE_NUMA */
+#endif // CCL_ENABLE_NUMA
 #ifdef CCL_ENABLE_SYCL
           "\t[-a,--sycl_dev_type <sycl device type>]: %s\n"
           "\t[-m,--sycl_mem_type <sycl memory type>]: %s\n"
           "\t[-u,--sycl_usm_type <sycl usm type>]: %s\n"
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
           "\t[-l,--coll <collectives list/all>]: %s\n"
           "\t[-d,--dtype <datatypes list/all>]: %s\n"
           "\t[-r,--reduction <reductions list/all>]: %s\n"
@@ -80,12 +80,12 @@ void print_help_usage(const char* app) {
           DEFAULT_RANKS_PER_PROC,
 #ifdef CCL_ENABLE_NUMA
           DEFAULT_NUMA_NODE_STR,
-#endif /* CCL_ENABLE_NUMA */
+#endif // CCL_ENABLE_NUMA
 #ifdef CCL_ENABLE_SYCL
           sycl_dev_names[DEFAULT_SYCL_DEV_TYPE].c_str(),
           sycl_mem_names[DEFAULT_SYCL_MEM_TYPE].c_str(),
           sycl_usm_names[DEFAULT_SYCL_USM_TYPE].c_str(),
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
           DEFAULT_COLL_LIST,
           DEFAULT_DTYPES_LIST,
           DEFAULT_REDUCTIONS_LIST,
@@ -252,7 +252,7 @@ int set_sycl_usm_type(const std::string& option_value, sycl_usm_type_t& usm) {
 
     return 0;
 }
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
 int set_datatypes(std::string option_value,
                   check_values_t check_values,
@@ -553,12 +553,12 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
 #ifdef CCL_ENABLE_NUMA
     const char* numa_options = "s:";
     memcpy(short_options + strlen(short_options), numa_options, strlen(numa_options));
-#endif /* CCL_ENABLE_NUMA */
+#endif // CCL_ENABLE_NUMA
 
 #ifdef CCL_ENABLE_SYCL
     const char* sycl_options = "a:m:u:";
     memcpy(short_options + strlen(short_options), sycl_options, strlen(sycl_options));
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
     struct option getopt_options[] = {
         { "backend", required_argument, nullptr, 'b' },
@@ -576,12 +576,12 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
         { "ranks_per_proc", required_argument, nullptr, 'k' },
 #ifdef CCL_ENABLE_NUMA
         { "numa_node", required_argument, nullptr, 's' },
-#endif /* CCL_ENABLE_NUMA */
+#endif // CCL_ENABLE_NUMA
 #ifdef CCL_ENABLE_SYCL
         { "sycl_dev_type", required_argument, nullptr, 'a' },
         { "sycl_mem_type", required_argument, nullptr, 'm' },
         { "sycl_usm_type", required_argument, nullptr, 'u' },
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
         { "coll", required_argument, nullptr, 'l' },
         { "dtype", required_argument, nullptr, 'd' },
         { "reduction", required_argument, nullptr, 'r' },
@@ -700,7 +700,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
                     errors++;
                 }
                 break;
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
             case 'l':
                 if (strcmp("all", optarg) == 0) {
                     options.coll_names = tokenize<std::string>(ALL_COLLS_LIST, ',');
@@ -837,12 +837,12 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   "\n  ranks_per_proc: %zu"
 #ifdef CCL_ENABLE_NUMA
                   "\n  numa_node:      %s"
-#endif /* CCL_ENABLE_NUMA */
+#endif // CCL_ENABLE_NUMA
 #ifdef CCL_ENABLE_SYCL
                   "\n  sycl_dev_type:  %s"
                   "\n  sycl_mem_type:  %s"
                   "\n  sycl_usm_type:  %s"
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
                   "\n  collectives:    %s"
                   "\n  datatypes:      %s"
                   "\n  reductions:     %s"
@@ -865,12 +865,12 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   (options.numa_node == DEFAULT_NUMA_NODE)
                       ? DEFAULT_NUMA_NODE_STR
                       : std::to_string(options.numa_node).c_str(),
-#endif /* CCL_ENABLE_NUMA */
+#endif // CCL_ENABLE_NUMA
 #ifdef CCL_ENABLE_SYCL
                   sycl_dev_type_str.c_str(),
                   sycl_mem_type_str.c_str(),
                   sycl_usm_type_str.c_str(),
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
                   collectives_str.c_str(),
                   datatypes_str.c_str(),
                   reductions_str.c_str(),

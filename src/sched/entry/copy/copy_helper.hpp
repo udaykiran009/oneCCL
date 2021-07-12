@@ -147,4 +147,4 @@ struct sycl_copier {
     sycl::event e;
 };
 
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL

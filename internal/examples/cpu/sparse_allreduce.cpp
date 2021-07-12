@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
                                      ccl::datatype::float64,
                                      ccl::datatype::int64,
                                      ccl::datatype::uint64>;
-#endif /* CCL_BF16_COMPILER */
+#endif // CCL_BF16_COMPILER 
 
     ccl::init();
 

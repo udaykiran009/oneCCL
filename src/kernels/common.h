@@ -12,9 +12,9 @@ typedef atomic_int sync_flag_type;
 #else
 // default type for sync flags
 typedef volatile int sync_flag_type;
-#endif /* ENABLE_KERNEL_ATOMICS */
+#endif // ENABLE_KERNEL_ATOMICS
 
-#else /* HOST_CTX */
+#else // HOST_CTX
 
 #pragma OPENCL EXTENSION cl_intel_subgroups : enable
 #pragma OPENCL EXTENSION cl_khr_subgroups : enable
@@ -103,14 +103,14 @@ typedef ushort bfloat16;
     printf("kernel %d.%d barrier passed\n", rank, thread_id);
 #define LOG_IN_BARRIER(rank, thread_id, flag, desired) \
     printf("kernel %d.%d barrier %d/%d\n", rank, thread_id, flag, desired);
-#else /* ENABLE_KERNEL_DEBUG */
+#else // ENABLE_KERNEL_DEBUG
 #define LOG_INPUT_DATA_START(rank)
 #define LOG_INPUT_DATA_END(rank)
 #define LOG_OUTGOING_DATA_START(rank)
 #define LOG_OUTGOING_DATA_END(rank)
 #define LOG_BARRIER_PASSED(rank, thread_id)
 #define LOG_IN_BARRIER(rank, thread_id, flag, desired)
-#endif /* ENABLE_KERNEL_DEBUG */
+#endif // ENABLE_KERNEL_DEBUG
 
 #define SWAP_VARIABLES(var1, var2, type) \
     do { \
@@ -178,7 +178,7 @@ typedef atomic_int sync_flag_type;
 #define GET_PROXY_SIZE(_sync_flag, size) \
     size = atomic_load_explicit(_sync_flag, memory_order_seq_cst, memory_scope_all_svm_devices);
 
-#else /* ENABLE_KERNEL_ATOMICS */
+#else // ENABLE_KERNEL_ATOMICS
 
 // default type for sync flags
 typedef volatile int sync_flag_type;
@@ -221,7 +221,7 @@ typedef volatile int sync_flag_type;
 
 #define GET_PROXY_SIZE(_sync_flag, size) size = *_sync_flag;
 
-#endif /* ENABLE_KERNEL_ATOMICS */
+#endif // ENABLE_KERNEL_ATOMICS
 
 /*
 #define KERNEL_BARRIER(_barrier_flag, _desired, _increment)                         \
@@ -269,4 +269,4 @@ typedef volatile int sync_flag_type;
         _desired += comm_size; \
     }*/
 
-#endif /* HOST_CTX */
+#endif // HOST_CTX

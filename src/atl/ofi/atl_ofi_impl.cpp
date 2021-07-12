@@ -1003,7 +1003,7 @@ static atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
 
 #ifdef CCL_ENABLE_SYCL
     setenv("FI_SHM_DISABLE_CMA", "1", 0);
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
     atl_ofi_adjust_env(attr);
 

@@ -76,11 +76,11 @@ static atl_mpi_lib_info_t mpi_lib_infos[MPI_LIB_INFO_MAX_COUNT] = {
 
 #ifdef CCL_BF16_COMPILER
 #define ATL_MPI_BF16
-#endif /* CCL_BF16_COMPILER */
+#endif // CCL_BF16_COMPILER
 
 #ifdef CCL_FP16_COMPILER
 #define ATL_MPI_FP16
-#endif /* CCL_FP16_COMPILER */
+#endif // CCL_FP16_COMPILER
 
 typedef struct {
     // custom MPI operations for BF16
@@ -264,7 +264,7 @@ static void BF16_TARGET_ATTRIBUTE_ALL atl_mpi_bf16_max_op(void* in,
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
     atl_mpi_bf16_base_op(in, inout, length, ccl::reduction::max);
 }
-#endif /* ATL_MPI_BF16 */
+#endif // ATL_MPI_BF16
 
 #ifdef ATL_MPI_FP16
 
@@ -310,7 +310,7 @@ static void FP16_TARGET_ATTRIBUTE_ALL atl_mpi_fp16_max_op(void* in,
     atl_mpi_check_op_params(in, inout, length, datatype, __FUNCTION__);
     atl_mpi_fp16_base_op(in, inout, length, ccl::reduction::max);
 }
-#endif /* ATL_MPI_FP16 */
+#endif // ATL_MPI_FP16
 
 static int atl_mpi_bf16_init() {
     int ret = MPI_SUCCESS;
@@ -368,7 +368,7 @@ static int atl_mpi_bf16_init() {
         return RET2ATL(ret);
     }
 
-#endif /* ATL_MPI_BF16 */
+#endif // ATL_MPI_BF16
 
     return RET2ATL(ret);
 }
@@ -451,7 +451,7 @@ static int atl_mpi_fp16_init() {
         return RET2ATL(ret);
     }
 
-#endif /* ATL_MPI_FP16 */
+#endif // ATL_MPI_FP16
 
     return RET2ATL(ret);
 }
@@ -506,7 +506,7 @@ static MPI_Op atl2mpi_op_bf16(atl_reduction_t rtype) {
         default: printf("unknown reduction type: %d\n", rtype); exit(1);
     }
 }
-#endif /* ATL_MPI_BF16 */
+#endif // ATL_MPI_BF16
 
 #ifdef ATL_MPI_FP16
 static MPI_Op atl2mpi_op_fp16(atl_reduction_t rtype) {
@@ -518,18 +518,18 @@ static MPI_Op atl2mpi_op_fp16(atl_reduction_t rtype) {
         default: printf("unknown reduction type: %d\n", rtype); exit(1);
     }
 }
-#endif /* ATL_MPI_FP16 */
+#endif // ATL_MPI_FP16
 
 static MPI_Op atl2mpi_op(atl_reduction_t rtype, MPI_Datatype dtype) {
 #ifdef ATL_MPI_BF16
     if (dtype == global_data.bf16.dtype)
         return atl2mpi_op_bf16(rtype);
-#endif /* ATL_MPI_BF16 */
+#endif // ATL_MPI_BF16
 
 #ifdef ATL_MPI_FP16
     if (dtype == global_data.fp16.dtype)
         return atl2mpi_op_fp16(rtype);
-#endif /* ATL_MPI_FP16 */
+#endif // ATL_MPI_FP16
 
     (void)dtype;
     switch (rtype) {
@@ -708,7 +708,7 @@ atl_status_t atl_mpi_set_base_env(const atl_attr_t& attr) {
 
 #ifdef CCL_ENABLE_SYCL
     setenv("FI_SHM_DISABLE_CMA", "1", 0);
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
     setenv("MPIR_CVAR_DEFAULT_THREAD_LEVEL", "MPI_THREAD_MULTIPLE", 0);
 
@@ -738,7 +738,7 @@ atl_status_t atl_mpi_set_impi_env(const atl_attr_t& attr, const atl_mpi_lib_attr
             setenv("I_MPI_THREAD_LOCK_LEVEL", "global", 0);
         }
     }
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
     setenv("I_MPI_THREAD_SPLIT", "1", 0);
     setenv("I_MPI_THREAD_RUNTIME", "generic", 0);
@@ -1729,4 +1729,4 @@ atl_status_t atl_mpi_main_addr_reserve(char* main_addr) {
     return ATL_STATUS_UNSUPPORTED;
 }
 
-#endif /* CCL_ENABLE_MPI */
+#endif // CCL_ENABLE_MPI

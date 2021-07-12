@@ -51,7 +51,7 @@ struct ccl_sched_sycl_buffer_handler : public ccl_sched_buffer_handler {
             : ccl_sched_buffer_handler(buffer, size),
               ctx(ctx) {}
 };
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
 struct ccl_sched_memory {
     std::list<ccl_sched_buffer_handler> buf_list;
@@ -61,8 +61,8 @@ struct ccl_sched_memory {
     std::list<ccl_sched_sycl_buffer_handler> sycl_buf_list;
 #ifdef MULTI_GPU_SUPPORT
     ze_handle_manager handle_manager;
-#endif /* MULTI_GPU_SUPPORT */
-#endif /* CCL_ENABLE_SYCL */
+#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL
 };
 
 static size_t lifo_priority = 0;
@@ -85,7 +85,7 @@ struct ccl_sched_base {
 
 #ifdef CCL_ENABLE_SYCL
     ccl_buffer alloc_staging_buffer(size_t bytes);
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
     void free_buffers();
 

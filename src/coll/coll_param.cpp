@@ -347,9 +347,9 @@ void ccl_coll_param::copy_deps(const std::vector<ccl::event>& d) {
         catch (ccl::exception&) {
         }
     }
-#else /* CCL_ENABLE_SYCL */
+#else // CCL_ENABLE_SYCL
     CCL_THROW_IF_NOT(d.size() == 0, "host deps are not supported yet");
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 }
 
 void ccl_coll_param::set_common_fields(ccl::datatype d,

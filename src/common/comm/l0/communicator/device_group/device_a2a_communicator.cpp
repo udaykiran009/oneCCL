@@ -254,4 +254,4 @@ ccl::event device_group_a2a_communicator::sparse_allreduce_impl(
 COMM_INTERFACE_COLL_INSTANTIATION(device_group_a2a_communicator);
 #ifdef CCL_ENABLE_SYCL
 SYCL_COMM_INTERFACE_COLL_INSTANTIATION(device_group_a2a_communicator);
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL

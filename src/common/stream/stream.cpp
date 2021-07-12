@@ -20,7 +20,7 @@ ccl_stream::ccl_stream(stream_type type,
     for (size_t idx = 0; idx < native_streams.size(); idx++) {
         native_streams[idx] = stream_native_t(stream.get_context(), stream.get_device());
     }
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 }
 
 // export attributes

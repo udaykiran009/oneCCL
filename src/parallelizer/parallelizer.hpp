@@ -23,7 +23,7 @@ private:
 
 #ifdef CCL_ENABLE_SYCL
     ccl::status process_pre_post_copies(ccl_master_sched* sched);
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
     ccl::status process_base(ccl_master_sched* sched);
 

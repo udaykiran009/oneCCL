@@ -9,7 +9,7 @@
     if (comm.rank() == 0) { \
         printf(fmt "\n", ##__VA_ARGS__); \
     }
-#endif /* PRINT_BY_ROOT */
+#endif // PRINT_BY_ROOT
 
 constexpr std::initializer_list<ccl::datatype> all_dtypes = {
     ccl::datatype::int8,    ccl::datatype::int32,   ccl::datatype::int64,   ccl::datatype::uint64,

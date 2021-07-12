@@ -232,4 +232,4 @@ ccl::event device_group_ring_communicator::sparse_allreduce_impl(
 COMM_INTERFACE_COLL_INSTANTIATION(device_group_ring_communicator);
 #ifdef CCL_ENABLE_SYCL
 SYCL_COMM_INTERFACE_COLL_INSTANTIATION(device_group_ring_communicator);
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL

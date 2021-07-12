@@ -443,7 +443,7 @@ ccl::event device_group_a2a_communicator::sparse_allreduce_impl(
 COMM_INTERFACE_COLL_INSTANTIATION(device_group_a2a_communicator);
 #ifdef CCL_ENABLE_SYCL
 SYCL_COMM_INTERFACE_COLL_INSTANTIATION(device_group_a2a_communicator);
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
 ////////////////////////////////////////////////////////////////
 device_group_ring_communicator::device_group_ring_communicator(ccl::unified_device_type&& device,
@@ -890,4 +890,4 @@ ccl::event device_group_ring_communicator::sparse_allreduce_impl(
 COMM_INTERFACE_COLL_INSTANTIATION(device_group_ring_communicator);
 #ifdef CCL_ENABLE_SYCL
 SYCL_COMM_INTERFACE_COLL_INSTANTIATION(device_group_ring_communicator);
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL

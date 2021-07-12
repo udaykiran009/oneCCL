@@ -10,7 +10,7 @@
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 
 #define CCL_REDUCE(type) \
     do { \
@@ -152,10 +152,10 @@ ccl::status ccl_comp_reduce(ccl_sched* sched,
 
     return ccl::status::success;
 
-#else /* CCL_ENABLE_SYCL */
+#else // CCL_ENABLE_SYCL
     return ccl_comp_reduce_regular(
         in_buf, in_count, inout_buf, out_count, dtype, reduction, reduction_fn, context);
-#endif /* CCL_ENABLE_SYCL */
+#endif // CCL_ENABLE_SYCL
 }
 
 ccl::status ccl_comp_batch_reduce(const void* in_buf,

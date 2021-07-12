@@ -443,7 +443,7 @@ void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
         free(recv_vbuf_bf16);
     }
 }
-#endif /* CCL_BF16_COMPILER */
+#endif // CCL_BF16_COMPILER
 
 template <ccl::datatype i_type,
           ccl::datatype v_type,
@@ -529,4 +529,4 @@ void sparse_test_run(ccl::sparse_coalesce_mode coalesce_mode,
     free(recv_ibuf);
     free(recv_vbuf);
 }
-#endif /* SPARSE_TEST_ALGO_HPP */
+#endif // SPARSE_TEST_ALGO_HPP
