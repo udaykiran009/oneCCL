@@ -49,6 +49,8 @@ struct ccl_coll_attr {
     ccl_coll_attr(ccl_coll_attr&&) = default;
     ccl_coll_attr& operator=(ccl_coll_attr&&) = default;
 
+    std::string to_string() const;
+
     ccl::prologue_fn prologue_fn = nullptr;
     ccl::epilogue_fn epilogue_fn = nullptr;
     ccl::reduction_fn reduction_fn = nullptr;
@@ -110,6 +112,8 @@ struct ccl_coll_param {
 
     ccl_coll_param();
     ccl_coll_param(const ccl_coll_param& other);
+
+    std::string to_string() const;
 
     void* get_send_buf(size_t idx = 0, buf_type type = buf_type::regular) const;
     void* get_recv_buf(size_t idx = 0, buf_type type = buf_type::regular) const;

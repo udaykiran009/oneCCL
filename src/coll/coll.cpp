@@ -46,6 +46,15 @@
 
 /* param is not const because param.comm can be updated for unordered colls */
 static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& attr) {
+    LOG_DEBUG("\n{\n",
+              "  param: ",
+              param.to_string(),
+              "\n"
+              "  attr: ",
+              attr.to_string(),
+              "\n"
+              "}");
+
     ccl_coll_validate_user_input(param, attr);
 
     ccl::global_data& data = ccl::global_data::get();

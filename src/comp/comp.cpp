@@ -209,11 +209,11 @@ ccl::status ccl_comp_batch_reduce(const void* in_buf,
 
 const char* ccl_reduction_to_str(ccl::reduction type) {
     switch (type) {
-        case ccl::reduction::sum: return "SUM";
-        case ccl::reduction::prod: return "PROD";
-        case ccl::reduction::min: return "MIN";
-        case ccl::reduction::max: return "MAX";
-        case ccl::reduction::custom: return "CUSTOM";
-        default: return "UNKNOWN";
+        case ccl::reduction::sum: return "sum";
+        case ccl::reduction::prod: return "prod";
+        case ccl::reduction::min: return "min";
+        case ccl::reduction::max: return "max";
+        case ccl::reduction::custom: return "custom";
+        default: return "unknown";
     }
 }

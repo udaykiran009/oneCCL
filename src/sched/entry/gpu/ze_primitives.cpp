@@ -110,7 +110,7 @@ std::string to_string(const ze_kernel_args_t& kernel_args) {
     for (const auto& arg : kernel_args) {
         // TODO: can we distinguish argument types in order to properly print them instead of printing
         // as a void* ptr?
-        ss << "  idx: " << idx << ", { " << arg.first << ", " << *(void**)arg.second << " },\n";
+        ss << "  idx: " << idx << ", { " << arg.first << ", " << *(void**)arg.second << " }\n";
         ++idx;
     }
     ss << "}";

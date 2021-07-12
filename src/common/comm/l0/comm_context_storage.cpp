@@ -32,10 +32,10 @@ group_context::comm_group_t group_context::group_by_kvs(
     LOG_DEBUG("thread released by barrier");
     LOG_DEBUG("cluster_device_group size: ",
               cluster_device_group_size,
-              "\nThread device group ranks size: ",
+              "\nthread device group ranks size: ",
               local_thread_device_group_ranks.size());
     for (size_t i = 0; i < local_thread_device_group_ranks.size(); i++) {
-        LOG_DEBUG("\nLocal thread device group ranks: ", local_thread_device_group_ranks[i]);
+        LOG_DEBUG("\nlocal thread device group ranks: ", local_thread_device_group_ranks[i]);
     }
     // register group slot in global context table, based on communicator id
     comm_group_t group = group_context::group_by_comm(atl);
@@ -48,19 +48,16 @@ group_context::comm_group_t group_context::group_by_kvs(
 }
 
 group_context::comm_group_t group_context::group_by_comm(std::shared_ptr<atl_wrapper> atl) {
-    LOG_INFO("\n",
-             "\nATL info:",
-             "\n  threads per process: ",
-             atl->get_threads_per_process(),
-             "\n  ranks per process:   ",
-             atl->get_ranks_per_process(),
-             "\n  atl size:            ",
-             atl->get_size(),
-             "\n  rank:                ",
-             atl->get_rank(),
-             "\n  unique id of atl:    ",
-             atl->get_id(),
-             "\n")
+    std::stringstream ss;
+    ss << "\n{\n"
+       << "  ATL info:\n"
+       << "    rank: " << atl->get_rank() << "\n"
+       << "    size: " << atl->get_size() << "\n"
+       << "    id: " << atl->get_id() << "\n"
+       << "    ranks per process: " << atl->get_ranks_per_process() << "\n"
+       << "    threads per process: " << atl->get_threads_per_process() << "\n"
+       << "}";
+    LOG_INFO(ss.str());
 
     comm_group_t group;
     {

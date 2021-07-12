@@ -24,10 +24,10 @@ ccl_numa_node::ccl_numa_node(int idx,
 std::string ccl_numa_node::to_string() {
     std::stringstream ss;
 
-    ss << "["
+    ss << "{"
        << "idx: " << idx << ", memory: " << mem_in_mb << " MB"
        << ", cores: " << core_count << ", cpus: " << cpus.size() << ", membind: " << membind_support
-       << "]";
+       << "}";
 
     return ss.str();
 }
