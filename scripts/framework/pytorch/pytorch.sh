@@ -32,6 +32,7 @@ set_run_env() {
     # CCL
     export CCL_LOG_LEVEL=INFO
     export CCL_ATL_TRANSPORT=ofi
+    export CCL_WORKER_COUNT=4
     ccl_vars_file="${CCL_INSTALL_DIR}/env/setvars.sh"
     if [[ -f ${ccl_vars_file} ]]
     then
@@ -791,6 +792,10 @@ run_tests() {
     fi
     fail_count=`echo "${fail_strings}" | sed '/^$/d' | wc -l`
 
+    echo_log ""
+    echo_log "tests log: ${TESTS_LOG_FILE}"
+    echo_log ""
+
     if [[ ${fail_count} -ne 0 ]]
     then
         echo_log ""
@@ -798,9 +803,6 @@ run_tests() {
         echo_log ""
         echo_log "${fail_strings}"
         echo_log ""
-        echo_log "see full log ${TESTS_LOG_FILE} for details"
-        echo_log ""
-        echo_log "TEST FAILED"
         check_exit_code ${fail_count} "TEST FAILED"
     else
         echo_log "TEST PASSED"
