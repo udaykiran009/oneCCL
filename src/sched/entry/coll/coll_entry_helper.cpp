@@ -13,6 +13,11 @@ ccl::status coll_entry_helper::build_schedule(ccl_sched* sched,
             sched->coll_attr.match_id = parent_sched->coll_attr.match_id;
         }
     }
+    sched->coll_attr.to_cache = parent_sched->coll_attr.to_cache;
+
+#ifdef CCL_ENABLE_SYCL
+    sched->coll_attr.is_sycl_buf = parent_sched->coll_attr.is_sycl_buf;
+#endif // CCL_ENABLE_SYCL
 
     switch (param.ctype) {
         case ccl_coll_allgatherv: {

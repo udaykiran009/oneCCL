@@ -49,17 +49,17 @@ void ccl_sched_base::update_coll_param_and_attr(const ccl_coll_param& param,
     int comm_size = coll_param.comm->size();
 
     if (coll_param.ctype == ccl_coll_allgatherv) {
-        if (coll_attr.vector_buf)
+        if (coll_attr.is_vector_buf)
             CCL_THROW_IF_NOT(static_cast<int>(coll_param.recv_bufs.size()) == comm_size);
         CCL_THROW_IF_NOT(static_cast<int>(coll_param.recv_counts.size()) == comm_size);
     }
 
     if (coll_param.ctype == ccl_coll_alltoallv) {
-        if (coll_attr.vector_buf)
+        if (coll_attr.is_vector_buf)
             CCL_THROW_IF_NOT(static_cast<int>(coll_param.send_bufs.size()) == comm_size);
         CCL_THROW_IF_NOT(static_cast<int>(coll_param.send_counts.size()) == comm_size);
 
-        if (coll_attr.vector_buf)
+        if (coll_attr.is_vector_buf)
             CCL_THROW_IF_NOT(static_cast<int>(coll_param.recv_bufs.size()) == comm_size);
         CCL_THROW_IF_NOT(static_cast<int>(coll_param.recv_counts.size()) == comm_size);
     }
@@ -276,7 +276,7 @@ void ccl_sched_base::get_pre_post_copy_counts(std::vector<size_t>& d2h_counts,
             break;
         case ccl_coll_alltoallv:
             if (param.recv_bufs.size() > 1) {
-                /* expect that vector_buf is enabled for send/recv both */
+                /* expect that is_vector_buf is enabled for send/recv both */
                 d2h_counts.insert(
                     d2h_counts.end(), param.send_counts.begin(), param.send_counts.end());
                 h2d_counts.insert(
@@ -328,6 +328,7 @@ void ccl_sched_base::alloc_buffers_for_pre_post_copy() {
     selector_param.dtype = param.dtype;
     selector_param.comm = param.comm;
     selector_param.stream = param.stream;
+    selector_param.is_sycl_buf = coll_attr.is_sycl_buf;
 
     ccl_coll_allreduce_algo allreduce_algo = ccl_coll_allreduce_last_value;
     if (param.ctype == ccl_coll_allreduce) {
@@ -341,7 +342,7 @@ void ccl_sched_base::alloc_buffers_for_pre_post_copy() {
 
     bool should_alloc_buffers = true;
 
-    if (!coll_attr.is_sycl_buffer) {
+    if (!coll_attr.is_sycl_buf) {
         auto bufs = param.get_all_non_zero_bufs();
         if (!bufs.empty()) {
             auto usm_type =

@@ -61,8 +61,11 @@ struct ccl_coll_attr {
     std::string match_id{};
 
     /* change how user-supplied buffers have to be interpreted */
-    int vector_buf = 0;
-    int is_sycl_buffer = 0;
+    int is_vector_buf = 0;
+
+#ifdef CCL_ENABLE_SYCL
+    int is_sycl_buf = 0;
+#endif // CCL_ENABLE_SYCL
 
     ccl::sparse_allreduce_completion_fn sparse_allreduce_completion_fn = nullptr;
     ccl::sparse_allreduce_alloc_fn sparse_allreduce_alloc_fn = nullptr;

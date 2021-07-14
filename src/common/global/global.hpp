@@ -100,6 +100,10 @@ private:
     void init_resize_independent_objects();
     void reset_resize_independent_objects();
 
+#ifdef MULTI_GPU_SUPPORT
+    void init_gpu();
+#endif // MULTI_GPU_SUPPORT
+
     env_data env_object;
 };
 

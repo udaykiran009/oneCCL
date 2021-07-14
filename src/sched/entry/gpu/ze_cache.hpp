@@ -9,20 +9,6 @@ namespace ccl {
 
 namespace ze {
 
-class ze_init {
-public:
-    static ze_init& instance() {
-        static ze_init init;
-        return init;
-    }
-
-private:
-    ze_init() {
-        LOG_DEBUG("l0 initialization");
-        ZE_CALL(zeInit(ZE_INIT_FLAG_GPU_ONLY));
-    }
-};
-
 template <ccl_coll_type coll_type>
 class ze_module_loader {
 public:

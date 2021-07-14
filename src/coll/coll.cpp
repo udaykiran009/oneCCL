@@ -133,7 +133,7 @@ ccl::status ccl_coll_build_allgatherv(ccl_sched* sched,
     param.recv_counts = recv_counts;
     param.dtype = dtype;
     param.comm = comm;
-    param.vector_buf = sched->coll_attr.vector_buf;
+    param.is_vector_buf = sched->coll_attr.is_vector_buf;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_allgatherv>(param);
 
@@ -173,6 +173,9 @@ ccl::status ccl_coll_build_allreduce(ccl_sched* sched,
     param.dtype = dtype;
     param.comm = comm;
     param.stream = sched->coll_param.stream;
+#ifdef CCL_ENABLE_SYCL
+    param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
+#endif // CCL_ENABLE_SYCL
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_allreduce>(param);
 

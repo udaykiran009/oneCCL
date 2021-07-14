@@ -55,6 +55,10 @@ ccl::status global_data::init() {
     init_resize_dependent_objects();
     init_resize_independent_objects();
 
+#ifdef MULTI_GPU_SUPPORT
+    init_gpu();
+#endif // MULTI_GPU_SUPPORT
+
     return ccl::status::success;
 }
 
@@ -96,5 +100,16 @@ void global_data::reset_resize_independent_objects() {
     algorithm_selector.reset();
     hwloc_wrapper.reset();
 }
+
+#ifdef MULTI_GPU_SUPPORT
+void global_data::init_gpu() {
+    LOG_DEBUG("initializing level-zero");
+    ze_result_t res = zeInit(ZE_INIT_FLAG_GPU_ONLY);
+    if (res != ZE_RESULT_SUCCESS) {
+        CCL_THROW("error at zeInit, code: ", res);
+    }
+    LOG_DEBUG("level-zero initialized");
+}
+#endif // MULTI_GPU_SUPPORT
 
 } // namespace ccl

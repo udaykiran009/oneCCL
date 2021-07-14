@@ -4,6 +4,7 @@
 #include "ze_primitives.hpp"
 #include "ze_cache.hpp"
 #include "ze_allreduce_entry.hpp"
+
 #include <CL/sycl/backend/level_zero.hpp>
 #include <string>
 
@@ -28,17 +29,20 @@ ze_allreduce_entry::ze_allreduce_entry(ccl_sched* sched,
           op(op),
           buf_size_bytes(dtype.size() * cnt) {}
 
-void ze_allreduce_entry::init() {
-    LOG_DEBUG(name(), " entry: initialization");
+ze_allreduce_entry::~ze_allreduce_entry() {
+    if (is_initialized) {
+        finalize();
+    }
+}
 
-    // TODO: can we to check that ze is allready initialized?
-    ze_init::instance();
+void ze_allreduce_entry::init() {
+    LOG_DEBUG("initialization");
 
     if (sched && sched->coll_param.stream) {
-        LOG_DEBUG(name(), " entry: getting a native stream");
+        LOG_DEBUG("getting a native stream");
         auto native_stream = sched->coll_param.stream->get_native_stream(sched->queue->get_idx());
         if (native_stream->get_backend() != cl::sycl::backend::level_zero) {
-            CCL_THROW(name(), " entry: unsupported sycl backend");
+            CCL_THROW("unsupported sycl backend");
         }
 
         auto sycl_device = native_stream->get_device();
@@ -48,7 +52,7 @@ void ze_allreduce_entry::init() {
         context = sycl_context.template get_native<cl::sycl::backend::level_zero>();
     }
     else {
-        CCL_THROW(name(), " entry: algo without stream is unsupported");
+        CCL_THROW("algo without stream is unsupported");
     }
 
     uint32_t num_queue_groups;
@@ -65,24 +69,31 @@ void ze_allreduce_entry::init() {
     comp_queue_desc.index = comp_queue_index;
     comp_queue_desc.ordinal = comp_ordinal;
     ZE_CALL(zeCommandQueueCreate(context, device, &comp_queue_desc, &comp_queue));
+    LOG_DEBUG("compute queue created: { ordinal: ",
+              comp_queue_desc.ordinal,
+              ", index: ",
+              comp_queue_desc.index,
+              " }");
 
     ze_command_list_desc_t comp_list_desc = default_cmd_list_desc;
     comp_list_desc.commandQueueGroupOrdinal = comp_ordinal;
     ZE_CALL(zeCommandListCreate(
         context, device, &comp_list_desc, &comp_list)); // TODO: we can cache it?
+    LOG_DEBUG("compute list created: { ordinal: ", comp_list_desc.commandQueueGroupOrdinal, " }");
 
     ze_module_loader<ccl_coll_allreduce>::instance().get(device, context, &module);
 
     std::string kernel_name =
         "allreduce_execution_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
     create_kernel(module, kernel_name, &kernel); // TODO: we can cache it
+    LOG_DEBUG("kernel created: name: ", kernel_name);
 
     ze_group_size_t group_size;
     get_suggested_group_size(kernel, cnt, &group_size);
-    LOG_DEBUG(name(), " entry: suggested group size: ", to_string(group_size));
+    LOG_DEBUG("suggested group size: ", to_string(group_size));
 
     get_suggested_group_count(group_size, cnt, &group_count);
-    LOG_DEBUG(name(), " entry: suggested group count: ", to_string(group_count));
+    LOG_DEBUG("suggested group count: ", to_string(group_count));
 
     ZE_CALL(zeKernelSetGroupSize(
         kernel, group_size.groupSizeX, group_size.groupSizeY, group_size.groupSizeZ));
@@ -92,8 +103,7 @@ void ze_allreduce_entry::init() {
     int peer_rank = 1;
     sched->get_ccl_sched_memory().handle_manager.get(peer_rank, 0, right_send_buf);
     sched->get_ccl_sched_memory().handle_manager.get(peer_rank, 1, right_recv_buf);
-    LOG_DEBUG(name(),
-              " entry: get IPC pointers from ",
+    LOG_DEBUG("get IPC pointers from ",
               peer_rank,
               " rank: right_send_buf: ",
               right_send_buf,
@@ -112,7 +122,7 @@ void ze_allreduce_entry::init() {
                                      { sizeof(right_send_buf_ptr), &right_send_buf_ptr },
                                      { sizeof(right_recv_buf_ptr), &right_recv_buf_ptr } };
 
-    LOG_DEBUG(name(), " entry: kernel args:\n", to_string(kernel_args));
+    LOG_DEBUG("kernel args:\n", to_string(kernel_args));
     set_kernel_args(kernel, kernel_args);
 
     ZE_CALL(zeCommandListAppendLaunchKernel(comp_list, kernel, &group_count, nullptr, 0, nullptr));
@@ -121,12 +131,15 @@ void ze_allreduce_entry::init() {
     ze_fence_desc_t fence_desc = default_fence_desc;
     ZE_CALL(zeFenceCreate(comp_queue, &fence_desc, &fence)); // TODO: we can cache it
 
-    LOG_DEBUG(name(), " entry: initialization complete");
+    LOG_DEBUG("initialization complete");
 }
 
 void ze_allreduce_entry::start() {
-    init();
-    LOG_DEBUG(name(), " entry: execute command list");
+    if (!is_initialized) {
+        init();
+        is_initialized = true;
+    }
+    LOG_DEBUG("execute command list");
     ZE_CALL(zeCommandQueueExecuteCommandLists(comp_queue, 1, &comp_list, fence));
 
     status = ccl_sched_entry_status_started;
@@ -142,8 +155,8 @@ void ze_allreduce_entry::update() {
     }
 
     if (fence_status == ZE_RESULT_SUCCESS) {
-        LOG_DEBUG(name(), " entry: command list complete");
-        finalize();
+        LOG_DEBUG("command list complete");
+        ZE_CALL(zeFenceReset(fence));
         status = ccl_sched_entry_status_complete;
     }
     else if (fence_status == ZE_RESULT_NOT_READY) {
@@ -151,16 +164,16 @@ void ze_allreduce_entry::update() {
         return;
     }
     else {
-        CCL_THROW(name(), " entry: error at zeFenceQueryStatus");
+        CCL_THROW("error at zeFenceQueryStatus");
     }
 }
 
 void ze_allreduce_entry::finalize() {
-    LOG_DEBUG(name(), " entry: finalization");
+    LOG_DEBUG("finalization");
     ZE_CALL(zeCommandListReset(comp_list));
     ZE_CALL(zeFenceDestroy(fence));
     ZE_CALL(zeCommandQueueDestroy(comp_queue));
     ZE_CALL(zeCommandListDestroy(comp_list));
     ZE_CALL(zeKernelDestroy(kernel));
-    LOG_DEBUG(name(), " entry: finalization complete");
+    LOG_DEBUG("finalization complete");
 }

@@ -337,7 +337,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
                     exec_queue[global_copy_idx]->coll_param.get_send_count(),
                     dtype,
                     stream,
-                    first_sched->coll_attr.is_sycl_buffer);
+                    first_sched->coll_attr.is_sycl_buf);
             else
 #endif // CCL_ENABLE_SYCL
                 entry_factory::make_entry<copy_entry>(
@@ -379,7 +379,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
                     exec_queue[global_copy_idx]->coll_param.get_recv_count(),
                     dtype,
                     stream,
-                    first_sched->coll_attr.is_sycl_buffer);
+                    first_sched->coll_attr.is_sycl_buf);
             else
 #endif // CCL_ENABLE_SYCL
                 entry_factory::make_entry<copy_entry>(

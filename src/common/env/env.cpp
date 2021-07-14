@@ -239,8 +239,8 @@ void env_data::parse() {
             CCL_THROW_IF_NOT(!ccl_root.empty(), "incorrect comm kernels path, CCL_ROOT not found!");
             comm_kernels_path = ccl_root + "/lib/kernels/";
         }
-        env_2_type(CCL_COMM_KERNELS_DEBUG, comm_kernels_debug);
     }
+    env_2_type(CCL_COMM_KERNELS_DEBUG, comm_kernels_debug);
     env_2_type(CCL_GPU_GROUP_SIZE, gpu_group_size);
     env_2_type(CCL_GPU_GROUP_COUNT, gpu_group_count);
 

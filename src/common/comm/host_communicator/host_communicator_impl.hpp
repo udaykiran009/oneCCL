@@ -43,7 +43,7 @@ ccl::event host_communicator::allgatherv_impl(const buffer_type* send_buf,
                                               const ccl::allgatherv_attr& attr,
                                               const ccl::vector_class<ccl::event>& deps) {
     ccl_coll_attr internal_attr(attr);
-    internal_attr.vector_buf = 1;
+    internal_attr.is_vector_buf = 1;
 
     ccl_request* req = ccl_allgatherv_impl(reinterpret_cast<const void*>(send_buf),
                                            send_count,
@@ -67,8 +67,9 @@ ccl::event host_communicator::allgatherv_impl(const buffer_type& send_buf,
                                               const ccl::allgatherv_attr& attr,
                                               const ccl::vector_class<ccl::event>& deps) {
     ccl_coll_attr internal_attr(attr);
-    internal_attr.is_sycl_buffer = 1;
-
+#ifdef CCL_ENABLE_SYCL
+    internal_attr.is_sycl_buf = 1;
+#endif // CCL_ENABLE_SYCL
     ccl_request* req = ccl_allgatherv_impl(reinterpret_cast<const void*>(&send_buf),
                                            send_count,
                                            reinterpret_cast<void*>(&recv_buf),
@@ -91,9 +92,10 @@ ccl::event host_communicator::allgatherv_impl(
     const ccl::allgatherv_attr& attr,
     const ccl::vector_class<ccl::event>& deps) {
     ccl_coll_attr internal_attr(attr);
-    internal_attr.vector_buf = 1;
-    internal_attr.is_sycl_buffer = 1;
-
+    internal_attr.is_vector_buf = 1;
+#ifdef CCL_ENABLE_SYCL
+    internal_attr.is_sycl_buf = 1;
+#endif // CCL_ENABLE_SYCL
     ccl_request* req = ccl_allgatherv_impl(reinterpret_cast<const void*>(&send_buf),
                                            send_count,
                                            (void*)(recv_bufs.data()),
@@ -138,8 +140,9 @@ ccl::event host_communicator::allreduce_impl(const buffer_type& send_buf,
                                              const ccl::allreduce_attr& attr,
                                              const ccl::vector_class<ccl::event>& deps) {
     ccl_coll_attr internal_attr(attr);
-    internal_attr.is_sycl_buffer = 1;
-
+#ifdef CCL_ENABLE_SYCL
+    internal_attr.is_sycl_buf = 1;
+#endif // CCL_ENABLE_SYCL
     ccl_request* req = ccl_allreduce_impl(reinterpret_cast<const void*>(&send_buf),
                                           reinterpret_cast<void*>(&recv_buf),
                                           count,
@@ -192,8 +195,9 @@ ccl::event host_communicator::alltoall_impl(const buffer_type& send_buf,
                                             const ccl::alltoall_attr& attr,
                                             const ccl::vector_class<ccl::event>& deps) {
     ccl_coll_attr internal_attr(attr);
-    internal_attr.is_sycl_buffer = 1;
-
+#ifdef CCL_ENABLE_SYCL
+    internal_attr.is_sycl_buf = 1;
+#endif // CCL_ENABLE_SYCL
     ccl_request* req = ccl_alltoall_impl(reinterpret_cast<const void*>(&send_buf),
                                          reinterpret_cast<void*>(&recv_buf),
                                          count,
@@ -261,8 +265,9 @@ ccl::event host_communicator::alltoallv_impl(const buffer_type& send_buf,
                                              const ccl::alltoallv_attr& attr,
                                              const ccl::vector_class<ccl::event>& deps) {
     ccl_coll_attr internal_attr(attr);
-    internal_attr.is_sycl_buffer = 1;
-
+#ifdef CCL_ENABLE_SYCL
+    internal_attr.is_sycl_buf = 1;
+#endif // CCL_ENABLE_SYCL
     ccl_request* req = ccl_alltoallv_impl(reinterpret_cast<const void*>(&send_buf),
                                           send_counts.data(),
                                           reinterpret_cast<void*>(&recv_buf),
@@ -317,8 +322,9 @@ ccl::event host_communicator::broadcast_impl(buffer_type& buf,
                                              const ccl::broadcast_attr& attr,
                                              const ccl::vector_class<ccl::event>& deps) {
     ccl_coll_attr internal_attr(attr);
-    internal_attr.is_sycl_buffer = 1;
-
+#ifdef CCL_ENABLE_SYCL
+    internal_attr.is_sycl_buf = 1;
+#endif // CCL_ENABLE_SYCL
     ccl_request* req = ccl_broadcast_impl(reinterpret_cast<void*>(&buf),
                                           count,
                                           ccl::native_type_info<buffer_type>::dtype,
@@ -365,8 +371,9 @@ ccl::event host_communicator::reduce_impl(const buffer_type& send_buf,
                                           const ccl::reduce_attr& attr,
                                           const ccl::vector_class<ccl::event>& deps) {
     ccl_coll_attr internal_attr(attr);
-    internal_attr.is_sycl_buffer = 1;
-
+#ifdef CCL_ENABLE_SYCL
+    internal_attr.is_sycl_buf = 1;
+#endif // CCL_ENABLE_SYCL
     ccl_request* req = ccl_reduce_impl(reinterpret_cast<const void*>(&send_buf),
                                        reinterpret_cast<void*>(&recv_buf),
                                        count,
@@ -412,8 +419,9 @@ ccl::event host_communicator::reduce_scatter_impl(const buffer_type& send_buf,
                                                   const ccl::reduce_scatter_attr& attr,
                                                   const ccl::vector_class<ccl::event>& deps) {
     ccl_coll_attr internal_attr(attr);
-    internal_attr.is_sycl_buffer = 1;
-
+#ifdef CCL_ENABLE_SYCL
+    internal_attr.is_sycl_buf = 1;
+#endif // CCL_ENABLE_SYCL
     ccl_request* req = ccl_reduce_scatter_impl(reinterpret_cast<const void*>(&send_buf),
                                                reinterpret_cast<void*>(&recv_buf),
                                                recv_count,

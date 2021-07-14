@@ -79,6 +79,7 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
     selector_param.dtype = sched->coll_param.dtype;
     selector_param.comm = sched->coll_param.comm;
     selector_param.stream = sched->coll_param.stream;
+    selector_param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
 
     ccl_coll_allreduce_algo allreduce_algo = ccl_coll_allreduce_last_value;
     if (selector_param.ctype == ccl_coll_allreduce)
@@ -169,7 +170,7 @@ ccl::status ccl_parallelizer::process_pre_post_copies(ccl_master_sched* sched) {
                 count,
                 dtype,
                 coll_param.stream,
-                coll_attr.is_sycl_buffer,
+                coll_attr.is_sycl_buf,
                 device_in_buf_offset);
         }
     }
@@ -195,7 +196,7 @@ ccl::status ccl_parallelizer::process_pre_post_copies(ccl_master_sched* sched) {
                 count,
                 dtype,
                 coll_param.stream,
-                coll_attr.is_sycl_buffer);
+                coll_attr.is_sycl_buf);
         }
 
         sched->sync_partial_scheds();
@@ -248,7 +249,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
     selector_param.count = coll_param.get_send_count();
     selector_param.dtype = dtype;
     selector_param.comm = comm;
-    selector_param.vector_buf = coll_attr.vector_buf;
+    selector_param.is_vector_buf = coll_attr.is_vector_buf;
     selector_param.stream = coll_param.stream;
 
     switch (coll_type) {

@@ -14,8 +14,9 @@ namespace ze {
 
 #define ZE_CALL(ze_api_call) \
     do { \
-        if (ze_api_call != ZE_RESULT_SUCCESS) { \
-            CCL_THROW("error at ", #ze_api_call); \
+        ze_result_t res = ze_api_call; \
+        if (res != ZE_RESULT_SUCCESS) { \
+            CCL_THROW("error at ", #ze_api_call, ", code: ", res); \
         } \
     } while (0);
 

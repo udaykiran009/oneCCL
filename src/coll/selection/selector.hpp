@@ -21,29 +21,23 @@ enum ccl_selection_border_type {
 };
 
 struct ccl_selector_param {
-    ccl_coll_type ctype;
-    size_t count;
-    ccl_datatype dtype;
-    ccl_comm* comm;
-    ccl_stream* stream;
+    ccl_coll_type ctype = ccl_coll_last_value;
+    size_t count = 0;
+    ccl_datatype dtype = ccl_datatype_int8;
+    ccl_comm* comm = nullptr;
+    ccl_stream* stream = nullptr;
 
-    const size_t* send_counts;
-    const size_t* recv_counts;
-    int vector_buf;
+    const size_t* send_counts = nullptr;
+    const size_t* recv_counts = nullptr;
+    int is_vector_buf = 0;
+
+#ifdef CCL_ENABLE_SYCL
+    int is_sycl_buf;
+#endif // CCL_ENABLE_SYCL
 
     /* tmp fields to avoid selection of algorithms which don't support all coalesce modes or alloc_fn */
     ccl::sparse_coalesce_mode sparse_coalesce_mode;
     ccl::sparse_allreduce_alloc_fn sparse_allreduce_alloc_fn;
-
-    ccl_selector_param()
-            : ctype(ccl_coll_last_value),
-              count(0),
-              dtype(ccl_datatype_int8),
-              comm(nullptr),
-              stream(nullptr),
-              send_counts(nullptr),
-              recv_counts(nullptr),
-              vector_buf(0) {}
 };
 
 template <ccl_coll_type coll_id>

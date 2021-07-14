@@ -1,4 +1,5 @@
 #include "ze_handle_exchange_entry.hpp"
+#include "ze_primitives.hpp"
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
 
@@ -356,12 +357,10 @@ int ze_handle_exchange_entry::get_handle_from_fd(int* fd, ze_ipc_mem_handle_t* h
 void ze_handle_exchange_entry::get_handle(ze_context_handle_t context,
                                           const void* buffer,
                                           ze_ipc_mem_handle_t* handle) {
-    ze_result_t ret;
+    CCL_THROW_IF_NOT(context != nullptr);
+    CCL_THROW_IF_NOT(buffer != nullptr);
 
-    ret = zeMemGetIpcHandle(context, buffer, handle);
-    if (ret) {
-        CCL_THROW("zeMemGetIpcHandle is failed: ", ret);
-    }
+    ZE_CALL(zeMemGetIpcHandle(context, buffer, handle));
 }
 
 static size_t get_ptr_diff(const void* ptr1, const void* ptr2) {
@@ -372,10 +371,7 @@ size_t ze_handle_exchange_entry::get_mem_offset(ze_context_handle_t context, voi
     void* base_ptr = nullptr;
     size_t alloc_size = 0;
 
-    auto ret = zeMemGetAddressRange(context, ptr, &base_ptr, &alloc_size);
-    if (ret != ZE_RESULT_SUCCESS) {
-        CCL_THROW("zeMemGetAddressRange failed, error: " + std::to_string(ret));
-    }
+    ZE_CALL(zeMemGetAddressRange(context, ptr, &base_ptr, &alloc_size));
 
     LOG_DEBUG("zeMemGetAddressRange for ptr ",
               ptr,

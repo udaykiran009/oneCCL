@@ -53,7 +53,7 @@ ccl::event single_device_communicator::allgatherv_impl(const buffer_type* send_b
                                                        const ccl::allgatherv_attr& attr,
                                                        const ccl::vector_class<ccl::event>& deps) {
     ccl_coll_attr internal_attr(attr);
-    internal_attr.vector_buf = 1;
+    internal_attr.is_vector_buf = 1;
     return allgatherv_base_impl(send_buf,
                                 send_count,
                                 (buffer_type*)(recv_bufs.data()),

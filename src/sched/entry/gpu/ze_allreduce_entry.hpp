@@ -31,6 +31,7 @@ public:
                                 const ccl_datatype& dtype,
                                 ccl::reduction op,
                                 ccl_comm* comm);
+    ~ze_allreduce_entry();
 
     void init();
     void start() override;
@@ -79,4 +80,5 @@ private:
     ze_kernel_handle_t kernel;
     ze_group_count_t group_count;
     ze_fence_handle_t fence;
+    bool is_initialized = false;
 };

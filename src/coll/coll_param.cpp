@@ -79,9 +79,9 @@ std::string ccl_coll_attr::to_string() const {
     ss << "{"
        << "priority: " << priority << ", sync: " << synchronous << ", to_cache: " << to_cache
        << ", match_id: " << (!match_id.empty() ? match_id : "<empty>")
-       << ", vector_buf: " << vector_buf
+       << ", is_vector_buf: " << is_vector_buf
 #ifdef CCL_ENABLE_SYCL
-       << ", sycl_buf: " << is_sycl_buffer
+       << ", sycl_buf: " << is_sycl_buf
 #endif // CCL_ENABLE_SYCL
        << "}";
 
@@ -434,7 +434,7 @@ ccl_coll_param ccl_coll_param::create_allgatherv_param(const void* send_buf,
     param.ctype = ccl_coll_allgatherv;
     param.send_bufs.push_back((void*)send_buf);
     param.send_counts.push_back(send_count);
-    if (attr.vector_buf) {
+    if (attr.is_vector_buf) {
         param.recv_bufs.assign((void**)recv_buf, (void**)recv_buf + comm->size());
     }
     else {

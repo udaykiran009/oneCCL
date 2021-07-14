@@ -110,7 +110,7 @@ void ccl_coll_validate_user_input(const ccl_coll_param& param, const ccl_coll_at
                          !(attr.prologue_fn || attr.epilogue_fn || attr.reduction_fn),
                      "prologue/epilogue/custom reduction is supported for allreduce only");
 
-    CCL_THROW_IF_NOT(param.ctype == ccl_coll_allgatherv || !(attr.vector_buf),
+    CCL_THROW_IF_NOT(param.ctype == ccl_coll_allgatherv || !(attr.is_vector_buf),
                      "vector buffer is supported for allgatherv only");
 
     if (param.ctype == ccl_coll_sparse_allreduce) {
@@ -155,7 +155,7 @@ void ccl_coll_validate_user_input(const ccl_coll_param& param, const ccl_coll_at
         // sycl::device stream_dev = param.stream->get_native().get_context();
         // sycl::device stream_ctx = param.stream->get_native().get_device();
 
-        if (!attr.is_sycl_buffer) {
+        if (!attr.is_sycl_buf) {
             /* check whether USM pointers have expected type */
             ccl_check_usm_pointers(param);
         }

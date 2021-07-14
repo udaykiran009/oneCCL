@@ -44,6 +44,10 @@ bool ccl_algorithm_selector_helper<ccl_coll_allreduce_algo>::can_use(
     const ccl_selector_param& param,
     const ccl_selection_table_t<ccl_coll_allreduce_algo>& table) {
     bool can_use = true;
+    bool is_sycl_buf = false;
+#ifdef CCL_ENABLE_SYCL
+    is_sycl_buf = param.is_sycl_buf;
+#endif // CCL_ENABLE_SYCL
 
     if (algo == ccl_coll_allreduce_rabenseifner &&
         static_cast<int>(param.count) < param.comm->pof2())
@@ -59,7 +63,7 @@ bool ccl_algorithm_selector_helper<ccl_coll_allreduce_algo>::can_use(
              (ccl::global_data::env().atl_transport == ccl_atl_ofi))
         can_use = false;
     else if (algo == ccl_coll_allreduce_gpu &&
-             (param.comm->size() != 2 ||
+             (param.comm->size() != 2 || is_sycl_buf ||
               (!param.stream || param.stream->get_type() != stream_type::gpu)))
         can_use = false;
 

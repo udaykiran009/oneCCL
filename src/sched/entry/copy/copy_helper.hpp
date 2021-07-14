@@ -20,14 +20,14 @@ struct sycl_copier {
                 ccl_buffer out_buf,
                 size_t count,
                 const ccl_datatype& dtype,
-                bool is_sycl_buffer = false,
+                bool is_sycl_buf = false,
                 size_t in_buf_offset = 0)
             : direction(direction),
               in_buf(in_buf),
               out_buf(out_buf),
               count(count),
               dtype(dtype),
-              is_sycl_buffer(is_sycl_buffer),
+              is_sycl_buf(is_sycl_buf),
               in_buf_offset(in_buf_offset) {}
 
     bool is_completed() {
@@ -58,7 +58,7 @@ struct sycl_copier {
             void* out_buf_ptr = out_buf.get_ptr(bytes);
 
             if (direction == copy_direction::d2d) {
-                CCL_THROW_IF_NOT(!is_sycl_buffer, "D2D + SYCL buffer");
+                CCL_THROW_IF_NOT(!is_sycl_buf, "D2D + SYCL buffer");
                 e = q->submit([&](sycl::handler& h) {
                     h.memcpy(out_buf_ptr,
                              static_cast<typename specific_sycl_buffer::value_type*>(in_buf_ptr) +
@@ -70,7 +70,7 @@ struct sycl_copier {
 
             void* void_device_ptr = (direction == copy_direction::h2d) ? out_buf_ptr : in_buf_ptr;
 
-            if (!is_sycl_buffer) {
+            if (!is_sycl_buf) {
                 auto device_ptr_type = sycl::get_pointer_type(void_device_ptr, q->get_context());
                 CCL_THROW_IF_NOT(device_ptr_type == sycl::usm::alloc::device,
                                  "unexpected USM type ",
@@ -95,10 +95,10 @@ struct sycl_copier {
                       out_buf_ptr,
                       ", device_ptr: ",
                       void_device_ptr,
-                      ", is_sycl_buffer: ",
-                      (is_sycl_buffer) ? "yes" : "no");
+                      ", is_sycl_buf: ",
+                      (is_sycl_buf) ? "yes" : "no");
 
-            if (is_sycl_buffer) {
+            if (is_sycl_buf) {
                 /* cast device pointer into SYCL buffer */
                 specific_sycl_buffer* device_buf_ptr =
                     static_cast<specific_sycl_buffer*>(void_device_ptr);
@@ -141,7 +141,7 @@ struct sycl_copier {
     ccl_buffer out_buf;
     size_t count;
     ccl_datatype dtype;
-    bool is_sycl_buffer;
+    bool is_sycl_buf;
     sycl::queue* q;
     size_t in_buf_offset;
     sycl::event e;

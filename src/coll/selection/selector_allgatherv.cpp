@@ -37,7 +37,7 @@ bool ccl_algorithm_selector_helper<ccl_coll_allgatherv_algo>::can_use(
     const ccl_selection_table_t<ccl_coll_allgatherv_algo>& table) {
     bool can_use = true;
 
-    if (param.vector_buf && algo != ccl_coll_allgatherv_flat &&
+    if (param.is_vector_buf && algo != ccl_coll_allgatherv_flat &&
         algo != ccl_coll_allgatherv_multi_bcast)
         can_use = false;
     else if (ccl::global_data::env().atl_transport == ccl_atl_mpi &&
