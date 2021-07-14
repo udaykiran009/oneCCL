@@ -18,66 +18,88 @@ void ze_handle_manager::init(const ccl_stream* stream) {
 }
 
 void ze_handle_manager::clear() {
-    int res = 0;
-    for (const auto& handle_pack : opened_handles) {
-        int fd;
-        void* mem_ptr = handle_pack.first;
-        const auto& ipc_info = handle_pack.second;
+    for (int rank = 0; rank < handles.size(); rank++) {
+        for (size_t buf_idx = 0; buf_idx < handles[rank].size(); buf_idx++) {
+            const auto& handle_info = handles[rank][buf_idx];
+            ze_ipc_mem_handle_t handle = handle_info.handle;
+            void* mem_ptr = handles[rank][buf_idx].mem_ptr;
+            size_t mem_offset = handle_info.mem_offset;
 
-        ze_ipc_mem_handle_t handle = ipc_info.handle;
-        size_t mem_offset = ipc_info.mem_offset;
+            LOG_DEBUG("clear: handle mem_ptr: ",
+                      handles[rank][buf_idx].mem_ptr,
+                      ", handle fd: ",
+                      *(int*)handles[rank][buf_idx].handle.data,
+                      ", rank: ",
+                      rank,
+                      ", buf_idx: ",
+                      buf_idx);
+            // when closing the handle we need to take care of pointers that points to the
+            // same level zero allocation. They're simply offsetted from some base pointer
+            // although represented by different FDs. If we close this base pointer,
+            // all the derived pointers are closed(unmapped) as well. To handle this case
+            // we ignore the result of close function which would fail if we close a pointer
+            // which is already closed. The function has semantic of free() call, so the result
+            // is not much useful anyway.
+            void* base_alloc_ptr = static_cast<char*>(mem_ptr) - mem_offset;
 
-        // when closing the handle we need to take care of pointers that points to the
-        // same level zero allocation. They're simply offsetted from some base pointer
-        // although represented by different FDs. If we close this base pointer,
-        // all the derived pointers are closed(unmapped) as well. To handle this case
-        // we ignore the result of close function which would fail if we close a pointer
-        // which is already closed. The function has semantic of free() call, so the result
-        // is not much useful anyway.
-        void* base_alloc_ptr = static_cast<char*>(mem_ptr) - mem_offset;
+            auto ret = zeMemCloseIpcHandle(context, base_alloc_ptr);
+            if (ret != ZE_RESULT_SUCCESS) {
+                LOG_INFO("unable to close memory handle: ",
+                         ret,
+                         ", for rank: ",
+                         rank,
+                         ", buf_idx: ",
+                         buf_idx);
+            }
 
-        auto ret = zeMemCloseIpcHandle(context, base_alloc_ptr);
-        if (ret != ZE_RESULT_SUCCESS) {
-            LOG_WARN("unable to close memory handle: ", ret);
-        }
-
-        memcpy(&fd, handle.data, sizeof(fd));
-        res = close(fd);
-        if (res) {
-            CCL_FATAL("unable to close fd of a handle: ", res);
+            // TODO: remove, when the fix arrives from L0 side
+            int fd;
+            memcpy(&fd, handle.data, sizeof(fd));
+            close(fd);
         }
     }
     LOG_DEBUG("handles are cleared successfully");
 }
 
 void ze_handle_manager::set(const std::vector<std::vector<ipc_handle_info>>& handles_arg) {
-    CCL_THROW_IF_NOT(!handles_arg.empty(), "handles argument is empty");
+    CCL_THROW_IF_NOT(!handles_arg.empty(), "handles_arg argument is empty");
+    CCL_THROW_IF_NOT(handles.empty(), "handles should be empty before set");
 
     handles = handles_arg;
-    LOG_DEBUG("handles are set successfully");
+
+    LOG_DEBUG("handles are set successfully, size of handles: ", handles.size());
 }
 
 void ze_handle_manager::get(const int rank, const size_t buf_idx, ccl_buffer& buf) {
-    void* memory = nullptr;
     ze_result_t ret = ZE_RESULT_SUCCESS;
 
     CCL_THROW_IF_NOT(rank < handles.size(), "rank is not valid value: ", rank);
     CCL_THROW_IF_NOT(buf_idx < handles[rank].size(), "buf_idx is not valid value: ", buf_idx);
 
     ze_ipc_mem_handle_t handle = handles[rank][buf_idx].handle;
+    void* mem_ptr = handles[rank][buf_idx].mem_ptr;
 
-    LOG_DEBUG("context: ", context, "device: ", device, "rank: ", rank, "buf_idx: ", buf_idx);
-    ret = zeMemOpenIpcHandle(context, device, handle, 0 /*cache allocation*/, &memory);
-    if (ret) {
-        CCL_THROW("unable to open memory handle: ", ret);
+    LOG_DEBUG("context: ", context, ", device: ", device, ", rank: ", rank, ", buf_idx: ", buf_idx);
+    if (mem_ptr == nullptr) {
+        ret = zeMemOpenIpcHandle(context, device, handle, 0 /*cache allocation*/, &mem_ptr);
+        if (ret) {
+            CCL_THROW(
+                "unable to open handle: ", ret, ", for rank: ", rank, ", for buf_idx: ", buf_idx);
+        }
     }
-    LOG_DEBUG("open memory: ", memory);
+    LOG_DEBUG("get: handle mem_ptr: ",
+              mem_ptr,
+              ", handle fd: ",
+              *(int*)handle.data,
+              ", for rank: ",
+              rank,
+              ", for buf_idx: ",
+              buf_idx);
 
     size_t mem_offset = handles[rank][buf_idx].mem_offset;
     // add offset that we received along with the handle
-    memory = static_cast<void*>(static_cast<char*>(memory) + mem_offset);
+    mem_ptr = static_cast<void*>(static_cast<char*>(mem_ptr) + mem_offset);
 
-    opened_handles.push_back({ memory, { handle, mem_offset } });
-    buf.set(memory);
+    buf.set(mem_ptr);
 }
 #endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT

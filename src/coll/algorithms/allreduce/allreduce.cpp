@@ -501,9 +501,12 @@ ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
     std::vector<void*> in_buffers(2);
     in_buffers[0] = send_buf.get_ptr();
     in_buffers[1] = recv_buf.get_ptr();
+
+    sched->set_entry_exec_mode(ccl_sched_entry_exec_once);
     entry_factory::make_entry<ze_handle_exchange_entry>(sched, comm, in_buffers, context);
 
     sched->add_barrier();
+    sched->set_entry_exec_mode(ccl_sched_entry_exec_regular);
 
     if (comm->rank() == 0) {
         entry_factory::make_entry<ze_allreduce_entry>(

@@ -95,7 +95,6 @@ void ze_handle_exchange_entry::update() {
                 int send_fd = 0;
                 //invoke get_fd_from_handle to share with other processes
                 get_fd_from_handle(&(handles[rank][buf_idx].handle), &send_fd);
-
                 // first send to the right peer
                 sendmsg_call(right_peer_socket, send_fd, handles[rank][buf_idx].mem_offset);
             }
@@ -119,8 +118,7 @@ void ze_handle_exchange_entry::update() {
 
                 //invoke get_handle_from_fd to store the handle
                 get_handle_from_fd(&recv_fd, &tmp_handle);
-
-                handles[peer][buf_idx] = { tmp_handle, mem_offset };
+                handles[peer][buf_idx] = { tmp_handle, mem_offset, nullptr };
 
                 if (peer_idx < (comm_size - 2)) {
                     // send from left to the right
@@ -138,6 +136,7 @@ void ze_handle_exchange_entry::update() {
 
     sched->get_ccl_sched_memory().handle_manager.set(handles);
     status = ccl_sched_entry_status_complete;
+
     unlink_sockets();
     close_sockets();
 
@@ -161,6 +160,11 @@ int ze_handle_exchange_entry::create_server_socket(const std::string& socket_nam
     socket_addr->sun_path[sizeof(socket_addr->sun_path) - 1] = '\0';
     *addr_len = sizeof((*socket_addr));
 
+    ret = fcntl(sock, F_SETFL, O_NONBLOCK);
+    if (ret) {
+        CCL_THROW("fcntl error: ", ret, ", errno: ", strerror(errno));
+    }
+
     ret = bind(sock, ((struct sockaddr*)&(*socket_addr)), *addr_len);
     if (ret) {
         CCL_THROW("bind error: ,", ret, ", errno: ", strerror(errno));
@@ -169,11 +173,6 @@ int ze_handle_exchange_entry::create_server_socket(const std::string& socket_nam
     ret = listen(sock, comm_size);
     if (ret) {
         CCL_THROW("listen error: ", ret, ", errno: ", strerror(errno));
-    }
-
-    ret = fcntl(sock, F_SETFL, O_NONBLOCK);
-    if (ret) {
-        CCL_THROW("fcntl error: ", ret, ", errno: ", strerror(errno));
     }
 
     return sock;
