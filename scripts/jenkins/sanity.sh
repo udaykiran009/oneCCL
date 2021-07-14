@@ -60,7 +60,6 @@ function print_help()
     "<options>:\n" \
     "-compatibility_tests: enbale compatibility tests\n" \
     "-modulefile_tests:    enable modulefile tests\n" \
-    "-unit_tests -kernels: enable unit tests for kernels\n" \
     "-functional_tests:    enable functional tests\n" \
     "-valgrind_check:      enable valgrind check\n" \
     "-help:                print this help information"
@@ -634,118 +633,6 @@ function run_tests()
     esac
 }
 
-function build_ut_tests()
-{
-    local test_type=$1
-    echo "CURRENT_WORK_DIR ${CURRENT_WORK_DIR}"
-    cd ${CURRENT_WORK_DIR}
-    mkdir -p build
-    cd ./build
-    path="$(pwd)"
-
-    if [ "${test_type}" == "-kernels" ]
-    then
-        source ${CCL_ONEAPI_DIR}/compiler/last/compiler/latest/env/vars.sh intel64
-        cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCOMPUTE_BACKEND=level_zero ..
-        LIST=`make help | grep "kernel_" | grep -Po '(?<=\.\.\. ).*'`
-        echo "List to build: $LIST\n"
-        make -j8 ${LIST} native_api_suite
-        check_command_exit_code $? "compilation of $LIST is FAILED"
-        # TODO: When multi_tile, multi_device are ready.
-        # Resolve an issue with common link for single_device, multi_device, multi_tile
-        cd "${path}/tests/unit/kernels/single_device"
-        ln -s ../../../../../src/kernels kernels
-        cd ${path}
-    fi
-}
-
-function get_ut_platfrom_info()
-{
-    output=$(${CURRENT_WORK_DIR}/build/tests/unit/native_api/native_api_suite --dump_table)
-    full_table=$(echo $output | sed 's/^.* Table //' | sed 's/ EndTable.*//')
-    table_indices=$(echo $full_table | sed 's/,/\n/g')
-    ret_arr=("${table_indices[@]}")
-    echo "${ret_arr[@]}"
-}
-
-function run_ut_ctest()
-{
-    local l0_affinity_mask=$1
-    local ut_name=$2
-
-    env ${l0_affinity_mask} ctest -VV -C $ut_name
-    check_command_exit_code $? "$ut_name is FAILED"
-}
-
-function run_ut_single_device ()
-{
-    ut_name="kernel_ring_single_device_suite_test"
-    platfrom_info=$1
-
-    if [ ${#platfrom_info[@]} -ne 0 ]; then
-        index=$(echo "${platfrom_info[0]}" | sed 's/\:\*//g')
-        #TODO: insert it in array after fix this case 'L0_CLUSTER_AFFINITY_MASK="'${index}','${index}','${index}'"'
-        declare -a arr_l0_affinity_masks=('L0_CLUSTER_AFFINITY_MASK="'${index}','${index}','${index}','${index}'"'
-                                          'L0_CLUSTER_AFFINITY_MASK="'${index}','${index}'"')
-        for l0_affinity_mask in "${arr_l0_affinity_masks[@]}"; do
-            run_ut_ctest ${l0_affinity_mask} ${ut_name}
-            check_command_exit_code $? "single_device ut is FAILED"
-        done
-    fi
-}
-
-function run_ut_multi_tile ()
-{
-    ut_name="kernel_ring_single_device_multi_tile_suite_test"
-    platfrom_info=$1
-
-    for ((i=1;i<${#platfrom_info[@]};i++)); do
-        if [ $i -ne 1 ]; then
-            mask_str+=","
-        fi
-        mask_str+="${array[i]}"
-    done
-
-    if [ ${#platfrom_info[@]} -gt 1 ]; then
-        l0_affinity_mask='L0_CLUSTER_AFFINITY_MASK="'$mask_str'"'
-        run_ut_ctest ${l0_affinity_mask} ${ut_name}
-        check_command_exit_code $? "multi_tile ut is FAILED"
-    fi
-}
-
-function run_ut_tests()
-{
-    echo "RUNNING UNIT TESTS"
-
-    local test_type=$1
-    local errors=0
-
-    build_ut_tests ${test_type}
-    check_command_exit_code $? "Building of unit kernels tests is FAILED"
-
-    platfrom_info=( $(get_ut_platfrom_info) )
-
-    case ${test_type} in
-        "-kernels")
-            run_ut_single_device ${platfrom_info}
-            if [ $? -ne 0 ]; then
-                errors=$((errors+1))
-            fi
-            run_ut_multi_tile ${platform_info}
-            if [ $? -ne 0 ]; then
-                errors=$((errors+1))
-            fi
-        ;;
-        *)
-            echo "WARNING: kernel unit testing not started"
-            exit 1
-        ;;
-    esac
-    if [ $errors -ne 0 ]; then
-        exit 1
-    fi
-}
-
 function clean_nodes() {
     echo "Start cleaning nodes..."
     if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
@@ -806,14 +693,6 @@ else
         "-modulefile_tests" )
             run_modulefile_tests
             shift
-            ;;
-        "-unit_tests" )
-                run_ut_tests $2
-                if [ $? -ne 0 ]; then
-                    exit 1
-                else
-                    exit 0
-                fi
             ;;
         "-functional_tests" )
             make_tests

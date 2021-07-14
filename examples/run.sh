@@ -109,12 +109,6 @@ check_environment()
     fi
 }
 
-# global variable for several use places
-# TODO: add alltoallv once it's fixed
-supported_kernel_colls="allgatherv,allreduce,bcast,reduce,reduce_scatter"
-kernel_colls_with_reductions="allreduce,reduce,reduce_scatter"
-supported_kernel_dtypes="int8,int32,float32"
-
 run_benchmark()
 {
     echo "================ENVIRONMENT=================="
@@ -192,24 +186,6 @@ run_benchmark()
     fi
     options="${options} --buf_count ${buf_count}"
 
-    use_kernels=0
-    if [ "${USE_KERNELS}" == "yes" ]
-    then
-        # these conditions check for benchmark with kernels
-        # coll are all there except alltoall
-        if [ "$example" == "benchmark" ] &&   \
-            [ "$backend" == "sycl" ] &&        \
-            [ "$transport" == "ofi" ] &&       \
-            [ "$runtime" == "level_zero" ] &&  \
-            [ "$loop" == "regular" ] &&        \
-            [[ "$coll" == ${supported_kernel_colls} ]] && \
-            [[ "$dtype" == ${supported_kernel_dtypes} ]] && \
-            [ "$reduction" == "sum" ]
-        then
-            echo "set flag use_kernels"
-            use_kernels=1
-        fi
-    fi
     # Run kernels with arbitraty sizes that should cover all the cases
     # options="${options} -y 1,2,4,7,8,16,17,32,64,128,133,256,1077,16384,16387" (XDEPS-2222)
     options="${options} -y 1,2,4,8,16,17,32,64,128,133,256,1077,16384"
@@ -250,22 +226,6 @@ run_benchmark()
                 eval $cmd > ${log_debug_test_log} 2>&1
                 check_test ${log_debug_test_log} ${example}
             fi
-        fi
-
-        if [ $use_kernels -eq 1 ] && [ "${usm}" == "device" ];
-        then
-            ranks_per_proc=4
-            if [ -n "${ranks}" ];
-            then
-                ranks_per_proc=${ranks}
-            fi
-
-            echo "Running benchmark with the kernels support:"
-            final_options="${options} -n 1 --ranks_per_proc ${ranks_per_proc}"
-            cmd=`echo $ccl_extra_env CCL_COMM_KERNELS=1 ./$example ${final_options}`
-            echo "Running: $cmd"
-            eval $cmd 2>&1 | tee ${test_log}
-            check_test ${test_log} ${example}
         fi
     done
 }
@@ -477,12 +437,6 @@ run()
                             ccl_extra_env="CCL_LOG_LEVEL=debug ${ccl_runtime_env}"
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${coll_list}
                             run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular allreduce ${dtype_list} ${reduction_list}
-
-                            # group of test scenarios for comm kernels
-                            ccl_extra_env="${ccl_runtime_env}"
-                            # TODO: currently benchmark supports only sum reduction, need to add support for other types and enable it here for reduction coll types
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${supported_kernel_colls} ${supported_kernel_dtypes} sum ${ranks_per_proc}
-
                         done
                     done
                 elif [ "$dir_name" == "sycl" ];
@@ -634,7 +588,6 @@ print_help()
     echo_log "  --mode mode             cpu|gpu mode"
     echo_log "  --scope scope           pr|abi|pv|all scope (default: pv)"
     echo_log "  --build-only            build only"
-    echo_log "  --use-kernels           run the benchmark with the kernels support"
     echo_log "  --help                  print help information"
     echo_log
     echo_log "Usage examples:"
@@ -664,7 +617,6 @@ parse_arguments()
             "--scope" | "-scope")                       SCOPE=$2 ; shift ;;
             "--build-only" | "-build-only")             BUILD_ONLY="yes" ;;
             "--run-only" | "-run-only")                 RUN_ONLY="yes" ;;
-            "--use-kernels" | "-use-kernels")           USE_KERNELS="yes" ;;
             "--cleanup" | "-cleanup")                   ENABLE_CLEANUP="yes" ;;
             *)
             echo "$(basename $0): ERROR: unknown option ($1)"
@@ -680,7 +632,6 @@ parse_arguments()
     [[ ! -z "$SCOPE" ]] && echo "SCOPE: $SCOPE"
     [[ ! -z "$BUILD_ONLY" ]] && echo "BUILD_ONLY: $BUILD_ONLY"
     [[ ! -z "$RUN_ONLY" ]] && echo "RUN_ONLY: $RUN_ONLY"
-    [[ ! -z "$USE_KERNELS" ]] && echo "USE_KERNELS: $USE_KERNELS"
     echo
 }
 
