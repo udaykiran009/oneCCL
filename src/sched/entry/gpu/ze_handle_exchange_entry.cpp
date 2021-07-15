@@ -37,10 +37,15 @@ void ze_handle_exchange_entry::start() {
         handles.at(rank).resize(in_buffers.size());
         ze_ipc_mem_handle_t handle;
 
-        get_handle(context, in_buffers[buf_idx], &handle);
-        size_t mem_offset = get_mem_offset(context, in_buffers[buf_idx]);
+        // zeMemGetIpcHandle requires the provided pointer to be the base of an allocation.
+        // We handle this the following way: for an input buffer retrieve its base pointer
+        // and the offset from this base ptr. The base ptr is used for zeMemGetIpcHandle
+        // and the offset is sent to the other rank. On that rank the base ptr is retrieved
+        // and offsetted to get the actual input buffer ptr.
+        auto mem_info = get_mem_info(context, in_buffers[buf_idx]);
+        get_handle(context, mem_info.first, &handle);
 
-        handles[rank][buf_idx] = { handle, mem_offset };
+        handles[rank][buf_idx] = { handle, mem_info.second };
     }
 
     right_peer_ss_name << "ccl-sock." << ((rank - 1) + comm_size) % comm_size << "-w";
@@ -367,7 +372,8 @@ static size_t get_ptr_diff(const void* ptr1, const void* ptr2) {
     return static_cast<const char*>(ptr2) - static_cast<const char*>(ptr1);
 }
 
-size_t ze_handle_exchange_entry::get_mem_offset(ze_context_handle_t context, void* ptr) {
+std::pair<void*, size_t> ze_handle_exchange_entry::get_mem_info(ze_context_handle_t context,
+                                                                void* ptr) {
     void* base_ptr = nullptr;
     size_t alloc_size = 0;
 
@@ -382,7 +388,7 @@ size_t ze_handle_exchange_entry::get_mem_offset(ze_context_handle_t context, voi
               ", alloc size: ",
               alloc_size);
 
-    return static_cast<char*>(ptr) - static_cast<char*>(base_ptr);
+    return { base_ptr, static_cast<char*>(ptr) - static_cast<char*>(base_ptr) };
 }
 
 void ze_handle_exchange_entry::unlink_sockets() {

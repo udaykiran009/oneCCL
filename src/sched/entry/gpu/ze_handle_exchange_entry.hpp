@@ -131,7 +131,7 @@ private:
     void recvmsg_call(int sock, int& fd, size_t& mem_offset);
 
     void get_handle(ze_context_handle_t context, const void* buffer, ze_ipc_mem_handle_t* handle);
-    size_t get_mem_offset(ze_context_handle_t context, void* ptr);
+    std::pair<void*, size_t> get_mem_info(ze_context_handle_t context, void* ptr);
 
     void unlink_sockets();
     void close_sockets();
