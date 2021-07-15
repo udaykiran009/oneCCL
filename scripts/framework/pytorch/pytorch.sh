@@ -16,6 +16,11 @@ TESTS_LOG_FILE="${SCRIPT_DIR}/tests_log_${current_date}.txt"
 touch ${LOG_FILE}
 touch ${TESTS_LOG_FILE}
 
+set_base_env() {
+    export LD_LIBRARY_PATH=${OFI_INSTALL_DIR}/lib:${OFI_INSTALL_DIR}/lib64:${LD_LIBRARY_PATH}
+    export LD_LIBRARY_PATH=${UCX_INSTALL_DIR}/lib:${UCC_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
+}
+
 set_run_env() {
     # UCC
     export UCC_CL_BASIC_USE_CCL=1 # enables CCL transport layer
@@ -23,7 +28,6 @@ set_run_env() {
     export UCC_CL_BASIC_LOG_LEVEL=INFO
     export UCC_TL_UCP_LOG_LEVEL=INFO
     export UCC_TL_CCL_LOG_LEVEL=INFO
-    export LD_LIBRARY_PATH=${UCX_INSTALL_DIR}/lib:${UCC_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
 
     # UCX
     export UCX_LOG_LEVEL=INFO
@@ -49,7 +53,6 @@ set_run_env() {
     export PSM3_RDMA=2 # enables user space RC QP RDMA
     export PSM3_MR_CACHE_MODE=2 # near term workaround until a MR cache solution completed
     export FI_PROVIDER_PATH=${PSM3_INSTALL_DIR}/lib/libfabric
-    export LD_LIBRARY_PATH=${OFI_INSTALL_DIR}/lib:${OFI_INSTALL_DIR}/lib64:${LD_LIBRARY_PATH}
 }
 
 PSM3_BASE_LINK="github.com/otcshare/psm3.git"
@@ -439,8 +442,6 @@ install_ofi() {
 
     make -j all && make install
     check_exit_code $? "Install OFI failed"
-
-    export LD_LIBRARY_PATH=${OFI_INSTALL_DIR}/lib:${OFI_INSTALL_DIR}/lib64:${LD_LIBRARY_PATH}
 }
 
 download_ccl() {
@@ -712,7 +713,6 @@ install_torch_ucc() {
 
 check_torch_ucc() {
     echo_log "================ Basic torch-ucc test ================"
-    export LD_LIBRARY_PATH=${UCX_INSTALL_DIR}/lib:${UCC_INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
     cmd="python -c \"import torch; import torch_ucc;\""
     echo_log ${cmd}
     eval ${cmd}
@@ -728,7 +728,7 @@ run_tests() {
 
     cd ${SCRIPT_WORK_DIR}
 
-    echo "================ UCC test ================" | tee -a ${TESTS_LOG_FILE}
+    echo "================ 1. UCC test ================" | tee -a ${TESTS_LOG_FILE}
     cd ${UCC_SRC_DIR}/test/mpi
     make
     check_exit_code $? "Build UCC test failed"
@@ -739,7 +739,7 @@ run_tests() {
     check_exit_code $? "Run UCC test failed"
     echo "================ ****************** ================" | tee -a ${TESTS_LOG_FILE}
 
-    echo "================ torch-ucc test ================" | tee -a ${TESTS_LOG_FILE}
+    echo "================ 2. torch-ucc test ================" | tee -a ${TESTS_LOG_FILE}
     cd ${TORCH_UCC_SRC_DIR}/test
     chmod +x start_test.sh
     cmd="./start_test.sh torch_alltoall_bench.py --backend ucc --max-size 1024 --iter 2 2>&1 | tee -a ${TESTS_LOG_FILE}"
@@ -748,7 +748,7 @@ run_tests() {
     check_exit_code $? "Run torch-ucc test failed"
     echo "================ ****************** ================" | tee -a ${TESTS_LOG_FILE}
 
-    echo "================ PARAM test ================" | tee -a ${TESTS_LOG_FILE}
+    echo "================ 3. PARAM test ================" | tee -a ${TESTS_LOG_FILE}
     if [[ -d ${PARAM_SRC_DIR} ]]
     then
         rm -rf ${PARAM_SRC_DIR}
@@ -811,6 +811,7 @@ run_tests() {
 
 parse_arguments $@
 
+set_base_env
 check_base_env
 
 download_ofi
