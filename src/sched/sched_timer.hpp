@@ -12,6 +12,7 @@ public:
     void stop();
     std::string str() const;
     void print(std::string title = {}) const;
+    void reset() noexcept;
 
 private:
     long double time_usec;

@@ -28,6 +28,10 @@ void sched_timer::print(std::string title) const {
     logger.info(title, ": ", this->str());
 }
 
+void sched_timer::reset() noexcept {
+    time_usec = 0;
+}
+
 long double sched_timer::get_time() const noexcept {
     return time_usec;
 }

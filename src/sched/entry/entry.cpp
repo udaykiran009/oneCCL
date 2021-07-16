@@ -64,6 +64,10 @@ void sched_entry::update() {
 }
 
 void sched_entry::reset(size_t idx) {
+    if (ccl::global_data::env().sched_profile) {
+        timer.reset();
+    }
+
     if (status == ccl_sched_entry_status_complete_once) {
         return;
     }
