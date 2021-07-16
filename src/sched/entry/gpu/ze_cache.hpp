@@ -1,72 +1,184 @@
 #pragma once
 
+#include "common/utils/hash.hpp"
 #include "ze_primitives.hpp"
-#include "common/global/global.hpp"
 
 #include <unordered_map>
 
 namespace ccl {
-
 namespace ze {
 
-template <ccl_coll_type coll_type>
-class ze_module_loader {
+class fence_cache {
 public:
-    void get(ze_device_handle_t device, ze_context_handle_t context, ze_module_handle_t* module) {
-        std::lock_guard<std::mutex> lock(mutex);
-        bool success = false;
+    fence_cache() = default;
+    ~fence_cache();
 
-        auto module_it = cache.find(device);
-        if (module_it != cache.end()) {
-            LOG_DEBUG("load module from cache");
-            *module = module_it->second;
-            success = true;
-        }
-        else {
-            LOG_DEBUG("load module from file and push it to cache");
-            std::string modules_dir = ccl::global_data::env().comm_kernels_path;
-            // TODO: remove
-            if (modules_dir.empty()) {
-                std::string ccl_root = getenv("CCL_ROOT");
-                CCL_THROW_IF_NOT(!ccl_root.empty(),
-                                 "incorrect comm kernels path, CCL_ROOT not found!");
-                modules_dir = ccl_root + "/lib/kernels/";
-            }
-            ccl::ze::load_module(modules_dir, get_file_name(), device, context, module);
-            success = cache.insert({ device, *module }).second;
-        }
-        CCL_THROW_IF_NOT(success == true, "module loading error");
+    void get(ze_command_queue_handle_t queue,
+             ze_fence_desc_t* fence_desc,
+             ze_fence_handle_t* fence);
+    void push(ze_command_queue_handle_t queue,
+              ze_fence_desc_t* fence_desc,
+              ze_fence_handle_t* fence);
+    void clear();
+
+private:
+    using key_t = typename std::tuple<ze_command_queue_handle_t, ze_fence_flags_t>;
+    using value_t = ze_fence_handle_t;
+    std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
+};
+
+class kernel_cache {
+public:
+    kernel_cache() = default;
+    ~kernel_cache();
+
+    void get(ze_module_handle_t module, const std::string& kernel_name, ze_kernel_handle_t* kernel);
+    void push(ze_module_handle_t module,
+              const std::string& kernel_name,
+              ze_kernel_handle_t* kernel);
+    void clear();
+
+private:
+    using key_t = typename std::tuple<ze_module_handle_t, std::string>;
+    using value_t = ze_kernel_handle_t;
+    std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
+};
+
+// TODO: need to improve with ability to save list with commands for specific algo
+class list_cache {
+public:
+    list_cache() = default;
+    ~list_cache();
+
+    void get(ze_context_handle_t context,
+             ze_device_handle_t device,
+             ze_command_list_desc_t* list_desc,
+             ze_command_list_handle_t* list);
+    void push(ze_context_handle_t context,
+              ze_device_handle_t device,
+              ze_command_list_desc_t* list_desc,
+              ze_command_list_handle_t* list);
+    void clear();
+
+private:
+    using key_t = typename std::
+        tuple<ze_context_handle_t, ze_device_handle_t, uint32_t, ze_command_list_flags_t>;
+    using value_t = ze_command_list_handle_t;
+    std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
+};
+
+class queue_cache {
+public:
+    queue_cache() = default;
+    ~queue_cache();
+
+    void get(ze_context_handle_t context,
+             ze_device_handle_t device,
+             ze_command_queue_desc_t* queue_desc,
+             ze_command_queue_handle_t* queue);
+    void clear();
+
+private:
+    using key_t = typename std::tuple<ze_context_handle_t,
+                                      ze_device_handle_t,
+                                      uint32_t,
+                                      uint32_t,
+                                      ze_command_queue_flags_t,
+                                      ze_command_queue_mode_t,
+                                      ze_command_queue_priority_t>;
+    using value_t = ze_command_queue_handle_t;
+    std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
+};
+
+class module_cache {
+public:
+    module_cache() = default;
+    ~module_cache();
+
+    void get(ze_context_handle_t context, ze_device_handle_t device, ze_module_handle_t* module);
+    void clear();
+
+private:
+    using key_t = ze_device_handle_t;
+    using value_t = ze_module_handle_t;
+    std::unordered_multimap<ze_device_handle_t, ze_module_handle_t> cache;
+    std::mutex mutex;
+
+    void load(ze_context_handle_t context, ze_device_handle_t device, ze_module_handle_t* module);
+};
+
+class cache {
+public:
+    cache(size_t instance_count)
+            : fences(instance_count),
+              kernels(instance_count),
+              lists(instance_count),
+              queues(instance_count) {}
+    cache(const cache&) = delete;
+    cache& operator=(const cache&) = delete;
+
+    void get(size_t worker_idx,
+             ze_command_queue_handle_t queue,
+             ze_fence_desc_t* fence_desc,
+             ze_fence_handle_t* fence) {
+        fences.at(worker_idx).get(queue, fence_desc, fence);
     }
 
-    static ze_module_loader<coll_type>& instance() {
-        static ze_module_loader<coll_type> loader;
-        return loader;
+    void get(size_t worker_idx,
+             ze_module_handle_t module,
+             std::string kernel_name,
+             ze_kernel_handle_t* kernel) {
+        kernels.at(worker_idx).get(module, kernel_name, kernel);
+    }
+
+    void get(size_t worker_idx,
+             ze_context_handle_t context,
+             ze_device_handle_t device,
+             ze_command_list_desc_t* list_desc,
+             ze_command_list_handle_t* list) {
+        lists.at(worker_idx).get(context, device, list_desc, list);
+    }
+
+    void get(size_t worker_idx,
+             ze_context_handle_t context,
+             ze_device_handle_t device,
+             ze_command_queue_desc_t* queue_desc,
+             ze_command_queue_handle_t* queue) {
+        queues.at(worker_idx).get(context, device, queue_desc, queue);
+    }
+
+    void get(ze_context_handle_t context, ze_device_handle_t device, ze_module_handle_t* module) {
+        modules.get(context, device, module);
+    }
+
+    void push(size_t worker_idx,
+              ze_command_queue_handle_t queue,
+              ze_fence_desc_t* fence_desc,
+              ze_fence_handle_t* fence) {
+        fences.at(worker_idx).push(queue, fence_desc, fence);
+    }
+
+    void push(size_t worker_idx,
+              ze_module_handle_t module,
+              std::string kernel_name,
+              ze_kernel_handle_t* kernel) {
+        kernels.at(worker_idx).push(module, kernel_name, kernel);
+    }
+
+    void push(size_t worker_idx,
+              ze_context_handle_t context,
+              ze_device_handle_t device,
+              ze_command_list_desc_t* list_desc,
+              ze_command_list_handle_t* list) {
+        lists.at(worker_idx).push(context, device, list_desc, list);
     }
 
 private:
-    std::unordered_map<ze_device_handle_t, ze_module_handle_t> cache;
-    std::mutex mutex;
-
-    ze_module_loader() = default;
-
-    constexpr const char* get_file_name() {
-        // TODO: add another
-        switch (coll_type) {
-            case ccl_coll_allreduce: return "ring_allreduce.spv";
-            default: return "";
-        }
-    }
-
-    void cleanup() {
-        LOG_DEBUG("cleanup cache");
-        for (auto& item : cache) {
-            ZE_CALL(zeModuleDestroy(item.second));
-        }
-    }
-
-    ~ze_module_loader() {
-        cleanup();
-    }
+    std::vector<fence_cache> fences;
+    std::vector<kernel_cache> kernels;
+    std::vector<list_cache> lists;
+    std::vector<queue_cache> queues;
+    module_cache modules;
 };
 
 } // namespace ze

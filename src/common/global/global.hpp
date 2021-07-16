@@ -39,6 +39,10 @@ class ccl_algorithm_selector_wrapper;
 
 namespace ccl {
 
+namespace ze {
+class cache;
+} // namespace ze
+
 // class comm_group;
 // using comm_group_t = std::shared_ptr<comm_group>;
 
@@ -87,6 +91,10 @@ public:
     std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>> algorithm_selector;
     std::unique_ptr<ccl_hwloc_wrapper> hwloc_wrapper;
     std::unique_ptr<group_context> global_ctx;
+
+#ifdef MULTI_GPU_SUPPORT
+    std::unique_ptr<ze::cache> ze_cache;
+#endif // MULTI_GPU_SUPPORT
 
     static thread_local bool is_worker_thread;
     bool is_ft_enabled;

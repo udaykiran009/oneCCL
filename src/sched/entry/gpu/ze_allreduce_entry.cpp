@@ -27,7 +27,9 @@ ze_allreduce_entry::ze_allreduce_entry(ccl_sched* sched,
           cnt(cnt),
           dtype(dtype),
           op(op),
-          buf_size_bytes(dtype.size() * cnt) {}
+          buf_size_bytes(dtype.size() * cnt),
+          is_initialized(false),
+          worker_idx(0) {}
 
 ze_allreduce_entry::~ze_allreduce_entry() {
     if (is_initialized) {
@@ -38,9 +40,12 @@ ze_allreduce_entry::~ze_allreduce_entry() {
 void ze_allreduce_entry::init() {
     LOG_DEBUG("initialization");
 
-    if (sched && sched->coll_param.stream) {
+    CCL_THROW_IF_NOT(sched != nullptr, "no sched");
+    worker_idx = sched->queue->get_idx();
+
+    if (sched->coll_param.stream) {
         LOG_DEBUG("getting a native stream");
-        auto native_stream = sched->coll_param.stream->get_native_stream(sched->queue->get_idx());
+        auto native_stream = sched->coll_param.stream->get_native_stream(worker_idx);
         if (native_stream->get_backend() != cl::sycl::backend::level_zero) {
             CCL_THROW("unsupported sycl backend");
         }
@@ -68,25 +73,25 @@ void ze_allreduce_entry::init() {
     ze_command_queue_desc_t comp_queue_desc = default_comp_queue_desc;
     comp_queue_desc.index = comp_queue_index;
     comp_queue_desc.ordinal = comp_ordinal;
-    ZE_CALL(zeCommandQueueCreate(context, device, &comp_queue_desc, &comp_queue));
-    LOG_DEBUG("compute queue created: { ordinal: ",
+
+    ccl::global_data::get().ze_cache->get(
+        worker_idx, context, device, &comp_queue_desc, &comp_queue);
+    LOG_DEBUG("get compute queue: { ordinal: ",
               comp_queue_desc.ordinal,
               ", index: ",
               comp_queue_desc.index,
               " }");
 
-    ze_command_list_desc_t comp_list_desc = default_cmd_list_desc;
+    comp_list_desc = default_cmd_list_desc;
     comp_list_desc.commandQueueGroupOrdinal = comp_ordinal;
-    ZE_CALL(zeCommandListCreate(
-        context, device, &comp_list_desc, &comp_list)); // TODO: we can cache it?
-    LOG_DEBUG("compute list created: { ordinal: ", comp_list_desc.commandQueueGroupOrdinal, " }");
+    ccl::global_data::get().ze_cache->get(worker_idx, context, device, &comp_list_desc, &comp_list);
+    LOG_DEBUG("get compute list: { ordinal: ", comp_list_desc.commandQueueGroupOrdinal, " }");
 
-    ze_module_loader<ccl_coll_allreduce>::instance().get(device, context, &module);
+    ccl::global_data::get().ze_cache->get(context, device, &module);
 
-    std::string kernel_name =
-        "allreduce_execution_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
-    create_kernel(module, kernel_name, &kernel); // TODO: we can cache it
-    LOG_DEBUG("kernel created: name: ", kernel_name);
+    kernel_name = "allreduce_execution_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
+    ccl::global_data::get().ze_cache->get(worker_idx, module, kernel_name, &kernel);
+    LOG_DEBUG("get kernel: name: ", kernel_name);
 
     ze_group_size_t group_size;
     get_suggested_group_size(kernel, cnt, &group_size);
@@ -122,14 +127,14 @@ void ze_allreduce_entry::init() {
                                      { sizeof(right_send_buf_ptr), &right_send_buf_ptr },
                                      { sizeof(right_recv_buf_ptr), &right_recv_buf_ptr } };
 
-    LOG_DEBUG("kernel args:\n", to_string(kernel_args));
+    LOG_DEBUG("kernel ", kernel, " args:\n", to_string(kernel_args));
     set_kernel_args(kernel, kernel_args);
 
     ZE_CALL(zeCommandListAppendLaunchKernel(comp_list, kernel, &group_count, nullptr, 0, nullptr));
     ZE_CALL(zeCommandListClose(comp_list));
 
-    ze_fence_desc_t fence_desc = default_fence_desc;
-    ZE_CALL(zeFenceCreate(comp_queue, &fence_desc, &fence)); // TODO: we can cache it
+    fence_desc = default_fence_desc;
+    ccl::global_data::get().ze_cache->get(worker_idx, comp_queue, &fence_desc, &fence);
 
     LOG_DEBUG("initialization complete");
 }
@@ -156,7 +161,7 @@ void ze_allreduce_entry::update() {
 
     if (fence_status == ZE_RESULT_SUCCESS) {
         LOG_DEBUG("command list complete");
-        ZE_CALL(zeFenceReset(fence));
+        ZE_CALL(zeFenceReset(fence)); // reset is needed if to_cache=1
         status = ccl_sched_entry_status_complete;
     }
     else if (fence_status == ZE_RESULT_NOT_READY) {
@@ -170,10 +175,18 @@ void ze_allreduce_entry::update() {
 
 void ze_allreduce_entry::finalize() {
     LOG_DEBUG("finalization");
-    ZE_CALL(zeCommandListReset(comp_list));
-    ZE_CALL(zeFenceDestroy(fence));
-    ZE_CALL(zeCommandQueueDestroy(comp_queue));
-    ZE_CALL(zeCommandListDestroy(comp_list));
-    ZE_CALL(zeKernelDestroy(kernel));
+    if (ccl::global_data::env().enable_comm_kernels_cache) {
+        // revert to cache
+        ccl::global_data::get().ze_cache->push(
+            worker_idx, context, device, &comp_list_desc, &comp_list);
+        ccl::global_data::get().ze_cache->push(worker_idx, module, kernel_name, &kernel);
+        ccl::global_data::get().ze_cache->push(worker_idx, comp_queue, &fence_desc, &fence);
+    }
+    else {
+        ZE_CALL(zeFenceDestroy(fence));
+        ZE_CALL(zeCommandQueueDestroy(comp_queue));
+        ZE_CALL(zeCommandListDestroy(comp_list));
+        ZE_CALL(zeKernelDestroy(kernel));
+    }
     LOG_DEBUG("finalization complete");
 }

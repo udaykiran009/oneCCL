@@ -100,6 +100,7 @@ env_data::env_data()
           enable_comm_kernels(0),
           comm_kernels_path(),
           comm_kernels_debug(0),
+          enable_comm_kernels_cache(1),
           gpu_group_size(CCL_ENV_SIZET_NOT_SPECIFIED),
           gpu_group_count(CCL_ENV_SIZET_NOT_SPECIFIED),
 
@@ -241,6 +242,7 @@ void env_data::parse() {
         }
     }
     env_2_type(CCL_COMM_KERNELS_DEBUG, comm_kernels_debug);
+    env_2_type(CCL_COMM_KERNELS_CACHE, enable_comm_kernels_cache);
     env_2_type(CCL_GPU_GROUP_SIZE, gpu_group_size);
     env_2_type(CCL_GPU_GROUP_COUNT, gpu_group_count);
 

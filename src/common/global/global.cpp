@@ -10,6 +10,10 @@
 #include "parallelizer/parallelizer.hpp"
 #include "sched/cache/cache.hpp"
 
+#ifdef MULTI_GPU_SUPPORT
+#include "sched/entry/gpu/ze_cache.hpp"
+#endif // MULTI_GPU_SUPPORT
+
 namespace ccl {
 
 thread_local bool global_data::is_worker_thread = false;
@@ -108,6 +112,9 @@ void global_data::init_gpu() {
     if (res != ZE_RESULT_SUCCESS) {
         CCL_THROW("error at zeInit, code: ", res);
     }
+
+    ze_cache = std::unique_ptr<ccl::ze::cache>(new ccl::ze::cache(env_object.worker_count));
+
     LOG_DEBUG("level-zero initialized");
 }
 #endif // MULTI_GPU_SUPPORT

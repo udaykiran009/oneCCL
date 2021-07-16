@@ -87,6 +87,7 @@ constexpr const char* CCL_ALLTOALL_SCATTER_PLAIN = "CCL_ALLTOALL_SCATTER_PLAIN";
 constexpr const char* CCL_COMM_KERNELS = "CCL_COMM_KERNELS";
 constexpr const char* CCL_COMM_KERNELS_PATH = "CCL_COMM_KERNELS_PATH";
 constexpr const char* CCL_COMM_KERNELS_DEBUG = "CCL_COMM_KERNELS_DEBUG";
+constexpr const char* CCL_COMM_KERNELS_CACHE = "CCL_COMM_KERNELS_CACHE";
 constexpr const char* CCL_GPU_GROUP_SIZE = "CCL_GPU_GROUP_SIZE";
 constexpr const char* CCL_GPU_GROUP_COUNT = "CCL_GPU_GROUP_COUNT";
 
@@ -189,6 +190,7 @@ public:
     int enable_comm_kernels;
     std::string comm_kernels_path;
     int comm_kernels_debug;
+    int enable_comm_kernels_cache;
     ssize_t gpu_group_size;
     ssize_t gpu_group_count;
 
