@@ -45,7 +45,9 @@
 #include "unordered_coll/unordered_coll.hpp"
 
 /* param is not const because param.comm can be updated for unordered colls */
-static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& attr) {
+static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& in_attr) {
+    ccl_coll_attr& attr = const_cast<ccl_coll_attr&>(in_attr);
+
     LOG_DEBUG("\n{\n",
               "  param: ",
               param.to_string(),
@@ -81,6 +83,26 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
             /* use comm provided by user, it is ordered collective */
         }
     }
+
+#ifdef CCL_ENABLE_SYCL
+    // WA: for topo_ring algo only, set sync = 1
+    if (param.ctype == ccl_coll_allreduce) {
+        ccl_selector_param selector_param;
+        selector_param.ctype = param.ctype;
+        selector_param.count = param.get_send_count();
+        selector_param.dtype = param.dtype;
+        selector_param.comm = param.comm;
+        selector_param.stream = param.stream;
+        selector_param.is_sycl_buf = attr.is_sycl_buf;
+
+        ccl_coll_allreduce_algo allreduce_algo = ccl_coll_allreduce_last_value;
+
+        allreduce_algo = data.algorithm_selector->get<ccl_coll_allreduce>(selector_param);
+        if (allreduce_algo == ccl_coll_allreduce_topo_ring) {
+            attr.synchronous = 1;
+        }
+    }
+#endif // CCL_ENABLE_SYCL
 
     /* 2. create or get schedule */
     ccl_master_sched* sched = ccl_master_sched::create(param, attr);
