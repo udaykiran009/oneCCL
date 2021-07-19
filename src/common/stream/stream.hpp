@@ -45,6 +45,12 @@ public:
         return (type == stream_type::cpu || type == stream_type::gpu);
     }
 
+#ifdef CCL_ENABLE_SYCL
+    cl::sycl::backend get_backend() const noexcept {
+        return backend;
+    }
+#endif // CCL_ENBALE_SYCL
+
     static std::unique_ptr<ccl_stream> create(stream_native_t& native_stream,
                                               const ccl::library_version& version);
 
@@ -69,5 +75,8 @@ private:
                const ccl::library_version& version);
 
     stream_type type;
+#ifdef CCL_ENABLE_SYCL
+    cl::sycl::backend backend;
+#endif // CCL_ENBALE_SYCL
     const ccl::library_version version;
 };

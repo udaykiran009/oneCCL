@@ -171,6 +171,8 @@ int ze_handle_exchange_entry::create_server_socket(const std::string& socket_nam
         CCL_THROW("fcntl error: ", ret, ", errno: ", strerror(errno));
     }
 
+    unlink(socket_name.c_str());
+
     ret = bind(sock, ((struct sockaddr*)&(*socket_addr)), *addr_len);
     if (ret) {
         CCL_THROW("bind error: ,", ret, ", errno: ", strerror(errno));
@@ -249,7 +251,7 @@ int ze_handle_exchange_entry::connect_call(int sock,
 int ze_handle_exchange_entry::sendmsg_fd(int sock, int fd, size_t mem_offset) {
     struct msghdr msg = {};
     struct cmsghdr* cmsg;
-    char ctrl_buf[CMSG_SPACE(sizeof(fd))];
+    char ctrl_buf[CMSG_SPACE(sizeof(fd))] = { 0 };
     struct iovec iov;
 
     iov.iov_base = &mem_offset;
@@ -277,7 +279,7 @@ int ze_handle_exchange_entry::sendmsg_fd(int sock, int fd, size_t mem_offset) {
 int ze_handle_exchange_entry::recvmsg_fd(int sock, int& fd, size_t& mem_offset) {
     struct msghdr msg = {};
     struct cmsghdr* cmsg;
-    char ctrl_buf[CMSG_SPACE(sizeof(int))];
+    char ctrl_buf[CMSG_SPACE(sizeof(int))] = { 0 };
     struct iovec iov = {};
 
     size_t buf = {};

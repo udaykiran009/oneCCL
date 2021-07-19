@@ -220,7 +220,7 @@ ccl::status ccl_coll_build_allreduce(ccl_sched* sched,
                 sched, send_buf, recv_buf, count, dtype, reduction));
             break;
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
-        case ccl_coll_allreduce_gpu:
+        case ccl_coll_allreduce_topo_ring:
             CCL_CALL(ccl_coll_build_gpu_allreduce(
                 sched, send_buf, recv_buf, count, dtype, reduction, comm));
             break;

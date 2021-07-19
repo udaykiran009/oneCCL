@@ -20,6 +20,8 @@ ccl_stream::ccl_stream(stream_type type,
     for (size_t idx = 0; idx < native_streams.size(); idx++) {
         native_streams[idx] = stream_native_t(stream.get_context(), stream.get_device());
     }
+
+    backend = stream.get_device().get_backend();
 #endif // CCL_ENABLE_SYCL
 }
 
@@ -49,8 +51,8 @@ std::string ccl_stream::to_string() const {
        << "type: " << ::to_string(type) << ", in_order: " << native_stream.is_in_order()
        << ", device: " << native_stream.get_device().get_info<cl::sycl::info::device::name>()
        << "}";
-#else
+#else // CCL_ENABLE_SYCL
     ss << reinterpret_cast<void*>(native_stream.get());
-#endif
+#endif // CCL_ENABLE_SYCL
     return ss.str();
 }

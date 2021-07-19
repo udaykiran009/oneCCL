@@ -124,15 +124,17 @@ run_benchmark()
     echo "backend: "$backend
     local runtime=$6
     echo "runtime: "$runtime
-    local loop=$7
+    local ppn=$7
+    echo "ppn: "$ppn
+    local loop=$8
     echo "loop: "$loop
-    local coll=$8
+    local coll=$9
     echo "coll: " $coll
-    local dtype=$9
+    local dtype=${10}
     echo "dtype: " $dtype
-    local reduction=${10}
+    local reduction=${11}
     echo "reduction: " $reduction
-    local ranks=${11}
+    local ranks=${12}
     echo "ranks per process: " ${ranks}
     echo "================ENVIRONMENT=================="
 
@@ -210,14 +212,14 @@ run_benchmark()
             eval $cmd 2>&1 | tee ${test_log}
             check_test ${test_log} ${example}
         else
-            log_debug_test_log="${test_log}.2_ranks"
+            log_debug_test_log="${test_log}.2_ranks_ppn_${ppn}"
             echo "output for run with CCL_LOG_LEVEL=debug and 2 ranks has been redirected to log file ${log_debug_test_log}"
             cmd=`echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_options}`
             echo "Running: $cmd"
             eval $cmd > ${log_debug_test_log} 2>&1
             check_test ${log_debug_test_log} ${example}
 
-            if [ "${transport}" == "ofi" ];
+            if [ "${transport}" == "ofi" ] && [ "${ppn}" == "1" ];
             then
                 log_debug_test_log="${test_log}.1_rank"
                 echo "output for run with CCL_LOG_LEVEL=debug and 1 rank has been redirected to log file ${log_debug_test_log}"
@@ -239,9 +241,11 @@ run_example()
     echo "dir_name: " $dir_name
     local transport=$3
     echo "transport: "$transport
-    local example=$4
+    local ppn=$4
+    echo "ppn: "$ppn
+    local example=$5
     echo "example: "$example
-    local arg=$5
+    local arg=$6
     echo "arg: "$arg
     echo "================ENVIRONMENT=================="
 
@@ -286,7 +290,7 @@ run()
     cd ${EXAMPLE_WORK_DIR}/
     pwd
 
-    ppn=1
+    ppns="1 2"
     n=2
     dtype_list="int8,int32,float32"
     reduction_list="sum"
@@ -314,6 +318,7 @@ run()
         then
             dir_list="${common_dir_list}"
             bench_backend_list="sycl"
+            ppns="2"
         elif [[ ${SCOPE} = "abi" ]]
         then
             dir_list="${common_dir_list} cpu sycl"
@@ -349,7 +354,8 @@ run()
                     continue
                 fi
                 transport_name="mpi"
-                ccl_transport_env="CCL_ATL_DEVICE_BUF=1 ${ccl_transport_env}"
+                # TODO: need fix on impi side MLSL-1020
+                # ccl_transport_env="CCL_ATL_DEVICE_BUF=1 ${ccl_transport_env}"
             fi
             ccl_transport_env="CCL_ATL_TRANSPORT=${transport_name} ${ccl_transport_env}"
 
@@ -373,189 +379,194 @@ run()
 
             for example in $examples_to_run
             do
-                if [ "$dir_name" == "benchmark" ];
-                then
+                for ppn in $ppns
+                do
+                    if [ "$dir_name" == "benchmark" ];
+                    then
 
-                    coll_list="all"
+                        coll_list="all"
 
-                    for backend in $bench_backend_list
-                    do
-                        runtime_list="none"
-                        if [ "$backend" == "sycl" ];
-                        then
-                            runtime_list="opencl level_zero"
-                        fi
-
-                        if [ "$transport" == "mpi_gpu" ];
-                        then
-                            if [ "$backend" != "sycl" ];
-                            then
-                                continue
-                            else
-                                runtime_list="level_zero"
-                            fi
-                        fi
-
-                        for runtime in $runtime_list
+                        for backend in $bench_backend_list
                         do
-                            ccl_runtime_env="${ccl_transport_env}"
-                            if [ "$runtime" != "none" ]
+                            runtime_list="none"
+                            if [ "$backend" == "sycl" ];
                             then
-                                ccl_runtime_env="SYCL_DEVICE_FILTER=${runtime} ${ccl_runtime_env}"
+                                runtime_list="opencl level_zero"
                             fi
 
-                            ccl_extra_env="${ccl_runtime_env}"
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${coll_list}
-
-                            for loop in "regular" "unordered"
-                            do
-                                if [ "$loop" == "unordered" ]
+                            if [ "$transport" == "mpi_gpu" ];
+                            then
+                                if [ "$backend" != "sycl" ];
                                 then
-                                    if [[ "${transport}" == *"mpi"* ]] || [ "$runtime" == "opencl" ];
-                                    then
-                                        continue
-                                    fi
+                                    continue
+                                else
+                                    runtime_list="level_zero"
+                                fi
+                            fi
+
+                            for runtime in $runtime_list
+                            do
+                                ccl_runtime_env="${ccl_transport_env}"
+                                if [ "$runtime" != "none" ]
+                                then
+                                    ccl_runtime_env="SYCL_DEVICE_FILTER=${runtime} ${ccl_runtime_env}"
                                 fi
 
-                                ccl_extra_env="CCL_PRIORITY=lifo ${ccl_runtime_env}"
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${loop} ${coll_list}
+                                ccl_extra_env="${ccl_runtime_env}"
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${ppn} regular ${coll_list}
 
-                                ccl_extra_env="CCL_WORKER_OFFLOAD=0 ${ccl_runtime_env}"
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${loop} ${coll_list}
+                                for loop in "regular" "unordered"
+                                do
+                                    if [ "$loop" == "unordered" ]
+                                    then
+                                        if [[ "${transport}" == *"mpi"* ]] || [ "$runtime" == "opencl" ];
+                                        then
+                                            continue
+                                        fi
+                                    fi
 
-                                ccl_extra_env="CCL_WORKER_WAIT=0 ${ccl_runtime_env}"
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${loop} ${coll_list}
+                                    ccl_extra_env="CCL_PRIORITY=lifo ${ccl_runtime_env}"
+                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${ppn} ${loop} ${coll_list}
+
+                                    ccl_extra_env="CCL_WORKER_OFFLOAD=0 ${ccl_runtime_env}"
+                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${ppn} ${loop} ${coll_list}
+
+                                    ccl_extra_env="CCL_WORKER_WAIT=0 ${ccl_runtime_env}"
+                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${ppn} ${loop} ${coll_list}
+                                done
+
+                                if [ "$runtime" != "opencl" ];
+                                then
+                                    # TODO: fix issue with OCL host usm, ticket to be filled
+                                    ccl_extra_env="CCL_FUSION=1 ${ccl_runtime_env}"
+                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${ppn} regular allreduce
+                                fi
+
+                                ccl_extra_env="CCL_LOG_LEVEL=debug ${ccl_runtime_env}"
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${ppn} regular ${coll_list}
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${ppn} regular allreduce ${dtype_list} ${reduction_list}
                             done
-
-                            if [ "$runtime" != "opencl" ];
-                            then
-                                # TODO: fix issue with OCL host usm, ticket to be filled
-                                ccl_extra_env="CCL_FUSION=1 ${ccl_runtime_env}"
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular allreduce
-                            fi
-
-                            ccl_extra_env="CCL_LOG_LEVEL=debug ${ccl_runtime_env}"
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${coll_list}
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular allreduce ${dtype_list} ${reduction_list}
                         done
-                    done
-                elif [ "$dir_name" == "sycl" ];
-                then
-                    for selector in $sycl_example_selector_list
-                    do
-                        if [ "$selector" == "gpu" ];
-                        then
-                            runtime_list="opencl level_zero"
-                        else
-                            runtime_list="opencl"
-                        fi
-
-                        if [ "$transport" == "mpi_gpu" ];
-                        then
-                            if [ "$selector" != "gpu" ];
-                            then
-                                continue
-                            else
-                                runtime_list="level_zero"
-                            fi
-                        fi
-
-                        if [[ "${example}" == *"_usm_"* ]]
-                        then
+                    elif [ "$dir_name" == "sycl" ];
+                    then
+                        for selector in $sycl_example_selector_list
+                        do
                             if [ "$selector" == "gpu" ];
                             then
-                                #usm_list="device shared" https://jira.devtools.intel.com/browse/MLSL-902
-                                usm_list="device"
+                                runtime_list="opencl level_zero"
                             else
-                                usm_list="host shared"
+                                runtime_list="opencl"
                             fi
-                        else
-                            usm_list="default"
-                        fi
 
-                        for runtime in $runtime_list
-                        do
-                            if [ "$selector" == "cpu" ] && [ "$runtime" == "opencl" ] && [ "$usm_list" != "default" ];
+                            if [ "$transport" == "mpi_gpu" ];
                             then
-                                # MLSL-856
-                                continue
+                                if [ "$selector" != "gpu" ];
+                                then
+                                    continue
+                                else
+                                    runtime_list="level_zero"
+                                fi
                             fi
 
-                            for usm in $usm_list
+                            if [[ "${example}" == *"_usm_"* ]]
+                            then
+                                if [ "$selector" == "gpu" ];
+                                then
+                                    #usm_list="device shared" https://jira.devtools.intel.com/browse/MLSL-902
+                                    usm_list="device"
+                                else
+                                    usm_list="host shared"
+                                fi
+                            else
+                                usm_list="default"
+                            fi
+
+                            for runtime in $runtime_list
                             do
-                                echo "selector $selector, runtime $runtime, usm $usm"
-                                ccl_extra_env="SYCL_DEVICE_FILTER=${runtime} ${ccl_transport_env}"
-                                run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} "${selector} ${usm}"
-                            done
-                        done
-                    done
-                elif [ "$dir_name" == "external_launcher" ];
-                then
-                    if [ "$transport" != "ofi" ];
-                    then
-                        continue
-                    fi
+                                if [ "$selector" == "cpu" ] && [ "$runtime" == "opencl" ] && [ "$usm_list" != "default" ];
+                                then
+                                    # MLSL-856
+                                    continue
+                                fi
 
-                    if [ -z "${I_MPI_HYDRA_HOST_FILE}" ];
-                    then
-                        echo "WARNING: I_MPI_HYDRA_HOST_FILE was not set."
-                        echo localhost > ${SCRIPT_DIR}/${dir_name}/hostfile
-                        export I_MPI_HYDRA_HOST_FILE=${SCRIPT_DIR}/${dir_name}/hostfile
-                    fi
-
-                    ccl_hosts=`echo $I_MPI_HYDRA_HOST_FILE`
-                    ccl_world_size=4
-                    ccl_vars="${CCL_ROOT}/env/setvars.sh"
-                    if [ ! -f "$ccl_vars" ];
-                    then
-                        # not a standalone version
-                        ccl_vars="${CCL_ROOT}/env/vars.sh"
-                    fi
-
-                    test_log="$EXAMPLE_WORK_DIR/$dir_name/log.txt"
-                    ${EXAMPLE_WORK_DIR}/${dir_name}/run.sh -v $ccl_vars -h $ccl_hosts -s $ccl_world_size 2>&1 | tee ${test_log}
-                    check_test ${test_log} "external_launcher"
-
-                else
-                    if [[ "${example}" == *"communicator"* ]]
-                    then
-                        n=8
-                        ccl_extra_env="${ccl_transport_env}"
-                        run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}
-                    elif [[ "${example}" == *"sparse_allreduce"* ]]
-                    then
-                        if [ "$transport" == "mpi" ];
-                        then
-                            sparse_algo_set="ring"
-                            sparse_coalesce_set="regular"
-                            sparse_callback_set="completion"
-                        else
-                            sparse_algo_set="ring mask allgatherv"
-                            sparse_coalesce_set="regular disable keep_precision"
-                            sparse_callback_set="completion alloc"
-                        fi
-                        for algo in ${sparse_algo_set};
-                        do
-                            ccl_extra_env="CCL_SPARSE_ALLREDUCE=${algo} ${ccl_transport_env}"
-                            for coalesce in ${sparse_coalesce_set};
-                            do
-                                for callback in ${sparse_callback_set};
+                                for usm in $usm_list
                                 do
-                                    if [ "$callback" == "alloc" ] && [ "$algo" != "allgatherv" ];
-                                    then
-                                        # TODO: implement alloc_fn for ring and mask
-                                        continue
-                                    fi
-                                    sparse_options="-coalesce ${coalesce} -callback ${callback}"
-                                    run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example} "${sparse_options}"
+                                    echo "selector $selector, runtime $runtime, usm $usm"
+                                    ccl_extra_env="SYCL_DEVICE_FILTER=${runtime} ${ccl_transport_env}"
+                                    run_example "${ccl_extra_env}" ${dir_name} ${transport} ${ppn} ${example} "${selector} ${usm}"
                                 done
                             done
                         done
+                    elif [ "$dir_name" == "external_launcher" ];
+                    then
+                        if [ "$transport" != "ofi" ];
+                        then
+                            continue
+                        fi
+
+                        if [ -z "${I_MPI_HYDRA_HOST_FILE}" ];
+                        then
+                            echo "WARNING: I_MPI_HYDRA_HOST_FILE was not set."
+                            echo localhost > ${SCRIPT_DIR}/${dir_name}/hostfile
+                            export I_MPI_HYDRA_HOST_FILE=${SCRIPT_DIR}/${dir_name}/hostfile
+                        fi
+
+                        ccl_hosts=`echo $I_MPI_HYDRA_HOST_FILE`
+                        ccl_world_size=4
+                        ccl_vars="${CCL_ROOT}/env/setvars.sh"
+                        if [ ! -f "$ccl_vars" ];
+                        then
+                            # not a standalone version
+                            ccl_vars="${CCL_ROOT}/env/vars.sh"
+                        fi
+
+                        test_log="$EXAMPLE_WORK_DIR/$dir_name/log.txt"
+                        ${EXAMPLE_WORK_DIR}/${dir_name}/run.sh -v $ccl_vars -h $ccl_hosts -s $ccl_world_size 2>&1 | tee ${test_log}
+                        check_test ${test_log} "external_launcher"
+
                     else
-                        ccl_extra_env="${ccl_transport_env}"
-                        run_example "${ccl_extra_env}" ${dir_name} ${transport} ${example}
+                        if [[ "${example}" == *"communicator"* ]]
+                        then
+                            n=8
+                            ccl_extra_env="${ccl_transport_env}"
+                            run_example "${ccl_extra_env}" ${dir_name} ${transport} ${ppn} ${example}
+                        elif [[ "${example}" == *"sparse_allreduce"* ]]
+                        then
+                            continue
+                            # Not launched branch for testing
+                            # if [ "$transport" == "mpi" ];
+                            # then
+                            #     sparse_algo_set="ring"
+                            #     sparse_coalesce_set="regular"
+                            #     sparse_callback_set="completion"
+                            # else
+                            #     sparse_algo_set="ring mask allgatherv"
+                            #     sparse_coalesce_set="regular disable keep_precision"
+                            #     sparse_callback_set="completion alloc"
+                            # fi
+                            # for algo in ${sparse_algo_set};
+                            # do
+                            #     ccl_extra_env="CCL_SPARSE_ALLREDUCE=${algo} ${ccl_transport_env}"
+                            #     for coalesce in ${sparse_coalesce_set};
+                            #     do
+                            #         for callback in ${sparse_callback_set};
+                            #         do
+                            #             if [ "$callback" == "alloc" ] && [ "$algo" != "allgatherv" ];
+                            #             then
+                            #                 # TODO: implement alloc_fn for ring and mask
+                            #                 continue
+                            #             fi
+                            #             sparse_options="-coalesce ${coalesce} -callback ${callback}"
+                            #             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${ppn} ${example} "${sparse_options}"
+                            #         done
+                            #     done
+                            # done
+                        else
+                            ccl_extra_env="${ccl_transport_env}"
+                            run_example "${ccl_extra_env}" ${dir_name} ${transport} ${ppn} ${example}
+                        fi
                     fi
-                fi
+                done
             done
         done
         cd - > /dev/null 2>&1

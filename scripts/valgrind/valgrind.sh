@@ -172,20 +172,20 @@ run_benchmark()
 
     if [[ ${VALGRIND_SCOPE} = "regular" ]]
     then
-        options=" -w 0 -i 2 -n 2 -y 256,16384,32777,1048576"
+        options=" -w 0 -i 2 -y 256,16384,32777,1048576"
     else
-        options=" -w 0 -i 2 -n 2 -y 256,32777,1048576"
+        options=" -w 0 -i 2 -y 256,32777,1048576"
     fi
 
     usm_list="none"
 
+    buf_count=2
     if [ "${backend}" != "" ];
     then
         options="${options} --backend ${backend}"
 
         if [ "${backend}" == "sycl" ];
         then
-            buf_count=2
             if [ "${runtime}" == "level_zero" ];
             then
                 # FIXME: enable back buf_count > 1 after USM fix in L0
@@ -196,6 +196,7 @@ run_benchmark()
             usm_list="device shared"
         fi
     fi
+    options="${options} --buf_count ${buf_count}"
 
     if [ "${loop}" != "" ];
     then
@@ -268,11 +269,9 @@ run()
     cd ${EXAMPLE_WORK_DIR}/
     pwd
 
-    ppn=1
-    n=2
     reduction_list="sum"
     coll_list="allgatherv allreduce alltoall alltoallv bcast reduce reduce_scatter"
-    ccl_base_env="FI_PROVIDER=tcp CCL_ATL_MPI=impi CCL_LOG_LEVEL=info I_MPI_DEBUG=2"
+    ccl_base_env="CCL_ALLREDUCE=ring FI_PROVIDER=tcp CCL_ATL_MPI=impi CCL_LOG_LEVEL=info I_MPI_DEBUG=2" # TODO: fix MLSL-1019
 
     if [[ ${MODE} = "cpu" ]]
     then

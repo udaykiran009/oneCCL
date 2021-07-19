@@ -336,7 +336,7 @@ void ccl_sched_base::alloc_buffers_for_pre_post_copy() {
     }
 
     if (!param.stream || !param.stream->is_sycl_device_stream() ||
-        allreduce_algo == ccl_coll_allreduce_gpu) {
+        allreduce_algo == ccl_coll_allreduce_topo_ring) {
         return;
     }
 

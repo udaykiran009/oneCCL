@@ -85,7 +85,7 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
     if (selector_param.ctype == ccl_coll_allreduce)
         allreduce_algo = data.algorithm_selector->get<ccl_coll_allreduce>(selector_param);
 
-    if (allreduce_algo != ccl_coll_allreduce_gpu) {
+    if (allreduce_algo != ccl_coll_allreduce_topo_ring) {
         ccl_coll_param& param = sched->coll_param;
         if (param.stream && param.stream->is_sycl_device_stream() &&
             (!param.device_send_bufs.empty() || !param.device_recv_bufs.empty())) {

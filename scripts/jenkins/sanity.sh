@@ -497,7 +497,13 @@ function run_tests()
                     CCL_ALLGATHERV=$algo ctest -VV -C allgatherv_"$algo"
                 done
 
-                for algo in "direct" "rabenseifner" "starlike" "ring" "double_tree" "recursive_doubling"
+                algos="direct rabenseifner starlike ring double_tree recursive_doubling"
+                if [ ${node_label} == "mlsl2_test_gpu" ]
+                then
+                    algos="${algos} topo_ring"
+                fi
+
+                for algo in $algos
                 do
                     if [ "$algo" == "ring" ];
                     then
@@ -554,7 +560,13 @@ function run_tests()
                     CCL_ALLGATHERV=$algo ctest -VV -C allgatherv_"$algo"
                 done
 
-                for algo in "rabenseifner" "starlike" "ring" "ring_rma" "double_tree" "recursive_doubling" "2d"
+                algos="rabenseifner starlike ring ring_rma double_tree recursive_doubling 2d"
+                if [ ${node_label} == "mlsl2_test_gpu" ]
+                then
+                    algos="${algos} topo_ring"
+                fi
+
+                for algo in $algos
                 do
                     if [ "$algo" == "ring_rma" ];
                     then
