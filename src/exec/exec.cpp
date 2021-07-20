@@ -67,7 +67,7 @@ ccl_executor::ccl_executor(const char* main_addr) {
     atl_wrapper::set_exec(this);
 }
 
-void ccl_executor::start_workers(size_t proc_idx, size_t proc_count) {
+void ccl_executor::start_workers(int proc_idx, int proc_count) {
     set_local_coord(proc_idx, proc_count);
     auto& env = ccl::global_data::env();
     CCL_THROW_IF_NOT(env.env_2_worker_affinity(get_local_proc_idx(), get_local_proc_count()));
@@ -268,7 +268,7 @@ void ccl_executor::do_work() {
     }
 }
 
-void ccl_executor::set_local_coord(size_t proc_idx, size_t proc_count) {
+void ccl_executor::set_local_coord(int proc_idx, int proc_count) {
     local_proc_idx = proc_idx;
     local_proc_count = proc_count;
     auto& env = ccl::global_data::env();
@@ -279,8 +279,8 @@ void ccl_executor::set_local_coord(size_t proc_idx, size_t proc_count) {
         char* local_idx_env = getenv(local_idx_env_name);
         char* local_count_env = getenv(local_count_env_name);
         if (local_idx_env && local_count_env) {
-            size_t local_idx = std::atoi(local_idx_env);
-            size_t local_count = std::atoi(local_count_env);
+            int local_idx = std::atoi(local_idx_env);
+            int local_count = std::atoi(local_count_env);
             CCL_THROW_IF_NOT(local_idx == local_proc_idx,
                              "unexpected local_proc_idx ",
                              local_proc_idx,

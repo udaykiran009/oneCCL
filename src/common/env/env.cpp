@@ -303,7 +303,7 @@ void env_data::print(int rank) {
     auto local_proc_idx = global_data.executor->get_local_proc_idx();
     auto local_proc_count = global_data.executor->get_local_proc_count();
 
-    if (rank < (int)local_proc_count) {
+    if (rank < local_proc_count) {
         for (size_t w_idx = 0; w_idx < worker_count; w_idx++) {
             LOG_INFO("local process [",
                      local_proc_idx,
@@ -453,7 +453,7 @@ void env_data::set_internal_env() {
     }
 }
 
-int env_data::env_2_worker_affinity_auto(size_t local_proc_idx, size_t workers_per_process) {
+int env_data::env_2_worker_affinity_auto(int local_proc_idx, size_t workers_per_process) {
     char* available_cores = std::getenv(I_MPI_AVAILABLE_CORES_ENV);
     CCL_THROW_IF_NOT(available_cores && strlen(available_cores) != 0,
                      "auto pinning requires ",
@@ -596,7 +596,7 @@ int env_data::parse_affinity(const std::string& input,
     return 1;
 }
 
-int env_data::env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_count) {
+int env_data::env_2_worker_affinity(int local_proc_idx, int local_proc_count) {
     CCL_THROW_IF_NOT(local_proc_count > 0);
 
     size_t idx;

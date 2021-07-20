@@ -269,12 +269,12 @@ public:
     static std::map<ccl_staging_buffer, std::string> staging_buffer_names;
     static std::map<atl_mnic_t, std::string> mnic_type_names;
 
-    int env_2_worker_affinity(size_t local_proc_idx, size_t local_proc_count);
+    int env_2_worker_affinity(int local_proc_idx, int local_proc_count);
     int env_2_worker_mem_affinity();
     void env_2_atl_transport();
 
 private:
-    int env_2_worker_affinity_auto(size_t local_proc_idx, size_t workers_per_process);
+    int env_2_worker_affinity_auto(int local_proc_idx, size_t workers_per_process);
 
     int parse_affinity(const std::string& input,
                        std::vector<ssize_t>& output,

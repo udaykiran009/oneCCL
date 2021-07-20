@@ -71,18 +71,13 @@ bool ccl_algorithm_selector_helper<ccl_coll_allreduce_algo>::can_use(
     else if (algo == ccl_coll_allreduce_direct &&
              (ccl::global_data::env().atl_transport == ccl_atl_ofi))
         can_use = false;
-    else if (
-        algo == ccl_coll_allreduce_topo_ring &&
-        ((param.comm->size() != 2) ||
-         (param.comm->size() !=
-          static_cast<int>(
-              ccl::global_data::get()
-                  .executor
-                  ->get_local_proc_count())) || // TODO: local_proc_count is int in atl_proc_coord_t
-         (!param.stream || param.stream->get_type() != stream_type::gpu || is_sycl_buf ||
-          !is_l0_backend || ccl::global_data::env().enable_fusion ||
-          ccl::global_data::env().enable_unordered_coll ||
-          ccl::global_data::env().worker_count != 1)))
+    else if (algo == ccl_coll_allreduce_topo_ring &&
+             ((param.comm->size() != 2) ||
+              (param.comm->size() != ccl::global_data::get().executor->get_local_proc_count()) ||
+              (!param.stream || param.stream->get_type() != stream_type::gpu || is_sycl_buf ||
+               !is_l0_backend || ccl::global_data::env().enable_fusion ||
+               ccl::global_data::env().enable_unordered_coll ||
+               ccl::global_data::env().worker_count != 1)))
         can_use = false;
 
     return can_use;
