@@ -85,8 +85,8 @@ MODEL_TF_SRC_COMMIT="74b72acf1436255987a238afb414185008631d09"
 MODEL_PT_FILE="bench_pt.py"
 MODEL_PT_BASE_LINK="https://gitlab.devtools.intel.com/aemani/dlutils/-/raw/master"
 
-TF_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww27/compiler-20210624/itex/ubuntu/tensorflow-2.5.0-cp37-cp37m-linux_x86_64.whl"
-ITEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww27/compiler-20210624/itex/ubuntu/intel_extension_for_tensorflow-0.1.0-cp37-cp37m-linux_x86_64.whl"
+TF_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww29/ubuntu/tensorflow-2.5.0-cp37-cp37m-linux_x86_64.whl"
+ITEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww29/ubuntu/intel_extension_for_tensorflow-0.2.0-cp37-cp37m-linux_x86_64.whl"
 TF_NAME=`basename $TF_LINK`
 ITEX_NAME=`basename $ITEX_LINK`
 
@@ -810,6 +810,15 @@ install_fw() {
         echo_log "\n=== install pybind11 ===\n"
         pip install pybind11
 
+        echo_log "\n=== install torchvision ===\n"
+        pip install torchvision --no-deps
+
+        echo_log "\n=== install pillow ===\n"
+        pip install --no-cache-dir -I pillow
+
+        echo_log "\n=== upgrade numpy ===\n"
+        pip install numpy --upgrade
+
         echo_log "\n=== install PT ===\n"
         if [[ -f ${PT_PATH} ]]
         then
@@ -958,7 +967,7 @@ download_model_pt() {
     fi
 
     cd ${SCRIPT_WORK_DIR}
-    curl -kLO ${MODEL_PT_BASE_LINK}/${MODEL_PT_FILE}
+    https_proxy="" curl -kLO ${MODEL_PT_BASE_LINK}/${MODEL_PT_FILE}
 }
 
 run_model_tf() {
