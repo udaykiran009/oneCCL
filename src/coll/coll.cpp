@@ -84,26 +84,10 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
         }
     }
 
-#ifdef CCL_ENABLE_SYCL
-    // WA: for topo_ring algo only, set sync = 1
-    if (param.ctype == ccl_coll_allreduce) {
-        ccl_selector_param selector_param;
-        selector_param.ctype = param.ctype;
-        selector_param.count = param.get_send_count();
-        selector_param.dtype = param.dtype;
-        selector_param.comm = param.comm;
-        selector_param.stream = param.stream;
-        selector_param.is_sycl_buf = attr.is_sycl_buf;
-
-        ccl_coll_allreduce_algo allreduce_algo = ccl_coll_allreduce_last_value;
-
-        allreduce_algo = data.algorithm_selector->get<ccl_coll_allreduce>(selector_param);
-        if (allreduce_algo == ccl_coll_allreduce_topo_ring) {
-            attr.synchronous = 1;
-        }
-    }
-#endif // CCL_ENABLE_SYCL
-
+#ifdef CCL_ENABLE_SYC
+    if (ccl::global_data::env().enable_op_sync)
+        attr.synchronous = 1;
+#endif // CCL_ENABLE_SYC
     /* 2. create or get schedule */
     ccl_master_sched* sched = ccl_master_sched::create(param, attr);
 

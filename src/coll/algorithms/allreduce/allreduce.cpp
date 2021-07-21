@@ -512,7 +512,7 @@ ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
         sched->add_barrier();
         sched->set_entry_exec_mode(ccl_sched_entry_exec_regular);
 
-        // TODO: no need barrier for the first iteration where ze_handle_exchange_entry is exists
+        // TODO: no need barrier for the first iteration where ze_handle_exchange_entry exists
         // TODO: think about the right way
         coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
     }
@@ -522,7 +522,7 @@ ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
 
     sched->add_barrier();
 
-    if (comm->rank() == 0) {
+    if (comm->rank() == ccl::global_data::env().kernel_1s_lead) {
         entry_factory::make_entry<ze_allreduce_entry>(
             sched, send_buf, recv_buf, count, dtype, op, comm);
         sched->add_barrier();

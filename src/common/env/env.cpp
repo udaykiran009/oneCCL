@@ -83,6 +83,7 @@ env_data::env_data()
           enable_cache_flush(0),
           enable_strict_order(0),
           staging_buffer(ccl_staging_usm),
+          enable_op_sync(1),
 
           chunk_count(1),
           min_chunk_size(65536),
@@ -98,11 +99,13 @@ env_data::env_data()
           alltoall_scatter_plain(0),
 
           enable_comm_kernels(0),
-          comm_kernels_path(),
-          comm_kernels_debug(0),
-          enable_comm_kernels_cache(1),
-          gpu_group_size(CCL_ENV_SIZET_NOT_SPECIFIED),
-          gpu_group_count(CCL_ENV_SIZET_NOT_SPECIFIED),
+          kernel_path(),
+          kernel_debug(0),
+          enable_kernel_cache(1),
+          kernel_group_size(CCL_ENV_SIZET_NOT_SPECIFIED),
+          kernel_group_count(CCL_ENV_SIZET_NOT_SPECIFIED),
+          enable_kernel_sync(1),
+          kernel_1s_lead(0),
 
           bf16_impl_type(ccl_bf16_no_compiler_support),
           fp16_impl_type(ccl_fp16_no_compiler_support) {
@@ -202,6 +205,7 @@ void env_data::parse() {
     env_2_type(CCL_CACHE_FLUSH, enable_cache_flush);
     env_2_type(CCL_STRICT_ORDER, enable_strict_order);
     env_2_enum(CCL_STAGING_BUFFER, staging_buffer_names, staging_buffer);
+    env_2_type(CCL_OP_SYNC, enable_op_sync);
 
     env_2_type(CCL_CHUNK_COUNT, chunk_count);
     CCL_THROW_IF_NOT(chunk_count >= 1, "incorrect ", CCL_CHUNK_COUNT, " ", chunk_count);
@@ -234,17 +238,19 @@ void env_data::parse() {
         CCL_THROW("comm kernels are requested but not supported in this version of CCL");
 #endif
 
-        env_2_type(CCL_COMM_KERNELS_PATH, comm_kernels_path);
-        if (comm_kernels_path.empty()) {
+        env_2_type(CCL_KERNEL_PATH, kernel_path);
+        if (kernel_path.empty()) {
             std::string ccl_root = getenv("CCL_ROOT");
             CCL_THROW_IF_NOT(!ccl_root.empty(), "incorrect comm kernels path, CCL_ROOT not found!");
-            comm_kernels_path = ccl_root + "/lib/kernels/";
+            kernel_path = ccl_root + "/lib/kernels/";
         }
     }
-    env_2_type(CCL_COMM_KERNELS_DEBUG, comm_kernels_debug);
-    env_2_type(CCL_COMM_KERNELS_CACHE, enable_comm_kernels_cache);
-    env_2_type(CCL_GPU_GROUP_SIZE, gpu_group_size);
-    env_2_type(CCL_GPU_GROUP_COUNT, gpu_group_count);
+    env_2_type(CCL_KERNEL_DEBUG, kernel_debug);
+    env_2_type(CCL_KERNEL_CACHE, enable_kernel_cache);
+    env_2_type(CCL_KERNEL_GROUP_SIZE, kernel_group_size);
+    env_2_type(CCL_KERNEL_GROUP_COUNT, kernel_group_count);
+    env_2_type(CCL_KERNEL_SYNC, enable_kernel_sync);
+    env_2_type(CCL_KERNEL_1S_LEAD, kernel_1s_lead);
 
     auto bf16_impl_types = ccl_bf16_get_impl_types();
     ccl_bf16_impl_type bf16_env_impl_type;
@@ -388,6 +394,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_CACHE_FLUSH, ": ", enable_cache_flush);
     LOG_INFO(CCL_STRICT_ORDER, ": ", enable_strict_order);
     LOG_INFO(CCL_STAGING_BUFFER, ": ", str_by_enum(staging_buffer_names, staging_buffer));
+    LOG_INFO(CCL_OP_SYNC, ": ", enable_op_sync);
 
     LOG_INFO(CCL_CHUNK_COUNT, ": ", chunk_count);
     LOG_INFO(CCL_MIN_CHUNK_SIZE, ": ", min_chunk_size);
@@ -412,18 +419,20 @@ void env_data::print(int rank) {
 
 #ifdef CCL_ENABLE_SYCL
     LOG_INFO(CCL_COMM_KERNELS, ": ", enable_comm_kernels);
-    LOG_INFO(CCL_COMM_KERNELS_PATH,
+    LOG_INFO(
+        CCL_KERNEL_PATH, ": ", (!kernel_path.empty()) ? kernel_path : CCL_ENV_STR_NOT_SPECIFIED);
+    LOG_INFO(CCL_KERNEL_DEBUG, ": ", kernel_debug);
+    LOG_INFO(CCL_KERNEL_GROUP_SIZE,
              ": ",
-             (!comm_kernels_path.empty()) ? comm_kernels_path : CCL_ENV_STR_NOT_SPECIFIED);
-    LOG_INFO(CCL_COMM_KERNELS_DEBUG, ": ", comm_kernels_debug);
-    LOG_INFO(CCL_GPU_GROUP_SIZE,
+             (kernel_group_size != CCL_ENV_SIZET_NOT_SPECIFIED) ? std::to_string(kernel_group_size)
+                                                                : CCL_ENV_STR_NOT_SPECIFIED);
+    LOG_INFO(CCL_KERNEL_GROUP_COUNT,
              ": ",
-             (gpu_group_size != CCL_ENV_SIZET_NOT_SPECIFIED) ? std::to_string(gpu_group_size)
-                                                             : CCL_ENV_STR_NOT_SPECIFIED);
-    LOG_INFO(CCL_GPU_GROUP_COUNT,
-             ": ",
-             (gpu_group_count != CCL_ENV_SIZET_NOT_SPECIFIED) ? std::to_string(gpu_group_count)
-                                                              : CCL_ENV_STR_NOT_SPECIFIED);
+             (kernel_group_count != CCL_ENV_SIZET_NOT_SPECIFIED)
+                 ? std::to_string(kernel_group_count)
+                 : CCL_ENV_STR_NOT_SPECIFIED);
+    LOG_INFO(CCL_KERNEL_SYNC, ": ", enable_kernel_sync);
+    LOG_INFO(CCL_KERNEL_1S_LEAD, ": ", kernel_1s_lead);
 #endif // CCL_ENABLE_SYCL
 
     LOG_INFO(CCL_BF16, ": ", str_by_enum(bf16_impl_names, bf16_impl_type));

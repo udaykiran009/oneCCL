@@ -6,6 +6,7 @@
 #include "comp/comp.hpp"
 #include "sched/entry/entry.hpp"
 
+#include <atomic>
 #include <sstream>
 #include <ze_api.h>
 

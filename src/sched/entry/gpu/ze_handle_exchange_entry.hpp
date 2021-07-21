@@ -26,9 +26,7 @@
 #include "sched/entry/entry.hpp"
 #include "sched/sched.hpp"
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
 #include "sched/ze_handle_manager.hpp"
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
 
 class ze_handle_exchange_entry : public sched_entry {
 public:
@@ -41,6 +39,7 @@ public:
                              ccl_comm* comm,
                              const std::vector<void*>& in_buffers,
                              ze_context_handle_t context);
+    ~ze_handle_exchange_entry();
 
     void start() override;
     void update() override;

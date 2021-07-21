@@ -144,15 +144,26 @@ void ze_allreduce_entry::start() {
         init();
         is_initialized = true;
     }
-    LOG_DEBUG("execute command list");
-    ZE_CALL(zeCommandQueueExecuteCommandLists(comp_queue, 1, &comp_list, fence));
 
-    status = ccl_sched_entry_status_started;
+    size_t kernel_counter = 0;
+    if (ccl::global_data::env().enable_kernel_sync) {
+        kernel_counter = std::atomic_fetch_add<size_t>(&ccl::global_data::get().kernel_counter, 1);
+    }
+
+    if (kernel_counter == 0) {
+        LOG_DEBUG("execute command list");
+        ZE_CALL(zeCommandQueueExecuteCommandLists(comp_queue, 1, &comp_list, fence));
+        status = ccl_sched_entry_status_started;
+    }
+    else {
+        std::atomic_fetch_sub<size_t>(&ccl::global_data::get().kernel_counter, 1);
+        status = ccl_sched_entry_status_again;
+    }
 }
 
 void ze_allreduce_entry::update() {
     ze_result_t fence_status;
-    if (global_data::env().comm_kernels_debug == 0) {
+    if (global_data::env().kernel_debug == 0) {
         fence_status = zeFenceQueryStatus(fence);
     }
     else {
@@ -171,11 +182,15 @@ void ze_allreduce_entry::update() {
     else {
         CCL_THROW("error at zeFenceQueryStatus");
     }
+
+    if (ccl::global_data::get().kernel_counter > 0) {
+        std::atomic_fetch_sub<size_t>(&ccl::global_data::get().kernel_counter, 1);
+    }
 }
 
 void ze_allreduce_entry::finalize() {
     LOG_DEBUG("finalization");
-    if (ccl::global_data::env().enable_comm_kernels_cache) {
+    if (ccl::global_data::env().enable_kernel_cache) {
         // revert to cache
         ccl::global_data::get().ze_cache->push(
             worker_idx, context, device, &comp_list_desc, &comp_list);

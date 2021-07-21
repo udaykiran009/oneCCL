@@ -58,7 +58,12 @@ void ze_handle_manager::clear() {
             close(fd);
         }
     }
-    LOG_DEBUG("handles are cleared successfully");
+
+    if (!handles.empty()) {
+        LOG_DEBUG("handles are cleared successfully");
+    }
+
+    handles.clear();
 }
 
 void ze_handle_manager::set(const std::vector<std::vector<ipc_handle_info>>& handles_arg) {
@@ -66,7 +71,6 @@ void ze_handle_manager::set(const std::vector<std::vector<ipc_handle_info>>& han
     CCL_THROW_IF_NOT(handles.empty(), "handles should be empty before set");
 
     handles = handles_arg;
-
     LOG_DEBUG("handles are set successfully, size of handles: ", handles.size());
 }
 

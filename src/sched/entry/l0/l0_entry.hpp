@@ -250,7 +250,7 @@ public:
 
         // Quering fence doesn't sync kernel output with the host, so if we need this
         // we use QuerySyncronize API.
-        if (ccl::global_data::env().comm_kernels_debug == 0) {
+        if (ccl::global_data::env().kernel_debug == 0) {
             ret = get_fence_impl().query_status();
         }
         else {
@@ -364,9 +364,9 @@ protected:
     void set_group_count(ze_group_count_t *group_count, uint32_t group_size_x) {
         // set ze_group_count_t
         uint32_t group_count_x = 0;
-        if (ccl::global_data::env().gpu_group_count != CCL_ENV_SIZET_NOT_SPECIFIED) {
-            group_count_x = ccl::global_data::env().gpu_group_count;
-            ENTRY_LOG_DEBUG("Set group thread count for x dimension by CCL_GPU_GROUP_COUNT=",
+        if (ccl::global_data::env().kernel_group_count != CCL_ENV_SIZET_NOT_SPECIFIED) {
+            group_count_x = ccl::global_data::env().kernel_group_count;
+            ENTRY_LOG_DEBUG("Set group thread count for x dimension by CCL_KERNEL_GROUP_COUNT=",
                             group_count_x,
                             " by user");
 
@@ -398,10 +398,11 @@ protected:
         uint32_t group_size_y = 1u;
         uint32_t group_size_z = 1u;
 
-        if (ccl::global_data::env().gpu_group_size != CCL_ENV_SIZET_NOT_SPECIFIED) {
-            group_size_x = ccl::global_data::env().gpu_group_size;
-            ENTRY_LOG_DEBUG(
-                "Set group size for x dimension by CCL_GPU_GROUP_SIZE=", group_size_x, " by user");
+        if (ccl::global_data::env().kernel_group_size != CCL_ENV_SIZET_NOT_SPECIFIED) {
+            group_size_x = ccl::global_data::env().kernel_group_size;
+            ENTRY_LOG_DEBUG("Set group size for x dimension by CCL_KERNEL_GROUP_SIZE=",
+                            group_size_x,
+                            " by user");
 
             if (group_size_x >
                     parent_communicator->get_device().get_compute_properties().maxGroupSizeX ||

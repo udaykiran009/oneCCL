@@ -25,6 +25,7 @@ global_data::global_data() {
 
     //TODO new_api configure thread wait timeout
     thread_barrier_wait_timeout_sec = 5;
+    kernel_counter = 0;
 }
 
 global_data::~global_data() {

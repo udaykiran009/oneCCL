@@ -62,7 +62,7 @@ void init(const init_attr& attr) {
     const auto& env_object = ccl::global_data::env();
     //WA
     if (env_object.enable_comm_kernels) {
-        register_gpu_module(env_object.comm_kernels_path);
+        register_gpu_module(env_object.kernel_path);
     }
 #endif //MULTI_GPU_SUPPORT
 }

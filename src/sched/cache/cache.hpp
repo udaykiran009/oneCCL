@@ -25,6 +25,13 @@ public:
             }
             iter++;
         }
+
+        // TODO: fix segfault
+        // for (auto& it: table) {
+        //     if(it.second != nullptr)
+        //         delete it.second;
+        // }
+        // table.clear();
     }
     ccl_sched_cache(const ccl_sched_cache& other) = delete;
     ccl_sched_cache& operator=(const ccl_sched_cache& other) = delete;

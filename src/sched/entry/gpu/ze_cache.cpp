@@ -11,7 +11,7 @@ fence_cache::~fence_cache() {
 void fence_cache::get(ze_command_queue_handle_t queue,
                       ze_fence_desc_t* fence_desc,
                       ze_fence_handle_t* fence) {
-    if (ccl::global_data::env().enable_comm_kernels_cache) {
+    if (ccl::global_data::env().enable_kernel_cache) {
         key_t key(queue, fence_desc->flags);
         auto key_value = cache.find(key);
         if (key_value != cache.end()) {
@@ -28,7 +28,7 @@ void fence_cache::get(ze_command_queue_handle_t queue,
 void fence_cache::push(ze_command_queue_handle_t queue,
                        ze_fence_desc_t* fence_desc,
                        ze_fence_handle_t* fence) {
-    if (!ccl::global_data::env().enable_comm_kernels_cache)
+    if (!ccl::global_data::env().enable_kernel_cache)
         return;
 
     key_t key(queue, fence_desc->flags);
@@ -44,7 +44,7 @@ void fence_cache::clear() {
 }
 
 kernel_cache::~kernel_cache() {
-    if (!ccl::global_data::env().enable_comm_kernels_cache && cache.size() > 0) {
+    if (!ccl::global_data::env().enable_kernel_cache && cache.size() > 0) {
         LOG_WARN("cache is disabled, but cache is not empty")
     }
     clear();
@@ -53,7 +53,7 @@ kernel_cache::~kernel_cache() {
 void kernel_cache::get(ze_module_handle_t module,
                        const std::string& kernel_name,
                        ze_kernel_handle_t* kernel) {
-    if (ccl::global_data::env().enable_comm_kernels_cache) {
+    if (ccl::global_data::env().enable_kernel_cache) {
         key_t key(module, kernel_name);
         auto key_value = cache.find(key);
         if (key_value != cache.end()) {
@@ -69,7 +69,7 @@ void kernel_cache::get(ze_module_handle_t module,
 void kernel_cache::push(ze_module_handle_t module,
                         const std::string& kernel_name,
                         ze_kernel_handle_t* kernel) {
-    if (!ccl::global_data::env().enable_comm_kernels_cache)
+    if (!ccl::global_data::env().enable_kernel_cache)
         return;
 
     key_t key(module, kernel_name);
@@ -85,7 +85,7 @@ void kernel_cache::clear() {
 }
 
 list_cache::~list_cache() {
-    if (!ccl::global_data::env().enable_comm_kernels_cache && cache.size() > 0) {
+    if (!ccl::global_data::env().enable_kernel_cache && cache.size() > 0) {
         LOG_WARN("cache is disabled, but cache is not empty")
     }
     clear();
@@ -95,7 +95,7 @@ void list_cache::get(ze_context_handle_t context,
                      ze_device_handle_t device,
                      ze_command_list_desc_t* list_desc,
                      ze_command_list_handle_t* list) {
-    if (ccl::global_data::env().enable_comm_kernels_cache) {
+    if (ccl::global_data::env().enable_kernel_cache) {
         key_t key(context, device, list_desc->commandQueueGroupOrdinal, list_desc->flags);
         auto key_value = cache.find(key);
         if (key_value != cache.end()) {
@@ -113,7 +113,7 @@ void list_cache::push(ze_context_handle_t context,
                       ze_device_handle_t device,
                       ze_command_list_desc_t* list_desc,
                       ze_command_list_handle_t* list) {
-    if (!ccl::global_data::env().enable_comm_kernels_cache)
+    if (!ccl::global_data::env().enable_kernel_cache)
         return;
 
     key_t key(context, device, list_desc->commandQueueGroupOrdinal, list_desc->flags);
@@ -129,7 +129,7 @@ void list_cache::clear() {
 }
 
 queue_cache::~queue_cache() {
-    if (!ccl::global_data::env().enable_comm_kernels_cache && cache.size() > 0) {
+    if (!ccl::global_data::env().enable_kernel_cache && cache.size() > 0) {
         LOG_WARN("cache is disabled, but cache is not empty")
     }
     clear();
@@ -139,7 +139,7 @@ void queue_cache::get(ze_context_handle_t context,
                       ze_device_handle_t device,
                       ze_command_queue_desc_t* queue_desc,
                       ze_command_queue_handle_t* queue) {
-    if (ccl::global_data::env().enable_comm_kernels_cache) {
+    if (ccl::global_data::env().enable_kernel_cache) {
         key_t key(context,
                   device,
                   queue_desc->index,
@@ -193,7 +193,7 @@ void module_cache::get(ze_context_handle_t context,
 void module_cache::load(ze_context_handle_t context,
                         ze_device_handle_t device,
                         ze_module_handle_t* module) {
-    std::string modules_dir = ccl::global_data::env().comm_kernels_path;
+    std::string modules_dir = ccl::global_data::env().kernel_path;
     // TODO: remove
     if (modules_dir.empty()) {
         std::string ccl_root = getenv("CCL_ROOT");

@@ -24,12 +24,8 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
     for (size_t idx = 0; idx < comm_size; idx++) {
         handles[idx].resize(in_buffers.size());
     }
+    LOG_DEBUG("handles size: ", handles.size(), ", in_buffers size: ", in_buffers.size());
 
-    LOG_DEBUG(
-        name(), "entry: handles size: ", handles.size(), ", in_buffers size: ", in_buffers.size());
-}
-
-void ze_handle_exchange_entry::start() {
     std::ostringstream right_peer_ss_name;
     std::ostringstream left_peer_ss_name;
 
@@ -48,8 +44,9 @@ void ze_handle_exchange_entry::start() {
         handles[rank][buf_idx] = { handle, mem_info.second };
     }
 
-    right_peer_ss_name << "ccl-sock." << ((rank - 1) + comm_size) % comm_size << "-w";
-    left_peer_ss_name << "ccl-sock." << rank << "-w";
+    right_peer_ss_name << "ccl-sock." << ((rank - 1) + comm_size) % comm_size << "-"
+                       << sched->sched_id << "-w";
+    left_peer_ss_name << "ccl-sock." << rank << "-" << sched->sched_id << "-w";
 
     right_peer_socket_name = right_peer_ss_name.str();
     left_peer_socket_name = left_peer_ss_name.str();
@@ -62,6 +59,14 @@ void ze_handle_exchange_entry::start() {
     right_peer_socket =
         create_client_socket(right_peer_socket_name, &right_peer_addr, &right_peer_addr_len);
 
+    LOG_DEBUG("started: ", name());
+}
+
+ze_handle_exchange_entry::~ze_handle_exchange_entry() {
+    close_sockets();
+}
+
+void ze_handle_exchange_entry::start() {
     LOG_DEBUG("started: ", name());
     status = ccl_sched_entry_status_started;
 }
@@ -92,6 +97,7 @@ void ze_handle_exchange_entry::update() {
         poll_fds.push_back(poll_fd);
         is_accepted = true;
     }
+    unlink_sockets();
 
     for (size_t buf_idx = start_buf_idx; buf_idx < in_buffers.size(); buf_idx++) {
         for (int peer_idx = start_peer_idx; peer_idx < comm_size - 1; peer_idx++) {
@@ -137,14 +143,11 @@ void ze_handle_exchange_entry::update() {
         start_buf_idx++;
     }
 
-    LOG_DEBUG(
-        name(), "entry: handles size: ", handles.size(), ", in_buffers size: ", in_buffers.size());
+    LOG_DEBUG("handles size: ", handles.size(), ", in_buffers size: ", in_buffers.size());
 
     sched->get_ccl_sched_memory().handle_manager.set(handles);
-    status = ccl_sched_entry_status_complete;
 
-    unlink_sockets();
-    close_sockets();
+    status = ccl_sched_entry_status_complete;
 
     LOG_DEBUG("completed: ", name());
 }
@@ -158,6 +161,7 @@ int ze_handle_exchange_entry::create_server_socket(const std::string& socket_nam
 
     int sock = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sock < 0) {
+        unlink_sockets();
         CCL_THROW("cannot create a server socket: ", sock, ", errno: ", strerror(errno));
     }
 
@@ -193,6 +197,7 @@ int ze_handle_exchange_entry::create_client_socket(const std::string& socket_nam
 
     int sock = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sock < 0) {
+        unlink_sockets();
         CCL_THROW("cannot create a client socket: ", sock, ", errno: ", strerror(errno));
     }
 
