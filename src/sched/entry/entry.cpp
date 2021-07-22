@@ -77,7 +77,7 @@ void sched_entry::reset(size_t idx) {
 }
 
 bool sched_entry::is_strict_order_satisfied() {
-    return (status > ccl_sched_entry_status_not_started);
+    return (status >= ccl_sched_entry_status_started);
 }
 
 void sched_entry::dump(std::stringstream& str, size_t idx) const {

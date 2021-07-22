@@ -16,7 +16,7 @@ namespace ze {
     do { \
         ze_result_t res = ze_api_call; \
         if (res != ZE_RESULT_SUCCESS) { \
-            CCL_THROW("error at ", #ze_api_call, ", code: ", res); \
+            CCL_THROW("level-zero error at ", #ze_api_call, ", code: ", res); \
         } \
     } while (0);
 
@@ -25,8 +25,11 @@ constexpr ze_device_mem_alloc_desc_t default_device_mem_alloc_desc = {};
 constexpr ze_kernel_desc_t default_kernel_desc = {};
 constexpr ze_fence_desc_t default_fence_desc = {};
 constexpr ze_command_queue_desc_t default_comp_queue_desc = {
+    .stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
+    .pNext = nullptr,
     .ordinal = 0,
     .index = 0,
+    .flags = 0,
     .mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS,
     .priority = ZE_COMMAND_QUEUE_PRIORITY_NORMAL
 };

@@ -80,10 +80,15 @@ env_data::env_data()
           max_short_size(0),
           bcast_part_count(CCL_ENV_SIZET_NOT_SPECIFIED),
           cache_key_type(ccl_cache_key_match_id),
+#ifdef CCL_ENABLE_SYCL
+          enable_cache_flush(1),
+          enable_strict_order(1),
+#else // CCL_ENABLE_SYCL
           enable_cache_flush(0),
           enable_strict_order(0),
+#endif // CCL_ENABLE_SYCL
           staging_buffer(ccl_staging_usm),
-          enable_op_sync(1),
+          enable_op_sync(0),
 
           chunk_count(1),
           min_chunk_size(65536),
@@ -105,7 +110,7 @@ env_data::env_data()
           kernel_group_size(CCL_ENV_SIZET_NOT_SPECIFIED),
           kernel_group_count(CCL_ENV_SIZET_NOT_SPECIFIED),
           enable_kernel_sync(1),
-          kernel_1s_lead(0),
+          kernel_1s_lead(1),
 
           bf16_impl_type(ccl_bf16_no_compiler_support),
           fp16_impl_type(ccl_fp16_no_compiler_support) {
@@ -204,6 +209,10 @@ void env_data::parse() {
     env_2_enum(CCL_CACHE_KEY, ccl_sched_key::key_type_names, cache_key_type);
     env_2_type(CCL_CACHE_FLUSH, enable_cache_flush);
     env_2_type(CCL_STRICT_ORDER, enable_strict_order);
+    if (enable_unordered_coll && enable_strict_order) {
+        LOG_INFO("unordered collectives are requested, disable strict order");
+        enable_strict_order = 0;
+    }
     env_2_enum(CCL_STAGING_BUFFER, staging_buffer_names, staging_buffer);
     env_2_type(CCL_OP_SYNC, enable_op_sync);
 
@@ -422,6 +431,7 @@ void env_data::print(int rank) {
     LOG_INFO(
         CCL_KERNEL_PATH, ": ", (!kernel_path.empty()) ? kernel_path : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_KERNEL_DEBUG, ": ", kernel_debug);
+    LOG_INFO(CCL_KERNEL_CACHE, ": ", enable_kernel_cache);
     LOG_INFO(CCL_KERNEL_GROUP_SIZE,
              ": ",
              (kernel_group_size != CCL_ENV_SIZET_NOT_SPECIFIED) ? std::to_string(kernel_group_size)

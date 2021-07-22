@@ -46,15 +46,15 @@ void ze_allreduce_entry::init() {
     if (sched->coll_param.stream) {
         LOG_DEBUG("getting a native stream");
         auto native_stream = sched->coll_param.stream->get_native_stream(worker_idx);
-        if (native_stream->get_backend() != cl::sycl::backend::level_zero) {
+        if (native_stream->get_backend() != sycl::backend::level_zero) {
             CCL_THROW("unsupported sycl backend");
         }
 
         auto sycl_device = native_stream->get_device();
-        device = sycl_device.template get_native<cl::sycl::backend::level_zero>();
+        device = sycl_device.template get_native<sycl::backend::level_zero>();
 
         auto sycl_context = native_stream->get_context();
-        context = sycl_context.template get_native<cl::sycl::backend::level_zero>();
+        context = sycl_context.template get_native<sycl::backend::level_zero>();
     }
     else {
         CCL_THROW("algo without stream is unsupported");
@@ -70,7 +70,7 @@ void ze_allreduce_entry::init() {
     get_comp_queue_ordinal(device, queue_props, &comp_ordinal);
     get_queue_index(queue_props, comp_ordinal, rank, &comp_queue_index);
 
-    ze_command_queue_desc_t comp_queue_desc = default_comp_queue_desc;
+    comp_queue_desc = default_comp_queue_desc;
     comp_queue_desc.index = comp_queue_index;
     comp_queue_desc.ordinal = comp_ordinal;
 
@@ -105,7 +105,7 @@ void ze_allreduce_entry::init() {
 
     ccl_buffer right_send_buf;
     ccl_buffer right_recv_buf;
-    int peer_rank = 1;
+    int peer_rank = (rank + 1) % comm_size;
     sched->get_ccl_sched_memory().handle_manager.get(peer_rank, 0, right_send_buf);
     sched->get_ccl_sched_memory().handle_manager.get(peer_rank, 1, right_recv_buf);
     LOG_DEBUG("get IPC pointers from ",
@@ -190,18 +190,11 @@ void ze_allreduce_entry::update() {
 
 void ze_allreduce_entry::finalize() {
     LOG_DEBUG("finalization");
-    if (ccl::global_data::env().enable_kernel_cache) {
-        // revert to cache
-        ccl::global_data::get().ze_cache->push(
-            worker_idx, context, device, &comp_list_desc, &comp_list);
-        ccl::global_data::get().ze_cache->push(worker_idx, module, kernel_name, &kernel);
-        ccl::global_data::get().ze_cache->push(worker_idx, comp_queue, &fence_desc, &fence);
-    }
-    else {
-        ZE_CALL(zeFenceDestroy(fence));
-        ZE_CALL(zeCommandQueueDestroy(comp_queue));
-        ZE_CALL(zeCommandListDestroy(comp_list));
-        ZE_CALL(zeKernelDestroy(kernel));
-    }
+    ccl::global_data::get().ze_cache->push(worker_idx, comp_queue, &fence_desc, &fence);
+    ccl::global_data::get().ze_cache->push(worker_idx, module, kernel_name, &kernel);
+    ccl::global_data::get().ze_cache->push(
+        worker_idx, context, device, &comp_list_desc, &comp_list);
+    ccl::global_data::get().ze_cache->push(
+        worker_idx, context, device, &comp_queue_desc, &comp_queue);
     LOG_DEBUG("finalization complete");
 }

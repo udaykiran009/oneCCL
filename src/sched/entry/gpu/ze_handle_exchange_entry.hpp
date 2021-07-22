@@ -37,8 +37,7 @@ public:
     ze_handle_exchange_entry() = delete;
     ze_handle_exchange_entry(ccl_sched* sched,
                              ccl_comm* comm,
-                             const std::vector<void*>& in_buffers,
-                             ze_context_handle_t context);
+                             const std::vector<void*>& in_buffers);
     ~ze_handle_exchange_entry();
 
     void start() override;
@@ -48,6 +47,10 @@ public:
         return class_name();
     }
 
+    bool is_strict_order_satisfied() override {
+        return (status >= ccl_sched_entry_status_complete);
+    }
+
 protected:
     void dump_detail(std::stringstream& str) const override {
         ccl_logger::format(str,
@@ -55,9 +58,9 @@ protected:
                            rank,
                            ", comm_size ",
                            comm_size,
-                           ", right_peer_socket_name ",
+                           ", right_peer ",
                            right_peer_socket_name,
-                           ", left_peer_socket_name ",
+                           ", left_peer ",
                            left_peer_socket_name,
                            ", context ",
                            context,
@@ -99,6 +102,7 @@ private:
     std::string right_peer_socket_name;
     std::string left_peer_socket_name;
 
+    bool is_created;
     bool is_connected;
     bool is_accepted;
 
@@ -134,6 +138,7 @@ private:
 
     void unlink_sockets();
     void close_sockets();
+    void clear_after_accept();
 };
 
 #endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT

@@ -48,6 +48,11 @@
 static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& in_attr) {
     ccl_coll_attr& attr = const_cast<ccl_coll_attr&>(in_attr);
 
+#ifdef CCL_ENABLE_SYCL
+    if (ccl::global_data::env().enable_op_sync)
+        attr.synchronous = 1;
+#endif // CCL_ENABLE_SYCL
+
     LOG_DEBUG("\n{\n",
               "  param: ",
               param.to_string(),
@@ -84,10 +89,6 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
         }
     }
 
-#ifdef CCL_ENABLE_SYC
-    if (ccl::global_data::env().enable_op_sync)
-        attr.synchronous = 1;
-#endif // CCL_ENABLE_SYC
     /* 2. create or get schedule */
     ccl_master_sched* sched = ccl_master_sched::create(param, attr);
 

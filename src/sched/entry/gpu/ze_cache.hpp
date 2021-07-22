@@ -13,13 +13,14 @@ public:
     fence_cache() = default;
     ~fence_cache();
 
+    void clear();
+
     void get(ze_command_queue_handle_t queue,
              ze_fence_desc_t* fence_desc,
              ze_fence_handle_t* fence);
     void push(ze_command_queue_handle_t queue,
               ze_fence_desc_t* fence_desc,
               ze_fence_handle_t* fence);
-    void clear();
 
 private:
     using key_t = typename std::tuple<ze_command_queue_handle_t, ze_fence_flags_t>;
@@ -32,11 +33,12 @@ public:
     kernel_cache() = default;
     ~kernel_cache();
 
+    void clear();
+
     void get(ze_module_handle_t module, const std::string& kernel_name, ze_kernel_handle_t* kernel);
     void push(ze_module_handle_t module,
               const std::string& kernel_name,
               ze_kernel_handle_t* kernel);
-    void clear();
 
 private:
     using key_t = typename std::tuple<ze_module_handle_t, std::string>;
@@ -50,6 +52,8 @@ public:
     list_cache() = default;
     ~list_cache();
 
+    void clear();
+
     void get(ze_context_handle_t context,
              ze_device_handle_t device,
              ze_command_list_desc_t* list_desc,
@@ -58,7 +62,6 @@ public:
               ze_device_handle_t device,
               ze_command_list_desc_t* list_desc,
               ze_command_list_handle_t* list);
-    void clear();
 
 private:
     using key_t = typename std::
@@ -72,11 +75,16 @@ public:
     queue_cache() = default;
     ~queue_cache();
 
+    void clear();
+
     void get(ze_context_handle_t context,
              ze_device_handle_t device,
              ze_command_queue_desc_t* queue_desc,
              ze_command_queue_handle_t* queue);
-    void clear();
+    void push(ze_context_handle_t context,
+              ze_device_handle_t device,
+              ze_command_queue_desc_t* queue_desc,
+              ze_command_queue_handle_t* queue);
 
 private:
     using key_t = typename std::tuple<ze_context_handle_t,
@@ -95,8 +103,9 @@ public:
     module_cache() = default;
     ~module_cache();
 
-    void get(ze_context_handle_t context, ze_device_handle_t device, ze_module_handle_t* module);
     void clear();
+
+    void get(ze_context_handle_t context, ze_device_handle_t device, ze_module_handle_t* module);
 
 private:
     using key_t = ze_device_handle_t;
@@ -116,7 +125,9 @@ public:
               queues(instance_count) {}
     cache(const cache&) = delete;
     cache& operator=(const cache&) = delete;
+    ~cache();
 
+    /* get */
     void get(size_t worker_idx,
              ze_command_queue_handle_t queue,
              ze_fence_desc_t* fence_desc,
@@ -151,6 +162,7 @@ public:
         modules.get(context, device, module);
     }
 
+    /* push */
     void push(size_t worker_idx,
               ze_command_queue_handle_t queue,
               ze_fence_desc_t* fence_desc,
@@ -171,6 +183,14 @@ public:
               ze_command_list_desc_t* list_desc,
               ze_command_list_handle_t* list) {
         lists.at(worker_idx).push(context, device, list_desc, list);
+    }
+
+    void push(size_t worker_idx,
+              ze_context_handle_t context,
+              ze_device_handle_t device,
+              ze_command_queue_desc_t* queue_desc,
+              ze_command_queue_handle_t* queue) {
+        queues.at(worker_idx).push(context, device, queue_desc, queue);
     }
 
 private:

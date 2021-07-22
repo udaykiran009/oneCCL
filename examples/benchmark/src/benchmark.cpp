@@ -191,6 +191,8 @@ void do_regular(ccl::communicator& service_comm,
         }
     }
 
+    ccl::barrier(service_comm);
+
     PRINT_BY_ROOT(service_comm, "\n# All done\n");
 }
 

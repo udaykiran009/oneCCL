@@ -8,8 +8,8 @@ void ze_handle_manager::init(const ccl_stream* stream) {
     auto sycl_device = stream->get_native_stream().get_device();
     auto sycl_context = stream->get_native_stream().get_context();
 
-    device = sycl_device.template get_native<cl::sycl::backend::level_zero>();
-    context = sycl_context.template get_native<cl::sycl::backend::level_zero>();
+    device = sycl_device.template get_native<sycl::backend::level_zero>();
+    context = sycl_context.template get_native<sycl::backend::level_zero>();
 
     CCL_THROW_IF_NOT(device != nullptr, "device is not valid");
     CCL_THROW_IF_NOT(context != nullptr, "context is not valid");
@@ -23,16 +23,19 @@ void ze_handle_manager::clear() {
             const auto& handle_info = handles[rank][buf_idx];
             ze_ipc_mem_handle_t handle = handle_info.handle;
             void* mem_ptr = handles[rank][buf_idx].mem_ptr;
-            size_t mem_offset = handle_info.mem_offset;
+            size_t mem_offset = handles[rank][buf_idx].mem_offset;
 
-            LOG_DEBUG("clear: handle mem_ptr: ",
-                      handles[rank][buf_idx].mem_ptr,
-                      ", handle fd: ",
-                      *(int*)handles[rank][buf_idx].handle.data,
+            LOG_DEBUG("close handle: base_ptr: ",
+                      mem_ptr,
+                      ", offset: ",
+                      mem_offset,
+                      ", fd: ",
+                      *(int*)handle.data,
                       ", rank: ",
                       rank,
                       ", buf_idx: ",
                       buf_idx);
+
             // when closing the handle we need to take care of pointers that points to the
             // same level zero allocation. They're simply offsetted from some base pointer
             // although represented by different FDs. If we close this base pointer,
@@ -40,16 +43,19 @@ void ze_handle_manager::clear() {
             // we ignore the result of close function which would fail if we close a pointer
             // which is already closed. The function has semantic of free() call, so the result
             // is not much useful anyway.
-            void* base_alloc_ptr = static_cast<char*>(mem_ptr) - mem_offset;
-
-            auto ret = zeMemCloseIpcHandle(context, base_alloc_ptr);
-            if (ret != ZE_RESULT_SUCCESS) {
-                LOG_INFO("unable to close memory handle: ",
-                         ret,
-                         ", for rank: ",
-                         rank,
-                         ", buf_idx: ",
-                         buf_idx);
+            if (mem_ptr) {
+                auto ret = zeMemCloseIpcHandle(context, mem_ptr);
+                if (ret != ZE_RESULT_SUCCESS) {
+                    LOG_DEBUG("unable to close memory handle: ",
+                              "level-zero ret: ",
+                              ret,
+                              ", rank: ",
+                              rank,
+                              ", buf_idx: ",
+                              buf_idx,
+                              ", ptr: ",
+                              mem_ptr);
+                }
             }
 
             // TODO: remove, when the fix arrives from L0 side
@@ -81,29 +87,38 @@ void ze_handle_manager::get(const int rank, const size_t buf_idx, ccl_buffer& bu
     CCL_THROW_IF_NOT(buf_idx < handles[rank].size(), "buf_idx is not valid value: ", buf_idx);
 
     ze_ipc_mem_handle_t handle = handles[rank][buf_idx].handle;
-    void* mem_ptr = handles[rank][buf_idx].mem_ptr;
+    void*& mem_ptr = handles[rank][buf_idx].mem_ptr;
 
     LOG_DEBUG("context: ", context, ", device: ", device, ", rank: ", rank, ", buf_idx: ", buf_idx);
     if (mem_ptr == nullptr) {
-        ret = zeMemOpenIpcHandle(context, device, handle, 0 /*cache allocation*/, &mem_ptr);
+        ret = zeMemOpenIpcHandle(context, device, handle, 0 /* cache allocation */, &mem_ptr);
         if (ret) {
-            CCL_THROW(
-                "unable to open handle: ", ret, ", for rank: ", rank, ", for buf_idx: ", buf_idx);
+            CCL_THROW("unable to open memory handle: level-zero ret: ",
+                      ret,
+                      ", rank: ",
+                      rank,
+                      ", buf_idx: ",
+                      buf_idx,
+                      ", context: ",
+                      context,
+                      ", device: ",
+                      device);
         }
+        CCL_THROW_IF_NOT(mem_ptr, "got null ptr from zeMemOpenIpcHandle");
     }
+
     LOG_DEBUG("get: handle mem_ptr: ",
               mem_ptr,
               ", handle fd: ",
               *(int*)handle.data,
-              ", for rank: ",
+              ", rank: ",
               rank,
-              ", for buf_idx: ",
+              ", buf_idx: ",
               buf_idx);
 
-    size_t mem_offset = handles[rank][buf_idx].mem_offset;
     // add offset that we received along with the handle
-    mem_ptr = static_cast<void*>(static_cast<char*>(mem_ptr) + mem_offset);
-
-    buf.set(mem_ptr);
+    size_t mem_offset = handles[rank][buf_idx].mem_offset;
+    void* final_ptr = static_cast<void*>(static_cast<char*>(mem_ptr) + mem_offset);
+    buf.set(final_ptr);
 }
 #endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT

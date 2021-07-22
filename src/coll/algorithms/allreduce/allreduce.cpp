@@ -495,9 +495,6 @@ ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
                                          ccl_comm* comm) {
     LOG_DEBUG("build gpu allreduce");
 
-    auto sycl_context = sched->coll_param.stream->get_native_stream().get_context();
-    ze_context_handle_t context = sycl_context.template get_native<cl::sycl::backend::level_zero>();
-
     std::vector<void*> in_buffers(2);
     in_buffers[0] = send_buf.get_ptr();
     in_buffers[1] = recv_buf.get_ptr();
@@ -508,7 +505,7 @@ ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
 
     if (sched->coll_attr.to_cache) {
         sched->set_entry_exec_mode(ccl_sched_entry_exec_once);
-        entry_factory::make_entry<ze_handle_exchange_entry>(sched, comm, in_buffers, context);
+        entry_factory::make_entry<ze_handle_exchange_entry>(sched, comm, in_buffers);
         sched->add_barrier();
         sched->set_entry_exec_mode(ccl_sched_entry_exec_regular);
 
@@ -517,7 +514,7 @@ ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
         coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
     }
     else {
-        entry_factory::make_entry<ze_handle_exchange_entry>(sched, comm, in_buffers, context);
+        entry_factory::make_entry<ze_handle_exchange_entry>(sched, comm, in_buffers);
     }
 
     sched->add_barrier();

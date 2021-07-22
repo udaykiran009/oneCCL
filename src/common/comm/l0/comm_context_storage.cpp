@@ -73,21 +73,21 @@ group_context::comm_group_t group_context::group_by_comm(std::shared_ptr<atl_wra
             group.reset(
                 new ccl::comm_group(host_comm, threads_per_process, ranks_per_process, unique_id));
             communicator_group_map.insert({ unique_id, group });
-            LOG_INFO("comm group: ",
-                     static_cast<void*>(group.get()),
-                     " has been created for unique_id: ",
-                     unique_id,
-                     ", threads per process: ",
-                     threads_per_process,
-                     ", ranks per process: ",
-                     ranks_per_process);
+            LOG_DEBUG("comm group: ",
+                      static_cast<void*>(group.get()),
+                      " has been created for unique_id: ",
+                      unique_id,
+                      ", threads per process: ",
+                      threads_per_process,
+                      ", ranks per process: ",
+                      ranks_per_process);
         }
         else {
             group = ctx_it->second;
-            LOG_INFO("get existing comm group: ",
-                     static_cast<void*>(group.get()),
-                     " for unique_id: ",
-                     unique_id);
+            LOG_DEBUG("get existing comm group: ",
+                      static_cast<void*>(group.get()),
+                      " for unique_id: ",
+                      unique_id);
         }
     }
     return group;

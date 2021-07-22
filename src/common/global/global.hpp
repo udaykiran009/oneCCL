@@ -111,6 +111,7 @@ private:
 
 #ifdef MULTI_GPU_SUPPORT
     void init_gpu();
+    void finalize_gpu();
 #endif // MULTI_GPU_SUPPORT
 
     env_data env_object;
