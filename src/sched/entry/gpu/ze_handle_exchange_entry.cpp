@@ -59,8 +59,20 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
 
     int op_id = sched->get_op_id();
     unique_tag_ss << sched->get_comm_id() << "-" << sched->sched_id << "-" << op_id;
-    right_peer_ss << "ccl-handle-" << ((rank + 1)) % comm_size << "-" << unique_tag_ss.str();
-    left_peer_ss << "ccl-handle-" << rank << "-" << unique_tag_ss.str();
+    right_peer_ss << "/tmp/ccl-handle-" << ((rank + 1)) % comm_size << "-" << unique_tag_ss.str();
+    left_peer_ss << "/tmp/ccl-handle-" << rank << "-" << unique_tag_ss.str();
+
+    // This is a temporary workaround around to provide uniqueness of socket files created
+    // in /tmp folder, otherwise this could result in issues in case of parallel runs
+    // by a single/multiple users.
+    // Ideally we should use process pid for this, but right now we don't have this information
+    // available for all the processes, so use this env variable instead. This works with mpiexec
+    // only(this is why it's the workaround rather than a complete solution)
+    static const char* mpi_uuid = getenv("I_MPI_HYDRA_UUID");
+    if (mpi_uuid) {
+        right_peer_ss << "-" << mpi_uuid;
+        left_peer_ss << "-" << mpi_uuid;
+    }
 
     right_peer_socket_name = right_peer_ss.str();
     left_peer_socket_name = left_peer_ss.str();
