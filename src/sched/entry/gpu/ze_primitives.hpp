@@ -16,7 +16,7 @@ namespace ze {
     do { \
         ze_result_t res = ze_api_call; \
         if (res != ZE_RESULT_SUCCESS) { \
-            CCL_THROW("level-zero error at ", #ze_api_call, ", code: ", res); \
+            CCL_THROW("level-zero error at ", #ze_api_call, ", code: ", ccl::ze::to_string(res)); \
         } \
     } while (0);
 
@@ -48,8 +48,6 @@ struct ze_group_size_t {
     uint32_t groupSizeZ = 0;
 };
 
-std::string to_string(const ze_group_size_t& group_size);
-std::string to_string(const ze_group_count_t& group_count);
 void get_suggested_group_size(ze_kernel_handle_t kernel, size_t count, ze_group_size_t* group_size);
 void get_suggested_group_count(const ze_group_size_t& group_size,
                                size_t count,
@@ -57,8 +55,6 @@ void get_suggested_group_count(const ze_group_size_t& group_size,
 
 using ze_kernel_arg_t = std::pair<size_t, const void*>;
 using ze_kernel_args_t = std::initializer_list<ze_kernel_arg_t>;
-
-std::string to_string(const ze_kernel_args_t& kernel_args);
 void set_kernel_args(ze_kernel_handle_t kernel, const ze_kernel_args_t& kernel_args);
 
 using ze_queue_properties_t = std::vector<ze_command_queue_group_properties_t>;
@@ -74,6 +70,11 @@ void get_queue_index(const ze_queue_properties_t& props,
                      uint32_t ordinal,
                      int rank,
                      uint32_t* index);
+
+std::string to_string(const ze_result_t result);
+std::string to_string(const ze_group_size_t& group_size);
+std::string to_string(const ze_group_count_t& group_count);
+std::string to_string(const ze_kernel_args_t& kernel_args);
 
 } // namespace ze
 } // namespace ccl

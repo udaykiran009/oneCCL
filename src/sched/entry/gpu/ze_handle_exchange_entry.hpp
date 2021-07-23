@@ -27,6 +27,7 @@
 #include "sched/sched.hpp"
 
 #include "sched/ze_handle_manager.hpp"
+#include "sched/entry/gpu/ze_primitives.hpp"
 
 class ze_handle_exchange_entry : public sched_entry {
 public:

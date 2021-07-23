@@ -1,6 +1,5 @@
 #include "sched/queue/queue.hpp"
 #include "ze_handle_exchange_entry.hpp"
-#include "ze_primitives.hpp"
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
 

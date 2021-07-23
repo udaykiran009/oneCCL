@@ -12,6 +12,7 @@
 
 #ifdef MULTI_GPU_SUPPORT
 #include "sched/entry/gpu/ze_cache.hpp"
+#include "sched/entry/gpu/ze_primitives.hpp"
 #endif // MULTI_GPU_SUPPORT
 
 namespace ccl {
@@ -115,7 +116,7 @@ void global_data::init_gpu() {
     LOG_INFO("initializing level-zero");
     ze_result_t res = zeInit(ZE_INIT_FLAG_GPU_ONLY);
     if (res != ZE_RESULT_SUCCESS) {
-        CCL_THROW("error at zeInit, code: ", res);
+        CCL_THROW("error at zeInit, code: ", ccl::ze::to_string(res));
     }
     ze_cache = std::unique_ptr<ccl::ze::cache>(new ccl::ze::cache(env_object.worker_count));
     LOG_INFO("initialized level-zero");

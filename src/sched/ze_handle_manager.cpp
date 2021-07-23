@@ -48,7 +48,7 @@ void ze_handle_manager::clear() {
                 if (ret != ZE_RESULT_SUCCESS) {
                     LOG_DEBUG("unable to close memory handle: ",
                               "level-zero ret: ",
-                              ret,
+                              ccl::ze::to_string(ret),
                               ", rank: ",
                               rank,
                               ", buf_idx: ",
@@ -58,7 +58,7 @@ void ze_handle_manager::clear() {
                 }
             }
 
-            // TODO: remove, when the fix arrives from L0 side
+            // TODO: remove, when the fix arrives from L0 side: XDEPS-2302
             int fd;
             memcpy(&fd, handle.data, sizeof(fd));
             close(fd);
@@ -94,7 +94,7 @@ void ze_handle_manager::get(const int rank, const size_t buf_idx, ccl_buffer& bu
         ret = zeMemOpenIpcHandle(context, device, handle, 0 /* cache allocation */, &mem_ptr);
         if (ret) {
             CCL_THROW("unable to open memory handle: level-zero ret: ",
-                      ret,
+                      ccl::ze::to_string(ret),
                       ", rank: ",
                       rank,
                       ", buf_idx: ",

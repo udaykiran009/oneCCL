@@ -12,6 +12,7 @@
 #include "common/utils/buffer.hpp"
 #include "common/log/log.hpp"
 #include "common/stream/stream.hpp"
+#include "sched/entry/gpu/ze_primitives.hpp"
 
 #include <ze_api.h>
 #include <CL/sycl/backend/level_zero.hpp>
