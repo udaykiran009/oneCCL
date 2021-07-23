@@ -32,7 +32,7 @@ struct ccl_selector_param {
     int is_vector_buf = 0;
 
 #ifdef CCL_ENABLE_SYCL
-    int is_sycl_buf;
+    int is_sycl_buf = 0;
 #endif // CCL_ENABLE_SYCL
 
     /* tmp fields to avoid selection of algorithms which don't support all coalesce modes or alloc_fn */

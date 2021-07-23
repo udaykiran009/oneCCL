@@ -28,19 +28,16 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
     }
     LOG_DEBUG("handles size: ", handles.size(), ", in_buffers size: ", in_buffers.size());
 
-    if (sched->coll_param.stream) {
-        LOG_DEBUG("getting a native stream");
-        auto native_stream = sched->coll_param.stream->get_native_stream();
-        if (native_stream.get_backend() != sycl::backend::level_zero) {
-            CCL_THROW("unsupported sycl backend");
-        }
+    CCL_THROW_IF_NOT(sched->coll_param.stream, "null stream in ze_handle_exchange_entry");
 
-        auto sycl_context = native_stream.get_context();
-        context = sycl_context.template get_native<sycl::backend::level_zero>();
+    LOG_DEBUG("getting a native stream");
+    auto native_stream = sched->coll_param.stream->get_native_stream();
+    if (native_stream.get_backend() != sycl::backend::level_zero) {
+        CCL_THROW("unsupported sycl backend");
     }
-    else {
-        CCL_THROW("algo without stream is unsupported");
-    }
+
+    auto sycl_context = native_stream.get_context();
+    context = sycl_context.template get_native<sycl::backend::level_zero>();
 
     for (size_t buf_idx = 0; buf_idx < in_buffers.size(); buf_idx++) {
         handles.at(rank).resize(in_buffers.size());
@@ -112,8 +109,6 @@ void ze_handle_exchange_entry::update() {
                         left_peer_socket)) {
             return;
         }
-
-        clear_after_accept();
 
         struct pollfd poll_fd = { 0 };
         poll_fd.fd = left_peer_socket;
@@ -431,13 +426,6 @@ std::pair<void*, size_t> ze_handle_exchange_entry::get_mem_info(ze_context_handl
               alloc_size);
 
     return { base_ptr, static_cast<char*>(ptr) - static_cast<char*>(base_ptr) };
-}
-
-void ze_handle_exchange_entry::clear_after_accept() {
-    /* this leads to sendmsg error */
-    // close(left_peer_connect_socket);
-
-    unlink(left_peer_socket_name.c_str());
 }
 
 void ze_handle_exchange_entry::unlink_sockets() {

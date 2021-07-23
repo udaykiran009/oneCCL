@@ -43,22 +43,19 @@ void ze_allreduce_entry::init() {
     CCL_THROW_IF_NOT(sched != nullptr, "no sched");
     worker_idx = sched->queue->get_idx();
 
-    if (sched->coll_param.stream) {
-        LOG_DEBUG("getting a native stream");
-        auto native_stream = sched->coll_param.stream->get_native_stream(worker_idx);
-        if (native_stream->get_backend() != sycl::backend::level_zero) {
-            CCL_THROW("unsupported sycl backend");
-        }
+    CCL_THROW_IF_NOT(sched->coll_param.stream, "null stream in ze_allreduce_entry");
 
-        auto sycl_device = native_stream->get_device();
-        device = sycl_device.template get_native<sycl::backend::level_zero>();
+    LOG_DEBUG("getting a native stream");
+    auto native_stream = sched->coll_param.stream->get_native_stream(worker_idx);
+    if (native_stream->get_backend() != sycl::backend::level_zero) {
+        CCL_THROW("unsupported sycl backend");
+    }
 
-        auto sycl_context = native_stream->get_context();
-        context = sycl_context.template get_native<sycl::backend::level_zero>();
-    }
-    else {
-        CCL_THROW("algo without stream is unsupported");
-    }
+    auto sycl_device = native_stream->get_device();
+    device = sycl_device.template get_native<sycl::backend::level_zero>();
+
+    auto sycl_context = native_stream->get_context();
+    context = sycl_context.template get_native<sycl::backend::level_zero>();
 
     uint32_t num_queue_groups;
     get_num_queue_groups(device, &num_queue_groups);
@@ -144,6 +141,11 @@ void ze_allreduce_entry::start() {
         init();
         is_initialized = true;
     }
+    else {
+        if (status == ccl_sched_entry_status_not_started) {
+            ZE_CALL(zeFenceReset(fence));
+        }
+    }
 
     size_t kernel_counter = 0;
     if (ccl::global_data::env().enable_kernel_sync) {
@@ -172,7 +174,6 @@ void ze_allreduce_entry::update() {
 
     if (fence_status == ZE_RESULT_SUCCESS) {
         LOG_DEBUG("command list complete");
-        ZE_CALL(zeFenceReset(fence)); // reset is needed if to_cache=1
         status = ccl_sched_entry_status_complete;
     }
     else if (fence_status == ZE_RESULT_NOT_READY) {

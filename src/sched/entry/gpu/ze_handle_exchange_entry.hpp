@@ -138,7 +138,6 @@ private:
 
     void unlink_sockets();
     void close_sockets();
-    void clear_after_accept();
 };
 
 #endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT

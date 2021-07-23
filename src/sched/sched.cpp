@@ -117,14 +117,13 @@ void ccl_sched::complete() {
             const char* coll_name =
                 ccl_coll_type_to_str(static_cast<ccl_master_sched*>(req)->coll_param.ctype);
             std::stringstream ss;
-            ss << "\n--- sched"
-               << " (" << coll_name << ") timers, usec ---\n";
+            ss << "\n" << coll_name << " timers, usec\n";
             ss << "total: " << timer.str() << "\n";
             for (size_t idx = 0; idx < entries.size(); ++idx) {
                 ss << "[" << idx << "] " << entries[idx]->name() << ": "
                    << entries[idx]->timer.str() << "\n";
             }
-            ss << "--------------------------------";
+            ss << "-----------------------------";
             logger.info(ss.str());
         }
     }

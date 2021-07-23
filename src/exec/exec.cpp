@@ -229,6 +229,8 @@ void ccl_executor::start(ccl_master_sched* sched) {
     size_t worker_idx;
     for (size_t idx = 0; idx < sched->partial_scheds.size(); idx++) {
         worker_idx = (this->*get_worker_idx_fn)(sched->partial_scheds[idx].get());
+        LOG_DEBUG(
+            "worker idx: ", worker_idx, ", coll: ", ccl_coll_type_to_str(sched->coll_param.ctype));
         workers[worker_idx]->add(sched->partial_scheds[idx].get());
     }
 }

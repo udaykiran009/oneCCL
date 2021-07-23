@@ -16,6 +16,7 @@ void fence_cache::clear() {
     for (auto& key_value : cache) {
         ZE_CALL(zeFenceDestroy(key_value.second));
     }
+    cache.clear();
 }
 
 void fence_cache::get(ze_command_queue_handle_t queue,
@@ -59,6 +60,7 @@ void kernel_cache::clear() {
     for (auto& key_value : cache) {
         ZE_CALL(zeKernelDestroy(key_value.second));
     }
+    cache.clear();
 }
 
 void kernel_cache::get(ze_module_handle_t module,
@@ -101,6 +103,7 @@ void list_cache::clear() {
     for (auto& key_value : cache) {
         ZE_CALL(zeCommandListDestroy(key_value.second));
     }
+    cache.clear();
 }
 
 void list_cache::get(ze_context_handle_t context,
@@ -146,6 +149,7 @@ void queue_cache::clear() {
     for (auto& key_value : cache) {
         ZE_CALL(zeCommandQueueDestroy(key_value.second))
     }
+    cache.clear();
 }
 
 void queue_cache::get(ze_context_handle_t context,
@@ -200,6 +204,7 @@ void module_cache::clear() {
     for (auto& key_value : cache) {
         ZE_CALL(zeModuleDestroy(key_value.second))
     }
+    cache.clear();
 }
 
 void module_cache::get(ze_context_handle_t context,
@@ -232,13 +237,23 @@ void module_cache::load(ze_context_handle_t context,
 }
 
 cache::~cache() {
-    fences.clear();
-    kernels.clear();
-    lists.clear();
-    queues.clear();
+    for (auto& instance : fences) {
+        instance.clear();
+    }
 
-    /* TOOD: fix module destroy */
-    // modules.clear();
+    for (auto& instance : kernels) {
+        instance.clear();
+    }
+
+    for (auto& instance : lists) {
+        instance.clear();
+    }
+
+    for (auto& instance : queues) {
+        instance.clear();
+    }
+
+    modules.clear();
 }
 
 } // namespace ze
