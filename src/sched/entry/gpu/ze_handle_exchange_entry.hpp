@@ -24,10 +24,9 @@
 
 #include "common/comm/comm.hpp"
 #include "sched/entry/entry.hpp"
-#include "sched/sched.hpp"
-
-#include "sched/ze_handle_manager.hpp"
 #include "sched/entry/gpu/ze_primitives.hpp"
+#include "sched/sched.hpp"
+#include "sched/ze_handle_manager.hpp"
 
 class ze_handle_exchange_entry : public sched_entry {
 public:
@@ -106,6 +105,7 @@ private:
     bool is_created;
     bool is_connected;
     bool is_accepted;
+    bool skip_first_send;
 
     int get_fd_from_handle(const ze_ipc_mem_handle_t* handle, int* fd);
     int get_handle_from_fd(int* fd, ze_ipc_mem_handle_t* handle);

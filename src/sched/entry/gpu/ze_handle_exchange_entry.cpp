@@ -15,7 +15,8 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
           start_peer_idx(0),
           is_created(false),
           is_connected(false),
-          is_accepted(false) {
+          is_accepted(false),
+          skip_first_send(false) {
     CCL_THROW_IF_NOT(!in_buffers.empty(), "in_buffers should be non empty");
 
     poll_fds.reserve(max_pfds);
@@ -39,7 +40,6 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
     context = sycl_context.template get_native<sycl::backend::level_zero>();
 
     for (size_t buf_idx = 0; buf_idx < in_buffers.size(); buf_idx++) {
-        handles.at(rank).resize(in_buffers.size());
         ze_ipc_mem_handle_t handle;
 
         // zeMemGetIpcHandle requires the provided pointer to be the base of an allocation.
@@ -88,6 +88,7 @@ ze_handle_exchange_entry::~ze_handle_exchange_entry() {
 void ze_handle_exchange_entry::start() {
     LOG_DEBUG("started: ", name());
     start_buf_idx = start_peer_idx = 0;
+    skip_first_send = false;
     status = ccl_sched_entry_status_started;
 }
 
@@ -130,25 +131,31 @@ void ze_handle_exchange_entry::update() {
         is_accepted = true;
     }
 
+    CCL_THROW_IF_NOT(poll_fds.size() == 1, "unexpected poll_fds size: ", poll_fds.size());
+
     for (size_t buf_idx = start_buf_idx; buf_idx < in_buffers.size(); buf_idx++) {
         for (int peer_idx = start_peer_idx; peer_idx < comm_size - 1; peer_idx++) {
             int peer = (rank + 1 + peer_idx) % comm_size;
 
-            if (peer_idx == 0) {
+            if ((peer_idx == 0) && !skip_first_send) {
                 int send_fd = 0;
                 // send own handle to right peer
                 get_fd_from_handle(&(handles[rank][buf_idx].handle), &send_fd);
                 sendmsg_call(right_peer_socket, send_fd, handles[rank][buf_idx].mem_offset);
+                skip_first_send = true;
             }
 
             int poll_ret = poll(&poll_fds[0], poll_fds.size(), timeout_ms);
+
             if (poll_ret == poll_expire_err_code) {
                 LOG_DEBUG("poll: timeout is expired");
                 return;
             }
             else if (poll_ret == POLL_ERR) {
-                CCL_THROW("poll: error: ", std::to_string(poll_ret));
+                CCL_THROW("poll: error: ", strerror(errno), ", ret: ", poll_ret);
             }
+
+            CCL_THROW_IF_NOT(poll_ret > 0, "unexpected poll ret: ", poll_ret);
 
             if (poll_fds[0].revents & POLLIN) {
                 int recv_fd = 0;
@@ -166,10 +173,23 @@ void ze_handle_exchange_entry::update() {
                     // proxy data to right peer
                     sendmsg_call(right_peer_socket, recv_fd, mem_offset);
                 }
+                start_peer_idx++;
             }
-            start_peer_idx++;
+            else if (poll_fds[0].revents & POLLERR) {
+                CCL_THROW("poll: POLLERR, buf_idx: ", buf_idx, ", peer_idx ", peer_idx);
+            }
+            else if (poll_fds[0].revents & POLLHUP) {
+                CCL_THROW("poll: POLLHUP, buf_idx: ", buf_idx, ", peer_idx ", peer_idx);
+            }
+            else {
+                LOG_TRACE("poll: nothing to receive, buf_idx: ", buf_idx, ", peer_idx ", peer_idx);
+                // nothing to receive
+                // continue with the same buf_idx/peer_idx in the next update() call
+                return;
+            }
         }
         start_peer_idx = 0;
+        skip_first_send = false;
         start_buf_idx++;
     }
 
