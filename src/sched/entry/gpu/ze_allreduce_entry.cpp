@@ -103,8 +103,8 @@ void ze_allreduce_entry::init() {
     ccl_buffer right_send_buf;
     ccl_buffer right_recv_buf;
     int peer_rank = (rank + 1) % comm_size;
-    sched->get_ccl_sched_memory().handle_manager.get(peer_rank, 0, right_send_buf);
-    sched->get_ccl_sched_memory().handle_manager.get(peer_rank, 1, right_recv_buf);
+    sched->get_memory().handle_manager.get(peer_rank, 0, right_send_buf);
+    sched->get_memory().handle_manager.get(peer_rank, 1, right_recv_buf);
     LOG_DEBUG("get IPC pointers from ",
               peer_rank,
               " rank: right_send_buf: ",

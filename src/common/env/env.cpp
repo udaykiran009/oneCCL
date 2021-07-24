@@ -44,6 +44,7 @@ env_data::env_data()
         : was_printed(false),
 
           log_level(ccl_log_level::warn),
+          queue_dump(0),
           sched_dump(0),
           sched_profile(0),
 
@@ -82,11 +83,10 @@ env_data::env_data()
           cache_key_type(ccl_cache_key_match_id),
 #ifdef CCL_ENABLE_SYCL
           enable_cache_flush(1),
-          enable_strict_order(1),
 #else // CCL_ENABLE_SYCL
           enable_cache_flush(0),
-          enable_strict_order(0),
 #endif // CCL_ENABLE_SYCL
+          enable_strict_order(0),
           staging_buffer(ccl_staging_usm),
           enable_op_sync(0),
 
@@ -119,6 +119,7 @@ env_data::env_data()
 void env_data::parse() {
     env_2_enum(CCL_LOG_LEVEL, ccl_logger::level_names, log_level);
     ccl_logger::set_log_level(log_level);
+    env_2_type(CCL_QUEUE_DUMP, queue_dump);
     env_2_type(CCL_SCHED_DUMP, sched_dump);
     env_2_type(CCL_SCHED_PROFILE, sched_profile);
 
@@ -341,6 +342,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_WORKER_WAIT, ": ", worker_wait);
 
     LOG_INFO(CCL_LOG_LEVEL, ": ", str_by_enum(ccl_logger::level_names, log_level));
+    LOG_INFO(CCL_QUEUE_DUMP, ": ", queue_dump);
     LOG_INFO(CCL_SCHED_DUMP, ": ", sched_dump);
     LOG_INFO(CCL_SCHED_PROFILE, ": ", sched_profile);
 

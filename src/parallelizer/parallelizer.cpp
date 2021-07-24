@@ -237,11 +237,11 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
     size_t a2av_send_bytes = 0, a2av_recv_bytes = 0;
     size_t a2av_send_count = 0, a2av_recv_count = 0;
 
-    ccl_coll_allgatherv_algo ag_algo = ccl_coll_allgatherv_naive;
+    ccl_coll_allgatherv_algo ag_algo = ccl_coll_allgatherv_last_value;
     ccl_coll_allreduce_algo allreduce_algo = ccl_coll_allreduce_last_value;
-    ccl_coll_alltoall_algo a2a_algo = ccl_coll_alltoall_direct;
-    ccl_coll_alltoallv_algo a2av_algo = ccl_coll_alltoallv_direct;
-    ccl_coll_bcast_algo ag_mbcast_algo = ccl_coll_bcast_naive;
+    ccl_coll_alltoall_algo a2a_algo = ccl_coll_alltoall_last_value;
+    ccl_coll_alltoallv_algo a2av_algo = ccl_coll_alltoallv_last_value;
+    ccl_coll_bcast_algo ag_mbcast_algo = ccl_coll_bcast_last_value;
 
     std::vector<ccl_parallelizer_prologue_ctx*> part_ctxs;
 
@@ -256,11 +256,6 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
     selector_param.is_sycl_buf = coll_attr.is_sycl_buf;
 #endif // CCL_ENABLE_SYCL
 
-    /* TODO: cache selector result inside param */
-    if (coll_type == ccl_coll_allreduce) {
-        allreduce_algo = data.algorithm_selector->get<ccl_coll_allreduce>(selector_param);
-    }
-
     switch (coll_type) {
         case ccl_coll_barrier: part_count = max_data_partition_count; break;
         case ccl_coll_bcast:
@@ -270,6 +265,9 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
             }
         case ccl_coll_reduce:
         case ccl_coll_allreduce:
+            if (coll_type == ccl_coll_allreduce) {
+                allreduce_algo = data.algorithm_selector->get<ccl_coll_allreduce>(selector_param);
+            }
             if ((allreduce_algo == ccl_coll_allreduce_topo_ring) ||
                 (coll_param.get_send_count() * dtype_size <=
                  ccl::global_data::env().max_short_size) ||

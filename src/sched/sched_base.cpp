@@ -4,6 +4,7 @@
 #include "coll/coll_param.hpp"
 #include "coll/selection/selection.hpp"
 #include "common/global/global.hpp"
+#include "sched/entry/factory/entry_factory.hpp"
 #include "sched/sched_base.hpp"
 
 std::string to_string(ccl_sched_add_mode mode) {
@@ -13,6 +14,10 @@ std::string to_string(ccl_sched_add_mode mode) {
         default: return "DEFAULT";
     }
     return "DEFAULT";
+}
+
+ccl_sched_base::~ccl_sched_base() {
+    free_memory();
 }
 
 void ccl_sched_base::set_coll_attr(const ccl_coll_attr& attr) {
@@ -130,13 +135,15 @@ ccl_buffer ccl_sched_base::alloc_staging_buffer(size_t bytes) {
 }
 #endif // CCL_ENABLE_SYCL
 
-void ccl_sched_base::free_buffers() {
+void ccl_sched_base::free_memory() {
     std::list<ccl_sched_buffer_handler>::iterator it;
     for (it = memory.buf_list.begin(); it != memory.buf_list.end(); it++) {
         LOG_DEBUG("free ", it->buffer.get_ptr());
         CCL_FREE(it->buffer.get_ptr());
     }
     memory.buf_list.clear();
+
+    free_memory_regions();
 
 #ifdef CCL_ENABLE_SYCL
     std::list<ccl_sched_sycl_buffer_handler>::iterator sycl_it;
@@ -145,6 +152,11 @@ void ccl_sched_base::free_buffers() {
         free(sycl_it->buffer.get_ptr(), sycl_it->ctx);
     }
     memory.sycl_buf_list.clear();
+
+#ifdef MULTI_GPU_SUPPORT
+    memory.handle_manager.clear();
+#endif // MULTI_GPU_SUPPORT
+
 #endif // CCL_ENABLE_SYCL
 }
 
@@ -241,6 +253,35 @@ ccl_buffer ccl_sched_base::find_and_realloc_buffer(void* in_ptr,
 void ccl_sched_base::add_memory_region(atl_mr_t* mr) {
     CCL_THROW_IF_NOT(mr);
     memory.mr_list.emplace_back(mr);
+}
+
+void ccl_sched_base::free_memory_regions() {
+    if (memory.mr_list.empty()) {
+        return;
+    }
+
+    /* perform deregistration in worker thread */
+
+    ccl_coll_param param{};
+    param.ctype = ccl_coll_internal;
+    param.comm = coll_param.comm;
+    std::unique_ptr<ccl_extra_sched> dereg_sched(new ccl_extra_sched(param, sched_id));
+    entry_factory::make_entry<deregister_entry>(dereg_sched.get(), memory.mr_list, param.comm);
+
+    if (ccl::global_data::get().is_worker_thread || !ccl::global_data::env().worker_offload) {
+        dereg_sched->do_progress();
+    }
+    else {
+        CCL_THROW("unsupported path");
+        /* release ownership, because ccl_wait_impl use delete inside */
+        // ccl_wait_impl<ccl_extra_sched>(
+        //     ccl::global_data::get().executor.get(),
+        //     start_subsched(dereg_sched.release()));
+    }
+
+    if (!memory.mr_list.empty()) {
+        LOG_ERROR("memory region list is not empty after deregister_entry completion");
+    }
 }
 
 void ccl_sched_base::get_pre_post_copy_counts(std::vector<size_t>& d2h_counts,

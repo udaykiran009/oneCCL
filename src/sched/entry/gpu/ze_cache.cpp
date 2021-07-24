@@ -22,6 +22,9 @@ void fence_cache::clear() {
 void fence_cache::get(ze_command_queue_handle_t queue,
                       ze_fence_desc_t* fence_desc,
                       ze_fence_handle_t* fence) {
+    CCL_THROW_IF_NOT(queue);
+    CCL_THROW_IF_NOT(fence_desc);
+    CCL_THROW_IF_NOT(fence);
     if (ccl::global_data::env().enable_kernel_cache) {
         key_t key(queue, fence_desc->flags);
         auto key_value = cache.find(key);
@@ -39,6 +42,9 @@ void fence_cache::get(ze_command_queue_handle_t queue,
 void fence_cache::push(ze_command_queue_handle_t queue,
                        ze_fence_desc_t* fence_desc,
                        ze_fence_handle_t* fence) {
+    CCL_THROW_IF_NOT(queue);
+    CCL_THROW_IF_NOT(fence_desc);
+    CCL_THROW_IF_NOT(fence && *fence);
     if (ccl::global_data::env().enable_kernel_cache) {
         key_t key(queue, fence_desc->flags);
         cache.insert({ std::move(key), *fence });
@@ -66,6 +72,8 @@ void kernel_cache::clear() {
 void kernel_cache::get(ze_module_handle_t module,
                        const std::string& kernel_name,
                        ze_kernel_handle_t* kernel) {
+    CCL_THROW_IF_NOT(module);
+    CCL_THROW_IF_NOT(kernel);
     if (ccl::global_data::env().enable_kernel_cache) {
         key_t key(module, kernel_name);
         auto key_value = cache.find(key);
@@ -82,6 +90,8 @@ void kernel_cache::get(ze_module_handle_t module,
 void kernel_cache::push(ze_module_handle_t module,
                         const std::string& kernel_name,
                         ze_kernel_handle_t* kernel) {
+    CCL_THROW_IF_NOT(module);
+    CCL_THROW_IF_NOT(kernel && *kernel);
     if (ccl::global_data::env().enable_kernel_cache) {
         key_t key(module, kernel_name);
         cache.insert({ std::move(key), *kernel });
@@ -110,6 +120,10 @@ void list_cache::get(ze_context_handle_t context,
                      ze_device_handle_t device,
                      ze_command_list_desc_t* list_desc,
                      ze_command_list_handle_t* list) {
+    CCL_THROW_IF_NOT(context);
+    CCL_THROW_IF_NOT(device);
+    CCL_THROW_IF_NOT(list_desc);
+    CCL_THROW_IF_NOT(list);
     if (ccl::global_data::env().enable_kernel_cache) {
         key_t key(context, device, list_desc->commandQueueGroupOrdinal, list_desc->flags);
         auto key_value = cache.find(key);
@@ -128,6 +142,10 @@ void list_cache::push(ze_context_handle_t context,
                       ze_device_handle_t device,
                       ze_command_list_desc_t* list_desc,
                       ze_command_list_handle_t* list) {
+    CCL_THROW_IF_NOT(context);
+    CCL_THROW_IF_NOT(device);
+    CCL_THROW_IF_NOT(list_desc);
+    CCL_THROW_IF_NOT(list && *list);
     if (ccl::global_data::env().enable_kernel_cache) {
         key_t key(context, device, list_desc->commandQueueGroupOrdinal, list_desc->flags);
         cache.insert({ std::move(key), *list });
@@ -156,6 +174,10 @@ void queue_cache::get(ze_context_handle_t context,
                       ze_device_handle_t device,
                       ze_command_queue_desc_t* queue_desc,
                       ze_command_queue_handle_t* queue) {
+    CCL_THROW_IF_NOT(context);
+    CCL_THROW_IF_NOT(device);
+    CCL_THROW_IF_NOT(queue_desc);
+    CCL_THROW_IF_NOT(queue);
     if (ccl::global_data::env().enable_kernel_cache) {
         key_t key(context,
                   device,
@@ -179,6 +201,10 @@ void queue_cache::push(ze_context_handle_t context,
                        ze_device_handle_t device,
                        ze_command_queue_desc_t* queue_desc,
                        ze_command_queue_handle_t* queue) {
+    CCL_THROW_IF_NOT(context);
+    CCL_THROW_IF_NOT(device);
+    CCL_THROW_IF_NOT(queue_desc);
+    CCL_THROW_IF_NOT(queue && *queue);
     if (ccl::global_data::env().enable_kernel_cache) {
         key_t key(context,
                   device,
@@ -210,6 +236,9 @@ void module_cache::clear() {
 void module_cache::get(ze_context_handle_t context,
                        ze_device_handle_t device,
                        ze_module_handle_t* module) {
+    CCL_THROW_IF_NOT(context);
+    CCL_THROW_IF_NOT(device);
+    CCL_THROW_IF_NOT(module);
     std::lock_guard<std::mutex> lock(mutex);
     auto key_value = cache.find(device);
     if (key_value != cache.end()) {
@@ -226,6 +255,9 @@ void module_cache::get(ze_context_handle_t context,
 void module_cache::load(ze_context_handle_t context,
                         ze_device_handle_t device,
                         ze_module_handle_t* module) {
+    CCL_THROW_IF_NOT(context);
+    CCL_THROW_IF_NOT(device);
+    CCL_THROW_IF_NOT(module);
     std::string modules_dir = ccl::global_data::env().kernel_path;
     // TODO: remove
     if (modules_dir.empty()) {

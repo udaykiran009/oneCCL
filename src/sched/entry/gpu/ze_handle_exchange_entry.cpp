@@ -175,7 +175,7 @@ void ze_handle_exchange_entry::update() {
 
     LOG_DEBUG("handles size: ", handles.size(), ", in_buffers size: ", in_buffers.size());
 
-    sched->get_ccl_sched_memory().handle_manager.set(handles);
+    sched->get_memory().handle_manager.set(handles);
 
     status = ccl_sched_entry_status_complete;
 

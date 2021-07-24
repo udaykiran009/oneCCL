@@ -37,13 +37,17 @@ group_context::comm_group_t group_context::group_by_kvs(
     for (size_t i = 0; i < local_thread_device_group_ranks.size(); i++) {
         LOG_DEBUG("\nlocal thread device group ranks: ", local_thread_device_group_ranks[i]);
     }
+
     // register group slot in global context table, based on communicator id
     comm_group_t group = group_context::group_by_comm(atl);
 
-    // sync existing group: blocking operation - wait for all groups
-    LOG_DEBUG("group thread barrier acquired: ", static_cast<void*>(group.get()));
-    group->sync_group_size(local_thread_device_group_ranks.size());
-    LOG_DEBUG("group thread barrier released: ", static_cast<void*>(group.get()));
+    if (ccl::global_data::env().enable_comm_kernels) {
+        // sync existing group: blocking operation - wait for all groups
+        LOG_DEBUG("group thread barrier acquired: ", static_cast<void*>(group.get()));
+        group->sync_group_size(local_thread_device_group_ranks.size());
+        LOG_DEBUG("group thread barrier released: ", static_cast<void*>(group.get()));
+    }
+
     return group;
 }
 

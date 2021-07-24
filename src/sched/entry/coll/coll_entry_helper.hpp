@@ -20,9 +20,21 @@ public:
             selector_param.comm = param.comm;
             selector_param.stream = param.stream;
             selector_param.is_vector_buf = sched->coll_attr.is_vector_buf;
+#ifdef CCL_ENABLE_SYCL
+            selector_param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
+#endif // CCL_ENABLE_SYCL
 
             if (param.ctype == ccl_coll_allgatherv) {
                 selector_param.count = param.send_count;
+            }
+
+            if (param.ctype == ccl_coll_allreduce) {
+                auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_allreduce>(
+                    selector_param);
+                /* TODO: move to sched ctor where strict_order is assigned */
+                if (algo == ccl_coll_allreduce_topo_ring) {
+                    sched->strict_order = true;
+                }
             }
 
             bool is_direct_algo =

@@ -45,10 +45,6 @@ public:
 
     virtual void complete();
 
-    void clear() {
-        entries.clear();
-    }
-
     size_t get_start_idx() const {
         return start_idx;
     }
@@ -72,7 +68,7 @@ public:
         return in_bin_status;
     }
 
-    ccl_sched_memory& get_ccl_sched_memory() {
+    ccl_sched_memory& get_memory() {
         return memory;
     }
 
@@ -151,7 +147,7 @@ public:
 
     /* whether sched should be executed in the same order as in user code */
     /* currently applicable for start phase only */
-    bool strict_order;
+    bool strict_order = false;
 
     /*
       limits number of active entries 

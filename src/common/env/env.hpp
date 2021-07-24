@@ -20,6 +20,7 @@ constexpr const char* CCL_ENV_STR_NOT_SPECIFIED = "<not specified>";
 constexpr const ssize_t CCL_ENV_SIZET_NOT_SPECIFIED = -1;
 
 constexpr const char* CCL_LOG_LEVEL = "CCL_LOG_LEVEL";
+constexpr const char* CCL_QUEUE_DUMP = "CCL_QUEUE_DUMP";
 constexpr const char* CCL_SCHED_DUMP = "CCL_SCHED_DUMP";
 constexpr const char* CCL_SCHED_PROFILE = "CCL_SCHED_PROFILE";
 
@@ -124,6 +125,7 @@ public:
     ccl_spinlock print_guard{};
 
     ccl_log_level log_level;
+    int queue_dump;
     int sched_dump;
     int sched_profile;
 

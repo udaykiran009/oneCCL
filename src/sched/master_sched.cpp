@@ -12,9 +12,8 @@ ccl_master_sched::~ccl_master_sched() {
     for (auto& part_sched : partial_scheds) {
         part_sched.reset();
     }
-
-    CCL_ASSERT(memory.mr_list.empty(), "memory list is not empty");
-    free_buffers();
+    if (!memory.mr_list.empty())
+        LOG_WARN("memory region list should be empty for master sched");
 }
 
 void ccl_master_sched::commit(ccl_parallelizer* parallelizer) {

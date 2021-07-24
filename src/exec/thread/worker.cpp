@@ -48,11 +48,10 @@ ccl::status ccl_worker::do_work(size_t& processed_count) {
     if (ret != ccl::status::success)
         return ret;
 
-#ifdef ENABLE_DEBUG
-    if (processed_count == 0 && (do_work_counter % CCL_WORKER_PROCESS_ALL_ITERS * 1024) == 0) {
-        //sched_queue->dump(std::cout);
+    if ((do_work_counter % (4 * CCL_WORKER_PROCESS_ALL_ITERS) == 0) &&
+        ccl::global_data::env().queue_dump) {
+        sched_queue->dump(std::cout);
     }
-#endif
 
     return ccl::status::success;
 }
@@ -147,7 +146,9 @@ ccl::status ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed_
     completed_sched_count = 0;
 
     size_t bin_size = bin->size();
-    CCL_ASSERT(bin_size > 0);
+
+    if (bin_size == 0)
+        return ccl::status::success;
 
     LOG_TRACE("bin ", bin, ", sched_count ", bin_size);
 

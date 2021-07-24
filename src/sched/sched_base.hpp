@@ -87,12 +87,13 @@ struct ccl_sched_base {
     ccl_buffer alloc_staging_buffer(size_t bytes);
 #endif // CCL_ENABLE_SYCL
 
-    void free_buffers();
+    void add_memory_region(atl_mr_t* mr);
+    void free_memory_regions();
+
+    void free_memory();
 
     ccl_buffer update_buffer(ccl_buffer buffer, size_t new_size);
     ccl_buffer find_and_realloc_buffer(void* buffer, size_t new_size, size_t expected_size = 0);
-
-    void add_memory_region(atl_mr_t* mr);
 
     void get_pre_post_copy_counts(std::vector<size_t>& d2h_counts,
                                   std::vector<size_t>& h2d_counts,
@@ -126,7 +127,7 @@ struct ccl_sched_base {
     }
 
 protected:
-    ~ccl_sched_base() = default;
+    ~ccl_sched_base();
 
     ccl_sched_base() {
         CCL_THROW("unsupported");
