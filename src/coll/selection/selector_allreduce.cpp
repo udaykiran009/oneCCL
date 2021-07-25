@@ -16,9 +16,9 @@ std::map<ccl_coll_allreduce_algo, std::string>
     };
 
 ccl_algorithm_selector<ccl_coll_allreduce>::ccl_algorithm_selector() {
-    // #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
-    //     insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allreduce_topo_ring);
-    // #else // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+    insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allreduce_topo_ring);
+#else // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
     if (ccl::global_data::env().atl_transport == ccl_atl_ofi) {
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allreduce_ring);
         insert(main_table, 0, CCL_ALLREDUCE_SHORT_MSG_SIZE, ccl_coll_allreduce_recursive_doubling);
@@ -26,14 +26,13 @@ ccl_algorithm_selector<ccl_coll_allreduce>::ccl_algorithm_selector() {
                CCL_ALLREDUCE_SHORT_MSG_SIZE + 1,
                CCL_ALLREDUCE_MEDIUM_MSG_SIZE,
                ccl_coll_allreduce_starlike);
-        insert(
-            fallback_table, 0, CCL_ALLREDUCE_SHORT_MSG_SIZE, ccl_coll_allreduce_recursive_doubling);
     }
     else if (ccl::global_data::env().atl_transport == ccl_atl_mpi)
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allreduce_direct);
-    //#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
 
     insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allreduce_ring);
+    insert(fallback_table, 0, CCL_ALLREDUCE_SHORT_MSG_SIZE, ccl_coll_allreduce_recursive_doubling);
 }
 
 template <>
@@ -74,10 +73,11 @@ bool ccl_algorithm_selector_helper<ccl_coll_allreduce_algo>::can_use(
     else if (algo == ccl_coll_allreduce_topo_ring &&
              ((param.comm->size() != 2) ||
               (param.comm->size() != ccl::global_data::get().executor->get_local_proc_count()) ||
-              (!param.stream || param.stream->get_type() != stream_type::gpu || is_sycl_buf ||
-               !is_l0_backend || ccl::global_data::env().enable_fusion ||
-               ccl::global_data::env().enable_unordered_coll ||
-               ccl::global_data::env().worker_count != 1)))
+              (!param.stream || param.stream->get_type() != stream_type::gpu) || is_sycl_buf ||
+              !is_l0_backend || ccl::global_data::env().enable_fusion ||
+              ccl::global_data::env().enable_unordered_coll ||
+              (ccl::global_data::env().priority_mode != ccl_priority_none) ||
+              (ccl::global_data::env().worker_count != 1)))
         can_use = false;
 
     return can_use;

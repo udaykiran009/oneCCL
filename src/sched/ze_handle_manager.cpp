@@ -46,7 +46,7 @@ void ze_handle_manager::clear() {
             if (mem_ptr) {
                 auto ret = zeMemCloseIpcHandle(context, mem_ptr);
                 if (ret != ZE_RESULT_SUCCESS) {
-                    LOG_DEBUG("unable to close memory handle: ",
+                    LOG_TRACE("unable to close memory handle: ",
                               "level-zero ret: ",
                               ccl::ze::to_string(ret),
                               ", rank: ",

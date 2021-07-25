@@ -144,6 +144,7 @@ run_benchmark()
 
     options="--check last"
     usm_list="none"
+    ccl_bench_env="${ccl_extra_env}"
 
     if [ "${backend}" != "" ];
     then
@@ -171,22 +172,25 @@ run_benchmark()
     fi
 
     buf_count=16
+    iter_count=16
+    extra_options=""
     if [ "${backend}" == "sycl" ];
     then
-        buf_count=2
-        if [ "${runtime}" == "level_zero" ];
-        then
-            # FIXME: enable back buf_count > 1 after USM fix in L0
-            # https://jira.devtools.intel.com/browse/CMPLRLLVM-22660
-            buf_count=1
-        fi
-        options="${options} --iters 8 --sycl_mem_type usm"
+        buf_count=4
+        iter_count=8
+        extra_options="--sycl_mem_type usm"
+
         #usm_list="device shared" https://jira.devtools.intel.com/browse/MLSL-902
         usm_list="device"
-    else
-        options="${options} --iters 16"
+
+        if [ "${runtime}" == "level_zero" ];
+        then
+            # TODO: submit compiler ticket
+            buf_count=1
+            ccl_bench_env="$ZE_SERIALIZE=2 ${ccl_extra_env}"
+        fi
     fi
-    options="${options} --buf_count ${buf_count}"
+    options="${options} --buf_count ${buf_count} --iters ${iter_count} ${extra_options}"
 
     # Run kernels with arbitraty sizes that should cover all the cases
     # options="${options} -y 1,2,4,7,8,16,17,32,64,128,133,256,1077,16384,16387" (XDEPS-2222)
@@ -205,16 +209,16 @@ run_benchmark()
             final_options="${options}"
         fi
 
-        if [ `echo $ccl_extra_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
+        if [ `echo $ccl_bench_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
         then
-            cmd=`echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_options}`
+            cmd=`echo $ccl_bench_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_options}`
             echo "Running: $cmd"
             eval $cmd 2>&1 | tee ${test_log}
             check_test ${test_log} ${example}
         else
             log_debug_test_log="${test_log}.2_ranks_ppn_${ppn}"
             echo "output for run with CCL_LOG_LEVEL=debug and 2 ranks has been redirected to log file ${log_debug_test_log}"
-            cmd=`echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_options}`
+            cmd=`echo $ccl_bench_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_options}`
             echo "Running: $cmd"
             eval $cmd > ${log_debug_test_log} 2>&1
             check_test ${log_debug_test_log} ${example}
@@ -223,7 +227,7 @@ run_benchmark()
             then
                 log_debug_test_log="${test_log}.1_rank"
                 echo "output for run with CCL_LOG_LEVEL=debug and 1 rank has been redirected to log file ${log_debug_test_log}"
-                cmd=`echo $ccl_extra_env mpiexec.hydra -n 1 -ppn $ppn -l ./$example ${final_options}`
+                cmd=`echo $ccl_bench_env mpiexec.hydra -n 1 -ppn $ppn -l ./$example ${final_options}`
                 echo "Running: $cmd"
                 eval $cmd > ${log_debug_test_log} 2>&1
                 check_test ${log_debug_test_log} ${example}
@@ -312,6 +316,7 @@ run()
             dir_list="${dir_list} external_launcher"
         fi
     else
+        ccl_base_env="ZE_ENABLE_VALIDATION_LAYER=1 ZE_ENABLE_PARAMETER_VALIDATION=1 ${ccl_base_env}"
         transport_list="${transport_list} mpi_gpu"
         common_dir_list="benchmark common"
         if [[ ${SCOPE} = "pr" ]]
@@ -349,13 +354,14 @@ run()
             transport_name=${transport}
             if [ "$transport" == "mpi_gpu" ];
             then
+                # TODO: need fix on impi side MLSL-1020
+                continue
+
                 if [ "$dir_name" != "sycl" ] && [ "$dir_name" != "benchmark" ]
                 then
                     continue
                 fi
-                transport_name="mpi"
-                # TODO: need fix on impi side MLSL-1020
-                # ccl_transport_env="CCL_ATL_DEVICE_BUF=1 ${ccl_transport_env}"
+                ccl_transport_env="CCL_ATL_DEVICE_BUF=1 ${ccl_transport_env}"
             fi
             ccl_transport_env="CCL_ATL_TRANSPORT=${transport_name} ${ccl_transport_env}"
 

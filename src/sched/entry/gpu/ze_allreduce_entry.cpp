@@ -32,12 +32,14 @@ ze_allreduce_entry::ze_allreduce_entry(ccl_sched* sched,
           worker_idx(0) {}
 
 ze_allreduce_entry::~ze_allreduce_entry() {
-    if (is_initialized) {
-        finalize();
-    }
+    finalize();
 }
 
 void ze_allreduce_entry::init() {
+    if (is_initialized) {
+        return;
+    }
+
     LOG_DEBUG("initialization");
 
     CCL_THROW_IF_NOT(sched != nullptr, "no sched");
@@ -133,18 +135,16 @@ void ze_allreduce_entry::init() {
     fence_desc = default_fence_desc;
     ccl::global_data::get().ze_cache->get(worker_idx, comp_queue, &fence_desc, &fence);
 
+    is_initialized = true;
+
     LOG_DEBUG("initialization complete");
 }
 
 void ze_allreduce_entry::start() {
-    if (!is_initialized) {
-        init();
-        is_initialized = true;
-    }
-    else {
-        if (status == ccl_sched_entry_status_not_started) {
-            ZE_CALL(zeFenceReset(fence));
-        }
+    init();
+
+    if (is_initialized && status == ccl_sched_entry_status_not_started) {
+        ZE_CALL(zeFenceReset(fence));
     }
 
     size_t kernel_counter = 0;
@@ -174,6 +174,9 @@ void ze_allreduce_entry::update() {
 
     if (fence_status == ZE_RESULT_SUCCESS) {
         LOG_DEBUG("command list complete");
+        if (!sched->coll_attr.to_cache) {
+            finalize();
+        }
         status = ccl_sched_entry_status_complete;
     }
     else if (fence_status == ZE_RESULT_NOT_READY) {
@@ -190,12 +193,20 @@ void ze_allreduce_entry::update() {
 }
 
 void ze_allreduce_entry::finalize() {
+    if (!is_initialized) {
+        return;
+    }
+
     LOG_DEBUG("finalization");
+
     ccl::global_data::get().ze_cache->push(worker_idx, comp_queue, &fence_desc, &fence);
     ccl::global_data::get().ze_cache->push(worker_idx, module, kernel_name, &kernel);
     ccl::global_data::get().ze_cache->push(
         worker_idx, context, device, &comp_list_desc, &comp_list);
     ccl::global_data::get().ze_cache->push(
         worker_idx, context, device, &comp_queue_desc, &comp_queue);
+
+    is_initialized = false;
+
     LOG_DEBUG("finalization complete");
 }

@@ -36,7 +36,6 @@ set_run_env() {
 
     # CCL
     export CCL_LOG_LEVEL=INFO
-    export CCL_COMM_KERNELS=0
     export CCL_WORKER_COUNT=1
     export CCL_WORKER_AFFINITY=4-19
     export CCL_ATL_TRANSPORT=mpi
@@ -60,14 +59,7 @@ set_run_env() {
     export SYCL_PI_LEVEL_ZERO_BATCH_SIZE=1
     export SYCL_DEVICE_FILTER={level_zero:gpu:0}
     export ZE_ROOT=/usr/local
-
-    if [ "${CCL_COMM_KERNELS}" == "1" ]
-    then
-        ulimit -n 1048576
-        export CCL_WORKER_OFFLOAD=0
-    else
-        export SYCL_PI_LEVEL_ZERO_TRACK_INDIRECT_ACCESS_MEMORY=1
-    fi
+    export SYCL_PI_LEVEL_ZERO_TRACK_INDIRECT_ACCESS_MEMORY=1
 
     # conda
     export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib"

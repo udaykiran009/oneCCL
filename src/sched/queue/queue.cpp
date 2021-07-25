@@ -151,7 +151,7 @@ size_t ccl_sched_queue::erase(ccl_sched_bin* bin, size_t idx) {
         std::lock_guard<sched_queue_lock_t> lock{ bins_guard };
         {
             // no need to lock 'bin' here, because all adding are under bins_guard protection
-            if (bin->sched_list.elems.empty() && (bins.size() > 1)) {
+            if (bin->sched_list.elems.empty() /* && (bins.size() > 1)*/) {
                 bins.erase(bin_priority);
 
                 // change priority

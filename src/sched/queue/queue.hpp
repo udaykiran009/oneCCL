@@ -14,7 +14,7 @@ using sched_bin_list_t = std::unordered_map<size_t, ccl_sched_bin>; // key - pri
 using sched_queue_lock_t = ccl_spinlock;
 
 /* ATL EP is limited resource, each priority bucket consumes single ATL EP and uses it for all bins in bucket */
-#define CCL_PRIORITY_BUCKET_COUNT (4)
+#define CCL_PRIORITY_BUCKET_COUNT (1)
 
 /* the size of priority bucket, each bin in bucket use the same ATL EP although bins have different priorities */
 #define CCL_PRIORITY_BUCKET_SIZE (8)

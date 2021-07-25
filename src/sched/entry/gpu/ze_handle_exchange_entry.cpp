@@ -414,7 +414,7 @@ void ze_handle_exchange_entry::recvmsg_call(int socket_fd, int& fd, size_t& mem_
                   ", errno: ",
                   strerror(errno));
     }
-    LOG_DEBUG("recv: rank[", rank, "], gotten fd:", fd, ", socket_fd:", socket_fd);
+    LOG_DEBUG("recv: rank[", rank, "], got fd:", fd, ", socket_fd:", socket_fd);
 }
 
 int ze_handle_exchange_entry::get_fd_from_handle(const ze_ipc_mem_handle_t* handle, int* fd) {

@@ -39,9 +39,6 @@ void ccl_algorithm_selector_base<algo_group_type>::init() {
     const std::string& str_to_parse =
         ccl_algorithm_selector_helper<algo_group_type>::get_str_to_parse();
 
-    if (!str_to_parse.length())
-        return;
-
     size_t elem_size;
     algo_group_type elem_algo;
     ccl_selection_border_type elem_border;
@@ -216,7 +213,7 @@ void ccl_algorithm_selector_base<algo_group_type>::print() const {
                 << "]: " << ccl_coll_algorithm_to_str(elem_algo) << std::endl;
         }
     }
-    LOG_TRACE(str.str());
+    LOG_DEBUG(str.str());
 }
 
 template <typename algo_group_type>
@@ -244,7 +241,7 @@ algo_group_type ccl_algorithm_selector_base<algo_group_type>::get(
         CCL_THROW_IF_NOT(lower_bound != fallback_table.end(),
                          "can't select algorithm: coll_type ",
                          ccl_coll_type_to_str(param.ctype),
-                         ", selection_count ",
+                         ", count ",
                          count);
         CCL_THROW_IF_NOT(ccl_algorithm_selector_helper<algo_group_type>::can_use(
                              elem_algo, param, fallback_table),
@@ -254,7 +251,7 @@ algo_group_type ccl_algorithm_selector_base<algo_group_type>::get(
 
     LOG_DEBUG("selected algo: coll_type ",
               ccl_coll_type_to_str(param.ctype),
-              ", selection_count ",
+              ", count ",
               count,
               ", algo ",
               ccl_coll_algorithm_to_str(elem_algo));

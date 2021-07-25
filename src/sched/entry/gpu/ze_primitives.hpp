@@ -20,10 +20,22 @@ namespace ze {
         } \
     } while (0);
 
-constexpr ze_command_list_desc_t default_cmd_list_desc = {};
-constexpr ze_device_mem_alloc_desc_t default_device_mem_alloc_desc = {};
-constexpr ze_kernel_desc_t default_kernel_desc = {};
-constexpr ze_fence_desc_t default_fence_desc = {};
+constexpr ze_fence_desc_t default_fence_desc = { .stype = ZE_STRUCTURE_TYPE_FENCE_DESC,
+                                                 .pNext = NULL,
+                                                 .flags = 0 };
+
+constexpr ze_kernel_desc_t default_kernel_desc = { .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
+                                                   .pNext = nullptr,
+                                                   .flags = 0,
+                                                   .pKernelName = nullptr };
+
+constexpr ze_command_list_desc_t default_cmd_list_desc = {
+    .stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC,
+    .pNext = NULL,
+    .commandQueueGroupOrdinal = 0,
+    .flags = 0,
+};
+
 constexpr ze_command_queue_desc_t default_comp_queue_desc = {
     .stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
     .pNext = nullptr,
@@ -32,6 +44,13 @@ constexpr ze_command_queue_desc_t default_comp_queue_desc = {
     .flags = 0,
     .mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS,
     .priority = ZE_COMMAND_QUEUE_PRIORITY_NORMAL
+};
+
+constexpr ze_device_mem_alloc_desc_t default_device_mem_alloc_desc = {
+    .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
+    .pNext = NULL,
+    .flags = 0,
+    .ordinal = 0
 };
 
 void load_module(std::string dir,

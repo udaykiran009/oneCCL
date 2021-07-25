@@ -26,7 +26,7 @@ void fence_cache::get(ze_command_queue_handle_t queue,
     CCL_THROW_IF_NOT(fence_desc);
     CCL_THROW_IF_NOT(fence);
     if (ccl::global_data::env().enable_kernel_cache) {
-        key_t key(queue, fence_desc->flags);
+        key_t key(queue);
         auto key_value = cache.find(key);
         if (key_value != cache.end()) {
             *fence = key_value->second;
@@ -46,7 +46,7 @@ void fence_cache::push(ze_command_queue_handle_t queue,
     CCL_THROW_IF_NOT(fence_desc);
     CCL_THROW_IF_NOT(fence && *fence);
     if (ccl::global_data::env().enable_kernel_cache) {
-        key_t key(queue, fence_desc->flags);
+        key_t key(queue);
         cache.insert({ std::move(key), *fence });
         LOG_DEBUG("inserted to cache: fence: ", *fence);
         return;

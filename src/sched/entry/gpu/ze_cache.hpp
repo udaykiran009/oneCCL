@@ -23,7 +23,7 @@ public:
               ze_fence_handle_t* fence);
 
 private:
-    using key_t = typename std::tuple<ze_command_queue_handle_t, ze_fence_flags_t>;
+    using key_t = typename std::tuple<ze_command_queue_handle_t>;
     using value_t = ze_fence_handle_t;
     std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
 };

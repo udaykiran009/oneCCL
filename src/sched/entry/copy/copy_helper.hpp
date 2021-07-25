@@ -125,6 +125,9 @@ struct sycl_copier {
                                   in_buf_offset,
                               bytes);
             }
+
+            /* TODO: fix parallel copies */
+            e.wait();
         }
         else {
             LOG_TRACE("visitor skipped index: ",
