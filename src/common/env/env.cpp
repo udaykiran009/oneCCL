@@ -111,6 +111,7 @@ env_data::env_data()
           kernel_group_count(CCL_ENV_SIZET_NOT_SPECIFIED),
           enable_kernel_sync(1),
           kernel_1s_lead(1),
+          ze_serialize_mode(0),
 
           bf16_impl_type(ccl_bf16_no_compiler_support),
           fp16_impl_type(ccl_fp16_no_compiler_support) {
@@ -247,7 +248,6 @@ void env_data::parse() {
 #ifndef MULTI_GPU_SUPPORT
         CCL_THROW("comm kernels are requested but not supported in this version of CCL");
 #endif
-
         env_2_type(CCL_KERNEL_PATH, kernel_path);
         if (kernel_path.empty()) {
             std::string ccl_root = getenv("CCL_ROOT");
@@ -261,6 +261,7 @@ void env_data::parse() {
     env_2_type(CCL_KERNEL_GROUP_COUNT, kernel_group_count);
     env_2_type(CCL_KERNEL_SYNC, enable_kernel_sync);
     env_2_type(CCL_KERNEL_1S_LEAD, kernel_1s_lead);
+    env_2_type(CCL_ZE_SERIALIZE, ze_serialize_mode);
 
     auto bf16_impl_types = ccl_bf16_get_impl_types();
     ccl_bf16_impl_type bf16_env_impl_type;
@@ -445,6 +446,7 @@ void env_data::print(int rank) {
                  : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_KERNEL_SYNC, ": ", enable_kernel_sync);
     LOG_INFO(CCL_KERNEL_1S_LEAD, ": ", kernel_1s_lead);
+    LOG_INFO(CCL_ZE_SERIALIZE, ": ", ze_serialize_mode);
 #endif // CCL_ENABLE_SYCL
 
     LOG_INFO(CCL_BF16, ": ", str_by_enum(bf16_impl_names, bf16_impl_type));

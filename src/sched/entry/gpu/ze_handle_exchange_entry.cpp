@@ -433,7 +433,7 @@ void ze_handle_exchange_entry::get_handle(ze_context_handle_t context,
     CCL_THROW_IF_NOT(context != nullptr);
     CCL_THROW_IF_NOT(buffer != nullptr);
 
-    ZE_CALL(zeMemGetIpcHandle(context, buffer, handle));
+    ZE_CALL(zeMemGetIpcHandle, (context, buffer, handle));
 }
 
 static size_t get_ptr_diff(const void* ptr1, const void* ptr2) {
@@ -445,7 +445,7 @@ std::pair<void*, size_t> ze_handle_exchange_entry::get_mem_info(ze_context_handl
     void* base_ptr = nullptr;
     size_t alloc_size = 0;
 
-    ZE_CALL(zeMemGetAddressRange(context, ptr, &base_ptr, &alloc_size));
+    ZE_CALL(zeMemGetAddressRange, (context, ptr, &base_ptr, &alloc_size));
 
     LOG_DEBUG("zeMemGetAddressRange: ptr: ",
               ptr,

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/log/log.hpp"
+#include "ze_call.hpp"
 
 #include <fstream>
 #include <initializer_list>
@@ -12,12 +13,10 @@ namespace ccl {
 
 namespace ze {
 
-#define ZE_CALL(ze_api_call) \
+#define ZE_CALL(ze_name, ze_args) \
     do { \
-        ze_result_t res = ze_api_call; \
-        if (res != ZE_RESULT_SUCCESS) { \
-            CCL_THROW("level-zero error at ", #ze_api_call, ", code: ", ccl::ze::to_string(res)); \
-        } \
+        ccl::ze::ze_call ze; \
+        ze.do_call(ze_name ze_args, #ze_name); \
     } while (0);
 
 constexpr ze_fence_desc_t default_fence_desc = { .stype = ZE_STRUCTURE_TYPE_FENCE_DESC,
@@ -94,6 +93,5 @@ std::string to_string(const ze_result_t result);
 std::string to_string(const ze_group_size_t& group_size);
 std::string to_string(const ze_group_count_t& group_count);
 std::string to_string(const ze_kernel_args_t& kernel_args);
-
 } // namespace ze
 } // namespace ccl

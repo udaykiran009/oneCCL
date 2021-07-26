@@ -99,8 +99,8 @@ void ze_allreduce_entry::init() {
     get_suggested_group_count(group_size, cnt, &group_count);
     LOG_DEBUG("suggested group count: ", to_string(group_count));
 
-    ZE_CALL(zeKernelSetGroupSize(
-        kernel, group_size.groupSizeX, group_size.groupSizeY, group_size.groupSizeZ));
+    ZE_CALL(zeKernelSetGroupSize,
+            (kernel, group_size.groupSizeX, group_size.groupSizeY, group_size.groupSizeZ));
 
     ccl_buffer right_send_buf;
     ccl_buffer right_recv_buf;
@@ -129,8 +129,9 @@ void ze_allreduce_entry::init() {
     LOG_DEBUG("kernel ", kernel, " args:\n", to_string(kernel_args));
     set_kernel_args(kernel, kernel_args);
 
-    ZE_CALL(zeCommandListAppendLaunchKernel(comp_list, kernel, &group_count, nullptr, 0, nullptr));
-    ZE_CALL(zeCommandListClose(comp_list));
+    ZE_CALL(zeCommandListAppendLaunchKernel,
+            (comp_list, kernel, &group_count, nullptr, 0, nullptr));
+    ZE_CALL(zeCommandListClose, (comp_list));
 
     fence_desc = default_fence_desc;
     ccl::global_data::get().ze_cache->get(worker_idx, comp_queue, &fence_desc, &fence);
@@ -144,7 +145,7 @@ void ze_allreduce_entry::start() {
     init();
 
     if (is_initialized && status == ccl_sched_entry_status_not_started) {
-        ZE_CALL(zeFenceReset(fence));
+        ZE_CALL(zeFenceReset, (fence));
     }
 
     size_t kernel_counter = 0;
@@ -154,7 +155,12 @@ void ze_allreduce_entry::start() {
 
     if (kernel_counter == 0) {
         LOG_DEBUG("execute command list");
-        ZE_CALL(zeCommandQueueExecuteCommandLists(comp_queue, 1, &comp_list, fence));
+        ZE_CALL(zeCommandQueueExecuteCommandLists, (comp_queue, 1, &comp_list, fence));
+
+        if (((global_data::env().ze_serialize_mode & ze_serialize_block)) != 0) {
+            LOG_DEBUG("wait until command lists are executed");
+            ZE_CALL(zeHostSynchronize, (comp_queue));
+        }
         status = ccl_sched_entry_status_started;
     }
     else {

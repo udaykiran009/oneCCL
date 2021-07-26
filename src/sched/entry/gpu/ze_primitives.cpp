@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <fstream>
 
+#include "common/global/global.hpp"
 #include "ze_primitives.hpp"
 
 namespace ccl {
@@ -39,7 +40,7 @@ void load_module(std::string dir,
     desc.format = format;
     desc.pInputModule = reinterpret_cast<const uint8_t*>(module_data.data());
     desc.inputSize = module_data.size();
-    ZE_CALL(zeModuleCreate(context, device, &desc, module, nullptr));
+    ZE_CALL(zeModuleCreate, (context, device, &desc, module, nullptr));
     LOG_DEBUG("module loading completed: directory: ", dir, ", file: ", file_name);
 }
 
@@ -58,13 +59,14 @@ void get_suggested_group_size(ze_kernel_handle_t kernel,
                               size_t count,
                               ze_group_size_t* group_size) {
     CCL_ASSERT(count > 0, "count == 0");
-    ZE_CALL(zeKernelSuggestGroupSize(kernel,
-                                     count,
-                                     1,
-                                     1,
-                                     &group_size->groupSizeX,
-                                     &group_size->groupSizeY,
-                                     &group_size->groupSizeZ));
+    ZE_CALL(zeKernelSuggestGroupSize,
+            (kernel,
+             count,
+             1,
+             1,
+             &group_size->groupSizeX,
+             &group_size->groupSizeY,
+             &group_size->groupSizeZ));
     CCL_THROW_IF_NOT(group_size->groupSizeX >= 1,
                      "wrong group size calculation: group size: ",
                      to_string(*group_size),
@@ -107,7 +109,7 @@ void set_kernel_args(ze_kernel_handle_t kernel, const ze_kernel_args_t& kernel_a
 
 void get_num_queue_groups(ze_device_handle_t device, uint32_t* num) {
     *num = 0;
-    ZE_CALL(zeDeviceGetCommandQueueGroupProperties(device, num, nullptr));
+    ZE_CALL(zeDeviceGetCommandQueueGroupProperties, (device, num, nullptr));
     CCL_THROW_IF_NOT(*num != 0, "no queue groups found");
 }
 
@@ -115,7 +117,7 @@ void get_queues_properties(ze_device_handle_t device,
                            uint32_t num_queue_groups,
                            ze_queue_properties_t* props) {
     props->resize(num_queue_groups);
-    ZE_CALL(zeDeviceGetCommandQueueGroupProperties(device, &num_queue_groups, props->data()));
+    ZE_CALL(zeDeviceGetCommandQueueGroupProperties, (device, &num_queue_groups, props->data()));
 }
 
 void get_comp_queue_ordinal(ze_device_handle_t device,
