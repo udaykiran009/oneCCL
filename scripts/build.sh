@@ -339,6 +339,7 @@ post_build()
     mv ${WORKSPACE}/build_gpu/_install/lib/* ${WORKSPACE}/build/_install/lib/cpu_gpu_dpcpp
     mv ${WORKSPACE}/build_gpu/_install/include/oneapi ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
     cp -r ${WORKSPACE}/examples ${WORKSPACE}/build/_install
+    prepare_pkgconfig
 }
 
 replace_tags()
@@ -662,6 +663,28 @@ prepare_staging()
     fi
 }
 
+prepare_pkgconfig()
+{
+    echo_log "run_prepare_pkgconfig()..."
+
+    declare -a ccl_configurations=("cpu_icc" "cpu_gpu_dpcpp")
+
+    for i in "${ccl_configurations[@]}"
+    do
+        PKGCONFIG_PATH="${WORKSPACE}/build/_install/lib/pkgconfig"
+        mkdir -p "${PKGCONFIG_PATH}"
+        cp ${WORKSPACE}/pkgconfig/template.pc ${PKGCONFIG_PATH}/ccl-${i}.pc
+        sed -i "s/@BUILD_TYPE@/${i}/" ${PKGCONFIG_PATH}/ccl-${i}.pc
+        if [ "$i" ==  "cpu_gpu_dpcpp" ]; then
+            sed -i "s/@OTHER_FLAGS@/-lsycl/" ${PKGCONFIG_PATH}/ccl-${i}.pc
+        else
+            sed -i "s/@OTHER_FLAGS@//" ${PKGCONFIG_PATH}/ccl-${i}.pc
+        fi
+    done
+
+    echo_log "run_prepare_pkgconfig()... DONE"
+}
+
 # Make archive package
 make_package()
 {
@@ -676,6 +699,7 @@ make_package()
         cd ${WORKSPACE}
         rm -rf ${TMP_DIR}/${CCL_PACKAGE_NAME}/package
         sed -i -e "s|CCL_SUBSTITUTE_OFFICIAL_VERSION|${CCL_VERSION_FORMAT}|g" ${WORKSPACE}/scripts/install.sh
+        sed -i -e "s|CCL_SUBSTITUTE_OFFICIAL_VERSION|${CCL_VERSION_FORMAT}|g" ${PACKAGE_ENG_DIR}/lib/pkgconfig/*.pc
         cp ${WORKSPACE}/scripts/install.sh ${TMP_DIR}/${CCL_PACKAGE_NAME}
         cd ${TMP_DIR}/${CCL_PACKAGE_NAME} && zip -0 -r -m -P accept ${TMP_DIR}/${CCL_PACKAGE_NAME}/package.zip *
         cp ${WORKSPACE}/doc/cclEULA.txt ${TMP_DIR}/${CCL_PACKAGE_NAME}
@@ -957,6 +981,8 @@ add_copyrights()
     ed ${PACKAGE_ENG_DIR}/modulefiles/ccl < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
     ed ${PACKAGE_ENG_DIR}/lib/cmake/oneCCL/oneCCLConfig.cmake < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
     ed ${PACKAGE_ENG_DIR}/lib/cmake/oneCCL/oneCCLConfigVersion.cmake < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
+    ed ${PACKAGE_ENG_DIR}/lib/pkgconfig/ccl-cpu_icc.pc < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
+    ed ${PACKAGE_ENG_DIR}/lib/pkgconfig/ccl-cpu_gpu_dpcpp.pc < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
 
     rm -rf ${TMP_COPYRIGHT_DIR}
     echo_log_separator

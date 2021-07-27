@@ -139,3 +139,4 @@ CCL_CONFIGURATION="${ccl_configuration}"; export CCL_CONFIGURATION
 CPATH=$(prepend_path "${CCL_ROOT}/include/${ccl_configuration}" "${CPATH:-}"); export CPATH
 LIBRARY_PATH=$(prepend_path "${CCL_ROOT}/lib/${ccl_configuration}" "${LIBRARY_PATH:-}"); export LIBRARY_PATH
 LD_LIBRARY_PATH=$(prepend_path "${CCL_ROOT}/lib/${ccl_configuration}" "${LD_LIBRARY_PATH:-}"); export LD_LIBRARY_PATH
+PKG_CONFIG_PATH=$(prepend_path "${CCL_ROOT}/lib/pkgconfig" "${PKG_CONFIG_PATH:-}"); export PKG_CONFIG_PATH
