@@ -270,7 +270,7 @@ inline std::vector<sycl::queue> create_sycl_queues(const std::string& device_typ
     try {
         ctx = sycl::context(rank_devices);
     }
-    catch (sycl::runtime_error&) {
+    catch (sycl::exception&) {
         size_t preferred_idx = (ranks.back() / ranks.size()) % devices.size();
         cout << "Can not create context from all rank devices of type: " << device_type
              << ", create context from single device, idx " << preferred_idx << "\n";

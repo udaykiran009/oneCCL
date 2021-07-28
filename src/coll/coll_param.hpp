@@ -133,11 +133,12 @@ struct ccl_coll_param {
 
     void validate() const;
 
-    void copy_deps(const std::vector<ccl::event>& d);
+    void copy_deps(const std::vector<ccl::event>& d, ccl::event* extra = nullptr);
     void set_common_fields(ccl::datatype dtype,
                            ccl_comm* comm,
                            const ccl_stream* stream,
                            const std::vector<ccl::event>& deps);
+    void sync_deps(const ccl_stream* s, const std::vector<ccl::event>& ds);
 
     static ccl_coll_param create_allgatherv_param(const void* send_buf,
                                                   size_t send_count,
