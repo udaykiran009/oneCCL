@@ -4,6 +4,7 @@
 namespace ccl {
 namespace ze {
 
+// fence_cache
 fence_cache::~fence_cache() {
     if (!cache.empty()) {
         LOG_WARN("fence cache is not empty, size: ", cache.size());
@@ -54,6 +55,7 @@ void fence_cache::push(ze_command_queue_handle_t queue,
     zeFenceDestroy(*fence);
 }
 
+// kernel_cache
 kernel_cache::~kernel_cache() {
     if (!cache.empty()) {
         LOG_WARN("kernel cache is not empty, size: ", cache.size());
@@ -101,6 +103,7 @@ void kernel_cache::push(ze_module_handle_t module,
     ZE_CALL(zeKernelDestroy, (*kernel));
 }
 
+// list_cache
 list_cache::~list_cache() {
     if (!cache.empty()) {
         LOG_WARN("list cache is not empty, size: ", cache.size());
@@ -155,6 +158,7 @@ void list_cache::push(ze_context_handle_t context,
     ZE_CALL(zeCommandListDestroy, (*list));
 }
 
+// queue_cache
 queue_cache::~queue_cache() {
     if (!cache.empty()) {
         LOG_WARN("queue cache is not empty, size: ", cache.size());
@@ -220,6 +224,7 @@ void queue_cache::push(ze_context_handle_t context,
     ZE_CALL(zeCommandQueueDestroy, (*queue));
 }
 
+// module_cache
 module_cache::~module_cache() {
     clear();
 }
@@ -268,6 +273,122 @@ void module_cache::load(ze_context_handle_t context,
     load_module(modules_dir, "ring_allreduce.spv", device, context, module);
 }
 
+// event_pool_cache
+event_pool_cache::~event_pool_cache() {
+    if (!cache.empty()) {
+        LOG_WARN("event pool cache is not empty, size: ", cache.size());
+    }
+    clear();
+}
+
+void event_pool_cache::clear() {
+    LOG_DEBUG("clear event pool cache: size: ", cache.size());
+    for (auto& key_value : cache) {
+        ZE_CALL(zeEventPoolDestroy, (key_value.second))
+    }
+    cache.clear();
+}
+
+void event_pool_cache::get(ze_context_handle_t context,
+                           ze_event_pool_desc_t* pool_desc,
+                           ze_event_pool_handle_t* event_pool) {
+    CCL_THROW_IF_NOT(context);
+    CCL_THROW_IF_NOT(pool_desc);
+    CCL_THROW_IF_NOT(event_pool);
+    if (ccl::global_data::env().enable_kernel_cache) {
+        key_t key(context, pool_desc->flags, pool_desc->count);
+        auto key_value = cache.find(key);
+        if (key_value != cache.end()) {
+            *event_pool = key_value->second;
+            cache.erase(key_value);
+            LOG_DEBUG("loaded from cache: event pool: ", *event_pool);
+            return;
+        }
+    }
+    ZE_CALL(zeEventPoolCreate, (context, pool_desc, 0, nullptr, event_pool));
+}
+
+void event_pool_cache::push(ze_context_handle_t context,
+                            ze_event_pool_desc_t* pool_desc,
+                            ze_event_pool_handle_t* event_pool) {
+    CCL_THROW_IF_NOT(context);
+    CCL_THROW_IF_NOT(pool_desc);
+    CCL_THROW_IF_NOT(event_pool);
+    if (ccl::global_data::env().enable_kernel_cache) {
+        key_t key(context, pool_desc->flags, pool_desc->count);
+        cache.insert({ std::move(key), *event_pool });
+        LOG_DEBUG("inserted to cache: event pool: ", *event_pool);
+        return;
+    }
+    ZE_CALL(zeEventPoolDestroy, (*event_pool));
+}
+
+// device_mem_cache
+device_mem_cache::~device_mem_cache() {
+    if (!cache.empty()) {
+        LOG_WARN("device memory cache is not empty, size: ", cache.size());
+    }
+    clear();
+}
+
+void device_mem_cache::clear() {
+    LOG_DEBUG("clear device memory cache: size: ", cache.size());
+    for (auto& key_value : cache) {
+        ZE_CALL(zeMemFree, (std::get<0>(key_value.first), key_value.second))
+    }
+    cache.clear();
+}
+
+void device_mem_cache::get(ze_context_handle_t context,
+                           ze_device_handle_t device,
+                           ze_device_mem_alloc_desc_t* device_mem_alloc_desc,
+                           size_t size_bytes,
+                           size_t alignment,
+                           void** pptr) {
+    CCL_THROW_IF_NOT(context);
+    CCL_THROW_IF_NOT(device);
+    CCL_THROW_IF_NOT(device_mem_alloc_desc);
+    if (ccl::global_data::env().enable_kernel_cache) {
+        key_t key(context,
+                  device,
+                  size_bytes,
+                  device_mem_alloc_desc->flags,
+                  device_mem_alloc_desc->ordinal);
+        auto key_value = cache.find(key);
+        if (key_value != cache.end()) {
+            *pptr = key_value->second;
+            cache.erase(key_value);
+            LOG_DEBUG("loaded from cache: device memory: ", *pptr);
+            return;
+        }
+    }
+    ZE_CALL(zeMemAllocDevice,
+            (context, device_mem_alloc_desc, size_bytes, alignment, device, pptr));
+}
+
+void device_mem_cache::push(ze_context_handle_t context,
+                            ze_device_handle_t device,
+                            ze_device_mem_alloc_desc_t* device_mem_alloc_desc,
+                            size_t size_bytes,
+                            size_t alignment,
+                            void** pptr) {
+    CCL_THROW_IF_NOT(context);
+    CCL_THROW_IF_NOT(device);
+    CCL_THROW_IF_NOT(device_mem_alloc_desc);
+    if (ccl::global_data::env().enable_kernel_cache) {
+        key_t key(context,
+                  device,
+                  size_bytes,
+                  device_mem_alloc_desc->flags,
+                  device_mem_alloc_desc->ordinal);
+        cache.insert({ std::move(key), *pptr });
+        LOG_DEBUG("inserted to cache: device memory: ", *pptr);
+        return;
+    }
+    ZE_CALL(zeMemFree, (context, *pptr));
+}
+
+// cache
 cache::~cache() {
     for (auto& instance : fences) {
         instance.clear();
@@ -282,6 +403,14 @@ cache::~cache() {
     }
 
     for (auto& instance : queues) {
+        instance.clear();
+    }
+
+    for (auto& instance : event_pools) {
+        instance.clear();
+    }
+
+    for (auto& instance : device_mems) {
         instance.clear();
     }
 

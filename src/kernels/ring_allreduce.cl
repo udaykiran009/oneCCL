@@ -14,14 +14,14 @@
 // the value must be one as it's used for division inside the kernel.
 // Op - A operation parameter(e.g. add(x, y))
 // OpName - Operator name which goes to the kernel name, e.g. OpName = add, Op = __add_int(actual function)
-#define DEFINE_KERNEL(Name, T, VecSize, Op, OpName) \
-    __kernel void allreduce_execution_##Name##_##OpName(int my_rank, \
-                                                        int comm_size, \
-                                                        ulong count, \
-                                                        const __global T* input_buffer, \
-                                                        __global T* output_buffer, \
-                                                        const __global T* right_input_buffer, \
-                                                        __global T* right_output_buffer) { \
+#define DEFINE_ALLREDUCE_KERNEL(Name, T, VecSize, Op, OpName) \
+    __kernel void allreduce_kernel_##Name##_##OpName(int my_rank, \
+                                                     int comm_size, \
+                                                     ulong count, \
+                                                     const __global T* input_buffer, \
+                                                     __global T* output_buffer, \
+                                                     const __global T* right_input_buffer, \
+                                                     __global T* right_output_buffer) { \
         DEBUG_BLOCK(printf("rank: %d, comm size: %d, count: %zu\n", my_rank, comm_size, count)); \
         size_t work_group_size = get_global_size(0); \
         size_t thread_id = get_global_id(0); \
@@ -30,6 +30,23 @@
             const size_t idx = thread_id + i; \
             output_buffer[idx] = Op(input_buffer[idx], right_input_buffer[idx]); \
             right_output_buffer[idx] = output_buffer[idx]; \
+        } \
+    }
+
+#define DEFINE_REDUCE_LOCAL_KERNEL(Name, T, VecSize, Op, OpName) \
+    __kernel void reduce_local_kernel_##Name##_##OpName(int my_rank, \
+                                                        int comm_size, \
+                                                        ulong count, \
+                                                        const __global T* input_buffer_1, \
+                                                        const __global T* input_buffer_2, \
+                                                        __global T* output_buffer) { \
+        DEBUG_BLOCK(printf("rank: %d, comm size: %d, count: %zu\n", my_rank, comm_size, count)); \
+        size_t work_group_size = get_global_size(0); \
+        size_t thread_id = get_global_id(0); \
+\
+        for (size_t i = 0; thread_id + i < count; i += work_group_size) { \
+            const size_t idx = thread_id + i; \
+            output_buffer[idx] = Op(input_buffer_1[idx], input_buffer_2[idx]); \
         } \
     }
 
@@ -267,24 +284,24 @@
 #define VEC_SIZE RING_ALLREDUCE_VEC_SIZE
 
 #define DEFINE_KERNELS_WITH_OP(OpName) \
-    DEFINE_KERNEL(int8, char, VEC_SIZE, __##OpName##_##char, OpName) \
-    DEFINE_KERNEL(uint8, uchar, VEC_SIZE, __##OpName##_##uchar, OpName) \
+    DEFINE_ALLREDUCE_KERNEL(int8, char, VEC_SIZE, __##OpName##_##char, OpName) \
+    DEFINE_ALLREDUCE_KERNEL(uint8, uchar, VEC_SIZE, __##OpName##_##uchar, OpName) \
 \
-    DEFINE_KERNEL(int16, short, VEC_SIZE, __##OpName##_##short, OpName) \
-    DEFINE_KERNEL(uint16, ushort, VEC_SIZE, __##OpName##_##ushort, OpName) \
+    DEFINE_ALLREDUCE_KERNEL(int16, short, VEC_SIZE, __##OpName##_##short, OpName) \
+    DEFINE_ALLREDUCE_KERNEL(uint16, ushort, VEC_SIZE, __##OpName##_##ushort, OpName) \
 \
-    DEFINE_KERNEL(int32, int, VEC_SIZE, __##OpName##_##int, OpName) \
-    DEFINE_KERNEL(uint32, uint, VEC_SIZE, __##OpName##_##uint, OpName) \
+    DEFINE_ALLREDUCE_KERNEL(int32, int, VEC_SIZE, __##OpName##_##int, OpName) \
+    DEFINE_ALLREDUCE_KERNEL(uint32, uint, VEC_SIZE, __##OpName##_##uint, OpName) \
 \
-    DEFINE_KERNEL(int64, long, VEC_SIZE, __##OpName##_##long, OpName) \
-    DEFINE_KERNEL(uint64, ulong, VEC_SIZE, __##OpName##_##ulong, OpName) \
+    DEFINE_ALLREDUCE_KERNEL(int64, long, VEC_SIZE, __##OpName##_##long, OpName) \
+    DEFINE_ALLREDUCE_KERNEL(uint64, ulong, VEC_SIZE, __##OpName##_##ulong, OpName) \
 \
-    DEFINE_KERNEL(float32, float, VEC_SIZE, __##OpName##_##float, OpName) \
-    DEFINE_KERNEL(float64, double, VEC_SIZE, __##OpName##_##double, OpName)
+    DEFINE_ALLREDUCE_KERNEL(float32, float, VEC_SIZE, __##OpName##_##float, OpName) \
+    DEFINE_ALLREDUCE_KERNEL(float64, double, VEC_SIZE, __##OpName##_##double, OpName)
 
 #define DEFINE_KERNELS_WITH_LP_OP(OpName) \
-    DEFINE_KERNEL(bfloat16, ushort, VEC_SIZE, __bf16_##OpName##_##ushort, OpName) \
-    DEFINE_KERNEL(float16, half, VEC_SIZE, __##OpName##_##half, OpName)
+    DEFINE_ALLREDUCE_KERNEL(bfloat16, ushort, VEC_SIZE, __bf16_##OpName##_##ushort, OpName) \
+    DEFINE_ALLREDUCE_KERNEL(float16, half, VEC_SIZE, __##OpName##_##half, OpName)
 
 #define DEFINE_OPS(T) \
     DEFINE_SUM_OP(T) \
@@ -333,3 +350,75 @@ DEFINE_KERNELS_WITH_LP_OP(sum)
 DEFINE_KERNELS_WITH_LP_OP(prod)
 DEFINE_KERNELS_WITH_LP_OP(min)
 DEFINE_KERNELS_WITH_LP_OP(max)
+
+#define DEFINE_REDUCE_LOCAL_KERNELS_WITH_OP(OpName) \
+    DEFINE_REDUCE_LOCAL_KERNEL(int8, char, VEC_SIZE, __reduce_local_##OpName##_##char, OpName) \
+    DEFINE_REDUCE_LOCAL_KERNEL(uint8, uchar, VEC_SIZE, __reduce_local_##OpName##_##uchar, OpName) \
+\
+    DEFINE_REDUCE_LOCAL_KERNEL(int16, short, VEC_SIZE, __reduce_local_##OpName##_##short, OpName) \
+    DEFINE_REDUCE_LOCAL_KERNEL( \
+        uint16, ushort, VEC_SIZE, __reduce_local_##OpName##_##ushort, OpName) \
+\
+    DEFINE_REDUCE_LOCAL_KERNEL(int32, int, VEC_SIZE, __reduce_local_##OpName##_##int, OpName) \
+    DEFINE_REDUCE_LOCAL_KERNEL(uint32, uint, VEC_SIZE, __reduce_local_##OpName##_##uint, OpName) \
+\
+    DEFINE_REDUCE_LOCAL_KERNEL(int64, long, VEC_SIZE, __reduce_local_##OpName##_##long, OpName) \
+    DEFINE_REDUCE_LOCAL_KERNEL(uint64, ulong, VEC_SIZE, __reduce_local_##OpName##_##ulong, OpName) \
+\
+    DEFINE_REDUCE_LOCAL_KERNEL( \
+        float32, float, VEC_SIZE, __reduce_local_##OpName##_##float, OpName) \
+    DEFINE_REDUCE_LOCAL_KERNEL( \
+        float64, double, VEC_SIZE, __reduce_local_##OpName##_##double, OpName)
+
+#define DEFINE_KERNELS_REDUCE_LOCAL_WITH_LP_OP(OpName) \
+    DEFINE_REDUCE_LOCAL_KERNEL( \
+        bfloat16, ushort, VEC_SIZE, __reduce_local_bf16_##OpName##_##ushort, OpName) \
+    DEFINE_REDUCE_LOCAL_KERNEL(float16, half, VEC_SIZE, __reduce_local_##OpName##_##half, OpName)
+
+#define DEFINE_REDUCE_LOCAL_OPS(T) \
+    DEFINE_REDUCE_LOCAL_SUM_OP(T) \
+    DEFINE_REDUCE_LOCAL_PROD_OP(T) \
+    DEFINE_REDUCE_LOCAL_MIN_OP(T) \
+    DEFINE_REDUCE_LOCAL_MAX_OP(T)
+
+#define DEFINE_REDUCE_LOCAL_BF16OPS(T) \
+    DEFINE_REDUCE_LOCAL_BF16SUM_OP(T) \
+    DEFINE_REDUCE_LOCAL_BF16PROD_OP(T) \
+    DEFINE_REDUCE_LOCAL_BF16MIN_OP(T) \
+    DEFINE_REDUCE_LOCAL_BF16MAX_OP(T)
+
+#define DEFINE_REDUCE_LOCAL_FP16OPS(T) \
+    DEFINE_REDUCE_LOCAL_FP16SUM_OP(T) \
+    DEFINE_REDUCE_LOCAL_FP16PROD_OP(T) \
+    DEFINE_REDUCE_LOCAL_FP16MIN_OP(T) \
+    DEFINE_REDUCE_LOCAL_FP16MAX_OP(T)
+
+// Define Op function for each supported type(use vector types for some of them as required by the kernel)
+DEFINE_REDUCE_LOCAL_OPS(char)
+DEFINE_REDUCE_LOCAL_OPS(uchar)
+
+DEFINE_REDUCE_LOCAL_OPS(short)
+DEFINE_REDUCE_LOCAL_OPS(ushort)
+
+DEFINE_REDUCE_LOCAL_OPS(int)
+DEFINE_REDUCE_LOCAL_OPS(uint)
+
+DEFINE_REDUCE_LOCAL_OPS(long)
+DEFINE_REDUCE_LOCAL_OPS(ulong)
+
+DEFINE_REDUCE_LOCAL_OPS(float)
+DEFINE_REDUCE_LOCAL_OPS(double)
+
+DEFINE_REDUCE_LOCAL_BF16OPS(ushort)
+DEFINE_REDUCE_LOCAL_FP16OPS(half)
+
+// Define the actual kernels
+DEFINE_REDUCE_LOCAL_KERNELS_WITH_OP(sum)
+DEFINE_REDUCE_LOCAL_KERNELS_WITH_OP(prod)
+DEFINE_REDUCE_LOCAL_KERNELS_WITH_OP(min)
+DEFINE_REDUCE_LOCAL_KERNELS_WITH_OP(max)
+
+DEFINE_KERNELS_REDUCE_LOCAL_WITH_LP_OP(sum)
+DEFINE_KERNELS_REDUCE_LOCAL_WITH_LP_OP(prod)
+DEFINE_KERNELS_REDUCE_LOCAL_WITH_LP_OP(min)
+DEFINE_KERNELS_REDUCE_LOCAL_WITH_LP_OP(max)

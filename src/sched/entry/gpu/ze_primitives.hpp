@@ -20,7 +20,7 @@ namespace ze {
     } while (0);
 
 constexpr ze_fence_desc_t default_fence_desc = { .stype = ZE_STRUCTURE_TYPE_FENCE_DESC,
-                                                 .pNext = NULL,
+                                                 .pNext = nullptr,
                                                  .flags = 0 };
 
 constexpr ze_kernel_desc_t default_kernel_desc = { .stype = ZE_STRUCTURE_TYPE_KERNEL_DESC,
@@ -30,7 +30,7 @@ constexpr ze_kernel_desc_t default_kernel_desc = { .stype = ZE_STRUCTURE_TYPE_KE
 
 constexpr ze_command_list_desc_t default_cmd_list_desc = {
     .stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC,
-    .pNext = NULL,
+    .pNext = nullptr,
     .commandQueueGroupOrdinal = 0,
     .flags = 0,
 };
@@ -47,10 +47,22 @@ constexpr ze_command_queue_desc_t default_comp_queue_desc = {
 
 constexpr ze_device_mem_alloc_desc_t default_device_mem_alloc_desc = {
     .stype = ZE_STRUCTURE_TYPE_DEVICE_MEM_ALLOC_DESC,
-    .pNext = NULL,
+    .pNext = nullptr,
     .flags = 0,
     .ordinal = 0
 };
+
+constexpr ze_event_pool_desc_t default_event_pool_desc = { .stype =
+                                                               ZE_STRUCTURE_TYPE_EVENT_POOL_DESC,
+                                                           .pNext = nullptr,
+                                                           .flags = 0,
+                                                           .count = 0 };
+
+constexpr ze_event_desc_t default_event_desc = { .stype = ZE_STRUCTURE_TYPE_EVENT_DESC,
+                                                 .pNext = nullptr,
+                                                 .index = 0,
+                                                 .signal = 0,
+                                                 .wait = 0 };
 
 void load_module(std::string dir,
                  std::string file_name,

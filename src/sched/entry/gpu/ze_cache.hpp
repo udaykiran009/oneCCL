@@ -116,13 +116,67 @@ private:
     void load(ze_context_handle_t context, ze_device_handle_t device, ze_module_handle_t* module);
 };
 
+class event_pool_cache {
+public:
+    event_pool_cache() = default;
+    ~event_pool_cache();
+
+    void clear();
+
+    void get(ze_context_handle_t context,
+             ze_event_pool_desc_t* pool_desc,
+             ze_event_pool_handle_t* event_pool);
+
+    void push(ze_context_handle_t context,
+              ze_event_pool_desc_t* pool_desc,
+              ze_event_pool_handle_t* event_pool);
+
+private:
+    using key_t = typename std::tuple<ze_context_handle_t, ze_event_pool_flags_t, uint32_t>;
+    using value_t = ze_event_pool_handle_t;
+    std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
+};
+
+class device_mem_cache {
+public:
+    device_mem_cache() = default;
+    ~device_mem_cache();
+
+    void clear();
+
+    void get(ze_context_handle_t context,
+             ze_device_handle_t device,
+             ze_device_mem_alloc_desc_t* device_mem_alloc_desc,
+             size_t size_bytes,
+             size_t alignment,
+             void** pptr);
+
+    void push(ze_context_handle_t context,
+              ze_device_handle_t device,
+              ze_device_mem_alloc_desc_t* device_mem_alloc_desc,
+              size_t size_bytes,
+              size_t alignment,
+              void** pptr);
+
+private:
+    using key_t = typename std::tuple<ze_context_handle_t,
+                                      ze_device_handle_t,
+                                      size_t,
+                                      ze_device_mem_alloc_flags_t,
+                                      uint32_t>;
+    using value_t = void*;
+    std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
+};
+
 class cache {
 public:
     cache(size_t instance_count)
             : fences(instance_count),
               kernels(instance_count),
               lists(instance_count),
-              queues(instance_count) {}
+              queues(instance_count),
+              event_pools(instance_count),
+              device_mems(instance_count) {}
     cache(const cache&) = delete;
     cache& operator=(const cache&) = delete;
     ~cache();
@@ -162,6 +216,24 @@ public:
         modules.get(context, device, module);
     }
 
+    void get(size_t worker_idx,
+             ze_context_handle_t context,
+             ze_event_pool_desc_t* pool_desc,
+             ze_event_pool_handle_t* event_pool) {
+        event_pools.at(worker_idx).get(context, pool_desc, event_pool);
+    }
+
+    void get(size_t worker_idx,
+             ze_context_handle_t context,
+             ze_device_handle_t device,
+             ze_device_mem_alloc_desc_t* device_mem_alloc_desc,
+             size_t size,
+             size_t alignment,
+             void** pptr) {
+        device_mems.at(worker_idx)
+            .get(context, device, device_mem_alloc_desc, size, alignment, pptr);
+    }
+
     /* push */
     void push(size_t worker_idx,
               ze_command_queue_handle_t queue,
@@ -193,11 +265,31 @@ public:
         queues.at(worker_idx).push(context, device, queue_desc, queue);
     }
 
+    void push(size_t worker_idx,
+              ze_context_handle_t context,
+              ze_event_pool_desc_t* pool_desc,
+              ze_event_pool_handle_t* event_pool) {
+        event_pools.at(worker_idx).push(context, pool_desc, event_pool);
+    }
+
+    void push(size_t worker_idx,
+              ze_context_handle_t context,
+              ze_device_handle_t device,
+              ze_device_mem_alloc_desc_t* device_mem_alloc_desc,
+              size_t size,
+              size_t alignment,
+              void** pptr) {
+        device_mems.at(worker_idx)
+            .push(context, device, device_mem_alloc_desc, size, alignment, pptr);
+    }
+
 private:
     std::vector<fence_cache> fences;
     std::vector<kernel_cache> kernels;
     std::vector<list_cache> lists;
     std::vector<queue_cache> queues;
+    std::vector<event_pool_cache> event_pools;
+    std::vector<device_mem_cache> device_mems;
     module_cache modules;
 };
 

@@ -39,6 +39,8 @@ public:
     void update() override;
     void finalize();
 
+    void reset_sync_objects();
+
     bool is_strict_order_satisfied() override {
         return (status >= ccl_sched_entry_status_complete);
     }
@@ -71,6 +73,7 @@ private:
     void* recv_buf_ptr;
     void* right_send_buf_ptr;
     void* right_recv_buf_ptr;
+    void* tmp_buf_ptr;
     const int rank;
     const int comm_size;
     const unsigned long cnt;
@@ -88,6 +91,15 @@ private:
 
     ze_command_list_desc_t comp_list_desc;
     ze_command_list_handle_t comp_list;
+
+    ze_event_pool_desc_t event_pool_desc;
+    ze_event_pool_handle_t event_pool;
+
+    ze_event_handle_t copy_from_peer_event;
+    ze_event_handle_t reduce_local_kernel_event;
+    ze_event_handle_t copy_to_peer_event;
+
+    ze_device_mem_alloc_desc_t device_mem_alloc_desc;
 
     ze_module_handle_t module;
     ze_kernel_handle_t kernel;
