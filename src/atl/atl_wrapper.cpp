@@ -24,6 +24,7 @@ atl_attr_t atl_wrapper::attr = {
         0, /* enable_extra_ep */
         1, /* ep_count */
         ATL_MNIC_NONE, /* mnic_type */
+        "", /* mnic_name */
         1 /* mnic_count */
     },
 

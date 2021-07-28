@@ -160,6 +160,7 @@ void env_data::parse() {
     env_2_type(CCL_ATL_EXTRA_EP, enable_extra_ep);
 
     env_2_enum(CCL_MNIC, mnic_type_names, mnic_type);
+    env_2_type(CCL_MNIC_NAME, mnic_name_raw);
     env_2_type(CCL_MNIC_COUNT, mnic_count);
     if (mnic_count == CCL_ENV_SIZET_NOT_SPECIFIED) {
         mnic_count = worker_count;
@@ -357,6 +358,8 @@ void env_data::print(int rank) {
     LOG_DEBUG(CCL_ATL_EXTRA_EP, ": ", enable_extra_ep);
 
     LOG_INFO(CCL_MNIC, ": ", str_by_enum(mnic_type_names, mnic_type));
+    LOG_INFO(
+        CCL_MNIC_NAME, ": ", (mnic_name_raw.length()) ? mnic_name_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_MNIC_COUNT, ": ", mnic_count);
 
     LOG_INFO(CCL_ALLGATHERV,

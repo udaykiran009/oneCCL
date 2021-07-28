@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string>
 
 #ifndef container_of
 #define container_of(ptr, type, field) ((type*)((char*)ptr - offsetof(type, field)))
@@ -37,7 +38,7 @@
     do { \
         atl_status_t status = func; \
         if (status != FI_SUCCESS) { \
-            LOG_ERROR(#func "\n fails with status: ", status); \
+            CCL_THROW(#func "\n fails with status: ", status); \
             err_action; \
         } \
     } while (0)
@@ -105,6 +106,7 @@ typedef struct {
         int enable_extra_ep;
         size_t ep_count;
         atl_mnic_t mnic_type;
+        std::string mnic_name;
         size_t mnic_count;
     } in;
     struct {

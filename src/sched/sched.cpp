@@ -85,11 +85,18 @@ void ccl_sched::complete() {
     if (ccl::global_data::env().sched_profile) {
         timer.stop();
         if (entries.size() > 0) {
-            const char* coll_name =
-                ccl_coll_type_to_str(static_cast<ccl_master_sched*>(req)->coll_param.ctype);
             std::stringstream ss;
-            ss << "\n" << coll_name << " timers, usec\n";
-            ss << "total: " << timer.str() << "\n";
+            ss << "\ncoll:";
+
+            ccl_coll_param* profile_param = &(static_cast<ccl_master_sched*>(req)->coll_param);
+            ss << ccl_coll_type_to_str(profile_param->ctype);
+
+            /* TODO: tmp check, replace ccl_coll_entry_param by ccl_coll_param */
+            if (!profile_param->send_counts.empty()) {
+                ss << " count:" << profile_param->get_send_count();
+            }
+
+            ss << " time(uses):\ntotal: " << timer.str() << "\n";
             for (size_t idx = 0; idx < entries.size(); ++idx) {
                 ss << "[" << idx << "] " << entries[idx]->name() << ": "
                    << entries[idx]->timer.str() << "\n";

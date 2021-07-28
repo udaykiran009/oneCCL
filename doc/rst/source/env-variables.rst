@@ -591,8 +591,16 @@ CCL_MAX_SHORT_SIZE
 Set this environment variable to specify the threshold of the number of bytes for a collective operation to be split.
 
 
+Multi-NIC
+#########
+
+
+CCL_MNIC, CCL_MNIC_NAME and CCL_MNIC_COUNT define filters to select multiple NICs.
+|product_short| workers will be pinned on selected NICs in a round-robin way.
+
+
 CCL_MNIC
-########
+********
 **Syntax**
 
 ::
@@ -617,12 +625,39 @@ CCL_MNIC
 
 **Description**
 
-Set this environment variable to control multi-NIC selection policy.
-|product_short| workers will be pinned on selected NICs in a round-robin way.
+Set this environment variable to control multi-NIC selection by NIC locality.
+
+
+CCL_MNIC_NAME
+*************
+**Syntax**
+
+::
+
+  CCL_MNIC_NAME=<namelist>
+
+**Arguments**
+
+.. list-table::
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+
+   * - <namelist>
+     - Description
+   * - ``<namelist>``
+     - A comma-separated list of NIC full names or prefixes to filter NICs.
+       Use the ``^`` symbol to exclude NICs starting with the specified prefixes. For example,
+       if you provide a list ``mlx5_0,mlx5_1,^mlx5_2``, NICs with the names ``mlx5_0`` and ``mlx5_1``
+       will be selected, while ``mlx5_2`` will be excluded from the selection.
+
+**Description**
+
+Set this environment variable to control multi-NIC selection by NIC names.
 
 
 CCL_MNIC_COUNT
-##############
+**************
 **Syntax**
 
 ::

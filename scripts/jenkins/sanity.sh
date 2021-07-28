@@ -139,6 +139,8 @@ function enable_default_env()
     # flush cache inside ccl::barrier to avoid OOM
     # in case of caching and large number of different match_ids
     export CCL_CACHE_FLUSH=1
+    export CCL_MNIC=global
+    export CCL_MNIC_NAME=eno,mlx,hfi,^unknown
     export I_MPI_DEBUG=12
 }
 

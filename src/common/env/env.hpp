@@ -43,6 +43,7 @@ constexpr const char* CCL_ATL_SYNC_COLL = "CCL_ATL_SYNC_COLL";
 constexpr const char* CCL_ATL_EXTRA_EP = "CCL_ATL_EXTRA_EP";
 
 constexpr const char* CCL_MNIC = "CCL_MNIC";
+constexpr const char* CCL_MNIC_NAME = "CCL_MNIC_NAME";
 constexpr const char* CCL_MNIC_COUNT = "CCL_MNIC_COUNT";
 
 constexpr const char* CCL_ALLGATHERV = "CCL_ALLGATHERV";
@@ -146,6 +147,7 @@ public:
     int enable_extra_ep;
 
     atl_mnic_t mnic_type;
+    std::string mnic_name_raw;
     ssize_t mnic_count;
 
     /*
