@@ -480,6 +480,7 @@ function run_tests()
     else
         reduce_algo_list_ofi="rabenseifner tree double_tree"
     fi
+    ppns="1 2"
     case "$runtime" in
            ofi )
                export CCL_ATL_TRANSPORT=ofi
@@ -500,7 +501,7 @@ function run_tests()
                 done
 
                 algos="direct rabenseifner starlike ring double_tree recursive_doubling"
-                if [ ${node_label} == "mlsl2_test_gpu" ]
+                if [ ${node_label} == "mlsl2_test_gpu_ft" ]
                 then
                     algos="${algos} topo_ring"
                 fi
@@ -514,7 +515,14 @@ function run_tests()
                     then
                         CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
                     fi
-                    CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"
+                done
+
+                for ppn in $ppns
+                do
+                    for algo in $algos
+                    do
+                        CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_"$ppn"
+                    done
                 done
 
                 for algo in "direct" "naive" "scatter" "scatter_barrier"
@@ -562,8 +570,9 @@ function run_tests()
                     CCL_ALLGATHERV=$algo ctest -VV -C allgatherv_"$algo"
                 done
 
+
                 algos="rabenseifner starlike ring ring_rma double_tree recursive_doubling 2d"
-                if [ ${node_label} == "mlsl2_test_gpu" ]
+                if [ ${node_label} == "mlsl2_test_gpu_ft" ]
                 then
                     algos="${algos} topo_ring"
                 fi
@@ -584,8 +593,15 @@ function run_tests()
                         then
                             CCL_AR2D_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
                         fi
-                        CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"
                     fi
+                done
+
+                for ppn in $ppns
+                do
+                    for algo in $algos
+                    do
+                        CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_"$ppn"
+                    done
                 done
 
                 for algo in "naive" "scatter" "scatter_barrier"

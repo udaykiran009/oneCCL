@@ -94,6 +94,7 @@ void transport_data::init_comms() {
 }
 
 void transport_data::reset_comms() {
+    ccl::barrier(get_service_comm());
     comms.clear();
     service_comms.clear();
 }

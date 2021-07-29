@@ -384,6 +384,7 @@ void base_test<T>::copy_from_device_recv_buffers(test_operation<T>& op) {
 
 template <typename T>
 int base_test<T>::run(test_operation<T>& op) {
+    static int run_counter = 0;
     size_t iter = 0, result = 0;
 
     char* algo = getenv(ALGO_SELECTION_ENV);
@@ -441,7 +442,11 @@ int base_test<T>::run(test_operation<T>& op) {
             }
 
             result += check(op);
+            if ((run_counter % 10) == 0) {
+                ccl::barrier(transport_data::instance().get_service_comm());
+            }
         }
+        run_counter++;
         free_buffers(op);
     }
     catch (const std::exception& ex) {
