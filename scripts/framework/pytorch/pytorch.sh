@@ -49,14 +49,15 @@ set_run_env() {
     export I_MPI_DEBUG=12
 
     # OFI
-    export FI_LOG_LEVEL=INFO
+    #export FI_LOG_LEVEL=INFO
+    export FI_PROVIDER=verbs
+    #export FI_VERBS_IFACE=ib0
     if [[ ${CLUSTER} = "fabric" ]]
     then
         export FI_PROVIDER=verbs
-        export FI_VERBS_IFACE=ib0
-        export CCL_KVS_IFACE=ib0
+        #export CCL_KVS_IFACE=ib0
     else
-        export FI_PROVIDER=psm3
+        #export FI_PROVIDER=psm3
         export PSM3_MULTI_EP=1 # to handle case when MPI initializes PSM3 before CCL
         export PSM3_RDMA=2 # enables user space RC QP RDMA
         export PSM3_MR_CACHE_MODE=2 # near term workaround until a MR cache solution completed
@@ -114,7 +115,7 @@ DEFAULT_RUN_TESTS="0"
 
 DEFAULT_PATH_TO_TOKEN_FILE_1S=""
 DEFAULT_USERNAME_1S=""
-DEFAULT_PROXY=""
+DEFAULT_PROXY="http://proxy-us.intel.com:912"
 
 DEFAULT_CLUSTER="ccl"
 
@@ -509,8 +510,8 @@ install_ccl() {
 
     # intentionally build with MPI support
     # to get MPI launcher in CCL install dir to be used for test launches below
-    cmake .. -DBUILD_FT=0 -DBUILD_EXAMPLES=0 -DBUILD_CONFIG=0 -DCMAKE_INSTALL_PREFIX=${CCL_INSTALL_DIR} \
-        -DENABLE_MPI=1 -DENABLE_MPI_TESTS=0 -DLIBFABRIC_DIR=${OFI_INSTALL_DIR}
+    cmake .. -DBUILD_FT=0 -DBUILD_EXAMPLES=1 -DBUILD_CONFIG=0 -DCMAKE_INSTALL_PREFIX=${CCL_INSTALL_DIR} \
+        -DENABLE_MPI=1 -DENABLE_MPI_TESTS=1 -DLIBFABRIC_DIR=${OFI_INSTALL_DIR}
     check_exit_code $? "Configure CCL failed"
 
     make -j install
@@ -771,8 +772,8 @@ run_tests() {
             --colls allgather,allgatherv,allreduce,alltoall,alltoallv,bcast \
             --teams world --dtypes float32 --ops sum --inplace 2 --msgsize 64:1024 2>&1 | tee -a ${TESTS_LOG_FILE}"
         echo_log "exec cmd: $cmd"
-        eval ${cmd}
-        check_exit_code $? "Run UCC test failed"
+        # eval ${cmd}
+        # check_exit_code $? "Run UCC test failed"
         echo "================ ****************** ================" | tee -a ${TESTS_LOG_FILE}
 
         echo "================ 2. torch-ucc test ================" | tee -a ${TESTS_LOG_FILE}
@@ -785,7 +786,15 @@ run_tests() {
         echo "================ ****************** ================" | tee -a ${TESTS_LOG_FILE}
     fi
 
-    echo "================ 3. PARAM test ================" | tee -a ${TESTS_LOG_FILE}
+    echo "================ 3. CCL test ================" | tee -a ${TESTS_LOG_FILE}
+    cd ${CCL_INSTALL_DIR}/examples/benchmark
+    cmd="mpiexec ${N} ${PPN} ${EXTRA_ARGS} ./benchmark -l all 2>&1 | tee -a ${TESTS_LOG_FILE}"
+    echo_log "exec cmd: $cmd"
+    eval ${cmd}
+    check_exit_code $? "Run CCL test failed"
+    echo "================ ****************** ================" | tee -a ${TESTS_LOG_FILE}
+
+    echo "================ 4. PARAM test ================" | tee -a ${TESTS_LOG_FILE}
     if [[ -d ${PARAM_SRC_DIR} ]]
     then
         rm -rf ${PARAM_SRC_DIR}
