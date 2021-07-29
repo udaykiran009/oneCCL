@@ -68,10 +68,6 @@ public:
         return in_bin_status;
     }
 
-    ccl_sched_memory& get_memory() {
-        return memory;
-    }
-
     /**
      * Reset runtime parameters and all entries
      */
@@ -133,7 +129,7 @@ public:
     ccl_sched_queue* queue = nullptr; /* cached pointer to queue, valid even after execution */
     size_t start_idx = 0; /* index to start */
 
-    /* 
+    /*
       used for unique ATL tag creation in algorithms with multiple parallel sub-schedules
       set once and then used for all entries
     */
@@ -150,7 +146,7 @@ public:
     bool strict_order = false;
 
     /*
-      limits number of active entries 
+      limits number of active entries
       mostly makes sense for ATL entries
     */
     ccl::flow_control flow_control;

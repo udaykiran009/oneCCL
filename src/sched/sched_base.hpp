@@ -61,6 +61,12 @@ struct ccl_sched_memory {
     std::list<ccl_sched_sycl_buffer_handler> sycl_buf_list;
 #ifdef MULTI_GPU_SUPPORT
     ze_handle_manager handle_manager;
+    // sync event which we use to signal to the user about collective completion
+    // and the pool it's created from(need to keep it to know what to return to the cache)
+    // TODO: this is not the best place for these objects, think about moving them
+    // to ccl_master_sched where they actually used
+    ze_event_handle_t sync_event;
+    ze_event_pool_handle_t sync_pool;
 #endif // MULTI_GPU_SUPPORT
 #endif // CCL_ENABLE_SYCL
 };
@@ -111,6 +117,10 @@ struct ccl_sched_base {
 
     void set_add_mode(ccl_sched_add_mode mode) {
         add_mode = mode;
+    }
+
+    ccl_sched_memory& get_memory() {
+        return memory;
     }
 
     ccl_coll_param coll_param{};

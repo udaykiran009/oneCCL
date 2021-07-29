@@ -3,6 +3,7 @@
 
 #include "coll/selection/selection.hpp"
 #include "common/global/global.hpp"
+#include "common/utils/sycl_utils.hpp"
 #include "parallelizer/parallelizer.hpp"
 #include "sched/entry/coll/coll_entry_helper.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
@@ -98,6 +99,20 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
        because it sets dependencies for all partial schedules
        which already should be filled */
     process_deps(sched);
+
+#ifdef CCL_ENABLE_SYCL
+    if (utils::should_use_sycl_output_event(sched->coll_param.stream)) {
+        auto& part_scheds = sched->partial_scheds;
+        size_t sched_count = part_scheds.size();
+
+        for (size_t idx = 0; idx < sched_count; idx++) {
+            part_scheds[idx]->set_add_mode(ccl_sched_add_back);
+        }
+        sched->sync_partial_scheds();
+
+        entry_factory::make_entry<ze_event_signal_entry>(part_scheds[0].get(), sched);
+    }
+#endif
 
     return ccl::status::success;
 }

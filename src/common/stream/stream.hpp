@@ -45,6 +45,10 @@ public:
         return (type == stream_type::cpu || type == stream_type::gpu);
     }
 
+    bool is_gpu() const {
+        return type == stream_type::gpu;
+    }
+
 #ifdef CCL_ENABLE_SYCL
     cl::sycl::backend get_backend() const noexcept {
         return backend;

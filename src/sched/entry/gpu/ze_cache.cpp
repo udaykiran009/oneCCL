@@ -293,6 +293,7 @@ void event_pool_cache::clear() {
     cache.clear();
 }
 
+// TODO: comment about non-optimal implementation and potential to improve
 void event_pool_cache::get(ze_context_handle_t context,
                            ze_event_pool_desc_t* pool_desc,
                            ze_event_pool_handle_t* event_pool) {
@@ -300,6 +301,7 @@ void event_pool_cache::get(ze_context_handle_t context,
     CCL_THROW_IF_NOT(pool_desc);
     CCL_THROW_IF_NOT(event_pool);
     if (ccl::global_data::env().enable_kernel_cache) {
+        // TODO: we can potentially use pool with count >= pool_desc->count
         key_t key(context, pool_desc->flags, pool_desc->count);
         auto key_value = cache.find(key);
         if (key_value != cache.end()) {

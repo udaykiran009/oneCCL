@@ -35,6 +35,7 @@ option(BUILD_UT "Build unit tests" FALSE)
 option(BUILD_CONFIG "Build cmake configs" TRUE)
 option(ENABLE_MPI "Enable MPI for library" TRUE)
 option(ENABLE_MPI_TESTS "Enable MPI for tests" TRUE)
+option(ENABLE_SYCL_INTEROP_EVENT "Enable support for interop event functionality" FALSE)
 
 option(USE_CODECOV_FLAGS "Calculate code coverage" FALSE)
 option(WITH_ASAN "Use address sanitizer, can only be used in Debug build" FALSE)
@@ -144,6 +145,12 @@ if (${CMAKE_C_COMPILER_ID} STREQUAL "GNU" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL 
         #c++17 introduces algined new operator, use it
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -faligned-new")
     endif()
+endif()
+
+# This is a temporal workaround until we fully switch to a new version of the compiler
+# that supports the functionality
+if (${ENABLE_SYCL_INTEROP_EVENT})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCCL_ENABLE_SYCL_INTEROP_EVENT=1")
 endif()
 
 # Clang doesn't automatically detects ninja processes as supporting colored output

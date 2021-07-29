@@ -11,16 +11,7 @@ public:
         return "master_sched";
     }
 
-    ccl_master_sched(const ccl_coll_param& coll_param)
-            : ccl_sched_base(coll_param),
-              ccl_request(),
-              partial_scheds() {
-#ifdef ENABLE_DEBUG
-        set_dump_callback([this](std::ostream& out) {
-            dump(out);
-        });
-#endif
-    }
+    ccl_master_sched(const ccl_coll_param& coll_param);
 
     ccl_master_sched(const ccl_master_sched& src) = delete;
 
@@ -49,5 +40,6 @@ public:
     static ccl_master_sched_ptr create(const ccl_coll_param& param, const ccl_coll_attr& attr);
 
 private:
+    void reset_state();
     void prepare_partial_scheds();
 };
