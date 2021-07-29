@@ -227,11 +227,11 @@ public:
              ze_context_handle_t context,
              ze_device_handle_t device,
              ze_device_mem_alloc_desc_t* device_mem_alloc_desc,
-             size_t size,
+             size_t size_bytes,
              size_t alignment,
              void** pptr) {
         device_mems.at(worker_idx)
-            .get(context, device, device_mem_alloc_desc, size, alignment, pptr);
+            .get(context, device, device_mem_alloc_desc, size_bytes, alignment, pptr);
     }
 
     /* push */
@@ -276,11 +276,11 @@ public:
               ze_context_handle_t context,
               ze_device_handle_t device,
               ze_device_mem_alloc_desc_t* device_mem_alloc_desc,
-              size_t size,
+              size_t size_bytes,
               size_t alignment,
               void** pptr) {
         device_mems.at(worker_idx)
-            .push(context, device, device_mem_alloc_desc, size, alignment, pptr);
+            .push(context, device, device_mem_alloc_desc, size_bytes, alignment, pptr);
     }
 
 private:

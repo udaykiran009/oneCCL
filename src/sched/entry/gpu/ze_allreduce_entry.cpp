@@ -304,13 +304,13 @@ void ze_allreduce_entry::finalize() {
         // event_pool_cache
         ccl::global_data::get().ze_cache->push(worker_idx, context, &event_pool_desc, &event_pool);
         // device_mem_cache
-        ccl::global_data::get().ze_cache->get(worker_idx,
-                                              context,
-                                              device,
-                                              &device_mem_alloc_desc,
-                                              buf_size_bytes,
-                                              0, /*alignment*/
-                                              &tmp_buf_ptr);
+        ccl::global_data::get().ze_cache->push(worker_idx,
+                                               context,
+                                               device,
+                                               &device_mem_alloc_desc,
+                                               buf_size_bytes,
+                                               0, /*alignment*/
+                                               &tmp_buf_ptr);
 
         ZE_CALL(zeEventDestroy, (copy_from_peer_event));
         ZE_CALL(zeEventDestroy, (reduce_local_kernel_event));

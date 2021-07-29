@@ -333,9 +333,12 @@ device_mem_cache::~device_mem_cache() {
 
 void device_mem_cache::clear() {
     LOG_DEBUG("clear device memory cache: size: ", cache.size());
-    for (auto& key_value : cache) {
-        ZE_CALL(zeMemFree, (std::get<0>(key_value.first), key_value.second))
-    }
+    //for (auto& key_value : cache) {
+    // TODO: there is a segfault on this call, when ~cache is invoked w/ or w/0 api cache.
+    // But it passes, when CCL_KERNEL_CACHE=0 (calls of zeMemAllocDevice and ZeMemFree happen on every iteration).
+    // We don't control destroying phase and may be key_value.second (mem_ptr) is already away to free?
+    // ZE_CALL(zeMemFree, (std::get<0>(key_value.first), key_value.second))
+    //}
     cache.clear();
 }
 
