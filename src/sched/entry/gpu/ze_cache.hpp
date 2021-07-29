@@ -105,15 +105,24 @@ public:
 
     void clear();
 
-    void get(ze_context_handle_t context, ze_device_handle_t device, ze_module_handle_t* module);
+    void get(ze_context_handle_t context,
+             ze_device_handle_t device,
+             ze_module_handle_t* module,
+             std::string spv_name);
 
 private:
     using key_t = ze_device_handle_t;
     using value_t = ze_module_handle_t;
-    std::unordered_multimap<ze_device_handle_t, ze_module_handle_t> cache;
+    std::unordered_multimap<std::tuple<ze_device_handle_t, std::string>,
+                            ze_module_handle_t,
+                            utils::tuple_hash>
+        cache;
     std::mutex mutex;
 
-    void load(ze_context_handle_t context, ze_device_handle_t device, ze_module_handle_t* module);
+    void load(ze_context_handle_t context,
+              ze_device_handle_t device,
+              ze_module_handle_t* module,
+              std::string spv_name);
 };
 
 class event_pool_cache {
@@ -212,8 +221,11 @@ public:
         queues.at(worker_idx).get(context, device, queue_desc, queue);
     }
 
-    void get(ze_context_handle_t context, ze_device_handle_t device, ze_module_handle_t* module) {
-        modules.get(context, device, module);
+    void get(ze_context_handle_t context,
+             ze_device_handle_t device,
+             ze_module_handle_t* module,
+             std::string spv_name) {
+        modules.get(context, device, module, spv_name);
     }
 
     void get(size_t worker_idx,

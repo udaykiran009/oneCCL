@@ -86,7 +86,7 @@ void ze_allreduce_entry::init() {
     ccl::global_data::get().ze_cache->get(worker_idx, context, device, &comp_list_desc, &comp_list);
     LOG_DEBUG("get compute list: { ordinal: ", comp_list_desc.commandQueueGroupOrdinal, " }");
 
-    ccl::global_data::get().ze_cache->get(context, device, &module);
+    ccl::global_data::get().ze_cache->get(context, device, &module, "ring_allreduce.spv");
 
     if (!ccl::global_data::env().enable_kernel_1s_copy_ops) {
         kernel_name = "allreduce_kernel_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);

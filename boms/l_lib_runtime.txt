@@ -12,6 +12,7 @@ DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCo
 <deliverydir>/l_lib_runtime/kernels/ring_bcast.spv	<installdir><l_ccl_install_path><l_ccl_platform>/lib/kernels/ring_bcast.spv		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/src/kernels/ring_bcast.spv
 <deliverydir>/l_lib_runtime/kernels/ring_reduce_scatter.spv	<installdir><l_ccl_install_path><l_ccl_platform>/lib/kernels/ring_reduce_scatter.spv		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/src/kernels/ring_reduce_scatter.spv
 <deliverydir>/l_lib_runtime/kernels/ring_reduce.spv	<installdir><l_ccl_install_path><l_ccl_platform>/lib/kernels/ring_reduce.spv		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/src/kernels/ring_reduce.spv
+<deliverydir>/l_lib_runtime/kernels/reduce_local.spv	<installdir><l_ccl_install_path><l_ccl_platform>/lib/kernels/reduce_local.spv		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/src/kernels/reduce_local.spv
 <deliverydir>/l_lib_runtime/pkgconfig/ccl-cpu_gpu_dpcpp.pc	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_lib_pkgconfig>/ccl-cpu_gpu_dpcpp.pc		external	Ksenya Kochanova		1	644	redistributable	root	<installroot>/lib/pkgconfig/ccl-cpu_gpu_dpcpp.pc
 <deliverydir>/l_lib_runtime/pkgconfig/ccl-cpu_icc.pc	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_lib_pkgconfig>/ccl-cpu_icc.pc		external	Ksenya Kochanova		1	644	redistributable	root	<installroot>/lib/pkgconfig/ccl-cpu_icc.pc
 #Intel Confidential
