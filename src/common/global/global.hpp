@@ -90,7 +90,6 @@ public:
     std::unique_ptr<ccl_fusion_manager> fusion_manager;
     std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>> algorithm_selector;
     std::unique_ptr<ccl_hwloc_wrapper> hwloc_wrapper;
-    std::unique_ptr<group_context> global_ctx;
     std::atomic<size_t> kernel_counter;
 
 #ifdef MULTI_GPU_SUPPORT
