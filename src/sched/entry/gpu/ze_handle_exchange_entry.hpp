@@ -37,7 +37,8 @@ public:
     ze_handle_exchange_entry() = delete;
     ze_handle_exchange_entry(ccl_sched* sched,
                              ccl_comm* comm,
-                             const std::vector<void*>& in_buffers);
+                             const std::vector<void*>& in_buffers,
+                             const int skip_rank = -1);
     ~ze_handle_exchange_entry();
 
     void start() override;

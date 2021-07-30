@@ -98,6 +98,7 @@ constexpr const char* CCL_KERNEL_1S_LEAD = "CCL_KERNEL_1S_LEAD";
 constexpr const char* CCL_ZE_SERIALIZE = "CCL_ZE_SERIALIZE";
 constexpr const char* CCL_KERNEL_1S_USE_COPY_OPS = "CCL_KERNEL_1S_USE_COPY_OPS";
 constexpr const char* CCL_KERNEL_OUTPUT_EVENT = "CCL_KERNEL_OUTPUT_EVENT";
+constexpr const char* CCL_KERNEL_1S_IPC_WA = "CCL_KERNEL_1S_IPC_WA";
 
 constexpr const char* CCL_BF16 = "CCL_BF16";
 constexpr const char* CCL_FP16 = "CCL_FP16";
@@ -209,6 +210,7 @@ public:
     int ze_serialize_mode;
     int enable_kernel_1s_copy_ops;
     int enable_kernel_output_event;
+    int enable_kernel_1s_ipc_wa;
 
     ccl_bf16_impl_type bf16_impl_type;
     ccl_fp16_impl_type fp16_impl_type;

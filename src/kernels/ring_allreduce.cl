@@ -50,6 +50,16 @@
         } \
     }
 
+__kernel void empty_kernel(int my_rank,
+                           int comm_size,
+                           ulong count,
+                           const __global void* input_buffer,
+                           __global void* output_buffer,
+                           const __global void* right_input_buffer,
+                           __global void* right_output_buffer) {
+    return;
+}
+
 #define DEFINE_KERNEL_MONOLITHIC(Name, T, VecSize, Op, OpName) \
     __kernel void allreduce_execution_monolithic##Name##_##OpName( \
         int my_rank, \

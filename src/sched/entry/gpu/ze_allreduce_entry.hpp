@@ -98,12 +98,15 @@ private:
     ze_event_handle_t copy_from_peer_event;
     ze_event_handle_t reduce_local_kernel_event;
     ze_event_handle_t copy_to_peer_event;
+    ze_event_handle_t empty_kernel_event;
 
     ze_device_mem_alloc_desc_t device_mem_alloc_desc;
 
     ze_module_handle_t module;
     ze_kernel_handle_t kernel;
+    ze_kernel_handle_t empty_kernel;
     std::string kernel_name;
+    std::string empty_kernel_name;
     ze_group_count_t group_count;
 
     ze_fence_desc_t fence_desc;

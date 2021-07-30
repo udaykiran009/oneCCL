@@ -5,7 +5,8 @@
 
 ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
                                                    ccl_comm* comm,
-                                                   const std::vector<void*>& in_buffers)
+                                                   const std::vector<void*>& in_buffers,
+                                                   const int skip_rank)
         : sched_entry(sched),
           comm(comm),
           in_buffers(in_buffers),
@@ -24,7 +25,7 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
     handles.resize(comm_size);
 
     for (size_t idx = 0; idx < comm_size; idx++) {
-        handles[idx].resize(in_buffers.size());
+        handles[idx].resize(in_buffers.size(), ipc_handle_info{});
     }
     LOG_DEBUG("handles size: ", handles.size(), ", in_buffers size: ", in_buffers.size());
 
@@ -39,18 +40,23 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
     auto sycl_context = native_stream.get_context();
     context = sycl_context.template get_native<sycl::backend::level_zero>();
 
-    for (size_t buf_idx = 0; buf_idx < in_buffers.size(); buf_idx++) {
-        ze_ipc_mem_handle_t handle;
+    // Note: when we skip a valid rank
+    // we send simply fd = 0, we need to fix it
+    // i.e. skip recvmsg on the receiver side
+    if (!(skip_rank == rank)) {
+        for (size_t buf_idx = 0; buf_idx < in_buffers.size(); buf_idx++) {
+            ze_ipc_mem_handle_t handle;
 
-        // zeMemGetIpcHandle requires the provided pointer to be the base of an allocation.
-        // We handle this the following way: for an input buffer retrieve its base pointer
-        // and the offset from this base ptr. The base ptr is used for zeMemGetIpcHandle
-        // and the offset is sent to the other rank. On that rank the base ptr is retrieved
-        // and offsetted to get the actual input buffer ptr.
-        auto mem_info = get_mem_info(context, in_buffers[buf_idx]);
-        get_handle(context, mem_info.first, &handle);
+            // zeMemGetIpcHandle requires the provided pointer to be the base of an allocation.
+            // We handle this the following way: for an input buffer retrieve its base pointer
+            // and the offset from this base ptr. The base ptr is used for zeMemGetIpcHandle
+            // and the offset is sent to the other rank. On that rank the base ptr is retrieved
+            // and offsetted to get the actual input buffer ptr.
+            auto mem_info = get_mem_info(context, in_buffers[buf_idx]);
+            get_handle(context, mem_info.first, &handle);
 
-        handles[rank][buf_idx] = { handle, mem_info.second };
+            handles[rank][buf_idx] = { handle, mem_info.second };
+        }
     }
 
     std::ostringstream right_peer_ss;

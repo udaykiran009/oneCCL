@@ -114,6 +114,7 @@ env_data::env_data()
           ze_serialize_mode(0),
           enable_kernel_1s_copy_ops(0),
           enable_kernel_output_event(0),
+          enable_kernel_1s_ipc_wa(0),
 
           bf16_impl_type(ccl_bf16_no_compiler_support),
           fp16_impl_type(ccl_fp16_no_compiler_support) {
@@ -267,6 +268,7 @@ void env_data::parse() {
     env_2_type(CCL_ZE_SERIALIZE, ze_serialize_mode);
     env_2_type(CCL_KERNEL_1S_USE_COPY_OPS, enable_kernel_1s_copy_ops);
     env_2_type(CCL_KERNEL_OUTPUT_EVENT, enable_kernel_output_event);
+    env_2_type(CCL_KERNEL_1S_IPC_WA, enable_kernel_1s_ipc_wa);
 
     auto bf16_impl_types = ccl_bf16_get_impl_types();
     ccl_bf16_impl_type bf16_env_impl_type;
@@ -455,6 +457,8 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_KERNEL_1S_LEAD, ": ", kernel_1s_lead);
     LOG_INFO(CCL_ZE_SERIALIZE, ": ", ze_serialize_mode);
     LOG_INFO(CCL_KERNEL_1S_USE_COPY_OPS, ": ", enable_kernel_1s_copy_ops);
+    LOG_INFO(CCL_KERNEL_OUTPUT_EVENT, ": ", enable_kernel_output_event);
+    LOG_INFO(CCL_KERNEL_1S_IPC_WA, ": ", enable_kernel_1s_ipc_wa);
 #endif // CCL_ENABLE_SYCL
 
     LOG_INFO(CCL_BF16, ": ", str_by_enum(bf16_impl_names, bf16_impl_type));

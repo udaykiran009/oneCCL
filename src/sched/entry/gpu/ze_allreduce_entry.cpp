@@ -35,6 +35,9 @@ ze_allreduce_entry::~ze_allreduce_entry() {
     finalize();
 }
 
+// TODO: we need to simplify the mechanism of submission
+// kernels, using knobs and etc. For example,
+// we can create base class common
 void ze_allreduce_entry::init() {
     if (is_initialized) {
         return;
@@ -108,6 +111,52 @@ void ze_allreduce_entry::init() {
     ZE_CALL(zeKernelSetGroupSize,
             (kernel, group_size.groupSizeX, group_size.groupSizeY, group_size.groupSizeZ));
 
+    event_pool_desc = default_event_pool_desc;
+    event_pool_desc.flags = 0;
+    // it's ok to ask for bigger count event than it's needed
+    event_pool_desc.count = 4;
+    size_t count_wait_events = 0;
+    empty_kernel_event = nullptr;
+
+    ccl::global_data::get().ze_cache->get(worker_idx, context, &event_pool_desc, &event_pool);
+    LOG_DEBUG("count of events ", std::to_string(event_pool_desc.count));
+
+    ze_event_desc_t event_desc = default_event_desc;
+    event_desc.signal = ZE_EVENT_SCOPE_FLAG_SUBDEVICE;
+    event_desc.wait = ZE_EVENT_SCOPE_FLAG_SUBDEVICE;
+
+    if (ccl::global_data::env().enable_kernel_1s_copy_ops) {
+        event_desc.index = 0;
+        ZE_CALL(zeEventCreate, (event_pool, &event_desc, &copy_from_peer_event));
+        event_desc.index = 1;
+        ZE_CALL(zeEventCreate, (event_pool, &event_desc, &reduce_local_kernel_event));
+        event_desc.index = 2;
+        ZE_CALL(zeEventCreate, (event_pool, &event_desc, &copy_to_peer_event));
+        if (ccl::global_data::env().enable_kernel_1s_ipc_wa) {
+            event_desc.index = 3;
+        }
+    }
+    else if (ccl::global_data::env().enable_kernel_1s_ipc_wa) {
+        ze_event_desc_t event_desc = default_event_desc;
+        event_desc.signal = ZE_EVENT_SCOPE_FLAG_SUBDEVICE;
+        event_desc.wait = ZE_EVENT_SCOPE_FLAG_SUBDEVICE;
+        event_desc.index = 0;
+    }
+
+    if (ccl::global_data::env().enable_kernel_1s_ipc_wa) {
+        ZE_CALL(zeEventCreate, (event_pool, &event_desc, &empty_kernel_event));
+        count_wait_events = 1;
+    }
+
+    if (ccl::global_data::env().enable_kernel_1s_ipc_wa) {
+        ze_group_count_t empty_group_count = { 1, 1, 1 };
+        empty_kernel_name = "empty_kernel";
+        LOG_DEBUG("get empty kernel: name: ", empty_kernel_name);
+        ccl::global_data::get().ze_cache->get(worker_idx, module, empty_kernel_name, &empty_kernel);
+        ZE_CALL(zeCommandListAppendLaunchKernel,
+                (comp_list, empty_kernel, &empty_group_count, empty_kernel_event, 0, nullptr));
+    }
+
     ccl_buffer right_send_buf;
     ccl_buffer right_recv_buf;
     int peer_rank = (rank + 1) % comm_size;
@@ -139,7 +188,7 @@ void ze_allreduce_entry::init() {
         set_kernel_args(kernel, kernel_args);
 
         ZE_CALL(zeCommandListAppendLaunchKernel,
-                (comp_list, kernel, &group_count, nullptr, 0, nullptr));
+                (comp_list, kernel, &group_count, nullptr, count_wait_events, &empty_kernel_event));
     }
     else if (ccl::global_data::env().enable_kernel_1s_copy_ops) {
         LOG_DEBUG("use copy + reduce_local + copy");
@@ -148,12 +197,6 @@ void ze_allreduce_entry::init() {
         recv_buf_ptr = recv_buf.get_ptr();
         right_send_buf_ptr = right_send_buf.get_ptr();
         right_recv_buf_ptr = right_recv_buf.get_ptr();
-
-        event_pool_desc = default_event_pool_desc;
-        event_pool_desc.flags = 0;
-        event_pool_desc.count = 3; // count of events
-        ccl::global_data::get().ze_cache->get(worker_idx, context, &event_pool_desc, &event_pool);
-        LOG_DEBUG("count of events ", std::to_string(event_pool_desc.count));
 
         device_mem_alloc_desc = default_device_mem_alloc_desc;
 
@@ -165,17 +208,6 @@ void ze_allreduce_entry::init() {
                                               0, /*alignment*/
                                               &tmp_buf_ptr);
 
-        ze_event_desc_t event_desc = default_event_desc;
-        event_desc.signal = ZE_EVENT_SCOPE_FLAG_SUBDEVICE;
-        event_desc.wait = ZE_EVENT_SCOPE_FLAG_SUBDEVICE;
-        event_desc.index = 0;
-        ZE_CALL(zeEventCreate, (event_pool, &event_desc, &copy_from_peer_event));
-        event_desc.index = 1;
-        ZE_CALL(zeEventCreate, (event_pool, &event_desc, &reduce_local_kernel_event));
-        event_desc.index = 2;
-
-        ZE_CALL(zeEventCreate, (event_pool, &event_desc, &copy_to_peer_event));
-
         // memory copy
         ZE_CALL(zeCommandListAppendMemoryCopy,
                 (comp_list,
@@ -183,8 +215,8 @@ void ze_allreduce_entry::init() {
                  right_send_buf_ptr,
                  buf_size_bytes,
                  copy_from_peer_event,
-                 0,
-                 nullptr));
+                 count_wait_events,
+                 &empty_kernel_event));
 
         ze_kernel_args_t kernel_args = { { sizeof(rank), &rank },
                                          { sizeof(comm_size), &comm_size },
@@ -292,6 +324,10 @@ void ze_allreduce_entry::finalize() {
     ccl::global_data::get().ze_cache->push(worker_idx, comp_queue, &fence_desc, &fence);
     // module_cache
     ccl::global_data::get().ze_cache->push(worker_idx, module, kernel_name, &kernel);
+    if (ccl::global_data::env().enable_kernel_1s_ipc_wa) {
+        ccl::global_data::get().ze_cache->push(
+            worker_idx, module, empty_kernel_name, &empty_kernel);
+    }
     // list_cache
     ccl::global_data::get().ze_cache->push(
         worker_idx, context, device, &comp_list_desc, &comp_list);
@@ -301,6 +337,14 @@ void ze_allreduce_entry::finalize() {
 
     if (ccl::global_data::env().enable_kernel_1s_copy_ops) {
         LOG_DEBUG("copy ops finalization");
+
+        ZE_CALL(zeEventDestroy, (copy_from_peer_event));
+        ZE_CALL(zeEventDestroy, (reduce_local_kernel_event));
+        ZE_CALL(zeEventDestroy, (copy_to_peer_event));
+        if (ccl::global_data::env().enable_kernel_1s_ipc_wa) {
+            ZE_CALL(zeEventDestroy, (empty_kernel_event));
+        }
+
         // event_pool_cache
         ccl::global_data::get().ze_cache->push(worker_idx, context, &event_pool_desc, &event_pool);
         // device_mem_cache
@@ -311,10 +355,6 @@ void ze_allreduce_entry::finalize() {
                                                buf_size_bytes,
                                                0, /*alignment*/
                                                &tmp_buf_ptr);
-
-        ZE_CALL(zeEventDestroy, (copy_from_peer_event));
-        ZE_CALL(zeEventDestroy, (reduce_local_kernel_event));
-        ZE_CALL(zeEventDestroy, (copy_to_peer_event));
     }
 
     is_initialized = false;
@@ -329,5 +369,8 @@ void ze_allreduce_entry::reset_sync_objects() {
         ZE_CALL(zeEventHostReset, (copy_from_peer_event));
         ZE_CALL(zeEventHostReset, (reduce_local_kernel_event));
         ZE_CALL(zeEventHostReset, (copy_to_peer_event));
+    }
+    if (ccl::global_data::env().enable_kernel_1s_ipc_wa) {
+        ZE_CALL(zeEventHostReset, (empty_kernel_event));
     }
 }

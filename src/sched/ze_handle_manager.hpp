@@ -21,6 +21,7 @@ struct ipc_handle_info {
     ze_ipc_mem_handle_t handle;
     size_t mem_offset;
     void* mem_ptr;
+    ipc_handle_info() = default;
 };
 
 class ze_handle_manager {
