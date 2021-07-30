@@ -376,8 +376,13 @@ void ccl_sched_base::alloc_buffers_for_pre_post_copy() {
         allreduce_algo = data.algorithm_selector->get<ccl_coll_allreduce>(selector_param);
     }
 
+    ccl_coll_bcast_algo bcast_algo = ccl_coll_bcast_last_value;
+    if (param.ctype == ccl_coll_bcast) {
+        bcast_algo = data.algorithm_selector->get<ccl_coll_bcast>(selector_param);
+    }
+
     if (!param.stream || !param.stream->is_sycl_device_stream() ||
-        allreduce_algo == ccl_coll_allreduce_topo_ring) {
+        allreduce_algo == ccl_coll_allreduce_topo_ring || bcast_algo == ccl_coll_bcast_topo_ring) {
         return;
     }
 

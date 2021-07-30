@@ -13,9 +13,6 @@
 #include "sched/entry/factory/entry_factory.h"
 
 #include "sched/entry/copy/copy_entry.hpp"
-#ifdef CCL_ENABLE_SYCL
-#include "sched/entry/copy/sycl_copy_entry.hpp"
-#endif // CCL_ENABLE_SYCL
 #include "sched/entry/deps_entry.hpp"
 #include "sched/entry/deregister_entry.hpp"
 #include "sched/entry/epilogue_entry.hpp"

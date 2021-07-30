@@ -6,6 +6,7 @@
 #include "common/stream/stream.hpp"
 #include "common/global/global.hpp"
 
+namespace ccl {
 namespace utils {
 
 static inline bool is_sycl_event_completed(sycl::event e) {
@@ -19,4 +20,5 @@ static inline bool should_use_sycl_output_event(ccl_stream* stream) {
 }
 
 } // namespace utils
+} // namespace ccl
 #endif

@@ -36,7 +36,7 @@ ccl_master_sched::ccl_master_sched(const ccl_coll_param& coll_param)
 #endif
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
-    if (utils::should_use_sycl_output_event(coll_param.stream)) {
+    if (ccl::utils::should_use_sycl_output_event(coll_param.stream)) {
         auto l0_context = coll_param.stream->get_native_stream()
                               .get_context()
                               .template get_native<cl::sycl::backend::level_zero>();
@@ -67,7 +67,7 @@ ccl_master_sched::~ccl_master_sched() {
         LOG_WARN("memory region list should be empty for master sched");
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
-    if (utils::should_use_sycl_output_event(coll_param.stream)) {
+    if (ccl::utils::should_use_sycl_output_event(coll_param.stream)) {
         auto l0_context = coll_param.stream->get_native_stream()
                               .get_context()
                               .template get_native<cl::sycl::backend::level_zero>();
@@ -127,7 +127,7 @@ void ccl_master_sched::reset_state() {
     reset_request();
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
-    if (utils::should_use_sycl_output_event(coll_param.stream)) {
+    if (ccl::utils::should_use_sycl_output_event(coll_param.stream)) {
         // Reset sycl event while it's in complete state, similar case to destruction in ~ccl_master_sched
         set_sync_event(sycl::event());
         LOG_DEBUG("reset sync event: ", get_memory().sync_event);
@@ -155,7 +155,7 @@ ccl_request* ccl_master_sched::start(ccl_executor* exec, bool reset_sched) {
     }
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
-    if (utils::should_use_sycl_output_event(coll_param.stream)) {
+    if (ccl::utils::should_use_sycl_output_event(coll_param.stream)) {
         LOG_DEBUG("convert L0 event: ",
                   get_memory().sync_event,
                   "into a SYCL event and submit a barrier");

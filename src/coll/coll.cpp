@@ -334,6 +334,10 @@ ccl::status ccl_coll_build_bcast(ccl_sched* sched,
     param.count = count;
     param.dtype = dtype;
     param.comm = comm;
+    param.stream = sched->coll_param.stream;
+#ifdef CCL_ENABLE_SYCL
+    param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
+#endif // CCL_ENABLE_SYCL
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_bcast>(param);
 
@@ -360,6 +364,11 @@ ccl::status ccl_coll_build_bcast(ccl_sched* sched,
         case ccl_coll_bcast_naive:
             CCL_CALL(ccl_coll_build_naive_bcast(sched, buf, count, dtype, root, comm));
             break;
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+        case ccl_coll_bcast_topo_ring:
+            CCL_CALL(ccl_coll_build_gpu_bcast(sched, buf, count, dtype, root, comm));
+            break;
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
         default:
             CCL_FATAL("unexpected bcast_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl::status::invalid_arguments;

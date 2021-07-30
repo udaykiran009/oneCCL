@@ -6,6 +6,7 @@
 */
 
 #include "coll/algorithms/algorithms.hpp"
+#include "sched/entry/coll/coll_entry_helper.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
 #define MIN(a, b) std::min(a, b)
@@ -217,3 +218,48 @@ ccl::status ccl_coll_build_scatter_ring_allgather_bcast(ccl_sched* sched,
 fn_exit:
     return status;
 }
+
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+
+ccl::status ccl_coll_build_gpu_bcast(ccl_sched* sched,
+                                     ccl_buffer buf,
+                                     size_t count,
+                                     const ccl_datatype& dtype,
+                                     int root,
+                                     ccl_comm* comm) {
+    LOG_DEBUG("build gpu bcast");
+
+    std::vector<void*> buffers(1);
+    buffers[0] = buf.get_ptr();
+    LOG_DEBUG("BCAST buf = ", buf.get_ptr(), " and root = ", root);
+
+    ccl_coll_entry_param barrier_param{};
+    barrier_param.ctype = ccl_coll_barrier;
+    barrier_param.comm = comm;
+
+    if (sched->coll_attr.to_cache) {
+        sched->set_entry_exec_mode(ccl_sched_entry_exec_once);
+        entry_factory::make_entry<ze_handle_exchange_entry>(sched, comm, buffers);
+        sched->add_barrier();
+        sched->set_entry_exec_mode(ccl_sched_entry_exec_regular);
+
+        coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
+    }
+    else {
+        entry_factory::make_entry<ze_handle_exchange_entry>(sched, comm, buffers);
+    }
+
+    sched->add_barrier();
+
+    if (comm->rank() != root) {
+        entry_factory::make_entry<copy_entry>(
+            sched, ccl_buffer(), buf, count, dtype, copy_attr(root, copy_direction::d2d, 0));
+        sched->add_barrier();
+    }
+
+    coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
+
+    return ccl::status::success;
+}
+
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT

@@ -62,6 +62,7 @@ enum ccl_coll_bcast_algo {
     ccl_coll_bcast_ring,
     ccl_coll_bcast_double_tree,
     ccl_coll_bcast_naive,
+    ccl_coll_bcast_topo_ring,
 
     ccl_coll_bcast_last_value
 };

@@ -23,6 +23,15 @@ ccl::status ccl_coll_build_scatter_ring_allgather_bcast(ccl_sched* sched,
                                                         int root,
                                                         ccl_comm* comm);
 
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+ccl::status ccl_coll_build_gpu_bcast(ccl_sched* sched,
+                                     ccl_buffer buf,
+                                     size_t count,
+                                     const ccl_datatype& dtype,
+                                     int root,
+                                     ccl_comm* comm);
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+
 ccl::status ccl_coll_build_dissemination_barrier(ccl_sched* sched, ccl_comm* comm);
 
 ccl::status ccl_coll_build_rabenseifner_reduce(ccl_sched* sched,
