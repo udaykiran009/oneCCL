@@ -2,11 +2,17 @@
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
 
+#include "common/comm/comm.hpp"
 #include "ze_handle_manager.hpp"
 
-void ze_handle_manager::init(const ccl_stream* stream) {
-    auto sycl_device = stream->get_native_stream().get_device();
-    auto sycl_context = stream->get_native_stream().get_context();
+void ze_handle_manager::init(const ccl_comm* init_comm, const ccl_stream* init_stream) {
+    CCL_THROW_IF_NOT(init_comm, "null comm");
+    CCL_THROW_IF_NOT(init_stream, "null stream");
+
+    comm = (ccl_comm*)init_comm;
+
+    auto sycl_device = init_stream->get_native_stream().get_device();
+    auto sycl_context = init_stream->get_native_stream().get_context();
 
     device = sycl_device.template get_native<sycl::backend::level_zero>();
     context = sycl_context.template get_native<sycl::backend::level_zero>();
@@ -22,8 +28,8 @@ void ze_handle_manager::clear() {
         for (size_t buf_idx = 0; buf_idx < handles[rank].size(); buf_idx++) {
             const auto& handle_info = handles[rank][buf_idx];
             ze_ipc_mem_handle_t handle = handle_info.handle;
-            void* mem_ptr = handles[rank][buf_idx].mem_ptr;
-            size_t mem_offset = handles[rank][buf_idx].mem_offset;
+            void* mem_ptr = handles[rank][buf_idx].ptr;
+            size_t mem_offset = handles[rank][buf_idx].offset;
 
             LOG_DEBUG("close handle: base_ptr: ",
                       mem_ptr,
@@ -74,6 +80,8 @@ void ze_handle_manager::clear() {
 
 void ze_handle_manager::set(const std::vector<std::vector<ipc_handle_info>>& handles_arg) {
     CCL_THROW_IF_NOT(!handles_arg.empty(), "handles_arg argument is empty");
+    CCL_THROW_IF_NOT(handles_arg.size() == comm->size(),
+                     "handles_arg and comm sizes should be equal");
     CCL_THROW_IF_NOT(handles.empty(), "handles should be empty before set");
 
     handles = handles_arg;
@@ -83,11 +91,14 @@ void ze_handle_manager::set(const std::vector<std::vector<ipc_handle_info>>& han
 void ze_handle_manager::get(const int rank, const size_t buf_idx, ccl_buffer& buf) {
     ze_result_t ret = ZE_RESULT_SUCCESS;
 
-    CCL_THROW_IF_NOT(rank < handles.size(), "rank is not valid value: ", rank);
+    CCL_THROW_IF_NOT((rank >= 0) && (rank < handles.size()) && (rank < comm->size()),
+                     "rank is not valid value: ",
+                     rank);
+    CCL_THROW_IF_NOT(rank != comm->rank(), "don't expect to open handle for own rank: ", rank);
     CCL_THROW_IF_NOT(buf_idx < handles[rank].size(), "buf_idx is not valid value: ", buf_idx);
 
     ze_ipc_mem_handle_t handle = handles[rank][buf_idx].handle;
-    void*& mem_ptr = handles[rank][buf_idx].mem_ptr;
+    void*& mem_ptr = handles[rank][buf_idx].ptr;
 
     LOG_DEBUG("context: ", context, ", device: ", device, ", rank: ", rank, ", buf_idx: ", buf_idx);
     if (mem_ptr == nullptr) {
@@ -117,8 +128,9 @@ void ze_handle_manager::get(const int rank, const size_t buf_idx, ccl_buffer& bu
               buf_idx);
 
     // add offset that we received along with the handle
-    size_t mem_offset = handles[rank][buf_idx].mem_offset;
+    size_t mem_offset = handles[rank][buf_idx].offset;
     void* final_ptr = static_cast<void*>(static_cast<char*>(mem_ptr) + mem_offset);
     buf.set(final_ptr);
 }
+
 #endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT

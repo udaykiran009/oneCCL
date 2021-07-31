@@ -76,14 +76,21 @@ bool operator==(const coll_param_gpu& lhs, const coll_param_gpu& rhs) {
 std::string ccl_coll_attr::to_string() const {
     std::stringstream ss;
 
-    ss << "{"
+    ss << "{ "
        << "priority: " << priority << ", sync: " << synchronous << ", to_cache: " << to_cache
-       << ", match_id: " << (!match_id.empty() ? match_id : "<empty>")
-       << ", is_vector_buf: " << is_vector_buf
+       << ", match_id: " << (!match_id.empty() ? match_id : "<empty>");
+
+    if (is_vector_buf) {
+        ss << ", vector_buf";
+    }
+
 #ifdef CCL_ENABLE_SYCL
-       << ", sycl_buf: " << is_sycl_buf
+    if (is_sycl_buf) {
+        ss << ", sycl_buf";
+    }
 #endif // CCL_ENABLE_SYCL
-       << "}";
+
+    ss << " }";
 
     return ss.str();
 }
@@ -119,7 +126,7 @@ ccl_coll_param::ccl_coll_param(const ccl_coll_param& other) {
 std::string ccl_coll_param::to_string() const {
     std::stringstream ss;
 
-    ss << "{";
+    ss << "{ ";
     ss << "coll: " << ccl_coll_type_to_str(ctype);
 
     if (!send_bufs.empty())
@@ -142,7 +149,7 @@ std::string ccl_coll_param::to_string() const {
 
     ss << ", comm: ";
     if (comm)
-        ss << "{rank: " << comm->rank() << ", size: " << comm->size() << "}";
+        ss << "{ rank: " << comm->rank() << ", size: " << comm->size() << " }";
     else
         ss << "null";
 
@@ -154,7 +161,7 @@ std::string ccl_coll_param::to_string() const {
     if (!deps.empty())
         ss << ", deps: " << deps.size();
 
-    ss << "}";
+    ss << " }";
 
     return ss.str();
 }

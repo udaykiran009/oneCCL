@@ -12,6 +12,7 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
           in_buffers(in_buffers),
           rank(comm->rank()),
           comm_size(comm->size()),
+          skip_rank(skip_rank),
           start_buf_idx(0),
           start_peer_idx(0),
           is_created(false),
@@ -40,23 +41,20 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
     auto sycl_context = native_stream.get_context();
     context = sycl_context.template get_native<sycl::backend::level_zero>();
 
-    // Note: when we skip a valid rank
-    // we send simply fd = 0, we need to fix it
-    // i.e. skip recvmsg on the receiver side
-    if (!(skip_rank == rank)) {
-        for (size_t buf_idx = 0; buf_idx < in_buffers.size(); buf_idx++) {
-            ze_ipc_mem_handle_t handle;
+    for (size_t buf_idx = 0; buf_idx < in_buffers.size(); buf_idx++) {
+        ze_ipc_mem_handle_t handle;
 
-            // zeMemGetIpcHandle requires the provided pointer to be the base of an allocation.
-            // We handle this the following way: for an input buffer retrieve its base pointer
-            // and the offset from this base ptr. The base ptr is used for zeMemGetIpcHandle
-            // and the offset is sent to the other rank. On that rank the base ptr is retrieved
-            // and offsetted to get the actual input buffer ptr.
-            auto mem_info = get_mem_info(context, in_buffers[buf_idx]);
+        // zeMemGetIpcHandle requires the provided pointer to be the base of an allocation.
+        // We handle this the following way: for an input buffer retrieve its base pointer
+        // and the offset from this base ptr. The base ptr is used for zeMemGetIpcHandle
+        // and the offset is sent to the other rank. On that rank the base ptr is retrieved
+        // and offsetted to get the actual input buffer ptr.
+        auto mem_info = get_mem_info(context, in_buffers[buf_idx]);
+
+        if (rank != skip_rank)
             get_handle(context, mem_info.first, &handle);
 
-            handles[rank][buf_idx] = { handle, mem_info.second };
-        }
+        handles[rank][buf_idx] = { handle, mem_info.second };
     }
 
     std::ostringstream right_peer_ss;
@@ -141,15 +139,18 @@ void ze_handle_exchange_entry::update() {
 
     for (size_t buf_idx = start_buf_idx; buf_idx < in_buffers.size(); buf_idx++) {
         for (int peer_idx = start_peer_idx; peer_idx < comm_size - 1; peer_idx++) {
-            int peer = (rank + 1 + peer_idx) % comm_size;
+            int peer = (comm_size + rank - 1 - peer_idx) % comm_size;
 
-            if ((peer_idx == 0) && !skip_first_send) {
+            if ((peer_idx == 0) && !skip_first_send && (rank != skip_rank)) {
                 int send_fd = 0;
                 // send own handle to right peer
                 get_fd_from_handle(&(handles[rank][buf_idx].handle), &send_fd);
-                sendmsg_call(right_peer_socket, send_fd, handles[rank][buf_idx].mem_offset);
+                sendmsg_call(right_peer_socket, send_fd, handles[rank][buf_idx].offset);
                 skip_first_send = true;
             }
+
+            if (peer == skip_rank)
+                continue;
 
             int poll_ret = poll(&poll_fds[0], poll_fds.size(), timeout_ms);
 
@@ -173,7 +174,7 @@ void ze_handle_exchange_entry::update() {
 
                 // invoke get_handle_from_fd to store the handle
                 get_handle_from_fd(&recv_fd, &tmp_handle);
-                handles[peer][buf_idx] = { tmp_handle, mem_offset, nullptr };
+                handles[peer][buf_idx] = { tmp_handle, mem_offset };
 
                 if (peer_idx < (comm_size - 2)) {
                     // proxy data to right peer

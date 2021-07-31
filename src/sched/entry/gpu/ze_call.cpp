@@ -4,28 +4,27 @@
 namespace ccl {
 namespace ze {
 
-// implementation of ze_call class
 std::mutex ze_call::mutex;
 
 ze_call::ze_call() {
     if (((global_data::env().ze_serialize_mode & ze_serialize_lock)) != 0) {
-        LOG_DEBUG("level zero call is locked");
+        LOG_DEBUG("ze call is locked");
         mutex.lock();
     }
 }
 
 ze_call::~ze_call() {
     if (((global_data::env().ze_serialize_mode & ze_serialize_lock)) != 0) {
-        LOG_DEBUG("level zero call is unlocked");
+        LOG_DEBUG("ze call is unlocked");
         mutex.unlock();
     }
 }
 
 void ze_call::do_call(ze_result_t ze_result, const char* ze_name) {
     if (ze_result != ZE_RESULT_SUCCESS) {
-        CCL_THROW("level-zero error at ", ze_name, ", code: ", ccl::ze::to_string(ze_result));
+        CCL_THROW("ze error at ", ze_name, ", code: ", ccl::ze::to_string(ze_result));
     }
-    LOG_DEBUG("call level zero function: ", ze_name);
+    LOG_DEBUG("call ze function: ", ze_name);
 }
 
 // provides different level zero synchronize methods

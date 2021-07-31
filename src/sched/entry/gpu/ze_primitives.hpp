@@ -71,7 +71,8 @@ void load_module(std::string dir,
                  ze_module_handle_t* module);
 void create_kernel(ze_module_handle_t module, std::string kernel_name, ze_kernel_handle_t* kernel);
 
-// This structure is just to align with l0 ze_group_count_t for convenience. l0 has no ze_group_size_t
+// this structure is just to align with ze_group_count_t
+// L0 doesn't have ze_group_size_t
 struct ze_group_size_t {
     uint32_t groupSizeX = 0;
     uint32_t groupSizeY = 0;
@@ -105,5 +106,6 @@ std::string to_string(const ze_result_t result);
 std::string to_string(const ze_group_size_t& group_size);
 std::string to_string(const ze_group_count_t& group_count);
 std::string to_string(const ze_kernel_args_t& kernel_args);
+
 } // namespace ze
 } // namespace ccl

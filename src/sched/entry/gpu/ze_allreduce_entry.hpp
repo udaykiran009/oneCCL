@@ -94,21 +94,20 @@ private:
 
     ze_event_pool_desc_t event_pool_desc;
     ze_event_pool_handle_t event_pool;
-
+    ze_event_handle_t empty_kernel_event;
     ze_event_handle_t copy_from_peer_event;
     ze_event_handle_t reduce_local_kernel_event;
-    ze_event_handle_t copy_to_peer_event;
-    ze_event_handle_t empty_kernel_event;
-
-    ze_device_mem_alloc_desc_t device_mem_alloc_desc;
+    ze_event_handle_t entry_event;
 
     ze_module_handle_t module;
-    ze_kernel_handle_t kernel;
-    ze_kernel_handle_t empty_kernel;
-    std::string kernel_name;
-    std::string empty_kernel_name;
+
     ze_group_count_t group_count;
 
-    ze_fence_desc_t fence_desc;
-    ze_fence_handle_t fence;
+    ze_kernel_handle_t main_kernel;
+    std::string main_kernel_name;
+
+    ze_kernel_handle_t empty_kernel;
+    std::string empty_kernel_name;
+
+    ze_device_mem_alloc_desc_t device_mem_alloc_desc;
 };

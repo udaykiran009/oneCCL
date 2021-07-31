@@ -98,33 +98,6 @@ private:
     std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
 };
 
-class module_cache {
-public:
-    module_cache() = default;
-    ~module_cache();
-
-    void clear();
-
-    void get(ze_context_handle_t context,
-             ze_device_handle_t device,
-             ze_module_handle_t* module,
-             std::string spv_name);
-
-private:
-    using key_t = ze_device_handle_t;
-    using value_t = ze_module_handle_t;
-    std::unordered_multimap<std::tuple<ze_device_handle_t, std::string>,
-                            ze_module_handle_t,
-                            utils::tuple_hash>
-        cache;
-    std::mutex mutex;
-
-    void load(ze_context_handle_t context,
-              ze_device_handle_t device,
-              ze_module_handle_t* module,
-              std::string spv_name);
-};
-
 class event_pool_cache {
 public:
     event_pool_cache() = default;
@@ -177,6 +150,33 @@ private:
     std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
 };
 
+class module_cache {
+public:
+    module_cache() = default;
+    ~module_cache();
+
+    void clear();
+
+    void get(ze_context_handle_t context,
+             ze_device_handle_t device,
+             ze_module_handle_t* module,
+             std::string spv_name);
+
+private:
+    using key_t = ze_device_handle_t;
+    using value_t = ze_module_handle_t;
+    std::unordered_multimap<std::tuple<ze_device_handle_t, std::string>,
+                            ze_module_handle_t,
+                            utils::tuple_hash>
+        cache;
+    std::mutex mutex;
+
+    void load(ze_context_handle_t context,
+              ze_device_handle_t device,
+              ze_module_handle_t* module,
+              std::string spv_name);
+};
+
 class cache {
 public:
     cache(size_t instance_count)
@@ -221,13 +221,6 @@ public:
         queues.at(worker_idx).get(context, device, queue_desc, queue);
     }
 
-    void get(ze_context_handle_t context,
-             ze_device_handle_t device,
-             ze_module_handle_t* module,
-             std::string spv_name) {
-        modules.get(context, device, module, spv_name);
-    }
-
     void get(size_t worker_idx,
              ze_context_handle_t context,
              ze_event_pool_desc_t* pool_desc,
@@ -244,6 +237,13 @@ public:
              void** pptr) {
         device_mems.at(worker_idx)
             .get(context, device, device_mem_alloc_desc, size_bytes, alignment, pptr);
+    }
+
+    void get(ze_context_handle_t context,
+             ze_device_handle_t device,
+             ze_module_handle_t* module,
+             std::string spv_name) {
+        modules.get(context, device, module, spv_name);
     }
 
     /* push */

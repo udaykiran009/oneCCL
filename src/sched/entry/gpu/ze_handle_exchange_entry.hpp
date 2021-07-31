@@ -87,6 +87,7 @@ private:
 
     const int rank;
     const int comm_size;
+    const int skip_rank;
 
     int start_buf_idx;
     int start_peer_idx;

@@ -146,7 +146,7 @@ protected:
     ccl_sched_base(const ccl_coll_param& coll_param) : coll_param(coll_param) {
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
         if (coll_param.stream != nullptr) {
-            memory.handle_manager.init(coll_param.stream);
+            memory.handle_manager.init(coll_param.comm, coll_param.stream);
         }
 #endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
     }

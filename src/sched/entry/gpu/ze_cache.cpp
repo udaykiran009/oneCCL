@@ -224,59 +224,6 @@ void queue_cache::push(ze_context_handle_t context,
     ZE_CALL(zeCommandQueueDestroy, (*queue));
 }
 
-// module_cache
-module_cache::~module_cache() {
-    clear();
-}
-
-void module_cache::clear() {
-    LOG_DEBUG("clear module cache: size: ", cache.size());
-    std::lock_guard<std::mutex> lock(mutex);
-    for (auto& key_value : cache) {
-        ZE_CALL(zeModuleDestroy, (key_value.second))
-    }
-    cache.clear();
-}
-
-void module_cache::get(ze_context_handle_t context,
-                       ze_device_handle_t device,
-                       ze_module_handle_t* module,
-                       std::string spv_name) {
-    CCL_THROW_IF_NOT(context);
-    CCL_THROW_IF_NOT(device);
-    CCL_THROW_IF_NOT(module);
-    CCL_THROW_IF_NOT(!spv_name.empty());
-    std::lock_guard<std::mutex> lock(mutex);
-    auto key_value = cache.find(std::tuple(device, spv_name));
-    if (key_value != cache.end()) {
-        *module = key_value->second;
-        LOG_DEBUG("loaded from cache: module: ", *module);
-    }
-    else {
-        load(context, device, module, spv_name);
-        cache.insert({ std::tuple(device, spv_name), *module });
-        LOG_DEBUG("inserted to cache: module: ", *module);
-    }
-}
-
-void module_cache::load(ze_context_handle_t context,
-                        ze_device_handle_t device,
-                        ze_module_handle_t* module,
-                        std::string spv_name) {
-    CCL_THROW_IF_NOT(context);
-    CCL_THROW_IF_NOT(device);
-    CCL_THROW_IF_NOT(module);
-    CCL_THROW_IF_NOT(!spv_name.empty());
-    std::string modules_dir = ccl::global_data::env().kernel_path;
-    // TODO: remove
-    if (modules_dir.empty()) {
-        std::string ccl_root = getenv("CCL_ROOT");
-        CCL_THROW_IF_NOT(!ccl_root.empty(), "incorrect comm kernels path, CCL_ROOT not found!");
-        modules_dir = ccl_root + "/lib/kernels/";
-    }
-    load_module(modules_dir, spv_name, device, context, module);
-}
-
 // event_pool_cache
 event_pool_cache::~event_pool_cache() {
     if (!cache.empty()) {
@@ -395,6 +342,59 @@ void device_mem_cache::push(ze_context_handle_t context,
         return;
     }
     ZE_CALL(zeMemFree, (context, *pptr));
+}
+
+// module_cache
+module_cache::~module_cache() {
+    clear();
+}
+
+void module_cache::clear() {
+    LOG_DEBUG("clear module cache: size: ", cache.size());
+    std::lock_guard<std::mutex> lock(mutex);
+    for (auto& key_value : cache) {
+        ZE_CALL(zeModuleDestroy, (key_value.second))
+    }
+    cache.clear();
+}
+
+void module_cache::get(ze_context_handle_t context,
+                       ze_device_handle_t device,
+                       ze_module_handle_t* module,
+                       std::string spv_name) {
+    CCL_THROW_IF_NOT(context);
+    CCL_THROW_IF_NOT(device);
+    CCL_THROW_IF_NOT(module);
+    CCL_THROW_IF_NOT(!spv_name.empty());
+    std::lock_guard<std::mutex> lock(mutex);
+    auto key_value = cache.find(std::tuple(device, spv_name));
+    if (key_value != cache.end()) {
+        *module = key_value->second;
+        LOG_DEBUG("loaded from cache: module: ", *module);
+    }
+    else {
+        load(context, device, module, spv_name);
+        cache.insert({ std::tuple(device, spv_name), *module });
+        LOG_DEBUG("inserted to cache: module: ", *module);
+    }
+}
+
+void module_cache::load(ze_context_handle_t context,
+                        ze_device_handle_t device,
+                        ze_module_handle_t* module,
+                        std::string spv_name) {
+    CCL_THROW_IF_NOT(context);
+    CCL_THROW_IF_NOT(device);
+    CCL_THROW_IF_NOT(module);
+    CCL_THROW_IF_NOT(!spv_name.empty());
+    std::string modules_dir = ccl::global_data::env().kernel_path;
+    // TODO: remove
+    if (modules_dir.empty()) {
+        std::string ccl_root = getenv("CCL_ROOT");
+        CCL_THROW_IF_NOT(!ccl_root.empty(), "incorrect comm kernels path, CCL_ROOT not found!");
+        modules_dir = ccl_root + "/lib/kernels/";
+    }
+    load_module(modules_dir, spv_name, device, context, module);
 }
 
 // cache

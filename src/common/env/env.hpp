@@ -95,10 +95,10 @@ constexpr const char* CCL_KERNEL_GROUP_SIZE = "CCL_KERNEL_GROUP_SIZE";
 constexpr const char* CCL_KERNEL_GROUP_COUNT = "CCL_KERNEL_GROUP_COUNT";
 constexpr const char* CCL_KERNEL_SYNC = "CCL_KERNEL_SYNC";
 constexpr const char* CCL_KERNEL_1S_LEAD = "CCL_KERNEL_1S_LEAD";
-constexpr const char* CCL_ZE_SERIALIZE = "CCL_ZE_SERIALIZE";
 constexpr const char* CCL_KERNEL_1S_USE_COPY_OPS = "CCL_KERNEL_1S_USE_COPY_OPS";
-constexpr const char* CCL_KERNEL_OUTPUT_EVENT = "CCL_KERNEL_OUTPUT_EVENT";
 constexpr const char* CCL_KERNEL_1S_IPC_WA = "CCL_KERNEL_1S_IPC_WA";
+constexpr const char* CCL_KERNEL_OUTPUT_EVENT = "CCL_KERNEL_OUTPUT_EVENT";
+constexpr const char* CCL_ZE_SERIALIZE = "CCL_ZE_SERIALIZE";
 
 constexpr const char* CCL_BF16 = "CCL_BF16";
 constexpr const char* CCL_FP16 = "CCL_FP16";
@@ -207,10 +207,10 @@ public:
     ssize_t kernel_group_count;
     int enable_kernel_sync;
     int kernel_1s_lead;
-    int ze_serialize_mode;
     int enable_kernel_1s_copy_ops;
-    int enable_kernel_output_event;
     int enable_kernel_1s_ipc_wa;
+    int enable_kernel_output_event;
+    int ze_serialize_mode;
 
     ccl_bf16_impl_type bf16_impl_type;
     ccl_fp16_impl_type fp16_impl_type;

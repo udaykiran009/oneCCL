@@ -54,7 +54,7 @@ void ccl_check_usm_pointers(const ccl_coll_param& param) {
         auto second_usm_type = *(++usm_types.begin());
         CCL_THROW("coll: ",
                   ccl_coll_type_to_str(param.ctype),
-                  ", mixed USM pointer types (",
+                  ", mixed usm pointer types (",
                   ccl_usm_type_to_str(first_usm_type),
                   ", ",
                   ccl_usm_type_to_str(second_usm_type),
@@ -77,7 +77,7 @@ void ccl_check_usm_pointers(const ccl_coll_param& param) {
 
     LOG_DEBUG("coll: ",
               ccl_coll_type_to_str(param.ctype),
-              ", USM pointer type: ",
+              ", usm pointer type: ",
               ccl_usm_type_to_str(usm_type),
               ", device type: ",
               ccl_sycl_device_to_str(dev));
@@ -85,7 +85,7 @@ void ccl_check_usm_pointers(const ccl_coll_param& param) {
     CCL_THROW_IF_NOT(is_valid_type,
                      "coll: ",
                      ccl_coll_type_to_str(param.ctype),
-                     " - invalid USM pointer type: ",
+                     " - invalid usm pointer type: ",
                      ccl_usm_type_to_str(usm_type),
                      " for device type: ",
                      ccl_sycl_device_to_str(dev));

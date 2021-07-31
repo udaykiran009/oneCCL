@@ -47,10 +47,10 @@ typename ccl_stream::native_handle_traits_t::return_type& ccl_stream::get_attrib
 std::string ccl_stream::to_string() const {
     std::stringstream ss;
 #ifdef CCL_ENABLE_SYCL
-    ss << "{"
+    ss << "{ "
        << "type: " << ::to_string(type) << ", in_order: " << native_stream.is_in_order()
        << ", device: " << native_stream.get_device().get_info<cl::sycl::info::device::name>()
-       << "}";
+       << " }";
 #else // CCL_ENABLE_SYCL
     ss << reinterpret_cast<void*>(native_stream.get());
 #endif // CCL_ENABLE_SYCL
