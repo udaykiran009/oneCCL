@@ -1,5 +1,5 @@
-#include "common.h"
-#include "shared.h"
+#include "../common.h"
+#include "../shared.h"
 
 /**
  * @param left_wrote_to_me_flag  - located in the memory of the current kernel, left rank uses a pointer to it to notify that he has sent some data.

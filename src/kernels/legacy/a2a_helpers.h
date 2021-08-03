@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common.h"
+#include "../common.h"
 
 #define DEFINE_A2A_COMM_DATA(NAME, T) \
     typedef struct __attribute__((packed)) a2a_gpu_comm_data_##NAME { \

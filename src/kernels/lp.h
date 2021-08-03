@@ -13,7 +13,7 @@ ushort __fp32_to_bf16(float V) {
     return temp.s1;
 }
 #else // CCL_BF16_GPU_TRUNCATE
-#include "rne.h"
+#include "legacy/rne.h"
 #endif // CCL_BF16_GPU_TRUNCATE
 
 #define DEFINE_BF16SUM_OP(T) \
@@ -33,27 +33,6 @@ ushort __fp32_to_bf16(float V) {
 
 #define DEFINE_BF16MAX_OP(T) \
     T __bf16_max_##T(T lhs, T rhs) { \
-        return __fp32_to_bf16(max(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs))); \
-    }
-
-//copy
-#define DEFINE_REDUCE_LOCAL_BF16SUM_OP(T) \
-    T __reduce_local_bf16_sum_##T(T lhs, T rhs) { \
-        return __fp32_to_bf16(__bf16_to_fp32(lhs) + __bf16_to_fp32(rhs)); \
-    }
-
-#define DEFINE_REDUCE_LOCAL_BF16PROD_OP(T) \
-    T __reduce_local_bf16_prod_##T(T lhs, T rhs) { \
-        return __fp32_to_bf16(__bf16_to_fp32(lhs) * __bf16_to_fp32(rhs)); \
-    }
-
-#define DEFINE_REDUCE_LOCAL_BF16MIN_OP(T) \
-    T __reduce_local_bf16_min_##T(T lhs, T rhs) { \
-        return __fp32_to_bf16(min(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs))); \
-    }
-
-#define DEFINE_REDUCE_LOCAL_BF16MAX_OP(T) \
-    T __reduce_local_bf16_max_##T(T lhs, T rhs) { \
         return __fp32_to_bf16(max(__bf16_to_fp32(lhs), __bf16_to_fp32(rhs))); \
     }
 
@@ -146,27 +125,6 @@ half __fp32_to_fp16(float V) {
         return __fp32_to_fp16(max(__fp16_to_fp32(lhs), __fp16_to_fp32(rhs))); \
     }
 
-//copy
-#define DEFINE_REDUCE_LOCAL_FP16SUM_OP(T) \
-    T __reduce_local_sum_##T(T lhs, T rhs) { \
-        return __fp32_to_fp16(__fp16_to_fp32(lhs) + __fp16_to_fp32(rhs)); \
-    }
-
-#define DEFINE_REDUCE_LOCAL_FP16PROD_OP(T) \
-    T __reduce_local_prod_##T(T lhs, T rhs) { \
-        return __fp32_to_fp16(__fp16_to_fp32(lhs) * __fp16_to_fp32(rhs)); \
-    }
-
-#define DEFINE_REDUCE_LOCAL_FP16MIN_OP(T) \
-    T __reduce_local_min_##T(T lhs, T rhs) { \
-        return __fp32_to_fp16(min(__fp16_to_fp32(lhs), __fp16_to_fp32(rhs))); \
-    }
-
-#define DEFINE_REDUCE_LOCAL_FP16MAX_OP(T) \
-    T __reduce_local_max_##T(T lhs, T rhs) { \
-        return __fp32_to_fp16(max(__fp16_to_fp32(lhs), __fp16_to_fp32(rhs))); \
-    }
-
 #else // CCL_FP16_GPU_TRUNCATE
 #define DEFINE_FP16SUM_OP(T) \
     T __sum_##T(T lhs, T rhs) { \
@@ -188,24 +146,4 @@ half __fp32_to_fp16(float V) {
         return max(lhs, rhs); \
     }
 
-//copy
-#define DEFINE_REDUCE_LOCAL_FP16SUM_OP(T) \
-    T __reduce_local_sum_##T(T lhs, T rhs) { \
-        return lhs + rhs; \
-    }
-
-#define DEFINE_REDUCE_LOCAL_FP16PROD_OP(T) \
-    T __reduce_local_prod_##T(T lhs, T rhs) { \
-        return lhs * rhs; \
-    }
-
-#define DEFINE_REDUCE_LOCAL_FP16MIN_OP(T) \
-    T __reduce_local_min_##T(T lhs, T rhs) { \
-        return min(lhs, rhs); \
-    }
-
-#define DEFINE_REDUCE_LOCAL_FP16MAX_OP(T) \
-    T __reduce_local_max_##T(T lhs, T rhs) { \
-        return max(lhs, rhs); \
-    }
 #endif // CCL_FP16_GPU_TRUNCATE

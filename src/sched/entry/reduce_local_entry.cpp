@@ -65,10 +65,10 @@ void reduce_local_entry::init() {
     ccl::global_data::get().ze_cache->get(worker_idx, context, device, &comp_list_desc, &comp_list);
     LOG_DEBUG("get compute list: { ordinal: ", comp_list_desc.commandQueueGroupOrdinal, " }");
 
-    ccl::global_data::get().ze_cache->get(context, device, &module, "reduce_local.spv");
+    ccl::global_data::get().ze_cache->get(context, device, &module, "kernels.spv");
 
     kernel_name =
-        "reduce_local_inplace_execution_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
+        "reduce_local_inplace_kernel_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
     ccl::global_data::get().ze_cache->get(worker_idx, module, kernel_name, &kernel);
     LOG_DEBUG("get kernel: name: ", kernel_name);
 

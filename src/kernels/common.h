@@ -86,26 +86,6 @@ typedef ushort bfloat16;
         return max(lhs, rhs); \
     }
 
-#define DEFINE_REDUCE_LOCAL_SUM_OP(T) \
-    T __reduce_local_sum_##T(T lhs, T rhs) { \
-        return lhs + rhs; \
-    }
-
-#define DEFINE_REDUCE_LOCAL_PROD_OP(T) \
-    T __reduce_local_prod_##T(T lhs, T rhs) { \
-        return lhs * rhs; \
-    }
-
-#define DEFINE_REDUCE_LOCAL_MIN_OP(T) \
-    T __reduce_local_min_##T(T lhs, T rhs) { \
-        return min(lhs, rhs); \
-    }
-
-#define DEFINE_REDUCE_LOCAL_MAX_OP(T) \
-    T __reduce_local_max_##T(T lhs, T rhs) { \
-        return max(lhs, rhs); \
-    }
-
 #ifdef ENABLE_KERNEL_DEBUG
 #define DEBUG_BLOCK(block) block
 #else

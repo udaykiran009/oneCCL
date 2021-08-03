@@ -19,7 +19,7 @@ excluded=".git
 ./deps/ofi/update_ofi.sh
 ./ccl_public
 ./ccl_oneapi
-./src/kernels
+./src/kernels/legacy
 ./tests/cfgs
 ./tests/reproducer
 ./tests/unit

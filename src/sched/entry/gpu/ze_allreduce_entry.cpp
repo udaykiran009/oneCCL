@@ -128,10 +128,10 @@ void ze_allreduce_entry::init() {
                                                   { sizeof(tmp_buf_ptr), &tmp_buf_ptr },
                                                   { sizeof(recv_buf_ptr), &recv_buf_ptr } };
 
-    ccl::global_data::get().ze_cache->get(context, device, &module, "ring_allreduce.spv");
+    ccl::global_data::get().ze_cache->get(context, device, &module, "kernels.spv");
 
     if (ccl::global_data::env().enable_kernel_1s_copy_ops) {
-        main_kernel_name = "reduce_local_kernel_";
+        main_kernel_name = "reduce_local_outofplace_kernel_";
         device_mem_alloc_desc = default_device_mem_alloc_desc;
         ccl::global_data::get().ze_cache->get(worker_idx,
                                               context,

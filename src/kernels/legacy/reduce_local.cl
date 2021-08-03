@@ -1,5 +1,5 @@
-#include "common.h"
-#include "shared.h"
+#include "../common.h"
+#include "../shared.h"
 
 #define DEFINE_KERNEL(Name, T, VecSize, Op, OpName) \
     __kernel void reduce_local_inplace_execution_##Name##_##OpName( \
