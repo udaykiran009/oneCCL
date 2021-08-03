@@ -17,16 +17,16 @@ touch ${LOG_FILE}
 CCL_ENV="CCL_LOG_LEVEL=info CCL_WORKER_AFFINITY=1-8 CCL_ATL_TRANSPORT=ofi"
 CCL_ENV="${CCL_ENV} CCL_ALLREDUCE=ring CCL_MAX_SHORT_SIZE=16384"
 MPI_ENV="I_MPI_DEBUG=12 I_MPI_PIN_PROCESSOR_LIST=9"
-PSM3_ENV="PSM3_MULTI_EP=1 PSM3_RDMA=2 PSM3_MR_CACHE_MODE=2"
-BASE_ENV="${CCL_ENV} ${MPI_ENV} ${PSM3_ENV}"
+PSM3_ENV="PSM3_MULTI_EP=1 PSM3_RDMA=1 PSM3_MR_CACHE_MODE=2 PSM3_IDENTIFY=1 PSM3_ALLOW_ROUTERS=1"
+BASE_ENV="${CCL_ENV} ${MPI_ENV}"
 
-PROVS="verbs psm3"
+PROVS="psm3 verbs"
 NODE_COUNTS="2 4 8 16"
 WORKER_COUNTS="1 2 4 8"
-COLLS="allreduce alltoall"
+COLLS="allreduce"
 NUMA_NODES="0 1"
 
-CCL_LINK="https://gitlab.devtools.intel.com/ict/ccl-team/ccl.git"
+CCL_LINK="https://github.com/intel-innersource/libraries.performance.communication.oneccl.git"
 CCL_BRANCH="master"
 
 DEFAULT_SCRIPT_WORK_DIR="${SCRIPT_DIR}/work_dir_${current_date}"
@@ -34,6 +34,7 @@ DEFAULT_FULL_SCOPE="0"
 DEFAULT_DOWNLOAD_CCL="0"
 DEFAULT_INSTALL_CCL="0"
 DEFAULT_RUN_TESTS="0"
+DEFAULT_PROCESS_OUTPUT="0"
 
 echo_log() {
     echo -e "$*" 2>&1 | tee -a ${LOG_FILE}
@@ -65,6 +66,8 @@ print_help() {
     echo_log "      Install oneCCL"
     echo_log "  -run_tests <bool_flag>"
     echo_log "      Run CCL benchmark with different options"
+    echo_log "  -process_output <path>"
+    echo_log "      Do post-processing for output file (convert raw log to csv log)"
     echo_log ""
     echo_log "Usage examples:"
     echo_log "  ${BASENAME}.sh -full 1"
@@ -79,6 +82,7 @@ parse_arguments() {
     INSTALL_CCL=${DEFAULT_INSTALL_CCL}
 
     RUN_TESTS=${DEFAULT_RUN_TESTS}
+    PROCESS_OUTPUT=${DEFAULT_PROCESS_OUTPUT}
 
     while [ $# -ne 0 ]
     do
@@ -107,6 +111,10 @@ parse_arguments() {
                 RUN_TESTS=${2}
                 shift
                 ;;
+            "-process_output")
+                PROCESS_OUTPUT=${2}
+                shift
+                ;;
             *)
                 echo "$(basename $0): ERROR: unknown option ($1)"
                 print_help
@@ -126,12 +134,20 @@ parse_arguments() {
         DOWNLOAD_CCL="1"
         INSTALL_CCL="1"
         RUN_TESTS="1"
+        PROCESS_OUTPUT="0"
 
         if [[ -d ${SCRIPT_WORK_DIR} ]]
         then
             rm -rf ${SCRIPT_WORK_DIR}
             mkdir -p ${SCRIPT_WORK_DIR}
         fi
+    fi
+
+    if [[ ${RUN_TESTS} = "1" ]] && [[ -f ${PROCESS_OUTPUT} ]]
+    then
+        echo_log "RUN_TESTS and PROCESS_OUTPUT actions are requested both"
+        echo_log "Please specify single action only"
+        return
     fi
 
     echo_log "-----------------------------------------------------------"
@@ -144,6 +160,7 @@ parse_arguments() {
     echo_log "INSTALL_CCL        = ${INSTALL_CCL}"
 
     echo_log "RUN_TESTS          = ${RUN_TESTS}"
+    echo_log "PROCESS_OUTPUT     = ${PROCESS_OUTPUT}"
 }
 
 download_ccl() {
@@ -188,6 +205,93 @@ install_ccl() {
 
     make -j install
     check_exit_code $? "failed to install CCL"
+}
+
+convert_to_csv() {
+    input_log=$1
+
+    echo_log "convert to csv\ninput log: ${input_log}"
+
+    line_count=$(cat ${input_log} | wc -l)
+    if [[ ${line_count} = "0" ]]
+    then
+        echo_log "no data to process"
+        return
+    fi
+
+    output_log=${input_log}".csv"
+    rm -f ${output_log}
+
+    size_cmd="sed -n -e '/#bytes/,/# All done/ p' ${input_log} \
+            | grep -v \"#bytes\" | grep -v \"All\" | awk '{ print \$2 }' \
+            | awk 'NF' | sort -n | uniq"
+    #echo "size_cmd: ${size_cmd}"
+    eval sizes=\$\(${size_cmd}\)
+
+    size_count=$(echo -e "${sizes}" | wc -l)
+    #echo "size_count: ${size_count}"
+
+    size_cmd="${size_cmd} | awk '{ ORS=\";\" } { print \$1 }'"
+    #echo "size_cmd: ${size_cmd}"
+    eval sizes=\$\(${size_cmd}\)
+
+    node_count_cmd="cat ${input_log} | grep \"exec config\" \
+        | awk '{ print \$4 }' | sed -e \"s/nodes=//\" | sort -n | uniq"
+    # echo "node_count_cmd: ${node_count_cmd}"
+    eval node_counts=\$\(${node_count_cmd}\)
+
+    for node_count in ${node_counts}
+    do
+        tmp_log=${input_log}".tmp.csv"
+        rm -f ${tmp_log}
+
+        echo -e "\nnode_count_${node_count}" >> ${output_log}
+
+        echo -n "bytes;${sizes}" >> ${tmp_log}
+        echo "" >> ${tmp_log}
+
+        config_name_cmd="cat ${input_log} | grep nodes=${node_count}"
+        #echo "config_name_cmd: ${config_name_cmd}"
+        eval config_names=\$\(${config_name_cmd}\)
+
+        while IFS= read -r config_name
+        do
+            config_short_name_cmd="echo "\${config_name}" | awk '{ print \$5\"_\"\$7 }' \
+                | sed -e \"s/workers=/w/\" | sed -e \"s/numa_node=/n/\""
+            #echo "config_short_name_cmd: ${config_short_name_cmd}"
+            eval config_short_name=\$\(${config_short_name_cmd}\)
+
+            echo -n "${config_short_name};" >> ${tmp_log}
+
+            config_values_cmd="cat ${input_log} | grep \"${config_name}\" -A 2000 \
+                | sed -n -e '/#bytes/,/# All done/ p' | grep -v \"#bytes\" | grep -v \"All done\" \
+                | head -n ${size_count} | awk -n '{ print \$5 }' | awk 'NF' \
+                | awk '{ print \$1 }' ORS=\";\""
+            #echo "config_values_cmd: ${config_values_cmd}"
+            eval config_values=\$\(${config_values_cmd}\)
+            echo -e "${config_values}" >> ${tmp_log}
+        done <<< "${config_names}"
+
+        transpose_cmd="cat ${tmp_log} \
+            | awk ' \
+              BEGIN { FS = \";\" } \
+              { for (i=1; i<=NF; i++) { arr[NR,i] = \$i } } NF>p { p = NF }
+              END { for (j=1; j<=p; j++) { \
+                        { str=arr[1,j] } \
+                        { if (str==\"\") break}
+                        for (i=2; i<=NR; i++) { \
+                            str=str\";\"arr[i,j]; \
+                        } \
+                        print str } }'"
+        #echo "transpose_cmd: ${transpose_cmd}"
+        eval transpose_values=\$\(${transpose_cmd}\)
+        echo "${transpose_values}" >> ${output_log}
+    done
+
+    rm -f ${tmp_log}
+    sed -i 's/\./,/g' ${output_log}
+
+    echo_log "output log: ${output_log}"
 }
 
 run_tests() {
@@ -255,6 +359,7 @@ run_tests() {
     do
         PROV_LOG_FILE="${LOG_FILE}_${prov}"
         touch ${PROV_LOG_FILE}
+
         for node_count in ${NODE_COUNTS}
         do
             if [ "${node_count}" -gt "${total_node_count}" ]
@@ -274,6 +379,11 @@ run_tests() {
                         echo -e "\nexec config: ${config}\n" | tee -a ${PROV_LOG_FILE}
                         
                         exec_env="${BASE_ENV} CCL_WORKER_COUNT=${worker_count} FI_PROVIDER=${prov}"
+                        if [[ ${prov} = "psm3" ]]
+                        then
+                            exec_env="${exec_env} ${PSM3_ENV}"
+                        fi
+
                         bench_args="-c off -i 40 -w 10 -j off -p 0 -l ${coll} -s ${numa_node} -f 16384 -t 67108864"
                         if [[ ${coll} = "allreduce" ]]
                         then
@@ -315,9 +425,21 @@ run_tests() {
             echo_log ""
             check_exit_code ${fail_count} "TEST FAILED"            
         fi
+
+        echo_log "TEST PASSED for prov ${prov}"
+        convert_to_csv ${PROV_LOG_FILE}
     done
 
     echo_log "TEST PASSED"
+}
+
+process_output() {
+    if [[ ! -f ${PROCESS_OUTPUT} ]]
+    then
+        return
+    fi
+
+    convert_to_csv ${PROCESS_OUTPUT}
 }
 
 parse_arguments $@
@@ -326,3 +448,5 @@ download_ccl
 install_ccl
 
 run_tests
+
+process_output
