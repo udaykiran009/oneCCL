@@ -14,13 +14,14 @@ current_date=`date "+%Y%m%d%H%M%S"`
 LOG_FILE="${SCRIPT_DIR}/perf_log_${current_date}"
 touch ${LOG_FILE}
 
-CCL_ENV="CCL_LOG_LEVEL=info CCL_WORKER_AFFINITY=1-8 CCL_ATL_TRANSPORT=ofi"
+CCL_ENV="CCL_LOG_LEVEL=info CCL_ATL_TRANSPORT=ofi"
 CCL_ENV="${CCL_ENV} CCL_ALLREDUCE=ring CCL_MAX_SHORT_SIZE=16384"
-MPI_ENV="I_MPI_DEBUG=12 I_MPI_PIN_PROCESSOR_LIST=9"
-PSM3_ENV="PSM3_MULTI_EP=1 PSM3_RDMA=1 PSM3_MR_CACHE_MODE=2 PSM3_IDENTIFY=1 PSM3_ALLOW_ROUTERS=1"
+MPI_ENV="I_MPI_DEBUG=12"
+PSM3_ENV="PSM3_MULTI_EP=1 PSM3_RDMA=0 PSM3_MR_CACHE_MODE=2 PSM3_IDENTIFY=1 PSM3_ALLOW_ROUTERS=1"
 BASE_ENV="${CCL_ENV} ${MPI_ENV}"
 
-PROVS="psm3 verbs"
+EXTERNAL_ITER_COUNT="5"
+PROVS="verbs psm3"
 NODE_COUNTS="2 4 8 16"
 WORKER_COUNTS="1 2 4 8"
 COLLS="allreduce"
@@ -153,14 +154,16 @@ parse_arguments() {
     echo_log "-----------------------------------------------------------"
     echo_log "PARAMETERS"
     echo_log "-----------------------------------------------------------"
-    echo_log "SCRIPT_WORK_DIR    = ${SCRIPT_WORK_DIR}"
-    echo_log "FULL_SCOPE         = ${FULL_SCOPE}"
+    echo_log "SCRIPT_WORK_DIR     = ${SCRIPT_WORK_DIR}"
+    echo_log "FULL_SCOPE          = ${FULL_SCOPE}"
 
-    echo_log "DOWNLOAD_CCL       = ${DOWNLOAD_CCL}"
-    echo_log "INSTALL_CCL        = ${INSTALL_CCL}"
+    echo_log "DOWNLOAD_CCL        = ${DOWNLOAD_CCL}"
+    echo_log "INSTALL_CCL         = ${INSTALL_CCL}"
 
-    echo_log "RUN_TESTS          = ${RUN_TESTS}"
-    echo_log "PROCESS_OUTPUT     = ${PROCESS_OUTPUT}"
+    echo_log "RUN_TESTS           = ${RUN_TESTS}"
+    echo_log "PROCESS_OUTPUT      = ${PROCESS_OUTPUT}"
+
+    echo_log "EXTERNAL_ITER_COUNT = ${EXTERNAL_ITER_COUNT}"
 }
 
 download_ccl() {
@@ -245,6 +248,9 @@ convert_to_csv() {
         tmp_log=${input_log}".tmp.csv"
         rm -f ${tmp_log}
 
+        tmp_avg_log=${input_log}".tmp.avg.csv"
+        rm -f ${tmp_avg_log}
+
         echo -e "\nnode_count_${node_count}" >> ${output_log}
 
         echo -n "bytes;${sizes}" >> ${tmp_log}
@@ -254,6 +260,7 @@ convert_to_csv() {
         #echo "config_name_cmd: ${config_name_cmd}"
         eval config_names=\$\(${config_name_cmd}\)
 
+        # iterate over different configs for specific node_count
         while IFS= read -r config_name
         do
             config_short_name_cmd="echo "\${config_name}" | awk '{ print \$5\"_\"\$7 }' \
@@ -272,15 +279,41 @@ convert_to_csv() {
             echo -e "${config_values}" >> ${tmp_log}
         done <<< "${config_names}"
 
-        transpose_cmd="cat ${tmp_log} \
-            | awk ' \
-              BEGIN { FS = \";\" } \
-              { for (i=1; i<=NF; i++) { arr[NR,i] = \$i } } NF>p { p = NF }
-              END { for (j=1; j<=p; j++) { \
-                        { str=arr[1,j] } \
-                        { if (str==\"\") break}
-                        for (i=2; i<=NR; i++) { \
-                            str=str\";\"arr[i,j]; \
+        uniq_config_name_cmd="cat ${tmp_log} | grep -v bytes | awk -F ';' '{ print \$1 }' | sort | uniq"
+        #echo "uniq_config_name_cmd: ${uniq_config_name_cmd}"
+        eval uniq_config_names=\$\(${uniq_config_name_cmd}\)
+
+        cat ${tmp_log} | grep "bytes" > ${tmp_avg_log}
+
+        for config_name in ${uniq_config_names}
+        do
+            echo -n "${config_name};" >> ${tmp_avg_log}
+
+            config_values_cmd="cat ${tmp_log} | grep ${config_name} \
+                | awk -F ';' '{ \$1=\"\"; print \$0 }' \
+                | awk -F ' ' \
+                    '{ for (i = 1; i <= NF; i++) { arr[NR,i] = \$i } } NF>field_count { field_count = NF } \
+                    END { for (j = 1; j <= field_count; j++) { \
+                              { sum = 0 } \
+                              for (i = 1; i <= NR; i++) { \
+                                  sum += arr[i,j] \
+                              } \
+                              { res = sum / NR } \
+                              { printf \"%.1f;\", res } \
+                           } }'"
+            #echo "config_values_cmd: ${config_values_cmd}"
+            eval config_values=\$\(${config_values_cmd}\)
+            echo -e "${config_values}" >> ${tmp_avg_log}
+        done
+
+        transpose_cmd="cat ${tmp_avg_log} \
+            | awk -F ';' \
+              '{ for (i = 1; i <= NF; i++) { arr[NR,i] = \$i } } NF>field_count { field_count = NF }
+              END { for (j = 1; j <= field_count; j++) { \
+                        { str = arr[1,j] } \
+                        { if (str == \"\") break }
+                        for (i = 2; i <= NR; i++) { \
+                            str = str\";\"arr[i,j] \
                         } \
                         print str } }'"
         #echo "transpose_cmd: ${transpose_cmd}"
@@ -289,6 +322,7 @@ convert_to_csv() {
     done
 
     rm -f ${tmp_log}
+    rm -f ${tmp_avg_log}
     sed -i 's/\./,/g' ${output_log}
 
     echo_log "output log: ${output_log}"
@@ -355,6 +389,8 @@ run_tests() {
         check_exit_code 1 "hostfile should contain at least one row"
     fi
 
+    cores_per_socket=$(lscpu | grep "Core(s) per socket:" | awk '{ print $4 }')
+
     for prov in ${PROVS}
     do
         PROV_LOG_FILE="${LOG_FILE}_${prov}"
@@ -370,32 +406,53 @@ run_tests() {
 
             for worker_count in ${WORKER_COUNTS}
             do
+                # workers + main thread + skip core 0
+                required_core_count=$((worker_count+2))
+                if [ "${required_core_count}" -gt "${cores_per_socket}" ]
+                then
+                    echo_log "no enough cores per socket to run with ${worker_count} workers, max available ${cores_per_socket}"
+                    continue
+                fi
+
                 for coll in ${COLLS}
                 do
                     for numa_node in ${NUMA_NODES}
                     do
-                        config="prov=${prov} nodes=${node_count} workers=${worker_count} coll=${coll} numa_node=${numa_node}"
-
-                        echo -e "\nexec config: ${config}\n" | tee -a ${PROV_LOG_FILE}
-                        
-                        exec_env="${BASE_ENV} CCL_WORKER_COUNT=${worker_count} FI_PROVIDER=${prov}"
-                        if [[ ${prov} = "psm3" ]]
+                        main_core=$((worker_count+1))
+                        if [[ ${numa_node} = "1" ]]
                         then
-                            exec_env="${exec_env} ${PSM3_ENV}"
+                            # use first core from NUMA node 1
+                            main_core=$(lscpu | grep "NUMA node1 CPU(s):" | awk '{ print $4 }' | awk -F "-|," '{ print $1 }')
                         fi
 
-                        bench_args="-c off -i 40 -w 10 -j off -p 0 -l ${coll} -s ${numa_node} -f 16384 -t 67108864"
+                        config_env="${BASE_ENV} I_MPI_PIN_PROCESSOR_LIST=${main_core}"
+                        config_env="${config_env} CCL_WORKER_AFFINITY=1-${worker_count}"
+                        config_env="${config_env} CCL_WORKER_COUNT=${worker_count}"
+                        config_env="${config_env} FI_PROVIDER=${prov}"
+                        if [[ ${prov} = "psm3" ]]
+                        then
+                            config_env="${config_env} ${PSM3_ENV}"
+                        fi
+
+                        bench_args="-c all -i 40 -w 10 -j off -p 0 -l ${coll} -s ${numa_node} -f 16384 -t 67108864"
                         if [[ ${coll} = "allreduce" ]]
                         then
                             bench_args="-q 1 ${bench_args}"
                         fi
-                        
-                        cmd="${exec_env} mpiexec -l -n ${node_count} -ppn 1"
+
+                        cmd="${config_env} mpiexec -l -n ${node_count} -ppn 1"
                         cmd="${cmd} ${bench_path} ${bench_args} 2>&1 | tee -a ${PROV_LOG_FILE}"
 
-                        echo -e "\n${cmd}\n" | tee -a ${PROV_LOG_FILE}
-                        eval ${cmd}
-                        check_exit_code $? "${config} failed"
+                        for iter in `seq 1 ${EXTERNAL_ITER_COUNT}`
+                        do
+                            config="prov=${prov} nodes=${node_count} workers=${worker_count}"
+                            config="${config} coll=${coll} numa_node=${numa_node} iter=${iter}"
+                            echo -e "\nexec config: ${config}\n" | tee -a ${PROV_LOG_FILE}
+                            echo -e "\n${cmd}\n" | tee -a ${PROV_LOG_FILE}
+                            echo -e "\n$(lscpu)\n" | tee -a ${PROV_LOG_FILE}
+                            eval ${cmd}
+                            check_exit_code $? "${config} failed"
+                        done
                     done
                 done
             done
