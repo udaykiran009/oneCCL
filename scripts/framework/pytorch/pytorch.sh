@@ -32,7 +32,10 @@ set_run_env() {
 
     # UCX
     export UCX_LOG_LEVEL=INFO
-    export UCX_TLS=tcp,shm,self
+    if [[ ${CLUSTER} = "catalina" ]]
+    then
+        export UCX_TLS=tcp,shm,self
+    fi
 
     # CCL
     export CCL_LOG_LEVEL=INFO
@@ -75,7 +78,7 @@ CCL_LINK="https://github.com/otcshare/oneccl.git"
 CCL_BRANCH="main"
 
 UCX_LINK="https://github.com/openucx/ucx.git"
-UCX_BRANCH="master"
+UCX_BRANCH="v1.11.0"
 
 UCC_BASE_LINK="github.com/otcshare/ucc.git"
 UCC_BRANCH="ccl-master"
