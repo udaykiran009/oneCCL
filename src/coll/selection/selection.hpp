@@ -32,7 +32,8 @@ public:
 
     template <ccl_coll_type coll_id>
     typename ccl_algorithm_selector<coll_id>::type get(const ccl_selector_param& param) const {
-        CCL_THROW_IF_NOT(coll_id == param.ctype);
+        CCL_THROW_IF_NOT(
+            coll_id == param.ctype, "expected coll_id ", coll_id, ", got ", param.ctype);
         return std::get<coll_id>(selectors).get(param);
     }
 

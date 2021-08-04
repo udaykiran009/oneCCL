@@ -24,7 +24,8 @@ struct copy_attr {
     copy_direction direction;
     size_t offset;
 
-    copy_attr() : peer_rank(copy_helper::invalid_rank), direction(copy_direction::d2d), offset(0) {}
+    copy_attr() : peer_rank(copy_helper::invalid_rank), direction(copy_direction::h2h), offset(0) {}
+
     copy_attr(int pr, copy_direction cd, size_t o) : peer_rank(pr), direction(cd), offset(o) {}
 };
 
@@ -69,6 +70,10 @@ public:
     }
 
     void init(sycl::queue*& q) {
+        if (is_initialized) {
+            return;
+        }
+
         LOG_DEBUG("initialization");
 
         auto sycl_device = q->get_device();
@@ -156,26 +161,40 @@ public:
         CCL_THROW_IF_NOT(sched != nullptr, "no sched");
         LOG_DEBUG(class_name(), ": in_buf ", in_buf, ", out_buf ", out_buf, ", count ", count);
 
-        if (!sched->coll_param.stream) {
+#ifdef CCL_ENABLE_SYCL
+        worker_idx = sched->queue->get_idx();
+        sycl::queue* q = nullptr;
+        sycl::usm::alloc in_ptr_type = sycl::usm::alloc::unknown;
+        sycl::usm::alloc out_ptr_type = sycl::usm::alloc::unknown;
+        if (sched->coll_param.stream) {
+            q = sched->coll_param.stream->get_native_stream(worker_idx);
+            CCL_THROW_IF_NOT(q, "null sycl queue");
+            in_ptr_type = sycl::get_pointer_type(in_buf.get_ptr(), q->get_context());
+            out_ptr_type = sycl::get_pointer_type(out_buf.get_ptr(), q->get_context());
+        }
+#endif // CCL_ENABLE_SYCL
+
+        if (!sched->coll_param.stream || (attr.direction == copy_direction::h2h)) {
+#ifdef CCL_ENABLE_SYCL
+            CCL_THROW_IF_NOT(in_ptr_type != sycl::usm::alloc::device,
+                             "unexpected device usm type for input buffer");
+            CCL_THROW_IF_NOT(out_ptr_type != sycl::usm::alloc::device,
+                             "unexpected device usm type for output buffer");
+#endif // CCL_ENABLE_SYCL
             do_regular_copy();
             return;
         }
 
 #ifdef CCL_ENABLE_SYCL
-        worker_idx = sched->queue->get_idx();
         is_sycl_buf = sched->coll_attr.is_sycl_buf;
-        LOG_DEBUG("getting a native stream");
-        sycl::queue* q = sched->coll_param.stream->get_native_stream(worker_idx);
-        CCL_THROW_IF_NOT(q, "null sycl queue");
         if (q->get_backend() != cl::sycl::backend::level_zero || is_sycl_buf) {
             ctype = copy_type::sycl;
-            auto in_ptr_type = sycl::get_pointer_type(in_buf.get_ptr(), q->get_context());
-            auto out_ptr_type = sycl::get_pointer_type(out_buf.get_ptr(), q->get_context());
 
             copy_direction direction;
 
-            if (is_sycl_buf)
+            if (is_sycl_buf) {
                 direction = attr.direction;
+            }
             else {
                 LOG_DEBUG("in_ptr_type: ",
                           ccl_usm_type_to_str(in_ptr_type),
@@ -184,7 +203,7 @@ public:
                           ", native_stream: ",
                           sched->coll_param.stream->to_string(),
                           ", count: ",
-                          count)
+                          count);
 
                 if ((in_ptr_type != sycl::usm::alloc::device) &&
                     (out_ptr_type != sycl::usm::alloc::device)) {
@@ -217,22 +236,21 @@ public:
 #ifdef MULTI_GPU_SUPPORT
         else {
             ctype = copy_type::ze;
-            if (!is_initialized) {
-                init(q);
 
-                if (is_initialized && status == ccl_sched_entry_status_not_started) {
-                    ZE_CALL(zeFenceReset, (fence));
-                }
+            init(q);
 
-                LOG_DEBUG("execute command list");
-                ZE_CALL(zeCommandQueueExecuteCommandLists, (comp_queue, 1, &comp_list, fence));
-
-                if (((global_data::env().ze_serialize_mode & ze_serialize_block)) != 0) {
-                    LOG_DEBUG("wait until command lists are executed");
-                    ZE_CALL(zeHostSynchronize, (comp_queue));
-                }
-                status = ccl_sched_entry_status_started;
+            if (is_initialized && status == ccl_sched_entry_status_not_started) {
+                ZE_CALL(zeFenceReset, (fence));
             }
+
+            LOG_DEBUG("execute command list");
+            ZE_CALL(zeCommandQueueExecuteCommandLists, (comp_queue, 1, &comp_list, fence));
+
+            if (((global_data::env().ze_serialize_mode & ze_serialize_block)) != 0) {
+                LOG_DEBUG("wait until command lists are executed");
+                ZE_CALL(zeHostSynchronize, (comp_queue));
+            }
+            status = ccl_sched_entry_status_started;
         }
 #endif // MULTI_GPU_SUPPORT
 #endif // CCL_ENABLE_SYCL

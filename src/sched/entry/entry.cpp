@@ -10,7 +10,7 @@ void sched_entry::do_progress() {
     bool is_gpu_entry = this->is_gpu_entry();
 
     if (status < ccl_sched_entry_status_started) {
-        CCL_ASSERT(
+        CCL_THROW_IF_NOT(
             status == ccl_sched_entry_status_not_started || status == ccl_sched_entry_status_again,
             "bad status ",
             status);
@@ -22,7 +22,7 @@ void sched_entry::do_progress() {
                 timer.start();
             }
             start();
-            CCL_ASSERT(status >= ccl_sched_entry_status_again, "bad status ", status);
+            CCL_THROW_IF_NOT(status >= ccl_sched_entry_status_again, "bad status ", status);
         }
         else {
             status = ccl_sched_entry_status_again;
@@ -31,7 +31,7 @@ void sched_entry::do_progress() {
     else if (status == ccl_sched_entry_status_started) {
         LOG_TRACE("update entry ", name());
         update();
-        CCL_ASSERT(status >= ccl_sched_entry_status_started, "bad status ", status);
+        CCL_THROW_IF_NOT(status >= ccl_sched_entry_status_started, "bad status ", status);
     }
 
     if (status == ccl_sched_entry_status_complete) {

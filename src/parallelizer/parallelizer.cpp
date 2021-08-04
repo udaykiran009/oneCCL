@@ -83,12 +83,14 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
     selector_param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
 
     ccl_coll_allreduce_algo allreduce_algo = ccl_coll_allreduce_last_value;
-    if (selector_param.ctype == ccl_coll_allreduce)
+    if (selector_param.ctype == ccl_coll_allreduce) {
         allreduce_algo = data.algorithm_selector->get<ccl_coll_allreduce>(selector_param);
+    }
 
     ccl_coll_bcast_algo bcast_algo = ccl_coll_bcast_last_value;
-    if (selector_param.ctype == ccl_coll_bcast)
+    if (selector_param.ctype == ccl_coll_bcast) {
         bcast_algo = data.algorithm_selector->get<ccl_coll_bcast>(selector_param);
+    }
 
     if (allreduce_algo != ccl_coll_allreduce_topo_ring && bcast_algo != ccl_coll_bcast_topo_ring) {
         ccl_coll_param& param = sched->coll_param;

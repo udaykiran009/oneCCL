@@ -8,7 +8,7 @@
 #include "common/utils/tuple.hpp"
 #include "oneapi/ccl/native_device_api/interop_utils.hpp"
 
-enum class copy_direction { d2h, h2d, d2d };
+enum class copy_direction { h2h, d2h, h2d, d2d };
 std::string to_string(copy_direction val);
 
 class copy_helper {

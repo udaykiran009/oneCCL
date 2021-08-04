@@ -110,7 +110,7 @@ env_data::env_data()
           kernel_group_size(CCL_ENV_SIZET_NOT_SPECIFIED),
           kernel_group_count(CCL_ENV_SIZET_NOT_SPECIFIED),
           enable_kernel_sync(1),
-          kernel_1s_lead(1),
+          kernel_1s_lead(0),
           enable_kernel_1s_copy_ops(0),
           enable_kernel_1s_ipc_wa(0),
           enable_kernel_output_event(0),

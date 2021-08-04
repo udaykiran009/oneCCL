@@ -320,9 +320,9 @@ run()
         common_dir_list="benchmark common"
         if [[ ${SCOPE} = "pr" ]]
         then
-            dir_list="${common_dir_list}"
+            dir_list="${common_dir_list} sycl"
             bench_backend_list="sycl"
-            ppns="2"
+            sycl_example_selector_list="gpu"
         elif [[ ${SCOPE} = "abi" ]]
         then
             dir_list="${common_dir_list} cpu sycl"
