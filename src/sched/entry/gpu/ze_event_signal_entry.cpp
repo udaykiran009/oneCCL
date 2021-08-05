@@ -1,5 +1,5 @@
+#include "sched/entry/gpu/ze_event_signal_entry.hpp"
 #include "sched/queue/queue.hpp"
-#include "ze_event_signal_entry.hpp"
 #include "common/utils/sycl_utils.hpp"
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)

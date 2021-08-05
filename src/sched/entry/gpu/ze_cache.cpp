@@ -1,5 +1,5 @@
 #include "common/global/global.hpp"
-#include "ze_cache.hpp"
+#include "sched/entry/gpu/ze_cache.hpp"
 
 namespace ccl {
 namespace ze {

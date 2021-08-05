@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common/log/log.hpp"
-#include "ze_call.hpp"
+#include "sched/entry/gpu/ze_call.hpp"
 
 #include <fstream>
 #include <initializer_list>

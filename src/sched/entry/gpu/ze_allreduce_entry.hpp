@@ -1,16 +1,13 @@
 #pragma once
 
-#include "common/comm/comm.hpp"
-#include "common/global/global.hpp"
 #include "common/utils/buffer.hpp"
 #include "comp/comp.hpp"
-#include "sched/entry/entry.hpp"
+#include "sched/entry/gpu/ze_base_entry.hpp"
 
 #include <atomic>
 #include <sstream>
-#include <ze_api.h>
 
-class ze_allreduce_entry : public sched_entry {
+class ze_allreduce_entry : public ze_base_entry {
 public:
     static constexpr const char* class_name() noexcept {
         return "ZE_ALLREDUCE";
@@ -18,10 +15,6 @@ public:
 
     const char* name() const noexcept override {
         return class_name();
-    }
-
-    bool is_gpu_entry() const noexcept override {
-        return true;
     }
 
     ze_allreduce_entry() = delete;
@@ -34,10 +27,10 @@ public:
                                 ccl_comm* comm);
     ~ze_allreduce_entry();
 
-    void init();
+    void init() override;
     void start() override;
     void update() override;
-    void finalize();
+    void finalize() override;
 
     void reset_sync_objects();
 
@@ -66,7 +59,6 @@ protected:
     }
 
 private:
-    ccl_sched* const sched;
     ccl_buffer send_buf;
     ccl_buffer recv_buf;
     void* send_buf_ptr;
@@ -74,30 +66,15 @@ private:
     void* right_send_buf_ptr;
     void* right_recv_buf_ptr;
     void* tmp_buf_ptr;
-    const int rank;
-    const int comm_size;
     const unsigned long cnt;
     const ccl_datatype dtype;
     const ccl::reduction op;
     const size_t buf_size_bytes;
     bool is_initialized;
-    size_t worker_idx;
 
-    ze_context_handle_t context;
-    ze_device_handle_t device;
-
-    ze_command_queue_desc_t comp_queue_desc;
-    ze_command_queue_handle_t comp_queue;
-
-    ze_command_list_desc_t comp_list_desc;
-    ze_command_list_handle_t comp_list;
-
-    ze_event_pool_desc_t event_pool_desc;
-    ze_event_pool_handle_t event_pool;
     ze_event_handle_t empty_kernel_event;
     ze_event_handle_t copy_from_peer_event;
     ze_event_handle_t reduce_local_kernel_event;
-    ze_event_handle_t entry_event;
 
     ze_module_handle_t module;
 

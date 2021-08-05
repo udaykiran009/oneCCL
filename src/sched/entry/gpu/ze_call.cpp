@@ -1,5 +1,5 @@
-#include "ze_call.hpp"
 #include "common/global/global.hpp"
+#include "sched/entry/gpu/ze_call.hpp"
 
 namespace ccl {
 namespace ze {

@@ -5,8 +5,8 @@
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
 
 #include "sched/entry/entry.hpp"
-#include "sched/sched.hpp"
 #include "sched/master_sched.hpp"
+#include "sched/sched.hpp"
 
 class ze_event_signal_entry : public sched_entry {
 public:

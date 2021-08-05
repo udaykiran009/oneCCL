@@ -1,12 +1,11 @@
-#include "reduce_local_entry.hpp"
+#include "sched/entry/reduce_local_entry.hpp"
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
 #include "coll/coll_check.hpp"
 #include "common/comm/l0/modules/kernel_utils.hpp"
 #include "common/datatype/datatype.hpp"
 #include "common/stream/stream.hpp"
-#include "gpu/ze_primitives.hpp"
-#include "gpu/ze_cache.hpp"
+#include "sched/entry/gpu/ze_primitives.hpp"
+#include "sched/entry/gpu/ze_cache.hpp"
 #include "sched/queue/queue.hpp"
 
 #include <string>
@@ -21,49 +20,7 @@ void reduce_local_entry::init() {
 
     LOG_DEBUG("initialization");
 
-    CCL_THROW_IF_NOT(sched != nullptr, "no sched");
-    worker_idx = sched->queue->get_idx();
-
-    CCL_THROW_IF_NOT(sched->coll_param.stream, "null stream in ze_reduce_local_entry");
-
-    LOG_DEBUG("getting a native stream");
-    auto native_stream = sched->coll_param.stream->get_native_stream(worker_idx);
-    if (native_stream->get_backend() != sycl::backend::level_zero) {
-        CCL_THROW("unsupported sycl backend");
-    }
-
-    auto sycl_device = native_stream->get_device();
-    device = sycl_device.template get_native<sycl::backend::level_zero>();
-
-    auto sycl_context = native_stream->get_context();
-    context = sycl_context.template get_native<sycl::backend::level_zero>();
-
-    uint32_t num_queue_groups;
-    get_num_queue_groups(device, &num_queue_groups);
-
-    ze_queue_properties_t queue_props;
-    get_queues_properties(device, num_queue_groups, &queue_props);
-
-    uint32_t comp_ordinal, comp_queue_index;
-    get_comp_queue_ordinal(device, queue_props, &comp_ordinal);
-    get_queue_index(queue_props, comp_ordinal, 0, &comp_queue_index);
-
-    comp_queue_desc = default_comp_queue_desc;
-    comp_queue_desc.index = comp_queue_index;
-    comp_queue_desc.ordinal = comp_ordinal;
-
-    ccl::global_data::get().ze_cache->get(
-        worker_idx, context, device, &comp_queue_desc, &comp_queue);
-    LOG_DEBUG("get compute queue: { ordinal: ",
-              comp_queue_desc.ordinal,
-              ", index: ",
-              comp_queue_desc.index,
-              " }");
-
-    comp_list_desc = default_cmd_list_desc;
-    comp_list_desc.commandQueueGroupOrdinal = comp_ordinal;
-    ccl::global_data::get().ze_cache->get(worker_idx, context, device, &comp_list_desc, &comp_list);
-    LOG_DEBUG("get compute list: { ordinal: ", comp_list_desc.commandQueueGroupOrdinal, " }");
+    ze_base_entry::init();
 
     ccl::global_data::get().ze_cache->get(context, device, &module, "kernels.spv");
 
@@ -93,11 +50,10 @@ void reduce_local_entry::init() {
     set_kernel_args(kernel, kernel_args);
 
     ZE_CALL(zeCommandListAppendLaunchKernel,
-            (comp_list, kernel, &group_count, nullptr, 0, nullptr));
+            (comp_list, kernel, &group_count, entry_event, 0, nullptr));
     ZE_CALL(zeCommandListClose, (comp_list));
 
-    fence_desc = default_fence_desc;
-    ccl::global_data::get().ze_cache->get(worker_idx, comp_queue, &fence_desc, &fence);
+    is_initialized = true;
 
     LOG_DEBUG("initialization complete");
 }
@@ -105,31 +61,9 @@ void reduce_local_entry::init() {
 void reduce_local_entry::update() {
     CCL_THROW_IF_NOT(use_device);
 
-    ze_result_t query_status;
-    if (ccl::global_data::env().kernel_debug == 0) {
-        query_status = zeFenceQueryStatus(fence);
-    }
-    else {
-        query_status = zeCommandQueueSynchronize(comp_queue, std::numeric_limits<uint64_t>::max());
-    }
-
-    if (query_status == ZE_RESULT_SUCCESS) {
-        LOG_DEBUG("command list complete");
-        if (!sched->coll_attr.to_cache) {
-            finalize();
-        }
-        status = ccl_sched_entry_status_complete;
-    }
-    else if (query_status == ZE_RESULT_NOT_READY) {
-        // just return in case if the kernel is not ready yet, will check again on the next iteration
-        return;
-    }
-    else {
-        CCL_THROW("error at zeFenceQueryStatus");
-    }
-
-    if (ccl::global_data::get().kernel_counter > 0) {
-        std::atomic_fetch_sub<size_t>(&ccl::global_data::get().kernel_counter, 1);
+    ze_base_entry::update();
+    if (status == ccl_sched_entry_status_complete && !sched->coll_attr.to_cache) {
+        finalize();
     }
 }
 
@@ -162,24 +96,8 @@ void reduce_local_entry::check_use_device() {
 void reduce_local_entry::start_on_device() {
     init();
 
-    if (is_initialized && status == ccl_sched_entry_status_not_started) {
-        ZE_CALL(zeFenceReset, (fence));
-    }
-
-    size_t kernel_counter = 0;
-    if (ccl::global_data::env().enable_kernel_sync) {
-        kernel_counter = std::atomic_fetch_add<size_t>(&ccl::global_data::get().kernel_counter, 1);
-    }
-
-    if (kernel_counter == 0) {
-        LOG_DEBUG("execute command list");
-        ZE_CALL(zeCommandQueueExecuteCommandLists, (comp_queue, 1, &comp_list, fence));
-        status = ccl_sched_entry_status_started;
-    }
-    else {
-        std::atomic_fetch_sub<size_t>(&ccl::global_data::get().kernel_counter, 1);
-        status = ccl_sched_entry_status_again;
-    }
+    ze_base_entry::start();
+    status = ccl_sched_entry_status_started;
 }
 
 void reduce_local_entry::finalize() {
@@ -189,8 +107,6 @@ void reduce_local_entry::finalize() {
 
     LOG_DEBUG("finalization");
 
-    // fence_cache
-    ccl::global_data::get().ze_cache->push(worker_idx, comp_queue, &fence_desc, &fence);
     // module_cache
     ccl::global_data::get().ze_cache->push(worker_idx, module, kernel_name, &kernel);
     // list_cache
@@ -200,8 +116,9 @@ void reduce_local_entry::finalize() {
     ccl::global_data::get().ze_cache->push(
         worker_idx, context, device, &comp_queue_desc, &comp_queue);
 
+    ze_base_entry::finalize();
+
     is_initialized = false;
 
     LOG_DEBUG("finalization complete");
 }
-#endif // defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common/utils/hash.hpp"
-#include "ze_primitives.hpp"
+#include "sched/entry/gpu/ze_primitives.hpp"
 
 #include <unordered_map>
 
