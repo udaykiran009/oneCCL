@@ -36,6 +36,7 @@ DEFAULT_DOWNLOAD_CCL="0"
 DEFAULT_INSTALL_CCL="0"
 DEFAULT_RUN_TESTS="0"
 DEFAULT_PROCESS_OUTPUT="0"
+DEFAULT_MSG_SIZES="trace"
 
 echo_log() {
     echo -e "$*" 2>&1 | tee -a ${LOG_FILE}
@@ -84,6 +85,7 @@ parse_arguments() {
 
     RUN_TESTS=${DEFAULT_RUN_TESTS}
     PROCESS_OUTPUT=${DEFAULT_PROCESS_OUTPUT}
+    MSG_SIZES=${DEFAULT_MSG_SIZES}
 
     while [ $# -ne 0 ]
     do
@@ -114,6 +116,10 @@ parse_arguments() {
                 ;;
             "-process_output")
                 PROCESS_OUTPUT=${2}
+                shift
+                ;;
+            "-msg_sizes")
+                MSG_SIZES=${2}
                 shift
                 ;;
             *)
@@ -151,6 +157,16 @@ parse_arguments() {
         return
     fi
 
+    if [[ ${MSG_SIZES} = "regular" ]]
+    then
+        msg_sizes_arg="-f 16384 -t 67108864"
+    elif [[ ${MSG_SIZES} = "trace" ]]
+    then
+        msg_sizes_arg="-y 1,188418,821760,2650112,4201474,4773198,6553600,19142658,21077326,21703312,24188816,40465152,40598530"
+    else
+        check_exit_code 1 "unknown msg_sizes '${MSG_SIZES}', select from: regular, trace"
+    fi
+
     echo_log "-----------------------------------------------------------"
     echo_log "PARAMETERS"
     echo_log "-----------------------------------------------------------"
@@ -162,6 +178,8 @@ parse_arguments() {
 
     echo_log "RUN_TESTS           = ${RUN_TESTS}"
     echo_log "PROCESS_OUTPUT      = ${PROCESS_OUTPUT}"
+
+    echo_log "MSG_SIZES           = ${MSG_SIZES}"
 
     echo_log "EXTERNAL_ITER_COUNT = ${EXTERNAL_ITER_COUNT}"
 }
@@ -434,11 +452,12 @@ run_tests() {
                             config_env="${config_env} ${PSM3_ENV}"
                         fi
 
-                        bench_args="-c all -i 40 -w 10 -j off -p 0 -l ${coll} -s ${numa_node} -f 16384 -t 67108864"
+                        bench_args="-c all -i 30 -w 10 -j off -d float32 -p 0 -l ${coll} -s ${numa_node}"
                         if [[ ${coll} = "allreduce" ]]
                         then
                             bench_args="-q 1 ${bench_args}"
                         fi
+                        bench_args="${msg_sizes_arg} ${bench_args}"
 
                         cmd="${config_env} mpiexec -l -n ${node_count} -ppn 1"
                         cmd="${cmd} ${bench_path} ${bench_args} 2>&1 | tee -a ${PROV_LOG_FILE}"
