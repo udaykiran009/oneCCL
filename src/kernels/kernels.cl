@@ -1,6 +1,16 @@
 #include "common.h"
 #include "shared.h"
 
+__kernel void empty_kernel(int my_rank,
+                           int comm_size,
+                           ulong count,
+                           const __global void* input_buffer,
+                           __global void* output_buffer,
+                           const __global void* right_input_buffer,
+                           __global void* right_output_buffer) {
+    return;
+}
+
 // Name - unique name suffix for the kernel
 // T - type parameter(e.g. float, int4, etc)
 // VecSize - vector size of the type. E.g. if float4 is used, VecSize is 4. Note: if just float is used,

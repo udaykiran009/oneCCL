@@ -604,25 +604,26 @@ function run_tests()
                     done
                 done
 
-                for algo in "naive" "scatter" "scatter_barrier"
-                do
-                    if [ "$algo" == "scatter_barrier" ];
-                    then
-                        CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
-                            CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"_chunked
-                    fi
-                    CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"
-                done
+                # TODO: https://jira.devtools.intel.com/browse/MLSL-1032
+                # for algo in "naive" "scatter" "scatter_barrier"
+                # do
+                #     if [ "$algo" == "scatter_barrier" ];
+                #     then
+                #         CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
+                #             CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"_chunked
+                #     fi
+                #     CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"
+                # done
 
-                for algo in "naive" "scatter" "scatter_barrier"
-                do
-                    if [ "$algo" == "scatter_barrier" ];
-                    then
-                        CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
-                            CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"_chunked
-                    fi
-                    CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"
-                done
+                # for algo in "naive" "scatter" "scatter_barrier"
+                # do
+                #     if [ "$algo" == "scatter_barrier" ];
+                #     then
+                #         CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
+                #             CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"_chunked
+                #     fi
+                #     CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"
+                # done
 
                 for algo in "ring" "double_tree" "naive"
                 do
@@ -645,8 +646,11 @@ function run_tests()
                 CCL_ATL_TRANSPORT=ofi CCL_PRIORITY=direct ctest -VV -C default
                ;;
             dynamic_pointer_mode )
-                CCL_ATL_TRANSPORT=mpi CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C default
-                CCL_ATL_TRANSPORT=ofi CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C default
+                # TODO: disable dynamic_pointer_mode for L0 based ops
+                # CCL_ATL_TRANSPORT=mpi CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C default
+                # CCL_ATL_TRANSPORT=ofi CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C default
+                CCL_ATL_TRANSPORT=mpi ctest -VV -C default
+                CCL_ATL_TRANSPORT=ofi ctest -VV -C default
                ;;
             unordered_coll_mode )
                 enable_unordered_coll_test_scope

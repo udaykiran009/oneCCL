@@ -26,11 +26,14 @@ enum class copy_type : int { regular = 0, sycl = 1, ze = 2 };
 struct copy_attr {
     int peer_rank;
     copy_direction direction;
-    size_t offset;
+    size_t in_buf_offset;
 
-    copy_attr() : peer_rank(copy_helper::invalid_rank), direction(copy_direction::h2h), offset(0) {}
-
-    copy_attr(int pr, copy_direction cd, size_t o) : peer_rank(pr), direction(cd), offset(o) {}
+    copy_attr(int pr = copy_helper::invalid_rank,
+              copy_direction cd = copy_direction::h2h,
+              size_t o = 0)
+            : peer_rank(pr),
+              direction(cd),
+              in_buf_offset(o) {}
 };
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
@@ -105,7 +108,7 @@ public:
         ZE_CALL(zeCommandListAppendMemoryCopy,
                 (comp_list,
                  out_buf.get_ptr(),
-                 in_buf.get_ptr(),
+                 ((char*)in_buf.get_ptr()) + attr.in_buf_offset * dtype.size(),
                  buf_size_bytes,
                  entry_event,
                  0,
@@ -149,7 +152,13 @@ public:
             in_ptr_type = sycl::get_pointer_type(in_buf.get_ptr(), q->get_context());
             out_ptr_type = sycl::get_pointer_type(out_buf.get_ptr(), q->get_context());
         }
+        LOG_DEBUG("in_ptr_type: ",
+                  ccl_usm_type_to_str(in_ptr_type),
+                  ", out_ptr_type: ",
+                  ccl_usm_type_to_str(out_ptr_type));
 #endif // CCL_ENABLE_SYCL
+
+        LOG_DEBUG("count: ", count, ", direction: ", to_string(attr.direction));
 
         if (!sched->coll_param.stream || (attr.direction == copy_direction::h2h)) {
 #ifdef CCL_ENABLE_SYCL
@@ -166,46 +175,16 @@ public:
         is_sycl_buf = sched->coll_attr.is_sycl_buf;
         if (q->get_backend() != cl::sycl::backend::level_zero || is_sycl_buf) {
             ctype = copy_type::sycl;
-
-            copy_direction direction;
-
-            if (is_sycl_buf) {
-                direction = attr.direction;
-            }
-            else {
-                LOG_DEBUG("in_ptr_type: ",
-                          ccl_usm_type_to_str(in_ptr_type),
-                          ", out_ptr_type: ",
-                          ccl_usm_type_to_str(out_ptr_type),
-                          ", native_stream: ",
-                          sched->coll_param.stream->to_string(),
-                          ", count: ",
-                          count);
-
+            if (!is_sycl_buf) {
                 if ((in_ptr_type != sycl::usm::alloc::device) &&
                     (out_ptr_type != sycl::usm::alloc::device)) {
                     do_regular_copy();
                     return;
                 }
-
-                if ((in_ptr_type == sycl::usm::alloc::device) &&
-                    (out_ptr_type == sycl::usm::alloc::device)) {
-                    direction = copy_direction::d2d;
-                }
-
-                if ((in_ptr_type == sycl::usm::alloc::host) &&
-                    (out_ptr_type == sycl::usm::alloc::device)) {
-                    direction = copy_direction::h2d;
-                }
-
-                if ((in_ptr_type == sycl::usm::alloc::device) &&
-                    (out_ptr_type == sycl::usm::alloc::host)) {
-                    direction = copy_direction::d2h;
-                }
             }
 
-            copier =
-                sycl_copier(direction, in_buf, out_buf, count, dtype, is_sycl_buf, attr.offset);
+            copier = sycl_copier(
+                attr.direction, in_buf, out_buf, count, dtype, is_sycl_buf, attr.in_buf_offset);
             copier.set_queue(q);
             ccl_tuple_for_each_indexed<ccl_sycl_buffer_one_dim_types>(copier);
             status = ccl_sched_entry_status_started;
@@ -275,8 +254,8 @@ protected:
                            in_buf,
                            ", out_buf ",
                            out_buf,
-                           ", offset ",
-                           attr.offset,
+                           ", in_buf_offset ",
+                           attr.in_buf_offset,
                            "\n");
     }
 

@@ -51,7 +51,7 @@ void create_kernel(ze_module_handle_t module, std::string kernel_name, ze_kernel
     desc.pKernelName = kernel_name.c_str();
     ze_result_t res = zeKernelCreate(module, &desc, kernel);
     if (res != ZE_RESULT_SUCCESS) {
-        CCL_THROW("error at zeKernelCreate: kernel name: ", kernel_name, "ret: ", to_string(res));
+        CCL_THROW("error at zeKernelCreate: kernel name: ", kernel_name, " ret: ", to_string(res));
     }
 }
 

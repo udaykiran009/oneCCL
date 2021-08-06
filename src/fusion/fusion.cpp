@@ -218,7 +218,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
               exec_queue.size());
 
     ccl_master_sched* sched = nullptr;
-    auto create_fn = [this, ctype, &fusion_buf, sum_count, dtype, reduction, comm]() {
+    auto create_fn = [this, ctype, &fusion_buf, sum_count, dtype, reduction, comm, stream]() {
         ccl_master_sched* sched = nullptr;
         switch (ctype) {
             case ccl_coll_allreduce: {
@@ -231,7 +231,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
                                                                                    reduction,
                                                                                    coll_attr,
                                                                                    comm,
-                                                                                   nullptr);
+                                                                                   stream);
                 sched = new ccl_master_sched(coll_param);
                 sched->internal_type = ccl_sched_internal_fusion;
             } break;
@@ -335,7 +335,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
                     ccl_buffer(fusion_buf, buf_cache.get_buf_size(), offset),
                     exec_queue[global_copy_idx]->coll_param.get_send_count(),
                     dtype,
-                    copy_attr(copy_helper::invalid_rank, copy_direction::d2h, 0));
+                    copy_attr(copy_helper::invalid_rank, copy_direction::d2h));
             else
 #endif // CCL_ENABLE_SYCL
                 entry_factory::make_entry<copy_entry>(
@@ -375,7 +375,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
                         ccl_buffer_type::INDIRECT),
                     exec_queue[global_copy_idx]->coll_param.get_recv_count(),
                     dtype,
-                    copy_attr(copy_helper::invalid_rank, copy_direction::h2d, 0));
+                    copy_attr(copy_helper::invalid_rank, copy_direction::h2d));
             else
 #endif // CCL_ENABLE_SYCL
                 entry_factory::make_entry<copy_entry>(
