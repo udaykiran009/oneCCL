@@ -7,6 +7,4 @@ DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCo
 <N/A>	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_icc_path>/libccl.so		external	Ksenya Kochanova		1	755	redistributable	root	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_icc_path>/libccl.so.1
 
 <deliverydir>/l_lib_runtime/kernels/kernels.spv	<installdir><l_ccl_install_path><l_ccl_platform>/lib/kernels/kernels.spv		external	Ksenya Kochanova		1	644	redistributable	root	<ccl_root>/src/kernels/kernels.spv
-<deliverydir>/l_lib_runtime/pkgconfig/ccl-cpu_gpu_dpcpp.pc	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_lib_pkgconfig>/ccl-cpu_gpu_dpcpp.pc		external	Ksenya Kochanova		1	644	redistributable	root	<installroot>/lib/pkgconfig/ccl-cpu_gpu_dpcpp.pc
-<deliverydir>/l_lib_runtime/pkgconfig/ccl-cpu_icc.pc	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_lib_pkgconfig>/ccl-cpu_icc.pc		external	Ksenya Kochanova		1	644	redistributable	root	<installroot>/lib/pkgconfig/ccl-cpu_icc.pc
 #Intel Confidential

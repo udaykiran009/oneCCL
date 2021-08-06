@@ -1,4 +1,7 @@
 DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCondition	InstalledFilePermission	Redistributable	InstalledFileOwner	SymbolicLink
 <deliverydir>/l_lib_sdk/cpu_gpu_dpcpp/libccl.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cpu_gpu_dpcpp/libccl.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/lib/cpu_gpu_dpcpp/libccl.a
 <deliverydir>/l_lib_sdk/cpu_icc/libccl.a	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cpu_icc/libccl.a		external	Ksenya Kochanova		1	755	redistributable	root	<installroot>/lib/cpu_icc/libccl.a
+<deliverydir>/l_lib_sdk/pkgconfig/ccl-cpu_gpu_dpcpp.pc	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_lib_pkgconfig>/ccl-cpu_gpu_dpcpp.pc		external	Ksenya Kochanova		1	644	redistributable	root	<installroot>/lib/pkgconfig/ccl-cpu_gpu_dpcpp.pc
+<deliverydir>/l_lib_sdk/pkgconfig/ccl-cpu_icc.pc	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_lib_pkgconfig>/ccl-cpu_icc.pc		external	Ksenya Kochanova		1	644	redistributable	root	<installroot>/lib/pkgconfig/ccl-cpu_icc.pc
+
 #Intel Confidential
