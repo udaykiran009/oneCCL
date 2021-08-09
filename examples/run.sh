@@ -187,7 +187,7 @@ run_benchmark()
         then
             # TODO: submit compiler ticket
             buf_count=1
-            ccl_bench_env="$ZE_SERIALIZE=2 ${ccl_extra_env}"
+            ccl_bench_env="ZE_SERIALIZE=2 ${ccl_extra_env}"
         fi
     fi
     options="${options} --buf_count ${buf_count} --iters ${iter_count} ${extra_options}"
