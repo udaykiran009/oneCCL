@@ -17,6 +17,17 @@ echo_log()
     echo -e "$*" 2>&1 | tee -a ${LOG_FILE}
 }
 
+# Cleanup temp dir
+cleanup()
+{
+    if [[ -d "${TMP_MAKE_DIR}" ]]
+    then
+        rm -rf "${TMP_MAKE_DIR}"
+    fi
+}
+
+trap cleanup EXIT
+
 DATE=`date +%Y%m%d`
 TIME=`date +%H%M%S`
 ARCH=`uname -m`
@@ -36,6 +47,7 @@ IMPI_DIR="${WORKSPACE}/deps/mpi"
 HWLOC_DIR="${WORKSPACE}/deps/hwloc"
 BOM_LIST_NAME="bom_lists.txt"
 TMP_DIR="${WORKSPACE}/_tmp"
+TMP_MAKE_DIR=$(mktemp -d -t dpcpp-XXXXXXXXXX)
 PACKAGE_DIR="${WORKSPACE}/_package"
 # Files ready to be packaged as an engineering archive
 PACKAGE_ENG_DIR="${PACKAGE_DIR}/eng"
@@ -283,7 +295,7 @@ build()
         "${CMAKE_ADDITIONAL_OPTIONS}"
     fi
 
-    log make -j$MAKE_JOB_COUNT VERBOSE=1 install
+    log TEMP=${TMP_MAKE_DIR} make -j$MAKE_JOB_COUNT VERBOSE=1 install
     CheckCommandExitCode $? "build failed"
 }
 
