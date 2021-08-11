@@ -86,6 +86,7 @@ if (CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)
                     sched/entry/gpu/ze_allreduce_entry.cpp
                     sched/entry/gpu/ze_handle_exchange_entry.cpp
                     sched/entry/gpu/ze_event_signal_entry.cpp
+                    sched/entry/gpu/ze_event_wait_entry.cpp
                     sched/entry/reduce_local_entry.cpp
                     sched/ze_handle_manager.cpp
         )

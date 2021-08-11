@@ -495,15 +495,16 @@ ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
                                          ccl_comm* comm) {
     LOG_DEBUG("build gpu allreduce");
 
-    int skip_rank = -1;
-    std::vector<void*> in_buffers(2);
-    in_buffers[0] = send_buf.get_ptr();
-    in_buffers[1] = recv_buf.get_ptr();
+    const std::vector<ze_handle_exchange_entry::mem_desc_t> in_buffers{
+        { send_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 0
+        { recv_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 1
+    };
 
     ccl_coll_entry_param barrier_param{};
     barrier_param.ctype = ccl_coll_barrier;
     barrier_param.comm = comm;
 
+    int skip_rank = -1;
     if (ccl::global_data::env().enable_kernel_1s_ipc_wa) {
         skip_rank = ccl::global_data::env().kernel_1s_lead;
     }

@@ -1,54 +1,38 @@
 #pragma once
 
-#include "oneapi/ccl/config.h"
-
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
-
-#include <iostream>
-#include <limits>
-#include <string>
-#include <vector>
-
-#include <arpa/inet.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <netdb.h>
-#include <poll.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/un.h>
-#include <unistd.h>
-
-#include <ze_api.h>
-
 #include "common/comm/comm.hpp"
 #include "sched/entry/entry.hpp"
 #include "sched/entry/gpu/ze_primitives.hpp"
 #include "sched/sched.hpp"
 #include "sched/ze_handle_manager.hpp"
 
+#include <poll.h>
+#include <sys/un.h>
+#include <ze_api.h>
+
 class ze_handle_exchange_entry : public sched_entry {
 public:
+    using mem_desc_t = typename std::pair<void*, ccl::ze::ipc_mem_type>;
+
     static constexpr const char* class_name() noexcept {
         return "ZE_HANDLES";
     }
 
+    const char* name() const noexcept override {
+        return class_name();
+    }
+
     ze_handle_exchange_entry() = delete;
-    ze_handle_exchange_entry(ccl_sched* sched,
-                             ccl_comm* comm,
-                             const std::vector<void*>& in_buffers,
-                             const int skip_rank = -1);
+    explicit ze_handle_exchange_entry(ccl_sched* sched,
+                                      ccl_comm* comm,
+                                      const std::vector<mem_desc_t>& in_buffers,
+                                      int skip_rank = -1);
     ~ze_handle_exchange_entry();
 
     void start() override;
     void update() override;
 
-    const char* name() const override {
-        return class_name();
-    }
-
-    bool is_strict_order_satisfied() override {
+    bool is_strict_order_satisfied() noexcept override {
         return (status >= ccl_sched_entry_status_complete);
     }
 
@@ -63,8 +47,6 @@ protected:
                            right_peer_socket_name,
                            ", left_peer ",
                            left_peer_socket_name,
-                           ", context ",
-                           context,
                            ", in_buffers size ",
                            in_buffers.size(),
                            ", handles size ",
@@ -80,37 +62,36 @@ private:
 
     const ccl_comm* comm;
 
-    std::vector<void*> in_buffers;
-    ze_context_handle_t context;
-
-    std::vector<std::vector<ipc_handle_info>> handles;
+    std::vector<mem_desc_t> in_buffers;
+    ccl::ze::ipc_handle_manager::mem_handle_map_t handles;
 
     const int rank;
     const int comm_size;
     const int skip_rank;
 
-    int start_buf_idx;
-    int start_peer_idx;
+    int start_buf_idx{};
+    int start_peer_idx{};
 
     std::vector<struct pollfd> poll_fds;
 
-    int right_peer_socket;
-    int left_peer_socket;
-    int left_peer_connect_socket;
+    int right_peer_socket{};
+    int left_peer_socket{};
+    int left_peer_connect_socket{};
 
-    struct sockaddr_un right_peer_addr, left_peer_addr;
-    int right_peer_addr_len, left_peer_addr_len;
+    struct sockaddr_un right_peer_addr {
+    }, left_peer_addr{};
+    int right_peer_addr_len{}, left_peer_addr_len{};
 
     std::string right_peer_socket_name;
     std::string left_peer_socket_name;
 
-    bool is_created;
-    bool is_connected;
-    bool is_accepted;
-    bool skip_first_send;
+    bool is_created{};
+    bool is_connected{};
+    bool is_accepted{};
+    bool skip_first_send{};
 
-    int get_fd_from_handle(const ze_ipc_mem_handle_t* handle, int* fd);
-    int get_handle_from_fd(int* fd, ze_ipc_mem_handle_t* handle);
+    void get_fd_from_handle(const ze_ipc_mem_handle_t* handle, int* fd) noexcept;
+    void get_handle_from_fd(const int* fd, ze_ipc_mem_handle_t* handle) noexcept;
 
     int create_server_socket(const std::string& socket_name,
                              struct sockaddr_un* socket_addr,
@@ -130,17 +111,15 @@ private:
                      int addr_len,
                      const std::string& socket_name);
 
-    int sendmsg_fd(int sock, int fd, size_t mem_offset);
-    int recvmsg_fd(int sock, int& fd, size_t& mem_offset);
+    void sendmsg_fd(int sock, int fd, size_t mem_offset);
+    void recvmsg_fd(int sock, int& fd, size_t& mem_offset);
 
     void sendmsg_call(int sock, int fd, size_t mem_offset);
     void recvmsg_call(int sock, int& fd, size_t& mem_offset);
 
-    void get_handle(ze_context_handle_t context, const void* buffer, ze_ipc_mem_handle_t* handle);
-    std::pair<void*, size_t> get_mem_info(ze_context_handle_t context, void* ptr);
+    using mem_info_t = typename std::pair<void*, size_t>;
+    mem_info_t get_mem_info(const void* ptr);
 
     void unlink_sockets();
     void close_sockets();
 };
-
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT

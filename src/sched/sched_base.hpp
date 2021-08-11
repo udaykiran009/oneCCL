@@ -60,7 +60,7 @@ struct ccl_sched_memory {
 #ifdef CCL_ENABLE_SYCL
     std::list<ccl_sched_sycl_buffer_handler> sycl_buf_list;
 #ifdef MULTI_GPU_SUPPORT
-    ze_handle_manager handle_manager;
+    ccl::ze::ipc_handle_manager handle_manager;
     // sync event which we use to signal to the user about collective completion
     // and the pool it's created from(need to keep it to know what to return to the cache)
     // TODO: this is not the best place for these objects, think about moving them

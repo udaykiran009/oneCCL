@@ -2,10 +2,12 @@
 #include "sched/queue/queue.hpp"
 #include "common/utils/sycl_utils.hpp"
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
 ze_event_signal_entry::ze_event_signal_entry(ccl_sched* sched, ccl_master_sched* master_sched)
-        : sched_entry{ sched },
-          master_sched{ master_sched } {}
+        : sched_entry(sched),
+          master_sched(master_sched) {
+    CCL_THROW_IF_NOT(sched, "no sched");
+    CCL_THROW_IF_NOT(master_sched, "no master_sched");
+}
 
 void ze_event_signal_entry::start() {
     LOG_DEBUG("signal event: ", master_sched->get_memory().sync_event);
@@ -21,4 +23,3 @@ void ze_event_signal_entry::update() {
         status = ccl_sched_entry_status_complete;
     }
 }
-#endif

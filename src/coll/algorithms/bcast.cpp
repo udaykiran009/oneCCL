@@ -229,8 +229,9 @@ ccl::status ccl_coll_build_gpu_bcast(ccl_sched* sched,
                                      ccl_comm* comm) {
     LOG_DEBUG("build gpu bcast");
 
-    std::vector<void*> buffers(1);
-    buffers[0] = buf.get_ptr();
+    const std::vector<ze_handle_exchange_entry::mem_desc_t> buffers{
+        { buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 0
+    };
     LOG_DEBUG("BCAST buf = ", buf.get_ptr(), " and root = ", root);
 
     ccl_coll_entry_param barrier_param{};
