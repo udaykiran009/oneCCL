@@ -1554,6 +1554,8 @@ static atl_status_t atl_mpi_init(int* argc,
     void* tag_ub_ptr = NULL;
     int required_thread_level = MPI_THREAD_MULTIPLE, provided_thread_level;
 
+    char my_hostname[ATL_MAX_HOSTNAME_LEN] = { 0 };
+
     atl_mpi_ctx_t* mpi_ctx = (atl_mpi_ctx_t*)calloc(1, sizeof(atl_mpi_ctx_t));
     if (!mpi_ctx)
         return ATL_STATUS_FAILURE;
@@ -1640,6 +1642,9 @@ static atl_status_t atl_mpi_init(int* argc,
     MPI_Comm_rank(local_comm, (int*)&(coord->local_idx));
     MPI_Comm_size(local_comm, (int*)&(coord->local_count));
     MPI_Comm_free(&local_comm);
+
+    gethostname(my_hostname, ATL_MAX_HOSTNAME_LEN - 1);
+    coord->hostname_hash = std::hash<std::string>{}(my_hostname);
 
     ctx->ops = &atl_mpi_ops;
     ctx->mr_ops = &atl_mpi_mr_ops;

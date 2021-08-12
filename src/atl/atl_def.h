@@ -20,6 +20,7 @@
 #define ATL_CACHELINE_LEN     64
 #define ATL_REQ_SIZE          8
 #define ATL_PROGRESS_MODE_ENV "ATL_PROGRESS_MODE"
+#define ATL_MAX_HOSTNAME_LEN  64
 
 #define DIR_SEP  '/'
 #define FILENAME (strrchr(__FILE__, DIR_SEP) ? strrchr(__FILE__, DIR_SEP) + 1 : __FILE__)
@@ -133,6 +134,7 @@ typedef struct {
     int global_count;
     int local_idx;
     int local_count;
+    size_t hostname_hash;
 } atl_proc_coord_t;
 
 typedef struct {

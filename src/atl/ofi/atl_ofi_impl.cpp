@@ -32,7 +32,6 @@
 
 #define ATL_OFI_DEFAULT_TIMEOUT_SEC 60
 #define ATL_OFI_MAX_RETRY_COUNT     10000
-#define ATL_OFI_MAX_HOSTNAME_LEN    64
 #define ATL_OFI_WAIT_SEC            10
 #define ATL_OFI_CQ_READ_ITERS       10000
 #define ATL_OFI_CQ_BUNCH_SIZE       8
@@ -304,32 +303,33 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
     int i;
     int local_idx = 0, local_count = 0;
     char* all_hostnames = NULL;
-    char my_hostname[ATL_OFI_MAX_HOSTNAME_LEN] = { 0 };
+    char my_hostname[ATL_MAX_HOSTNAME_LEN] = { 0 };
     size_t my_hostname_len = 0;
     int my_global_proc_idx = coord->global_idx;
 
-    gethostname(my_hostname, ATL_OFI_MAX_HOSTNAME_LEN - 1);
+    gethostname(my_hostname, ATL_MAX_HOSTNAME_LEN - 1);
     my_hostname_len = strlen(my_hostname);
+    coord->hostname_hash = std::hash<std::string>{}(my_hostname);
 
-    CCL_THROW_IF_NOT(my_hostname_len < ATL_OFI_MAX_HOSTNAME_LEN,
+    CCL_THROW_IF_NOT(my_hostname_len < ATL_MAX_HOSTNAME_LEN,
                      "unexpected my_hostname_len ",
                      my_hostname_len,
                      ", expected max ",
-                     (size_t)(ATL_OFI_MAX_HOSTNAME_LEN));
+                     (size_t)(ATL_MAX_HOSTNAME_LEN));
 
-    if (ATL_OFI_MAX_HOSTNAME_LEN - my_hostname_len <= 10) {
+    if (ATL_MAX_HOSTNAME_LEN - my_hostname_len <= 10) {
         LOG_WARN("hostname is quite long, len: ", my_hostname_len, ", name: ", my_hostname);
     }
 
     snprintf(my_hostname + my_hostname_len,
-             ATL_OFI_MAX_HOSTNAME_LEN - my_hostname_len,
+             ATL_MAX_HOSTNAME_LEN - my_hostname_len,
              "-%d",
              my_global_proc_idx);
 
     ret = pmi->pmrt_kvs_put((char*)ATL_OFI_HOSTNAME_PM_KEY,
                             my_global_proc_idx * ATL_OFI_PMI_PROC_MULTIPLIER,
                             my_hostname,
-                            ATL_OFI_MAX_HOSTNAME_LEN);
+                            ATL_MAX_HOSTNAME_LEN);
 
     if (ret) {
         LOG_ERROR("pmrt_kvs_put: ret: ", ret);
@@ -338,7 +338,7 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
 
     pmi->pmrt_barrier();
 
-    all_hostnames = (char*)calloc(1, coord->global_count * ATL_OFI_MAX_HOSTNAME_LEN);
+    all_hostnames = (char*)calloc(1, coord->global_count * ATL_MAX_HOSTNAME_LEN);
     if (!all_hostnames) {
         LOG_ERROR("can't allocate all_hostnames");
         goto fn_err;
@@ -347,8 +347,8 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
     for (i = 0; i < coord->global_count; i++) {
         ret = pmi->pmrt_kvs_get((char*)ATL_OFI_HOSTNAME_PM_KEY,
                                 i * ATL_OFI_PMI_PROC_MULTIPLIER,
-                                all_hostnames + i * ATL_OFI_MAX_HOSTNAME_LEN,
-                                ATL_OFI_MAX_HOSTNAME_LEN);
+                                all_hostnames + i * ATL_MAX_HOSTNAME_LEN,
+                                ATL_MAX_HOSTNAME_LEN);
         if (ret) {
             LOG_ERROR("pmrt_kvs_get: ret: ", ret);
             goto fn_err;
@@ -357,11 +357,11 @@ static atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, ipmi* p
 
     for (i = 0; i < coord->global_count; i++) {
         if (!strncmp(my_hostname,
-                     all_hostnames + i * ATL_OFI_MAX_HOSTNAME_LEN,
+                     all_hostnames + i * ATL_MAX_HOSTNAME_LEN,
                      my_hostname_len + 1 /* including "-" at the end */)) {
             local_count++;
             int peer_global_proc_idx;
-            sscanf(all_hostnames + i * ATL_OFI_MAX_HOSTNAME_LEN + my_hostname_len + 1,
+            sscanf(all_hostnames + i * ATL_MAX_HOSTNAME_LEN + my_hostname_len + 1,
                    "%d",
                    &peer_global_proc_idx);
             if (my_global_proc_idx > peer_global_proc_idx)
