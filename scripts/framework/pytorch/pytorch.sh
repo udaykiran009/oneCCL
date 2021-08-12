@@ -78,7 +78,7 @@ CCL_LINK="https://github.com/otcshare/oneccl.git"
 CCL_BRANCH="main"
 
 UCX_LINK="https://github.com/openucx/ucx.git"
-UCX_BRANCH="v1.11.0"
+UCX_BRANCH="v1.11.1-rc1"
 
 UCC_BASE_LINK="github.com/otcshare/ucc.git"
 UCC_BRANCH="ccl-master"
@@ -90,6 +90,8 @@ TORCH_UCC_BRANCH="main"
 
 PARAM_LINK="https://github.com/facebookresearch/param.git"
 PARAM_BRANCH="master"
+
+TRACE_LINK="https://intel.sharepoint.com/sites/Facebook-CSPcollaboration/Shared%20Documents/SPR%20HBM%20Program/param_traces/trace_replay_files_040721.tgz"
 
 
 DEFAULT_SCRIPT_WORK_DIR="${SCRIPT_DIR}/work_dir_${current_date}"
@@ -114,6 +116,7 @@ DEFAULT_INSTALL_PT="0"
 DEFAULT_DOWNLOAD_TORCH_UCC="0"
 DEFAULT_INSTALL_TORCH_UCC="0"
 
+DEFAULT_TRACE_PATH="/nfs/inn/proj/mpi/users/mshiryae/shared/trace"
 DEFAULT_RUN_TESTS="0"
 
 DEFAULT_PATH_TO_TOKEN_FILE_1S=""
@@ -169,6 +172,8 @@ print_help() {
     echo_log "      Download torch-ucc"
     echo_log "  -install_torch_ucc <bool_flag>"
     echo_log "      Install torch-ucc"
+    echo_log "  -trace_path <path>"
+    echo_log "      Path to directory with comm trace files"
     echo_log "  -run_tests <bool_flag>"
     echo_log "      Run UCC, torch-ucc and PARAM tests on 2 ranks"
     echo_log "  -token <path>"
@@ -208,6 +213,7 @@ parse_arguments() {
     DOWNLOAD_TORCH_UCC=${DEFAULT_DOWNLOAD_TORCH_UCC}
     INSTALL_TORCH_UCC=${DEFAULT_INSTALL_TORCH_UCC}
 
+    TRACE_PATH=${DEFAULT_TRACE_PATH}
     RUN_TESTS=${DEFAULT_RUN_TESTS}
 
     PATH_TO_TOKEN_FILE_1S=${DEFAULT_PATH_TO_TOKEN_FILE_1S}
@@ -280,6 +286,10 @@ parse_arguments() {
                 ;;
             "-install_torch_ucc")
                 INSTALL_TORCH_UCC=${2}
+                shift
+                ;;
+            "-trace_path")
+                TRACE_PATH=${2}
                 shift
                 ;;
             "-run_tests")
@@ -363,6 +373,13 @@ parse_arguments() {
         fi
     fi
 
+    if [[ ${RUN_TESTS} = "1" ]] && [[ ! -d ${TRACE_PATH} ]]
+    then
+        echo_log "ERROR: TRACE_PATH (${TRACE_PATH}) is not directory"
+        echo_log "download trace from ${TRACE_LINK}, unpack it and pass path using -trace_path <path>"
+        check_exit_code 1 ""
+    fi
+
     RDMA_CORE_DIR_OPTION=""
     if [[ ${CLUSTER} = "fabric" ]]
     then
@@ -394,6 +411,7 @@ parse_arguments() {
     echo_log "DOWNLOAD_TORCH_UCC = ${DOWNLOAD_TORCH_UCC}"
     echo_log "INSTALL_TORCH_UCC  = ${INSTALL_TORCH_UCC}"
 
+    echo_log "TRACE_PATH         = ${TRACE_PATH}"
     echo_log "RUN_TESTS          = ${RUN_TESTS}"
 
     echo_log "PROXY              = ${PROXY}"
@@ -765,7 +783,8 @@ run_tests() {
 
     cd ${SCRIPT_WORK_DIR}
 
-    if [[ ${CLUSTER} != "fabric" ]]
+    # if [[ ${CLUSTER} != "fabric" ]]
+    if [[ ${CLUSTER} = "unknown" ]]
     then
         echo "================ 1. UCC test ================" | tee -a ${TESTS_LOG_FILE}
         cd ${UCC_SRC_DIR}/test/mpi
@@ -821,18 +840,30 @@ run_tests() {
 
     MASTER_IP="--master-ip ${master_ip_value}"
 
-    param_coll_list="all_reduce all_to_all all_to_allv"
+    # param_coll_list="all_reduce all_to_all all_to_allv"
+    param_coll_list="all_reduce all_to_allv"
 
     for coll in ${param_coll_list}
     do
-        cmd="mpirun ${N} ${PPN} ${EXTRA_ARGS} python ./comms.py ${MASTER_IP} \
+        cmd="mpiexec ${N} ${PPN} ${EXTRA_ARGS} python ./comms.py ${MASTER_IP} \
             --b 8 --e 8M --n 64 --f 2 --z 1 \
             --collective ${coll} --backend ucc --log INFO 2>&1 | tee -a ${TESTS_LOG_FILE}"
         echo_log "exec cmd: $cmd"
         eval ${cmd}
         check_exit_code $? "Run PARAM/${coll} failed"
     done
+    echo "================ ****************** ================" | tee -a ${TESTS_LOG_FILE}
 
+    echo "================ 5. PARAM trace ================" | tee -a ${TESTS_LOG_FILE}
+    TRACE_OUTPUT_PATH="${SCRIPT_WORK_DIR}/trace_output"
+    rm "${TRACE_OUTPUT_PATH}/*"
+    cmd="mpiexec ${N} ${PPN} ${EXTRA_ARGS} python ./commsTraceReplay.py ${MASTER_IP} \
+        --trace-path ${TRACE_PATH} --output-path ${TRACE_OUTPUT_PATH} \
+        --no-warm-up --max-msg-cnt 1024 --auto-shrink \
+        --backend ucc --log INFO 2>&1 | tee -a ${TESTS_LOG_FILE}"
+    echo_log "exec cmd: $cmd"
+    eval ${cmd}
+    check_exit_code $? "Run PARAM/trace failed"
     echo "================ ****************** ================" | tee -a ${TESTS_LOG_FILE}
 
     fail_pattern="abort|^bad$|corrupt|^fault$|invalid|kill|runtime_error|terminate|timed|unexpected"
