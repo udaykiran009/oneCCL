@@ -8,6 +8,8 @@
 #include <sstream>
 #include <vector>
 
+#include "options.hpp"
+
 #define zeCall(myZeCall) \
     do { \
         if (myZeCall != ZE_RESULT_SUCCESS) { \
@@ -199,8 +201,8 @@ void get_device_info(const ze_device_handle_t& device) {
 
 template <class vector_t>
 void print_line(const vector_t& props, const std::string& title) {
-    constexpr int title_col_width = 35;
-    constexpr int col_width = 13;
+    constexpr int title_col_width = 31;
+    constexpr int col_width = 11;
 
     if (!title.empty()) {
         std::cout << std::left << std::setw(title_col_width) << std::string(title + ":");
@@ -288,7 +290,9 @@ void print() {
     }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    parse_options(argc, argv);
+
     zeCall(zeInit(0));
 
     uint32_t drivers_count = 0;
@@ -304,12 +308,15 @@ int main() {
 
         for (uint32_t device_idx = 0, total_device_idx = 0; device_idx < devices_count;
              ++device_idx, ++total_device_idx) {
+            if (options.show_device_with_idx >= 0 && options.show_device_with_idx != device_idx) {
+                continue;
+            }
             device_ids.push_back(std::to_string(device_idx));
             get_device_info(devices[device_idx]);
 
             uint32_t subdevices_count = 0;
             zeCall(zeDeviceGetSubDevices(devices[device_idx], &subdevices_count, nullptr));
-            if (subdevices_count > 0) {
+            if (subdevices_count > 0 && !options.show_root_device_only) {
                 std::vector<ze_device_handle_t> subdevices(subdevices_count);
                 zeCall(zeDeviceGetSubDevices(
                     devices[device_idx], &subdevices_count, subdevices.data()));
