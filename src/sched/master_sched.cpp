@@ -1,3 +1,4 @@
+#include "coll/coll_check.hpp"
 #include "common/global/global.hpp"
 #include "common/utils/sync_object.hpp"
 #include "common/utils/sycl_utils.hpp"
@@ -9,10 +10,15 @@
 #include "sched/master_sched.hpp"
 #include "sched/queue/queue.hpp"
 
+#ifdef CCL_ENABLE_SYCL
+#include <CL/sycl.hpp>
+#include <CL/sycl/backend/level_zero.hpp>
+
 #ifdef MULTI_GPU_SUPPORT
 #include "sched/entry/gpu/ze_cache.hpp"
 #include "sched/entry/gpu/ze_primitives.hpp"
-#endif
+#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_SYCL
 constexpr ze_event_pool_desc_t get_event_pool_desc() {

@@ -84,6 +84,7 @@ if (CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)
     list (APPEND EXTENSIONS_SRC
                     sched/entry/gpu/ze_base_entry.cpp
                     sched/entry/gpu/ze_allreduce_entry.cpp
+                    sched/entry/gpu/ze_copy_entry.cpp
                     sched/entry/gpu/ze_handle_exchange_entry.cpp
                     sched/entry/gpu/ze_event_signal_entry.cpp
                     sched/entry/gpu/ze_event_wait_entry.cpp
@@ -189,6 +190,7 @@ set(CCL_SRC
     sched/queue/queue.cpp
     sched/entry/coll/coll_entry.cpp
     sched/entry/coll/coll_entry_helper.cpp
+    sched/entry/copy/copy_entry.cpp
     sched/entry/copy/copy_helper.cpp
     sched/entry/entry.cpp
     sched/entry/factory/chunked_entry_factory.cpp

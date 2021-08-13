@@ -16,6 +16,16 @@ public:
     static const int invalid_rank;
 };
 
+struct copy_attr {
+    int peer_rank;
+    copy_direction direction;
+    size_t in_buf_offset;
+
+    copy_attr(int peer_rank = copy_helper::invalid_rank,
+              copy_direction direction = copy_direction::h2h,
+              size_t in_buf_offset = 0);
+};
+
 #ifdef CCL_ENABLE_SYCL
 
 struct sycl_copier {
