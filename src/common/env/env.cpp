@@ -86,6 +86,7 @@ env_data::env_data()
 #else // CCL_ENABLE_SYCL
           enable_cache_flush(0),
 #endif // CCL_ENABLE_SYCL
+          enable_buffer_cache(1),
           enable_strict_order(0),
           staging_buffer(ccl_staging_usm),
           enable_op_sync(0),
@@ -214,6 +215,7 @@ void env_data::parse() {
     env_2_type(CCL_BCAST_PART_COUNT, (size_t&)bcast_part_count);
     env_2_enum(CCL_CACHE_KEY, ccl_sched_key::key_type_names, cache_key_type);
     env_2_type(CCL_CACHE_FLUSH, enable_cache_flush);
+    env_2_type(CCL_BUFFER_CACHE, enable_buffer_cache);
     env_2_type(CCL_STRICT_ORDER, enable_strict_order);
     if (enable_unordered_coll && enable_strict_order) {
         LOG_INFO("unordered collectives are requested, disable strict order");
@@ -413,6 +415,7 @@ void env_data::print(int rank) {
                                                                : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_CACHE_KEY, ": ", str_by_enum(ccl_sched_key::key_type_names, cache_key_type));
     LOG_INFO(CCL_CACHE_FLUSH, ": ", enable_cache_flush);
+    LOG_INFO(CCL_BUFFER_CACHE, ": ", enable_buffer_cache);
     LOG_INFO(CCL_STRICT_ORDER, ": ", enable_strict_order);
     LOG_INFO(CCL_STAGING_BUFFER, ": ", str_by_enum(staging_buffer_names, staging_buffer));
     LOG_INFO(CCL_OP_SYNC, ": ", enable_op_sync);

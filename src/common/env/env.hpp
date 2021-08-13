@@ -70,6 +70,7 @@ constexpr const char* CCL_MAX_SHORT_SIZE = "CCL_MAX_SHORT_SIZE";
 constexpr const char* CCL_BCAST_PART_COUNT = "CCL_BCAST_PART_COUNT";
 constexpr const char* CCL_CACHE_KEY = "CCL_CACHE_KEY";
 constexpr const char* CCL_CACHE_FLUSH = "CCL_CACHE_FLUSH";
+constexpr const char* CCL_BUFFER_CACHE = "CCL_BUFFER_CACHE";
 constexpr const char* CCL_STRICT_ORDER = "CCL_STRICT_ORDER";
 constexpr const char* CCL_STAGING_BUFFER = "CCL_STAGING_BUFFER";
 constexpr const char* CCL_OP_SYNC = "CCL_OP_SYNC";
@@ -182,6 +183,7 @@ public:
     ssize_t bcast_part_count;
     ccl_cache_key_type cache_key_type;
     int enable_cache_flush;
+    int enable_buffer_cache;
     int enable_strict_order;
     ccl_staging_buffer staging_buffer;
     int enable_op_sync;

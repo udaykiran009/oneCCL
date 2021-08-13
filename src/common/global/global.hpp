@@ -39,6 +39,8 @@ class ccl_algorithm_selector_wrapper;
 
 namespace ccl {
 
+class buffer_cache;
+
 namespace ze {
 class cache;
 } // namespace ze
@@ -86,6 +88,7 @@ public:
     std::unique_ptr<ccl_datatype_storage> dtypes;
     std::unique_ptr<ccl_executor> executor;
     std::unique_ptr<ccl_sched_cache> sched_cache;
+    std::unique_ptr<ccl::buffer_cache> buffer_cache;
     std::unique_ptr<ccl_parallelizer> parallelizer;
     std::unique_ptr<ccl_fusion_manager> fusion_manager;
     std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>> algorithm_selector;

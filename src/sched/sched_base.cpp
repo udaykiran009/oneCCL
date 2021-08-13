@@ -4,6 +4,7 @@
 #include "coll/coll_param.hpp"
 #include "coll/selection/selection.hpp"
 #include "common/global/global.hpp"
+#include "sched/buffer_cache.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 #include "sched/sched_base.hpp"
 
@@ -102,8 +103,10 @@ ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes) {
     LOG_DEBUG("try to allocate buffer size: ", bytes);
     CCL_THROW_IF_NOT(bytes > 0, "incorrect buffer size: ", bytes);
 
-    ccl_buffer buffer =
-        ccl_buffer(CCL_MALLOC(bytes, "sched_buffer"), bytes, 0, ccl_buffer_type::DIRECT);
+    void* ptr = nullptr;
+    ccl::global_data::get().buffer_cache->get(sched_id, bytes, &ptr);
+
+    ccl_buffer buffer = ccl_buffer(ptr, bytes, 0, ccl_buffer_type::DIRECT);
     memory.buf_list.emplace_back(buffer, bytes);
     CCL_THROW_IF_NOT(buffer.get_ptr(), "null ptr");
 
@@ -120,7 +123,9 @@ ccl_buffer ccl_sched_base::alloc_staging_buffer(size_t bytes) {
     if (ccl::global_data::env().staging_buffer == ccl_staging_usm) {
         CCL_ASSERT(coll_param.stream);
         sycl::context ctx = coll_param.stream->get_native_stream().get_context();
-        buffer = ccl_buffer(aligned_alloc_host(64, bytes, ctx), bytes, 0, ccl_buffer_type::DIRECT);
+        void* ptr = nullptr;
+        ccl::global_data::get().buffer_cache->get(sched_id, bytes, ctx, &ptr);
+        buffer = ccl_buffer(ptr, bytes, 0, ccl_buffer_type::DIRECT);
         memory.sycl_buf_list.emplace_back(buffer, bytes, ctx);
         LOG_DEBUG(
             "allocated host usm buffer ptr: ", buffer.get_ptr(), ", size: ", buffer.get_size());
@@ -139,7 +144,7 @@ void ccl_sched_base::free_memory() {
     std::list<ccl_sched_buffer_handler>::iterator it;
     for (it = memory.buf_list.begin(); it != memory.buf_list.end(); it++) {
         LOG_DEBUG("free ", it->buffer.get_ptr());
-        CCL_FREE(it->buffer.get_ptr());
+        ccl::global_data::get().buffer_cache->push(sched_id, it->size, it->buffer.get_ptr());
     }
     memory.buf_list.clear();
 
@@ -149,7 +154,8 @@ void ccl_sched_base::free_memory() {
     std::list<ccl_sched_sycl_buffer_handler>::iterator sycl_it;
     for (sycl_it = memory.sycl_buf_list.begin(); sycl_it != memory.sycl_buf_list.end(); sycl_it++) {
         LOG_DEBUG("free host usm ", sycl_it->buffer.get_ptr());
-        free(sycl_it->buffer.get_ptr(), sycl_it->ctx);
+        ccl::global_data::get().buffer_cache->push(
+            sched_id, sycl_it->size, sycl_it->ctx, sycl_it->buffer.get_ptr());
     }
     memory.sycl_buf_list.clear();
 

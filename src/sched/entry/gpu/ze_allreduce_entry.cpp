@@ -248,7 +248,7 @@ void ze_allreduce_entry::finalize() {
                                                &device_mem_alloc_desc,
                                                buf_size_bytes,
                                                0, /*alignment*/
-                                               &tmp_buf_ptr);
+                                               tmp_buf_ptr);
     }
 
     /* kernels */
