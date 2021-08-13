@@ -391,6 +391,7 @@ ccl::status ccl_coll_build_reduce(ccl_sched* sched,
     param.count = count;
     param.dtype = dtype;
     param.comm = comm;
+    param.stream = sched->coll_param.stream;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_reduce>(param);
 
@@ -419,6 +420,12 @@ ccl::status ccl_coll_build_reduce(ccl_sched* sched,
                 root == 0 ? comm->dtree() : comm->dtree().copy_with_new_root(root),
                 comm));
             break;
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+        case ccl_coll_reduce_topo_ring:
+            CCL_CALL(ccl_coll_build_gpu_reduce(
+                sched, send_buf, recv_buf, count, dtype, reduction, root, comm));
+            break;
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
         default:
             CCL_FATAL("unexpected reduce_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl::status::invalid_arguments;

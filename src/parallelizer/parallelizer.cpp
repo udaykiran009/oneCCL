@@ -92,7 +92,13 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
         bcast_algo = data.algorithm_selector->get<ccl_coll_bcast>(selector_param);
     }
 
-    if (allreduce_algo != ccl_coll_allreduce_topo_ring && bcast_algo != ccl_coll_bcast_topo_ring) {
+    ccl_coll_reduce_algo reduce_algo = ccl_coll_reduce_last_value;
+    if (selector_param.ctype == ccl_coll_reduce) {
+        reduce_algo = data.algorithm_selector->get<ccl_coll_reduce>(selector_param);
+    }
+
+    if (allreduce_algo != ccl_coll_allreduce_topo_ring && bcast_algo != ccl_coll_bcast_topo_ring &&
+        reduce_algo != ccl_coll_reduce_topo_ring) {
         ccl_coll_param& param = sched->coll_param;
         if (param.stream && param.stream->is_sycl_device_stream() &&
             (!param.device_send_bufs.empty() || !param.device_recv_bufs.empty())) {
@@ -480,6 +486,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
                 param.reduction = coll_param.reduction;
                 param.root = coll_param.root;
                 param.comm = comm;
+                param.stream = coll_param.stream;
                 coll_entry_helper::add_coll_entry<ccl_coll_reduce>(part_scheds[idx].get(), param);
             }
             break;

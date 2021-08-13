@@ -29,13 +29,14 @@
 #include "sched/entry/sync_entry.hpp"
 #include "sched/entry/wait_value_entry.hpp"
 #include "sched/entry/write_entry.hpp"
-// gpu
+
 #if defined(MULTI_GPU_SUPPORT) && defined(CCL_ENABLE_SYCL)
 #include "sched/entry/gpu/ze_allreduce_entry.hpp"
 #include "sched/entry/gpu/ze_copy_entry.hpp"
 #include "sched/entry/gpu/ze_handle_exchange_entry.hpp"
 #include "sched/entry/gpu/ze_event_signal_entry.hpp"
 #include "sched/entry/gpu/ze_event_wait_entry.hpp"
+#include "sched/entry/gpu/ze_reduce_entry.hpp"
 #endif // MULTI_GPU_SUPPORT && CCL_ENABLE_SYCL
 
 #include "sched/sched.hpp"

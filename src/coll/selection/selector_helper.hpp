@@ -7,7 +7,8 @@
 #include "exec/exec.hpp"
 
 inline bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
-    if ((param.ctype != ccl_coll_allreduce) && (param.ctype != ccl_coll_bcast)) {
+    if ((param.ctype != ccl_coll_allreduce) && (param.ctype != ccl_coll_bcast) &&
+        (param.ctype != ccl_coll_reduce)) {
         return false;
     }
 
@@ -31,6 +32,7 @@ inline bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
         (ccl::global_data::env().worker_count != 1)) {
         return false;
     }
+
     return true;
 }
 

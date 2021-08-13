@@ -72,6 +72,7 @@ enum ccl_coll_reduce_algo {
     ccl_coll_reduce_rabenseifner,
     ccl_coll_reduce_tree,
     ccl_coll_reduce_double_tree,
+    ccl_coll_reduce_topo_ring,
 
     ccl_coll_reduce_last_value
 };

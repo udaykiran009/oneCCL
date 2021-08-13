@@ -43,6 +43,17 @@ ccl::status ccl_coll_build_rabenseifner_reduce(ccl_sched* sched,
                                                int root,
                                                ccl_comm* comm);
 
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
+                                      ccl_buffer send_buf,
+                                      ccl_buffer recv_buf,
+                                      size_t count,
+                                      const ccl_datatype& dtype,
+                                      ccl::reduction reduction,
+                                      int root,
+                                      ccl_comm* comm);
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+
 ccl::status ccl_coll_build_rabenseifner_allreduce(ccl_sched* sched,
                                                   ccl_buffer send_buf,
                                                   ccl_buffer recv_buf,

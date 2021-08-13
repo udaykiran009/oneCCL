@@ -6,7 +6,8 @@ std::map<ccl_coll_reduce_algo, std::string>
         std::make_pair(ccl_coll_reduce_direct, "direct"),
         std::make_pair(ccl_coll_reduce_rabenseifner, "rabenseifner"),
         std::make_pair(ccl_coll_reduce_tree, "tree"),
-        std::make_pair(ccl_coll_reduce_double_tree, "double_tree")
+        std::make_pair(ccl_coll_reduce_double_tree, "double_tree"),
+        std::make_pair(ccl_coll_reduce_topo_ring, "topo_ring")
     };
 
 ccl_algorithm_selector<ccl_coll_reduce>::ccl_algorithm_selector() {
@@ -35,8 +36,8 @@ bool ccl_algorithm_selector_helper<ccl_coll_reduce_algo>::can_use(
     else if (algo == ccl_coll_reduce_direct &&
              (ccl::global_data::env().atl_transport == ccl_atl_ofi))
         can_use = false;
-
-    return can_use;
+    else if (algo == ccl_coll_reduce_topo_ring && !ccl_can_use_topo_ring_algo(param))
+        can_use = false;
 
     return can_use;
 }
