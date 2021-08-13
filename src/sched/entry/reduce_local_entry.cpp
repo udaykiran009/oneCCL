@@ -14,7 +14,7 @@ using namespace ccl;
 using namespace ccl::ze;
 
 void reduce_local_entry::init() {
-    if (is_initialized) {
+    if (ze_base_entry::is_initialized) {
         return;
     }
 
@@ -49,11 +49,10 @@ void reduce_local_entry::init() {
     LOG_DEBUG("kernel ", kernel, " args:\n", to_string(kernel_args));
     set_kernel_args(kernel, kernel_args);
 
-    ZE_CALL(zeCommandListAppendLaunchKernel,
-            (comp_list, kernel, &group_count, entry_event, 0, nullptr));
-    ZE_CALL(zeCommandListClose, (comp_list));
-
-    is_initialized = true;
+    ZE_CALL(
+        zeCommandListAppendLaunchKernel,
+        (ze_base_entry::comp_list, kernel, &group_count, ze_base_entry::entry_event, 0, nullptr));
+    ZE_CALL(zeCommandListClose, (ze_base_entry::comp_list));
 
     LOG_DEBUG("initialization complete");
 }
@@ -101,7 +100,7 @@ void reduce_local_entry::start_on_device() {
 }
 
 void reduce_local_entry::finalize() {
-    if (!is_initialized) {
+    if (!ze_base_entry::is_initialized) {
         return;
     }
 
@@ -117,8 +116,6 @@ void reduce_local_entry::finalize() {
         worker_idx, context, device, &comp_queue_desc, &comp_queue);
 
     ze_base_entry::finalize();
-
-    is_initialized = false;
 
     LOG_DEBUG("finalization complete");
 }

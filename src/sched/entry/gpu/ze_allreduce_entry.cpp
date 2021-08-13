@@ -17,24 +17,20 @@ ze_allreduce_entry::ze_allreduce_entry(ccl_sched* sched,
                                        const ccl_datatype& dtype,
                                        reduction op,
                                        ccl_comm* comm)
-        : ze_base_entry(sched, 3 /* request additional events */),
+        : ze_base_entry(sched, local_events_count /* request additional events */),
           send_buf(send_buf),
           recv_buf(recv_buf),
           cnt(cnt),
           dtype(dtype),
           op(op),
-          buf_size_bytes(dtype.size() * cnt),
-          is_initialized(false),
-          empty_kernel_event(nullptr),
-          empty_kernel(nullptr),
-          empty_kernel_name("empty_kernel") {}
+          buf_size_bytes(dtype.size() * cnt) {}
 
 ze_allreduce_entry::~ze_allreduce_entry() {
     finalize();
 }
 
 void ze_allreduce_entry::init() {
-    if (is_initialized) {
+    if (ze_base_entry::is_initialized) {
         return;
     }
 
@@ -48,12 +44,6 @@ void ze_allreduce_entry::init() {
     int peer_rank = (rank + 1) % comm_size;
     sched->get_memory().handle_manager.get(peer_rank, 0, right_send_buf);
     sched->get_memory().handle_manager.get(peer_rank, 1, right_recv_buf);
-    LOG_DEBUG("get IPC pointers from ",
-              peer_rank,
-              " rank: right_send_buf: ",
-              right_send_buf,
-              ", right_recv_buf: ",
-              right_recv_buf);
 
     send_buf_ptr = send_buf.get_ptr();
     recv_buf_ptr = recv_buf.get_ptr();
@@ -76,27 +66,27 @@ void ze_allreduce_entry::init() {
                                                   { sizeof(tmp_buf_ptr), &tmp_buf_ptr },
                                                   { sizeof(recv_buf_ptr), &recv_buf_ptr } };
 
-    ccl::global_data::get().ze_cache->get(context, device, &module, "kernels.spv");
+    global_data::get().ze_cache->get(context, device, &module, "kernels.spv");
 
-    if (ccl::global_data::env().enable_kernel_1s_copy_ops) {
+    if (global_data::env().enable_kernel_1s_copy_ops) {
         main_kernel_name = "reduce_local_outofplace_kernel_";
         device_mem_alloc_desc = default_device_mem_alloc_desc;
-        ccl::global_data::get().ze_cache->get(worker_idx,
-                                              context,
-                                              device,
-                                              &device_mem_alloc_desc,
-                                              buf_size_bytes,
-                                              0, /*alignment*/
-                                              &tmp_buf_ptr);
+        global_data::get().ze_cache->get(worker_idx,
+                                         context,
+                                         device,
+                                         &device_mem_alloc_desc,
+                                         buf_size_bytes,
+                                         0, /*alignment*/
+                                         &tmp_buf_ptr);
     }
     else {
         main_kernel_name = "allreduce_kernel_";
     }
     main_kernel_name += to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
     LOG_DEBUG("get kernel: name: ", main_kernel_name);
-    ccl::global_data::get().ze_cache->get(worker_idx, module, main_kernel_name, &main_kernel);
+    global_data::get().ze_cache->get(worker_idx, module, main_kernel_name, &main_kernel);
 
-    auto& main_kernel_args = (ccl::global_data::env().enable_kernel_1s_copy_ops)
+    auto& main_kernel_args = (global_data::env().enable_kernel_1s_copy_ops)
                                  ? reduce_local_kernel_args
                                  : allreduce_kernel_args;
     LOG_DEBUG("kernel ", main_kernel, " args:\n", to_string(main_kernel_args));
@@ -112,9 +102,9 @@ void ze_allreduce_entry::init() {
     ZE_CALL(zeKernelSetGroupSize,
             (main_kernel, group_size.groupSizeX, group_size.groupSizeY, group_size.groupSizeZ));
 
-    if (ccl::global_data::env().enable_kernel_1s_ipc_wa) {
+    if (global_data::env().enable_kernel_1s_ipc_wa) {
         LOG_DEBUG("get kernel: name: ", empty_kernel_name);
-        ccl::global_data::get().ze_cache->get(worker_idx, module, empty_kernel_name, &empty_kernel);
+        global_data::get().ze_cache->get(worker_idx, module, empty_kernel_name, &empty_kernel);
         CCL_THROW_IF_NOT(empty_kernel, "null empty_kernel");
         /* use allreduce_kernel_args since they have pointers to peer mem */
         set_kernel_args(empty_kernel, allreduce_kernel_args);
@@ -132,7 +122,7 @@ void ze_allreduce_entry::init() {
         ZE_CALL(zeEventCreate, (event_pool, &event_desc, &empty_kernel_event));
     }
 
-    if (ccl::global_data::env().enable_kernel_1s_copy_ops) {
+    if (global_data::env().enable_kernel_1s_copy_ops) {
         event_desc.index = last_event_idx++;
         ZE_CALL(zeEventCreate, (event_pool, &event_desc, &copy_from_peer_event));
         event_desc.index = last_event_idx++;
@@ -146,14 +136,19 @@ void ze_allreduce_entry::init() {
         LOG_DEBUG("append empty kernel");
         ze_group_count_t empty_group_count = { 1, 1, 1 };
         ZE_CALL(zeCommandListAppendLaunchKernel,
-                (comp_list, empty_kernel, &empty_group_count, empty_kernel_event, 0, nullptr));
+                (ze_base_entry::comp_list,
+                 empty_kernel,
+                 &empty_group_count,
+                 empty_kernel_event,
+                 0,
+                 nullptr));
     }
 
-    if (ccl::global_data::env().enable_kernel_1s_copy_ops) {
+    if (global_data::env().enable_kernel_1s_copy_ops) {
         LOG_DEBUG("one-sided multi-phase algorithm");
 
         ZE_CALL(zeCommandListAppendMemoryCopy,
-                (comp_list,
+                (ze_base_entry::comp_list,
                  tmp_buf_ptr,
                  right_send_buf_ptr,
                  buf_size_bytes,
@@ -162,7 +157,7 @@ void ze_allreduce_entry::init() {
                  &empty_kernel_event));
 
         ZE_CALL(zeCommandListAppendLaunchKernel,
-                (comp_list,
+                (ze_base_entry::comp_list,
                  main_kernel,
                  &group_count,
                  reduce_local_kernel_event,
@@ -170,28 +165,26 @@ void ze_allreduce_entry::init() {
                  &copy_from_peer_event));
 
         ZE_CALL(zeCommandListAppendMemoryCopy,
-                (comp_list,
+                (ze_base_entry::comp_list,
                  right_recv_buf_ptr,
                  recv_buf_ptr,
                  buf_size_bytes,
-                 entry_event,
+                 ze_base_entry::entry_event,
                  1,
                  &reduce_local_kernel_event));
     }
     else {
         LOG_DEBUG("one-sided monolithic algorithm");
         ZE_CALL(zeCommandListAppendLaunchKernel,
-                (comp_list,
+                (ze_base_entry::comp_list,
                  main_kernel,
                  &group_count,
-                 entry_event,
+                 ze_base_entry::entry_event,
                  (empty_kernel_event) ? 1 : 0,
                  &empty_kernel_event));
     }
 
-    ZE_CALL(zeCommandListClose, (comp_list));
-
-    is_initialized = true;
+    ZE_CALL(zeCommandListClose, (ze_base_entry::comp_list));
 
     LOG_DEBUG("initialization complete");
 }
@@ -199,13 +192,13 @@ void ze_allreduce_entry::init() {
 void ze_allreduce_entry::start() {
     init();
 
-    if (is_initialized && status == ccl_sched_entry_status_not_started) {
+    if (ze_base_entry::is_initialized && status == ccl_sched_entry_status_not_started) {
         reset_sync_objects();
     }
 
     size_t kernel_counter = 0;
-    if (ccl::global_data::env().enable_kernel_sync) {
-        kernel_counter = ccl::global_data::get().kernel_counter++;
+    if (global_data::env().enable_kernel_sync) {
+        kernel_counter = global_data::get().kernel_counter++;
     }
 
     if (kernel_counter == 0) {
@@ -213,7 +206,7 @@ void ze_allreduce_entry::start() {
         status = ccl_sched_entry_status_started;
     }
     else {
-        ccl::global_data::get().kernel_counter--;
+        global_data::get().kernel_counter--;
         status = ccl_sched_entry_status_again;
     }
 }
@@ -224,44 +217,41 @@ void ze_allreduce_entry::update() {
         finalize();
     }
 
-    if (ccl::global_data::env().enable_kernel_sync && ccl::global_data::get().kernel_counter > 0) {
-        ccl::global_data::get().kernel_counter--;
+    if (global_data::env().enable_kernel_sync && global_data::get().kernel_counter > 0) {
+        global_data::get().kernel_counter--;
     }
 }
 
 void ze_allreduce_entry::finalize() {
-    if (!is_initialized) {
+    if (!ze_base_entry::is_initialized) {
         return;
     }
 
     LOG_DEBUG("finalization");
 
     /* events */
-    if (ccl::global_data::env().enable_kernel_1s_copy_ops) {
+    if (global_data::env().enable_kernel_1s_copy_ops) {
         LOG_DEBUG("copy ops finalization");
         ZE_CALL(zeEventDestroy, (copy_from_peer_event));
         ZE_CALL(zeEventDestroy, (reduce_local_kernel_event));
         /* device mem */
-        ccl::global_data::get().ze_cache->push(worker_idx,
-                                               context,
-                                               device,
-                                               &device_mem_alloc_desc,
-                                               buf_size_bytes,
-                                               0, /*alignment*/
-                                               tmp_buf_ptr);
+        global_data::get().ze_cache->push(worker_idx,
+                                          context,
+                                          device,
+                                          &device_mem_alloc_desc,
+                                          buf_size_bytes,
+                                          0, /*alignment*/
+                                          &tmp_buf_ptr);
     }
 
     /* kernels */
     if (empty_kernel_event) {
         ZE_CALL(zeEventDestroy, (empty_kernel_event));
-        ccl::global_data::get().ze_cache->push(
-            worker_idx, module, empty_kernel_name, &empty_kernel);
+        global_data::get().ze_cache->push(worker_idx, module, empty_kernel_name, &empty_kernel);
     }
-    ccl::global_data::get().ze_cache->push(worker_idx, module, main_kernel_name, &main_kernel);
+    global_data::get().ze_cache->push(worker_idx, module, main_kernel_name, &main_kernel);
 
     ze_base_entry::finalize();
-
-    is_initialized = false;
 
     LOG_DEBUG("finalization complete");
 }
@@ -271,7 +261,7 @@ void ze_allreduce_entry::reset_sync_objects() {
         ZE_CALL(zeEventHostReset, (empty_kernel_event));
     }
 
-    if (ccl::global_data::env().enable_kernel_1s_copy_ops) {
+    if (global_data::env().enable_kernel_1s_copy_ops) {
         ZE_CALL(zeEventHostReset, (copy_from_peer_event));
         ZE_CALL(zeEventHostReset, (reduce_local_kernel_event));
     }

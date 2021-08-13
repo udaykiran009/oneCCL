@@ -38,8 +38,7 @@ public:
               dtype(dtype),
               op(reduction_op),
               fn(sched->coll_attr.reduction_fn),
-              use_device(false),
-              is_initialized(false) {
+              use_device(false) {
         CCL_THROW_IF_NOT(op != ccl::reduction::custom || fn,
                          "custom reduction requires user provided callback");
     }
@@ -123,7 +122,6 @@ private:
     void* inout_buf_ptr;
 
     bool use_device;
-    bool is_initialized;
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
     ze_module_handle_t module;

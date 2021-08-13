@@ -31,6 +31,8 @@ protected:
     int comm_size{};
     size_t worker_idx{};
 
+    bool is_initialized{};
+
     ze_device_handle_t device{};
     ze_context_handle_t context{};
 
@@ -44,7 +46,4 @@ protected:
     ze_event_pool_handle_t event_pool{};
 
     ze_event_handle_t entry_event{};
-
-private:
-    bool is_initialized{};
 };

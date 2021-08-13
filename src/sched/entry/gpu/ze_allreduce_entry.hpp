@@ -59,32 +59,33 @@ protected:
     }
 
 private:
-    ccl_buffer send_buf;
-    ccl_buffer recv_buf;
-    void* send_buf_ptr;
-    void* recv_buf_ptr;
-    void* right_send_buf_ptr;
-    void* right_recv_buf_ptr;
-    void* tmp_buf_ptr;
+    static constexpr uint32_t local_events_count{ 3 };
+
+    const ccl_buffer send_buf;
+    const ccl_buffer recv_buf;
+    void* send_buf_ptr{};
+    void* recv_buf_ptr{};
+    void* right_send_buf_ptr{};
+    void* right_recv_buf_ptr{};
+    void* tmp_buf_ptr{};
     const unsigned long cnt;
     const ccl_datatype dtype;
     const ccl::reduction op;
     const size_t buf_size_bytes;
-    bool is_initialized;
 
-    ze_event_handle_t empty_kernel_event;
-    ze_event_handle_t copy_from_peer_event;
-    ze_event_handle_t reduce_local_kernel_event;
+    ze_event_handle_t empty_kernel_event{};
+    ze_event_handle_t copy_from_peer_event{};
+    ze_event_handle_t reduce_local_kernel_event{};
 
-    ze_module_handle_t module;
+    ze_module_handle_t module{};
 
-    ze_group_count_t group_count;
+    ze_group_count_t group_count{};
 
-    ze_kernel_handle_t main_kernel;
-    std::string main_kernel_name;
+    ze_kernel_handle_t main_kernel{};
+    std::string main_kernel_name{};
 
-    ze_kernel_handle_t empty_kernel;
-    std::string empty_kernel_name;
+    ze_kernel_handle_t empty_kernel{};
+    std::string empty_kernel_name{ "empty_kernel" };
 
     ze_device_mem_alloc_desc_t device_mem_alloc_desc;
 };
