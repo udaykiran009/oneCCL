@@ -2,6 +2,7 @@
 #include <fstream>
 
 #include "common/global/global.hpp"
+#include "common/log/log.hpp"
 #include "sched/entry/gpu/ze_primitives.hpp"
 
 namespace ccl {

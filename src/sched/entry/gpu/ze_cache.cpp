@@ -169,7 +169,7 @@ queue_cache::~queue_cache() {
 void queue_cache::clear() {
     LOG_DEBUG("clear queue cache: size: ", cache.size());
     for (auto& key_value : cache) {
-        ZE_CALL(zeCommandQueueDestroy, (key_value.second))
+        ZE_CALL(zeCommandQueueDestroy, (key_value.second));
     }
     cache.clear();
 }
@@ -235,7 +235,7 @@ event_pool_cache::~event_pool_cache() {
 void event_pool_cache::clear() {
     LOG_DEBUG("clear event pool cache: size: ", cache.size());
     for (auto& key_value : cache) {
-        ZE_CALL(zeEventPoolDestroy, (key_value.second))
+        ZE_CALL(zeEventPoolDestroy, (key_value.second));
     }
     cache.clear();
 }
@@ -349,7 +349,7 @@ void module_cache::clear() {
     LOG_DEBUG("clear module cache: size: ", cache.size());
     std::lock_guard<std::mutex> lock(mutex);
     for (auto& key_value : cache) {
-        ZE_CALL(zeModuleDestroy, (key_value.second))
+        ZE_CALL(zeModuleDestroy, (key_value.second));
     }
     cache.clear();
 }

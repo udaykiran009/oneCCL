@@ -1,4 +1,5 @@
 #include "common/global/global.hpp"
+#include "common/log/log.hpp"
 #include "sched/entry/gpu/ze_call.hpp"
 
 namespace ccl {
@@ -7,24 +8,25 @@ namespace ze {
 std::mutex ze_call::mutex;
 
 ze_call::ze_call() {
-    if (((global_data::env().ze_serialize_mode & ze_serialize_lock)) != 0) {
+    if ((global_data::env().ze_serialize_mode & ze_call::serialize_mode::lock) != 0) {
         LOG_DEBUG("ze call is locked");
         mutex.lock();
     }
 }
 
 ze_call::~ze_call() {
-    if (((global_data::env().ze_serialize_mode & ze_serialize_lock)) != 0) {
+    if ((global_data::env().ze_serialize_mode & ze_call::serialize_mode::lock) != 0) {
         LOG_DEBUG("ze call is unlocked");
         mutex.unlock();
     }
 }
 
-void ze_call::do_call(ze_result_t ze_result, const char* ze_name) {
+ze_result_t ze_call::do_call(ze_result_t ze_result, const char* ze_name) const {
     if (ze_result != ZE_RESULT_SUCCESS) {
-        CCL_THROW("ze error at ", ze_name, ", code: ", ccl::ze::to_string(ze_result));
+        CCL_THROW("ze error at ", ze_name, ", code: ", to_string(ze_result));
     }
     LOG_DEBUG("call ze function: ", ze_name);
+    return ze_result;
 }
 
 // provides different level zero synchronize methods

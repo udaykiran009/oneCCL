@@ -110,7 +110,7 @@ void ze_base_entry::start() {
     ZE_CALL(zeEventHostReset, (entry_event));
     ZE_CALL(zeCommandQueueExecuteCommandLists, (comp_queue, 1, &comp_list, nullptr));
 
-    if (((global_data::env().ze_serialize_mode & ze_serialize_block)) != 0) {
+    if (((global_data::env().ze_serialize_mode & ze_call::serialize_mode::block)) != 0) {
         LOG_DEBUG("wait until command lists are executed");
         ZE_CALL(zeHostSynchronize, (comp_queue));
     }
@@ -123,7 +123,7 @@ void ze_base_entry::update() {
         query_status = zeEventQueryStatus(entry_event);
     }
     else {
-        query_status = zeCommandQueueSynchronize(comp_queue, std::numeric_limits<uint64_t>::max());
+        query_status = zeHostSynchronize(comp_queue);
     }
 
     if (query_status == ZE_RESULT_SUCCESS) {

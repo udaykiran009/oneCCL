@@ -1,9 +1,7 @@
 #pragma once
 
-#include "common/log/log.hpp"
 #include "sched/entry/gpu/ze_call.hpp"
 
-#include <fstream>
 #include <initializer_list>
 #include <string>
 #include <vector>
@@ -13,11 +11,7 @@ namespace ccl {
 
 namespace ze {
 
-#define ZE_CALL(ze_name, ze_args) \
-    do { \
-        ccl::ze::ze_call ze; \
-        ze.do_call(ze_name ze_args, #ze_name); \
-    } while (0);
+#define ZE_CALL(ze_name, ze_args) ccl::ze::ze_call().do_call(ze_name ze_args, #ze_name)
 
 constexpr ze_fence_desc_t default_fence_desc = { .stype = ZE_STRUCTURE_TYPE_FENCE_DESC,
                                                  .pNext = nullptr,
