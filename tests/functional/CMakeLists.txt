@@ -121,6 +121,15 @@ foreach(ppn 1; 2)
     foreach(algo direct; rabenseifner; starlike; ring; ring_rma; double_tree; recursive_doubling; 2d; topo_ring)
         add_test (NAME allreduce_${algo}_${ppn} CONFIGURATIONS allreduce_${algo}_${ppn} COMMAND mpiexec.hydra -l -n 2 -ppn ${ppn} ${CCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_${algo}_${ppn}_report.junit.xml)
     endforeach()
+
+    foreach(algo direct; ring; double_tree; naive; topo_ring)
+        add_test (NAME bcast_${algo}_${ppn} CONFIGURATIONS bcast_${algo}_${ppn} COMMAND mpiexec.hydra -l -n 2 -ppn ${ppn} ${CCL_INSTALL_TESTS}/bcast_test --gtest_output=xml:${CCL_INSTALL_TESTS}/bcast_${algo}_${ppn}_report.junit.xml)
+    endforeach()
+
+    foreach(algo direct; rabenseifner; tree; double_tree; topo_ring)
+        add_test (NAME reduce_${algo}_${ppn} CONFIGURATIONS reduce_${algo}_${ppn} COMMAND mpiexec.hydra -l -n 2 -ppn ${ppn} ${CCL_INSTALL_TESTS}/reduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/reduce_${algo}_${ppn}_report.junit.xml)
+    endforeach()
+
 endforeach()
 
 foreach(algo starlike; ring; 2d)
@@ -141,14 +150,6 @@ endforeach()
 
 foreach(algo scatter_barrier)
 add_test (NAME alltoallv_${algo}_chunked CONFIGURATIONS alltoallv_${algo}_chunked COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/alltoallv_test --gtest_output=xml:${CCL_INSTALL_TESTS}/alltoallv_${algo}_chunked_report.junit.xml)
-endforeach()
-
-foreach(algo direct; ring; double_tree; naive)
-add_test (NAME bcast_${algo} CONFIGURATIONS bcast_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/bcast_test --gtest_output=xml:${CCL_INSTALL_TESTS}/bcast_${algo}_report.junit.xml)
-endforeach()
-
-foreach(algo direct; rabenseifner; tree; double_tree)
-add_test (NAME reduce_${algo} CONFIGURATIONS reduce_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/reduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/reduce_${algo}_report.junit.xml)
 endforeach()
 
 foreach(algo direct; ring)

@@ -163,6 +163,7 @@ set(CCL_SRC
     coll/algorithms/reduce_scatter.cpp
     coll/coll.cpp
     coll/coll_check.cpp
+    coll/selection/selection.cpp
     coll/selection/selector_allgatherv.cpp
     coll/selection/selector_allreduce.cpp
     coll/selection/selector_alltoall.cpp

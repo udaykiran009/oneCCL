@@ -69,7 +69,6 @@ void ze_reduce_entry::init() {
 
     ccl::global_data::get().ze_cache->get(context, device, &module, "kernels.spv");
 
-    main_kernel_name = "reduce_local_outofplace_kernel_";
     device_mem_alloc_desc = default_device_mem_alloc_desc;
     ccl::global_data::get().ze_cache->get(worker_idx,
                                           context,
@@ -79,7 +78,8 @@ void ze_reduce_entry::init() {
                                           0, /*alignment*/
                                           &tmp_buf_ptr);
 
-    main_kernel_name += to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
+    main_kernel_name =
+        "reduce_local_outofplace_kernel_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
     LOG_DEBUG("get kernel: name: ", main_kernel_name);
     ccl::global_data::get().ze_cache->get(worker_idx, module, main_kernel_name, &main_kernel);
 
@@ -201,7 +201,7 @@ void ze_reduce_entry::finalize() {
                                            &device_mem_alloc_desc,
                                            buf_size_bytes,
                                            0, /*alignment*/
-                                           &tmp_buf_ptr);
+                                           tmp_buf_ptr);
 
     /* kernels */
     if (empty_kernel_event) {

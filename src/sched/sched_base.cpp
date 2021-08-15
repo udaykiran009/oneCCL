@@ -368,7 +368,6 @@ void ccl_sched_base::alloc_buffers_for_pre_post_copy() {
     param.device_recv_bufs.clear();
 
     // TODO: WA skip sycl pre_post_copy for allreduce gpu algo
-    ccl::global_data& data = ccl::global_data::get();
     ccl_selector_param selector_param;
     selector_param.ctype = param.ctype;
     selector_param.count = param.get_send_count();
@@ -377,24 +376,8 @@ void ccl_sched_base::alloc_buffers_for_pre_post_copy() {
     selector_param.stream = param.stream;
     selector_param.is_sycl_buf = coll_attr.is_sycl_buf;
 
-    ccl_coll_allreduce_algo allreduce_algo = ccl_coll_allreduce_last_value;
-    if (param.ctype == ccl_coll_allreduce) {
-        allreduce_algo = data.algorithm_selector->get<ccl_coll_allreduce>(selector_param);
-    }
-
-    ccl_coll_bcast_algo bcast_algo = ccl_coll_bcast_last_value;
-    if (param.ctype == ccl_coll_bcast) {
-        bcast_algo = data.algorithm_selector->get<ccl_coll_bcast>(selector_param);
-    }
-
-    ccl_coll_reduce_algo reduce_algo = ccl_coll_reduce_last_value;
-    if (param.ctype == ccl_coll_reduce) {
-        reduce_algo = data.algorithm_selector->get<ccl_coll_reduce>(selector_param);
-    }
-
     if (!param.stream || !param.stream->is_sycl_device_stream() ||
-        allreduce_algo == ccl_coll_allreduce_topo_ring || bcast_algo == ccl_coll_bcast_topo_ring ||
-        reduce_algo == ccl_coll_reduce_topo_ring) {
+        ccl_is_topo_ring_algo(selector_param)) {
         return;
     }
 

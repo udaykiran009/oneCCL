@@ -28,13 +28,9 @@ public:
                 selector_param.count = param.send_count;
             }
 
-            if (param.ctype == ccl_coll_allreduce) {
-                auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_allreduce>(
-                    selector_param);
+            if (ccl_is_topo_ring_algo(selector_param)) {
                 /* TODO: move to sched ctor where strict_order is assigned */
-                if (algo == ccl_coll_allreduce_topo_ring) {
-                    sched->strict_order = true;
-                }
+                sched->strict_order = true;
             }
 
             bool is_direct_algo =

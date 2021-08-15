@@ -474,13 +474,41 @@ function run_tests()
     enable_default_test_scope
 
     set_external_env
-    if [ $node_label == "mlsl2_test_gpu_ft" ]
-    then
-        reduce_algo_list_ofi="rabenseifner tree"
-    else
-        reduce_algo_list_ofi="rabenseifner tree double_tree"
-    fi
+
     ppns="1 2"
+
+    allgatherv_algos="naive flat ring"
+    allreduce_algos="rabenseifner starlike ring double_tree recursive_doubling"
+    alltoall_algos="naive scatter scatter_barrier"
+    alltoallv_algos=${alltoall_algos}
+    bcast_algos="ring double_tree naive"
+    reduce_algos="rabenseifner tree"
+    reduce_scatter_algos="ring"
+
+    if [ ${runtime} == "mpi_adjust" ]
+    then
+        allgatherv_algos="${allgatherv_algos} direct"
+        allreduce_algos="${allreduce_algos} direct"
+        alltoall_algos="${alltoall_algos} direct"
+        alltoallv_algos="${alltoallv_algos} direct"
+        bcast_algos="${bcast_algos} direct"
+        reduce_algos="${reduce_algos} direct"
+        reduce_scatter_algos="${reduce_scatter_algos} direct"
+    fi
+
+    if [ ${runtime} == "ofi_adjust" ]
+    then
+        allgatherv_algos="${allgatherv_algos} multi_bcast"
+        allreduce_algos="${allreduce_algos} ring_rma 2d"
+    fi
+
+    if [ ${node_label} == "mlsl2_test_gpu_ft" ]
+    then
+        allreduce_algos="${allreduce_algos} topo_ring"
+        bcast_algos="${bcast_algos} topo_ring"
+        reduce_algos="${reduce_algos} topo_ring"
+    fi
+
     case "$runtime" in
            ofi )
                export CCL_ATL_TRANSPORT=ofi
@@ -495,18 +523,12 @@ function run_tests()
            mpi_adjust )
                 export CCL_ATL_TRANSPORT=mpi
 
-                for algo in "direct" "naive" "flat" "ring"
+                for algo in ${allgatherv_algos}
                 do
                     CCL_ALLGATHERV=$algo ctest -VV -C allgatherv_"$algo"
                 done
 
-                algos="direct rabenseifner starlike ring double_tree recursive_doubling"
-                if [ ${node_label} == "mlsl2_test_gpu_ft" ]
-                then
-                    algos="${algos} topo_ring"
-                fi
-
-                for algo in $algos
+                for algo in ${allreduce_algos}
                 do
                     if [ "$algo" == "ring" ];
                     then
@@ -519,13 +541,23 @@ function run_tests()
 
                 for ppn in $ppns
                 do
-                    for algo in $algos
+                    for algo in ${allreduce_algos}
                     do
                         CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_"$ppn"
                     done
+
+                    for algo in ${bcast_algos}
+                    do
+                        CCL_BCAST=$algo ctest -VV -C bcast_"$algo"_"$ppn"
+                    done
+
+                    for algo in ${reduce_algos}
+                    do
+                        CCL_REDUCE=$algo ctest -VV -C reduce_"$algo"_"$ppn"
+                    done
                 done
 
-                for algo in "direct" "naive" "scatter" "scatter_barrier"
+                for algo in ${alltoall_algos}
                 do
                     if [ "$algo" == "scatter_barrier" ];
                     then
@@ -535,7 +567,7 @@ function run_tests()
                     CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"
                 done
 
-                for algo in "direct" "naive" "scatter" "scatter_barrier"
+                for algo in ${alltoallv_algos}
                 do
                     if [ "$algo" == "scatter_barrier" ];
                     then
@@ -545,39 +577,21 @@ function run_tests()
                     CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"
                 done
 
-                for algo in "direct" "ring" "double_tree" "naive"
-                do
-                    CCL_BCAST=$algo ctest -VV -C bcast_"$algo"
-                done
-
-                for algo in "direct" "rabenseifner" "tree"
-                do
-                    CCL_REDUCE=$algo ctest -VV -C reduce_"$algo"
-                done
-
-                for algo in "direct" "ring"
+                for algo in ${reduce_scatter_algos}
                 do
                     CCL_REDUCE_SCATTER=$algo ctest -VV -C reduce_scatter_"$algo"
                 done
-
                ;;
            ofi_adjust )
 
                 export CCL_ATL_TRANSPORT=ofi
 
-                for algo in "naive" "flat" "multi_bcast" "ring"
+                for algo in ${allgatherv_algos}
                 do
                     CCL_ALLGATHERV=$algo ctest -VV -C allgatherv_"$algo"
                 done
 
-
-                algos="rabenseifner starlike ring ring_rma double_tree recursive_doubling 2d"
-                if [ ${node_label} == "mlsl2_test_gpu_ft" ]
-                then
-                    algos="${algos} topo_ring"
-                fi
-
-                for algo in $algos
+                for algo in ${allreduce_algos}
                 do
                     if [ "$algo" == "ring_rma" ];
                     then
@@ -598,9 +612,19 @@ function run_tests()
 
                 for ppn in $ppns
                 do
-                    for algo in $algos
+                    for algo in ${allreduce_algos}
                     do
                         CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_"$ppn"
+                    done
+
+                    for algo in ${bcast_algos}
+                    do
+                        CCL_BCAST=$algo ctest -VV -C bcast_"$algo"_"$ppn"
+                    done
+
+                    for algo in ${reduce_algos}
+                    do
+                        CCL_REDUCE=$algo ctest -VV -C reduce_"$algo"_"$ppn"
                     done
                 done
 
@@ -625,21 +649,10 @@ function run_tests()
                 #     CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"
                 # done
 
-                for algo in "ring" "double_tree" "naive"
-                do
-                    CCL_BCAST=$algo ctest -VV -C bcast_"$algo"
-                done
-
-                for algo in $reduce_algo_list_ofi
-                do
-                    CCL_REDUCE=$algo ctest -VV -C reduce_"$algo"
-                done
-
-                for algo in "ring"
+                for algo in ${reduce_scatter_algos}
                 do
                     CCL_REDUCE_SCATTER=$algo ctest -VV -C reduce_scatter_"$algo"
                 done
-
                ;;
             priority_mode )
                 CCL_ATL_TRANSPORT=ofi CCL_PRIORITY=lifo ctest -VV -C default

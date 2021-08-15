@@ -72,59 +72,18 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
     process_base(sched);
 
 #ifdef CCL_ENABLE_SYCL
-    // TODO: WA skip sycl copy entry for allreduce gpu algo
-    ccl::global_data& data = ccl::global_data::get();
-    ccl_selector_param selector_param;
-    selector_param.ctype = sched->coll_param.ctype;
-    selector_param.count = sched->coll_param.get_send_count();
-    selector_param.dtype = sched->coll_param.dtype;
-    selector_param.comm = sched->coll_param.comm;
-    selector_param.stream = sched->coll_param.stream;
-    selector_param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
-
-    ccl_coll_allreduce_algo allreduce_algo = ccl_coll_allreduce_last_value;
-    if (selector_param.ctype == ccl_coll_allreduce) {
-        allreduce_algo = data.algorithm_selector->get<ccl_coll_allreduce>(selector_param);
+    ccl_coll_param& param = sched->coll_param;
+    if (param.stream && param.stream->is_sycl_device_stream() &&
+        (!param.device_send_bufs.empty() || !param.device_recv_bufs.empty())) {
+        process_pre_post_copies(sched);
     }
-
-    ccl_coll_bcast_algo bcast_algo = ccl_coll_bcast_last_value;
-    if (selector_param.ctype == ccl_coll_bcast) {
-        bcast_algo = data.algorithm_selector->get<ccl_coll_bcast>(selector_param);
-    }
-
-    ccl_coll_reduce_algo reduce_algo = ccl_coll_reduce_last_value;
-    if (selector_param.ctype == ccl_coll_reduce) {
-        reduce_algo = data.algorithm_selector->get<ccl_coll_reduce>(selector_param);
-    }
-
-    if (allreduce_algo != ccl_coll_allreduce_topo_ring && bcast_algo != ccl_coll_bcast_topo_ring &&
-        reduce_algo != ccl_coll_reduce_topo_ring) {
-        ccl_coll_param& param = sched->coll_param;
-        if (param.stream && param.stream->is_sycl_device_stream() &&
-            (!param.device_send_bufs.empty() || !param.device_recv_bufs.empty())) {
-            process_pre_post_copies(sched);
-        }
-    }
+    process_output_event(sched);
 #endif // CCL_ENABLE_SYCL
 
     /* should be the last call in the sequence of process_* calls
        because it sets dependencies for all partial schedules
        which already should be filled */
     process_deps(sched);
-
-#ifdef CCL_ENABLE_SYCL
-    if (ccl::utils::should_use_sycl_output_event(sched->coll_param.stream)) {
-        auto& part_scheds = sched->partial_scheds;
-        size_t sched_count = part_scheds.size();
-
-        for (size_t idx = 0; idx < sched_count; idx++) {
-            part_scheds[idx]->set_add_mode(ccl_sched_add_back);
-        }
-        sched->sync_partial_scheds();
-
-        entry_factory::make_entry<ze_event_signal_entry>(part_scheds[0].get(), sched);
-    }
-#endif
 
     return ccl::status::success;
 }
@@ -225,6 +184,24 @@ ccl::status ccl_parallelizer::process_pre_post_copies(ccl_master_sched* sched) {
 
     return ccl::status::success;
 }
+
+ccl::status ccl_parallelizer::process_output_event(ccl_master_sched* sched) {
+    if (!ccl::utils::should_use_sycl_output_event(sched->coll_param.stream)) {
+        return ccl::status::success;
+    }
+
+    auto& part_scheds = sched->partial_scheds;
+    size_t sched_count = part_scheds.size();
+
+    for (size_t idx = 0; idx < sched_count; idx++) {
+        part_scheds[idx]->set_add_mode(ccl_sched_add_back);
+    }
+    sched->sync_partial_scheds();
+
+    entry_factory::make_entry<ze_event_signal_entry>(part_scheds[0].get(), sched);
+
+    return ccl::status::success;
+}
 #endif // CCL_ENABLE_SYCL
 
 ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
@@ -259,7 +236,6 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
     size_t a2av_send_count = 0, a2av_recv_count = 0;
 
     ccl_coll_allgatherv_algo ag_algo = ccl_coll_allgatherv_last_value;
-    ccl_coll_allreduce_algo allreduce_algo = ccl_coll_allreduce_last_value;
     ccl_coll_alltoall_algo a2a_algo = ccl_coll_alltoall_last_value;
     ccl_coll_alltoallv_algo a2av_algo = ccl_coll_alltoallv_last_value;
     ccl_coll_bcast_algo ag_mbcast_algo = ccl_coll_bcast_last_value;
@@ -286,11 +262,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
             }
         case ccl_coll_reduce:
         case ccl_coll_allreduce:
-            if (coll_type == ccl_coll_allreduce) {
-                allreduce_algo = data.algorithm_selector->get<ccl_coll_allreduce>(selector_param);
-            }
-            if ((allreduce_algo == ccl_coll_allreduce_topo_ring) ||
-                (coll_param.get_send_count() * dtype_size <=
+            if ((coll_param.get_send_count() * dtype_size <=
                  ccl::global_data::env().max_short_size) ||
                 (coll_param.get_send_count() < max_data_partition_count)) {
                 part_count = 1;
@@ -300,6 +272,9 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
                 part_count = (coll_param.get_send_count() * dtype_size) / CCL_ATL_LARGE_MSG_SIZE;
                 if (part_count < max_data_partition_count)
                     part_count = max_data_partition_count;
+            }
+            if (ccl_is_topo_ring_algo(selector_param)) {
+                part_count = 1;
             }
             break;
         case ccl_coll_alltoall:

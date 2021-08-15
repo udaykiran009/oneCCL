@@ -11,12 +11,17 @@ std::map<ccl_coll_bcast_algo, std::string>
     };
 
 ccl_algorithm_selector<ccl_coll_bcast>::ccl_algorithm_selector() {
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+    insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_bcast_topo_ring);
+#else // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
     if (ccl::global_data::env().atl_transport == ccl_atl_ofi) {
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_bcast_naive);
         insert(main_table, 0, CCL_BCAST_SHORT_MSG_SIZE, ccl_coll_bcast_double_tree);
     }
-    else if (ccl::global_data::env().atl_transport == ccl_atl_mpi)
+    else if (ccl::global_data::env().atl_transport == ccl_atl_mpi) {
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_bcast_direct);
+    }
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
 
     insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_bcast_naive);
 }

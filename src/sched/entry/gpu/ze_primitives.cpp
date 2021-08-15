@@ -97,7 +97,7 @@ void set_kernel_args(ze_kernel_handle_t kernel, const ze_kernel_args_t& kernel_a
     for (const auto& arg : kernel_args) {
         auto res = zeKernelSetArgumentValue(kernel, idx, arg.first, arg.second);
         if (res != ZE_RESULT_SUCCESS) {
-            CCL_THROW("zeKernelSetArgumentValue falied with error ",
+            CCL_THROW("zeKernelSetArgumentValue failed with error ",
                       to_string(res),
                       " on idx ",
                       idx,
