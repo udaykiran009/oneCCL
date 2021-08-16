@@ -2,7 +2,7 @@
 
 BASENAME=`basename $0 .sh`
 
-SCOPE="all"
+SCOPE="commit"
 DEPTH="1"
 
 LOG_FILE="clang_format.log"
