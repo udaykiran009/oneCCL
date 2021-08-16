@@ -254,13 +254,14 @@ void env_data::parse() {
 #ifndef MULTI_GPU_SUPPORT
         CCL_THROW("comm kernels are requested but not supported in this version of CCL");
 #endif
-        env_2_type(CCL_KERNEL_PATH, kernel_path);
-        if (kernel_path.empty()) {
-            std::string ccl_root = getenv("CCL_ROOT");
-            CCL_THROW_IF_NOT(!ccl_root.empty(), "incorrect comm kernels path, CCL_ROOT not found!");
-            kernel_path = ccl_root + "/lib/kernels/";
-        }
     }
+    env_2_type(CCL_KERNEL_PATH, kernel_path);
+    if (kernel_path.empty()) {
+        std::string ccl_root = getenv("CCL_ROOT");
+        CCL_THROW_IF_NOT(!ccl_root.empty(), "incorrect comm kernels path, CCL_ROOT not found!");
+        kernel_path = ccl_root + "/lib/kernels/";
+    }
+
     env_2_type(CCL_KERNEL_DEBUG, kernel_debug);
     env_2_type(CCL_KERNEL_CACHE, enable_kernel_cache);
     env_2_type(CCL_KERNEL_GROUP_SIZE, kernel_group_size);
