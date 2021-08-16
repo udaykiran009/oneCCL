@@ -690,7 +690,7 @@ check_mode()
         if [ -z "${CXX_COMPILER}" ]
         then
             CXX_COMPILER=dpcpp
-            COMPUTE_BACKEND="dpcpp"
+            COMPUTE_BACKEND="dpcpp_level_zero"
         fi
         ;;
     esac
