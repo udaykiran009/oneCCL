@@ -141,6 +141,7 @@ ccl::status ccl_coll_build_allgatherv(ccl_sched* sched,
     param.dtype = dtype;
     param.comm = comm;
     param.is_vector_buf = sched->coll_attr.is_vector_buf;
+    param.hint_algo = sched->hint_algo;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_allgatherv>(param);
 
@@ -161,6 +162,7 @@ ccl::status ccl_coll_build_allgatherv(ccl_sched* sched,
             CCL_FATAL("unexpected allgatherv_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl::status::invalid_arguments;
     }
+
     return status;
 }
 
@@ -183,6 +185,7 @@ ccl::status ccl_coll_build_allreduce(ccl_sched* sched,
 #ifdef CCL_ENABLE_SYCL
     param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
 #endif // CCL_ENABLE_SYCL
+    param.hint_algo = sched->hint_algo;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_allreduce>(param);
 
@@ -253,6 +256,7 @@ ccl::status ccl_coll_build_alltoall(ccl_sched* sched,
     param.count = count;
     param.dtype = dtype;
     param.comm = comm;
+    param.hint_algo = sched->hint_algo;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_alltoall>(param);
 
@@ -281,6 +285,7 @@ ccl::status ccl_coll_build_alltoallv(ccl_sched* sched,
     param.ctype = ccl_coll_alltoallv;
     param.dtype = dtype;
     param.comm = comm;
+    param.hint_algo = sched->hint_algo;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_alltoallv>(param);
 
@@ -305,6 +310,7 @@ ccl::status ccl_coll_build_barrier(ccl_sched* sched, ccl_comm* comm) {
     param.count = 0;
     param.dtype = ccl_datatype_int8;
     param.comm = comm;
+    param.hint_algo = sched->hint_algo;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_barrier>(param);
 
@@ -338,6 +344,7 @@ ccl::status ccl_coll_build_bcast(ccl_sched* sched,
 #ifdef CCL_ENABLE_SYCL
     param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
 #endif // CCL_ENABLE_SYCL
+    param.hint_algo = sched->hint_algo;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_bcast>(param);
 
@@ -392,6 +399,7 @@ ccl::status ccl_coll_build_reduce(ccl_sched* sched,
     param.dtype = dtype;
     param.comm = comm;
     param.stream = sched->coll_param.stream;
+    param.hint_algo = sched->hint_algo;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_reduce>(param);
 
@@ -449,6 +457,7 @@ ccl::status ccl_coll_build_reduce_scatter(ccl_sched* sched,
     param.count = count;
     param.dtype = dtype;
     param.comm = comm;
+    param.hint_algo = sched->hint_algo;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_reduce_scatter>(param);
 

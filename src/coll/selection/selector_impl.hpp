@@ -217,12 +217,6 @@ void ccl_algorithm_selector_base<algo_group_type>::print() const {
 }
 
 template <typename algo_group_type>
-bool ccl_algorithm_selector_base<algo_group_type>::is_direct(
-    const ccl_selector_param& param) const {
-    return ccl_algorithm_selector_helper<algo_group_type>::is_direct(get(param));
-}
-
-template <typename algo_group_type>
 algo_group_type ccl_algorithm_selector_base<algo_group_type>::get(
     const ccl_selector_param& param) const {
     size_t elem_size;
@@ -230,6 +224,30 @@ algo_group_type ccl_algorithm_selector_base<algo_group_type>::get(
     ccl_selection_border_type elem_border;
 
     size_t count = ccl_algorithm_selector_helper<algo_group_type>::get_count(param);
+
+    if (param.hint_algo.has_value()) {
+        elem_algo = static_cast<algo_group_type>(param.hint_algo.value);
+        if (!ccl_algorithm_selector_helper<algo_group_type>::can_use(
+                elem_algo, param, main_table)) {
+            LOG_DEBUG("can't select hint algorithm: ctype ",
+                      ccl_coll_type_to_str(param.ctype),
+                      ", count ",
+                      count,
+                      ", algo ",
+                      ccl_coll_algorithm_to_str(elem_algo),
+                      ", switch to regular selection");
+        }
+        else {
+            LOG_DEBUG("selected hint algo: ctype ",
+                      ccl_coll_type_to_str(param.ctype),
+                      ", count ",
+                      count,
+                      ", algo ",
+                      ccl_coll_algorithm_to_str(elem_algo));
+            return elem_algo;
+        }
+    }
+
     size_t size = count * param.dtype.size();
     auto lower_bound = main_table.lower_bound(size);
     ccl_selection_unpack_elem(elem_size, elem_algo, elem_border, lower_bound, main_table);
@@ -239,17 +257,17 @@ algo_group_type ccl_algorithm_selector_base<algo_group_type>::get(
         lower_bound = fallback_table.lower_bound(size);
         ccl_selection_unpack_elem(elem_size, elem_algo, elem_border, lower_bound, fallback_table);
         CCL_THROW_IF_NOT(lower_bound != fallback_table.end(),
-                         "can't select algorithm: coll_type ",
+                         "can't select algorithm: ctype ",
                          ccl_coll_type_to_str(param.ctype),
                          ", count ",
                          count);
         CCL_THROW_IF_NOT(ccl_algorithm_selector_helper<algo_group_type>::can_use(
                              elem_algo, param, fallback_table),
-                         "can't select algorithm in fallback_table: coll_type ",
+                         "can't select algorithm in fallback_table: ctype ",
                          ccl_coll_type_to_str(param.ctype));
     }
 
-    LOG_DEBUG("selected algo: coll_type ",
+    LOG_DEBUG("selected algo: ctype ",
               ccl_coll_type_to_str(param.ctype),
               ", count ",
               count,

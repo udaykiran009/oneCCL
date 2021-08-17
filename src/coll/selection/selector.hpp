@@ -35,6 +35,8 @@ struct ccl_selector_param {
     int is_sycl_buf = 0;
 #endif // CCL_ENABLE_SYCL
 
+    ccl_coll_algo hint_algo = {};
+
     /* tmp fields to avoid selection of algorithms which don't support all coalesce modes or alloc_fn */
     ccl::sparse_coalesce_mode sparse_coalesce_mode;
     ccl::sparse_allreduce_alloc_fn sparse_allreduce_alloc_fn;
@@ -63,7 +65,6 @@ using ccl_selection_table_iter_t = typename ccl_selection_table_t<algo_group_typ
                     size_t left, \
                     size_t right, \
                     algo_group_type algo_id); \
-        bool is_direct(const ccl_selector_param& param) const; \
     };
 
 #define CCL_SELECTION_DECLARE_ALGO_SELECTOR(coll_id, algo_group_type) \

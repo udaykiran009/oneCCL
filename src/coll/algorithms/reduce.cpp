@@ -455,6 +455,7 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
     ccl_coll_entry_param barrier_param{};
     barrier_param.ctype = ccl_coll_barrier;
     barrier_param.comm = comm;
+    barrier_param.hint_algo.barrier = ccl_coll_barrier_ring;
 
     if (sched->coll_attr.to_cache) {
         sched->set_entry_exec_mode(ccl_sched_entry_exec_once);

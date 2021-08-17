@@ -126,6 +126,9 @@ struct ccl_sched_base {
     ccl_coll_param coll_param{};
     ccl_coll_attr coll_attr{};
 
+    /* TODO: schedule doesn't necessarily map on single algo */
+    ccl_coll_algo hint_algo{};
+
     /* sequence number of the schedule in the communicator */
     ccl_sched_id_t sched_id = 0;
 

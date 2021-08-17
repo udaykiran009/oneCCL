@@ -1,6 +1,39 @@
 #include "coll/selection/selection.hpp"
 #include "common/global/global.hpp"
 
+bool ccl_is_direct_algo(const ccl_selector_param& param) {
+    bool res = false;
+
+    auto& selector = ccl::global_data::get().algorithm_selector;
+
+    if (param.ctype == ccl_coll_allgatherv) {
+        res = (selector->get<ccl_coll_allgatherv>(param) == ccl_coll_allgatherv_direct);
+    }
+    else if (param.ctype == ccl_coll_allreduce) {
+        res = (selector->get<ccl_coll_allreduce>(param) == ccl_coll_allreduce_direct);
+    }
+    else if (param.ctype == ccl_coll_alltoall) {
+        res = (selector->get<ccl_coll_alltoall>(param) == ccl_coll_alltoall_direct);
+    }
+    else if (param.ctype == ccl_coll_alltoallv) {
+        res = (selector->get<ccl_coll_alltoallv>(param) == ccl_coll_alltoallv_direct);
+    }
+    else if (param.ctype == ccl_coll_barrier) {
+        res = (selector->get<ccl_coll_barrier>(param) == ccl_coll_barrier_direct);
+    }
+    else if (param.ctype == ccl_coll_bcast) {
+        res = (selector->get<ccl_coll_bcast>(param) == ccl_coll_bcast_direct);
+    }
+    else if (param.ctype == ccl_coll_reduce) {
+        res = (selector->get<ccl_coll_reduce>(param) == ccl_coll_reduce_direct);
+    }
+    else if (param.ctype == ccl_coll_reduce_scatter) {
+        res = (selector->get<ccl_coll_reduce_scatter>(param) == ccl_coll_reduce_scatter_direct);
+    }
+
+    return res;
+}
+
 bool ccl_is_topo_ring_algo(const ccl_selector_param& param) {
 #ifndef CCL_ENABLE_SYCL
     return false;
@@ -13,17 +46,16 @@ bool ccl_is_topo_ring_algo(const ccl_selector_param& param) {
 
     bool res = false;
 
+    auto& selector = ccl::global_data::get().algorithm_selector;
+
     if (param.ctype == ccl_coll_allreduce) {
-        res = (ccl::global_data::get().algorithm_selector->get<ccl_coll_allreduce>(param) ==
-               ccl_coll_allreduce_topo_ring);
+        res = (selector->get<ccl_coll_allreduce>(param) == ccl_coll_allreduce_topo_ring);
     }
     else if (param.ctype == ccl_coll_bcast) {
-        res = (ccl::global_data::get().algorithm_selector->get<ccl_coll_bcast>(param) ==
-               ccl_coll_bcast_topo_ring);
+        res = (selector->get<ccl_coll_bcast>(param) == ccl_coll_bcast_topo_ring);
     }
     else if (param.ctype == ccl_coll_reduce) {
-        res = (ccl::global_data::get().algorithm_selector->get<ccl_coll_reduce>(param) ==
-               ccl_coll_reduce_topo_ring);
+        res = (selector->get<ccl_coll_reduce>(param) == ccl_coll_reduce_topo_ring);
     }
 
     return res;

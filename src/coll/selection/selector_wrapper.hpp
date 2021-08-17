@@ -37,12 +37,6 @@ public:
         return std::get<coll_id>(selectors).get(param);
     }
 
-    template <ccl_coll_type coll_id>
-    bool is_direct(const ccl_selector_param& param) const {
-        CCL_THROW_IF_NOT(coll_id == param.ctype);
-        return std::get<coll_id>(selectors).is_direct(param);
-    }
-
 private:
     using algo_selectors = std::tuple<ccl_algorithm_selector<registered_coll_id>...>;
     algo_selectors selectors;

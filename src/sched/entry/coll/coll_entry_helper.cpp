@@ -19,6 +19,8 @@ ccl::status coll_entry_helper::build_schedule(ccl_sched* sched,
     sched->coll_attr.is_sycl_buf = parent_sched->coll_attr.is_sycl_buf;
 #endif // CCL_ENABLE_SYCL
 
+    sched->hint_algo = param.hint_algo;
+
     switch (param.ctype) {
         case ccl_coll_allgatherv: {
             res = ccl_coll_build_allgatherv(sched,

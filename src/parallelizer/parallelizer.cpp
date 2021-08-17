@@ -235,10 +235,8 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
     size_t a2av_send_bytes = 0, a2av_recv_bytes = 0;
     size_t a2av_send_count = 0, a2av_recv_count = 0;
 
-    ccl_coll_allgatherv_algo ag_algo = ccl_coll_allgatherv_last_value;
-    ccl_coll_alltoall_algo a2a_algo = ccl_coll_alltoall_last_value;
-    ccl_coll_alltoallv_algo a2av_algo = ccl_coll_alltoallv_last_value;
-    ccl_coll_bcast_algo ag_mbcast_algo = ccl_coll_bcast_last_value;
+    ccl_coll_algo algo;
+    ccl_coll_algo internal_algo;
 
     std::vector<ccl_parallelizer_prologue_ctx*> part_ctxs;
 
@@ -278,8 +276,8 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
             }
             break;
         case ccl_coll_alltoall:
-            a2a_algo = data.algorithm_selector->get<ccl_coll_alltoall>(selector_param);
-            if (a2a_algo == ccl_coll_alltoall_direct) {
+            algo.alltoall = data.algorithm_selector->get<ccl_coll_alltoall>(selector_param);
+            if (algo.alltoall == ccl_coll_alltoall_direct) {
                 part_count = 1;
             }
             else {
@@ -287,8 +285,8 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
             }
             break;
         case ccl_coll_alltoallv:
-            a2av_algo = data.algorithm_selector->get<ccl_coll_alltoallv>(selector_param);
-            if (a2av_algo == ccl_coll_alltoallv_direct) {
+            algo.alltoallv = data.algorithm_selector->get<ccl_coll_alltoallv>(selector_param);
+            if (algo.alltoallv == ccl_coll_alltoallv_direct) {
                 part_count = 1;
             }
             else {
@@ -297,21 +295,23 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
             break;
         case ccl_coll_allgatherv:
             selector_param.recv_counts = coll_param.recv_counts.data();
-            ag_algo = data.algorithm_selector->get<ccl_coll_allgatherv>(selector_param);
-            if (ag_algo == ccl_coll_allgatherv_direct || ag_algo == ccl_coll_allgatherv_naive ||
-                ag_algo == ccl_coll_allgatherv_ring) {
+            algo.allgatherv = data.algorithm_selector->get<ccl_coll_allgatherv>(selector_param);
+            if (algo.allgatherv == ccl_coll_allgatherv_direct ||
+                algo.allgatherv == ccl_coll_allgatherv_naive ||
+                algo.allgatherv == ccl_coll_allgatherv_ring) {
                 part_count = 1;
             }
-            else if (ag_algo == ccl_coll_allgatherv_multi_bcast ||
-                     ag_algo == ccl_coll_allgatherv_flat) {
+            else if (algo.allgatherv == ccl_coll_allgatherv_multi_bcast ||
+                     algo.allgatherv == ccl_coll_allgatherv_flat) {
                 part_count = comm_size;
                 ag_recv_bufs.resize(comm_size);
-                if (ag_algo == ccl_coll_allgatherv_multi_bcast) {
+                if (algo.allgatherv == ccl_coll_allgatherv_multi_bcast) {
                     selector_param.ctype = ccl_coll_bcast;
                     selector_param.count = sched->coll_param.get_send_count();
                     selector_param.dtype = dtype;
-                    ag_mbcast_algo = data.algorithm_selector->get<ccl_coll_bcast>(selector_param);
-                    if (ag_mbcast_algo == ccl_coll_bcast_direct) {
+                    internal_algo.bcast =
+                        data.algorithm_selector->get<ccl_coll_bcast>(selector_param);
+                    if (internal_algo.bcast == ccl_coll_bcast_direct) {
                         /*
                             group all direct bcasts for specific worker together into single schedule w/o
                             any barriers to get all required MPI level tags by single do_progress call
@@ -323,7 +323,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
                 }
             }
             else {
-                CCL_FATAL("unexpected allgatherv_algo ", ag_algo);
+                CCL_FATAL("unexpected allgatherv_algo ", algo.allgatherv);
             }
             break;
         case ccl_coll_reduce_scatter: part_count = 1; break;
@@ -338,8 +338,8 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
               ", part_count ",
               part_count);
 
-    if (coll_type == ccl_coll_allgatherv && ag_algo == ccl_coll_allgatherv_multi_bcast &&
-        ag_mbcast_algo == ccl_coll_bcast_direct) {
+    if (coll_type == ccl_coll_allgatherv && algo.allgatherv == ccl_coll_allgatherv_multi_bcast &&
+        internal_algo.bcast == ccl_coll_bcast_direct) {
         counts.resize(comm_size, 0);
         offsets.resize(comm_size, 0);
     }
@@ -400,8 +400,9 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
         case ccl_coll_allgatherv:
             counts[0] = coll_param.get_recv_count(0);
             offsets[0] = 0;
-            if (ag_algo == ccl_coll_allgatherv_direct || ag_algo == ccl_coll_allgatherv_naive ||
-                ag_algo == ccl_coll_allgatherv_ring) {
+            if (algo.allgatherv == ccl_coll_allgatherv_direct ||
+                algo.allgatherv == ccl_coll_allgatherv_naive ||
+                algo.allgatherv == ccl_coll_allgatherv_ring) {
             }
             else {
                 for (idx = 1; idx < comm_size; idx++) {
@@ -624,8 +625,9 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
         }
 
         case ccl_coll_allgatherv: {
-            if (ag_algo == ccl_coll_allgatherv_direct || ag_algo == ccl_coll_allgatherv_naive ||
-                ag_algo == ccl_coll_allgatherv_ring) {
+            if (algo.allgatherv == ccl_coll_allgatherv_direct ||
+                algo.allgatherv == ccl_coll_allgatherv_naive ||
+                algo.allgatherv == ccl_coll_allgatherv_ring) {
                 ccl_coll_entry_param param{};
                 param.ctype = ccl_coll_allgatherv;
                 param.send_buf = ccl_buffer(coll_param.get_send_buf_ptr(),
@@ -640,11 +642,11 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
                 coll_entry_helper::add_coll_entry<ccl_coll_allgatherv>(part_scheds[0].get(), param);
             }
             else {
-                CCL_ASSERT(ag_algo == ccl_coll_allgatherv_flat ||
-                               ag_algo == ccl_coll_allgatherv_multi_bcast,
+                CCL_ASSERT(algo.allgatherv == ccl_coll_allgatherv_flat ||
+                               algo.allgatherv == ccl_coll_allgatherv_multi_bcast,
                            "unexpected allgatherv algorithm");
 
-                if (ag_algo == ccl_coll_allgatherv_flat) {
+                if (algo.allgatherv == ccl_coll_allgatherv_flat) {
                     ccl_coll_build_flat_allgatherv(sched, part_scheds_vector, coll_param);
                 }
                 else {
@@ -657,15 +659,16 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
 
         case ccl_coll_alltoall:
         case ccl_coll_alltoallv: {
-            if (a2a_algo == ccl_coll_alltoall_naive || a2av_algo == ccl_coll_alltoallv_naive) {
+            if (algo.alltoall == ccl_coll_alltoall_naive ||
+                algo.alltoallv == ccl_coll_alltoallv_naive) {
                 ccl_coll_build_naive_alltoallv(sched, part_scheds_vector, coll_param);
             }
-            else if (a2a_algo == ccl_coll_alltoall_scatter ||
-                     a2av_algo == ccl_coll_alltoallv_scatter) {
+            else if (algo.alltoall == ccl_coll_alltoall_scatter ||
+                     algo.alltoallv == ccl_coll_alltoallv_scatter) {
                 ccl_coll_build_scatter_alltoallv(sched, part_scheds_vector, coll_param);
             }
-            else if (a2a_algo == ccl_coll_alltoall_scatter_barrier ||
-                     a2av_algo == ccl_coll_alltoallv_scatter_barrier) {
+            else if (algo.alltoall == ccl_coll_alltoall_scatter_barrier ||
+                     algo.alltoallv == ccl_coll_alltoallv_scatter_barrier) {
                 ccl_coll_build_scatter_barrier_alltoallv(sched, part_scheds_vector, coll_param);
             }
             else {

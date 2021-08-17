@@ -503,6 +503,7 @@ ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
     ccl_coll_entry_param barrier_param{};
     barrier_param.ctype = ccl_coll_barrier;
     barrier_param.comm = comm;
+    barrier_param.hint_algo.barrier = ccl_coll_barrier_ring;
 
     int skip_rank = -1;
     if (ccl::global_data::env().enable_kernel_1s_ipc_wa) {
