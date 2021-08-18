@@ -142,12 +142,65 @@ void get_comp_queue_ordinal(ze_device_handle_t device,
     }
 }
 
+void get_copy_queue_ordinal(ze_device_handle_t device,
+                            const ze_queue_properties_t& props,
+                            uint32_t* ordinal) {
+    uint32_t copy_ordinal = std::numeric_limits<uint32_t>::max();
+
+    for (uint32_t idx = 0; idx < props.size(); ++idx) {
+        if ((props[idx].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) &&
+            global_data::env().ze_copy_engine == ccl_ze_copy_engine_none) {
+            copy_ordinal = idx;
+            break;
+        }
+
+        if ((props[idx].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COPY) &&
+            ((props[idx].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) == 0)) {
+            if (props[idx].numQueues == 1 &&
+                global_data::env().ze_copy_engine == ccl_ze_copy_engine_main) {
+                copy_ordinal = idx;
+                break;
+            }
+            if (props[idx].numQueues > 1 &&
+                global_data::env().ze_copy_engine == ccl_ze_copy_engine_link) {
+                copy_ordinal = idx;
+                break;
+            }
+        }
+    }
+
+    LOG_DEBUG("find copy queue: { ordinal: ",
+              copy_ordinal,
+              ", numQueues: ",
+              props[copy_ordinal].numQueues,
+              " }");
+
+    if (copy_ordinal != std::numeric_limits<uint32_t>::max()) {
+        *ordinal = copy_ordinal;
+    }
+    else {
+        LOG_WARN("could not find queue ordinal for copy engine mode: ",
+                 global_data::env().ze_copy_engine,
+                 ", ordinal 0 will be used");
+        *ordinal = 0;
+    }
+}
+
 void get_queue_index(const ze_queue_properties_t& props,
                      uint32_t ordinal,
                      int rank,
-                     uint32_t* index) {
+                     uint32_t* index,
+                     uint32_t opt_counter) {
     CCL_ASSERT(props.size() > ordinal, "props.size() <= ordinal");
-    *index = rank % props[ordinal].numQueues;
+    // TODO: index depends on rank's changing, when > 1 queues are created,
+    // the index is still the same for different queues, that's the issue.
+    // WA is adding optional counter, which says the order number of a queue.
+    // Need to think, how we'd calculate the index for every queue.
+    if (global_data::env().ze_copy_engine == ccl_ze_copy_engine_none)
+        *index = (rank % props[ordinal].numQueues) + opt_counter;
+    else
+        *index = rank % props[ordinal].numQueues;
+    LOG_DEBUG("set queue index: ", *index);
 }
 
 std::string to_string(const ze_result_t result) {

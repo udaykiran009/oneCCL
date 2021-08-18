@@ -11,7 +11,7 @@
 using namespace ccl;
 using namespace ccl::ze;
 
-ze_base_entry::ze_base_entry(ccl_sched* sched, uint32_t add_event_count)
+ze_base_entry::ze_base_entry(ccl_sched *sched, uint32_t add_event_count)
         : sched_entry(sched),
           sched(sched),
           add_event_count(add_event_count) {
@@ -49,25 +49,15 @@ void ze_base_entry::init() {
     ze_queue_properties_t queue_props;
     get_queues_properties(device, num_queue_groups, &queue_props);
 
-    uint32_t comp_ordinal, comp_queue_index;
-    get_comp_queue_ordinal(device, queue_props, &comp_ordinal);
-    get_queue_index(queue_props, comp_ordinal, rank, &comp_queue_index);
+    /* init comp queue, list */
+    get_comp_primitives(queue_props, comp_primitives);
+    init_primitives(comp_primitives);
 
-    comp_queue_desc = default_comp_queue_desc;
-    comp_queue_desc.index = comp_queue_index;
-    comp_queue_desc.ordinal = comp_ordinal;
-    global_data::get().ze_cache->get(worker_idx, context, device, &comp_queue_desc, &comp_queue);
-    LOG_DEBUG("get compute queue: { ordinal: ",
-              comp_queue_desc.ordinal,
-              ", index: ",
-              comp_queue_desc.index,
-              " }");
-
-    /* create list */
-    comp_list_desc = default_cmd_list_desc;
-    comp_list_desc.commandQueueGroupOrdinal = comp_ordinal;
-    global_data::get().ze_cache->get(worker_idx, context, device, &comp_list_desc, &comp_list);
-    LOG_DEBUG("get compute list: { ordinal: ", comp_list_desc.commandQueueGroupOrdinal, " }");
+    if (global_data::env().enable_kernel_1s_copy_ops) {
+        /* init copy queue, list */
+        get_copy_primitives(queue_props, copy_primitives);
+        init_primitives(copy_primitives);
+    }
 
     /* create event pool */
     event_pool_desc = default_event_pool_desc;
@@ -95,24 +85,46 @@ void ze_base_entry::finalize() {
     global_data::get().ze_cache->push(worker_idx, context, &event_pool_desc, &event_pool);
 
     /* list */
-    global_data::get().ze_cache->push(worker_idx, context, device, &comp_list_desc, &comp_list);
+    global_data::get().ze_cache->push(
+        worker_idx, context, device, &comp_primitives.list_desc, &comp_primitives.list);
 
     /* queue */
-    global_data::get().ze_cache->push(worker_idx, context, device, &comp_queue_desc, &comp_queue);
+    global_data::get().ze_cache->push(
+        worker_idx, context, device, &comp_primitives.queue_desc, &comp_primitives.queue);
+
+    if (global_data::env().enable_kernel_1s_copy_ops) {
+        /* copy list */
+        global_data::get().ze_cache->push(
+            worker_idx, context, device, &copy_primitives.list_desc, &copy_primitives.list);
+
+        /* copy queue */
+        global_data::get().ze_cache->push(
+            worker_idx, context, device, &copy_primitives.queue_desc, &copy_primitives.queue);
+    }
 
     is_initialized = false;
 }
 
 void ze_base_entry::start() {
-    LOG_DEBUG("execute command list");
-
     CCL_THROW_IF_NOT(entry_event, "no entry event");
     ZE_CALL(zeEventHostReset, (entry_event));
-    ZE_CALL(zeCommandQueueExecuteCommandLists, (comp_queue, 1, &comp_list, nullptr));
+
+    if (copy_primitives.queue && copy_primitives.list) {
+        LOG_DEBUG("execute copy command list");
+        ZE_CALL(zeCommandQueueExecuteCommandLists,
+                (copy_primitives.queue, 1, &copy_primitives.list, nullptr));
+    }
+
+    LOG_DEBUG("execute command list");
+    ZE_CALL(zeCommandQueueExecuteCommandLists,
+            (comp_primitives.queue, 1, &comp_primitives.list, nullptr));
 
     if (((global_data::env().ze_serialize_mode & ze_call::serialize_mode::block)) != 0) {
         LOG_DEBUG("wait until command lists are executed");
-        ZE_CALL(zeHostSynchronize, (comp_queue));
+        if (copy_primitives.queue)
+            ZE_CALL(zeHostSynchronize, (copy_primitives.queue));
+        if (comp_primitives.queue)
+            ZE_CALL(zeHostSynchronize, (comp_primitives.queue));
     }
 }
 
@@ -123,7 +135,10 @@ void ze_base_entry::update() {
         query_status = zeEventQueryStatus(entry_event);
     }
     else {
-        query_status = zeHostSynchronize(comp_queue);
+        if (copy_primitives.queue)
+            query_status = zeHostSynchronize(copy_primitives.queue);
+        if (comp_primitives.queue)
+            query_status = zeHostSynchronize(comp_primitives.queue);
     }
 
     if (query_status == ZE_RESULT_SUCCESS) {
@@ -137,4 +152,50 @@ void ze_base_entry::update() {
     else {
         CCL_THROW("error at zeEventQueryStatus");
     }
+}
+
+ze_command_list_handle_t ze_base_entry::get_copy_list() {
+    if (copy_primitives.list) {
+        LOG_DEBUG("copy list is available");
+        return copy_primitives.list;
+    }
+
+    LOG_DEBUG("compute list is returned as default");
+    return comp_primitives.list;
+}
+
+void ze_base_entry::get_comp_primitives(ze_queue_properties_t queue_props,
+                                        cmd_primitives &comp_primitives) {
+    uint32_t ordinal, queue_index;
+    get_comp_queue_ordinal(device, queue_props, &ordinal);
+    get_queue_index(queue_props, ordinal, rank, &queue_index, 0);
+
+    comp_primitives.queue_desc.ordinal = ordinal;
+    comp_primitives.queue_desc.index = queue_index;
+    comp_primitives.list_desc.commandQueueGroupOrdinal = ordinal;
+}
+
+void ze_base_entry::get_copy_primitives(ze_queue_properties_t queue_props,
+                                        cmd_primitives &comp_primitives) {
+    uint32_t ordinal, queue_index;
+    get_copy_queue_ordinal(device, queue_props, &ordinal);
+    get_queue_index(queue_props, ordinal, rank, &queue_index, 1);
+
+    comp_primitives.queue_desc.ordinal = ordinal;
+    comp_primitives.queue_desc.index = queue_index;
+    comp_primitives.list_desc.commandQueueGroupOrdinal = ordinal;
+}
+
+void ze_base_entry::init_primitives(cmd_primitives &cmd_primitives) {
+    global_data::get().ze_cache->get(
+        worker_idx, context, device, &cmd_primitives.queue_desc, &cmd_primitives.queue);
+    LOG_DEBUG("get queue: { ordinal: ",
+              cmd_primitives.queue_desc.ordinal,
+              ", index: ",
+              cmd_primitives.queue_desc.index,
+              " }");
+
+    global_data::get().ze_cache->get(
+        worker_idx, context, device, &cmd_primitives.list_desc, &cmd_primitives.list);
+    LOG_DEBUG("get list: { ordinal: ", cmd_primitives.list_desc.commandQueueGroupOrdinal, " }");
 }

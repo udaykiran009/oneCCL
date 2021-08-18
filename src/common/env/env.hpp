@@ -100,6 +100,7 @@ constexpr const char* CCL_KERNEL_1S_USE_COPY_OPS = "CCL_KERNEL_1S_USE_COPY_OPS";
 constexpr const char* CCL_KERNEL_1S_IPC_WA = "CCL_KERNEL_1S_IPC_WA";
 constexpr const char* CCL_KERNEL_OUTPUT_EVENT = "CCL_KERNEL_OUTPUT_EVENT";
 constexpr const char* CCL_ZE_SERIALIZE = "CCL_ZE_SERIALIZE";
+constexpr const char* CCL_ZE_COPY_ENGINE = "CCL_ZE_COPY_ENGINE";
 
 constexpr const char* CCL_BF16 = "CCL_BF16";
 constexpr const char* CCL_FP16 = "CCL_FP16";
@@ -109,6 +110,12 @@ enum ccl_priority_mode { ccl_priority_none, ccl_priority_direct, ccl_priority_li
 enum ccl_atl_transport { ccl_atl_ofi, ccl_atl_mpi };
 
 enum ccl_staging_buffer { ccl_staging_regular, ccl_staging_usm };
+
+enum ccl_ze_copy_engine_mode {
+    ccl_ze_copy_engine_none,
+    ccl_ze_copy_engine_main,
+    ccl_ze_copy_engine_link
+};
 
 namespace ccl {
 
@@ -213,6 +220,7 @@ public:
     int enable_kernel_1s_ipc_wa;
     int enable_kernel_output_event;
     int ze_serialize_mode;
+    ccl_ze_copy_engine_mode ze_copy_engine;
 
     ccl_bf16_impl_type bf16_impl_type;
     ccl_fp16_impl_type fp16_impl_type;
@@ -287,6 +295,7 @@ public:
     static std::map<ccl_priority_mode, std::string> priority_mode_names;
     static std::map<ccl_atl_transport, std::string> atl_transport_names;
     static std::map<ccl_staging_buffer, std::string> staging_buffer_names;
+    static std::map<ccl_ze_copy_engine_mode, std::string> ze_copy_engine_names;
     static std::map<atl_mnic_t, std::string> mnic_type_names;
 
     int env_2_worker_affinity(int local_proc_idx, int local_proc_count);

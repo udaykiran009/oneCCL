@@ -40,6 +40,12 @@ std::map<atl_mnic_t, std::string> env_data::mnic_type_names = {
     std::make_pair(ATL_MNIC_GLOBAL, "global")
 };
 
+std::map<ccl_ze_copy_engine_mode, std::string> env_data::ze_copy_engine_names = {
+    std::make_pair(ccl_ze_copy_engine_none, "none"),
+    std::make_pair(ccl_ze_copy_engine_main, "main"),
+    std::make_pair(ccl_ze_copy_engine_link, "link")
+};
+
 env_data::env_data()
         : was_printed(false),
 
@@ -116,6 +122,7 @@ env_data::env_data()
           enable_kernel_1s_ipc_wa(0),
           enable_kernel_output_event(0),
           ze_serialize_mode(0),
+          ze_copy_engine(ccl_ze_copy_engine_none),
 
           bf16_impl_type(ccl_bf16_no_compiler_support),
           fp16_impl_type(ccl_fp16_no_compiler_support) {
@@ -272,6 +279,7 @@ void env_data::parse() {
     env_2_type(CCL_KERNEL_1S_IPC_WA, enable_kernel_1s_ipc_wa);
     env_2_type(CCL_KERNEL_OUTPUT_EVENT, enable_kernel_output_event);
     env_2_type(CCL_ZE_SERIALIZE, ze_serialize_mode);
+    env_2_enum(CCL_ZE_COPY_ENGINE, ze_copy_engine_names, ze_copy_engine);
 
     auto bf16_impl_types = ccl_bf16_get_impl_types();
     ccl_bf16_impl_type bf16_env_impl_type;
@@ -463,6 +471,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_KERNEL_1S_IPC_WA, ": ", enable_kernel_1s_ipc_wa);
     LOG_INFO(CCL_KERNEL_OUTPUT_EVENT, ": ", enable_kernel_output_event);
     LOG_INFO(CCL_ZE_SERIALIZE, ": ", ze_serialize_mode);
+    LOG_INFO(CCL_ZE_COPY_ENGINE, ": ", str_by_enum(ze_copy_engine_names, ze_copy_engine));
 #endif // CCL_ENABLE_SYCL
 
     LOG_INFO(CCL_BF16, ": ", str_by_enum(bf16_impl_names, bf16_impl_type));

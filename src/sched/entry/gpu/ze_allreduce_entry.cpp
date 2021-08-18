@@ -136,7 +136,7 @@ void ze_allreduce_entry::init() {
         LOG_DEBUG("append empty kernel");
         ze_group_count_t empty_group_count = { 1, 1, 1 };
         ZE_CALL(zeCommandListAppendLaunchKernel,
-                (ze_base_entry::comp_list,
+                (ze_base_entry::comp_primitives.list,
                  empty_kernel,
                  &empty_group_count,
                  empty_kernel_event,
@@ -148,7 +148,7 @@ void ze_allreduce_entry::init() {
         LOG_DEBUG("one-sided multi-phase algorithm");
 
         ZE_CALL(zeCommandListAppendMemoryCopy,
-                (ze_base_entry::comp_list,
+                (ze_base_entry::get_copy_list(),
                  tmp_buf_ptr,
                  right_send_buf_ptr,
                  buf_size_bytes,
@@ -157,7 +157,7 @@ void ze_allreduce_entry::init() {
                  &empty_kernel_event));
 
         ZE_CALL(zeCommandListAppendLaunchKernel,
-                (ze_base_entry::comp_list,
+                (ze_base_entry::comp_primitives.list,
                  main_kernel,
                  &group_count,
                  reduce_local_kernel_event,
@@ -165,7 +165,7 @@ void ze_allreduce_entry::init() {
                  &copy_from_peer_event));
 
         ZE_CALL(zeCommandListAppendMemoryCopy,
-                (ze_base_entry::comp_list,
+                (ze_base_entry::get_copy_list(),
                  right_recv_buf_ptr,
                  recv_buf_ptr,
                  buf_size_bytes,
@@ -176,7 +176,7 @@ void ze_allreduce_entry::init() {
     else {
         LOG_DEBUG("one-sided monolithic algorithm");
         ZE_CALL(zeCommandListAppendLaunchKernel,
-                (ze_base_entry::comp_list,
+                (ze_base_entry::comp_primitives.list,
                  main_kernel,
                  &group_count,
                  ze_base_entry::entry_event,
@@ -184,8 +184,10 @@ void ze_allreduce_entry::init() {
                  &empty_kernel_event));
     }
 
-    ZE_CALL(zeCommandListClose, (ze_base_entry::comp_list));
-
+    ZE_CALL(zeCommandListClose, (ze_base_entry::comp_primitives.list));
+    if (global_data::env().enable_kernel_1s_copy_ops) {
+        ZE_CALL(zeCommandListClose, (ze_base_entry::copy_primitives.list));
+    }
     LOG_DEBUG("initialization complete");
 }
 

@@ -2,6 +2,8 @@
 
 #include <ze_api.h>
 
+using namespace ccl;
+
 ze_copy_entry::ze_copy_entry(ccl_sched* sched,
                              ccl_buffer in_buf,
                              ccl_buffer out_buf,
@@ -23,7 +25,7 @@ ze_copy_entry::~ze_copy_entry() {
 }
 
 void ze_copy_entry::init() {
-    if (is_initialized) {
+    if (ze_base_entry::is_initialized) {
         return;
     }
 
@@ -43,11 +45,11 @@ void ze_copy_entry::init() {
 
     void* dst = out_buf.get_ptr();
     void* src = static_cast<char*>(in_buf.get_ptr()) + attr.in_buf_offset * dtype.size();
-    ZE_CALL(zeCommandListAppendMemoryCopy,
-            (ze_base_entry::comp_list, dst, src, buf_size_bytes, entry_event, 0, nullptr));
-    ZE_CALL(zeCommandListClose, (ze_base_entry::comp_list));
+    ze_command_list_handle_t list = ze_base_entry::get_copy_list();
 
-    is_initialized = true;
+    ZE_CALL(zeCommandListAppendMemoryCopy,
+            (list, dst, src, buf_size_bytes, ze_base_entry::entry_event, 0, nullptr));
+    ZE_CALL(zeCommandListClose, (list));
 
     LOG_DEBUG("initialization complete");
 }
@@ -55,6 +57,7 @@ void ze_copy_entry::init() {
 void ze_copy_entry::start() {
     init();
     ze_base_entry::start();
+
     status = ccl_sched_entry_status_started;
 }
 
@@ -66,15 +69,13 @@ void ze_copy_entry::update() {
 }
 
 void ze_copy_entry::finalize() {
-    if (!is_initialized) {
+    if (!ze_base_entry::is_initialized) {
         return;
     }
 
     LOG_DEBUG("finalization");
 
     ze_base_entry::finalize();
-
-    is_initialized = false;
 
     LOG_DEBUG("finalization complete");
 }

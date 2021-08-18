@@ -127,13 +127,18 @@ void ze_reduce_entry::init() {
         LOG_DEBUG("append empty kernel");
         ze_group_count_t empty_group_count = { 1, 1, 1 };
         ZE_CALL(zeCommandListAppendLaunchKernel,
-                (comp_list, empty_kernel, &empty_group_count, empty_kernel_event, 0, nullptr));
+                (comp_primitives.list,
+                 empty_kernel,
+                 &empty_group_count,
+                 empty_kernel_event,
+                 0,
+                 nullptr));
     }
 
     LOG_DEBUG("one-sided multi-phase algorithm");
 
     ZE_CALL(zeCommandListAppendMemoryCopy,
-            (comp_list,
+            (comp_primitives.list,
              tmp_buf_ptr,
              right_send_buf_ptr,
              buf_size_bytes,
@@ -141,10 +146,11 @@ void ze_reduce_entry::init() {
              (empty_kernel_event) ? 1 : 0,
              &empty_kernel_event));
 
-    ZE_CALL(zeCommandListAppendLaunchKernel,
-            (comp_list, main_kernel, &group_count, entry_event, 1, &copy_from_peer_event));
+    ZE_CALL(
+        zeCommandListAppendLaunchKernel,
+        (comp_primitives.list, main_kernel, &group_count, entry_event, 1, &copy_from_peer_event));
 
-    ZE_CALL(zeCommandListClose, (comp_list));
+    ZE_CALL(zeCommandListClose, (comp_primitives.list));
 
     is_initialized = true;
 

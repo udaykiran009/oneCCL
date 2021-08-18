@@ -49,10 +49,14 @@ void reduce_local_entry::init() {
     LOG_DEBUG("kernel ", kernel, " args:\n", to_string(kernel_args));
     set_kernel_args(kernel, kernel_args);
 
-    ZE_CALL(
-        zeCommandListAppendLaunchKernel,
-        (ze_base_entry::comp_list, kernel, &group_count, ze_base_entry::entry_event, 0, nullptr));
-    ZE_CALL(zeCommandListClose, (ze_base_entry::comp_list));
+    ZE_CALL(zeCommandListAppendLaunchKernel,
+            (ze_base_entry::comp_primitives.list,
+             kernel,
+             &group_count,
+             ze_base_entry::entry_event,
+             0,
+             nullptr));
+    ZE_CALL(zeCommandListClose, (ze_base_entry::comp_primitives.list));
 
     LOG_DEBUG("initialization complete");
 }
@@ -108,12 +112,6 @@ void reduce_local_entry::finalize() {
 
     // module_cache
     ccl::global_data::get().ze_cache->push(worker_idx, module, kernel_name, &kernel);
-    // list_cache
-    ccl::global_data::get().ze_cache->push(
-        worker_idx, context, device, &comp_list_desc, &comp_list);
-    // queue_cache
-    ccl::global_data::get().ze_cache->push(
-        worker_idx, context, device, &comp_queue_desc, &comp_queue);
 
     ze_base_entry::finalize();
 

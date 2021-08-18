@@ -42,6 +42,4 @@ private:
     const ccl_datatype& dtype;
     const copy_attr attr;
     const size_t buf_size_bytes;
-
-    bool is_initialized{};
 };

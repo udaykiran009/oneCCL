@@ -7,6 +7,15 @@
 
 #include <ze_api.h>
 
+using namespace ccl::ze;
+
+struct cmd_primitives {
+    ze_command_queue_handle_t queue{};
+    ze_command_queue_desc_t queue_desc{ default_cmd_queue_desc };
+    ze_command_list_handle_t list{};
+    ze_command_list_desc_t list_desc{ default_cmd_list_desc };
+};
+
 class ze_base_entry : public sched_entry {
 public:
     bool is_gpu_entry() const noexcept override {
@@ -14,18 +23,24 @@ public:
     }
 
     ze_base_entry() = delete;
-    ze_base_entry(const ze_base_entry&) = delete;
+    ze_base_entry(const ze_base_entry &) = delete;
     virtual ~ze_base_entry(){};
 
 protected:
-    explicit ze_base_entry(ccl_sched* sched, uint32_t add_event_count = 0);
+    explicit ze_base_entry(ccl_sched *sched, uint32_t add_event_count = 0);
 
     virtual void init();
     virtual void start() override;
     virtual void update() override;
     virtual void finalize();
 
-    ccl_sched* const sched;
+    ze_command_list_handle_t get_copy_list();
+
+    void init_primitives(cmd_primitives &cmd_primitives);
+    void get_copy_primitives(ze_queue_properties_t queue_props, cmd_primitives &comp_primitives);
+    void get_comp_primitives(ze_queue_properties_t queue_props, cmd_primitives &comp_primitives);
+
+    ccl_sched *const sched;
     const uint32_t add_event_count;
     int rank{};
     int comm_size{};
@@ -36,11 +51,8 @@ protected:
     ze_device_handle_t device{};
     ze_context_handle_t context{};
 
-    ze_command_queue_desc_t comp_queue_desc{};
-    ze_command_queue_handle_t comp_queue{};
-
-    ze_command_list_desc_t comp_list_desc{};
-    ze_command_list_handle_t comp_list{};
+    cmd_primitives comp_primitives{};
+    cmd_primitives copy_primitives{};
 
     ze_event_pool_desc_t event_pool_desc{};
     ze_event_pool_handle_t event_pool{};

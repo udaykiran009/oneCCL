@@ -29,7 +29,7 @@ constexpr ze_command_list_desc_t default_cmd_list_desc = {
     .flags = 0,
 };
 
-constexpr ze_command_queue_desc_t default_comp_queue_desc = {
+constexpr ze_command_queue_desc_t default_cmd_queue_desc = {
     .stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
     .pNext = nullptr,
     .ordinal = 0,
@@ -91,10 +91,14 @@ void get_queues_properties(ze_device_handle_t device,
 void get_comp_queue_ordinal(ze_device_handle_t device,
                             const ze_queue_properties_t& props,
                             uint32_t* ordinal);
+void get_copy_queue_ordinal(ze_device_handle_t device,
+                            const ze_queue_properties_t& props,
+                            uint32_t* ordinal);
 void get_queue_index(const ze_queue_properties_t& props,
                      uint32_t ordinal,
                      int rank,
-                     uint32_t* index);
+                     uint32_t* index,
+                     uint32_t opt_counter);
 
 std::string to_string(const ze_result_t result);
 std::string to_string(const ze_group_size_t& group_size);
