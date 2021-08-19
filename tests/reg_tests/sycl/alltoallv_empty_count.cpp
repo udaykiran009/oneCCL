@@ -1,38 +1,9 @@
 #include <numeric>
 #include <vector>
 #include <iostream>
-
+#include "sycl_base.hpp"
 #include "oneapi/ccl.hpp"
-#include "gtest/gtest.h"
 #include "mpi.h"
-
-class alltoallv_test : public ::testing::Test {
-protected:
-    void SetUp() override {
-        ccl::init();
-
-        MPI_Init(NULL, NULL);
-        MPI_Comm_size(MPI_COMM_WORLD, &size);
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    }
-
-    void TearDown() override {
-        // don't do finalize if the case has failed, this
-        // could lead to a deadlock due to inconsistent state.
-        if (HasFatalFailure()) {
-            return;
-        }
-
-        int is_finalized = 0;
-        MPI_Finalized(&is_finalized);
-
-        if (!is_finalized)
-            MPI_Finalize();
-    }
-
-    int size;
-    int rank;
-};
 
 // there are 3 ranks, rank 0 is able to send and receive data to/from others(its send and receive total count > 0)
 // rank 1 only sends data but not receives it(its recv_count == 0 for all ranks), and rank 2 only receives data but
@@ -41,16 +12,30 @@ protected:
 // in the testcase we simply run alltoallv with these parameters and after that check that both rank 0 and rank 2 received
 // the correct data.
 // TODO: once we add more tests, move some common parts out of this test
-TEST_F(alltoallv_test, alltoallv_empty_recv_count) {
+int main(int argc, char* argv[]) {
     const size_t count = 1000;
 
     int i = 0;
+    int size;
+    int rank;
 
-    ASSERT_GE(size, 3) << "test expects >= 3 ranks";
+    if (size < 3) {
+        printf("test expects >= 3 ranks");
+        return -1;
+    }
 
     sycl::queue q;
-    ASSERT_TRUE(q.get_device().is_gpu())
-        << "test expects GPU device, please use SYCL_DEVICE_FILTER accordingly";
+    if (!q.get_device().is_gpu()) {
+        printf("test expects GPU device, please use SYCL_DEVICE_FILTER accordingly");
+        return -1;
+    }
+
+    ccl::init();
+
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    atexit(mpi_finalize);
 
     /* create kvs */
     ccl::shared_ptr_class<ccl::kvs> kvs;
@@ -129,7 +114,7 @@ TEST_F(alltoallv_test, alltoallv_empty_recv_count) {
 
     // if our rank is the one that didn't receive anything, than just exit and don't do any checking
     if (rank == empty_recv_rank)
-        return;
+        return 0;
 
     size_t total_recv = std::accumulate(recv_counts.begin(), recv_counts.end(), 0);
 
@@ -152,9 +137,12 @@ TEST_F(alltoallv_test, alltoallv_empty_recv_count) {
     {
         sycl::host_accessor check_buf_acc(check_buf, sycl::read_only);
         for (i = 0; i < total_recv; i++) {
-            ASSERT_NE(check_buf_acc[i], -1) << "check failed for receive buffer";
+            if (check_buf_acc[i] == -1) {
+                printf("unexpected value at idx %d\n", i);
+                fflush(stdout);
+                return -1;
+            }
         }
     }
-
-    return;
+    return 0;
 }

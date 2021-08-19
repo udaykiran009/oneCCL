@@ -1,0 +1,26 @@
+cmake_minimum_required(VERSION 2.8)
+
+set(pkg_sources
+    pkgconfig_support_checker.cpp)
+
+set(CCL_INSTALL_TESTS "${CMAKE_CURRENT_SOURCE_DIR}")
+
+find_package(PkgConfig REQUIRED)
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "IntelLLVM")
+    set(PKG_CCL_LIB "ccl-cpu_gpu_dpcpp")
+else()
+    set(PKG_CCL_LIB "ccl-cpu_icc")
+endif()
+pkg_check_modules(IMPI_PKG REQUIRED IMPORTED_TARGET impi)
+pkg_check_modules(CCL_PKG REQUIRED IMPORTED_TARGET ${PKG_CCL_LIB})
+
+message(STATUS "CCL_PKG_LDFLAGS = ${CCL_PKG_LDFLAGS}")
+message(STATUS "CCL_PKG_CFLAGS = ${CCL_PKG_CFLAGS}")
+
+foreach(src ${pkg_sources})
+   get_filename_component(executable ${src} NAME_WE)
+   add_executable(${executable} ${src})
+   target_link_libraries(${executable} PRIVATE ${CCL_PKG_LDFLAGS})
+   target_include_directories(${executable} PRIVATE ${CCL_PKG_CFLAGS})
+   install(TARGETS ${executable} RUNTIME DESTINATION ${CCL_INSTALL_TESTS} OPTIONAL)
+endforeach(src ${pkg_sources})

@@ -62,6 +62,7 @@ function print_help()
     "-modulefile_tests:    enable modulefile tests\n" \
     "-functional_tests:    enable functional tests\n" \
     "-valgrind_check:      enable valgrind check\n" \
+    "-reg_tests:           enable regression tests\n" \
     "-help:                print this help information"
     exit 0
 }
@@ -336,6 +337,26 @@ function run_valgrind_check()
     fi
 }
 
+function run_reg_tests()
+{
+    set_external_env
+    if [ ${node_label} == "mlsl2_test_gpu" ]
+    then
+        ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode gpu
+    else
+        ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode cpu
+    fi
+    log_status_fail=${PIPESTATUS[0]}
+    if [ "$log_status_fail" -eq 0 ]
+    then
+        echo "regression testing ... OK"
+        exit 0
+    else
+        echo "regression testing ... NOK"
+        exit 1
+    fi
+}
+
 function run_compatibitily_tests()
 {
     set_external_env
@@ -357,6 +378,7 @@ function run_compatibitily_tests()
         exit 1
     fi
 }
+
 
 function run_horovod_tests()
 {
@@ -753,6 +775,10 @@ else
             ;;
         "-valgrind_check" )
             run_valgrind_check
+            shift
+            ;;
+        "-reg_tests" )
+            run_reg_tests
             shift
             ;;
         *)

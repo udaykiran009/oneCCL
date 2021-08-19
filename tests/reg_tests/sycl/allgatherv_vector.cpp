@@ -1,47 +1,29 @@
 #include <numeric>
 #include <vector>
 #include <iostream>
-
 #include "oneapi/ccl.hpp"
-#include "gtest/gtest.h"
+#include "sycl_base.hpp"
 #include "mpi.h"
 
-class allgatherv_test : public ::testing::Test {
-protected:
-    void SetUp() override {
-        ccl::init();
-
-        MPI_Init(NULL, NULL);
-        MPI_Comm_size(MPI_COMM_WORLD, &size);
-        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    }
-
-    void TearDown() override {
-        // don't do finalize if the case has failed, this
-        // could lead to a deadlock due to inconsistent state.
-        if (HasFatalFailure()) {
-            return;
-        }
-
-        int is_finalized = 0;
-        MPI_Finalized(&is_finalized);
-
-        if (!is_finalized)
-            MPI_Finalize();
-    }
-
+int main(int argc, char *argv[]) {
+    const size_t count = 50;
     int size;
     int rank;
-};
-
-TEST_F(allgatherv_test, allgatherv_vector) {
-    const size_t count = 50;
 
     int i = 0;
 
     sycl::queue q;
-    ASSERT_TRUE(q.get_device().is_gpu())
-        << "test expects GPU device, please use SYCL_DEVICE_FILTER accordingly";
+    if (!q.get_device().is_gpu()) {
+        printf("test expects GPU device, please use SYCL_DEVICE_FILTER accordingly");
+        return -1;
+    }
+
+    ccl::init();
+
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    atexit(mpi_finalize);
 
     /* create kvs */
     ccl::shared_ptr_class<ccl::kvs> kvs;
@@ -126,10 +108,9 @@ TEST_F(allgatherv_test, allgatherv_vector) {
             if (check_buf_acc[i] == -1) {
                 printf("unexpected value at idx %d\n", i);
                 fflush(stdout);
+                return -1;
             }
-            ASSERT_NE(check_buf_acc[i], -1) << "check failed for receive buffer";
         }
     }
-
-    return;
+    return 0;
 }

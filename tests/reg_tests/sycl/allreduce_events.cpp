@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
         for (i = 0; i < count * num_iters; i++) {
             if (check_buf[i] == -1) {
                 cout << "FAILED\n";
-                break;
+                return -1;
             }
         }
         if (i == count * num_iters) {
