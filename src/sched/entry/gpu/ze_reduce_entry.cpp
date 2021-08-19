@@ -67,13 +67,13 @@ void ze_reduce_entry::init() {
                                                   { sizeof(tmp_buf_ptr), &tmp_buf_ptr },
                                                   { sizeof(recv_buf_ptr), &recv_buf_ptr } };
 
-    ccl::global_data::get().ze_cache->get(context, device, &module, "kernels.spv");
+    ccl::global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
 
     device_mem_alloc_desc = default_device_mem_alloc_desc;
     ccl::global_data::get().ze_cache->get(worker_idx,
                                           context,
                                           device,
-                                          &device_mem_alloc_desc,
+                                          device_mem_alloc_desc,
                                           buf_size_bytes,
                                           0, /*alignment*/
                                           &tmp_buf_ptr);
@@ -204,7 +204,7 @@ void ze_reduce_entry::finalize() {
     ccl::global_data::get().ze_cache->push(worker_idx,
                                            context,
                                            device,
-                                           &device_mem_alloc_desc,
+                                           device_mem_alloc_desc,
                                            buf_size_bytes,
                                            0, /*alignment*/
                                            tmp_buf_ptr);
@@ -212,10 +212,9 @@ void ze_reduce_entry::finalize() {
     /* kernels */
     if (empty_kernel_event) {
         ZE_CALL(zeEventDestroy, (empty_kernel_event));
-        ccl::global_data::get().ze_cache->push(
-            worker_idx, module, empty_kernel_name, &empty_kernel);
+        ccl::global_data::get().ze_cache->push(worker_idx, module, empty_kernel_name, empty_kernel);
     }
-    ccl::global_data::get().ze_cache->push(worker_idx, module, main_kernel_name, &main_kernel);
+    ccl::global_data::get().ze_cache->push(worker_idx, module, main_kernel_name, main_kernel);
 
     ze_base_entry::finalize();
 

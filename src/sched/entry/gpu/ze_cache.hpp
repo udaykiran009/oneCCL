@@ -16,11 +16,11 @@ public:
     void clear();
 
     void get(ze_command_queue_handle_t queue,
-             ze_fence_desc_t* fence_desc,
+             const ze_fence_desc_t& fence_desc,
              ze_fence_handle_t* fence);
     void push(ze_command_queue_handle_t queue,
-              ze_fence_desc_t* fence_desc,
-              ze_fence_handle_t* fence);
+              const ze_fence_desc_t& fence_desc,
+              ze_fence_handle_t fence);
 
 private:
     using key_t = typename std::tuple<ze_command_queue_handle_t>;
@@ -36,9 +36,7 @@ public:
     void clear();
 
     void get(ze_module_handle_t module, const std::string& kernel_name, ze_kernel_handle_t* kernel);
-    void push(ze_module_handle_t module,
-              const std::string& kernel_name,
-              ze_kernel_handle_t* kernel);
+    void push(ze_module_handle_t module, const std::string& kernel_name, ze_kernel_handle_t kernel);
 
 private:
     using key_t = typename std::tuple<ze_module_handle_t, std::string>;
@@ -56,12 +54,12 @@ public:
 
     void get(ze_context_handle_t context,
              ze_device_handle_t device,
-             ze_command_list_desc_t* list_desc,
+             const ze_command_list_desc_t& list_desc,
              ze_command_list_handle_t* list);
     void push(ze_context_handle_t context,
               ze_device_handle_t device,
-              ze_command_list_desc_t* list_desc,
-              ze_command_list_handle_t* list);
+              const ze_command_list_desc_t& list_desc,
+              ze_command_list_handle_t list);
 
 private:
     using key_t = typename std::
@@ -79,12 +77,12 @@ public:
 
     void get(ze_context_handle_t context,
              ze_device_handle_t device,
-             ze_command_queue_desc_t* queue_desc,
+             const ze_command_queue_desc_t& queue_desc,
              ze_command_queue_handle_t* queue);
     void push(ze_context_handle_t context,
               ze_device_handle_t device,
-              ze_command_queue_desc_t* queue_desc,
-              ze_command_queue_handle_t* queue);
+              const ze_command_queue_desc_t& queue_desc,
+              ze_command_queue_handle_t queue);
 
 private:
     using key_t = typename std::tuple<ze_context_handle_t,
@@ -106,12 +104,12 @@ public:
     void clear();
 
     void get(ze_context_handle_t context,
-             ze_event_pool_desc_t* pool_desc,
+             const ze_event_pool_desc_t& pool_desc,
              ze_event_pool_handle_t* event_pool);
 
     void push(ze_context_handle_t context,
-              ze_event_pool_desc_t* pool_desc,
-              ze_event_pool_handle_t* event_pool);
+              const ze_event_pool_desc_t& pool_desc,
+              ze_event_pool_handle_t event_pool);
 
 private:
     using key_t = typename std::tuple<ze_context_handle_t, ze_event_pool_flags_t, uint32_t>;
@@ -128,14 +126,14 @@ public:
 
     void get(ze_context_handle_t context,
              ze_device_handle_t device,
-             ze_device_mem_alloc_desc_t* device_mem_alloc_desc,
+             const ze_device_mem_alloc_desc_t& device_mem_alloc_desc,
              size_t bytes,
              size_t alignment,
              void** pptr);
 
     void push(ze_context_handle_t context,
               ze_device_handle_t device,
-              ze_device_mem_alloc_desc_t* device_mem_alloc_desc,
+              const ze_device_mem_alloc_desc_t& device_mem_alloc_desc,
               size_t bytes,
               size_t alignment,
               void* ptr);
@@ -159,33 +157,33 @@ public:
 
     void get(ze_context_handle_t context,
              ze_device_handle_t device,
-             ze_module_handle_t* module,
-             std::string spv_name);
+             const std::string& spv_name,
+             ze_module_handle_t* module);
 
 private:
-    using key_t = ze_device_handle_t;
+    using key_t = typename std::tuple<ze_device_handle_t, std::string>;
     using value_t = ze_module_handle_t;
-    std::unordered_multimap<std::tuple<ze_device_handle_t, std::string>,
-                            ze_module_handle_t,
-                            utils::tuple_hash>
-        cache;
+    std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
     std::mutex mutex;
 
     void load(ze_context_handle_t context,
               ze_device_handle_t device,
-              ze_module_handle_t* module,
-              std::string spv_name);
+              const std::string& spv_name,
+              ze_module_handle_t* module);
 };
 
 class cache {
 public:
     cache(size_t instance_count)
-            : fences(instance_count),
+            : instance_count(instance_count),
+              fences(instance_count),
               kernels(instance_count),
               lists(instance_count),
               queues(instance_count),
               event_pools(instance_count),
-              device_mems(instance_count) {}
+              device_mems(instance_count) {
+        LOG_DEBUG("create cache with ", instance_count, " instances");
+    }
     cache(const cache&) = delete;
     cache& operator=(const cache&) = delete;
     ~cache();
@@ -193,14 +191,14 @@ public:
     /* get */
     void get(size_t instance_idx,
              ze_command_queue_handle_t queue,
-             ze_fence_desc_t* fence_desc,
+             const ze_fence_desc_t& fence_desc,
              ze_fence_handle_t* fence) {
         fences.at(instance_idx).get(queue, fence_desc, fence);
     }
 
     void get(size_t instance_idx,
              ze_module_handle_t module,
-             std::string kernel_name,
+             const std::string& kernel_name,
              ze_kernel_handle_t* kernel) {
         kernels.at(instance_idx).get(module, kernel_name, kernel);
     }
@@ -208,7 +206,7 @@ public:
     void get(size_t instance_idx,
              ze_context_handle_t context,
              ze_device_handle_t device,
-             ze_command_list_desc_t* list_desc,
+             const ze_command_list_desc_t& list_desc,
              ze_command_list_handle_t* list) {
         lists.at(instance_idx).get(context, device, list_desc, list);
     }
@@ -216,14 +214,14 @@ public:
     void get(size_t instance_idx,
              ze_context_handle_t context,
              ze_device_handle_t device,
-             ze_command_queue_desc_t* queue_desc,
+             const ze_command_queue_desc_t& queue_desc,
              ze_command_queue_handle_t* queue) {
         queues.at(instance_idx).get(context, device, queue_desc, queue);
     }
 
     void get(size_t instance_idx,
              ze_context_handle_t context,
-             ze_event_pool_desc_t* pool_desc,
+             const ze_event_pool_desc_t& pool_desc,
              ze_event_pool_handle_t* event_pool) {
         event_pools.at(instance_idx).get(context, pool_desc, event_pool);
     }
@@ -231,7 +229,7 @@ public:
     void get(size_t instance_idx,
              ze_context_handle_t context,
              ze_device_handle_t device,
-             ze_device_mem_alloc_desc_t* device_mem_alloc_desc,
+             const ze_device_mem_alloc_desc_t& device_mem_alloc_desc,
              size_t bytes,
              size_t alignment,
              void** pptr) {
@@ -241,53 +239,53 @@ public:
 
     void get(ze_context_handle_t context,
              ze_device_handle_t device,
-             ze_module_handle_t* module,
-             std::string spv_name) {
-        modules.get(context, device, module, spv_name);
+             const std::string& spv_name,
+             ze_module_handle_t* module) {
+        modules.get(context, device, spv_name, module);
     }
 
     /* push */
     void push(size_t instance_idx,
               ze_command_queue_handle_t queue,
-              ze_fence_desc_t* fence_desc,
-              ze_fence_handle_t* fence) {
+              const ze_fence_desc_t& fence_desc,
+              ze_fence_handle_t fence) {
         fences.at(instance_idx).push(queue, fence_desc, fence);
     }
 
     void push(size_t instance_idx,
               ze_module_handle_t module,
-              std::string kernel_name,
-              ze_kernel_handle_t* kernel) {
+              const std::string& kernel_name,
+              ze_kernel_handle_t kernel) {
         kernels.at(instance_idx).push(module, kernel_name, kernel);
     }
 
     void push(size_t instance_idx,
               ze_context_handle_t context,
               ze_device_handle_t device,
-              ze_command_list_desc_t* list_desc,
-              ze_command_list_handle_t* list) {
+              const ze_command_list_desc_t& list_desc,
+              ze_command_list_handle_t list) {
         lists.at(instance_idx).push(context, device, list_desc, list);
     }
 
     void push(size_t instance_idx,
               ze_context_handle_t context,
               ze_device_handle_t device,
-              ze_command_queue_desc_t* queue_desc,
-              ze_command_queue_handle_t* queue) {
+              const ze_command_queue_desc_t& queue_desc,
+              ze_command_queue_handle_t queue) {
         queues.at(instance_idx).push(context, device, queue_desc, queue);
     }
 
     void push(size_t instance_idx,
               ze_context_handle_t context,
-              ze_event_pool_desc_t* pool_desc,
-              ze_event_pool_handle_t* event_pool) {
+              const ze_event_pool_desc_t& pool_desc,
+              ze_event_pool_handle_t event_pool) {
         event_pools.at(instance_idx).push(context, pool_desc, event_pool);
     }
 
     void push(size_t instance_idx,
               ze_context_handle_t context,
               ze_device_handle_t device,
-              ze_device_mem_alloc_desc_t* device_mem_alloc_desc,
+              const ze_device_mem_alloc_desc_t& device_mem_alloc_desc,
               size_t bytes,
               size_t alignment,
               void* ptr) {
@@ -296,13 +294,14 @@ public:
     }
 
 private:
+    const size_t instance_count;
     std::vector<fence_cache> fences;
     std::vector<kernel_cache> kernels;
     std::vector<list_cache> lists;
     std::vector<queue_cache> queues;
     std::vector<event_pool_cache> event_pools;
     std::vector<device_mem_cache> device_mems;
-    module_cache modules;
+    module_cache modules{};
 };
 
 } // namespace ze

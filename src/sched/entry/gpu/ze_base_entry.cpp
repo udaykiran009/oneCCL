@@ -62,7 +62,7 @@ void ze_base_entry::init() {
     /* create event pool */
     event_pool_desc = default_event_pool_desc;
     event_pool_desc.count = 1 + add_event_count; // at least one event to track progress
-    global_data::get().ze_cache->get(worker_idx, context, &event_pool_desc, &event_pool);
+    global_data::get().ze_cache->get(worker_idx, context, event_pool_desc, &event_pool);
     LOG_DEBUG("get event pool: { max event count: ", event_pool_desc.count, " }");
 
     /* create event */
@@ -82,24 +82,24 @@ void ze_base_entry::finalize() {
     ZE_CALL(zeEventDestroy, (entry_event));
 
     /* event pool */
-    global_data::get().ze_cache->push(worker_idx, context, &event_pool_desc, &event_pool);
+    global_data::get().ze_cache->push(worker_idx, context, event_pool_desc, event_pool);
 
     /* list */
     global_data::get().ze_cache->push(
-        worker_idx, context, device, &comp_primitives.list_desc, &comp_primitives.list);
+        worker_idx, context, device, comp_primitives.list_desc, comp_primitives.list);
 
     /* queue */
     global_data::get().ze_cache->push(
-        worker_idx, context, device, &comp_primitives.queue_desc, &comp_primitives.queue);
+        worker_idx, context, device, comp_primitives.queue_desc, comp_primitives.queue);
 
     if (global_data::env().enable_kernel_1s_copy_ops) {
         /* copy list */
         global_data::get().ze_cache->push(
-            worker_idx, context, device, &copy_primitives.list_desc, &copy_primitives.list);
+            worker_idx, context, device, copy_primitives.list_desc, copy_primitives.list);
 
         /* copy queue */
         global_data::get().ze_cache->push(
-            worker_idx, context, device, &copy_primitives.queue_desc, &copy_primitives.queue);
+            worker_idx, context, device, copy_primitives.queue_desc, copy_primitives.queue);
     }
 
     is_initialized = false;
@@ -188,7 +188,7 @@ void ze_base_entry::get_copy_primitives(ze_queue_properties_t queue_props,
 
 void ze_base_entry::init_primitives(cmd_primitives &cmd_primitives) {
     global_data::get().ze_cache->get(
-        worker_idx, context, device, &cmd_primitives.queue_desc, &cmd_primitives.queue);
+        worker_idx, context, device, cmd_primitives.queue_desc, &cmd_primitives.queue);
     LOG_DEBUG("get queue: { ordinal: ",
               cmd_primitives.queue_desc.ordinal,
               ", index: ",
@@ -196,6 +196,6 @@ void ze_base_entry::init_primitives(cmd_primitives &cmd_primitives) {
               " }");
 
     global_data::get().ze_cache->get(
-        worker_idx, context, device, &cmd_primitives.list_desc, &cmd_primitives.list);
+        worker_idx, context, device, cmd_primitives.list_desc, &cmd_primitives.list);
     LOG_DEBUG("get list: { ordinal: ", cmd_primitives.list_desc.commandQueueGroupOrdinal, " }");
 }

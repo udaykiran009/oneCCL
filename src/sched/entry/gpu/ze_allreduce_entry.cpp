@@ -66,7 +66,7 @@ void ze_allreduce_entry::init() {
                                                   { sizeof(tmp_buf_ptr), &tmp_buf_ptr },
                                                   { sizeof(recv_buf_ptr), &recv_buf_ptr } };
 
-    global_data::get().ze_cache->get(context, device, &module, "kernels.spv");
+    global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
 
     if (global_data::env().enable_kernel_1s_copy_ops) {
         main_kernel_name = "reduce_local_outofplace_kernel_";
@@ -74,7 +74,7 @@ void ze_allreduce_entry::init() {
         global_data::get().ze_cache->get(worker_idx,
                                          context,
                                          device,
-                                         &device_mem_alloc_desc,
+                                         device_mem_alloc_desc,
                                          buf_size_bytes,
                                          0, /*alignment*/
                                          &tmp_buf_ptr);
@@ -240,7 +240,7 @@ void ze_allreduce_entry::finalize() {
         global_data::get().ze_cache->push(worker_idx,
                                           context,
                                           device,
-                                          &device_mem_alloc_desc,
+                                          device_mem_alloc_desc,
                                           buf_size_bytes,
                                           0, /*alignment*/
                                           tmp_buf_ptr);
@@ -249,9 +249,9 @@ void ze_allreduce_entry::finalize() {
     /* kernels */
     if (empty_kernel_event) {
         ZE_CALL(zeEventDestroy, (empty_kernel_event));
-        global_data::get().ze_cache->push(worker_idx, module, empty_kernel_name, &empty_kernel);
+        global_data::get().ze_cache->push(worker_idx, module, empty_kernel_name, empty_kernel);
     }
-    global_data::get().ze_cache->push(worker_idx, module, main_kernel_name, &main_kernel);
+    global_data::get().ze_cache->push(worker_idx, module, main_kernel_name, main_kernel);
 
     ze_base_entry::finalize();
 
