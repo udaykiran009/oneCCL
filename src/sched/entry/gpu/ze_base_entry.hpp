@@ -29,7 +29,7 @@ public:
 protected:
     explicit ze_base_entry(ccl_sched *sched, uint32_t add_event_count = 0);
 
-    virtual void init();
+    void init(init_mode ze_init_mode);
     virtual void start() override;
     virtual void update() override;
     virtual void finalize();

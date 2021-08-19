@@ -13,6 +13,11 @@ namespace ze {
 
 #define ZE_CALL(ze_name, ze_args) ccl::ze::ze_call().do_call(ze_name ze_args, #ze_name)
 
+enum class init_mode : int {
+    compute = 1,
+    copy = 2,
+};
+
 constexpr ze_fence_desc_t default_fence_desc = { .stype = ZE_STRUCTURE_TYPE_FENCE_DESC,
                                                  .pNext = nullptr,
                                                  .flags = 0 };
@@ -58,6 +63,14 @@ constexpr ze_event_desc_t default_event_desc = { .stype = ZE_STRUCTURE_TYPE_EVEN
                                                  .signal = 0,
                                                  .wait = 0 };
 
+inline init_mode operator|(init_mode mode1, init_mode mode2) {
+    return static_cast<init_mode>(static_cast<int>(mode1) | static_cast<int>(mode2));
+}
+
+inline bool operator&(init_mode mode1, init_mode mode2) {
+    return static_cast<int>(mode1) & static_cast<int>(mode2);
+}
+
 void load_module(std::string dir,
                  std::string file_name,
                  ze_device_handle_t device,
@@ -97,8 +110,7 @@ void get_copy_queue_ordinal(ze_device_handle_t device,
 void get_queue_index(const ze_queue_properties_t& props,
                      uint32_t ordinal,
                      int rank,
-                     uint32_t* index,
-                     uint32_t opt_counter);
+                     uint32_t* index);
 
 std::string to_string(const ze_result_t result);
 std::string to_string(const ze_group_size_t& group_size);

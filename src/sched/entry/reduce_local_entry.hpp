@@ -47,7 +47,7 @@ public:
     ~reduce_local_entry() override {
         finalize();
     }
-    void init() override;
+    void init();
     void finalize() override;
     void update() override;
     void check_use_device();

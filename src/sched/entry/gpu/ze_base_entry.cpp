@@ -22,7 +22,7 @@ ze_base_entry::ze_base_entry(ccl_sched *sched, uint32_t add_event_count)
     comm_size = comm->size();
 }
 
-void ze_base_entry::init() {
+void ze_base_entry::init(init_mode ze_init_mode) {
     if (is_initialized) {
         return;
     }
@@ -42,19 +42,23 @@ void ze_base_entry::init() {
     auto sycl_context = native_stream->get_context();
     context = sycl_context.template get_native<sycl::backend::level_zero>();
 
-    /* create queue */
+    /* get queue properties */
     uint32_t num_queue_groups;
     get_num_queue_groups(device, &num_queue_groups);
 
     ze_queue_properties_t queue_props;
     get_queues_properties(device, num_queue_groups, &queue_props);
 
-    /* init comp queue, list */
-    get_comp_primitives(queue_props, comp_primitives);
-    init_primitives(comp_primitives);
+    /* init compute queue, list */
+    if (init_mode::compute & ze_init_mode) {
+        LOG_DEBUG("compute init mode is enabled");
+        get_comp_primitives(queue_props, comp_primitives);
+        init_primitives(comp_primitives);
+    }
 
-    if (global_data::env().enable_kernel_1s_copy_ops) {
-        /* init copy queue, list */
+    /* init copy queue, list */
+    if (init_mode::copy & ze_init_mode) {
+        LOG_DEBUG("copy init mode is enabled");
         get_copy_primitives(queue_props, copy_primitives);
         init_primitives(copy_primitives);
     }
@@ -84,15 +88,19 @@ void ze_base_entry::finalize() {
     /* event pool */
     global_data::get().ze_cache->push(worker_idx, context, event_pool_desc, event_pool);
 
-    /* list */
-    global_data::get().ze_cache->push(
-        worker_idx, context, device, comp_primitives.list_desc, comp_primitives.list);
+    if (comp_primitives.list && comp_primitives.queue) {
+        LOG_DEBUG("push from cache for compute list and queue");
+        /* list */
+        global_data::get().ze_cache->push(
+            worker_idx, context, device, comp_primitives.list_desc, comp_primitives.list);
 
-    /* queue */
-    global_data::get().ze_cache->push(
-        worker_idx, context, device, comp_primitives.queue_desc, comp_primitives.queue);
+        /* queue */
+        global_data::get().ze_cache->push(
+            worker_idx, context, device, comp_primitives.queue_desc, comp_primitives.queue);
+    }
 
-    if (global_data::env().enable_kernel_1s_copy_ops) {
+    if (copy_primitives.list && copy_primitives.queue) {
+        LOG_DEBUG("push from cache for copy list and queue");
         /* copy list */
         global_data::get().ze_cache->push(
             worker_idx, context, device, copy_primitives.list_desc, copy_primitives.list);
@@ -109,15 +117,17 @@ void ze_base_entry::start() {
     CCL_THROW_IF_NOT(entry_event, "no entry event");
     ZE_CALL(zeEventHostReset, (entry_event));
 
-    if (copy_primitives.queue && copy_primitives.list) {
+    if (comp_primitives.list && comp_primitives.queue) {
+        LOG_DEBUG("execute compute command list");
+        ZE_CALL(zeCommandQueueExecuteCommandLists,
+                (comp_primitives.queue, 1, &comp_primitives.list, nullptr));
+    }
+
+    if (copy_primitives.list && copy_primitives.queue) {
         LOG_DEBUG("execute copy command list");
         ZE_CALL(zeCommandQueueExecuteCommandLists,
                 (copy_primitives.queue, 1, &copy_primitives.list, nullptr));
     }
-
-    LOG_DEBUG("execute command list");
-    ZE_CALL(zeCommandQueueExecuteCommandLists,
-            (comp_primitives.queue, 1, &comp_primitives.list, nullptr));
 
     if (((global_data::env().ze_serialize_mode & ze_call::serialize_mode::block)) != 0) {
         LOG_DEBUG("wait until command lists are executed");
@@ -155,20 +165,23 @@ void ze_base_entry::update() {
 }
 
 ze_command_list_handle_t ze_base_entry::get_copy_list() {
+    ze_command_list_handle_t list = nullptr;
     if (copy_primitives.list) {
+        list = copy_primitives.list;
         LOG_DEBUG("copy list is available");
-        return copy_primitives.list;
+    } else {
+        list = comp_primitives.list;
+        LOG_DEBUG("compute list is returned as default");
     }
-
-    LOG_DEBUG("compute list is returned as default");
-    return comp_primitives.list;
+    CCL_THROW_IF_NOT(list, "command list is not valid");
+    return list;
 }
 
 void ze_base_entry::get_comp_primitives(ze_queue_properties_t queue_props,
                                         cmd_primitives &comp_primitives) {
     uint32_t ordinal, queue_index;
     get_comp_queue_ordinal(device, queue_props, &ordinal);
-    get_queue_index(queue_props, ordinal, rank, &queue_index, 0);
+    get_queue_index(queue_props, ordinal, rank, &queue_index);
 
     comp_primitives.queue_desc.ordinal = ordinal;
     comp_primitives.queue_desc.index = queue_index;
@@ -179,7 +192,7 @@ void ze_base_entry::get_copy_primitives(ze_queue_properties_t queue_props,
                                         cmd_primitives &comp_primitives) {
     uint32_t ordinal, queue_index;
     get_copy_queue_ordinal(device, queue_props, &ordinal);
-    get_queue_index(queue_props, ordinal, rank, &queue_index, 1);
+    get_queue_index(queue_props, ordinal, rank, &queue_index);
 
     comp_primitives.queue_desc.ordinal = ordinal;
     comp_primitives.queue_desc.index = queue_index;

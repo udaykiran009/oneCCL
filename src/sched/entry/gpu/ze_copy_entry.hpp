@@ -30,7 +30,7 @@ public:
                            copy_attr attr = {});
     ~ze_copy_entry();
 
-    void init() override;
+    void init();
     void start() override;
     void update() override;
     void finalize() override;

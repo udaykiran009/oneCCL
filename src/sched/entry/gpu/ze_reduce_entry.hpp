@@ -28,7 +28,7 @@ public:
                              ccl_comm* comm);
     ~ze_reduce_entry();
 
-    void init() override;
+    void init();
     void start() override;
     void update() override;
     void finalize() override;

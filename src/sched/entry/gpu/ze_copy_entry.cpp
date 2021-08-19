@@ -31,7 +31,8 @@ void ze_copy_entry::init() {
 
     LOG_DEBUG("initialization");
 
-    ze_base_entry::init();
+    // copy init mode is default
+    ze_base_entry::init(init_mode::copy);
 
     if (attr.peer_rank > copy_helper::invalid_rank) {
         if (!out_buf) {
@@ -56,6 +57,7 @@ void ze_copy_entry::init() {
 
 void ze_copy_entry::start() {
     init();
+
     ze_base_entry::start();
 
     status = ccl_sched_entry_status_started;

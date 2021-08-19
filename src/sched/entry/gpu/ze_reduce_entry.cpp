@@ -43,7 +43,15 @@ void ze_reduce_entry::init() {
 
     LOG_DEBUG("initialization");
 
-    ze_base_entry::init();
+    init_mode init_mode_type;
+    if (global_data::env().enable_kernel_1s_copy_ops) {
+        init_mode_type = (init_mode::copy | init_mode::compute);
+    }
+    else {
+        init_mode_type = init_mode::compute;
+    }
+
+    ze_base_entry::init(init_mode_type);
 
     /* create kernels */
     ccl_buffer right_send_buf;
@@ -138,7 +146,7 @@ void ze_reduce_entry::init() {
     LOG_DEBUG("one-sided multi-phase algorithm");
 
     ZE_CALL(zeCommandListAppendMemoryCopy,
-            (comp_primitives.list,
+            (ze_base_entry::get_copy_list(),
              tmp_buf_ptr,
              right_send_buf_ptr,
              buf_size_bytes,
@@ -151,6 +159,9 @@ void ze_reduce_entry::init() {
         (comp_primitives.list, main_kernel, &group_count, entry_event, 1, &copy_from_peer_event));
 
     ZE_CALL(zeCommandListClose, (comp_primitives.list));
+    if (global_data::env().enable_kernel_1s_copy_ops) {
+        ZE_CALL(zeCommandListClose, (ze_base_entry::copy_primitives.list));
+    }
 
     is_initialized = true;
 
@@ -198,7 +209,7 @@ void ze_reduce_entry::finalize() {
     LOG_DEBUG("finalization");
 
     /* events */
-    LOG_DEBUG("copy ops finalization");
+    LOG_DEBUG("copy event finalization");
     ZE_CALL(zeEventDestroy, (copy_from_peer_event));
     /* device mem */
     ccl::global_data::get().ze_cache->push(worker_idx,

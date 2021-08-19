@@ -20,7 +20,7 @@ void reduce_local_entry::init() {
 
     LOG_DEBUG("initialization");
 
-    ze_base_entry::init();
+    ze_base_entry::init(init_mode::compute);
 
     ccl::global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
 

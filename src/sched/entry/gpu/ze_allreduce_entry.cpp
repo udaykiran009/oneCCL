@@ -36,7 +36,15 @@ void ze_allreduce_entry::init() {
 
     LOG_DEBUG("initialization");
 
-    ze_base_entry::init();
+    init_mode init_mode_type;
+    if (global_data::env().enable_kernel_1s_copy_ops) {
+        init_mode_type = (init_mode::copy | init_mode::compute);
+    }
+    else {
+        init_mode_type = init_mode::compute;
+    }
+
+    ze_base_entry::init(init_mode_type);
 
     /* create kernels */
     ccl_buffer right_send_buf;
