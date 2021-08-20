@@ -30,7 +30,7 @@ public:
     void init();
     void start() override;
     void update() override;
-    void finalize() override;
+    void finalize();
 
     void reset_sync_objects();
 

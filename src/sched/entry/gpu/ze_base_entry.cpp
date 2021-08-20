@@ -59,7 +59,7 @@ void ze_base_entry::init(init_mode ze_init_mode) {
     /* init copy queue, list */
     if (init_mode::copy & ze_init_mode) {
         LOG_DEBUG("copy init mode is enabled");
-        get_copy_primitives(queue_props, copy_primitives);
+        get_copy_primitives(queue_props, copy_primitives, ze_init_mode);
         init_primitives(copy_primitives);
     }
 
@@ -168,16 +168,17 @@ ze_command_list_handle_t ze_base_entry::get_copy_list() {
     ze_command_list_handle_t list = nullptr;
     if (copy_primitives.list) {
         list = copy_primitives.list;
-        LOG_DEBUG("copy list is available");
-    } else {
-        list = comp_primitives.list;
-        LOG_DEBUG("compute list is returned as default");
+        LOG_DEBUG("copy list is returned");
     }
-    CCL_THROW_IF_NOT(list, "command list is not valid");
+    else {
+        list = comp_primitives.list;
+        LOG_DEBUG("compute list is returned");
+    }
+    CCL_THROW_IF_NOT(list, "command list is invalid");
     return list;
 }
 
-void ze_base_entry::get_comp_primitives(ze_queue_properties_t queue_props,
+void ze_base_entry::get_comp_primitives(const ze_queue_properties_t &queue_props,
                                         cmd_primitives &comp_primitives) {
     uint32_t ordinal, queue_index;
     get_comp_queue_ordinal(device, queue_props, &ordinal);
@@ -188,15 +189,27 @@ void ze_base_entry::get_comp_primitives(ze_queue_properties_t queue_props,
     comp_primitives.list_desc.commandQueueGroupOrdinal = ordinal;
 }
 
-void ze_base_entry::get_copy_primitives(ze_queue_properties_t queue_props,
-                                        cmd_primitives &comp_primitives) {
+void ze_base_entry::get_copy_primitives(const ze_queue_properties_t &queue_props,
+                                        cmd_primitives &copy_primitives,
+                                        init_mode ze_init_mode) {
     uint32_t ordinal, queue_index;
     get_copy_queue_ordinal(device, queue_props, &ordinal);
-    get_queue_index(queue_props, ordinal, rank, &queue_index);
 
-    comp_primitives.queue_desc.ordinal = ordinal;
-    comp_primitives.queue_desc.index = queue_index;
-    comp_primitives.list_desc.commandQueueGroupOrdinal = ordinal;
+    // TODO: index depends on rank's changing, when > 1 queues are created,
+    // the index is still the same for different queues, that's the issue.
+    // WA is adding optional counter, which says the order number of a queue.
+    // Need to think, how we'd calculate the index for every queue.
+    // Hang in case of CCL_KERNEL_1S_USE_COPY_OPS=1 CCL_ZE_COPY_ENGINE=none
+    if (ze_init_mode == (init_mode::copy | init_mode::compute)) {
+        get_queue_index(queue_props, ordinal, rank + 1, &queue_index);
+    }
+    else {
+        get_queue_index(queue_props, ordinal, rank, &queue_index);
+    }
+
+    copy_primitives.queue_desc.ordinal = ordinal;
+    copy_primitives.queue_desc.index = queue_index;
+    copy_primitives.list_desc.commandQueueGroupOrdinal = ordinal;
 }
 
 void ze_base_entry::init_primitives(cmd_primitives &cmd_primitives) {

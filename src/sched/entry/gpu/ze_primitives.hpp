@@ -109,7 +109,7 @@ void get_copy_queue_ordinal(ze_device_handle_t device,
                             uint32_t* ordinal);
 void get_queue_index(const ze_queue_properties_t& props,
                      uint32_t ordinal,
-                     int rank,
+                     int idx,
                      uint32_t* index);
 
 std::string to_string(const ze_result_t result);

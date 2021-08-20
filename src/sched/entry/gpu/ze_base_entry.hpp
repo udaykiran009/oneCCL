@@ -32,13 +32,16 @@ protected:
     void init(init_mode ze_init_mode);
     virtual void start() override;
     virtual void update() override;
-    virtual void finalize();
+    void finalize();
 
     ze_command_list_handle_t get_copy_list();
 
     void init_primitives(cmd_primitives &cmd_primitives);
-    void get_copy_primitives(ze_queue_properties_t queue_props, cmd_primitives &comp_primitives);
-    void get_comp_primitives(ze_queue_properties_t queue_props, cmd_primitives &comp_primitives);
+    void get_copy_primitives(const ze_queue_properties_t &queue_props,
+                             cmd_primitives &copy_primitives,
+                             init_mode ze_init_mode);
+    void get_comp_primitives(const ze_queue_properties_t &queue_props,
+                             cmd_primitives &comp_primitives);
 
     ccl_sched *const sched;
     const uint32_t add_event_count;

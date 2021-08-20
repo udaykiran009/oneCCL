@@ -5,13 +5,13 @@
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
 #include "sched/entry/gpu/ze_base_entry.hpp"
-#endif // defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
 class reduce_local_entry : public ze_base_entry {
 #else
 class reduce_local_entry : public sched_entry {
-#endif // defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
 public:
     static constexpr const char* class_name() noexcept {
         return "REDUCE_LOCAL";
@@ -28,9 +28,9 @@ public:
             :
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
               ze_base_entry(sched),
-#else
+#else // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
               sched_entry(sched),
-#endif // defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
               in_buf(in_buf),
               in_cnt(in_cnt),
               inout_buf(inout_buf),
@@ -48,14 +48,14 @@ public:
         finalize();
     }
     void init();
-    void finalize() override;
+    void finalize();
     void update() override;
     void check_use_device();
     void start_on_device();
-#else
+#else // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
     void check_use_device() {}
     void start_on_device() {}
-#endif // defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
     void start_on_host() {
         size_t bytes = in_cnt * dtype.size();
         size_t offset = inout_buf.get_offset();
@@ -128,5 +128,5 @@ private:
     ze_kernel_handle_t kernel;
     std::string kernel_name;
     ze_group_count_t group_count;
-#endif // defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
 };

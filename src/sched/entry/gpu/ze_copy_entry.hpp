@@ -33,7 +33,7 @@ public:
     void init();
     void start() override;
     void update() override;
-    void finalize() override;
+    void finalize();
 
 private:
     ccl_sched* const sched;

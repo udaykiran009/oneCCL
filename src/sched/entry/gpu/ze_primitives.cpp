@@ -126,9 +126,9 @@ void get_comp_queue_ordinal(ze_device_handle_t device,
                             uint32_t* ordinal) {
     uint32_t comp_ordinal = std::numeric_limits<uint32_t>::max();
 
-    for (uint32_t i = 0; i < props.size(); ++i) {
-        if (props[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
-            comp_ordinal = i;
+    for (uint32_t idx = 0; idx < props.size(); ++idx) {
+        if (props[idx].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
+            comp_ordinal = idx;
             break;
         }
     }
@@ -204,10 +204,10 @@ void get_copy_queue_ordinal(ze_device_handle_t device,
 
 void get_queue_index(const ze_queue_properties_t& props,
                      uint32_t ordinal,
-                     int rank,
+                     int idx,
                      uint32_t* index) {
     CCL_ASSERT(props.size() > ordinal, "props.size() <= ordinal");
-    *index = rank % props[ordinal].numQueues;
+    *index = idx % props[ordinal].numQueues;
     LOG_DEBUG("set queue index: ", *index);
 }
 

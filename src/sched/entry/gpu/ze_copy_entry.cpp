@@ -31,7 +31,6 @@ void ze_copy_entry::init() {
 
     LOG_DEBUG("initialization");
 
-    // copy init mode is default
     ze_base_entry::init(init_mode::copy);
 
     if (attr.peer_rank > copy_helper::invalid_rank) {
