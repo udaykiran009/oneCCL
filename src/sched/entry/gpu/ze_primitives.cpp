@@ -133,13 +133,10 @@ void get_comp_queue_ordinal(ze_device_handle_t device,
         }
     }
 
-    LOG_DEBUG("find queue: "
-              ", params: { ordinal: ",
+    LOG_DEBUG("find queue: { ordinal: ",
               comp_ordinal,
-              ", numQueues: ",
-              props[comp_ordinal].numQueues,
-              ", flags: ",
-              props[comp_ordinal].flags,
+              ", queue properties params: ",
+              to_string(props[comp_ordinal]),
               " }");
 
     if (comp_ordinal != std::numeric_limits<uint32_t>::max()) {
@@ -182,13 +179,10 @@ void get_copy_queue_ordinal(ze_device_handle_t device,
         }
     }
 
-    LOG_DEBUG("find copy queue: ",
-              " { ordinal: ",
+    LOG_DEBUG("find copy queue: { ordinal: ",
               copy_ordinal,
-              ", numQueues: ",
-              props[copy_ordinal].numQueues,
-              ", flags: ",
-              props[copy_ordinal].flags,
+              ", queue properties params: ",
+              to_string(props[copy_ordinal]),
               " }");
 
     if (copy_ordinal != std::numeric_limits<uint32_t>::max()) {
@@ -293,6 +287,59 @@ std::string to_string(const ze_kernel_args_t& kernel_args) {
     }
     ss << "}";
     return ss.str();
+}
+
+std::string to_string(const ze_command_queue_group_property_flag_t& flag) {
+    switch (flag) {
+        case ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE:
+            return "ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE";
+        case ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COPY:
+            return "ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COPY";
+        case ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COOPERATIVE_KERNELS:
+            return "ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COOPERATIVE_KERNELS";
+        case ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_METRICS:
+            return "ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_METRICS";
+        case ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_FORCE_UINT32:
+            return "ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_FORCE_UINT32";
+        default:
+            return "unknown ze_command_queue_group_property_flag_t value: " +
+                   std::to_string(static_cast<int>(flag));
+    }
+}
+
+std::string to_string(const ze_command_queue_group_properties_t& queue_property) {
+    std::stringstream ss;
+    ss << "stype: " << queue_property.stype << ", pNext: " << (void*)queue_property.pNext
+       << ", flags: "
+       << flags_to_string<ze_command_queue_group_property_flag_t>(queue_property.flags)
+       << ", maxMemoryFillPatternSize: " << queue_property.maxMemoryFillPatternSize
+       << ", numQueues: " << queue_property.numQueues;
+    return ss.str();
+}
+
+std::string join_strings(const std::vector<std::string>& tokens, const std::string& delimeter) {
+    std::stringstream ss;
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        ss << tokens[i];
+        if (i < tokens.size() - 1) {
+            ss << delimeter;
+        }
+    }
+    return ss.str();
+}
+
+template <typename T>
+std::string flags_to_string(uint32_t flags) {
+    const size_t bits = 8;
+    std::vector<std::string> output;
+    for (size_t i = 0; i < sizeof(flags) * bits; ++i) {
+        const size_t mask = 1UL << i;
+        const auto flag = flags & mask;
+        if (flag != 0) {
+            output.emplace_back(to_string(static_cast<T>(flag)));
+        }
+    }
+    return join_strings(output, " | ");
 }
 
 } // namespace ze
