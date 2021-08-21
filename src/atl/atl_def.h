@@ -18,7 +18,7 @@
 #define SIZEOFARR(arr) (sizeof(arr) / sizeof(arr[0]))
 
 #define ATL_CACHELINE_LEN     64
-#define ATL_REQ_SIZE          8
+#define ATL_REQ_SIZE          16
 #define ATL_PROGRESS_MODE_ENV "ATL_PROGRESS_MODE"
 #define ATL_MAX_HOSTNAME_LEN  64
 
@@ -29,11 +29,6 @@
  * Dynamically loaded transports must export the following entry point.
  * This is invoked by the ATL framework when the transport library is loaded.
  */
-
-#define ATL_EXT_INI atl_status_t atl_ini(atl_transport_t* atl_transport)
-
-#define ATL_OFI_INI ATL_EXT_INI
-#define ATL_MPI_INI ATL_EXT_INI
 
 #define ATL_CALL(func, err_action) \
     do { \
@@ -143,29 +138,7 @@ typedef struct {
     void* internal[ATL_REQ_SIZE];
 } atl_req_t __attribute__((aligned(ATL_CACHELINE_LEN)));
 
-typedef struct {
-    const char* name;
-    atl_status_t (*init)(int* argc,
-                         char*** argv,
-                         atl_attr_t* attr,
-                         atl_ctx_t** ctx,
-                         const char* main_addr,
-                         ipmi* pmi);
-    atl_status_t (*reserve_addr)(char* main_addr);
-} atl_transport_t;
-
-typedef struct {
-    atl_status_t (*finalize)(atl_ctx_t* ctx);
-} atl_ops_t;
-
-typedef struct {
-    atl_status_t (*mr_reg)(atl_ctx_t* ctx, const void* buf, size_t len, atl_mr_t** mr);
-    atl_status_t (*mr_dereg)(atl_ctx_t* ctx, atl_mr_t* mr);
-} atl_mr_ops_t;
-
 struct atl_ctx {
-    atl_ops_t* ops;
-    atl_mr_ops_t* mr_ops;
     atl_proc_coord_t coord;
 
     size_t ep_count;
@@ -178,96 +151,7 @@ struct atl_ctx {
    count - for iov and for dtype-arrays like in reduce/allreduce
 */
 
-typedef struct {
-    atl_status_t (*send)(atl_ep_t* ep,
-                         const void* buf,
-                         size_t len,
-                         int dst_proc_idx,
-                         uint64_t tag,
-                         atl_req_t* req);
-    atl_status_t (
-        *recv)(atl_ep_t* ep, void* buf, size_t len, int src_proc_idx, uint64_t tag, atl_req_t* req);
-    atl_status_t (
-        *probe)(atl_ep_t* ep, int src_proc_idx, uint64_t tag, int* found, size_t* recv_len);
-} atl_p2p_ops_t;
-
-typedef struct {
-    /* order convention - keep alphabetical order */
-    atl_status_t (*allgatherv)(atl_ep_t* ep,
-                               const void* send_buf,
-                               size_t send_len,
-                               void* recv_buf,
-                               const int* recv_lens,
-                               const int* offsets,
-                               atl_req_t* req);
-    atl_status_t (*allreduce)(atl_ep_t* ep,
-                              const void* send_buf,
-                              void* recv_buf,
-                              size_t count,
-                              atl_datatype_t dtype,
-                              atl_reduction_t op,
-                              atl_req_t* req);
-    atl_status_t (
-        *alltoall)(atl_ep_t* ep, const void* send_buf, void* recv_buf, size_t len, atl_req_t* req);
-    atl_status_t (*alltoallv)(atl_ep_t* ep,
-                              const void* send_buf,
-                              const int* send_lens,
-                              const int* send_offsets,
-                              void* recv_buf,
-                              const int* recv_lens,
-                              const int* recv_offsets,
-                              atl_req_t* req);
-    atl_status_t (*barrier)(atl_ep_t* ep, atl_req_t* req);
-    atl_status_t (*bcast)(atl_ep_t* ep, void* buf, size_t len, int root, atl_req_t* req);
-    atl_status_t (*reduce)(atl_ep_t* ep,
-                           const void* send_buf,
-                           void* recv_buf,
-                           size_t count,
-                           int root,
-                           atl_datatype_t dtype,
-                           atl_reduction_t op,
-                           atl_req_t* req);
-    atl_status_t (*reduce_scatter)(atl_ep_t* ep,
-                                   const void* send_buf,
-                                   void* recv_buf,
-                                   size_t recv_count,
-                                   atl_datatype_t dtype,
-                                   atl_reduction_t op,
-                                   atl_req_t* req);
-} atl_coll_ops_t;
-
-typedef struct {
-    atl_status_t (*read)(atl_ep_t* ep,
-                         void* buf,
-                         size_t len,
-                         atl_mr_t* mr,
-                         uint64_t addr,
-                         uintptr_t remote_key,
-                         int dst_proc_idx,
-                         atl_req_t* req);
-    atl_status_t (*write)(atl_ep_t* ep,
-                          const void* buf,
-                          size_t len,
-                          atl_mr_t* mr,
-                          uint64_t addr,
-                          uintptr_t remote_key,
-                          int dst_proc_idx,
-                          atl_req_t* req);
-} atl_rma_ops_t;
-
-typedef struct {
-    atl_status_t (*wait)(atl_ep_t* ep, atl_req_t* req);
-    atl_status_t (*wait_all)(atl_ep_t* ep, atl_req_t* reqs, size_t count);
-    atl_status_t (*cancel)(atl_ep_t* ep, atl_req_t* req);
-    atl_status_t (*poll)(atl_ep_t* ep);
-    atl_status_t (*check)(atl_ep_t* ep, int* is_completed, atl_req_t* req);
-} atl_comp_ops_t;
-
 struct atl_ep {
     size_t idx;
     atl_ctx_t* ctx;
-    atl_p2p_ops_t* p2p_ops;
-    atl_coll_ops_t* coll_ops;
-    atl_rma_ops_t* rma_ops;
-    atl_comp_ops_t* comp_ops;
 };

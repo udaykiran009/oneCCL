@@ -45,9 +45,9 @@ void copy_entry::start() {
         out_ptr_type = sycl::get_pointer_type(out_buf.get_ptr(), q->get_context());
     }
     LOG_DEBUG("in_ptr_type: ",
-              ccl_usm_type_to_str(in_ptr_type),
+              ccl::utils::usm_type_to_str(in_ptr_type),
               ", out_ptr_type: ",
-              ccl_usm_type_to_str(out_ptr_type));
+              ccl::utils::usm_type_to_str(out_ptr_type));
 #endif // CCL_ENABLE_SYCL
 
     LOG_DEBUG("count: ", count, ", direction: ", to_string(attr.direction));

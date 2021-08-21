@@ -5,36 +5,9 @@
 #include "coll/coll_check.hpp"
 #include "common/env/env.hpp"
 #include "common/global/global.hpp"
+#include "common/utils/sycl_utils.hpp"
 
 #ifdef CCL_ENABLE_SYCL
-std::string ccl_usm_type_to_str(sycl::usm::alloc type) {
-    switch (type) {
-        case sycl::usm::alloc::host: return "host";
-        case sycl::usm::alloc::device: return "device";
-        case sycl::usm::alloc::shared: return "shared";
-        case sycl::usm::alloc::unknown: return "unknown";
-        default: CCL_THROW("unexpected USM type: ", static_cast<int>(type));
-    }
-}
-
-std::string ccl_sycl_device_to_str(const sycl::device& dev) {
-    if (dev.is_host()) {
-        return "host";
-    }
-    else if (dev.is_cpu()) {
-        return "cpu";
-    }
-    else if (dev.is_gpu()) {
-        return "gpu";
-    }
-    else if (dev.is_accelerator()) {
-        return "accel";
-    }
-    else {
-        CCL_THROW("unexpected device type");
-    }
-}
-
 void ccl_check_usm_pointers(const ccl_coll_param& param) {
     auto bufs = param.get_all_non_zero_bufs();
     if (bufs.empty()) {
@@ -55,12 +28,12 @@ void ccl_check_usm_pointers(const ccl_coll_param& param) {
         CCL_THROW("coll: ",
                   ccl_coll_type_to_str(param.ctype),
                   ", mixed usm pointer types (",
-                  ccl_usm_type_to_str(first_usm_type),
+                  ccl::utils::usm_type_to_str(first_usm_type),
                   ", ",
-                  ccl_usm_type_to_str(second_usm_type),
+                  ccl::utils::usm_type_to_str(second_usm_type),
                   ") within single operation are not supported, ",
                   "device type: ",
-                  ccl_sycl_device_to_str(dev));
+                  ccl::utils::sycl_device_to_str(dev));
     }
 
     sycl::usm::alloc usm_type = *usm_types.begin();
@@ -78,17 +51,17 @@ void ccl_check_usm_pointers(const ccl_coll_param& param) {
     LOG_DEBUG("coll: ",
               ccl_coll_type_to_str(param.ctype),
               ", usm pointer type: ",
-              ccl_usm_type_to_str(usm_type),
+              ccl::utils::usm_type_to_str(usm_type),
               ", device type: ",
-              ccl_sycl_device_to_str(dev));
+              ccl::utils::sycl_device_to_str(dev));
 
     CCL_THROW_IF_NOT(is_valid_type,
                      "coll: ",
                      ccl_coll_type_to_str(param.ctype),
                      " - invalid usm pointer type: ",
-                     ccl_usm_type_to_str(usm_type),
+                     ccl::utils::usm_type_to_str(usm_type),
                      " for device type: ",
-                     ccl_sycl_device_to_str(dev));
+                     ccl::utils::sycl_device_to_str(dev));
 }
 #endif // CCL_ENABLE_SYCL
 

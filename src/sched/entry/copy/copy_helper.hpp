@@ -1,11 +1,11 @@
 #pragma once
 
-#include "coll/coll_check.hpp"
 #include "common/datatype/datatype.hpp"
 #include "common/global/global.hpp"
 #include "common/utils/buffer.hpp"
 #include "common/utils/enums.hpp"
 #include "common/utils/tuple.hpp"
+#include "common/utils/sycl_utils.hpp"
 #include "oneapi/ccl/native_device_api/interop_utils.hpp"
 
 enum class copy_direction { h2h, d2h, h2d, d2d };
@@ -89,7 +89,7 @@ struct sycl_copier {
                 auto device_ptr_type = sycl::get_pointer_type(void_device_ptr, q->get_context());
                 CCL_THROW_IF_NOT(device_ptr_type == sycl::usm::alloc::device,
                                  "unexpected USM type ",
-                                 ccl_usm_type_to_str(device_ptr_type),
+                                 ccl::utils::usm_type_to_str(device_ptr_type),
                                  " for device_ptr ",
                                  void_device_ptr);
             }

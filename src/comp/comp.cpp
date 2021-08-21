@@ -1,10 +1,10 @@
-#include "coll/coll_check.hpp"
 #include "comp/bf16/bf16.hpp"
 #include "comp/comp.hpp"
 #include "comp/fp16/fp16.hpp"
 #include "common/log/log.hpp"
 #include "common/global/global.hpp"
 #include "common/utils/enums.hpp"
+#include "common/utils/sycl_utils.hpp"
 #include "oneapi/ccl/types.hpp"
 #include "sched/queue/queue.hpp"
 
@@ -111,9 +111,9 @@ ccl::status ccl_comp_reduce(ccl_sched* sched,
     auto inout_ptr_type = sycl::get_pointer_type(inout_buf, q->get_context());
 
     LOG_DEBUG("in_ptr_type: ",
-              ccl_usm_type_to_str(in_ptr_type),
+              ccl::utils::usm_type_to_str(in_ptr_type),
               ", inout_ptr_type: ",
-              ccl_usm_type_to_str(inout_ptr_type),
+              ccl::utils::usm_type_to_str(inout_ptr_type),
               ", native_stream: ",
               stream->to_string(),
               ", in_count: ",

@@ -122,6 +122,7 @@ set(CCL_SRC
     atl/atl_wrapper.cpp
     atl/mpi/atl_mpi.cpp
     atl/ofi/atl_ofi.cpp
+    atl/ofi/atl_ofi_helper.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable_simple.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable_simple_internal.cpp

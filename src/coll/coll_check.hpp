@@ -7,8 +7,6 @@
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_SYCL
-std::string ccl_usm_type_to_str(sycl::usm::alloc type);
-size_t ccl_get_device_type(const sycl::device& dev);
 void ccl_check_usm_pointers(const std::vector<void*>& ptrs,
                             const sycl::device& dev,
                             const sycl::context& ctx);

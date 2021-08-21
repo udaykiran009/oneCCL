@@ -1427,41 +1427,6 @@ static atl_status_t atl_mpi_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t*
     return status;
 }
 
-static atl_ops_t atl_mpi_ops = {
-    .finalize = atl_mpi_finalize,
-};
-
-static atl_mr_ops_t atl_mpi_mr_ops = {
-    .mr_reg = atl_mpi_mr_reg,
-    .mr_dereg = atl_mpi_mr_dereg,
-};
-
-static atl_p2p_ops_t atl_mpi_ep_p2p_ops = {
-    .send = atl_mpi_ep_send,
-    .recv = atl_mpi_ep_recv,
-    .probe = atl_mpi_ep_probe,
-};
-
-static atl_coll_ops_t atl_mpi_ep_coll_ops = { .allgatherv = atl_mpi_ep_allgatherv,
-                                              .allreduce = atl_mpi_ep_allreduce,
-                                              .alltoall = atl_mpi_ep_alltoall,
-                                              .alltoallv = atl_mpi_ep_alltoallv,
-                                              .barrier = atl_mpi_ep_barrier,
-                                              .bcast = atl_mpi_ep_bcast,
-                                              .reduce = atl_mpi_ep_reduce,
-                                              .reduce_scatter = atl_mpi_ep_reduce_scatter };
-
-static atl_rma_ops_t atl_mpi_ep_rma_ops = {
-    .read = atl_mpi_ep_read,
-    .write = atl_mpi_ep_write,
-};
-
-static atl_comp_ops_t atl_mpi_ep_comp_ops = { .wait = atl_mpi_ep_wait,
-                                              .wait_all = atl_mpi_ep_wait_all,
-                                              .cancel = NULL,
-                                              .poll = atl_mpi_ep_poll,
-                                              .check = atl_mpi_ep_check };
-
 static atl_status_t atl_mpi_ep_init(atl_mpi_ctx_t* mpi_ctx, size_t idx, atl_ep_t** ep) {
     int ret;
 
@@ -1522,10 +1487,6 @@ static atl_status_t atl_mpi_ep_init(atl_mpi_ctx_t* mpi_ctx, size_t idx, atl_ep_t
     *ep = &mpi_ep->ep;
     (*ep)->idx = idx;
     (*ep)->ctx = &mpi_ctx->ctx;
-    (*ep)->p2p_ops = &atl_mpi_ep_p2p_ops;
-    (*ep)->coll_ops = &atl_mpi_ep_coll_ops;
-    (*ep)->rma_ops = &atl_mpi_ep_rma_ops;
-    (*ep)->comp_ops = &atl_mpi_ep_comp_ops;
 
     return ATL_STATUS_SUCCESS;
 
@@ -1646,8 +1607,6 @@ static atl_status_t atl_mpi_init(int* argc,
     gethostname(my_hostname, ATL_MAX_HOSTNAME_LEN - 1);
     coord->hostname_hash = std::hash<std::string>{}(my_hostname);
 
-    ctx->ops = &atl_mpi_ops;
-    ctx->mr_ops = &atl_mpi_mr_ops;
     ctx->ep_count = attr->in.ep_count;
     ctx->eps = (atl_ep_t**)calloc(1, sizeof(void*) * attr->in.ep_count);
     if (!ctx->eps)

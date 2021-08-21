@@ -1,9 +1,9 @@
 #include "sched/entry/reduce_local_entry.hpp"
 
-#include "coll/coll_check.hpp"
 #include "common/comm/l0/modules/kernel_utils.hpp"
 #include "common/datatype/datatype.hpp"
 #include "common/stream/stream.hpp"
+#include "common/utils/sycl_utils.hpp"
 #include "sched/entry/gpu/ze_primitives.hpp"
 #include "sched/entry/gpu/ze_cache.hpp"
 #include "sched/queue/queue.hpp"
@@ -83,9 +83,9 @@ void reduce_local_entry::check_use_device() {
     auto inout_ptr_type = sycl::get_pointer_type(inout_buf.get_ptr(bytes), q->get_context());
 
     LOG_DEBUG("in_ptr_type: ",
-              ccl_usm_type_to_str(in_ptr_type),
+              ccl::utils::usm_type_to_str(in_ptr_type),
               ", inout_ptr_type: ",
-              ccl_usm_type_to_str(inout_ptr_type),
+              ccl::utils::usm_type_to_str(inout_ptr_type),
               ", native_stream: ",
               stream->to_string(),
               ", in_count: ",

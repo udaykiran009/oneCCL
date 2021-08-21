@@ -650,26 +650,25 @@ function run_tests()
                     done
                 done
 
-                # TODO: https://jira.devtools.intel.com/browse/MLSL-1032
-                # for algo in "naive" "scatter" "scatter_barrier"
-                # do
-                #     if [ "$algo" == "scatter_barrier" ];
-                #     then
-                #         CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
-                #             CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"_chunked
-                #     fi
-                #     CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"
-                # done
+                for algo in "naive" "scatter" "scatter_barrier"
+                do
+                    if [ "$algo" == "scatter_barrier" ];
+                    then
+                        CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
+                            CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"_chunked
+                    fi
+                    CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"
+                done
 
-                # for algo in "naive" "scatter" "scatter_barrier"
-                # do
-                #     if [ "$algo" == "scatter_barrier" ];
-                #     then
-                #         CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
-                #             CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"_chunked
-                #     fi
-                #     CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"
-                # done
+                for algo in "naive" "scatter" "scatter_barrier"
+                do
+                    if [ "$algo" == "scatter_barrier" ];
+                    then
+                        CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
+                            CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"_chunked
+                    fi
+                    CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"
+                done
 
                 for algo in ${reduce_scatter_algos}
                 do
