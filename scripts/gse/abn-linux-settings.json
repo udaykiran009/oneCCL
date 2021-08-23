@@ -1,0 +1,28 @@
+{
+  "storages": {
+    "CSV": {
+      "enabled": true,
+      "url": "./results/csv"
+    },
+    "JSON": {
+      "enabled": true,
+      "url": "./results/json"
+    },
+    "LoggingStorage": {
+      "enabled": true
+    }
+  },
+  "agent": {
+    "scripts": {
+      "autoinstall": {
+        "enabled": false,
+        "artifacts": {
+          "DynamicTest": {
+            "path": "%PACKAGE_DIR%",
+            "enabled": false
+          }
+        }
+      }
+    }
+  }
+}
