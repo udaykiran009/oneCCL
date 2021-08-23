@@ -15,6 +15,10 @@ else()
     set(EXCLUDE_LIST "$ENV{EXCLUDE_LIST}")
 endif()
 
+if (DEFINED ENV{I_MPI_ROOT})
+    set(I_MPI_ROOT "$ENV{I_MPI_ROOT}")
+endif()
+
 message(STATUS "FT CCL_ROOT: ${CCL_ROOT}")
 message(STATUS "FT EXAMPLES_INC_DIRS: ${EXAMPLES_INC_DIRS}")
 message(STATUS "EXCLUDE_LIST: ${EXCLUDE_LIST}")

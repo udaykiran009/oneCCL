@@ -138,8 +138,8 @@ build () {
     if [[ ${ENABLE_BUILD} = "yes" ]]; then
         print_header "Build tests..."
         rm -rf build
-        mkdir build
-        pushd build
+        mkdir ${SCRIPT_DIR}/build
+        pushd ${SCRIPT_DIR}/build
         cmake .. -DCMAKE_C_COMPILER=${C_COMPILER} -DCMAKE_CXX_COMPILER=${CXX_COMPILER}
         make VERBOSE=1 install
         CheckCommandExitCode $? "build failed"
@@ -157,7 +157,7 @@ run_tests() {
         fi
 
         for dir in ${test_dirs}; do
-            pushd ${dir}
+            pushd ${SCRIPT_DIR}/${dir}
             echo "DEBUG: Processing a ${dir} directory"
             tests=$(ls *.sh 2> /dev/null)
             for test in ${tests}; do
@@ -166,7 +166,7 @@ run_tests() {
                     continue 
                 fi
                 echo "${test}"
-                ${test}
+                ./${test}
                 if [[ $? -ne 0 ]]; then
                     failed_test+=(${test})
                 fi

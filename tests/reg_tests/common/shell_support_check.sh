@@ -19,7 +19,8 @@ else
     SUPPORTED_SHELLS="${SUPPORTED_SHELLS} ${TOOLS_DIR}/zsh/bin/zsh"
 fi
 
-BASENAME="`basename $0 .sh`"
+SCRIPT_DIR=$(cd $(dirname "${BASH_SOURCE}") && pwd -P)
+BASENAME="$(basename $0 .sh)"
 TEST_LOG="${BASENAME}.log"
 
 SCRIPT_NAME="vars_test.sh"
@@ -44,7 +45,7 @@ cleanup_and_exit()
 CCL_ROOT_TMP=${CCL_ROOT}
 
 for shell in ${SUPPORTED_SHELLS}; do
-    cat << EOF > ${SCRIPT_NAME}
+    cat << EOF > ${SCRIPT_DIR}/${SCRIPT_NAME}
     . ${CCL_ROOT_TMP}/env/vars.sh
     echo SHELL=\$(ps -p "\$\$" -o comm=)
     echo EXP_ROOT=${CCL_ROOT_TMP}
@@ -54,12 +55,12 @@ for shell in ${SUPPORTED_SHELLS}; do
     fi
     exit 0
 EOF
-    chmod +x ${SCRIPT_NAME}
-    export CCL_ROOT="" && ${shell} -c "./vars_test.sh" >> "${TEST_LOG}" 2>&1
+    chmod +x ${SCRIPT_DIR}/${SCRIPT_NAME}
+    export CCL_ROOT="" && ${shell} -c "${SCRIPT_DIR}/vars_test.sh" >> "${TEST_LOG}" 2>&1
     if [ $? -ne 0 ]; then
         cleanup_and_exit "Fail" "${shell}"
     fi 
 done
 
-rm "${SCRIPT_NAME}"
+rm "${SCRIPT_DIR}/${SCRIPT_NAME}"
 cleanup_and_exit "Pass"
