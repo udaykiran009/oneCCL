@@ -20,7 +20,7 @@ public:
               thread_function(thread_function) {}
 
     ccl_base_thread() = delete;
-    ~ccl_base_thread() = default;
+    virtual ~ccl_base_thread() = default;
 
     ccl_base_thread(const ccl_base_thread&) = delete;
     ccl_base_thread(ccl_base_thread&&) = delete;
