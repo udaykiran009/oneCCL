@@ -98,7 +98,8 @@ void transport_data::init_comms(user_options_t& options) {
     else if (options.backend == BACKEND_SYCL) {
         auto sycl_queues = create_sycl_queues(sycl_dev_names[options.sycl_dev_type], local_ranks);
         ASSERT(!sycl_queues.empty(), "queues should contain at least one queue");
-        ASSERT(ranks_per_proc == sycl_queues.size(), "ranks and queues sizes should match");
+        ASSERT(static_cast<size_t>(ranks_per_proc) == sycl_queues.size(),
+               "ranks and queues sizes should match");
 
         auto sycl_context = sycl_queues[0].get_context();
         context = ccl::create_context(sycl_context);

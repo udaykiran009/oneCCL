@@ -6,8 +6,6 @@ using namespace sycl;
 int main(int argc, char *argv[]) {
     const size_t count = 10 * 1024 * 1024;
 
-    int i = 0;
-    int j = 0;
     int size = 0;
     int rank = 0;
 
@@ -58,14 +56,14 @@ int main(int argc, char *argv[]) {
         host_accessor recv_buf_acc(recv_buf, write_only);
         host_accessor expected_acc_buf(expected_buf, write_only);
 
-        for (i = 0; i < count; i++) {
+        for (size_t i = 0; i < count; i++) {
             send_buf_acc[i] = rank;
         }
-        for (i = 0; i < count * size; i++) {
+        for (size_t i = 0; i < count * size; i++) {
             recv_buf_acc[i] = -1;
         }
-        for (i = 0; i < size; i++) {
-            for (j = 0; j < count; j++) {
+        for (int i = 0; i < size; i++) {
+            for (size_t j = 0; j < count; j++) {
                 expected_acc_buf[i * count + j] = i + 1;
             }
         }
@@ -102,6 +100,7 @@ int main(int argc, char *argv[]) {
     /* print out the result of the test on the host side */
     {
         host_accessor recv_buf_acc(recv_buf, read_only);
+        size_t i;
         for (i = 0; i < size * count; i++) {
             if (recv_buf_acc[i] == -1) {
                 cout << "FAILED\n";

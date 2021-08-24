@@ -57,7 +57,7 @@ void ipc_handle_manager::init(const ccl_comm* init_comm, const ccl_stream* init_
 }
 
 void ipc_handle_manager::clear() {
-    for (int rank = 0; rank < handles.size(); rank++) {
+    for (int rank = 0; rank < static_cast<int>(handles.size()); rank++) {
         for (size_t buf_idx = 0; buf_idx < handles[rank].size(); buf_idx++) {
             const auto& handle_info = handles[rank][buf_idx];
             ze_ipc_mem_handle_t handle = handle_info.handle;
@@ -125,7 +125,7 @@ void ipc_handle_manager::clear() {
 
 void ipc_handle_manager::set(const mem_handle_map_t& handles_arg) {
     CCL_THROW_IF_NOT(!handles_arg.empty(), "handles_arg argument is empty");
-    CCL_THROW_IF_NOT(handles_arg.size() == comm->size(),
+    CCL_THROW_IF_NOT(handles_arg.size() == static_cast<size_t>(comm->size()),
                      "handles_arg and comm sizes should be equal");
     CCL_THROW_IF_NOT(handles.empty(), "handles should be empty before set");
 
@@ -134,9 +134,10 @@ void ipc_handle_manager::set(const mem_handle_map_t& handles_arg) {
 }
 
 void ipc_handle_manager::get(int rank, size_t buf_idx, ccl_buffer& buf) {
-    CCL_THROW_IF_NOT((rank >= 0) && (rank < handles.size()) && (rank < comm->size()),
-                     "rank is not valid value: ",
-                     rank);
+    CCL_THROW_IF_NOT(
+        (rank >= 0) && (rank < static_cast<int>(handles.size())) && (rank < comm->size()),
+        "rank is not valid value: ",
+        rank);
     CCL_THROW_IF_NOT(rank != comm->rank(), "don't expect to open handle for own rank: ", rank);
     CCL_THROW_IF_NOT(buf_idx < handles[rank].size(), "buf_idx is not valid value: ", buf_idx);
 

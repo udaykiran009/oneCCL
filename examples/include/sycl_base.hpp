@@ -191,7 +191,7 @@ inline std::vector<sycl::device> create_sycl_gpu_devices() {
                << " sub-devices\n";
             result.insert(result.end(), sub_devices.begin(), sub_devices.end());
 
-            for (auto idx = 0; idx < sub_devices.size(); idx++) {
+            for (size_t idx = 0; idx < sub_devices.size(); idx++) {
                 ss << sub_dev_prefix << "sub-device " << idx << ": ["
                    << sub_devices[idx].get_info<cl::sycl::info::device::name>() << "]\n";
             }
