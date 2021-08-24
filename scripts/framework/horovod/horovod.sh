@@ -68,7 +68,7 @@ set_run_env() {
 CONDA_LINK="https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux-x86_64.sh"
 CONDA_INSTALL_DIR=""
 
-CCL_LINK="https://gitlab.devtools.intel.com/ict/ccl-team/ccl.git"
+CCL_BASE_LINK="github.com/intel-innersource/libraries.performance.communication.oneccl"
 HOROVOD_BASE_LINK="github.com/intel-innersource/frameworks.ai.horovod.git"
 MODEL_TF_BASE_LINK="github.com/intel-innersource/frameworks.ai.models.intel-models"
 MODEL_TF_SRC_BRANCH="yang/resnet50-training-tmp"
@@ -602,8 +602,9 @@ download_ccl() {
         rm -rf ${CCL_SRC_DIR}
     fi
 
-    cd ${SCRIPT_WORK_DIR}
-    https_proxy="" git clone --branch master --single-branch ${CCL_LINK} ${CCL_SRC_DIR}
+    cd ${SCRIPT_WORK_DIR}    
+    GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S} git clone --branch master --single-branch \
+        https://${USERNAME_1S}${CCL_BASE_LINK} ${CCL_SRC_DIR}
 }
 
 install_ccl() {
