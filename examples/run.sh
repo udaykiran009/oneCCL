@@ -353,13 +353,11 @@ run()
             transport_name=${transport}
             if [ "$transport" == "mpi_gpu" ];
             then
-                # TODO: need fix on impi side MLSL-1020
-                continue
-
                 if [ "$dir_name" != "sycl" ] && [ "$dir_name" != "benchmark" ]
                 then
                     continue
                 fi
+                transport_name="mpi"
                 ccl_transport_env="CCL_ATL_DEVICE_BUF=1 ${ccl_transport_env}"
             fi
             ccl_transport_env="CCL_ATL_TRANSPORT=${transport_name} ${ccl_transport_env}"
