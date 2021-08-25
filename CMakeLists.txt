@@ -35,7 +35,7 @@ option(BUILD_UT "Build unit tests" FALSE)
 option(BUILD_CONFIG "Build cmake configs" TRUE)
 option(ENABLE_MPI "Enable MPI for library" TRUE)
 option(ENABLE_MPI_TESTS "Enable MPI for tests" TRUE)
-option(ENABLE_SYCL_INTEROP_EVENT "Enable support for interop event functionality" FALSE)
+option(ENABLE_SYCL_INTEROP_EVENT "Enable support for interop event functionality" TRUE)
 option(ENABLE_OFI_HMEM "Enable support for OFI HMEM" FALSE)
 
 option(USE_CODECOV_FLAGS "Calculate code coverage" FALSE)
