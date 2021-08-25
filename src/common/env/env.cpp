@@ -111,7 +111,6 @@ env_data::env_data()
           alltoall_scatter_max_ops(CCL_ENV_SIZET_NOT_SPECIFIED),
           alltoall_scatter_plain(0),
 
-          enable_comm_kernels(0),
           kernel_path(),
           kernel_debug(0),
           enable_kernel_cache(1),
@@ -257,13 +256,6 @@ void env_data::parse() {
     env_2_type(CCL_ALLTOALL_SCATTER_MAX_OPS, (size_t&)alltoall_scatter_max_ops);
     env_2_type(CCL_ALLTOALL_SCATTER_PLAIN, alltoall_scatter_plain);
 
-    env_2_type(CCL_COMM_KERNELS, enable_comm_kernels);
-
-    if (enable_comm_kernels) {
-#ifndef MULTI_GPU_SUPPORT
-        CCL_THROW("comm kernels are requested but not supported in this version of CCL");
-#endif
-    }
     env_2_type(CCL_KERNEL_PATH, kernel_path);
     if (kernel_path.empty()) {
         std::string ccl_root = getenv("CCL_ROOT");
@@ -454,7 +446,6 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_ALLTOALL_SCATTER_PLAIN, ": ", alltoall_scatter_plain);
 
 #ifdef CCL_ENABLE_SYCL
-    LOG_INFO(CCL_COMM_KERNELS, ": ", enable_comm_kernels);
     LOG_INFO(
         CCL_KERNEL_PATH, ": ", (!kernel_path.empty()) ? kernel_path : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_KERNEL_DEBUG, ": ", kernel_debug);

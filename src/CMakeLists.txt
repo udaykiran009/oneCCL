@@ -12,7 +12,6 @@ endif(CCL_ENABLE_SYCL)
 
 if (MULTI_GPU_SUPPORT)
 list (APPEND EXTENSIONS_SRC
-                    ccl_gpu_modules.cpp
                     ccl_cpp_utils.cpp
 
                     native_device_api/l0/base.cpp
@@ -27,8 +26,6 @@ list (APPEND EXTENSIONS_SRC
                     native_device_api/l0/primitives.cpp
                     native_device_api/interop_utils.cpp
 
-                    common/event/impls/gpu_event.cpp
-
                     common/comm/l0/comm_context.cpp
                     common/comm/l0/comm_context_storage.cpp
                     common/comm/l0/context_comm_addr.cpp
@@ -42,13 +39,6 @@ list (APPEND EXTENSIONS_SRC
                     common/comm/l0/devices/communication_structs/ipc_connection.cpp
                     common/comm/l0/devices/communication_structs/ipc_server.cpp
                     common/comm/l0/devices/communication_structs/ipc_client.cpp
-
-                    common/comm/l0/communicator/device_group/device_ring_communicator.cpp
-                    common/comm/l0/communicator/device_group/device_a2a_communicator.cpp
-                    common/comm/l0/communicator/thread_group/thread_ring_communicator.cpp
-                    common/comm/l0/communicator/thread_group/thread_a2a_communicator.cpp
-                    common/comm/l0/communicator/process_group/process_ring_communicator.cpp
-                    common/comm/l0/communicator/process_group/process_a2a_communicator.cpp
 
                     common/comm/l0/context/process_group_ctx.cpp
                     common/comm/l0/context/thread_group_ctx.cpp

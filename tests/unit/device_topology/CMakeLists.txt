@@ -1,2 +1,0 @@
-add_subdirectory(topology)
-add_subdirectory(ipc_serialization)

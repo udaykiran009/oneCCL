@@ -43,9 +43,9 @@ struct comm_impl_base_dispatch {
            Indicate that multiple devices are not supported
            Don't throw anything if comm_kernels=1 to enable our testing with partial functionality.
         */
-        if (table_size > 1 && !ccl::global_data::env().enable_comm_kernels) {
-            throw ccl::unimplemented("API", "create_communicators", "for multiple devices");
-        }
+        // if (table_size > 1 && !ccl::global_data::env().enable_comm_kernels) {
+        //     throw ccl::unimplemented("API", "create_communicators", "for multiple devices");
+        // }
     }
 
     template <class DeviceType, class ContextType>

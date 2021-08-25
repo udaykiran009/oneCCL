@@ -16,9 +16,6 @@
 #include "common/global/global.hpp"
 
 #ifdef MULTI_GPU_SUPPORT
-#include "common/comm/l0/communicator/device_group/device_ring_communicator.hpp"
-#include "common/comm/l0/communicator/thread_group/thread_ring_communicator.hpp"
-#include "common/comm/l0/communicator/process_group/process_ring_communicator.hpp"
 #include "supported_topologies.hpp"
 #endif
 
@@ -134,19 +131,6 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
                 new host_communicator(std::move(device_id), std::move(context), atl));
         }
 #endif
-
-#ifdef MULTI_GPU_SUPPORT
-        case ccl::group_split_type::thread:
-            return communicator_interface_ptr(new device_group_ring_communicator(
-                std::move(device_id), std::move(context), thread_idx, process_idx, attr));
-        case ccl::group_split_type::process:
-            return communicator_interface_ptr(new thread_device_group_ring_communicator(
-                std::move(device_id), std::move(context), thread_idx, process_idx, attr));
-        case ccl::group_split_type::cluster:
-            return communicator_interface_ptr(new process_ring_communicator(
-                std::move(device_id), std::move(context), thread_idx, process_idx, attr));
-#endif //MULTI_GPU_SUPPORT
-
         default:
             throw ccl::exception(
                 std::string("Invalid `comm_split_attr` value for `ccl_device_preferred_group`: ") +

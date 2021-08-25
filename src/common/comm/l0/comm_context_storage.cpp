@@ -25,7 +25,7 @@ group_context::comm_group_t group_context::group_by_kvs(
      * Most of the cases are handled in communicator_impl_details.hpp, but here we check the case
      * when we have multiple threads and each of them has 1 device. And we don't know the total number
      * of ranks in the process until we sync them above */
-    if (atl->get_ranks_per_process() > 1 && !ccl::global_data::env().enable_comm_kernels) {
+    if (atl->get_ranks_per_process() > 1 /* && !ccl::global_data::env().enable_comm_kernels*/) {
         throw ccl::unimplemented("API", "create_communicators", "for multiple devices");
     }
 
@@ -41,12 +41,12 @@ group_context::comm_group_t group_context::group_by_kvs(
     // register group slot in global context table, based on communicator id
     comm_group_t group = group_context::group_by_comm(atl);
 
-    if (ccl::global_data::env().enable_comm_kernels) {
-        // sync existing group: blocking operation - wait for all groups
-        LOG_DEBUG("group thread barrier acquired: ", static_cast<void*>(group.get()));
-        group->sync_group_size(local_thread_device_group_ranks.size());
-        LOG_DEBUG("group thread barrier released: ", static_cast<void*>(group.get()));
-    }
+    // if (ccl::global_data::env().enable_comm_kernels) {
+    //     // sync existing group: blocking operation - wait for all groups
+    //     LOG_DEBUG("group thread barrier acquired: ", static_cast<void*>(group.get()));
+    //     group->sync_group_size(local_thread_device_group_ranks.size());
+    //     LOG_DEBUG("group thread barrier released: ", static_cast<void*>(group.get()));
+    // }
 
     return group;
 }

@@ -210,7 +210,6 @@ public:
     ssize_t alltoall_scatter_max_ops;
     int alltoall_scatter_plain;
 
-    int enable_comm_kernels;
     std::string kernel_path;
     int kernel_debug;
     int enable_kernel_cache;

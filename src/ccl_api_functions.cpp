@@ -10,7 +10,6 @@
 
 #include "ccl_api_functions_generators.hpp"
 #include "common/global/global.hpp"
-#include "ccl_gpu_module.hpp"
 
 namespace ccl {
 
@@ -27,44 +26,9 @@ struct impl_dispatch {
     }
 };
 
-#ifdef MULTI_GPU_SUPPORT
-/* register a gpu module */
-void register_gpu_module(std::string kernels_path) {
-    if (!kernels_path.empty()) {
-        if (*kernels_path.rbegin() != '/') {
-            kernels_path += '/';
-        }
-    }
-
-    LOG_INFO("SPIRV kernels directory: ", kernels_path);
-
-    load_gpu_module(
-        kernels_path + "ring_allgatherv.spv", ccl::device_topology_type::ring, ccl_coll_allgatherv);
-    load_gpu_module(
-        kernels_path + "ring_allreduce.spv", ccl::device_topology_type::ring, ccl_coll_allreduce);
-    load_gpu_module(
-        kernels_path + "ring_alltoallv.spv", ccl::device_topology_type::ring, ccl_coll_alltoallv);
-    load_gpu_module(
-        kernels_path + "ring_bcast.spv", ccl::device_topology_type::ring, ccl_coll_bcast);
-    load_gpu_module(
-        kernels_path + "ring_reduce.spv", ccl::device_topology_type::ring, ccl_coll_reduce);
-    load_gpu_module(kernels_path + "ring_reduce_scatter.spv",
-                    ccl::device_topology_type::ring,
-                    ccl_coll_reduce_scatter);
-}
-#endif //MULTI_GPU_SUPPORT
-
 void init(const init_attr& attr) {
     auto& env = detail::environment::instance();
     (void)env;
-
-#ifdef MULTI_GPU_SUPPORT
-    const auto& env_object = ccl::global_data::env();
-    //WA
-    if (env_object.enable_comm_kernels) {
-        register_gpu_module(env_object.kernel_path);
-    }
-#endif //MULTI_GPU_SUPPORT
 }
 
 /******************** ENVIRONMENT ********************/
