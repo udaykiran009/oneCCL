@@ -224,3 +224,17 @@ echo -e "\nstart MPI parsing\n"
 parse_mpi ${mpi_raw_log} ${mpi_parsed_log}
 
 echo -e "\ncompleted\n"
+
+#nccl testing on endv
+
+# ssh 207.108.8.122
+# bsub -P R -Is -t 100 -N 1 -p cnvq /bin/bash
+# git clone https://github.com/NVIDIA/nccl.git
+# cd nccl
+# make -j src.build CUDA_HOME=/opt/crtdc/cuda/11.3
+# make pkg.debian.build
+# git clone https://github.com/NVIDIA/nccl-tests.git
+# cd nccl-tests
+# make  NCCL_HOME=/panfs/users/ksenyako/nccl_experiments/nccl/build/ CUDA_HOME=/opt/crtdc/cuda/11.3 
+# export LD_LIBRARY_PATH=/panfs/users/ksenyako/nccl_experiments/nccl/build/lib/:$LD_LIBRARY_PATH                                        ldd ./build/all_reduce_perf
+# ./build/all_reduce_perf -b 8 -e 256M -f 2 -g 1
