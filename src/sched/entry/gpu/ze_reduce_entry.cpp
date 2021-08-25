@@ -55,9 +55,9 @@ void ze_reduce_entry::init() {
 
     /* create kernels */
     ccl_buffer right_send_buf;
-    int peer_rank = (rank + 1) % comm_size;
+    int peer_rank = (comm->rank() + 1) % comm->size();
     if (comm->rank() == root) {
-        sched->get_memory().handle_manager.get(peer_rank, 0, right_send_buf);
+        sched->get_memory().handle_manager.get(comm->get_global_rank(peer_rank), 0, right_send_buf);
     }
 
     LOG_DEBUG(
@@ -65,6 +65,7 @@ void ze_reduce_entry::init() {
 
     send_buf_ptr = send_buf.get_ptr();
     recv_buf_ptr = recv_buf.get_ptr();
+    // in place case check! diff idx for handle_mngr
 
     right_send_buf_ptr = right_send_buf.get_ptr();
 

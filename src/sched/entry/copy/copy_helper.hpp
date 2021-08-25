@@ -18,9 +18,11 @@ public:
 
 struct copy_attr {
     int peer_rank;
+    size_t peer_buf_idx;
     copy_direction direction;
     size_t in_buf_offset;
 
+    copy_attr(int peer_rank, size_t peer_buf_idx, copy_direction direction, size_t in_buf_offset);
     copy_attr(int peer_rank = copy_helper::invalid_rank,
               copy_direction direction = copy_direction::undefined,
               size_t in_buf_offset = 0);

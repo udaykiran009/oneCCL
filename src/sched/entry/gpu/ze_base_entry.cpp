@@ -16,6 +16,7 @@ ze_base_entry::ze_base_entry(ccl_sched *sched, uint32_t add_event_count)
           sched(sched),
           add_event_count(add_event_count) {
     CCL_THROW_IF_NOT(sched, "no sched");
+    //add comm as param in ctor
     auto comm = sched->coll_param.comm;
     CCL_THROW_IF_NOT(comm, "no comm");
     rank = comm->rank();

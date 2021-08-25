@@ -35,11 +35,11 @@ void ze_copy_entry::init() {
 
     if (attr.peer_rank > copy_helper::invalid_rank) {
         if (!out_buf) {
-            sched->get_memory().handle_manager.get(attr.peer_rank, 0, out_buf);
+            sched->get_memory().handle_manager.get(attr.peer_rank, attr.peer_buf_idx, out_buf);
         }
 
         if (!in_buf) {
-            sched->get_memory().handle_manager.get(attr.peer_rank, 0, in_buf);
+            sched->get_memory().handle_manager.get(attr.peer_rank, attr.peer_buf_idx, in_buf);
         }
     }
 

@@ -57,8 +57,8 @@ host_communicator::host_communicator(int size, int rank, shared_ptr_class<ikvs_w
     ccl::global_data& data = ccl::global_data::get();
     std::shared_ptr<atl_wrapper> atl_tmp =
         std::shared_ptr<atl_wrapper>(new atl_wrapper(size, { rank }, kvs));
-    comm_impl =
-        std::shared_ptr<ccl_comm>(new ccl_comm(rank, size, data.comm_ids->acquire(), atl_tmp));
+    comm_impl = std::shared_ptr<ccl_comm>(
+        new ccl_comm(rank, size, data.comm_ids->acquire(), atl_tmp, false, this));
     create_sub_comms(atl_tmp);
 }
 
@@ -86,7 +86,8 @@ host_communicator::host_communicator(std::shared_ptr<atl_wrapper> atl)
     LOG_DEBUG("ctor");
 
     ccl::global_data& data = ccl::global_data::get();
-    comm_impl = std::shared_ptr<ccl_comm>(new ccl_comm(rank, size, data.comm_ids->acquire(), atl));
+    comm_impl = std::shared_ptr<ccl_comm>(
+        new ccl_comm(rank, size, data.comm_ids->acquire(), atl, false, this));
     create_sub_comms(atl);
 }
 
@@ -149,6 +150,8 @@ void host_communicator::create_sub_comms(std::shared_ptr<atl_wrapper> atl) {
     if (ccl::global_data::env().atl_transport == ccl_atl_mpi) {
         r2r_comm = nullptr;
         node_comm = nullptr;
+        pair_comm = nullptr;
+        even_comm = nullptr;
         return;
     }
     else {
@@ -162,6 +165,14 @@ void host_communicator::create_sub_comms(std::shared_ptr<atl_wrapper> atl) {
             new host_communicator(std::shared_ptr<ccl_comm>(this->create_with_color(
                                       atl->get_host_color(), data.comm_ids.get(), comm_impl.get())),
                                   is_sub_comm));
+        even_comm = std::shared_ptr<host_communicator>(new host_communicator(
+            std::shared_ptr<ccl_comm>(this->create_with_color(
+                atl->get_host_color() + atl->get_rank() % 2, data.comm_ids.get(), comm_impl.get())),
+            is_sub_comm));
+        pair_comm = std::shared_ptr<host_communicator>(new host_communicator(
+            std::shared_ptr<ccl_comm>(this->create_with_color(
+                atl->get_host_color() + atl->get_rank() / 2, data.comm_ids.get(), comm_impl.get())),
+            is_sub_comm));
     }
 }
 
@@ -443,6 +454,18 @@ std::shared_ptr<host_communicator> host_communicator::get_r2r_comm() {
 
 std::shared_ptr<host_communicator> host_communicator::get_node_comm() {
     return node_comm;
+}
+
+std::shared_ptr<host_communicator> host_communicator::get_pair_comm() {
+    return pair_comm;
+}
+
+std::shared_ptr<host_communicator> host_communicator::get_even_comm() {
+    return even_comm;
+}
+
+std::shared_ptr<ccl_comm> host_communicator::get_ccl_comm() {
+    return comm_impl;
 }
 
 std::string host_communicator::to_string() const {

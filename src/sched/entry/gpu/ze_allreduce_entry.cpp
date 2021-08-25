@@ -23,7 +23,8 @@ ze_allreduce_entry::ze_allreduce_entry(ccl_sched* sched,
           cnt(cnt),
           dtype(dtype),
           op(op),
-          buf_size_bytes(dtype.size() * cnt) {}
+          buf_size_bytes(dtype.size() * cnt),
+          comm(comm) {}
 
 ze_allreduce_entry::~ze_allreduce_entry() {
     finalize();
@@ -49,12 +50,18 @@ void ze_allreduce_entry::init() {
     /* create kernels */
     ccl_buffer right_send_buf;
     ccl_buffer right_recv_buf;
-    int peer_rank = (rank + 1) % comm_size;
-    sched->get_memory().handle_manager.get(peer_rank, 0, right_send_buf);
-    sched->get_memory().handle_manager.get(peer_rank, 1, right_recv_buf);
+    int peer_rank = (comm->rank() + 1) % comm->size();
 
     send_buf_ptr = send_buf.get_ptr();
     recv_buf_ptr = recv_buf.get_ptr();
+    if (send_buf_ptr == recv_buf_ptr) {
+        sched->get_memory().handle_manager.get(comm->get_global_rank(peer_rank), 1, right_send_buf);
+        sched->get_memory().handle_manager.get(comm->get_global_rank(peer_rank), 1, right_recv_buf);
+    }
+    else {
+        sched->get_memory().handle_manager.get(comm->get_global_rank(peer_rank), 0, right_send_buf);
+        sched->get_memory().handle_manager.get(comm->get_global_rank(peer_rank), 1, right_recv_buf);
+    }
     right_send_buf_ptr = right_send_buf.get_ptr();
     right_recv_buf_ptr = right_recv_buf.get_ptr();
 

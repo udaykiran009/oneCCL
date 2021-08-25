@@ -126,6 +126,9 @@ public:
     std::shared_ptr<atl_wrapper> get_atl();
     std::shared_ptr<host_communicator> get_r2r_comm();
     std::shared_ptr<host_communicator> get_node_comm();
+    std::shared_ptr<host_communicator> get_even_comm();
+    std::shared_ptr<host_communicator> get_pair_comm();
+    std::shared_ptr<ccl_comm> get_ccl_comm();
 
     // troubleshooting
     std::string to_string() const;
@@ -140,6 +143,8 @@ private:
 
     std::shared_ptr<host_communicator> r2r_comm;
     std::shared_ptr<host_communicator> node_comm;
+    std::shared_ptr<host_communicator> even_comm;
+    std::shared_ptr<host_communicator> pair_comm;
     ccl::comm_split_attr comm_attr;
     int comm_rank;
     int comm_size;

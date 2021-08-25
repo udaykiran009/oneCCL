@@ -2,8 +2,18 @@
 
 const int copy_helper::invalid_rank = -1;
 
+copy_attr::copy_attr(int peer_rank,
+                     size_t peer_buf_idx,
+                     copy_direction direction,
+                     size_t in_buf_offset)
+        : peer_rank(peer_rank),
+          peer_buf_idx(peer_buf_idx),
+          direction(direction),
+          in_buf_offset(in_buf_offset) {}
+
 copy_attr::copy_attr(int peer_rank, copy_direction direction, size_t in_buf_offset)
         : peer_rank(peer_rank),
+          peer_buf_idx(0),
           direction(direction),
           in_buf_offset(in_buf_offset) {}
 
