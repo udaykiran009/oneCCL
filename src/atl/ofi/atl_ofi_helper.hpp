@@ -22,6 +22,9 @@
 #include "atl.h"
 #include "common/global/global.hpp"
 #include "hwloc/hwloc_wrapper.hpp"
+#ifdef CCL_ENABLE_OFI_HMEM
+#include "sched/entry/gpu/ze_primitives.hpp"
+#endif // CCL_ENABLE_OFI_HMEM
 
 #define ATL_OFI_BASE_PM_KEY     "atl-ofi"
 #define ATL_OFI_FI_ADDR_PM_KEY  ATL_OFI_BASE_PM_KEY "-fiaddr"
@@ -44,6 +47,8 @@
 #define ATL_OFI_MAX_ACTIVE_PROV_COUNT \
     2 /* by current scheme each EP may use only SHM and 1 NW prov */
 #define ATL_OFI_SHM_PROV_NAME "shm"
+
+#define ATL_OFI_MAX_ZE_DEV_COUNT 1024
 
 #ifndef PRId64
 #define PRId64 "lld"
@@ -191,7 +196,7 @@ typedef struct {
     std::vector<std::string> mnic_include_names;
     std::vector<std::string> mnic_exclude_names;
     size_t mnic_count;
-    int enable_dma_buf;
+    int enable_hmem;
 } atl_ofi_ctx_t;
 
 typedef struct {
@@ -203,11 +208,27 @@ typedef struct {
     struct fid_mr* mr;
 } atl_ofi_req_t;
 
+#ifdef CCL_ENABLE_OFI_HMEM
+typedef struct atl_ofi_ze_data {
+    ze_driver_handle_t driver;
+    ze_context_handle_t context;
+    uint32_t device_count;
+    ze_device_handle_t devices[ATL_OFI_MAX_ZE_DEV_COUNT];
+
+    atl_ofi_ze_data() : driver(nullptr), context(nullptr), device_count(0) {}
+
+} atl_ofi_ze_data_t;
+#endif // CCL_ENABLE_OFI_HMEM
+
 typedef struct atl_ofi_global_data {
     size_t ctx_count;
     int is_env_inited;
     void* dlhandle;
     char prov_env_copy[ATL_OFI_MAX_PROV_ENV_LEN];
+
+#ifdef CCL_ENABLE_OFI_HMEM
+    atl_ofi_ze_data ze_data;
+#endif // CCL_ENABLE_OFI_HMEM
 
     atl_ofi_global_data() : ctx_count(0), is_env_inited(0), dlhandle(nullptr), prov_env_copy() {
         memset(prov_env_copy, 0, sizeof(prov_env_copy));
@@ -218,6 +239,10 @@ extern atl_ofi_global_data_t global_data;
 
 template <class Container>
 std::string vec_to_string(Container& elems);
+
+#ifdef CCL_ENABLE_OFI_HMEM
+void atl_ofi_init_ze_data();
+#endif // CCL_ENABLE_OFI_HMEM
 
 void atl_ofi_print_coord(atl_proc_coord_t* coord);
 std::string atl_ofi_get_short_nic_name(const struct fi_info* prov);

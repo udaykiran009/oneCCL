@@ -119,6 +119,7 @@ process_files()
             grep -v "googletest/" | \
             grep -v "deps/" | \
             grep -v "scripts/copyright" | \
+            grep -v "scripts/framework" | \
             grep -P ".*\.(c|cpp|h|hpp|cl|i)$")
         do
             echo_log "process file: ${filename}"

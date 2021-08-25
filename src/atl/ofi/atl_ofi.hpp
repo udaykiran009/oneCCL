@@ -174,12 +174,12 @@ private:
 
         void clear();
 
-        void init(size_t instance_count, int enable_dma_buf);
+        void init(size_t instance_count, int enable_hmem);
         void get(size_t idx, fid_domain* domain, void* buf, size_t bytes, fid_mr** mr);
         void push(size_t idx, fid_mr* mr);
 
     private:
-        int enable_dma_buf;
+        int enable_hmem;
         std::vector<mr_cache> memory_regions;
     };
 

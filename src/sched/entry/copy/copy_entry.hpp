@@ -68,12 +68,9 @@ private:
     ccl_buffer out_buf{};
     const size_t count;
     const ccl_datatype dtype;
-    const copy_attr attr;
-    const size_t buf_size_bytes;
-
-    bool is_sycl_buf{};
-    size_t worker_idx{};
+    copy_attr attr;
     copy_type ctype{ copy_type::regular };
+
 #ifdef CCL_ENABLE_SYCL
     sycl_copier copier{};
 #endif // CCL_ENABLE_SYCL

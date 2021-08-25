@@ -18,6 +18,10 @@ enum class init_mode : int {
     copy = 2,
 };
 
+constexpr ze_context_desc_t default_context_desc = { .stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+                                                     .pNext = nullptr,
+                                                     .flags = 0 };
+
 constexpr ze_fence_desc_t default_fence_desc = { .stype = ZE_STRUCTURE_TYPE_FENCE_DESC,
                                                  .pNext = nullptr,
                                                  .flags = 0 };
@@ -50,6 +54,16 @@ constexpr ze_device_mem_alloc_desc_t default_device_mem_alloc_desc = {
     .flags = 0,
     .ordinal = 0
 };
+
+constexpr ze_memory_allocation_properties_t default_alloc_props = {
+    .stype = ZE_STRUCTURE_TYPE_MEMORY_ALLOCATION_PROPERTIES,
+    .pNext = nullptr,
+    .type = ZE_MEMORY_TYPE_UNKNOWN
+};
+
+constexpr ze_device_properties_t default_device_props = { .stype =
+                                                              ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES,
+                                                          .pNext = nullptr };
 
 constexpr ze_event_pool_desc_t default_event_pool_desc = { .stype =
                                                                ZE_STRUCTURE_TYPE_EVENT_POOL_DESC,

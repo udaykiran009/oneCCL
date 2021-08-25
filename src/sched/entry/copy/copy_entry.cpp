@@ -23,8 +23,7 @@ copy_entry::copy_entry(ccl_sched* sched,
           out_buf(out_buf),
           count(count),
           dtype(dtype),
-          attr(attr),
-          buf_size_bytes(dtype.size() * count) {
+          attr(attr) {
     CCL_THROW_IF_NOT(sched, "no sched");
 }
 
@@ -34,20 +33,47 @@ void copy_entry::start() {
     LOG_DEBUG(class_name(), ": in_buf ", in_buf, ", out_buf ", out_buf, ", count ", count);
 
 #ifdef CCL_ENABLE_SYCL
-    worker_idx = sched->queue->get_idx();
+    int is_sycl_buf = sched->coll_attr.is_sycl_buf;
     sycl::queue* q = nullptr;
+
     sycl::usm::alloc in_ptr_type = sycl::usm::alloc::unknown;
     sycl::usm::alloc out_ptr_type = sycl::usm::alloc::unknown;
+
     if (sched->coll_param.stream) {
-        q = sched->coll_param.stream->get_native_stream(worker_idx);
+        q = sched->coll_param.stream->get_native_stream(sched->queue->get_idx());
         CCL_THROW_IF_NOT(q, "null sycl queue");
         in_ptr_type = sycl::get_pointer_type(in_buf.get_ptr(), q->get_context());
         out_ptr_type = sycl::get_pointer_type(out_buf.get_ptr(), q->get_context());
+
+        LOG_DEBUG("in_ptr_type: ",
+                  ccl::utils::usm_type_to_str(in_ptr_type),
+                  ", out_ptr_type: ",
+                  ccl::utils::usm_type_to_str(out_ptr_type));
+
+        if (attr.direction == copy_direction::undefined) {
+            if (in_ptr_type == sycl::usm::alloc::device &&
+                out_ptr_type == sycl::usm::alloc::device) {
+                attr.direction = copy_direction::d2d;
+            }
+
+            if ((in_ptr_type != sycl::usm::alloc::device) &&
+                (out_ptr_type != sycl::usm::alloc::device)) {
+                attr.direction = copy_direction::h2h;
+            }
+
+            if ((in_ptr_type == sycl::usm::alloc::device) &&
+                (out_ptr_type != sycl::usm::alloc::device)) {
+                attr.direction = copy_direction::d2h;
+            }
+
+            if ((in_ptr_type != sycl::usm::alloc::device) &&
+                (out_ptr_type == sycl::usm::alloc::device)) {
+                attr.direction = copy_direction::h2d;
+            }
+
+            CCL_THROW_IF_NOT(attr.direction != copy_direction::undefined);
+        }
     }
-    LOG_DEBUG("in_ptr_type: ",
-              ccl::utils::usm_type_to_str(in_ptr_type),
-              ", out_ptr_type: ",
-              ccl::utils::usm_type_to_str(out_ptr_type));
 #endif // CCL_ENABLE_SYCL
 
     LOG_DEBUG("count: ", count, ", direction: ", to_string(attr.direction));
@@ -64,7 +90,6 @@ void copy_entry::start() {
     }
 
 #ifdef CCL_ENABLE_SYCL
-    is_sycl_buf = sched->coll_attr.is_sycl_buf;
     if (q->get_backend() != cl::sycl::backend::level_zero || is_sycl_buf) {
         ctype = copy_type::sycl;
         if (!is_sycl_buf) {
@@ -106,8 +131,8 @@ void copy_entry::update() {
 }
 
 void copy_entry::do_regular_copy() {
-    auto comp_status = ccl_comp_copy(
-        in_buf.get_ptr(buf_size_bytes), out_buf.get_ptr(buf_size_bytes), count, dtype);
+    size_t bytes = dtype.size() * count;
+    auto comp_status = ccl_comp_copy(in_buf.get_ptr(bytes), out_buf.get_ptr(bytes), count, dtype);
     CCL_ASSERT(comp_status == ccl::status::success, "bad status ", comp_status);
     status = ccl_sched_entry_status_complete;
 }

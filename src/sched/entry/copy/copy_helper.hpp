@@ -8,7 +8,7 @@
 #include "common/utils/sycl_utils.hpp"
 #include "oneapi/ccl/native_device_api/interop_utils.hpp"
 
-enum class copy_direction { h2h, d2h, h2d, d2d };
+enum class copy_direction { undefined, h2h, d2h, h2d, d2d };
 std::string to_string(copy_direction val);
 
 class copy_helper {
@@ -22,7 +22,7 @@ struct copy_attr {
     size_t in_buf_offset;
 
     copy_attr(int peer_rank = copy_helper::invalid_rank,
-              copy_direction direction = copy_direction::h2h,
+              copy_direction direction = copy_direction::undefined,
               size_t in_buf_offset = 0);
 };
 

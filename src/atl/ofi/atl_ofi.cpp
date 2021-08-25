@@ -4,22 +4,6 @@
 #include "common/utils/sycl_utils.hpp"
 #endif // CCL_ENABLE_SYCL
 
-#ifndef FI_HMEM
-#define FI_HMEM (1ULL << 47)
-#endif
-
-#ifndef FI_MR_HMEM
-#define FI_MR_HMEM (1 << 10)
-#endif
-
-#ifndef FI_HMEM_SYSTEM
-#define FI_HMEM_SYSTEM 0
-#endif
-
-#ifndef FI_HMEM_ZE
-#define FI_HMEM_ZE 3
-#endif
-
 // cache
 
 void atl_ofi::fi_cache::clear() {
@@ -28,8 +12,8 @@ void atl_ofi::fi_cache::clear() {
     }
 }
 
-void atl_ofi::fi_cache::init(size_t instance_count, int enable_dma_buf) {
-    this->enable_dma_buf = enable_dma_buf;
+void atl_ofi::fi_cache::init(size_t instance_count, int enable_hmem) {
+    this->enable_hmem = enable_hmem;
     memory_regions.resize(instance_count);
 }
 
@@ -40,18 +24,18 @@ atl_ofi::fi_cache::~fi_cache() {
 void atl_ofi::fi_cache::get(size_t idx, fid_domain* domain, void* buf, size_t bytes, fid_mr** mr) {
     CCL_THROW_IF_NOT(mr);
     *mr = nullptr;
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
-    if (enable_dma_buf) {
+#ifdef CCL_ENABLE_OFI_HMEM
+    if (enable_hmem) {
         memory_regions.at(idx % memory_regions.size()).get(domain, buf, bytes, mr);
     }
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_OFI_HMEM
 }
 
 void atl_ofi::fi_cache::push(size_t idx, fid_mr* mr) {
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#ifdef CCL_ENABLE_OFI_HMEM
     if (mr)
         memory_regions.at(idx % memory_regions.size()).push(mr);
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_OFI_HMEM
 }
 
 atl_ofi::mr_cache::~mr_cache() {
@@ -95,27 +79,38 @@ void atl_ofi::mr_cache::get(fid_domain* domain, void* buf, size_t bytes, fid_mr*
     iov.iov_len = bytes;
     mr_attr.mr_iov = &iov;
     mr_attr.iov_count = 1;
-    mr_attr.access = FI_SEND | FI_RECV;
+    mr_attr.access = FI_SEND | FI_RECV | FI_REMOTE_READ | FI_REMOTE_WRITE;
     mr_attr.requested_key = mr_key++;
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
-    // TODO: detect usm type using SYCL or L0
-    // sycl::get_pointer_type(buf, ctx);
+#ifdef CCL_ENABLE_OFI_HMEM
+    mr_attr.iface = FI_HMEM_SYSTEM;
 
-    // TODO: pass device from user level
+    atl_ofi_ze_data& ze_data = global_data.ze_data;
+    ze_memory_allocation_properties_t alloc_props = ccl::ze::default_alloc_props;
+    ze_device_handle_t alloc_dev = nullptr;
+    ZE_CALL(zeMemGetAllocProperties, (ze_data.context, buf, &alloc_props, &alloc_dev));
 
-    // TODO: place HMEM code under ifdef
+    if (alloc_dev) {
+        ze_device_properties_t alloc_dev_props = ccl::ze::default_device_props;
+        ZE_CALL(zeDeviceGetProperties, (alloc_dev, &alloc_dev_props));
 
-    // auto usm_type = sycl::usm::alloc::device;
-    // if (usm_type == sycl::usm::alloc::device) {
-    //     mr_attr.iface = FI_HMEM_ZE;
-    //     mr_attr.device.ze = 0;
-    // }
-    // else {
-    //     mr_attr.iface = FI_HMEM_SYSTEM;
-    // }
-    // LOG_DEBUG("register buffer with usm type ", ccl::utils::usm_type_to_str(usm_type));
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+        int dev_idx = -1;
+        for (int idx = 0; idx < ze_data.device_count; idx++) {
+            ze_device_properties_t dev_props = ccl::ze::default_device_props;
+            ZE_CALL(zeDeviceGetProperties, (ze_data.devices[idx], &dev_props));
+
+            if (!std::memcmp(&dev_props.uuid, &alloc_dev_props.uuid, sizeof(ze_device_uuid_t))) {
+                dev_idx = idx;
+                LOG_DEBUG("ze device idx ", dev_idx, " corresponds to buffer ", buf);
+                break;
+            }
+        }
+        CCL_THROW_IF_NOT(dev_idx != -1);
+
+        mr_attr.iface = FI_HMEM_ZE;
+        mr_attr.device.ze = dev_idx;
+    }
+#endif // CCL_ENABLE_OFI_HMEM
 
     int ret = fi_mr_regattr(domain, &mr_attr, 0, mr);
     CCL_THROW_IF_NOT(!ret, "failed to register mr, ret ", ret);
@@ -173,6 +168,9 @@ atl_status_t atl_ofi::atl_init(int* argc,
             LOG_ERROR("atl_ofi_set_env error");
             return ATL_STATUS_FAILURE;
         }
+#ifdef CCL_ENABLE_OFI_HMEM
+        atl_ofi_init_ze_data();
+#endif // CCL_ENABLE_OFI_HMEM
     }
     global_data.ctx_count++;
 
@@ -216,14 +214,14 @@ atl_status_t atl_ofi::atl_init(int* argc,
 
     prov_env = getenv("FI_PROVIDER");
 
-    ofi_ctx->enable_dma_buf = 0;
+    ofi_ctx->enable_hmem = 0;
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#ifdef CCL_ENABLE_OFI_HMEM
     if (prov_env && strstr(prov_env, "verbs") && attr->in.enable_device_buf) {
-        ofi_ctx->enable_dma_buf = 1;
+        ofi_ctx->enable_hmem = 1;
     }
 
-    if (ofi_ctx->enable_dma_buf) {
+    if (ofi_ctx->enable_hmem) {
         base_hints->caps |= FI_HMEM;
         base_hints->domain_attr->mr_mode =
             (FI_MR_ALLOCATED | FI_MR_PROV_KEY | FI_MR_VIRT_ADDR | FI_MR_LOCAL | FI_MR_HMEM);
@@ -233,9 +231,9 @@ atl_status_t atl_ofi::atl_init(int* argc,
 
         /* TODO: implement fallback logic if HMEM can't be enabled */
     }
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_OFI_HMEM
 
-    cache.init(attr->in.ep_count, ofi_ctx->enable_dma_buf);
+    cache.init(attr->in.ep_count, ofi_ctx->enable_hmem);
 
     fi_version = FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION);
 
@@ -394,9 +392,9 @@ atl_status_t atl_ofi::atl_init(int* argc,
         LOG_INFO("  mnic_count: ", ofi_ctx->mnic_count);
         LOG_INFO("  max_retry_count: ", ofi_ctx->max_retry_count);
         LOG_INFO("  progress_mode: ", ofi_ctx->progress_mode);
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
-        LOG_INFO("  dma_buf: ", ofi_ctx->enable_dma_buf);
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_OFI_HMEM
+        LOG_INFO("  hmem: ", ofi_ctx->enable_hmem);
+#endif // CCL_ENABLE_OFI_HMEM
     }
 
     fi_freeinfo(base_hints);
@@ -405,7 +403,7 @@ atl_status_t atl_ofi::atl_init(int* argc,
     /* report actual attributes back to upper level */
     attr->out.enable_shm = enable_shm;
     attr->out.enable_rma = 0;
-    attr->out.enable_device_buf = ofi_ctx->enable_dma_buf;
+    attr->out.enable_device_buf = ofi_ctx->enable_hmem;
     attr->out.mnic_type = ofi_ctx->mnic_type;
     attr->out.mnic_count = ofi_ctx->mnic_count;
     attr->out.tag_bits = 64;
