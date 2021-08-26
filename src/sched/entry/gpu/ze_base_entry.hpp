@@ -18,10 +18,6 @@ struct cmd_primitives {
 
 class ze_base_entry : public sched_entry {
 public:
-    bool is_gpu_entry() const noexcept override {
-        return true;
-    }
-
     ze_base_entry() = delete;
     ze_base_entry(const ze_base_entry &) = delete;
     virtual ~ze_base_entry(){};

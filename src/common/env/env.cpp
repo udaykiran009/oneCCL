@@ -67,6 +67,7 @@ env_data::env_data()
           enable_shm(0),
           enable_rma(0),
           enable_device_buf(0),
+          enable_device_buf_wa(0),
           enable_atl_cache(1),
           enable_sync_coll(0),
           enable_extra_ep(0),
@@ -167,6 +168,10 @@ void env_data::parse() {
     env_2_type(CCL_ATL_SHM, enable_shm);
     env_2_type(CCL_ATL_RMA, enable_rma);
     env_2_type(CCL_ATL_DEVICE_BUF, enable_device_buf);
+    if (atl_transport == ccl_atl_mpi && enable_device_buf) {
+        worker_count = 1;
+    }
+    env_2_type(CCL_ATL_DEVICE_BUF_WA, enable_device_buf_wa);
     env_2_type(CCL_ATL_CACHE, enable_atl_cache);
     env_2_type(CCL_ATL_SYNC_COLL, enable_sync_coll);
     env_2_type(CCL_ATL_EXTRA_EP, enable_extra_ep);
@@ -365,6 +370,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_ATL_SHM, ": ", enable_shm);
     LOG_INFO(CCL_ATL_RMA, ": ", enable_rma);
     LOG_INFO(CCL_ATL_DEVICE_BUF, ": ", enable_device_buf);
+    LOG_INFO(CCL_ATL_DEVICE_BUF_WA, ": ", enable_device_buf_wa);
     LOG_INFO(CCL_ATL_CACHE, ": ", enable_atl_cache);
     LOG_DEBUG(CCL_ATL_SYNC_COLL, ": ", enable_sync_coll);
     LOG_DEBUG(CCL_ATL_EXTRA_EP, ": ", enable_extra_ep);

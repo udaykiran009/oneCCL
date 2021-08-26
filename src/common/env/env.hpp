@@ -39,6 +39,7 @@ constexpr const char* CCL_ATL_TRANSPORT = "CCL_ATL_TRANSPORT";
 constexpr const char* CCL_ATL_SHM = "CCL_ATL_SHM";
 constexpr const char* CCL_ATL_RMA = "CCL_ATL_RMA";
 constexpr const char* CCL_ATL_DEVICE_BUF = "CCL_ATL_DEVICE_BUF";
+constexpr const char* CCL_ATL_DEVICE_BUF_WA = "CCL_ATL_DEVICE_BUF_WA";
 constexpr const char* CCL_ATL_SYNC_COLL = "CCL_ATL_SYNC_COLL";
 constexpr const char* CCL_ATL_EXTRA_EP = "CCL_ATL_EXTRA_EP";
 constexpr const char* CCL_ATL_CACHE = "CCL_ATL_CACHE";
@@ -155,6 +156,7 @@ public:
     int enable_shm;
     int enable_rma;
     int enable_device_buf;
+    int enable_device_buf_wa;
     int enable_atl_cache;
     int enable_sync_coll;
     int enable_extra_ep;

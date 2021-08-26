@@ -99,18 +99,65 @@ size_t ccl_sched_base::get_priority() const {
     return priority;
 }
 
-ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes) {
+void* ccl_sched_base::alloc_buffer_unmanaged(size_t bytes, ccl_sched_buf_type buf_type) {
     LOG_DEBUG("try to allocate buffer size: ", bytes);
     CCL_THROW_IF_NOT(bytes > 0, "incorrect buffer size: ", bytes);
 
     void* ptr = nullptr;
-    ccl::global_data::get().buffer_cache->get(sched_id, bytes, &ptr);
+    if (buf_type == ccl_sched_buf_system) {
+        ccl::global_data::get().buffer_cache->get(sched_id, bytes, &ptr);
+    }
+#ifdef CCL_ENABLE_SYCL
+    else if (buf_type == ccl_sched_buf_runtime) {
+        CCL_THROW_IF_NOT(coll_param.stream, "null stream");
+        sycl::context ctx = coll_param.stream->get_native_stream().get_context();
+        ccl::global_data::get().buffer_cache->get(sched_id, bytes, ctx, &ptr);
+    }
+#endif // CCL_ENABLE_SYCL
+    else {
+        CCL_THROW("unexpected buf_type ", buf_type);
+    }
 
-    ccl_buffer buffer = ccl_buffer(ptr, bytes, 0, ccl_buffer_type::DIRECT);
-    memory.buf_list.emplace_back(buffer, bytes);
+    LOG_DEBUG("allocated buffer: ", ptr, ", size: ", bytes);
+    return ptr;
+}
+
+void ccl_sched_base::free_buffer_unmanaged(void* ptr, size_t bytes, ccl_sched_buf_type buf_type) {
+    LOG_DEBUG("free buffer: ", ptr, ", buf_type: ", buf_type);
+
+    if (buf_type == ccl_sched_buf_system) {
+        ccl::global_data::get().buffer_cache->push(sched_id, bytes, ptr);
+    }
+#ifdef CCL_ENABLE_SYCL
+    else if (buf_type == ccl_sched_buf_runtime) {
+        CCL_THROW_IF_NOT(coll_param.stream, "null stream");
+        sycl::context ctx = coll_param.stream->get_native_stream().get_context();
+        ccl::global_data::get().buffer_cache->push(sched_id, bytes, ctx, ptr);
+    }
+#endif // CCL_ENABLE_SYCL
+    else {
+        CCL_THROW("unexpected buf_type ", buf_type);
+    }
+}
+
+ccl_buffer ccl_sched_base::alloc_buffer(size_t bytes, ccl_sched_buf_type buf_type) {
+    ccl_buffer buffer =
+        ccl_buffer(alloc_buffer_unmanaged(bytes, buf_type), bytes, 0, ccl_buffer_type::DIRECT);
+
+    if (buf_type == ccl_sched_buf_system) {
+        memory.buf_list.emplace_back(buffer, bytes);
+    }
+#ifdef CCL_ENABLE_SYCL
+    else if (buf_type == ccl_sched_buf_runtime) {
+        CCL_THROW_IF_NOT(coll_param.stream, "null stream");
+        sycl::context ctx = coll_param.stream->get_native_stream().get_context();
+        memory.sycl_buf_list.emplace_back(buffer, bytes, ctx);
+        LOG_DEBUG(
+            "allocated host usm buffer ptr: ", buffer.get_ptr(), ", size: ", buffer.get_size());
+    }
+#endif // CCL_ENABLE_SYCL
+
     CCL_THROW_IF_NOT(buffer.get_ptr(), "null ptr");
-
-    LOG_DEBUG("allocated buffer ptr: ", buffer.get_ptr(), ", size: ", buffer.get_size());
     return buffer;
 }
 
@@ -119,20 +166,11 @@ ccl_buffer ccl_sched_base::alloc_staging_buffer(size_t bytes) {
     LOG_DEBUG("try to allocate usm host buffer size: ", bytes);
     CCL_THROW_IF_NOT(bytes > 0, "incorrect buffer size: ", bytes);
 
-    ccl_buffer buffer;
+    ccl_sched_buf_type buf_type = ccl_sched_buf_system;
     if (ccl::global_data::env().staging_buffer == ccl_staging_usm) {
-        CCL_ASSERT(coll_param.stream);
-        sycl::context ctx = coll_param.stream->get_native_stream().get_context();
-        void* ptr = nullptr;
-        ccl::global_data::get().buffer_cache->get(sched_id, bytes, ctx, &ptr);
-        buffer = ccl_buffer(ptr, bytes, 0, ccl_buffer_type::DIRECT);
-        memory.sycl_buf_list.emplace_back(buffer, bytes, ctx);
-        LOG_DEBUG(
-            "allocated host usm buffer ptr: ", buffer.get_ptr(), ", size: ", buffer.get_size());
+        buf_type = ccl_sched_buf_runtime;
     }
-    else {
-        buffer = alloc_buffer(bytes);
-    }
+    ccl_buffer buffer = alloc_buffer(bytes, buf_type);
 
     CCL_THROW_IF_NOT(buffer.get_ptr(), "null ptr");
 
@@ -143,8 +181,7 @@ ccl_buffer ccl_sched_base::alloc_staging_buffer(size_t bytes) {
 void ccl_sched_base::free_memory() {
     std::list<ccl_sched_buffer_handler>::iterator it;
     for (it = memory.buf_list.begin(); it != memory.buf_list.end(); it++) {
-        LOG_DEBUG("free ", it->buffer.get_ptr());
-        ccl::global_data::get().buffer_cache->push(sched_id, it->size, it->buffer.get_ptr());
+        free_buffer_unmanaged(it->buffer.get_ptr(), it->size, ccl_sched_buf_system);
     }
     memory.buf_list.clear();
 

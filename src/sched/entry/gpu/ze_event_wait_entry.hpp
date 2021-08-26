@@ -13,10 +13,6 @@ public:
         return class_name();
     }
 
-    bool is_gpu_entry() const noexcept override {
-        return true;
-    }
-
     bool is_strict_order_satisfied() override {
         return (status >= ccl_sched_entry_status_complete);
     }

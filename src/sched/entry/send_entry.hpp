@@ -3,6 +3,7 @@
 #include "common/global/global.hpp"
 #include "sched/entry/entry.hpp"
 #include "sched/queue/queue.hpp"
+#include "sched/entry/copy/copy_entry.hpp"
 
 class send_entry : public sched_entry,
                    public postponed_fields<send_entry,
@@ -27,9 +28,7 @@ public:
               dst(dst),
               comm(comm) {}
 
-    void start() override {
-        update_fields();
-
+    void start_send() {
         int global_dst = comm->get_global_rank(dst);
         int global_rank = comm->get_global_rank(comm->rank());
 
@@ -41,13 +40,53 @@ public:
             "SEND entry dst ", global_dst, ", tag ", atl_tag, ", req ", &req, ", bytes ", bytes);
 
         atl_status_t atl_status = comm->atl->atl_ep_send(
-            sched->bin->get_atl_ep(), buf.get_ptr(bytes), bytes, global_dst, atl_tag, &req);
+            sched->bin->get_atl_ep(), proxy_buf.get_ptr(bytes), bytes, global_dst, atl_tag, &req);
 
         update_status(atl_status);
     }
 
+    void reset(size_t idx) override {
+        sched_entry::reset(idx);
+        if (proxy_copy_entry) {
+            proxy_copy_entry->reset(idx);
+        }
+    }
+
+    void start() override {
+        update_fields();
+
+        if (ccl::global_data::env().enable_device_buf_wa && cnt) {
+            if (!proxy_buf) {
+                proxy_buf = sched->alloc_buffer(cnt * dtype.size()
+#ifdef CCL_ENABLE_SYCL
+                                                    ,
+                                                ccl_sched_buf_runtime
+#endif // CCL_ENABLE_SYCL
+                );
+            }
+            if (!proxy_copy_entry) {
+                proxy_copy_entry =
+                    std::shared_ptr<copy_entry>(new copy_entry(sched, buf, proxy_buf, cnt, dtype));
+            }
+
+            proxy_copy_entry->do_progress();
+
+            if (proxy_copy_entry->get_status() != ccl_sched_entry_status_complete) {
+                status = ccl_sched_entry_status_again;
+                return;
+            }
+        }
+
+        if (!proxy_buf) {
+            proxy_buf = buf;
+        }
+
+        start_send();
+    }
+
     void update() override {
         int req_status;
+
         atl_status_t atl_status =
             comm->atl->atl_ep_check(sched->bin->get_atl_ep(), &req_status, &req);
 
@@ -101,4 +140,7 @@ private:
     ccl_comm* comm;
     uint64_t atl_tag = 0;
     atl_req_t req{};
+
+    std::shared_ptr<copy_entry> proxy_copy_entry;
+    ccl_buffer proxy_buf{};
 };

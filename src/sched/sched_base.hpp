@@ -34,6 +34,13 @@ enum ccl_sched_add_mode {
     ccl_sched_add_mode_last_value
 };
 
+enum ccl_sched_buf_type {
+    ccl_sched_buf_system,
+    ccl_sched_buf_runtime,
+
+    ccl_sched_buf_last_value
+};
+
 std::string to_string(ccl_sched_add_mode mode);
 
 struct ccl_sched_buffer_handler {
@@ -87,7 +94,12 @@ struct ccl_sched_base {
 
     size_t get_priority() const;
 
-    ccl_buffer alloc_buffer(size_t bytes);
+    void* alloc_buffer_unmanaged(size_t bytes, ccl_sched_buf_type buf_type = ccl_sched_buf_system);
+    void free_buffer_unmanaged(void* ptr,
+                               size_t bytes,
+                               ccl_sched_buf_type buf_type = ccl_sched_buf_system);
+
+    ccl_buffer alloc_buffer(size_t bytes, ccl_sched_buf_type buf_type = ccl_sched_buf_system);
 
 #ifdef CCL_ENABLE_SYCL
     ccl_buffer alloc_staging_buffer(size_t bytes);

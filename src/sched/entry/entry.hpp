@@ -62,10 +62,6 @@ public:
 
     static const char* status_to_str(ccl_sched_entry_status status);
 
-    virtual bool is_gpu_entry() const noexcept {
-        return false;
-    }
-
     ccl::sched_timer timer;
 
 protected:

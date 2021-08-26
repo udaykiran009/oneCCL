@@ -7,31 +7,47 @@ void sched_entry::do_progress() {
     if (is_completed())
         return;
 
-    bool is_gpu_entry = this->is_gpu_entry();
-
     if (status < ccl_sched_entry_status_started) {
         CCL_THROW_IF_NOT(
             status == ccl_sched_entry_status_not_started || status == ccl_sched_entry_status_again,
             "bad status ",
-            status);
+            status,
+            "(",
+            status_to_str(status),
+            ")");
 
-        // For l0 entry take_credit & return_credit isn't needed
-        // That's why we'd skip it
-        if (is_gpu_entry || sched->flow_control.take_credit()) {
-            if (ccl::global_data::env().sched_profile) {
+        bool took_credits = false;
+        if (status == ccl_sched_entry_status_not_started) {
+            took_credits = sched->flow_control.take_credit();
+            if (took_credits && ccl::global_data::env().sched_profile) {
                 timer.start();
             }
-            start();
-            CCL_THROW_IF_NOT(status >= ccl_sched_entry_status_again, "bad status ", status);
         }
-        else {
-            status = ccl_sched_entry_status_again;
+        else if (status == ccl_sched_entry_status_again) {
+            took_credits = true;
         }
+
+        if (!took_credits) {
+            return;
+        }
+
+        start();
+        CCL_THROW_IF_NOT(status >= ccl_sched_entry_status_again,
+                         "bad status ",
+                         status,
+                         "(",
+                         status_to_str(status),
+                         ")");
     }
     else if (status == ccl_sched_entry_status_started) {
         LOG_TRACE("update entry ", name());
         update();
-        CCL_THROW_IF_NOT(status >= ccl_sched_entry_status_started, "bad status ", status);
+        CCL_THROW_IF_NOT(status >= ccl_sched_entry_status_started,
+                         "bad status ",
+                         status,
+                         "(",
+                         status_to_str(status),
+                         ")");
     }
 
     if (status == ccl_sched_entry_status_complete) {
@@ -39,16 +55,20 @@ void sched_entry::do_progress() {
             timer.stop();
         }
 
-        if (!is_gpu_entry) {
-            sched->flow_control.return_credit();
-        }
-
         if (exec_mode == ccl_sched_entry_exec_once) {
             status = ccl_sched_entry_status_complete_once;
         }
+
+        sched->flow_control.return_credit();
     }
 
-    // TODO: what if status is ccl_sched_entry_status_failed or ccl_sched_entry_status_invalid?
+    CCL_THROW_IF_NOT(
+        status != ccl_sched_entry_status_failed && status != ccl_sched_entry_status_invalid,
+        "bad status ",
+        status,
+        "(",
+        status_to_str(status),
+        ")");
 }
 
 bool sched_entry::is_completed() {
@@ -58,7 +78,7 @@ bool sched_entry::is_completed() {
 
 void sched_entry::update() {
     /*
-       update is required for communication/synchronization/wait_value ops
+       update is required for async ops (atl, ze, sync)
        for other ops it is empty method
     */
 }

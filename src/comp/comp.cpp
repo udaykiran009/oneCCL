@@ -129,12 +129,12 @@ ccl::status ccl_comp_reduce(ccl_sched* sched,
     size_t bytes = in_count * dtype.size();
 
     if (in_ptr_type == sycl::usm::alloc::device) {
-        host_in_buf = CCL_MALLOC(bytes, "host_in_buf");
+        host_in_buf = sched->alloc_buffer_unmanaged(bytes, ccl_sched_buf_runtime);
         q->memcpy(host_in_buf, in_buf, bytes).wait();
     }
 
     if (inout_ptr_type == sycl::usm::alloc::device) {
-        host_inout_buf = CCL_MALLOC(bytes, "host_inout_buf");
+        host_inout_buf = sched->alloc_buffer_unmanaged(bytes, ccl_sched_buf_runtime);
         q->memcpy(host_inout_buf, inout_buf, bytes).wait();
     }
 
@@ -142,12 +142,12 @@ ccl::status ccl_comp_reduce(ccl_sched* sched,
         host_in_buf, in_count, host_inout_buf, out_count, dtype, reduction, reduction_fn, context);
 
     if (host_in_buf != in_buf) {
-        CCL_FREE(host_in_buf);
+        sched->free_buffer_unmanaged(host_in_buf, bytes, ccl_sched_buf_runtime);
     }
 
     if (host_inout_buf != inout_buf) {
         q->memcpy(inout_buf, host_inout_buf, bytes).wait();
-        CCL_FREE(host_inout_buf);
+        sched->free_buffer_unmanaged(host_inout_buf, bytes, ccl_sched_buf_runtime);
     }
 
     return ccl::status::success;

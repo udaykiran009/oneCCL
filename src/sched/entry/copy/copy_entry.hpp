@@ -27,10 +27,6 @@ public:
         return class_name();
     }
 
-    bool is_gpu_entry() const noexcept override {
-        return true;
-    }
-
     copy_entry() = delete;
     copy_entry(ccl_sched* sched,
                ccl_buffer in_buf,

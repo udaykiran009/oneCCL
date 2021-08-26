@@ -18,10 +18,6 @@ public:
         return class_name();
     }
 
-    bool is_gpu_entry() const noexcept override {
-        return true;
-    }
-
     explicit ze_copy_entry(ccl_sched* sched,
                            ccl_buffer in_buf,
                            ccl_buffer out_buf,
