@@ -394,7 +394,12 @@ run()
                             runtime_list="none"
                             if [ "$backend" == "sycl" ];
                             then
-                                runtime_list="opencl level_zero"
+                                if [ "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU" == "atsm" ]
+                                then
+                                    runtime_list="level_zero"
+                                else
+                                    runtime_list="opencl level_zero"
+                                fi
                             fi
 
                             if [ "$transport" == "mpi_gpu" ];
@@ -456,7 +461,12 @@ run()
                         do
                             if [ "$selector" == "gpu" ];
                             then
-                                runtime_list="opencl level_zero"
+                                if [ "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU" == "atsm" ]
+                                then
+                                    runtime_list="level_zero"
+                                else
+                                    runtime_list="opencl level_zero"
+                                fi
                             else
                                 runtime_list="opencl"
                             fi
