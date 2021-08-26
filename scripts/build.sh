@@ -88,8 +88,8 @@ PRE_DROP_DIR="${WORKSPACE}/_predrop/"
 
 if [ -z "${LIBFABRIC_INSTALL_DIR}" ]
 then
-    # OFI ABI 1.2
-    LIBFABRIC_INSTALL_DIR="/p/pdsd/scratch/Uploads/libfabric-1.8.1"
+    # OFI ABI 1.3 + FI_HMEM_ZE
+    LIBFABRIC_INSTALL_DIR="/p/pdsd/scratch/Uploads/IMPI/other/software/libfabric/linux/v1.12.0"
 fi
 
 LIBCCL_SO_VERSION="1.0"
@@ -274,11 +274,14 @@ build()
     export I_MPI_ROOT=$IMPI_DIR
 
     BUILD_FOLDER="build"
+    OFI_HMEM="0"
+
     # TODO: check by dpcpp* mask
     # if [[ "${compute_backend}" == "dpcpp"* ]]
     if [ "${compute_backend}" == "dpcpp_level_zero" ]
     then
         BUILD_FOLDER="build_gpu"
+        OFI_HMEM="1"
     fi
 
     echo "compute_backend =" ${compute_backend}
@@ -289,7 +292,8 @@ build()
 
     if [[ ${ENABLE_CONF} = "yes" ]]; then
         log cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-        -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" \
+        -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" \
+        -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" -DENABLE_OFI_HMEM="${OFI_HMEM}" \
         -DCOMPUTE_BACKEND="${compute_backend}" -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" \
         -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}" \
         "${CMAKE_ADDITIONAL_OPTIONS}"
