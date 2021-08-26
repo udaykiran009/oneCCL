@@ -732,6 +732,7 @@ atl_status_t atl_mpi_set_impi_env(const atl_attr_t& attr, const atl_mpi_lib_attr
         setenv("I_MPI_OFFLOAD_TOPOLIB", "l0", 0);
         setenv("I_MPI_OFFLOAD_QUEUE_CACHE", "1", 0);
         setenv("I_MPI_OFFLOAD_LIST_CACHE", "1", 0);
+        setenv("I_MPI_OFFLOAD_MEMCPY_KIND", "cached", 0);
         if (attr.in.ep_count > 1) {
             /* try to set global lock level before vci level
                because setenv is invoked with overwrite=0 */
