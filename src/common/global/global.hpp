@@ -32,7 +32,6 @@ class ccl_executor;
 class ccl_sched_cache;
 class ccl_parallelizer;
 class ccl_fusion_manager;
-struct ccl_group_context;
 
 template <ccl_coll_type... registered_types_id>
 class ccl_algorithm_selector_wrapper;
@@ -44,24 +43,6 @@ class buffer_cache;
 namespace ze {
 class cache;
 } // namespace ze
-
-// class comm_group;
-// using comm_group_t = std::shared_ptr<comm_group>;
-
-// struct ccl_group_context {
-//      TODO
-//      * In multithreading scenario we use different comm_group_t objects in different threads.
-//      * But we need to match different groups created for the same world in different threads
-//      * The assumption is done: if different groups created from the same communicator color, than they
-//      * should be interpreted as the same groups in the same world.
-//      *
-//      *
-//      * In the final solution the 'group_unique_key' should be equal to unique KVS idenditifier
-
-//     using group_unique_key = typename ccl::ccl_host_attributes_traits<ccl_host_color>::type;
-//     std::map<group_unique_key, comm_group_t> communicator_group_map;
-//     ccl_spinlock mutex;
-// };
 
 class global_data {
 public:
@@ -101,9 +82,6 @@ public:
 
     static thread_local bool is_worker_thread;
     bool is_ft_enabled;
-
-    //TODO new_api configure thread wait timeout
-    size_t thread_barrier_wait_timeout_sec = 5;
 
 private:
     global_data();

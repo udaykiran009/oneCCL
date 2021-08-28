@@ -160,6 +160,7 @@ atl_status_t atl_ofi::atl_init(int* argc,
     size_t idx = 0, ep_idx = 0, prov_idx = 0;
     char* prov_name = nullptr;
     char* prov_env = nullptr;
+    char* fi_version_env = nullptr;
     atl_ofi_prov_t* prov = nullptr;
     char *max_retry_count_env = nullptr, *progress_mode_env = nullptr;
     int open_nw_provs = 1;
@@ -179,6 +180,19 @@ atl_status_t atl_ofi::atl_init(int* argc,
             LOG_ERROR("atl_ofi_set_env error");
             return ATL_STATUS_FAILURE;
         }
+
+        fi_version_env = getenv(ATL_OFI_MAJOR_VERSION);
+        if (fi_version_env) {
+            global_data.fi_major_version = safe_c_strtol(fi_version_env, nullptr, 10);
+        }
+
+        fi_version_env = getenv(ATL_OFI_MINOR_VERSION);
+        if (fi_version_env) {
+            global_data.fi_minor_version = safe_c_strtol(fi_version_env, nullptr, 10);
+        }
+
+        LOG_INFO("fi_version: ", global_data.fi_major_version, ".", global_data.fi_minor_version);
+
 #ifdef CCL_ENABLE_OFI_HMEM
         atl_ofi_init_ze_data();
 #endif // CCL_ENABLE_OFI_HMEM
@@ -221,7 +235,6 @@ atl_status_t atl_ofi::atl_init(int* argc,
     base_hints->domain_attr->control_progress = FI_PROGRESS_MANUAL;
     base_hints->domain_attr->data_progress = FI_PROGRESS_MANUAL;
     base_hints->caps = FI_TAGGED;
-    base_hints->caps |= FI_DIRECTED_RECV;
 
     prov_env = getenv("FI_PROVIDER");
 
@@ -246,7 +259,7 @@ atl_status_t atl_ofi::atl_init(int* argc,
 
     cache.init(attr->in.ep_count, ofi_ctx->enable_hmem);
 
-    fi_version = FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION);
+    fi_version = FI_VERSION(global_data.fi_major_version, global_data.fi_minor_version);
 
     if (coord->global_idx == 0)
         LOG_INFO("libfabric version: ", fi_tostr("1" /* ignored */, FI_TYPE_VERSION));
@@ -309,6 +322,9 @@ atl_status_t atl_ofi::atl_init(int* argc,
     if (ofi_ctx->mnic_type == ATL_MNIC_NONE)
         ofi_ctx->mnic_count = 1;
 
+    attr->out.tag_bits = 64;
+    attr->out.max_tag = 0xFFFFFFFFFFFFFFFF;
+
     /* open SHM provider */
     if (enable_shm) {
         prov_idx = ofi_ctx->shm_prov_idx;
@@ -317,7 +333,7 @@ atl_status_t atl_ofi::atl_init(int* argc,
         prov->idx = prov_idx;
         prov->is_shm = 1;
         ATL_CALL(atl_ofi_get_prov_list(ctx, prov_name, base_hints, &prov_list), goto err);
-        ATL_CALL(atl_ofi_prov_init(ctx, prov_list, prov, pmi), goto err);
+        ATL_CALL(atl_ofi_prov_init(ctx, prov_list, prov, attr, pmi), goto err);
         free(prov_name);
         fi_freeinfo(prov_list);
         ofi_ctx->prov_count++;
@@ -329,7 +345,7 @@ atl_status_t atl_ofi::atl_init(int* argc,
     }
 
     if (open_nw_provs) {
-        ATL_CALL(atl_ofi_open_nw_provs(ctx, base_hints, pmi), goto err);
+        ATL_CALL(atl_ofi_open_nw_provs(ctx, base_hints, attr, pmi), goto err);
         ofi_ctx->mnic_count = ofi_ctx->nw_prov_count;
     }
 
@@ -417,8 +433,6 @@ atl_status_t atl_ofi::atl_init(int* argc,
     attr->out.enable_device_buf = ofi_ctx->enable_hmem;
     attr->out.mnic_type = ofi_ctx->mnic_type;
     attr->out.mnic_count = ofi_ctx->mnic_count;
-    attr->out.tag_bits = 64;
-    attr->out.max_tag = 0xFFFFFFFFFFFFFFFF;
     attr->out.max_order_waw_size = 0;
 
     return ATL_STATUS_SUCCESS;

@@ -30,8 +30,10 @@
 #define ATL_OFI_FI_ADDR_PM_KEY  ATL_OFI_BASE_PM_KEY "-fiaddr"
 #define ATL_OFI_HOSTNAME_PM_KEY ATL_OFI_BASE_PM_KEY "-hostname"
 
-#define ATL_OFI_TIMEOUT_SEC_ENV     "ATL_OFI_TIMEOUT_SEC"
-#define ATL_OFI_MAX_RETRY_COUNT_ENV "ATL_OFI_MAX_RETRY_COUNT"
+#define ATL_OFI_MAJOR_VERSION       "CCL_ATL_OFI_MAJOR_VERSION"
+#define ATL_OFI_MINOR_VERSION       "CCL_ATL_OFI_MINOR_VERSION"
+#define ATL_OFI_TIMEOUT_SEC_ENV     "CCL_ATL_OFI_TIMEOUT_SEC"
+#define ATL_OFI_MAX_RETRY_COUNT_ENV "CCL_ATL_OFI_MAX_RETRY_COUNT"
 
 #define ATL_OFI_DEFAULT_TIMEOUT_SEC 60
 #define ATL_OFI_MAX_RETRY_COUNT     10000
@@ -226,11 +228,20 @@ typedef struct atl_ofi_global_data {
     void* dlhandle;
     char prov_env_copy[ATL_OFI_MAX_PROV_ENV_LEN];
 
+    int fi_major_version;
+    int fi_minor_version;
+
 #ifdef CCL_ENABLE_OFI_HMEM
     atl_ofi_ze_data ze_data;
 #endif // CCL_ENABLE_OFI_HMEM
 
-    atl_ofi_global_data() : ctx_count(0), is_env_inited(0), dlhandle(nullptr), prov_env_copy() {
+    atl_ofi_global_data()
+            : ctx_count(0),
+              is_env_inited(0),
+              dlhandle(nullptr),
+              prov_env_copy(),
+              fi_major_version(FI_MAJOR_VERSION),
+              fi_minor_version(FI_MINOR_VERSION) {
         memset(prov_env_copy, 0, sizeof(prov_env_copy));
     }
 } atl_ofi_global_data_t;
@@ -273,11 +284,14 @@ atl_status_t atl_ofi_get_prov_list(atl_ctx_t* ctx,
 atl_status_t atl_ofi_prov_init(atl_ctx_t* ctx,
                                struct fi_info* info,
                                atl_ofi_prov_t* prov,
+                               atl_attr_t* attr,
                                std::unique_ptr<ipmi>& pmi);
+atl_status_t atl_ofi_adjust_out_tag(atl_ofi_prov_t* prov, atl_attr_t* attr);
 int atl_ofi_nic_already_used(const struct fi_info* prov, struct fi_info** others, size_t nic_count);
 int atl_ofi_is_nic_local(struct fi_info* info);
 atl_status_t atl_ofi_parse_mnic_name(atl_ctx_t* ctx, std::string str_to_parse);
 int atl_ofi_is_allowed_nic_name(atl_ofi_ctx_t* ofi_ctx, struct fi_info* info);
 atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
                                    struct fi_info* base_hints,
+                                   atl_attr_t* attr,
                                    std::unique_ptr<ipmi>& pmi);

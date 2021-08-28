@@ -25,8 +25,6 @@ global_data::global_data() {
        to ensure static objects construction/destruction rule */
     LOG_INFO("create global_data object");
 
-    //TODO new_api configure thread wait timeout
-    thread_barrier_wait_timeout_sec = 5;
     kernel_counter = 0;
 }
 

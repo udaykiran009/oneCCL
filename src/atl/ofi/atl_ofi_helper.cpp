@@ -811,7 +811,7 @@ atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
     */
     global_data.dlhandle = dlopen("libfabric.so", RTLD_GLOBAL | RTLD_NOW);
     if (global_data.dlhandle == nullptr) {
-        CCL_THROW("dlopen (libfabric.so): ", dlerror());
+        LOG_WARN("dlopen (libfabric.so): ", dlerror());
     }
 
     global_data.is_env_inited = 1;
@@ -826,7 +826,7 @@ atl_status_t atl_ofi_get_prov_list(atl_ctx_t* ctx,
     struct fi_info* hints = nullptr;
     struct fi_info* prov_list = nullptr;
     ssize_t ret = 0;
-    int fi_version = FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION);
+    int fi_version = FI_VERSION(global_data.fi_major_version, global_data.fi_minor_version);
     const char* prov_name_str = (prov_name) ? prov_name : "<default>";
 
     hints = fi_dupinfo(base_hints);
@@ -879,6 +879,7 @@ err:
 atl_status_t atl_ofi_prov_init(atl_ctx_t* ctx,
                                struct fi_info* info,
                                atl_ofi_prov_t* prov,
+                               atl_attr_t* attr,
                                std::unique_ptr<ipmi>& pmi) {
     struct fi_av_attr av_attr;
     size_t ep_idx = 0;
@@ -946,11 +947,51 @@ atl_status_t atl_ofi_prov_init(atl_ctx_t* ctx,
         goto err;
     }
 
+    ATL_CALL(atl_ofi_adjust_out_tag(prov, attr), goto err);
+
     return ATL_STATUS_SUCCESS;
 
 err:
     LOG_ERROR("can't init provider ", atl_ofi_get_nic_name(info));
     return ATL_STATUS_FAILURE;
+}
+
+atl_status_t atl_ofi_adjust_out_tag(atl_ofi_prov_t* prov, atl_attr_t* attr) {
+    size_t tag_bits = 64;
+    uint64_t mem_tag_format = prov->info->ep_attr->mem_tag_format;
+    while (tag_bits && !(mem_tag_format & ((uint64_t)1 << (tag_bits - 1)))) {
+        tag_bits--;
+    }
+
+    attr->out.tag_bits = std::min(attr->out.tag_bits, tag_bits);
+
+    if (attr->out.tag_bits == 64) {
+        attr->out.max_tag = 0xFFFFFFFFFFFFFFFF;
+    }
+    else {
+        attr->out.max_tag = (((uint64_t)1 << attr->out.tag_bits) - 1);
+    }
+
+    const char* prov_name = prov->info->fabric_attr->prov_name;
+
+    CCL_THROW_IF_NOT(attr->out.tag_bits > 0,
+                     "unexpected tag_bits ",
+                     attr->out.tag_bits,
+                     " for prov ",
+                     prov_name);
+
+    CCL_THROW_IF_NOT(
+        attr->out.max_tag > 0, "unexpected max_tag ", attr->out.max_tag, " for prov ", prov_name);
+
+    LOG_INFO(prov_name,
+             " tag_bits: ",
+             attr->out.tag_bits,
+             ", max_tag: ",
+             attr->out.max_tag,
+             ", mem_tag_format: ",
+             mem_tag_format);
+
+    return ATL_STATUS_SUCCESS;
 }
 
 /* determine if NIC has already been included in others */
@@ -1116,6 +1157,7 @@ int atl_ofi_is_allowed_nic_name(atl_ofi_ctx_t* ofi_ctx, struct fi_info* info) {
 
 atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
                                    struct fi_info* base_hints,
+                                   atl_attr_t* attr,
                                    std::unique_ptr<ipmi>& pmi) {
     atl_status_t ret = ATL_STATUS_SUCCESS;
     struct fi_info* prov_list = nullptr;
@@ -1237,7 +1279,7 @@ atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
         prov = &ofi_ctx->provs[prov_idx];
         prov->idx = prov_idx;
         prov->is_shm = 0;
-        ATL_CALL(atl_ofi_prov_init(ctx, final_prov_list[idx], prov, pmi), goto err);
+        ATL_CALL(atl_ofi_prov_init(ctx, final_prov_list[idx], prov, attr, pmi), goto err);
     }
 
 exit:
