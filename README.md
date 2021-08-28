@@ -57,7 +57,6 @@ You can also do the following during installation:
 - [Specify `SYCL` cross-platform abstraction level](INSTALL.md#specify-sycl-cross-platform-abstraction-level)
 - [Specify the build type](INSTALL.md#specify-the-build-type)
 - [Enable `make` verbose output](INSTALL.md#enable-make-verbose-output)
-- [Build with address sanitizer](INSTALL.md#build-with-address-sanitizer)
 
 ## Usage
 
