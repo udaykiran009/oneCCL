@@ -55,8 +55,6 @@ private:
     ze_device_handle_t device{};
     ccl_comm* comm{};
     mem_handle_map_t handles;
-
-    size_t get_ptr_diff(const void* ptr1, const void* ptr2) noexcept;
 };
 
 } // namespace ze

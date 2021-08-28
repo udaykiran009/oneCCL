@@ -358,7 +358,7 @@ run()
                     continue
                 fi
                 transport_name="mpi"
-                ccl_transport_env="CCL_ATL_DEVICE_BUF=1 CCL_ATL_DEVICE_BUF_WA=1 ${ccl_transport_env}"
+                ccl_transport_env="CCL_ATL_DEVICE_BUF=1 CCL_ATL_SEND_PROXY=usm ${ccl_transport_env}"
             fi
             ccl_transport_env="CCL_ATL_TRANSPORT=${transport_name} ${ccl_transport_env}"
 

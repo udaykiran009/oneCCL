@@ -39,7 +39,7 @@ constexpr const char* CCL_ATL_TRANSPORT = "CCL_ATL_TRANSPORT";
 constexpr const char* CCL_ATL_SHM = "CCL_ATL_SHM";
 constexpr const char* CCL_ATL_RMA = "CCL_ATL_RMA";
 constexpr const char* CCL_ATL_DEVICE_BUF = "CCL_ATL_DEVICE_BUF";
-constexpr const char* CCL_ATL_DEVICE_BUF_WA = "CCL_ATL_DEVICE_BUF_WA";
+constexpr const char* CCL_ATL_SEND_PROXY = "CCL_ATL_SEND_PROXY";
 constexpr const char* CCL_ATL_SYNC_COLL = "CCL_ATL_SYNC_COLL";
 constexpr const char* CCL_ATL_EXTRA_EP = "CCL_ATL_EXTRA_EP";
 constexpr const char* CCL_ATL_CACHE = "CCL_ATL_CACHE";
@@ -111,6 +111,12 @@ enum ccl_priority_mode { ccl_priority_none, ccl_priority_direct, ccl_priority_li
 
 enum ccl_atl_transport { ccl_atl_ofi, ccl_atl_mpi };
 
+enum ccl_atl_send_proxy {
+    ccl_atl_send_proxy_none,
+    ccl_atl_send_proxy_regular,
+    ccl_atl_send_proxy_usm
+};
+
 enum ccl_staging_buffer { ccl_staging_regular, ccl_staging_usm };
 
 enum ccl_ze_copy_engine_mode {
@@ -156,7 +162,7 @@ public:
     int enable_shm;
     int enable_rma;
     int enable_device_buf;
-    int enable_device_buf_wa;
+    ccl_atl_send_proxy atl_send_proxy;
     int enable_atl_cache;
     int enable_sync_coll;
     int enable_extra_ep;
@@ -297,6 +303,7 @@ public:
 
     static std::map<ccl_priority_mode, std::string> priority_mode_names;
     static std::map<ccl_atl_transport, std::string> atl_transport_names;
+    static std::map<ccl_atl_send_proxy, std::string> atl_send_proxy_names;
     static std::map<ccl_staging_buffer, std::string> staging_buffer_names;
     static std::map<ccl_ze_copy_engine_mode, std::string> ze_copy_engine_names;
     static std::map<atl_mnic_t, std::string> mnic_type_names;

@@ -97,7 +97,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
         if (data.fusion_manager->add(sched)) {
             LOG_DEBUG("sched ",
                       sched,
-                      ", ctype ",
+                      ", coll ",
                       ccl_coll_type_to_str(sched->coll_param.ctype),
                       " will be fused");
             return sched;

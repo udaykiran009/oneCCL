@@ -233,9 +233,9 @@ extern ccl_logger logger;
                          basedir_static(__FILE__), \
                          ":", \
                          __LINE__, \
-                         "  ", \
-                         __FUNCTION__, \
                          " ", \
+                         __FUNCTION__, \
+                         ": ", \
                          ##__VA_ARGS__); \
         } \
     }
@@ -261,9 +261,9 @@ extern ccl_logger logger;
                          basedir_static(__FILE__), \
                          ":", \
                          __LINE__, \
-                         "  ", \
-                         __FUNCTION__, \
                          " ", \
+                         __FUNCTION__, \
+                         ": ", \
                          ##__VA_ARGS__); \
         } \
     }
@@ -275,9 +275,9 @@ extern ccl_logger logger;
                          basedir_static(__FILE__), \
                          ":", \
                          __LINE__, \
-                         "  ", \
-                         __FUNCTION__, \
                          " ", \
+                         __FUNCTION__, \
+                         ": ", \
                          ##__VA_ARGS__); \
         } \
     }
@@ -298,11 +298,11 @@ extern ccl_logger logger;
     do { \
         std::stringstream throw_msg_ss; \
         ccl_logger::format(throw_msg_ss, \
-                           __FILENAME__, \
-                           ":", \
-                           __FUNCTION__, \
+                           basedir_static(__FILE__), \
                            ":", \
                            __LINE__, \
+                           " ", \
+                           __FUNCTION__, \
                            ": EXCEPTION: ", \
                            ##__VA_ARGS__); \
         throw ccl::exception(throw_msg_ss.str()); \
@@ -315,11 +315,11 @@ extern ccl_logger logger;
     do { \
         std::stringstream throw_msg_ss; \
         ccl_logger::format(throw_msg_ss, \
-                           __FILENAME__, \
-                           ":", \
-                           __FUNCTION__, \
+                           basedir_static(__FILE__), \
                            ":", \
                            __LINE__, \
+                           " ", \
+                           __FUNCTION__, \
                            ": EXCEPTION: ", \
                            ##__VA_ARGS__); \
         LOG_ERROR("Error - ", ##__VA_ARGS__); \

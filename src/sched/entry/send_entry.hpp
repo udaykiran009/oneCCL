@@ -40,29 +40,45 @@ public:
             "SEND entry dst ", global_dst, ", tag ", atl_tag, ", req ", &req, ", bytes ", bytes);
 
         atl_status_t atl_status = comm->atl->atl_ep_send(
-            sched->bin->get_atl_ep(), proxy_buf.get_ptr(bytes), bytes, global_dst, atl_tag, &req);
+            sched->bin->get_atl_ep(), send_buf.get_ptr(bytes), bytes, global_dst, atl_tag, &req);
 
         update_status(atl_status);
     }
 
     void reset(size_t idx) override {
         sched_entry::reset(idx);
+#ifdef CCL_ENABLE_SYCL
         if (proxy_copy_entry) {
             proxy_copy_entry->reset(idx);
         }
+#endif // CCL_ENABLE_SYCL
     }
 
     void start() override {
         update_fields();
 
-        if (ccl::global_data::env().enable_device_buf_wa && cnt) {
-            if (!proxy_buf) {
-                proxy_buf = sched->alloc_buffer(cnt * dtype.size()
+        send_buf = buf;
+
 #ifdef CCL_ENABLE_SYCL
-                                                    ,
-                                                ccl_sched_buf_runtime
-#endif // CCL_ENABLE_SYCL
-                );
+        if (sched->coll_param.stream && cnt &&
+            (ccl::global_data::env().atl_send_proxy != ccl_atl_send_proxy_none) &&
+            (proxy_mode == proxy_copy_mode::unknown)) {
+            sycl::usm::alloc ptr_type = sycl::usm::alloc::unknown;
+            if (sched->coll_param.stream->get_type() == stream_type::gpu) {
+                auto sycl_queue = sched->coll_param.stream->get_native_stream();
+                ptr_type = sycl::get_pointer_type(buf.get_ptr(), sycl_queue.get_context());
+            }
+            proxy_mode = (ptr_type == sycl::usm::alloc::device) ? proxy_copy_mode::enabled
+                                                                : proxy_copy_mode::disabled;
+        }
+
+        if (proxy_mode == proxy_copy_mode::enabled) {
+            if (!proxy_buf) {
+                ccl_sched_buf_type buf_type =
+                    (ccl::global_data::env().atl_send_proxy == ccl_atl_send_proxy_regular)
+                        ? ccl_sched_buf_system
+                        : ccl_sched_buf_runtime;
+                send_buf = proxy_buf = sched->alloc_buffer(cnt * dtype.size(), buf_type);
             }
             if (!proxy_copy_entry) {
                 proxy_copy_entry =
@@ -76,10 +92,7 @@ public:
                 return;
             }
         }
-
-        if (!proxy_buf) {
-            proxy_buf = buf;
-        }
+#endif // CCL_ENABLE_SYCL
 
         start_send();
     }
@@ -141,6 +154,12 @@ private:
     uint64_t atl_tag = 0;
     atl_req_t req{};
 
+    ccl_buffer send_buf;
+
+#ifdef CCL_ENABLE_SYCL
+    enum class proxy_copy_mode { unknown, enabled, disabled };
+    proxy_copy_mode proxy_mode = proxy_copy_mode::unknown;
     std::shared_ptr<copy_entry> proxy_copy_entry;
     ccl_buffer proxy_buf{};
+#endif // CCL_ENABLE_SYCL
 };

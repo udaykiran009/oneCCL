@@ -204,13 +204,9 @@ void ipc_handle_manager::get_address_range(const void* ptr, void** base_ptr, siz
               ", base ptr: ",
               *base_ptr,
               ", offset: ",
-              get_ptr_diff(*base_ptr, ptr),
+              ccl_get_ptr_diff(*base_ptr, ptr),
               ", size: ",
               *size);
-}
-
-size_t ipc_handle_manager::get_ptr_diff(const void* ptr1, const void* ptr2) noexcept {
-    return static_cast<const char*>(ptr2) - static_cast<const char*>(ptr1);
 }
 
 } // namespace ze

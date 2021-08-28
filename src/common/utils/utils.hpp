@@ -131,6 +131,10 @@
 
 /* other */
 
+static inline size_t ccl_get_ptr_diff(const void* ptr1, const void* ptr2) {
+    return static_cast<const char*>(ptr2) - static_cast<const char*>(ptr1);
+}
+
 static inline size_t ccl_pof2(size_t number) {
     size_t last_bit_mask = ((size_t)1 << (8 * sizeof(size_t) - 1));
     if (number & last_bit_mask) {

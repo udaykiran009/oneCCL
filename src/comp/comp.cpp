@@ -97,6 +97,10 @@ ccl::status ccl_comp_reduce(ccl_sched* sched,
                             ccl::reduction reduction,
                             ccl::reduction_fn reduction_fn,
                             const ccl::fn_context* context) {
+    if (!in_count) {
+        return ccl::status::success;
+    }
+
 #ifdef CCL_ENABLE_SYCL
     ccl_stream* stream = (ccl_stream*)sched->coll_param.stream;
 

@@ -130,7 +130,7 @@ bool ccl_sched_key::operator==(const ccl_sched_key& k) const {
 }
 
 void ccl_sched_key::print() const {
-    LOG_DEBUG("ctype ",
+    LOG_DEBUG("coll ",
               ccl_coll_type_to_str(f.ctype),
               ", dtype ",
               ccl::global_data::get().dtypes->name(f.dtype),

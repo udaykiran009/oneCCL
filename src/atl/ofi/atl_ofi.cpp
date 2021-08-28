@@ -57,11 +57,6 @@ void atl_ofi::mr_cache::get(fid_domain* domain, void* buf, size_t bytes, fid_mr*
     CCL_THROW_IF_NOT(domain);
     CCL_THROW_IF_NOT(mr);
 
-    if (!buf) {
-        *mr = nullptr;
-        return;
-    }
-
     if (ccl::global_data::env().enable_atl_cache) {
         key_t key(domain, buf, bytes);
         auto key_value = cache.find(key);
@@ -83,12 +78,21 @@ void atl_ofi::mr_cache::get(fid_domain* domain, void* buf, size_t bytes, fid_mr*
     mr_attr.requested_key = mr_key++;
 
 #ifdef CCL_ENABLE_OFI_HMEM
+
     mr_attr.iface = FI_HMEM_SYSTEM;
+    mr_attr.device.ze = 0;
 
     atl_ofi_ze_data& ze_data = global_data.ze_data;
     ze_memory_allocation_properties_t alloc_props = ccl::ze::default_alloc_props;
     ze_device_handle_t alloc_dev = nullptr;
     ZE_CALL(zeMemGetAllocProperties, (ze_data.context, buf, &alloc_props, &alloc_dev));
+
+    LOG_DEBUG("alloc_props: dev ", alloc_dev, ", type ", alloc_props.type);
+
+    if (alloc_props.type == ZE_MEMORY_TYPE_HOST || alloc_props.type == ZE_MEMORY_TYPE_DEVICE ||
+        alloc_props.type == ZE_MEMORY_TYPE_SHARED) {
+        mr_attr.iface = FI_HMEM_ZE;
+    }
 
     if (alloc_dev) {
         ze_device_properties_t alloc_dev_props = ccl::ze::default_device_props;
@@ -101,19 +105,26 @@ void atl_ofi::mr_cache::get(fid_domain* domain, void* buf, size_t bytes, fid_mr*
 
             if (!std::memcmp(&dev_props.uuid, &alloc_dev_props.uuid, sizeof(ze_device_uuid_t))) {
                 dev_idx = idx;
-                LOG_DEBUG("ze device idx ", dev_idx, " corresponds to buffer ", buf);
+                LOG_DEBUG("buf ", buf, " corresponds to ze device idx ", dev_idx);
                 break;
             }
         }
         CCL_THROW_IF_NOT(dev_idx != -1);
-
-        mr_attr.iface = FI_HMEM_ZE;
         mr_attr.device.ze = dev_idx;
     }
 #endif // CCL_ENABLE_OFI_HMEM
 
-    int ret = fi_mr_regattr(domain, &mr_attr, 0, mr);
-    CCL_THROW_IF_NOT(!ret, "failed to register mr, ret ", ret);
+    int ofi_ret;
+    ATL_OFI_CALL(fi_mr_regattr(domain, &mr_attr, 0, mr),
+                 ofi_ret,
+                 CCL_THROW("failed to register mr, ret: ",
+                           ofi_ret,
+                           ", buf: ",
+                           buf,
+                           ", bytes: ",
+                           bytes,
+                           ", iface: ",
+                           mr_attr.iface));
 
     if (ccl::global_data::env().enable_atl_cache) {
         key_t key(domain, buf, bytes);
@@ -668,6 +679,8 @@ atl_status_t atl_ofi::atl_ep_probe(atl_ep_t* ep,
                                    uint64_t tag,
                                    int* found,
                                    size_t* recv_len) {
+    CCL_THROW("unexpected path");
+
     atl_status_t ret;
     atl_ofi_req_t reqs[ATL_OFI_MAX_PROV_COUNT];
     struct fi_msg_tagged msgs[ATL_OFI_MAX_PROV_COUNT];

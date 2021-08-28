@@ -168,37 +168,37 @@ std::string ccl_coll_param::to_string() const {
 
 void* ccl_coll_param::get_send_buf(size_t idx, ccl_coll_param::buf_type type) const {
     auto& vec = (type == ccl_coll_param::buf_type::regular) ? send_bufs : device_send_bufs;
-    CCL_THROW_IF_NOT(idx < vec.size(), "ctype ", ctype, ", unexpected idx ", idx);
+    CCL_THROW_IF_NOT(idx < vec.size(), "coll ", ctype, ", unexpected idx ", idx);
     return vec[idx];
 }
 
 void* ccl_coll_param::get_recv_buf(size_t idx, ccl_coll_param::buf_type type) const {
     auto& vec = (type == ccl_coll_param::buf_type::regular) ? recv_bufs : device_recv_bufs;
-    CCL_THROW_IF_NOT(idx < vec.size(), "ctype ", ctype, ", unexpected idx ", idx);
+    CCL_THROW_IF_NOT(idx < vec.size(), "coll ", ctype, ", unexpected idx ", idx);
     return vec[idx];
 }
 
 void* ccl_coll_param::get_send_buf_ptr(size_t idx, ccl_coll_param::buf_type type) const {
     auto& vec = (type == ccl_coll_param::buf_type::regular) ? send_bufs : device_send_bufs;
-    CCL_THROW_IF_NOT(idx < vec.size(), "ctype ", ctype, ", unexpected idx ", idx);
+    CCL_THROW_IF_NOT(idx < vec.size(), "coll ", ctype, ", unexpected idx ", idx);
     void* res = (void*)(&vec[idx]);
     return res;
 }
 
 void* ccl_coll_param::get_recv_buf_ptr(size_t idx, ccl_coll_param::buf_type type) const {
     auto& vec = (type == ccl_coll_param::buf_type::regular) ? recv_bufs : device_recv_bufs;
-    CCL_THROW_IF_NOT(idx < vec.size(), "ctype ", ctype, ", unexpected idx ", idx);
+    CCL_THROW_IF_NOT(idx < vec.size(), "coll ", ctype, ", unexpected idx ", idx);
     void* res = (void*)(&vec[idx]);
     return res;
 }
 
 size_t ccl_coll_param::get_send_count(size_t idx) const {
-    CCL_THROW_IF_NOT(idx < send_counts.size(), "ctype ", ctype, ", unexpected idx ", idx);
+    CCL_THROW_IF_NOT(idx < send_counts.size(), "coll ", ctype, ", unexpected idx ", idx);
     return send_counts[idx];
 }
 
 size_t ccl_coll_param::get_recv_count(size_t idx) const {
-    CCL_THROW_IF_NOT(idx < recv_counts.size(), "ctype ", ctype, ", unexpected idx ", idx);
+    CCL_THROW_IF_NOT(idx < recv_counts.size(), "coll ", ctype, ", unexpected idx ", idx);
     return recv_counts[idx];
 }
 

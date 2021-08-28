@@ -21,7 +21,7 @@ void coll_entry::start() {
 
     LOG_DEBUG("starting COLL entry: ", this, ", subsched: ", coll_sched.get());
     auto req = sched->start_subsched(coll_sched.get());
-    LOG_DEBUG(" started COLL entry: ", this, ", subsched ", coll_sched.get(), ", req ", req);
+    LOG_DEBUG("started COLL entry: ", this, ", subsched ", coll_sched.get(), ", req ", req);
 
     status = ccl_sched_entry_status_started;
 }

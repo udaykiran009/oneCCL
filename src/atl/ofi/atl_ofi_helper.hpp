@@ -73,7 +73,7 @@
         (ret_val) = func; \
         if ((ret_val) != FI_SUCCESS) { \
             LOG_ERROR( \
-                #func "\n fails with ret: ", ret_val, ", strerror:", fi_strerror(-(ret_val))); \
+                #func "\n fails with ret: ", ret_val, ", strerror: ", fi_strerror(-(ret_val))); \
             err_action; \
         } \
     } while (0)
