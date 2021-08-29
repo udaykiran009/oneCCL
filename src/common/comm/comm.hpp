@@ -24,10 +24,12 @@ class kvs_interface;
 
 class alignas(CACHELINE_SIZE) ccl_comm {
 public:
-    //TODO
+    static constexpr int invalid_rank = -1;
+
     ccl::host_communicator* get_host_comm() {
         return host_comm;
     }
+
     static void ccl_comm_reset_thread_barrier();
     ccl_comm() = delete;
     ccl_comm(const ccl_comm& other) = delete;
@@ -39,6 +41,7 @@ public:
              std::shared_ptr<atl_wrapper> atl,
              bool share_resources = false,
              ccl::host_communicator* host_comm = nullptr);
+
     ccl_comm(int rank,
              int size,
              ccl_comm_id_storage::comm_id&& id,

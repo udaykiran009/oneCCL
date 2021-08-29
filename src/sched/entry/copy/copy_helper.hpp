@@ -11,21 +11,20 @@
 enum class copy_direction { undefined, h2h, d2h, h2d, d2d };
 std::string to_string(copy_direction val);
 
-class copy_helper {
-public:
-    static const int invalid_rank;
-};
-
 struct copy_attr {
     int peer_rank;
     size_t peer_buf_idx;
     copy_direction direction;
+    ccl_comm* map_comm;
     size_t in_buf_offset;
 
-    copy_attr(int peer_rank, size_t peer_buf_idx, copy_direction direction, size_t in_buf_offset);
-    copy_attr(int peer_rank = copy_helper::invalid_rank,
+    copy_attr(int peer_rank = ccl_comm::invalid_rank,
+              size_t peer_buf_idx = 0,
               copy_direction direction = copy_direction::undefined,
+              ccl_comm* map_comm = nullptr,
               size_t in_buf_offset = 0);
+
+    copy_attr(copy_direction direction, size_t in_buf_offset = 0);
 };
 
 #ifdef CCL_ENABLE_SYCL

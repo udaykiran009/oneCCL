@@ -4,10 +4,21 @@
 #include "coll/coll_param.hpp"
 #include "coll/selection/selection.hpp"
 #include "common/global/global.hpp"
+#include "common/comm/comm.hpp"
+#include "common/comm/host_communicator/host_communicator.hpp"
 #include "sched/buffer_cache.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 #include "sched/sched_base.hpp"
 
+ccl_sched_base::ccl_sched_base(const ccl_coll_param& coll_param) : coll_param(coll_param) {
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+    if (coll_param.stream) {
+        ccl_comm* node_comm =
+            coll_param.comm->get_host_comm()->get_node_comm().get()->get_ccl_comm().get();
+        memory.handle_manager.init(node_comm, coll_param.stream);
+    }
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+}
 std::string to_string(ccl_sched_add_mode mode) {
     switch (mode) {
         case ccl_sched_add_front: return "FRONT";

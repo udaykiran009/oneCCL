@@ -18,14 +18,13 @@ ze_reduce_entry::ze_reduce_entry(ccl_sched* sched,
                                  reduction op,
                                  int root,
                                  ccl_comm* comm)
-        : ze_base_entry(sched, 2 /* request additional events */),
+        : ze_base_entry(sched, comm, 2 /* request additional events */),
           send_buf(send_buf),
           recv_buf(recv_buf),
           cnt(cnt),
           dtype(dtype),
           op(op),
           root(root),
-          comm(comm),
           buf_size_bytes(dtype.size() * cnt),
           is_initialized(false),
           empty_kernel_event(nullptr),
@@ -51,25 +50,24 @@ void ze_reduce_entry::init() {
         init_mode_type = init_mode::compute;
     }
 
+    CCL_THROW_IF_NOT(comm_rank == root, "unexpected comm_rank ", comm_rank, ", expected ", root);
+
     ze_base_entry::init(init_mode_type);
 
     /* create kernels */
     ccl_buffer right_send_buf;
-    int peer_rank = (comm->rank() + 1) % comm->size();
-    if (comm->rank() == root) {
-        sched->get_memory().handle_manager.get(comm->get_global_rank(peer_rank), 0, right_send_buf);
-    }
-
+    int peer_rank = (comm_rank + 1) % comm_size;
+    sched->get_memory().handle_manager.get(peer_rank, 0, right_send_buf, comm);
     LOG_DEBUG(
         "get IPC pointers from ", peer_rank, " by ", root, ", right_send_buf: ", right_send_buf);
 
     send_buf_ptr = send_buf.get_ptr();
     recv_buf_ptr = recv_buf.get_ptr();
-    // in place case check! diff idx for handle_mngr
+    // TODO: in place case check! diff idx for handle_mngr
 
     right_send_buf_ptr = right_send_buf.get_ptr();
 
-    ze_kernel_args_t reduce_local_kernel_args = { { sizeof(rank), &rank },
+    ze_kernel_args_t reduce_local_kernel_args = { { sizeof(comm_rank), &comm_rank },
                                                   { sizeof(comm_size), &comm_size },
                                                   { sizeof(cnt), &cnt },
                                                   { sizeof(send_buf_ptr), &send_buf_ptr },

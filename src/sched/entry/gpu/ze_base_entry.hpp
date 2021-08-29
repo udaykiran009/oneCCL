@@ -23,7 +23,9 @@ public:
     virtual ~ze_base_entry(){};
 
 protected:
-    explicit ze_base_entry(ccl_sched *sched, uint32_t add_event_count = 0);
+    explicit ze_base_entry(ccl_sched *sched,
+                           ccl_comm *comm = nullptr,
+                           uint32_t add_event_count = 0);
 
     void init(init_mode ze_init_mode);
     virtual void start() override;
@@ -40,9 +42,11 @@ protected:
                              cmd_primitives &comp_primitives);
 
     ccl_sched *const sched;
-    const uint32_t add_event_count;
-    int rank{};
+
+    ccl_comm *comm{};
+    int comm_rank{};
     int comm_size{};
+
     size_t worker_idx{};
 
     bool is_initialized{};
@@ -55,6 +59,6 @@ protected:
 
     ze_event_pool_desc_t event_pool_desc{};
     ze_event_pool_handle_t event_pool{};
-
     ze_event_handle_t entry_event{};
+    const uint32_t add_event_count;
 };

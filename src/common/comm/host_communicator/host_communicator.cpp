@@ -147,16 +147,19 @@ void host_communicator::exchange_colors(std::vector<int>& colors) {
 }
 
 void host_communicator::create_sub_comms(std::shared_ptr<atl_wrapper> atl) {
+    bool is_sub_comm = true;
     if (ccl::global_data::env().atl_transport == ccl_atl_mpi) {
-        r2r_comm = nullptr;
-        node_comm = nullptr;
-        pair_comm = nullptr;
-        even_comm = nullptr;
-        return;
+        r2r_comm =
+            std::shared_ptr<host_communicator>(new host_communicator(comm_impl, is_sub_comm));
+        node_comm =
+            std::shared_ptr<host_communicator>(new host_communicator(comm_impl, is_sub_comm));
+        pair_comm =
+            std::shared_ptr<host_communicator>(new host_communicator(comm_impl, is_sub_comm));
+        even_comm =
+            std::shared_ptr<host_communicator>(new host_communicator(comm_impl, is_sub_comm));
     }
     else {
         ccl::global_data& data = ccl::global_data::get();
-        bool is_sub_comm = true;
         r2r_comm = std::shared_ptr<host_communicator>(
             new host_communicator(std::shared_ptr<ccl_comm>(this->create_with_color(
                                       atl->get_r2r_color(), data.comm_ids.get(), comm_impl.get())),

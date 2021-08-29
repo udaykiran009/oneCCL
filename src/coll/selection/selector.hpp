@@ -26,6 +26,7 @@ struct ccl_selector_param {
     ccl_datatype dtype = ccl_datatype_int8;
     ccl_comm* comm = nullptr;
     ccl_stream* stream = nullptr;
+    void* buf = nullptr;
 
     const size_t* send_counts = nullptr;
     const size_t* recv_counts = nullptr;

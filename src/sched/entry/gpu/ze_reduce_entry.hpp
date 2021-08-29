@@ -70,7 +70,6 @@ private:
     const ccl_datatype dtype;
     const ccl::reduction op;
     int root;
-    ccl_comm* comm;
     const size_t buf_size_bytes;
     bool is_initialized;
 

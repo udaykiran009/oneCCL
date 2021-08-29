@@ -285,7 +285,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
                     ccl_buffer(fusion_buf, buffer_size, offset),
                     exec_queue[global_copy_idx]->coll_param.get_send_count(),
                     dtype,
-                    copy_attr(copy_helper::invalid_rank, copy_direction::d2h));
+                    copy_attr(copy_direction::d2h));
             else
 #endif // CCL_ENABLE_SYCL
                 entry_factory::make_entry<copy_entry>(
@@ -325,7 +325,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
                         ccl_buffer_type::INDIRECT),
                     exec_queue[global_copy_idx]->coll_param.get_recv_count(),
                     dtype,
-                    copy_attr(copy_helper::invalid_rank, copy_direction::h2d));
+                    copy_attr(copy_direction::h2d));
             else
 #endif // CCL_ENABLE_SYCL
                 entry_factory::make_entry<copy_entry>(

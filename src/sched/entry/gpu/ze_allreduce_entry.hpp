@@ -72,7 +72,6 @@ private:
     const ccl_datatype dtype;
     const ccl::reduction op;
     const size_t buf_size_bytes;
-    const ccl_comm* comm;
 
     ze_event_handle_t empty_kernel_event{};
     ze_event_handle_t copy_from_peer_event{};

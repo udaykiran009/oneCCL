@@ -68,25 +68,34 @@ bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
     }
 
     bool is_sycl_buf = false;
+    bool is_device_buf = true;
     bool is_l0_backend = false;
+
+    size_t local_proc_count = ccl::global_data::get().executor->get_local_proc_count();
 
 #ifdef CCL_ENABLE_SYCL
     is_sycl_buf = param.is_sycl_buf;
+    if (param.buf && param.stream) {
+        auto ctx = param.stream->get_native_stream().get_context();
+        is_device_buf =
+            (sycl::get_pointer_type(param.buf, ctx) == sycl::usm::alloc::device) ? true : false;
+    }
 #ifdef MULTI_GPU_SUPPORT
-    if (param.stream && param.stream->get_backend() == sycl::backend::level_zero)
+    if (param.stream && param.stream->get_backend() == sycl::backend::level_zero) {
         is_l0_backend = true;
+    }
 #endif // MULTI_GPU_SUPPORT
 #endif // CCL_ENABLE_SYCL
 
     if ((param.comm->size() != 2 && param.comm->size() != 4) ||
-        (param.comm->size() != ccl::global_data::get().executor->get_local_proc_count()) ||
-        (!param.stream || param.stream->get_type() != stream_type::gpu) || is_sycl_buf ||
-        !is_l0_backend || ccl::global_data::env().enable_fusion ||
+        (param.comm->size() == 2 && param.comm->size() != static_cast<int>(local_proc_count)) ||
+        (param.comm->size() == 4 && local_proc_count != 2 && local_proc_count != 4) ||
+        (param.comm->size() != 2 && (ccl::global_data::env().atl_transport == ccl_atl_mpi)) ||
+        !param.stream || (param.stream->get_type() != stream_type::gpu) || is_sycl_buf ||
+        !is_device_buf || !is_l0_backend || ccl::global_data::env().enable_fusion ||
         ccl::global_data::env().enable_unordered_coll ||
         (ccl::global_data::env().priority_mode != ccl_priority_none) ||
-        (ccl::global_data::env().worker_count != 1) ||
-        (ccl::global_data::env().atl_transport == ccl_atl_mpi &&
-         param.ctype == ccl_coll_allreduce)) {
+        (ccl::global_data::env().worker_count != 1)) {
         return false;
     }
 

@@ -182,6 +182,7 @@ ccl::status ccl_coll_build_allreduce(ccl_sched* sched,
     param.dtype = dtype;
     param.comm = comm;
     param.stream = sched->coll_param.stream;
+    param.buf = send_buf.get_ptr();
 #ifdef CCL_ENABLE_SYCL
     param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
 #endif // CCL_ENABLE_SYCL

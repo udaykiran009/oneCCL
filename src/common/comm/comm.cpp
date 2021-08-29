@@ -145,8 +145,13 @@ ccl_comm* ccl_comm::create_with_colors(const std::vector<int>& colors,
 
 std::shared_ptr<ccl_comm> ccl_comm::clone_with_new_id(ccl_comm_id_storage::comm_id&& id) {
     ccl_rank2rank_map rank_map{ m_local2global_map };
-    return std::make_shared<ccl_comm>(
-        m_rank, m_size, std::move(id), std::move(rank_map), atl, true /*share_resources*/);
+    return std::make_shared<ccl_comm>(m_rank,
+                                      m_size,
+                                      std::move(id),
+                                      std::move(rank_map),
+                                      atl,
+                                      true /*share_resources*/,
+                                      get_host_comm());
 }
 
 int ccl_comm::get_global_rank(int rank) const {

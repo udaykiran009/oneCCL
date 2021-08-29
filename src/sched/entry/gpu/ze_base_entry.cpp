@@ -11,15 +11,17 @@
 using namespace ccl;
 using namespace ccl::ze;
 
-ze_base_entry::ze_base_entry(ccl_sched *sched, uint32_t add_event_count)
+ze_base_entry::ze_base_entry(ccl_sched *sched, ccl_comm *comm, uint32_t add_event_count)
         : sched_entry(sched),
           sched(sched),
+          comm(comm),
           add_event_count(add_event_count) {
     CCL_THROW_IF_NOT(sched, "no sched");
-    //add comm as param in ctor
-    auto comm = sched->coll_param.comm;
+    if (!comm) {
+        comm = sched->coll_param.comm;
+    }
     CCL_THROW_IF_NOT(comm, "no comm");
-    rank = comm->rank();
+    comm_rank = comm->rank();
     comm_size = comm->size();
 }
 
@@ -183,7 +185,7 @@ void ze_base_entry::get_comp_primitives(const ze_queue_properties_t &queue_props
                                         cmd_primitives &comp_primitives) {
     uint32_t ordinal, queue_index;
     get_comp_queue_ordinal(device, queue_props, &ordinal);
-    get_queue_index(queue_props, ordinal, rank, &queue_index);
+    get_queue_index(queue_props, ordinal, comm_rank, &queue_index);
 
     comp_primitives.queue_desc.ordinal = ordinal;
     comp_primitives.queue_desc.index = queue_index;
@@ -202,10 +204,10 @@ void ze_base_entry::get_copy_primitives(const ze_queue_properties_t &queue_props
     // Need to think, how we'd calculate the index for every queue.
     // Hang in case of CCL_KERNEL_1S_USE_COPY_OPS=1 CCL_ZE_COPY_ENGINE=none
     if (ze_init_mode == (init_mode::copy | init_mode::compute)) {
-        get_queue_index(queue_props, ordinal, rank + 1, &queue_index);
+        get_queue_index(queue_props, ordinal, comm_rank + 1, &queue_index);
     }
     else {
-        get_queue_index(queue_props, ordinal, rank, &queue_index);
+        get_queue_index(queue_props, ordinal, comm_rank, &queue_index);
     }
 
     copy_primitives.queue_desc.ordinal = ordinal;

@@ -153,7 +153,7 @@ ccl::status ccl_parallelizer::process_pre_post_copies(ccl_master_sched* sched) {
                 ccl_buffer(coll_param.get_send_buf(idx), bytes),
                 count,
                 dtype,
-                copy_attr(copy_helper::invalid_rank, copy_direction::d2h, device_in_buf_offset));
+                copy_attr(copy_direction::d2h, device_in_buf_offset));
         }
     }
 
@@ -176,7 +176,7 @@ ccl::status ccl_parallelizer::process_pre_post_copies(ccl_master_sched* sched) {
                            ccl_buffer_type::INDIRECT),
                 count,
                 dtype,
-                copy_attr(copy_helper::invalid_rank, copy_direction::h2d, 0));
+                copy_attr(copy_direction::h2d, 0));
         }
 
         sched->sync_partial_scheds();

@@ -255,7 +255,7 @@ ccl::status ccl_coll_build_gpu_bcast(ccl_sched* sched,
 
     if (comm->rank() != root) {
         entry_factory::make_entry<copy_entry>(
-            sched, ccl_buffer(), buf, count, dtype, copy_attr(root, copy_direction::d2d, 0));
+            sched, ccl_buffer(), buf, count, dtype, copy_attr(root, 0, copy_direction::d2d));
         sched->add_barrier();
     }
 

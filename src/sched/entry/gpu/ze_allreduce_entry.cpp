@@ -17,14 +17,13 @@ ze_allreduce_entry::ze_allreduce_entry(ccl_sched* sched,
                                        const ccl_datatype& dtype,
                                        reduction op,
                                        ccl_comm* comm)
-        : ze_base_entry(sched, local_events_count /* request additional events */),
+        : ze_base_entry(sched, comm, local_events_count /* request additional events */),
           send_buf(send_buf),
           recv_buf(recv_buf),
           cnt(cnt),
           dtype(dtype),
           op(op),
-          buf_size_bytes(dtype.size() * cnt),
-          comm(comm) {}
+          buf_size_bytes(dtype.size() * cnt) {}
 
 ze_allreduce_entry::~ze_allreduce_entry() {
     finalize();
@@ -50,22 +49,22 @@ void ze_allreduce_entry::init() {
     /* create kernels */
     ccl_buffer right_send_buf;
     ccl_buffer right_recv_buf;
-    int peer_rank = (comm->rank() + 1) % comm->size();
+    int peer_rank = (comm_rank + 1) % comm_size;
 
     send_buf_ptr = send_buf.get_ptr();
     recv_buf_ptr = recv_buf.get_ptr();
     if (send_buf_ptr == recv_buf_ptr) {
-        sched->get_memory().handle_manager.get(comm->get_global_rank(peer_rank), 1, right_send_buf);
-        sched->get_memory().handle_manager.get(comm->get_global_rank(peer_rank), 1, right_recv_buf);
+        sched->get_memory().handle_manager.get(peer_rank, 1, right_send_buf, comm);
+        sched->get_memory().handle_manager.get(peer_rank, 1, right_recv_buf, comm);
     }
     else {
-        sched->get_memory().handle_manager.get(comm->get_global_rank(peer_rank), 0, right_send_buf);
-        sched->get_memory().handle_manager.get(comm->get_global_rank(peer_rank), 1, right_recv_buf);
+        sched->get_memory().handle_manager.get(peer_rank, 0, right_send_buf, comm);
+        sched->get_memory().handle_manager.get(peer_rank, 1, right_recv_buf, comm);
     }
     right_send_buf_ptr = right_send_buf.get_ptr();
     right_recv_buf_ptr = right_recv_buf.get_ptr();
 
-    ze_kernel_args_t allreduce_kernel_args = { { sizeof(rank), &rank },
+    ze_kernel_args_t allreduce_kernel_args = { { sizeof(comm_rank), &comm_rank },
                                                { sizeof(comm_size), &comm_size },
                                                { sizeof(cnt), &cnt },
                                                { sizeof(send_buf_ptr), &send_buf_ptr },
@@ -74,7 +73,7 @@ void ze_allreduce_entry::init() {
                                                { sizeof(right_recv_buf_ptr),
                                                  &right_recv_buf_ptr } };
 
-    ze_kernel_args_t reduce_local_kernel_args = { { sizeof(rank), &rank },
+    ze_kernel_args_t reduce_local_kernel_args = { { sizeof(comm_rank), &comm_rank },
                                                   { sizeof(comm_size), &comm_size },
                                                   { sizeof(cnt), &cnt },
                                                   { sizeof(send_buf_ptr), &send_buf_ptr },
