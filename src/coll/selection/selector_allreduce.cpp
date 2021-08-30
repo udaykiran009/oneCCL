@@ -41,6 +41,10 @@ bool ccl_algorithm_selector_helper<ccl_coll_allreduce_algo>::can_use(
     const ccl_selection_table_t<ccl_coll_allreduce_algo>& table) {
     bool can_use = true;
 
+    ccl_coll_algo algo_param;
+    algo_param.allreduce = algo;
+    can_use = ccl_can_use_datatype(algo_param, param);
+
     if (algo == ccl_coll_allreduce_rabenseifner &&
         static_cast<int>(param.count) < param.comm->pof2())
         can_use = false;

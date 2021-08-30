@@ -1,7 +1,8 @@
 set(sources
     allgatherv_vector.cpp
     allreduce_events.cpp
-    alltoallv_empty_count.cpp)
+    alltoallv_empty_count.cpp
+    allreduce_bf16_gpu.cpp)
 
 set(CCL_INSTALL_TESTS "${CMAKE_CURRENT_SOURCE_DIR}")
 

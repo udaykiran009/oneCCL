@@ -33,6 +33,10 @@ bool ccl_algorithm_selector_helper<ccl_coll_bcast_algo>::can_use(
     const ccl_selection_table_t<ccl_coll_bcast_algo>& table) {
     bool can_use = true;
 
+    ccl_coll_algo algo_param;
+    algo_param.bcast = algo;
+    can_use = ccl_can_use_datatype(algo_param, param);
+
     if (ccl::global_data::env().enable_unordered_coll && algo == ccl_coll_bcast_double_tree) {
         /* TODO: stabilize double_tree bcast for unordered_coll case */
         can_use = false;

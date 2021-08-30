@@ -8,13 +8,13 @@
 
 /*
 
- https://www.johndcook.com/blog/2018/11/15/bfloat16/ 
+ https://www.johndcook.com/blog/2018/11/15/bfloat16/
 
  In this example we use the accuracy 0.00781250
  of calculations performed in the bfloat16, but don't take
  into account the error that may occur during conversion
- from float32 datatype to bfloat16. 
- 
+ from float32 datatype to bfloat16.
+
  */
 
 #define BF16_PRECISION 0.00781250 /* 2^-7 */
@@ -152,3 +152,36 @@ void convert_bf16_to_fp32_arrays(void* recv_buf_bf16, float* recv_buf, int count
 }
 
 #endif // CCL_BF16_COMPILER
+
+// Routines to convert between fp32 and bf16 without relying on AVX instructions.
+// These are useful when bf16 is only natively supported on a device.
+void convert_fp32_to_bf16_arrays_generic(float* send_buf_float, void* send_buf_bf16, int count) {
+    int int_val = 0, int_val_shifted = 0;
+
+    for (int i = 0; i < count; ++i) {
+        /* iterate over send_buf_bf16 */
+        int* send_bfp_tail = (int*)(((char*)send_buf_bf16) + (2 * i));
+        /* copy float (4 bytes) data as is to int variable, */
+        memcpy(&int_val, &send_buf_float[i], 4);
+        /* then perform shift and */
+        int_val_shifted = int_val >> BF16_SHIFT;
+        /* save pointer to result */
+        *send_bfp_tail = int_val_shifted;
+    }
+}
+
+void convert_bf16_to_fp32_arrays_generic(void* recv_buf_bf16, float* recv_buf_float, int count) {
+    int int_val = 0, int_val_shifted = 0;
+
+    /* proceed remaining bf16's in buffer */
+    for (int i = 0; i < count; i++) {
+        /* iterate over recv_buf_bf16 */
+        int* recv_bfp_tail = (int*)((char*)recv_buf_bf16 + (2 * i));
+        /* copy bf16 data as is to int variable, */
+        memcpy(&int_val, recv_bfp_tail, 4);
+        /* then perform shift and */
+        int_val_shifted = int_val << BF16_SHIFT;
+        /* copy result to output */
+        memcpy((recv_buf_float + i), &int_val_shifted, 4);
+    }
+}

@@ -98,20 +98,6 @@ void ccl_coll_validate_user_input(const ccl_coll_param& param, const ccl_coll_at
             "sparse_allreduce requires completion callback only or allocation callback only");
     }
 
-    if (param.dtype.idx() == ccl::datatype::float16) {
-        CCL_THROW_IF_NOT(ccl::global_data::env().fp16_impl_type != ccl_fp16_no_compiler_support,
-                         "FP16 datatype is requested but not supported by CCL compiler");
-        CCL_THROW_IF_NOT(ccl::global_data::env().fp16_impl_type != ccl_fp16_no_hardware_support,
-                         "FP16 datatype is requested but not supported by hardware");
-    }
-
-    if (param.dtype.idx() == ccl::datatype::bfloat16) {
-        CCL_THROW_IF_NOT(ccl::global_data::env().bf16_impl_type != ccl_bf16_no_compiler_support,
-                         "BF16 datatype is requested but not supported by CCL compiler");
-        CCL_THROW_IF_NOT(ccl::global_data::env().bf16_impl_type != ccl_bf16_no_hardware_support,
-                         "BF16 datatype is requested but not supported by hardware");
-    }
-
     if (param.ctype == ccl_coll_bcast || param.ctype == ccl_coll_reduce) {
         CCL_THROW_IF_NOT(param.root < param.comm->size(),
                          "unexpected root ",

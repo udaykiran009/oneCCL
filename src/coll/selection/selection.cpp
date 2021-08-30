@@ -34,6 +34,73 @@ bool ccl_is_direct_algo(const ccl_selector_param& param) {
     return res;
 }
 
+static bool ccl_is_device_side_algo(ccl_coll_algo algo, const ccl_selector_param& param) {
+    if (param.ctype == ccl_coll_allreduce) {
+        return algo.allreduce == ccl_coll_allreduce_topo_ring;
+    }
+    else if (param.ctype == ccl_coll_reduce) {
+        return algo.reduce == ccl_coll_reduce_topo_ring;
+    }
+    else if (param.ctype == ccl_coll_bcast) {
+        return algo.bcast == ccl_coll_bcast_topo_ring;
+    }
+
+    return false;
+}
+
+bool ccl_can_use_datatype(ccl_coll_algo algo, const ccl_selector_param& param) {
+    // A regular type, so we don't need to check for an additional support
+    if (param.dtype.idx() != ccl::datatype::bfloat16 &&
+        param.dtype.idx() != ccl::datatype::float16) {
+        return true;
+    }
+
+    bool can_use = true;
+
+    bool device_side_algo = ccl_is_device_side_algo(algo, param);
+
+    // Algorithms running on GPU device support both fp16 and bf16, so we don't need to require their
+    // support on the host.
+    if (!device_side_algo) {
+        if (param.dtype.idx() == ccl::datatype::bfloat16) {
+            bool bf16_hw_support =
+                ccl::global_data::env().bf16_impl_type != ccl_bf16_no_hardware_support;
+            bool bf16_compiler_support =
+                ccl::global_data::env().bf16_impl_type != ccl_bf16_no_compiler_support;
+
+            can_use = bf16_compiler_support && bf16_hw_support;
+
+            if (!can_use) {
+                LOG_DEBUG("BF16 datatype is requested for ",
+                          ccl_coll_type_to_str(param.ctype),
+                          " running on CPU but not fully supported: hw: ",
+                          bf16_hw_support,
+                          " compiler: ",
+                          bf16_compiler_support);
+            }
+        }
+        else if (param.dtype.idx() == ccl::datatype::float16) {
+            bool fp16_hw_support =
+                ccl::global_data::env().fp16_impl_type != ccl_fp16_no_hardware_support;
+            bool fp16_compiler_support =
+                ccl::global_data::env().fp16_impl_type != ccl_fp16_no_compiler_support;
+
+            can_use = fp16_hw_support && fp16_compiler_support;
+
+            if (!can_use) {
+                LOG_DEBUG("FP16 datatype is requested for ",
+                          ccl_coll_type_to_str(param.ctype),
+                          " running on CPU but not fully supported: hw: ",
+                          fp16_hw_support,
+                          " compiler: ",
+                          fp16_compiler_support);
+            }
+        }
+    }
+
+    return can_use;
+}
+
 bool ccl_is_topo_ring_algo(const ccl_selector_param& param) {
 #ifndef CCL_ENABLE_SYCL
     return false;
