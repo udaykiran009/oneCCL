@@ -193,7 +193,7 @@ ccl::status ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
     size_t send_main_chunk_size, send_last_chunk_size;
     size_t recv_main_chunk_size, recv_last_chunk_size;
 
-    size_t send_chunk_size, recv_chunk_size, reduce_chunk_size;
+    size_t send_chunk_size, recv_chunk_size = 0, reduce_chunk_size;
     size_t send_chunk_offset, recv_chunk_offset = 0, reduce_chunk_offset;
 
     /* if chunk_count > 1 then make reduction with 1 chunk delay to get comp/comp overlapping */
