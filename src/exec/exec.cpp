@@ -35,7 +35,7 @@ atl_attr_t ccl_executor::generate_atl_attr(const ccl::env_data& env) {
         don't use ring_rma till that
     */
     attr.in.enable_rma = 0; // env.enable_rma;
-    attr.in.enable_device_buf = env.enable_device_buf;
+    attr.in.enable_hmem = env.enable_hmem;
     attr.in.enable_sync_coll = env.enable_sync_coll;
     attr.in.enable_extra_ep = env.enable_extra_ep;
     attr.in.ep_count = calculate_atl_ep_count(env.worker_count);

@@ -97,7 +97,7 @@ typedef struct {
     struct {
         int enable_shm;
         int enable_rma;
-        int enable_device_buf;
+        int enable_hmem;
         int enable_sync_coll;
         int enable_extra_ep;
         size_t ep_count;
@@ -108,7 +108,7 @@ typedef struct {
     struct {
         int enable_shm;
         int enable_rma;
-        int enable_device_buf;
+        int enable_hmem;
         atl_mnic_t mnic_type;
         size_t mnic_count;
         size_t tag_bits;

@@ -437,8 +437,7 @@ void ccl_sched_base::alloc_buffers_for_pre_post_copy() {
             auto usm_type =
                 sycl::get_pointer_type(bufs[0], param.stream->get_native_stream().get_context());
             if ((usm_type == sycl::usm::alloc::host) || (usm_type == sycl::usm::alloc::shared) ||
-                ((usm_type == sycl::usm::alloc::device) &&
-                 atl_wrapper::attr.out.enable_device_buf)) {
+                ((usm_type == sycl::usm::alloc::device) && atl_wrapper::attr.out.enable_hmem)) {
                 should_alloc_buffers = false;
             }
         }

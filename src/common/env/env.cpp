@@ -72,7 +72,7 @@ env_data::env_data()
 #endif // CCL_ENABLE_MPI
           enable_shm(0),
           enable_rma(0),
-          enable_device_buf(0),
+          enable_hmem(0),
           atl_send_proxy(ccl_atl_send_proxy_none),
           enable_atl_cache(1),
           enable_sync_coll(0),
@@ -173,8 +173,8 @@ void env_data::parse() {
     env_2_atl_transport();
     env_2_type(CCL_ATL_SHM, enable_shm);
     env_2_type(CCL_ATL_RMA, enable_rma);
-    env_2_type(CCL_ATL_DEVICE_BUF, enable_device_buf);
-    if (atl_transport == ccl_atl_mpi && enable_device_buf) {
+    env_2_type(CCL_ATL_HMEM, enable_hmem);
+    if (atl_transport == ccl_atl_mpi && enable_hmem) {
         worker_count = 1;
     }
     env_2_enum(CCL_ATL_SEND_PROXY, atl_send_proxy_names, atl_send_proxy);
@@ -375,7 +375,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_ATL_TRANSPORT, ": ", str_by_enum(atl_transport_names, atl_transport));
     LOG_INFO(CCL_ATL_SHM, ": ", enable_shm);
     LOG_INFO(CCL_ATL_RMA, ": ", enable_rma);
-    LOG_INFO(CCL_ATL_DEVICE_BUF, ": ", enable_device_buf);
+    LOG_INFO(CCL_ATL_HMEM, ": ", enable_hmem);
     LOG_INFO(CCL_ATL_SEND_PROXY, ": ", str_by_enum(atl_send_proxy_names, atl_send_proxy));
     LOG_INFO(CCL_ATL_CACHE, ": ", enable_atl_cache);
     LOG_DEBUG(CCL_ATL_SYNC_COLL, ": ", enable_sync_coll);

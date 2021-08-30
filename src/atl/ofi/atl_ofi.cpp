@@ -241,7 +241,7 @@ atl_status_t atl_ofi::atl_init(int* argc,
     ofi_ctx->enable_hmem = 0;
 
 #ifdef CCL_ENABLE_OFI_HMEM
-    if (prov_env && strstr(prov_env, "verbs") && attr->in.enable_device_buf) {
+    if (prov_env && strstr(prov_env, "verbs") && attr->in.enable_hmem) {
         ofi_ctx->enable_hmem = 1;
     }
 
@@ -430,7 +430,7 @@ atl_status_t atl_ofi::atl_init(int* argc,
     /* report actual attributes back to upper level */
     attr->out.enable_shm = enable_shm;
     attr->out.enable_rma = 0;
-    attr->out.enable_device_buf = ofi_ctx->enable_hmem;
+    attr->out.enable_hmem = ofi_ctx->enable_hmem;
     attr->out.mnic_type = ofi_ctx->mnic_type;
     attr->out.mnic_count = ofi_ctx->mnic_count;
     attr->out.max_order_waw_size = 0;

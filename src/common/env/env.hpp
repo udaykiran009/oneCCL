@@ -38,7 +38,7 @@ constexpr const char* I_MPI_AVAILABLE_CORES_DELIMS = ",x";
 constexpr const char* CCL_ATL_TRANSPORT = "CCL_ATL_TRANSPORT";
 constexpr const char* CCL_ATL_SHM = "CCL_ATL_SHM";
 constexpr const char* CCL_ATL_RMA = "CCL_ATL_RMA";
-constexpr const char* CCL_ATL_DEVICE_BUF = "CCL_ATL_DEVICE_BUF";
+constexpr const char* CCL_ATL_HMEM = "CCL_ATL_HMEM";
 constexpr const char* CCL_ATL_SEND_PROXY = "CCL_ATL_SEND_PROXY";
 constexpr const char* CCL_ATL_SYNC_COLL = "CCL_ATL_SYNC_COLL";
 constexpr const char* CCL_ATL_EXTRA_EP = "CCL_ATL_EXTRA_EP";
@@ -161,7 +161,7 @@ public:
     ccl_atl_transport atl_transport;
     int enable_shm;
     int enable_rma;
-    int enable_device_buf;
+    int enable_hmem;
     ccl_atl_send_proxy atl_send_proxy;
     int enable_atl_cache;
     int enable_sync_coll;

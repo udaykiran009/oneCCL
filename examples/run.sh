@@ -308,6 +308,7 @@ run()
     then
         dir_list="benchmark common cpu"
         bench_backend_list="host"
+
         # additional mode for testing external_launcher in lab only due to unstable result
         # in PV lab and https://jira.devtools.intel.com/browse/MLSL-808
         if [[ ${SCOPE} != "pv" ]]
@@ -315,8 +316,12 @@ run()
             dir_list="${dir_list} external_launcher"
         fi
     else
+        if [[ ${SCOPE} != "pv" ]]
+        then
+            transport_list="${transport_list} mpi_gpu"
+        fi
+
         ccl_base_env="ZE_ENABLE_VALIDATION_LAYER=1 ZE_ENABLE_PARAMETER_VALIDATION=1 ${ccl_base_env}"
-        transport_list="${transport_list} mpi_gpu"
         common_dir_list="benchmark common"
         if [[ ${SCOPE} = "pr" ]]
         then
@@ -358,7 +363,7 @@ run()
                     continue
                 fi
                 transport_name="mpi"
-                ccl_transport_env="CCL_ATL_DEVICE_BUF=1 CCL_ATL_SEND_PROXY=usm ${ccl_transport_env}"
+                ccl_transport_env="CCL_ATL_HMEM=1 CCL_ATL_SEND_PROXY=usm ${ccl_transport_env}"
             fi
             ccl_transport_env="CCL_ATL_TRANSPORT=${transport_name} ${ccl_transport_env}"
 

@@ -19,7 +19,7 @@ atl_attr_t atl_wrapper::attr = {
     {
         0, /* enable_shm */
         0, /* enable_rma */
-        0, /* enable_device_buf */
+        0, /* enable_hmem */
         0, /* enable_sync_coll */
         0, /* enable_extra_ep */
         1, /* ep_count */
@@ -184,7 +184,7 @@ void atl_wrapper::init_transport() {
         LOG_INFO("atl-in-attrs:");
         LOG_INFO("  enable_shm: ", attr.in.enable_shm);
         LOG_INFO("  enable_rma: ", attr.in.enable_rma);
-        LOG_INFO("  enable_device_buf: ", attr.in.enable_device_buf);
+        LOG_INFO("  enable_hmem: ", attr.in.enable_hmem);
         LOG_INFO("  enable_sync_coll: ", attr.in.enable_sync_coll);
         LOG_INFO("  enable_extra_ep: ", attr.in.enable_extra_ep);
         LOG_INFO("  ep_count: ", attr.in.ep_count);
@@ -194,7 +194,7 @@ void atl_wrapper::init_transport() {
         LOG_INFO("atl-out-attrs:");
         LOG_INFO("  enable_shm: ", attr.out.enable_shm);
         LOG_INFO("  enable_rma: ", attr.out.enable_rma);
-        LOG_INFO("  enable_device_buf: ", attr.out.enable_device_buf);
+        LOG_INFO("  enable_hmem: ", attr.out.enable_hmem);
         LOG_INFO("  mnic_type: ", attr.out.mnic_type);
         LOG_INFO("  mnic_count: ", attr.out.mnic_count);
         LOG_INFO("  tag_bits: ", attr.out.tag_bits);
