@@ -60,7 +60,7 @@ set_run_env() {
         export FI_PROVIDER=verbs
         #export CCL_KVS_IFACE=ib0
     else
-        #export FI_PROVIDER=psm3
+        export FI_PROVIDER=psm3
         export PSM3_MULTI_EP=1 # to handle case when MPI initializes PSM3 before CCL
         export PSM3_RDMA=2 # enables user space RC QP RDMA
         export PSM3_MR_CACHE_MODE=2 # near term workaround until a MR cache solution completed
