@@ -26,6 +26,7 @@ struct ipc_handle_info {
 
     ipc_handle_info();
     ipc_handle_info(const ze_ipc_mem_handle_t& handle, size_t offset, ipc_mem_type type);
+    ipc_handle_info(const ipc_handle_info&) = default;
     ipc_handle_info& operator=(const ipc_handle_info&) = default;
 };
 
