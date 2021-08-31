@@ -38,6 +38,8 @@ public:
               dtype(dtype),
               op(reduction_op),
               fn(sched->coll_attr.reduction_fn),
+              in_buf_ptr(nullptr),
+              inout_buf_ptr(nullptr),
               use_device(false) {
         CCL_THROW_IF_NOT(op != ccl::reduction::custom || fn,
                          "custom reduction requires user provided callback");

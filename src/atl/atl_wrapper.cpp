@@ -29,7 +29,16 @@ atl_attr_t atl_wrapper::attr = {
     },
 
     /* out */
-    {}
+    {
+        0, /* enable_shm */
+        0, /* enable_rma */
+        0, /* enable_hmem */
+        ATL_MNIC_NONE, /* mnic_type */
+        0, /* mnic_count */
+        0, /* tag_bits */
+        0, /* max_tag */
+        0, /* max_order_waw_size */
+    }
 };
 
 void atl_wrapper::set_internal_env(const atl_attr_t& attr) {

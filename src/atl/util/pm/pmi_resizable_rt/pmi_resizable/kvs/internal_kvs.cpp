@@ -21,7 +21,6 @@
 
 size_t internal_kvs::kvs_set_value(const char* kvs_name, const char* kvs_key, const char* kvs_val) {
     kvs_request_t request;
-    memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_PUT;
     kvs_str_copy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
     kvs_str_copy(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
@@ -39,7 +38,6 @@ size_t internal_kvs::kvs_set_value(const char* kvs_name, const char* kvs_key, co
 
 size_t internal_kvs::kvs_set_size(const char* kvs_name, const char* kvs_key, const char* kvs_val) {
     kvs_request_t request;
-    memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_SET_SIZE;
     kvs_str_copy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
     kvs_str_copy(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
@@ -59,7 +57,6 @@ size_t internal_kvs::kvs_barrier_register(const char* kvs_name,
                                           const char* kvs_key,
                                           const char* kvs_val) {
     kvs_request_t request;
-    memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_BARRIER_REGISTER;
     kvs_str_copy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
     kvs_str_copy(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
@@ -78,7 +75,7 @@ size_t internal_kvs::kvs_barrier_register(const char* kvs_name,
 void internal_kvs::kvs_barrier(const char* kvs_name, const char* kvs_key, const char* kvs_val) {
     kvs_request_t request;
     int is_done;
-    memset(&request, 0, sizeof(kvs_request_t));
+
     request.mode = AM_BARRIER;
     kvs_str_copy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
     kvs_str_copy(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
@@ -97,7 +94,6 @@ void internal_kvs::kvs_barrier(const char* kvs_name, const char* kvs_key, const 
 
 size_t internal_kvs::kvs_remove_name_key(const char* kvs_name, const char* kvs_key) {
     kvs_request_t request;
-    memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_REMOVE;
     kvs_str_copy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
     kvs_str_copy(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
@@ -114,7 +110,6 @@ size_t internal_kvs::kvs_remove_name_key(const char* kvs_name, const char* kvs_k
 
 size_t internal_kvs::kvs_register(const char* kvs_name, const char* kvs_key, char* kvs_val) {
     kvs_request_t request;
-    memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_INTERNAL_REGISTER;
     kvs_str_copy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
     kvs_str_copy(request.key, kvs_key, MAX_KVS_KEY_LENGTH);
@@ -139,7 +134,6 @@ size_t internal_kvs::kvs_get_value_by_name_key(const char* kvs_name,
                                                const char* kvs_key,
                                                char* kvs_val) {
     kvs_request_t request;
-    memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_GET_VAL;
     size_t is_exist = 0;
     kvs_str_copy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
@@ -172,7 +166,6 @@ size_t internal_kvs::kvs_get_value_by_name_key(const char* kvs_name,
 size_t internal_kvs::kvs_get_count_names(const char* kvs_name) {
     size_t count_names = 0;
     kvs_request_t request;
-    memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_GET_COUNT;
     kvs_str_copy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
 
@@ -201,7 +194,6 @@ size_t internal_kvs::kvs_get_keys_values_by_name(const char* kvs_name,
     kvs_request_t request;
     kvs_request_t* answers;
 
-    memset(&request, 0, sizeof(kvs_request_t));
     request.mode = AM_GET_KEYS_VALUES;
     kvs_str_copy(request.name, kvs_name, MAX_KVS_NAME_LENGTH);
 
@@ -270,7 +262,6 @@ size_t internal_kvs::kvs_get_replica_size(void) {
     }
     else {
         kvs_request_t request;
-        memset(&request, 0, sizeof(kvs_request_t));
         request.mode = AM_GET_REPLICA;
 
         DO_RW_OP(write,
@@ -704,8 +695,6 @@ size_t internal_kvs::kvs_init(const char* main_addr) {
 
 size_t internal_kvs::kvs_finalize(void) {
     kvs_request_t request;
-    memset(&request, 0, sizeof(kvs_request_t));
-
     close(client_op_sock);
     client_op_sock = 0;
     if (kvs_thread != 0) {

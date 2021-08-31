@@ -67,8 +67,11 @@ void atl_ofi::mr_cache::get(fid_domain* domain, void* buf, size_t bytes, fid_mr*
         }
     }
 
-    struct fi_mr_attr mr_attr = {};
-    struct iovec iov = {};
+    struct fi_mr_attr mr_attr;
+    struct iovec iov;
+
+    memset(&mr_attr, 0, sizeof(mr_attr));
+    memset(&iov, 0, sizeof(iov));
 
     iov.iov_base = buf;
     iov.iov_len = bytes;
@@ -99,7 +102,7 @@ void atl_ofi::mr_cache::get(fid_domain* domain, void* buf, size_t bytes, fid_mr*
         ZE_CALL(zeDeviceGetProperties, (alloc_dev, &alloc_dev_props));
 
         int dev_idx = -1;
-        for (int idx = 0; idx < ze_data.device_count; idx++) {
+        for (int idx = 0; idx < static_cast<int>(ze_data.device_count); idx++) {
             ze_device_properties_t dev_props = ccl::ze::default_device_props;
             ZE_CALL(zeDeviceGetProperties, (ze_data.devices[idx], &dev_props));
 

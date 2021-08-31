@@ -247,6 +247,8 @@ if (${CMAKE_C_COMPILER_ID} STREQUAL "Intel" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL
         set(SRC_C_FLAGS "${SRC_C_FLAGS} -prof-gen=srcpos -prof-src-root-cwd")
         set(SRC_CXX_FLAGS "${SRC_CXX_FLAGS} -prof-gen=srcpos -prof-src-root-cwd")
     endif()
+    #To suppress for 'offsetof applied to non-POD (Plain Old Data) types is nonstandar'
+    set(SRC_CXX_FLAGS "${SRC_CXX_FLAGS} -diag-disable=1875")
 endif()
 
 list(APPEND SRC_INCLUDE_DIRS

@@ -132,10 +132,11 @@ typedef struct {
     size_t hostname_hash;
 } atl_proc_coord_t;
 
-typedef struct {
+typedef struct atl_req {
     uint64_t tag;
     size_t remote_proc_idx;
     void* internal[ATL_REQ_SIZE];
+    atl_req() : tag(0), remote_proc_idx(0), internal() {}
 } atl_req_t __attribute__((aligned(ATL_CACHELINE_LEN)));
 
 struct atl_ctx {
