@@ -240,8 +240,8 @@ typedef struct atl_ofi_global_data {
               is_env_inited(0),
               dlhandle(nullptr),
               prov_env_copy(),
-              fi_major_version(FI_MAJOR_VERSION),
-              fi_minor_version(FI_MINOR_VERSION) {
+              fi_major_version(1),
+              fi_minor_version(10) {
         memset(prov_env_copy, 0, sizeof(prov_env_copy));
     }
 } atl_ofi_global_data_t;
