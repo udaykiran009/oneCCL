@@ -3,7 +3,6 @@
 #include "coll/algorithms/algorithms_enum.hpp"
 #include "common/env/env.hpp"
 #include "common/utils/utils.hpp"
-#include "common/comm/l0/comm_context_storage.hpp"
 #include "hwloc/hwloc_wrapper.hpp"
 #include "internal_types.hpp"
 

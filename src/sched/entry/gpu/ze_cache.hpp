@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/log/log.hpp"
 #include "common/utils/hash.hpp"
 #include "sched/entry/gpu/ze_primitives.hpp"
 

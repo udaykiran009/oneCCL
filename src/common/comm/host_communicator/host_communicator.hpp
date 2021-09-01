@@ -58,14 +58,6 @@ public:
         return true;
     }
 
-    const ccl::group_unique_key& get_comm_group_id() const override {
-        return owner_id;
-    }
-
-    void set_comm_group_id(ccl::group_unique_key id) {
-        owner_id = id;
-    }
-
 #ifdef MULTI_GPU_SUPPORT
     void visit(ccl::gpu_comm_attr& comm_attr) override;
 #endif
@@ -148,7 +140,6 @@ private:
     ccl::comm_split_attr comm_attr;
     int comm_rank;
     int comm_size;
-    ccl::group_unique_key owner_id;
 
     host_communicator* get_impl() {
         return this;

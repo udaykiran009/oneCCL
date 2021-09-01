@@ -43,7 +43,7 @@
 #include "sched/sched.hpp"
 
 namespace entry_factory {
-/* generic interface for entry creation */
+
 template <class EntryType, class... Arguments>
 EntryType* make_entry(ccl_sched* sched, Arguments&&... args) {
     LOG_DEBUG("creating ", EntryType::class_name(), " entry");
@@ -53,29 +53,4 @@ EntryType* make_entry(ccl_sched* sched, Arguments&&... args) {
     return new_entry;
 }
 
-template <class EntryType, ccl_sched_add_mode mode, class... Arguments>
-EntryType* make_ordered_entry(ccl_sched* sched, Arguments&&... args) {
-    LOG_DEBUG("creating ", EntryType::class_name(), " entry, use mode: ", to_string(mode));
-    return detail::entry_creator<EntryType>::template create<mode>(
-        sched, std::forward<Arguments>(args)...);
-}
-
-/* Example for non-standard entry 'my_non_standard_entry' creation
-    namespace detail
-    {
-        template <>
-        class entry_creator<my_non_standard_entry>
-        {
-            public:
-            static my_non_standard_entry* create(/ *** specific parameters for construction *** /)
-            {
-                auto &&new_entry = std::unique_ptr<my_non_standard_entry>(
-                            new my_non_standard_entry(/ *** specific parameters for construction *** /));
-
-                //Add custom contruction/registration logic, if needed
-
-                return static_cast<my_non_standard_entry*>(sched->add_entry(std::move(new_entry)));
-            }
-        };
-    }*/
 } // namespace entry_factory

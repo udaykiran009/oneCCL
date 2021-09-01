@@ -4,84 +4,43 @@ set (EXTENSIONS_SRC)
 
 if (CCL_ENABLE_SYCL)
     list (APPEND EXTENSIONS_SRC
-                    native_device_api/l0/utils.cpp
-                    native_device_api/sycl/export.cpp
-                    native_device_api/interop_utils.cpp
+        native_device_api/l0/utils.cpp
+        native_device_api/sycl/export.cpp
+        native_device_api/interop_utils.cpp
         )
 endif(CCL_ENABLE_SYCL)
 
-if (MULTI_GPU_SUPPORT)
-list (APPEND EXTENSIONS_SRC
-                    ccl_cpp_utils.cpp
-
-                    native_device_api/l0/base.cpp
-                    native_device_api/l0/device.cpp
-                    native_device_api/l0/context.cpp
-                    native_device_api/l0/event_pool.cpp
-                    native_device_api/l0/subdevice.cpp
-                    native_device_api/l0/driver.cpp
-                    native_device_api/l0/export.cpp
-                    native_device_api/l0/platform.cpp
-                    native_device_api/l0/utils.cpp
-                    native_device_api/l0/primitives.cpp
-                    native_device_api/interop_utils.cpp
-
-                    common/comm/l0/comm_context.cpp
-                    common/comm/l0/comm_context_storage.cpp
-                    common/comm/l0/context_comm_addr.cpp
-
-                    common/comm/l0/devices/ccl_gpu_base_comm.cpp
-                    common/comm/l0/devices/ccl_gpu_comm.cpp
-                    common/comm/l0/devices/ccl_virtual_gpu_comm.cpp
-                    common/comm/l0/devices/ccl_ipc_gpu_comm.cpp
-
-                    common/comm/l0/devices/communication_structs/connection.cpp
-                    common/comm/l0/devices/communication_structs/ipc_connection.cpp
-                    common/comm/l0/devices/communication_structs/ipc_server.cpp
-                    common/comm/l0/devices/communication_structs/ipc_client.cpp
-
-                    common/comm/l0/context/process_group_ctx.cpp
-                    common/comm/l0/context/thread_group_ctx.cpp
-                    common/comm/l0/context/device_group_ctx.cpp
-                    common/comm/l0/context/device_storage.cpp
-
-                    common/comm/l0/topology/topology_serializer.cpp
-                    common/comm/l0/topology/ring/device_group_ring_creator.cpp
-                    common/comm/l0/topology/ring/thread_group_ring_creator.cpp
-                    common/comm/l0/topology/ring/process_group_ring_creator.cpp
-                    common/comm/l0/topology/topology_construction_utils.cpp
-
-                    common/comm/l0/context/scale/ipc/ipc_ctx_session.cpp
-                    common/comm/l0/context/scale/ipc/ipc_ctx_utils.cpp
-                    common/comm/l0/context/scale/ipc/ipc_session_key.cpp
-
-                    common/comm/l0/context/scale/base/base_session.cpp
-                    common/comm/l0/context/scale/scale_out/scale_out_session.cpp
-
-                    common/comm/l0/gpu_comm_attr.cpp
-                    common/comm/l0/modules/base_entry_module.cpp
-                    common/comm/l0/modules/modules_source_data.cpp
-                    common/comm/l0/modules/kernel_utils.cpp
-
-                    sched/gpu_sched.cpp
-                    sched/gpu_concurrent_sched.cpp
-                    sched/entry/gpu/ze_cache.cpp
-                    sched/entry/gpu/ze_call.cpp
-                    sched/entry/gpu/ze_primitives.cpp)
-endif(MULTI_GPU_SUPPORT)
-
 if (CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)
     list (APPEND EXTENSIONS_SRC
-                    sched/entry/gpu/ze_base_entry.cpp
-                    sched/entry/gpu/ze_copy_entry.cpp
-                    sched/entry/gpu/ze_handle_exchange_entry.cpp
-                    sched/entry/gpu/ze_event_signal_entry.cpp
-                    sched/entry/gpu/ze_event_wait_entry.cpp
-                    sched/entry/gpu/ze_onesided_allreduce_entry.cpp
-                    sched/entry/gpu/ze_reduce_entry.cpp
-                    sched/entry/gpu/ze_ring_allreduce_entry.cpp
-                    sched/entry/reduce_local_entry.cpp
-                    sched/ze_handle_manager.cpp
+
+        ccl_cpp_utils.cpp
+
+        native_device_api/l0/base.cpp
+        native_device_api/l0/device.cpp
+        native_device_api/l0/context.cpp
+        native_device_api/l0/event_pool.cpp
+        native_device_api/l0/subdevice.cpp
+        native_device_api/l0/driver.cpp
+        native_device_api/l0/export.cpp
+        native_device_api/l0/platform.cpp
+        native_device_api/l0/utils.cpp
+        native_device_api/l0/primitives.cpp
+        native_device_api/interop_utils.cpp
+
+        sched/entry/gpu/ze_base_entry.cpp
+        sched/entry/gpu/ze_cache.cpp
+        sched/entry/gpu/ze_call.cpp
+        sched/entry/gpu/ze_copy_entry.cpp
+        sched/entry/gpu/ze_handle_exchange_entry.cpp
+        sched/entry/gpu/ze_event_signal_entry.cpp
+        sched/entry/gpu/ze_event_wait_entry.cpp
+        sched/entry/gpu/ze_onesided_allreduce_entry.cpp
+        sched/entry/gpu/ze_primitives.cpp
+        sched/entry/gpu/ze_reduce_entry.cpp
+        sched/entry/gpu/ze_ring_allreduce_entry.cpp
+        sched/entry/reduce_local_entry.cpp
+        sched/ze_handle_manager.cpp
+
         )
 endif(CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)
 

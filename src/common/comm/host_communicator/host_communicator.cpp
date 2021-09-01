@@ -15,10 +15,6 @@
 
 #include "common/comm/comm.hpp"
 
-#ifdef MULTI_GPU_SUPPORT
-#include "common/comm/l0/gpu_comm_attr.hpp"
-#endif
-
 namespace ccl {
 
 using ccl::preview::create_comm_split_attr;

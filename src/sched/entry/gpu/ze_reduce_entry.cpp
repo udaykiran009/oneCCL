@@ -1,4 +1,3 @@
-#include "common/comm/l0/modules/kernel_utils.hpp"
 #include "common/stream/stream.hpp"
 #include "sched/entry/gpu/ze_cache.hpp"
 #include "sched/entry/gpu/ze_primitives.hpp"

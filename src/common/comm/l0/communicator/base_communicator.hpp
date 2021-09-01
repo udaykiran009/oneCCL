@@ -1,13 +1,10 @@
 #pragma once
+
 #include <mutex>
 
 #include "common/comm/comm_interface.hpp"
-//TODO #include "sched/gpu_sched.hpp"
-#include "common/comm/l0/comm_context_id.hpp"
 
 struct base_communicator : public ccl::communicator_interface {
-    //TODO using group_comm_storage = native::specific_indexed_device_storage;
-
     base_communicator(ccl::unified_device_type&& owned_device,
                       ccl::unified_context_type&& owned_ctx,
                       size_t thread_idx,
@@ -50,24 +47,6 @@ struct base_communicator : public ccl::communicator_interface {
         return comm_attr;
     }
 
-    const ccl::group_unique_key& get_comm_group_id() const override {
-        return owner_id;
-    }
-
-    void set_comm_group_id(ccl::group_unique_key id) {
-        owner_id = id;
-    }
-    /*
-    virtual bool is_ready() const
-    {
-        if(!devices)
-        {
-            std::unique_lock<ccl_spinlock> lock(ready_mutex);
-            return devices;
-        }
-        return true;
-    }
-*/
     ccl::unified_device_type device;
     ccl::unified_context_type context;
     size_t thread_id;
@@ -79,6 +58,4 @@ struct base_communicator : public ccl::communicator_interface {
     int comm_size;
 
     mutable ccl_spinlock ready_mutex;
-
-    ccl::group_unique_key owner_id;
 };

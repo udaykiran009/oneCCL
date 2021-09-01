@@ -1,12 +1,7 @@
 #pragma once
+
 #include "oneapi/ccl/types.hpp"
 #include "oneapi/ccl/type_traits.hpp"
-#include "common/comm/l0/communicator/typed_base_communicator.hpp"
-#include "common/comm/l0/gpu_comm_attr.hpp"
-#include "common/comm/l0/context/thread_group_ctx.hpp"
-#include "common/comm/l0/context/process_group_ctx.hpp"
-#include "common/comm/l0/comm_context_storage.hpp"
-#include "common/comm/l0/comm_context.hpp"
 
 #define TEMPLATE_DECL_ARG \
     class comm_impl, ccl::group_split_type topology, ccl::device_topology_type class_id, \

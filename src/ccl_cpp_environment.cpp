@@ -4,7 +4,6 @@
 #include "common/utils/version.hpp"
 
 #if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
-#include "common/comm/l0/comm_context.hpp"
 #include "common/comm/comm_interface.hpp"
 #endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
 

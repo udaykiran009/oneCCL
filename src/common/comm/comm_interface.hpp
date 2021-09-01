@@ -14,7 +14,6 @@
 #include "oneapi/ccl/stream.hpp"
 
 #include "common/comm/compiler_comm_interface_dispatcher.hpp"
-#include "common/comm/l0/comm_context_id.hpp"
 #include "internal_types.hpp"
 
 namespace native {
@@ -133,8 +132,6 @@ struct communicator_interface : public communicator_interface_dispatcher {
     virtual bool is_accelerator() const noexcept = 0;
 
     virtual bool is_ready() const = 0;
-
-    virtual const group_unique_key& get_comm_group_id() const = 0;
 
     virtual ccl::communicator_interface_ptr split(const ccl::comm_split_attr& attr) = 0;
 
