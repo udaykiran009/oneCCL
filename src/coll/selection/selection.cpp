@@ -1,4 +1,5 @@
 #include "coll/selection/selection.hpp"
+#include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/global/global.hpp"
 
 bool ccl_is_direct_algo(const ccl_selector_param& param) {
@@ -139,6 +140,7 @@ bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
     bool is_l0_backend = false;
 
     size_t local_proc_count = ccl::global_data::get().executor->get_local_proc_count();
+    int comm_size = param.comm->size();
 
 #ifdef CCL_ENABLE_SYCL
     is_sycl_buf = param.is_sycl_buf;
@@ -154,10 +156,13 @@ bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
 #endif // MULTI_GPU_SUPPORT
 #endif // CCL_ENABLE_SYCL
 
-    if ((param.comm->size() != 2 && param.comm->size() != 4) ||
-        (param.comm->size() == 2 && param.comm->size() != static_cast<int>(local_proc_count)) ||
-        (param.comm->size() == 4 && local_proc_count != 2 && local_proc_count != 4) ||
-        (param.comm->size() != 2 && (ccl::global_data::env().atl_transport == ccl_atl_mpi)) ||
+    if ((comm_size < 2) || (local_proc_count == 1) ||
+        ((comm_size != static_cast<int>(local_proc_count)) && (local_proc_count != 2)) ||
+
+        // need subcomms support from atl/mpi
+        ((comm_size != static_cast<int>(local_proc_count)) &&
+         (ccl::global_data::env().atl_transport == ccl_atl_mpi)) ||
+
         !param.stream || (param.stream->get_type() != stream_type::gpu) || is_sycl_buf ||
         !is_device_buf || !is_l0_backend || ccl::global_data::env().enable_fusion ||
         ccl::global_data::env().enable_unordered_coll ||

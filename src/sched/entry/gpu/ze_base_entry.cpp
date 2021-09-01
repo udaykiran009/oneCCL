@@ -14,8 +14,7 @@ using namespace ccl::ze;
 ze_base_entry::ze_base_entry(ccl_sched *sched, ccl_comm *comm, uint32_t add_event_count)
         : sched_entry(sched),
           sched(sched),
-          comm(comm),
-          add_event_count(add_event_count) {
+          comm(comm) {
     CCL_THROW_IF_NOT(sched, "no sched");
     if (!comm) {
         comm = sched->coll_param.comm;
@@ -23,6 +22,7 @@ ze_base_entry::ze_base_entry(ccl_sched *sched, ccl_comm *comm, uint32_t add_even
     CCL_THROW_IF_NOT(comm, "no comm");
     comm_rank = comm->rank();
     comm_size = comm->size();
+    events.resize(add_event_count + 1, nullptr); // at least one event to track progress
 }
 
 void ze_base_entry::init(init_mode ze_init_mode) {
@@ -36,7 +36,7 @@ void ze_base_entry::init(init_mode ze_init_mode) {
     LOG_DEBUG("getting a native stream");
     auto native_stream = sched->coll_param.stream->get_native_stream(worker_idx);
     if (native_stream->get_backend() != sycl::backend::level_zero) {
-        CCL_THROW("unsupported sycl backend");
+        CCL_THROW("unsupported SYCL backend");
     }
 
     auto sycl_device = native_stream->get_device();
@@ -68,16 +68,11 @@ void ze_base_entry::init(init_mode ze_init_mode) {
 
     /* create event pool */
     event_pool_desc = default_event_pool_desc;
-    event_pool_desc.count = 1 + add_event_count; // at least one event to track progress
+    event_pool_desc.count = events.size();
     global_data::get().ze_cache->get(worker_idx, context, event_pool_desc, &event_pool);
     LOG_DEBUG("get event pool: { max event count: ", event_pool_desc.count, " }");
 
-    /* create event */
-    ze_event_desc_t event_desc = default_event_desc;
-    event_desc.signal = ZE_EVENT_SCOPE_FLAG_SUBDEVICE;
-    event_desc.wait = ZE_EVENT_SCOPE_FLAG_SUBDEVICE;
-    event_desc.index = 0;
-    ZE_CALL(zeEventCreate, (event_pool, &event_desc, &entry_event));
+    entry_event = create_event();
 
     is_initialized = true;
 }
@@ -86,7 +81,8 @@ void ze_base_entry::finalize() {
     if (!is_initialized) {
         return;
     }
-    ZE_CALL(zeEventDestroy, (entry_event));
+
+    destroy_events();
 
     /* event pool */
     global_data::get().ze_cache->push(worker_idx, context, event_pool_desc, event_pool);
@@ -117,8 +113,7 @@ void ze_base_entry::finalize() {
 }
 
 void ze_base_entry::start() {
-    CCL_THROW_IF_NOT(entry_event, "no entry event");
-    ZE_CALL(zeEventHostReset, (entry_event));
+    reset_events();
 
     if (comp_primitives.list && comp_primitives.queue) {
         LOG_DEBUG("execute compute command list");
@@ -139,6 +134,14 @@ void ze_base_entry::start() {
         if (comp_primitives.queue)
             ZE_CALL(zeHostSynchronize, (comp_primitives.queue));
     }
+}
+
+bool ze_base_entry::is_event_completed(ze_event_handle_t event) {
+    ze_result_t res = zeEventQueryStatus(event);
+    CCL_THROW_IF_NOT(res == ZE_RESULT_SUCCESS || res == ZE_RESULT_NOT_READY,
+                     "unexpected result from zeEventQueryStatus: ",
+                     to_string(res));
+    return (res == ZE_RESULT_SUCCESS);
 }
 
 void ze_base_entry::update() {
@@ -203,7 +206,7 @@ void ze_base_entry::get_copy_primitives(const ze_queue_properties_t &queue_props
     // WA is adding optional counter, which says the order number of a queue.
     // Need to think, how we'd calculate the index for every queue.
     // Hang in case of CCL_KERNEL_1S_USE_COPY_OPS=1 CCL_ZE_COPY_ENGINE=none
-    if (ze_init_mode == (init_mode::copy | init_mode::compute)) {
+    if (ze_init_mode == (init_mode::compute | init_mode::copy)) {
         get_queue_index(queue_props, ordinal, comm_rank + 1, &queue_index);
     }
     else {
@@ -227,4 +230,43 @@ void ze_base_entry::init_primitives(cmd_primitives &cmd_primitives) {
     global_data::get().ze_cache->get(
         worker_idx, context, device, cmd_primitives.list_desc, &cmd_primitives.list);
     LOG_DEBUG("get list: { ordinal: ", cmd_primitives.list_desc.commandQueueGroupOrdinal, " }");
+}
+
+ze_event_handle_t ze_base_entry::create_event() {
+    ze_event_desc_t event_desc = default_event_desc;
+    event_desc.signal = ZE_EVENT_SCOPE_FLAG_DEVICE;
+    event_desc.wait = ZE_EVENT_SCOPE_FLAG_DEVICE;
+    event_desc.index = event_counter++;
+    LOG_DEBUG("create event with index ", event_desc.index);
+    CCL_THROW_IF_NOT(event_desc.index < event_pool_desc.count, "event creation limit exceeded");
+    CCL_THROW_IF_NOT(event_desc.index < events.size());
+
+    ze_event_handle_t event;
+    ZE_CALL(zeEventCreate, (event_pool, &event_desc, &event));
+    events[event_desc.index] = event;
+
+    return event;
+}
+
+void ze_base_entry::reset_events() {
+    CCL_THROW_IF_NOT(entry_event, "no entry event");
+    for (size_t idx = 0; idx < events.size(); idx++) {
+        if (events[idx])
+            ZE_CALL(zeEventHostReset, (events[idx]));
+    }
+}
+
+void ze_base_entry::destroy_events() {
+    CCL_THROW_IF_NOT(entry_event, "no entry event");
+    for (size_t idx = 0; idx < events.size(); idx++) {
+        if (events[idx])
+            ZE_CALL(zeEventDestroy, (events[idx]));
+    }
+}
+
+void ze_base_entry::close_lists() {
+    if (comp_primitives.list)
+        ZE_CALL(zeCommandListClose, (comp_primitives.list));
+    if (copy_primitives.list)
+        ZE_CALL(zeCommandListClose, (copy_primitives.list));
 }

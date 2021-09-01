@@ -7,32 +7,30 @@
 #include <atomic>
 #include <sstream>
 
-class ze_allreduce_entry : public ze_base_entry {
+class ze_onesided_allreduce_entry : public ze_base_entry {
 public:
     static constexpr const char* class_name() noexcept {
-        return "ZE_ALLREDUCE";
+        return "ZE_1S_ALLREDUCE";
     }
 
     const char* name() const noexcept override {
         return class_name();
     }
 
-    ze_allreduce_entry() = delete;
-    explicit ze_allreduce_entry(ccl_sched* sched,
-                                ccl_buffer send_buf,
-                                ccl_buffer recv_buf,
-                                size_t cnt,
-                                const ccl_datatype& dtype,
-                                ccl::reduction op,
-                                ccl_comm* comm);
-    ~ze_allreduce_entry();
+    ze_onesided_allreduce_entry() = delete;
+    explicit ze_onesided_allreduce_entry(ccl_sched* sched,
+                                         ccl_buffer send_buf,
+                                         ccl_buffer recv_buf,
+                                         size_t cnt,
+                                         const ccl_datatype& dtype,
+                                         ccl::reduction op,
+                                         ccl_comm* comm);
+    ~ze_onesided_allreduce_entry();
 
     void init();
     void start() override;
     void update() override;
     void finalize();
-
-    void reset_sync_objects();
 
     bool is_strict_order_satisfied() override {
         return (status >= ccl_sched_entry_status_complete);
@@ -59,8 +57,6 @@ protected:
     }
 
 private:
-    static constexpr uint32_t local_events_count{ 3 };
-
     const ccl_buffer send_buf;
     const ccl_buffer recv_buf;
     void* send_buf_ptr{};

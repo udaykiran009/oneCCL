@@ -487,14 +487,14 @@ ccl::status ccl_coll_build_ring_allreduce(ccl_sched* sched,
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
 
-ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
-                                         ccl_buffer send_buf,
-                                         ccl_buffer recv_buf,
-                                         size_t count,
-                                         const ccl_datatype& dtype,
-                                         ccl::reduction op,
-                                         ccl_comm* comm) {
-    LOG_DEBUG("build gpu allreduce");
+ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
+                                               ccl_buffer send_buf,
+                                               ccl_buffer recv_buf,
+                                               size_t count,
+                                               const ccl_datatype& dtype,
+                                               ccl::reduction op,
+                                               ccl_comm* comm) {
+    LOG_DEBUG("build topo_ring allreduce");
 
     const std::vector<ze_handle_exchange_entry::mem_desc_t> in_buffers{
         { send_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 0
@@ -510,6 +510,9 @@ ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
     ccl_comm* even_comm = comm->get_host_comm()->get_even_comm().get()->get_ccl_comm().get();
     ccl_comm* node_comm = comm->get_host_comm()->get_node_comm().get()->get_ccl_comm().get();
     ccl_comm* r2r_comm = comm->get_host_comm()->get_r2r_comm().get()->get_ccl_comm().get();
+
+    int comm_size = comm->size();
+    int node_comm_size = node_comm->size();
 
     int skip_rank = -1;
     if (ccl::global_data::env().enable_kernel_1s_ipc_wa) {
@@ -534,15 +537,16 @@ ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
 
     sched->add_barrier();
 
-    if (comm->size() == 4) {
+    if (comm_size > 2) {
         LOG_DEBUG("node_comm: id: ",
                   node_comm->id(),
                   ", size: ",
-                  node_comm->size(),
+                  node_comm_size,
                   ", rank: ",
                   node_comm->rank());
 
-        if (node_comm->size() == 2) {
+        // TODO: change condition when reduce/bcast for > 2 ranks will be supported
+        if (node_comm_size == 2) {
             LOG_DEBUG("r2r_comm: id: ",
                       r2r_comm->id(),
                       ", size: ",
@@ -569,13 +573,14 @@ ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
                     ccl_buffer(),
                     count,
                     dtype,
-                    copy_attr((node_comm->rank() + 1) % node_comm->size(), 1, copy_direction::d2d));
+                    copy_attr((node_comm->rank() + 1) % node_comm_size, 1, copy_direction::d2d));
                 sched->add_barrier();
             }
             barrier_param.comm = comm;
             coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
         }
-        else if (node_comm->size() == 4) {
+        /* TODO: fix correctness */
+        else if (0) { //(node_comm_size == 4) && (comm_size == node_comm_size)) {
             LOG_DEBUG("pair_comm: id: ",
                       pair_comm->id(),
                       ", size: ",
@@ -599,11 +604,9 @@ ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
                 coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
                 sched->add_barrier();
 
-                if (even_comm->rank() == ccl::global_data::env().kernel_1s_lead) {
-                    entry_factory::make_entry<ze_allreduce_entry>(
-                        sched, recv_buf, recv_buf, count, dtype, op, even_comm);
-                    sched->add_barrier();
-                }
+                entry_factory::make_entry<ze_onesided_allreduce_entry>(
+                    sched, recv_buf, recv_buf, count, dtype, op, even_comm);
+                sched->add_barrier();
             }
 
             barrier_param.comm = comm;
@@ -624,21 +627,34 @@ ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
                 sched->add_barrier();
             }
         }
+        else if ((node_comm_size >= 3) && (comm_size == node_comm_size)) {
+            entry_factory::make_entry<ze_ring_allreduce_entry>(
+                sched, send_buf, recv_buf, count, dtype, op, comm);
+            sched->add_barrier();
+
+            barrier_param.comm = comm;
+            coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
+        }
         else {
-            CCL_THROW("unexpected node_comm size: ", node_comm->size());
+            CCL_THROW("unexpected node_comm size: ", node_comm_size);
         }
     }
-    else if (comm->size() == 2) {
+    else if ((comm_size == 2) && (comm_size == node_comm_size)) {
         if (comm->rank() == ccl::global_data::env().kernel_1s_lead) {
-            entry_factory::make_entry<ze_allreduce_entry>(
+            entry_factory::make_entry<ze_onesided_allreduce_entry>(
                 sched, send_buf, recv_buf, count, dtype, op, comm);
             sched->add_barrier();
         }
+
+        // entry_factory::make_entry<ze_ring_allreduce_entry>(
+        //         sched, send_buf, recv_buf, count, dtype, op, comm);
+        // sched->add_barrier();
+
         barrier_param.comm = comm;
         coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
     }
     else {
-        CCL_THROW("unexpected comm size: ", comm->size());
+        CCL_THROW("unexpected comm size: ", comm_size, ", node comm size: ", node_comm_size);
     }
 
     return ccl::status::success;

@@ -51,7 +51,8 @@ void ze_copy_entry::init() {
 
     ZE_CALL(zeCommandListAppendMemoryCopy,
             (list, dst, src, buf_size_bytes, ze_base_entry::entry_event, 0, nullptr));
-    ZE_CALL(zeCommandListClose, (list));
+
+    ze_base_entry::close_lists();
 
     LOG_DEBUG("initialization complete");
 }

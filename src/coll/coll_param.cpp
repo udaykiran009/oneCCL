@@ -129,14 +129,19 @@ std::string ccl_coll_param::to_string() const {
     ss << "{ ";
     ss << "coll: " << ccl_coll_type_to_str(ctype);
 
-    if (!send_bufs.empty())
-        ss << ", sb: " << get_send_buf() << ", sc: " << get_send_count();
+    if (!send_bufs.empty()) {
+        ss << ", sb: " << get_send_buf()
+           << ", sc: " << std::accumulate(send_counts.begin(), send_counts.end(), 0);
+    }
 
-    if (!recv_bufs.empty())
-        ss << ", rb: " << get_recv_buf() << ", rc: " << get_recv_count();
+    if (!recv_bufs.empty()) {
+        ss << ", rb: " << get_recv_buf()
+           << ", rc: " << std::accumulate(recv_counts.begin(), recv_counts.end(), 0);
+    }
 
-    if (ctype != ccl_coll_barrier)
+    if (ctype != ccl_coll_barrier) {
         ss << ", dt: " << ccl::global_data::get().dtypes->name(dtype);
+    }
 
     if (ctype == ccl_coll_allreduce || ctype == ccl_coll_reduce ||
         ctype == ccl_coll_reduce_scatter) {

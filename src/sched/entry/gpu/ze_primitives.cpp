@@ -9,6 +9,20 @@ namespace ccl {
 
 namespace ze {
 
+std::string get_build_log_string(ze_module_build_log_handle_t build_log) {
+    size_t build_log_size = 0;
+    ZE_CALL(zeModuleBuildLogGetString, (build_log, &build_log_size, nullptr));
+
+    if (!build_log_size) {
+        LOG_WARN(build_log_size, "empty build log");
+        return {};
+    }
+
+    std::vector<char> build_log_c_string(build_log_size);
+    ZE_CALL(zeModuleBuildLogGetString, (build_log, &build_log_size, build_log_c_string.data()));
+    return std::string(build_log_c_string.begin(), build_log_c_string.end());
+}
+
 void load_module(std::string dir,
                  std::string file_name,
                  ze_device_handle_t device,
@@ -36,13 +50,21 @@ void load_module(std::string dir,
     file.read(reinterpret_cast<char*>(module_data.data()), filesize);
     file.close();
 
+    ze_module_build_log_handle_t build_log;
     ze_module_desc_t desc = {};
     ze_module_format_t format = ZE_MODULE_FORMAT_IL_SPIRV;
     desc.format = format;
     desc.pInputModule = reinterpret_cast<const uint8_t*>(module_data.data());
     desc.inputSize = module_data.size();
-    ZE_CALL(zeModuleCreate, (context, device, &desc, module, nullptr));
-    LOG_DEBUG("module loading completed: directory: ", dir, ", file: ", file_name);
+
+    if (zeModuleCreate(context, device, &desc, module, &build_log) != ZE_RESULT_SUCCESS) {
+        LOG_WARN("failed to build file: ", file_path, ", log: ", get_build_log_string(build_log));
+    }
+    else {
+        LOG_DEBUG("module loading completed: directory: ", dir, ", file: ", file_name);
+    }
+
+    zeModuleBuildLogDestroy(build_log);
 }
 
 void create_kernel(ze_module_handle_t module, std::string kernel_name, ze_kernel_handle_t* kernel) {

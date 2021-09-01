@@ -104,13 +104,13 @@ ccl::status ccl_coll_build_starlike_allreduce(ccl_sched* sched,
                                               ccl_comm* comm);
 
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
-ccl::status ccl_coll_build_gpu_allreduce(ccl_sched* sched,
-                                         ccl_buffer send_buf,
-                                         ccl_buffer recv_buf,
-                                         size_t count,
-                                         const ccl_datatype& dtype,
-                                         ccl::reduction reduction,
-                                         ccl_comm* comm);
+ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
+                                               ccl_buffer send_buf,
+                                               ccl_buffer recv_buf,
+                                               size_t count,
+                                               const ccl_datatype& dtype,
+                                               ccl::reduction reduction,
+                                               ccl_comm* comm);
 #endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
 
 ccl::status ccl_coll_build_naive_allgatherv(ccl_sched* sched,

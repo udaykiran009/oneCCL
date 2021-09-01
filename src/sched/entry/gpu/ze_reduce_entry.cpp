@@ -112,22 +112,11 @@ void ze_reduce_entry::init() {
         set_kernel_args(empty_kernel, main_kernel_args);
     }
 
-    ze_event_desc_t event_desc = default_event_desc;
-    event_desc.signal = ZE_EVENT_SCOPE_FLAG_SUBDEVICE;
-    event_desc.wait = ZE_EVENT_SCOPE_FLAG_SUBDEVICE;
-
-    uint32_t last_event_idx = 1; // 0 is used to track entry progress
-
     if (empty_kernel) {
-        LOG_DEBUG("create event for empty kernel");
-        event_desc.index = last_event_idx++;
-        ZE_CALL(zeEventCreate, (event_pool, &event_desc, &empty_kernel_event));
+        empty_kernel_event = ze_base_entry::create_event();
     }
 
-    event_desc.index = last_event_idx++;
-    ZE_CALL(zeEventCreate, (event_pool, &event_desc, &copy_from_peer_event));
-
-    LOG_DEBUG("real event count: ", last_event_idx);
+    copy_from_peer_event = ze_base_entry::create_event();
 
     /* do appends */
     if (empty_kernel) {
@@ -157,10 +146,7 @@ void ze_reduce_entry::init() {
         zeCommandListAppendLaunchKernel,
         (comp_primitives.list, main_kernel, &group_count, entry_event, 1, &copy_from_peer_event));
 
-    ZE_CALL(zeCommandListClose, (comp_primitives.list));
-    if (global_data::env().enable_kernel_1s_copy_ops) {
-        ZE_CALL(zeCommandListClose, (ze_base_entry::copy_primitives.list));
-    }
+    ze_base_entry::close_lists();
 
     is_initialized = true;
 
@@ -169,10 +155,6 @@ void ze_reduce_entry::init() {
 
 void ze_reduce_entry::start() {
     init();
-
-    if (is_initialized && status == ccl_sched_entry_status_not_started) {
-        reset_sync_objects();
-    }
 
     size_t kernel_counter = 0;
     if (ccl::global_data::env().enable_kernel_sync) {
@@ -207,9 +189,6 @@ void ze_reduce_entry::finalize() {
 
     LOG_DEBUG("finalization");
 
-    /* events */
-    LOG_DEBUG("copy event finalization");
-    ZE_CALL(zeEventDestroy, (copy_from_peer_event));
     /* device mem */
     ccl::global_data::get().ze_cache->push(worker_idx,
                                            context,
@@ -221,7 +200,6 @@ void ze_reduce_entry::finalize() {
 
     /* kernels */
     if (empty_kernel_event) {
-        ZE_CALL(zeEventDestroy, (empty_kernel_event));
         ccl::global_data::get().ze_cache->push(worker_idx, module, empty_kernel_name, empty_kernel);
     }
     ccl::global_data::get().ze_cache->push(worker_idx, module, main_kernel_name, main_kernel);
@@ -231,11 +209,4 @@ void ze_reduce_entry::finalize() {
     is_initialized = false;
 
     LOG_DEBUG("finalization complete");
-}
-
-void ze_reduce_entry::reset_sync_objects() {
-    if (empty_kernel_event) {
-        ZE_CALL(zeEventHostReset, (empty_kernel_event));
-    }
-    ZE_CALL(zeEventHostReset, (copy_from_peer_event));
 }

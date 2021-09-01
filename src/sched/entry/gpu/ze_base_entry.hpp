@@ -41,6 +41,13 @@ protected:
     void get_comp_primitives(const ze_queue_properties_t &queue_props,
                              cmd_primitives &comp_primitives);
 
+    ze_event_handle_t create_event();
+    static bool is_event_completed(ze_event_handle_t event);
+    void reset_events();
+    void destroy_events();
+
+    void close_lists();
+
     ccl_sched *const sched;
 
     ccl_comm *comm{};
@@ -57,8 +64,11 @@ protected:
     cmd_primitives comp_primitives{};
     cmd_primitives copy_primitives{};
 
+    ze_event_handle_t entry_event{};
+
+private:
+    uint32_t event_counter{};
     ze_event_pool_desc_t event_pool_desc{};
     ze_event_pool_handle_t event_pool{};
-    ze_event_handle_t entry_event{};
-    const uint32_t add_event_count;
+    std::vector<ze_event_handle_t> events;
 };
