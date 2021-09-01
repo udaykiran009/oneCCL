@@ -50,7 +50,7 @@ public:
         }
 
         /* for remaining cases use regular coll_entry to get schedule filling offload */
-        return entry_factory::make_entry<coll_entry>(sched, param);
+        return entry_factory::create<coll_entry>(sched, param);
     }
 
     static ccl::status build_schedule(ccl_sched* sched,

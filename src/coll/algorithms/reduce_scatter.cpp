@@ -17,7 +17,7 @@ ccl::status ccl_coll_build_direct_reduce_scatter(ccl_sched* sched,
                                                  ccl_comm* comm) {
     LOG_DEBUG("build direct reduce_scatter");
 
-    entry_factory::make_entry<reduce_scatter_entry>(
+    entry_factory::create<reduce_scatter_entry>(
         sched, send_buf, recv_buf, recv_count, dtype, reduction, comm);
     return ccl::status::success;
 }
@@ -55,7 +55,7 @@ ccl::status ccl_coll_build_ring_reduce_scatter_block(ccl_sched* sched,
 
     if (!inplace) {
         /* copy local data into recv_buf */
-        entry_factory::make_entry<copy_entry>(
+        entry_factory::create<copy_entry>(
             sched, send_buf + rank * recv_count * dtype_size, recv_buf, recv_count, dtype);
     }
 
@@ -69,39 +69,39 @@ ccl::status ccl_coll_build_ring_reduce_scatter_block(ccl_sched* sched,
         /* send the data that dst needs. recv data that this process
          * needs from src into tmp_recvbuf */
         if (!inplace) {
-            entry_factory::make_entry<send_entry>(
+            entry_factory::create<send_entry>(
                 sched, send_buf + dst * recv_count * dtype_size, recv_count, dtype, dst, comm);
 
-            entry_factory::make_entry<recv_entry>(sched, tmp_buf, recv_count, dtype, src, comm);
+            entry_factory::create<recv_entry>(sched, tmp_buf, recv_count, dtype, src, comm);
         }
         else {
-            entry_factory::make_entry<send_entry>(
+            entry_factory::create<send_entry>(
                 sched, recv_buf + dst * recv_count * dtype_size, recv_count, dtype, dst, comm);
 
-            entry_factory::make_entry<recv_entry>(sched, tmp_buf, recv_count, dtype, src, comm);
+            entry_factory::create<recv_entry>(sched, tmp_buf, recv_count, dtype, src, comm);
         }
 
         sched->add_barrier();
 
         if (!inplace) {
-            entry_factory::make_entry<reduce_local_entry>(
+            entry_factory::create<reduce_local_entry>(
                 sched, tmp_buf, recv_count, recv_buf, nullptr, dtype, op);
         }
         else {
-            entry_factory::make_entry<reduce_local_entry>(sched,
-                                                          tmp_buf,
-                                                          recv_count,
-                                                          recv_buf + rank * recv_count * dtype_size,
-                                                          nullptr,
-                                                          dtype,
-                                                          op);
+            entry_factory::create<reduce_local_entry>(sched,
+                                                      tmp_buf,
+                                                      recv_count,
+                                                      recv_buf + rank * recv_count * dtype_size,
+                                                      nullptr,
+                                                      dtype,
+                                                      op);
         }
     }
 
     /* if inplace, move output data to the beginning of
      * recv_buf. already done for rank 0 */
     if (inplace && (rank != 0)) {
-        entry_factory::make_entry<copy_entry>(
+        entry_factory::create<copy_entry>(
             sched, recv_buf + rank * recv_count * dtype_size, recv_buf, recv_count, dtype);
     }
 
@@ -163,7 +163,7 @@ ccl::status ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
 
     if (comm_size == 1) {
         if (!inplace) {
-            entry_factory::make_entry<copy_entry>(sched, send_buf, recv_buf, count, dtype);
+            entry_factory::create<copy_entry>(sched, send_buf, recv_buf, count, dtype);
             sched->add_barrier();
         }
         return ccl::status::success;
@@ -263,33 +263,32 @@ ccl::status ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
             recv_reduce_local_buf += reduce_chunk_offset;
             recv_reduce_comm_buf += reduce_chunk_offset;
 
-            entry_factory::make_entry<send_entry>(sched, sbuf, send_chunk_size, dtype, dst, comm);
+            entry_factory::create<send_entry>(sched, sbuf, send_chunk_size, dtype, dst, comm);
 
             if (!use_prev) {
                 CCL_ASSERT(recv_chunk_size == reduce_chunk_size);
-                entry_factory::make_entry<recv_reduce_entry>(sched,
-                                                             recv_reduce_local_buf,
-                                                             recv_chunk_size,
-                                                             nullptr, /* out_cnt */
-                                                             dtype,
-                                                             op,
-                                                             src,
-                                                             recv_reduce_comm_buf,
-                                                             comm,
-                                                             recv_reduce_result_type);
+                entry_factory::create<recv_reduce_entry>(sched,
+                                                         recv_reduce_local_buf,
+                                                         recv_chunk_size,
+                                                         nullptr, /* out_cnt */
+                                                         dtype,
+                                                         op,
+                                                         src,
+                                                         recv_reduce_comm_buf,
+                                                         comm,
+                                                         recv_reduce_result_type);
             }
             else {
-                entry_factory::make_entry<recv_entry>(
-                    sched, rbuf, recv_chunk_size, dtype, src, comm);
+                entry_factory::create<recv_entry>(sched, rbuf, recv_chunk_size, dtype, src, comm);
 
                 if (idx + chunk_idx > 0) {
-                    entry_factory::make_entry<reduce_local_entry>(sched,
-                                                                  reduce_in_buf,
-                                                                  reduce_chunk_size,
-                                                                  reduce_inout_buf,
-                                                                  nullptr,
-                                                                  dtype,
-                                                                  op);
+                    entry_factory::create<reduce_local_entry>(sched,
+                                                              reduce_in_buf,
+                                                              reduce_chunk_size,
+                                                              reduce_inout_buf,
+                                                              nullptr,
+                                                              dtype,
+                                                              op);
                     sched->add_barrier();
                 }
 
@@ -309,13 +308,13 @@ ccl::status ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
                     reduce_in_buf += recv_chunk_offset;
                     reduce_inout_buf += recv_chunk_offset;
 
-                    entry_factory::make_entry<reduce_local_entry>(sched,
-                                                                  reduce_in_buf,
-                                                                  recv_chunk_size,
-                                                                  reduce_inout_buf,
-                                                                  nullptr,
-                                                                  dtype,
-                                                                  op);
+                    entry_factory::create<reduce_local_entry>(sched,
+                                                              reduce_in_buf,
+                                                              recv_chunk_size,
+                                                              reduce_inout_buf,
+                                                              nullptr,
+                                                              dtype,
+                                                              op);
                 }
             }
 

@@ -11,7 +11,7 @@ void make_chunked_send_entry(ccl_sched* sched,
         "send",
         dtype,
         cnt,
-        make_entry<send_entry>(chunk_sched, buf + chunk_offset, chunk_size, dtype, dst, comm),
+        create<send_entry>(chunk_sched, buf + chunk_offset, chunk_size, dtype, dst, comm),
         { chunk_sched = sched; });
 }
 
@@ -25,7 +25,7 @@ void make_chunked_recv_entry(ccl_sched* sched,
         "recv",
         dtype,
         cnt,
-        make_entry<recv_entry>(chunk_sched, buf + chunk_offset, chunk_size, dtype, src, comm),
+        create<recv_entry>(chunk_sched, buf + chunk_offset, chunk_size, dtype, src, comm),
         { chunk_sched = sched; });
 }
 
@@ -42,16 +42,16 @@ void make_chunked_recv_reduce_entry(ccl_sched* sched,
     CCL_CHUNKED_ENTRY_FUNCTION("recv_reduce",
                                dtype,
                                cnt,
-                               make_entry<recv_reduce_entry>(chunk_sched,
-                                                             inout_buf + chunk_offset,
-                                                             chunk_size,
-                                                             out_cnt,
-                                                             dtype,
-                                                             reduction_op,
-                                                             src,
-                                                             comm_buf + chunk_offset,
-                                                             comm,
-                                                             result_buf_type),
+                               create<recv_reduce_entry>(chunk_sched,
+                                                         inout_buf + chunk_offset,
+                                                         chunk_size,
+                                                         out_cnt,
+                                                         dtype,
+                                                         reduction_op,
+                                                         src,
+                                                         comm_buf + chunk_offset,
+                                                         comm,
+                                                         result_buf_type),
                                { chunk_sched = sched; });
 }
 
@@ -66,7 +66,7 @@ void make_chunked_send_entry(std::vector<ccl_sched*>& scheds,
         "send",
         dtype,
         cnt,
-        make_entry<send_entry>(chunk_sched, buf + chunk_offset, chunk_size, dtype, dst, comm),
+        create<send_entry>(chunk_sched, buf + chunk_offset, chunk_size, dtype, dst, comm),
         { chunk_sched = scheds[(first_sched_idx + chunk_idx) % scheds.size()]; });
 }
 
@@ -81,7 +81,7 @@ void make_chunked_recv_entry(std::vector<ccl_sched*>& scheds,
         "recv",
         dtype,
         cnt,
-        make_entry<recv_entry>(chunk_sched, buf + chunk_offset, chunk_size, dtype, src, comm),
+        create<recv_entry>(chunk_sched, buf + chunk_offset, chunk_size, dtype, src, comm),
         { chunk_sched = scheds[(first_sched_idx + chunk_idx) % scheds.size()]; });
 }
 
@@ -95,7 +95,7 @@ void make_chunked_copy_entry(std::vector<ccl_sched*>& scheds,
         "copy",
         dtype,
         cnt,
-        make_entry<copy_entry>(
+        create<copy_entry>(
             chunk_sched, in_buf + chunk_offset, out_buf + chunk_offset, chunk_size, dtype),
         { chunk_sched = scheds[(first_sched_idx + chunk_idx) % scheds.size()]; });
 }

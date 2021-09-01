@@ -320,7 +320,7 @@ void ccl_sched_base::free_memory_regions() {
     param.ctype = ccl_coll_internal;
     param.comm = coll_param.comm;
     std::unique_ptr<ccl_extra_sched> dereg_sched(new ccl_extra_sched(param, sched_id));
-    entry_factory::make_entry<deregister_entry>(dereg_sched.get(), memory.mr_list, param.comm);
+    entry_factory::create<deregister_entry>(dereg_sched.get(), memory.mr_list, param.comm);
 
     if (ccl::global_data::get().is_worker_thread || !ccl::global_data::env().worker_offload) {
         dereg_sched->do_progress();

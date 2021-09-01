@@ -45,11 +45,11 @@
 namespace entry_factory {
 
 template <class EntryType, class... Arguments>
-EntryType* make_entry(ccl_sched* sched, Arguments&&... args) {
-    LOG_DEBUG("creating ", EntryType::class_name(), " entry");
-    EntryType* new_entry = detail::entry_creator<EntryType>::template create<
+EntryType* create(ccl_sched* sched, Arguments&&... args) {
+    LOG_DEBUG("creating: ", EntryType::class_name(), " entry");
+    EntryType* new_entry = detail::entry_creator<EntryType>::template make_entry<
         ccl_sched_add_mode::ccl_sched_add_mode_last_value>(sched, std::forward<Arguments>(args)...);
-    LOG_DEBUG("created: ", EntryType::class_name(), ", entry: ", new_entry, ", for sched: ", sched);
+    LOG_DEBUG("created: ", EntryType::class_name(), ", entry: ", new_entry, ", sched: ", sched);
     return new_entry;
 }
 

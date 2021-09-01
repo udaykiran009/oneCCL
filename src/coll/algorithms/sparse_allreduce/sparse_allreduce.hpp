@@ -148,7 +148,7 @@
         param_nnz.dtype = ccl_datatype_int8; \
         param_nnz.comm = comm; \
 \
-        entry_factory::make_entry<coll_entry>(sched, param_nnz); \
+        entry_factory::create<coll_entry>(sched, param_nnz); \
         sched->add_barrier(); \
     } while (0)
 
@@ -544,37 +544,37 @@ ccl::status ccl_coll_build_sparse_allreduce_ring(ccl_sched* sched,
     sa_hndl->recv_counts =
         static_cast<size_t*>(sched->alloc_buffer(sizeof(size_t) * comm_size).get_ptr());
 
-    entry_factory::make_entry<function_entry>(sched, sparse_coalesce_ring<i_type, v_type>, sa_hndl);
+    entry_factory::create<function_entry>(sched, sparse_coalesce_ring<i_type, v_type>, sa_hndl);
     sched->add_barrier();
 
     if (comm_size > 1) {
         CCL_SPARSE_ALLREDUCE_ADD_NNZ_ENTRY();
 
-        entry_factory::make_entry<function_entry>(sched, sparse_set_max_buf_size_ring, sa_hndl);
+        entry_factory::create<function_entry>(sched, sparse_set_max_buf_size_ring, sa_hndl);
         sched->add_barrier();
 
         for (int i = 0; i < comm_size - 1; i++) {
             /* send local data to the right neighbour */
-            send_entry* se = entry_factory::make_entry<send_entry>(
+            send_entry* se = entry_factory::create<send_entry>(
                 sched, ccl_buffer(), 0, ccl_datatype_int8, send_to, comm);
             se->set_field_fn<ccl_sched_entry_field_buf>(sparse_get_send_buf_ring, sa_hndl);
             se->set_field_fn<ccl_sched_entry_field_cnt>(sparse_get_send_count_ring, sa_hndl);
 
             /* receive data from the left neighbour */
-            recv_entry* re = entry_factory::make_entry<recv_entry>(
+            recv_entry* re = entry_factory::create<recv_entry>(
                 sched, ccl_buffer(), 0, ccl_datatype_int8, recv_from, comm);
             re->set_field_fn<ccl_sched_entry_field_buf>(sparse_get_recv_buf_ring, sa_hndl);
             re->set_field_fn<ccl_sched_entry_field_cnt>(sparse_get_recv_count_ring, sa_hndl);
             sched->add_barrier();
 
             /* reduce data */
-            entry_factory::make_entry<function_entry>(
+            entry_factory::create<function_entry>(
                 sched, sparse_reduce_ring<i_type, v_type>, sa_hndl);
             sched->add_barrier();
         }
 
         /* copy all reduced data to recv_buf */
-        entry_factory::make_entry<function_entry>(
+        entry_factory::create<function_entry>(
             sched, sparse_prepare_result_ring<i_type, v_type>, sa_hndl);
         sched->add_barrier();
     }
@@ -750,13 +750,13 @@ ccl::status ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
     sa_hndl->recv_counts =
         static_cast<size_t*>(sched->alloc_buffer(sizeof(size_t) * comm_size).get_ptr());
 
-    entry_factory::make_entry<function_entry>(sched, sparse_coalesce_mask<i_type, v_type>, sa_hndl);
+    entry_factory::create<function_entry>(sched, sparse_coalesce_mask<i_type, v_type>, sa_hndl);
     sched->add_barrier();
 
     if (comm_size > 1) {
         CCL_SPARSE_ALLREDUCE_ADD_NNZ_ENTRY();
 
-        entry_factory::make_entry<function_entry>(sched, sparse_nnz_per_rank_mask, sa_hndl);
+        entry_factory::create<function_entry>(sched, sparse_nnz_per_rank_mask, sa_hndl);
         sched->add_barrier();
 
         ccl_coll_entry_param param_allgatherv{};
@@ -769,13 +769,13 @@ ccl::status ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
         param_allgatherv.comm = comm;
 
         /* gather indices from all the processes */
-        coll_entry* e = entry_factory::make_entry<coll_entry>(sched, param_allgatherv);
+        coll_entry* e = entry_factory::create<coll_entry>(sched, param_allgatherv);
         e->set_field_fn<ccl_sched_entry_field_send_buf>(sparse_get_send_buf_mask, sa_hndl);
         e->set_field_fn<ccl_sched_entry_field_recv_buf>(sparse_get_allgatherv_buf_mask, sa_hndl);
         e->set_field_fn<ccl_sched_entry_field_send_count>(sparse_get_send_count_mask, sa_hndl);
         sched->add_barrier();
 
-        entry_factory::make_entry<function_entry>(
+        entry_factory::create<function_entry>(
             sched, sparse_create_matrix_mask<i_type, v_type>, sa_hndl);
         sched->add_barrier();
 
@@ -789,7 +789,7 @@ ccl::status ccl_coll_build_sparse_allreduce_mask(ccl_sched* sched,
         param_allreduce.comm = comm;
 
         /* coll allreduce on matrix data */
-        coll_entry* ce = entry_factory::make_entry<coll_entry>(sched, param_allreduce);
+        coll_entry* ce = entry_factory::create<coll_entry>(sched, param_allreduce);
         ce->set_field_fn<ccl_sched_entry_field_send_buf>(sparse_get_allreduce_buf_mask, sa_hndl);
         ce->set_field_fn<ccl_sched_entry_field_recv_buf>(sparse_get_allreduce_buf_mask, sa_hndl);
         ce->set_field_fn<ccl_sched_entry_field_cnt>(sparse_get_allreduce_count_mask, sa_hndl);
@@ -1070,7 +1070,7 @@ ccl::status ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched* sched,
               sa_hndl->recv_counts);
 
     if (sched->coll_attr.sparse_coalesce_mode != ccl::sparse_coalesce_mode::disable) {
-        entry_factory::make_entry<function_entry>(
+        entry_factory::create<function_entry>(
             sched, sparse_coalesce_allgatherv<i_type, v_type>, sa_hndl);
         sched->add_barrier();
 
@@ -1084,7 +1084,7 @@ ccl::status ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched* sched,
 
     CCL_SPARSE_ALLREDUCE_ADD_NNZ_ENTRY();
 
-    entry_factory::make_entry<function_entry>(sched, sparse_alloc_result_buf_allgatherv, sa_hndl);
+    entry_factory::create<function_entry>(sched, sparse_alloc_result_buf_allgatherv, sa_hndl);
     sched->add_barrier();
 
     // allgather indices
@@ -1098,12 +1098,12 @@ ccl::status ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched* sched,
     param_i.dtype = index_dtype;
     param_i.comm = comm;
 
-    coll_entry* ce = entry_factory::make_entry<coll_entry>(sched, param_i, parallel_request_index);
+    coll_entry* ce = entry_factory::create<coll_entry>(sched, param_i, parallel_request_index);
     ce->set_field_fn<ccl_sched_entry_field_send_buf>(sparse_get_i_send_allgatherv, sa_hndl);
     ce->set_field_fn<ccl_sched_entry_field_recv_buf>(sparse_get_i_recv_allgatherv, sa_hndl);
     ce->set_field_fn<ccl_sched_entry_field_send_count>(sparse_get_send_count_allgatherv<0>,
                                                        sa_hndl);
-    entry_factory::make_entry<function_entry>(sched, sparse_set_v_counts_allgatherv<1>, sa_hndl);
+    entry_factory::create<function_entry>(sched, sparse_set_v_counts_allgatherv<1>, sa_hndl);
 
     // allgather values
     parallel_request_index++;
@@ -1116,7 +1116,7 @@ ccl::status ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched* sched,
     param_v.dtype = value_dtype;
     param_v.comm = comm;
 
-    ce = entry_factory::make_entry<coll_entry>(sched, param_v, parallel_request_index);
+    ce = entry_factory::create<coll_entry>(sched, param_v, parallel_request_index);
     ce->set_field_fn<ccl_sched_entry_field_send_buf>(sparse_get_v_send_allgatherv, sa_hndl);
     ce->set_field_fn<ccl_sched_entry_field_recv_buf>(sparse_get_v_recv_allgatherv, sa_hndl);
     ce->set_field_fn<ccl_sched_entry_field_send_count>(sparse_get_send_count_allgatherv<1>,
@@ -1124,11 +1124,10 @@ ccl::status ccl_coll_build_sparse_allreduce_3_allgatherv(ccl_sched* sched,
     sched->add_barrier();
 
     if (sched->coll_attr.sparse_coalesce_mode == ccl::sparse_coalesce_mode::disable) {
-        entry_factory::make_entry<function_entry>(
-            sched, sparse_return_gathered_allgatherv, sa_hndl);
+        entry_factory::create<function_entry>(sched, sparse_return_gathered_allgatherv, sa_hndl);
     }
     else {
-        entry_factory::make_entry<function_entry>(
+        entry_factory::create<function_entry>(
             sched, sparse_reduce_gathered_allgatherv<i_type, v_type>, sa_hndl);
     }
     sched->add_barrier();

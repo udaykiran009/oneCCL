@@ -239,7 +239,7 @@ void ccl_master_sched::sync_partial_scheds() {
     if (add_sync_entry) {
         auto sync_obj = std::make_shared<sync_object>(partial_scheds.size());
         for (auto& sched : partial_scheds) {
-            entry_factory::make_entry<sync_entry>(sched.get(), sync_obj);
+            entry_factory::create<sync_entry>(sched.get(), sync_obj);
         }
     }
 }

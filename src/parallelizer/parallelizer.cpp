@@ -98,7 +98,7 @@ ccl::status ccl_parallelizer::process_deps(ccl_master_sched* sched) {
     }
     sched->sync_partial_scheds();
 
-    entry_factory::make_entry<deps_entry>(deps_sched);
+    entry_factory::create<deps_entry>(deps_sched);
     deps_sched->add_barrier();
 
     return ccl::status::success;
@@ -145,7 +145,7 @@ ccl::status ccl_parallelizer::process_pre_post_copies(ccl_master_sched* sched) {
             size_t count = d2h_counts[idx];
             size_t bytes = count * dtype_size;
 
-            entry_factory::make_entry<copy_entry>(
+            entry_factory::create<copy_entry>(
                 part_scheds[sched_idx].get(),
                 ccl_buffer(coll_param.get_send_buf_ptr(idx, ccl_coll_param::buf_type::device),
                            bytes,
@@ -168,7 +168,7 @@ ccl::status ccl_parallelizer::process_pre_post_copies(ccl_master_sched* sched) {
             size_t count = h2d_counts[idx];
             size_t bytes = count * dtype_size;
 
-            entry_factory::make_entry<copy_entry>(
+            entry_factory::create<copy_entry>(
                 part_scheds[sched_idx].get(),
                 ccl_buffer(coll_param.get_recv_buf(idx), bytes),
                 ccl_buffer(coll_param.get_recv_buf_ptr(idx, ccl_coll_param::buf_type::device),
@@ -198,7 +198,7 @@ ccl::status ccl_parallelizer::process_output_event(ccl_master_sched* sched) {
     }
     sched->sync_partial_scheds();
 
-    entry_factory::make_entry<ze_event_signal_entry>(part_scheds[0].get(), sched);
+    entry_factory::create<ze_event_signal_entry>(part_scheds[0].get(), sched);
 
     return ccl::status::success;
 }
@@ -504,7 +504,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
                                .get_ptr();
                 main_ctx->part_idx = 0;
                 main_ctx->part_count = 1;
-                entry_factory::make_entry<prologue_entry>(
+                entry_factory::create<prologue_entry>(
                     part_scheds[0].get(),
                     coll_attr.prologue_fn,
                     ccl_buffer(coll_param.get_send_buf_ptr(),
@@ -528,7 +528,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
                     part_ctx->part_idx = idx;
                     part_ctx->part_count = part_count;
 
-                    entry_factory::make_entry<copy_entry>(
+                    entry_factory::create<copy_entry>(
                         part_scheds[idx].get(),
                         ccl_buffer(main_ctx, sizeof(ccl_parallelizer_prologue_ctx)),
                         ccl_buffer(part_ctx, sizeof(ccl_parallelizer_prologue_ctx)),
@@ -581,7 +581,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
             if (coll_attr.prologue_fn && !coll_attr.epilogue_fn) {
                 sched->sync_partial_scheds();
 
-                auto entry = entry_factory::make_entry<copy_entry>(
+                auto entry = entry_factory::create<copy_entry>(
                     part_scheds[0].get(),
                     ccl_buffer(), /* in_buf */
                     ccl_buffer(coll_param.get_recv_buf_ptr(),
@@ -599,7 +599,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
 
             if (coll_attr.epilogue_fn) {
                 sched->sync_partial_scheds();
-                auto entry = entry_factory::make_entry<epilogue_entry>(
+                auto entry = entry_factory::create<epilogue_entry>(
                     part_scheds[0].get(),
                     coll_attr.epilogue_fn,
                     ccl_buffer(coll_param.get_recv_buf_ptr(),
@@ -742,7 +742,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
 
                 sched->sync_partial_scheds();
 
-                auto entry = entry_factory::make_entry<sparse_allreduce_completion_entry>(
+                auto entry = entry_factory::create<sparse_allreduce_completion_entry>(
                     part_scheds[0].get(),
                     coll_attr.sparse_allreduce_completion_fn,
                     coll_attr.sparse_allreduce_fn_ctx,

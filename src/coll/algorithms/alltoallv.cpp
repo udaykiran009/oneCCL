@@ -20,7 +20,7 @@ ccl::status ccl_coll_build_direct_alltoallv(ccl_sched* sched,
                                             ccl_comm* comm) {
     LOG_DEBUG("build direct alltoallv");
 
-    entry_factory::make_entry<alltoallv_entry>(
+    entry_factory::create<alltoallv_entry>(
         sched, send_buf, send_counts, recv_buf, recv_counts, dtype, comm);
     return ccl::status::success;
 }
@@ -142,17 +142,17 @@ ccl::status ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
 
     if (!inplace && send_counts[comm_rank] && recv_counts[comm_rank]) {
         size_t sched_idx = (2 * comm_rank) % sched_count;
-        entry_factory::make_entry<copy_entry>(scheds[sched_idx],
-                                              ccl_buffer(coll_param.get_send_buf_ptr(),
-                                                         total_send_bytes,
-                                                         send_offsets[comm_rank],
-                                                         ccl_buffer_type::INDIRECT),
-                                              ccl_buffer(coll_param.get_recv_buf_ptr(),
-                                                         total_recv_bytes,
-                                                         recv_offsets[comm_rank],
-                                                         ccl_buffer_type::INDIRECT),
-                                              send_counts[comm_rank],
-                                              dtype);
+        entry_factory::create<copy_entry>(scheds[sched_idx],
+                                          ccl_buffer(coll_param.get_send_buf_ptr(),
+                                                     total_send_bytes,
+                                                     send_offsets[comm_rank],
+                                                     ccl_buffer_type::INDIRECT),
+                                          ccl_buffer(coll_param.get_recv_buf_ptr(),
+                                                     total_recv_bytes,
+                                                     recv_offsets[comm_rank],
+                                                     ccl_buffer_type::INDIRECT),
+                                          send_counts[comm_rank],
+                                          dtype);
     }
 
     for (int idx = 0; idx < comm_size; idx++) {
@@ -187,14 +187,14 @@ ccl::status ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
 
         if (inplace) {
             scheds[sched_idx]->add_barrier();
-            entry_factory::make_entry<copy_entry>(scheds[sched_idx],
-                                                  recv_buf,
-                                                  ccl_buffer(coll_param.get_recv_buf_ptr(),
-                                                             total_recv_bytes,
-                                                             recv_offsets[idx],
-                                                             ccl_buffer_type::INDIRECT),
-                                                  recv_counts[idx],
-                                                  dtype);
+            entry_factory::create<copy_entry>(scheds[sched_idx],
+                                              recv_buf,
+                                              ccl_buffer(coll_param.get_recv_buf_ptr(),
+                                                         total_recv_bytes,
+                                                         recv_offsets[idx],
+                                                         ccl_buffer_type::INDIRECT),
+                                              recv_counts[idx],
+                                              dtype);
             scheds[sched_idx]->add_barrier();
         }
     }
@@ -237,17 +237,17 @@ ccl::status ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
 
     if (!inplace && send_counts[comm_rank] && recv_counts[comm_rank]) {
         size_t sched_idx = (2 * comm_rank) % sched_count;
-        entry_factory::make_entry<copy_entry>(scheds[sched_idx],
-                                              ccl_buffer(coll_param.get_send_buf_ptr(),
-                                                         total_send_bytes,
-                                                         send_offsets[comm_rank],
-                                                         ccl_buffer_type::INDIRECT),
-                                              ccl_buffer(coll_param.get_recv_buf_ptr(),
-                                                         total_recv_bytes,
-                                                         recv_offsets[comm_rank],
-                                                         ccl_buffer_type::INDIRECT),
-                                              send_counts[comm_rank],
-                                              dtype);
+        entry_factory::create<copy_entry>(scheds[sched_idx],
+                                          ccl_buffer(coll_param.get_send_buf_ptr(),
+                                                     total_send_bytes,
+                                                     send_offsets[comm_rank],
+                                                     ccl_buffer_type::INDIRECT),
+                                          ccl_buffer(coll_param.get_recv_buf_ptr(),
+                                                     total_recv_bytes,
+                                                     recv_offsets[comm_rank],
+                                                     ccl_buffer_type::INDIRECT),
+                                          send_counts[comm_rank],
+                                          dtype);
     }
 
     for (int idx = 0; idx < comm_size; idx++) {
@@ -306,14 +306,14 @@ ccl::status ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
 
         size_t sched_idx = (comm_rank + idx) % sched_count;
 
-        entry_factory::make_entry<copy_entry>(scheds[sched_idx],
-                                              recv_bufs[idx],
-                                              ccl_buffer(coll_param.get_recv_buf_ptr(),
-                                                         total_recv_bytes,
-                                                         recv_offsets[idx],
-                                                         ccl_buffer_type::INDIRECT),
-                                              recv_counts[idx],
-                                              dtype);
+        entry_factory::create<copy_entry>(scheds[sched_idx],
+                                          recv_bufs[idx],
+                                          ccl_buffer(coll_param.get_recv_buf_ptr(),
+                                                     total_recv_bytes,
+                                                     recv_offsets[idx],
+                                                     ccl_buffer_type::INDIRECT),
+                                          recv_counts[idx],
+                                          dtype);
     }
 
     return ccl::status::success;
@@ -363,13 +363,13 @@ ccl::status ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sche
     std::vector<ccl_sched*> send_scheds(sched_count);
 
     for (size_t idx = 0; idx < sched_count; idx++) {
-        auto recv_sched = entry_factory::make_entry<subsched_entry>(
+        auto recv_sched = entry_factory::create<subsched_entry>(
                               scheds[idx], 0, [](ccl_sched* s) {}, "A2AV_RECV")
                               ->get_subsched();
 
         recv_scheds[idx] = recv_sched;
 
-        auto send_sched = entry_factory::make_entry<subsched_entry>(
+        auto send_sched = entry_factory::create<subsched_entry>(
                               scheds[idx], 0, [](ccl_sched* s) {}, "A2AV_SEND")
                               ->get_subsched();
 
@@ -378,17 +378,17 @@ ccl::status ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sche
 
     if (!inplace && send_counts[comm_rank] && recv_counts[comm_rank]) {
         size_t sched_idx = (2 * comm_rank) % sched_count;
-        entry_factory::make_entry<copy_entry>(recv_scheds[sched_idx],
-                                              ccl_buffer(coll_param.get_send_buf_ptr(),
-                                                         total_send_bytes,
-                                                         send_offsets[comm_rank],
-                                                         ccl_buffer_type::INDIRECT),
-                                              ccl_buffer(coll_param.get_recv_buf_ptr(),
-                                                         total_recv_bytes,
-                                                         recv_offsets[comm_rank],
-                                                         ccl_buffer_type::INDIRECT),
-                                              send_counts[comm_rank],
-                                              dtype);
+        entry_factory::create<copy_entry>(recv_scheds[sched_idx],
+                                          ccl_buffer(coll_param.get_send_buf_ptr(),
+                                                     total_send_bytes,
+                                                     send_offsets[comm_rank],
+                                                     ccl_buffer_type::INDIRECT),
+                                          ccl_buffer(coll_param.get_recv_buf_ptr(),
+                                                     total_recv_bytes,
+                                                     recv_offsets[comm_rank],
+                                                     ccl_buffer_type::INDIRECT),
+                                          send_counts[comm_rank],
+                                          dtype);
     }
 
     for (int idx = 0; idx < comm_size; idx++) {
@@ -450,14 +450,14 @@ ccl::status ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sche
 
         size_t sched_idx = (comm_rank + idx) % sched_count;
 
-        entry_factory::make_entry<copy_entry>(scheds[sched_idx],
-                                              recv_bufs[idx],
-                                              ccl_buffer(coll_param.get_recv_buf_ptr(),
-                                                         total_recv_bytes,
-                                                         recv_offsets[idx],
-                                                         ccl_buffer_type::INDIRECT),
-                                              recv_counts[idx],
-                                              dtype);
+        entry_factory::create<copy_entry>(scheds[sched_idx],
+                                          recv_bufs[idx],
+                                          ccl_buffer(coll_param.get_recv_buf_ptr(),
+                                                     total_recv_bytes,
+                                                     recv_offsets[idx],
+                                                     ccl_buffer_type::INDIRECT),
+                                          recv_counts[idx],
+                                          dtype);
     }
 
     return ccl::status::success;

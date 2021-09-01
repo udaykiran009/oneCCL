@@ -19,7 +19,7 @@ ccl::status ccl_coll_build_direct_bcast(ccl_sched* sched,
                                         ccl_comm* comm) {
     LOG_DEBUG("build direct bcast");
 
-    entry_factory::make_entry<bcast_entry>(sched, buf, count, dtype, root, comm);
+    entry_factory::create<bcast_entry>(sched, buf, count, dtype, root, comm);
     return ccl::status::success;
 }
 
@@ -43,12 +43,12 @@ ccl::status ccl_coll_build_naive_bcast(ccl_sched* sched,
     if (rank == root) {
         for (idx = 0; idx < comm_size; idx++) {
             if (idx != rank) {
-                entry_factory::make_entry<send_entry>(sched, buf, count, dtype, idx, comm);
+                entry_factory::create<send_entry>(sched, buf, count, dtype, idx, comm);
             }
         }
     }
     else {
-        entry_factory::make_entry<recv_entry>(sched, buf, count, dtype, root, comm);
+        entry_factory::create<recv_entry>(sched, buf, count, dtype, root, comm);
     }
 
 fn_exit:
@@ -101,12 +101,12 @@ ccl::status ccl_coll_build_scatter_for_bcast(ccl_sched* sched,
             curr_size = recv_size;
 
             if (recv_size > 0) {
-                entry_factory::make_entry<recv_entry>(sched,
-                                                      tmp_buf + relative_rank * scatter_size,
-                                                      recv_size,
-                                                      ccl_datatype_int8,
-                                                      src,
-                                                      comm);
+                entry_factory::create<recv_entry>(sched,
+                                                  tmp_buf + relative_rank * scatter_size,
+                                                  recv_size,
+                                                  ccl_datatype_int8,
+                                                  src,
+                                                  comm);
                 sched->add_barrier();
             }
             break;
@@ -130,13 +130,12 @@ ccl::status ccl_coll_build_scatter_for_bcast(ccl_sched* sched,
                 if (dst >= comm_size)
                     dst -= comm_size;
 
-                entry_factory::make_entry<send_entry>(
-                    sched,
-                    tmp_buf + scatter_size * (relative_rank + mask),
-                    send_size,
-                    ccl_datatype_int8,
-                    dst,
-                    comm);
+                entry_factory::create<send_entry>(sched,
+                                                  tmp_buf + scatter_size * (relative_rank + mask),
+                                                  send_size,
+                                                  ccl_datatype_int8,
+                                                  dst,
+                                                  comm);
                 sched->add_barrier();
                 curr_size -= send_size;
             }
@@ -204,10 +203,10 @@ ccl::status ccl_coll_build_scatter_ring_allgather_bcast(ccl_sched* sched,
         if (right_count < 0)
             right_count = 0;
         right_disp = rel_j * scatter_size;
-        entry_factory::make_entry<send_entry>(
+        entry_factory::create<send_entry>(
             sched, tmp_buf + right_disp, right_count, ccl_datatype_int8, right, comm);
         /* sendrecv, no barrier here */
-        entry_factory::make_entry<recv_entry>(
+        entry_factory::create<recv_entry>(
             sched, tmp_buf + left_disp, left_count, ccl_datatype_int8, left, comm);
         sched->add_barrier();
 
@@ -241,20 +240,20 @@ ccl::status ccl_coll_build_gpu_bcast(ccl_sched* sched,
 
     if (sched->coll_attr.to_cache) {
         sched->set_entry_exec_mode(ccl_sched_entry_exec_once);
-        entry_factory::make_entry<ze_handle_exchange_entry>(sched, comm, buffers);
+        entry_factory::create<ze_handle_exchange_entry>(sched, comm, buffers);
         sched->add_barrier();
         sched->set_entry_exec_mode(ccl_sched_entry_exec_regular);
 
         coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
     }
     else {
-        entry_factory::make_entry<ze_handle_exchange_entry>(sched, comm, buffers);
+        entry_factory::create<ze_handle_exchange_entry>(sched, comm, buffers);
     }
 
     sched->add_barrier();
 
     if (comm->rank() != root) {
-        entry_factory::make_entry<copy_entry>(
+        entry_factory::create<copy_entry>(
             sched, ccl_buffer(), buf, count, dtype, copy_attr(root, 0, copy_direction::d2d));
         sched->add_barrier();
     }

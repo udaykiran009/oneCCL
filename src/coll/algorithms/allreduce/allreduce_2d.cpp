@@ -118,7 +118,7 @@ static void ccl_allreduce_2d_add_reduce_scatter_allreduce_allgather(ccl_sched* s
             sched, send_buf, recv_buf, count, dtype, op, comm, chunk_idx, chunk_count);
     }
     else {
-        entry_factory::make_entry<subsched_entry>(
+        entry_factory::create<subsched_entry>(
             sched,
             chunk_idx,
             [send_buf, recv_buf, count, &dtype, op, comm, chunk_idx, chunk_count](ccl_sched* s) {
@@ -127,7 +127,7 @@ static void ccl_allreduce_2d_add_reduce_scatter_allreduce_allgather(ccl_sched* s
             },
             "AR_AG");
 
-        entry_factory::make_entry<subsched_entry>(
+        entry_factory::create<subsched_entry>(
             sched,
             chunk_idx + 1,
             [send_buf, recv_buf, count, &dtype, op, comm, chunk_idx, chunk_count](ccl_sched* s) {

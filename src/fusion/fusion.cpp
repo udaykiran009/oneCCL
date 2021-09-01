@@ -275,7 +275,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
             size_t global_copy_idx = idx * copies_per_part + copy_idx;
 #ifdef CCL_ENABLE_SYCL
             if (stream && stream->is_sycl_device_stream())
-                entry_factory::make_entry<copy_entry>(
+                entry_factory::create<copy_entry>(
                     part_scheds[idx].get(),
                     ccl_buffer(
                         exec_queue[global_copy_idx]->coll_param.get_send_buf_ptr(
@@ -288,7 +288,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
                     copy_attr(copy_direction::d2h));
             else
 #endif // CCL_ENABLE_SYCL
-                entry_factory::make_entry<copy_entry>(
+                entry_factory::create<copy_entry>(
                     part_scheds[idx].get(),
                     ccl_buffer(
                         exec_queue[global_copy_idx]->coll_param.get_send_buf_ptr(),
@@ -315,7 +315,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
             size_t global_copy_idx = idx * copies_per_part + copy_idx;
 #ifdef CCL_ENABLE_SYCL
             if (stream && stream->is_sycl_device_stream())
-                entry_factory::make_entry<copy_entry>(
+                entry_factory::create<copy_entry>(
                     part_scheds[idx].get(),
                     ccl_buffer(fusion_buf, buffer_size, offset),
                     ccl_buffer(
@@ -328,7 +328,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
                     copy_attr(copy_direction::h2d));
             else
 #endif // CCL_ENABLE_SYCL
-                entry_factory::make_entry<copy_entry>(
+                entry_factory::create<copy_entry>(
                     part_scheds[idx].get(),
                     ccl_buffer(fusion_buf, buffer_size, offset),
                     ccl_buffer(
@@ -341,7 +341,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
             part_scheds[idx]->add_barrier();
 
             offset += exec_queue[global_copy_idx]->coll_param.get_recv_count() * dtype_size;
-            entry_factory::make_entry<function_entry>(
+            entry_factory::create<function_entry>(
                 part_scheds[idx].get(), complete_user_request, exec_queue[global_copy_idx]);
             CCL_THROW_IF_NOT(!exec_queue[global_copy_idx]->is_completed(),
                              "incorrect completion counter");
@@ -354,8 +354,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
         part_scheds[0]->set_finalize_fn(release_fusion_buf_for_cached_sched, fusion_buf);
     }
     else {
-        entry_factory::make_entry<function_entry>(
-            part_scheds[0].get(), release_fusion_buf, fusion_buf);
+        entry_factory::create<function_entry>(part_scheds[0].get(), release_fusion_buf, fusion_buf);
     }
 
     clear_exec_queue();
