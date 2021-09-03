@@ -789,12 +789,6 @@ atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
     setenv("FI_OFI_RXM_MSG_RX_SIZE", "128", 0);
     setenv("FI_OFI_RXM_MSG_TX_SIZE", "128", 0);
 
-#ifdef CCL_ENABLE_OFI_HMEM
-    if (attr.in.enable_hmem) {
-        setenv("FI_OFI_RXM_SAR_LIMIT", "1073741824", 0);
-    }
-#endif // CCL_ENABLE_OFI_HMEM
-
     setenv("FI_SHM_TX_SIZE", "8192", 0);
     setenv("FI_SHM_RX_SIZE", "8192", 0);
 

@@ -55,10 +55,10 @@ OFI
 Run instructions
 ################
 
-Run allreduce test with SYCL USM device buffers.
+Run allreduce test with ring algorithm and SYCL USM device buffers.
 
 ::
 
     source <ccl_install_dir>/env/setvars.sh
     export LD_LIBRARY_PATH=<ofi_install_path>/lib:${LD_LIBRARY_PATH}
-    CCL_ATL_TRANSPORT=ofi CCL_ATL_HMEM=1 FI_PROVIDER=verbs mpiexec -n 2 <ccl_install_dir>/examples/sycl/sycl_allreduce_usm_test gpu device
+    CCL_ATL_TRANSPORT=ofi CCL_ATL_HMEM=1 CCL_ALLREDUCE=ring FI_PROVIDER=verbs mpiexec -n 2 <ccl_install_dir>/examples/sycl/sycl_allreduce_usm_test gpu device
