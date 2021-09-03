@@ -235,6 +235,10 @@ ccl::status ccl_coll_build_allreduce(ccl_sched* sched,
             CCL_CALL(ccl_coll_build_topo_ring_allreduce(
                 sched, send_buf, recv_buf, count, dtype, reduction, comm));
             break;
+        case ccl_coll_allreduce_topo_a2a:
+            CCL_CALL(ccl_coll_build_topo_a2a_allreduce(
+                sched, send_buf, recv_buf, count, dtype, reduction, comm));
+            break;
 #endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
         default:
             CCL_FATAL("unexpected allreduce_algo ", ccl_coll_algorithm_to_str(algo));

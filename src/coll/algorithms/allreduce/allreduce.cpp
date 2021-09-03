@@ -656,4 +656,47 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
     return ccl::status::success;
 }
 
+ccl::status ccl_coll_build_topo_a2a_allreduce(ccl_sched* sched,
+                                              ccl_buffer send_buf,
+                                              ccl_buffer recv_buf,
+                                              size_t count,
+                                              const ccl_datatype& dtype,
+                                              ccl::reduction op,
+                                              ccl_comm* comm) {
+    LOG_DEBUG("build topo_a2a allreduce");
+
+    const std::vector<ze_handle_exchange_entry::mem_desc_t> in_buffers{
+        { send_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 0
+        { recv_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 1
+    };
+
+    ccl_coll_entry_param barrier_param{};
+    barrier_param.ctype = ccl_coll_barrier;
+    barrier_param.comm = comm;
+    barrier_param.hint_algo.barrier = ccl_coll_barrier_ring;
+
+    if (sched->coll_attr.to_cache) {
+        sched->set_entry_exec_mode(ccl_sched_entry_exec_once);
+        entry_factory::create<ze_handle_exchange_entry>(sched, comm, in_buffers);
+        sched->add_barrier();
+        sched->set_entry_exec_mode(ccl_sched_entry_exec_regular);
+
+        // TODO: no need barrier for the first iteration where ze_handle_exchange_entry exists
+        coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
+    }
+    else {
+        entry_factory::create<ze_handle_exchange_entry>(sched, comm, in_buffers);
+    }
+
+    sched->add_barrier();
+
+    entry_factory::create<ze_a2a_allreduce_entry>(
+        sched, send_buf, recv_buf, count, dtype, op, comm);
+    sched->add_barrier();
+
+    coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
+
+    return ccl::status::success;
+}
+
 #endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT

@@ -27,6 +27,7 @@ if (CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)
         native_device_api/l0/primitives.cpp
         native_device_api/interop_utils.cpp
 
+        sched/entry/gpu/ze_a2a_allreduce_entry.cpp
         sched/entry/gpu/ze_base_entry.cpp
         sched/entry/gpu/ze_cache.cpp
         sched/entry/gpu/ze_call.cpp

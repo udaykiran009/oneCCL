@@ -425,7 +425,7 @@ void ccl_sched_base::alloc_buffers_for_pre_post_copy() {
     selector_param.is_sycl_buf = coll_attr.is_sycl_buf;
 
     if (!param.stream || !param.stream->is_sycl_device_stream() ||
-        ccl_is_topo_ring_algo(selector_param)) {
+        ccl_is_topo_ring_algo(selector_param) || ccl_is_topo_a2a_algo(selector_param)) {
         return;
     }
 

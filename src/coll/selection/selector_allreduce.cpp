@@ -11,12 +11,14 @@ std::map<ccl_coll_allreduce_algo, std::string>
         std::make_pair(ccl_coll_allreduce_double_tree, "double_tree"),
         std::make_pair(ccl_coll_allreduce_recursive_doubling, "recursive_doubling"),
         std::make_pair(ccl_coll_allreduce_2d, "2d"),
-        std::make_pair(ccl_coll_allreduce_topo_ring, "topo_ring")
+        std::make_pair(ccl_coll_allreduce_topo_ring, "topo_ring"),
+        std::make_pair(ccl_coll_allreduce_topo_a2a, "topo_a2a")
     };
 
 ccl_algorithm_selector<ccl_coll_allreduce>::ccl_algorithm_selector() {
 #if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
     insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allreduce_topo_ring);
+    // insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allreduce_topo_a2a);
 #else // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
     if (ccl::global_data::env().atl_transport == ccl_atl_ofi) {
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allreduce_ring);
@@ -59,6 +61,8 @@ bool ccl_algorithm_selector_helper<ccl_coll_allreduce_algo>::can_use(
              (ccl::global_data::env().atl_transport == ccl_atl_ofi))
         can_use = false;
     else if (algo == ccl_coll_allreduce_topo_ring && !ccl_can_use_topo_ring_algo(param))
+        can_use = false;
+    else if (algo == ccl_coll_allreduce_topo_a2a && !ccl_can_use_topo_a2a_algo(param))
         can_use = false;
 
     return can_use;

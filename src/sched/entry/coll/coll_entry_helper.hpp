@@ -28,7 +28,7 @@ public:
 #endif // CCL_ENABLE_SYCL
         selector_param.hint_algo = param.hint_algo;
 
-        if (ccl_is_topo_ring_algo(selector_param)) {
+        if (ccl_is_topo_ring_algo(selector_param) || ccl_is_topo_a2a_algo(selector_param)) {
             sched->strict_order = true;
         }
 

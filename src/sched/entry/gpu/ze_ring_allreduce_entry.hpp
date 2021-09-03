@@ -4,8 +4,6 @@
 #include "comp/comp.hpp"
 #include "sched/entry/gpu/ze_base_entry.hpp"
 
-class ze_kernel;
-
 class ze_ring_allreduce_entry : public ze_base_entry {
 public:
     static constexpr const char* class_name() noexcept {

@@ -9,55 +9,6 @@
 using namespace ccl;
 using namespace ccl::ze;
 
-class ze_kernel {
-public:
-    ze_kernel(ze_module_handle_t module, const std::string& kernel_name, size_t worker_idx = 0)
-            : module(module),
-              kernel_name(kernel_name),
-              worker_idx(worker_idx) {
-        global_data::get().ze_cache->get(worker_idx, module, kernel_name, &kernel);
-        LOG_DEBUG("get kernel: name: ", kernel_name);
-    }
-
-    ~ze_kernel() {
-        if (kernel) {
-            global_data::get().ze_cache->push(worker_idx, module, kernel_name, kernel);
-        }
-    }
-
-    void set_args(ze_kernel_args_t kernel_args) {
-        LOG_DEBUG("kernel ", kernel, " args:\n", to_string(kernel_args));
-        set_kernel_args(kernel, kernel_args);
-    }
-
-    void calculate_group_size(size_t count) {
-        get_suggested_group_size(kernel, count, &group_size);
-        LOG_DEBUG("suggested group size: ", to_string(group_size));
-
-        ZE_CALL(zeKernelSetGroupSize,
-                (kernel, group_size.groupSizeX, group_size.groupSizeY, group_size.groupSizeZ));
-
-        get_suggested_group_count(group_size, count, &group_count);
-        LOG_DEBUG("suggested group count: ", to_string(group_count));
-    }
-
-    ze_kernel_handle_t get_kernel() const {
-        return kernel;
-    }
-
-    const ze_group_count_t* get_group_count() const {
-        return &group_count;
-    }
-
-private:
-    ze_module_handle_t module{};
-    std::string kernel_name{};
-    size_t worker_idx{};
-    ze_group_count_t group_count{};
-    ze_group_size_t group_size{};
-    ze_kernel_handle_t kernel{};
-};
-
 ze_ring_allreduce_entry::ze_ring_allreduce_entry(ccl_sched* sched,
                                                  ccl_buffer send_buf,
                                                  ccl_buffer recv_buf,

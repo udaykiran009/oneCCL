@@ -29,7 +29,8 @@ enum ccl_coll_allreduce_algo {
     ccl_coll_allreduce_double_tree,
     ccl_coll_allreduce_recursive_doubling,
     ccl_coll_allreduce_2d,
-    ccl_coll_allreduce_topo_ring
+    ccl_coll_allreduce_topo_ring,
+    ccl_coll_allreduce_topo_a2a
 };
 
 enum ccl_coll_alltoall_algo {

@@ -270,3 +270,57 @@ void ze_base_entry::close_lists() {
     if (copy_primitives.list)
         ZE_CALL(zeCommandListClose, (copy_primitives.list));
 }
+
+ze_kernel::ze_kernel(ze_module_handle_t module, const std::string &kernel_name, size_t worker_idx)
+        : module(module),
+          kernel_name(kernel_name),
+          worker_idx(worker_idx) {
+    global_data::get().ze_cache->get(worker_idx, module, kernel_name, &kernel);
+    CCL_THROW_IF_NOT(kernel);
+    LOG_DEBUG("get kernel: name: ", kernel_name);
+}
+
+ze_kernel::ze_kernel(ze_kernel &&other) noexcept
+        : module(std::move(other.module)),
+          kernel_name(std::move(other.kernel_name)),
+          worker_idx(std::move(other.worker_idx)),
+          group_count(std::move(other.group_count)),
+          group_size(std::move(other.group_size)),
+          kernel(std::move(other.kernel)) {
+    other.module = nullptr;
+    other.kernel_name.clear();
+    other.worker_idx = 0;
+    other.group_count = { 0, 0, 0 };
+    other.group_size = { 0, 0, 0 };
+    other.kernel = nullptr;
+};
+
+ze_kernel::~ze_kernel() {
+    if (kernel) {
+        global_data::get().ze_cache->push(worker_idx, module, kernel_name, kernel);
+    }
+}
+
+void ze_kernel::set_args(ze_kernel_args_t kernel_args) {
+    LOG_DEBUG("kernel ", kernel, " args:\n", to_string(kernel_args));
+    set_kernel_args(kernel, kernel_args);
+}
+
+void ze_kernel::calculate_group_size(size_t count) {
+    get_suggested_group_size(kernel, count, &group_size);
+    LOG_DEBUG("suggested group size: ", to_string(group_size));
+
+    ZE_CALL(zeKernelSetGroupSize,
+            (kernel, group_size.groupSizeX, group_size.groupSizeY, group_size.groupSizeZ));
+
+    get_suggested_group_count(group_size, count, &group_count);
+    LOG_DEBUG("suggested group count: ", to_string(group_count));
+}
+
+ze_kernel_handle_t ze_kernel::get_kernel() const {
+    return kernel;
+}
+
+const ze_group_count_t *ze_kernel::get_group_count() const {
+    return &group_count;
+}
