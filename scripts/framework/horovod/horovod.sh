@@ -18,6 +18,9 @@ set_run_env() {
     # model
     export PYTHONPATH=${RN50_MODEL_TF_DIR}:${PYTHONPATH}
 
+    #ATS WA for event execution: remove after fix
+    export EnableDirectSubmission=1
+
     # Tensorflow
     export TF_ENABLE_LAYOUT_OPT=0
     export ITEX_ENABLE_TILE_AS_DEVICE=1
@@ -30,6 +33,7 @@ set_run_env() {
     # HVD
     export HOROVOD_LOG_LEVEL=INFO
     export HOROVOD_THREAD_AFFINITY=0,1
+    export HOROVOD_CCL_FIN_THREADS=1
     #export HOROVOD_FUSION_THRESHOLD=150000000
     #export HOROVOD_DISABLE_GROUP_FUSION=1
     #export HOROVOD_CYCLE_TIME=0.1
@@ -39,6 +43,7 @@ set_run_env() {
     export CCL_WORKER_COUNT=1
     export CCL_WORKER_AFFINITY=4-19
     export CCL_ATL_TRANSPORT=mpi
+    export CCL_KERNEL_OUTPUT_EVENT=1
     vars_file="${CCL_SRC_DIR}/build/_install/env/setvars.sh"
     if [[ -f ${vars_file} ]]
     then
@@ -77,14 +82,15 @@ MODEL_TF_SRC_COMMIT="74b72acf1436255987a238afb414185008631d09"
 MODEL_PT_FILE="bench_pt.py"
 MODEL_PT_BASE_LINK="https://gitlab.devtools.intel.com/aemani/dlutils/-/raw/master"
 
-TF_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww29/ubuntu/tensorflow-2.5.0-cp37-cp37m-linux_x86_64.whl"
-ITEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww29/ubuntu/intel_extension_for_tensorflow-0.2.0-cp37-cp37m-linux_x86_64.whl"
+TF_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww35/itex_wenjun/ubuntu/tensorflow-2.5.0-cp37-cp37m-linux_x86_64.whl"
+ITEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww35/itex_wenjun/ubuntu/intel_extension_for_tensorflow-0.2.1-cp37-cp37m-linux_x86_64.whl"
+
 TF_NAME=`basename $TF_LINK`
 ITEX_NAME=`basename $ITEX_LINK`
 
 #PT_LINK="http://10.165.58.120:8080/whls_063021_dpcpp060321/torch-1.7.0a0-cp37-cp37m-linux_x86_64.whl"
-PT_LINK="http://10.165.58.120:8080/ipexgpu/latest/torch-1.7.0a0-cp37-cp37m-linux_x86_64.whl"
-IPEX_LINK="http://10.165.58.120:8080/whls_063021_dpcpp060321/torch_ipex-0.1+3f77413-cp37-cp37m-linux_x86_64.whl"
+PT_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww36/pytorch/ubuntu/dpcpp0824/torch-2021.07.15.14820cec71-cp37-cp37m-linux_x86_64.whl"
+IPEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww36/pytorch/ubuntu/dpcpp0824/ipex-2021.08.28.082f03e7-cp37-cp37m-linux_x86_64.whl"
 
 PT_NAME=`basename $PT_LINK`
 IPEX_NAME=`basename $IPEX_LINK`
@@ -408,6 +414,7 @@ parse_arguments() {
     RN50_MODEL_TF_DIR=${MODEL_TF_SRC_DIR}/models/image_recognition/tensorflow/resnet50v1_5/training
     RN50_OUTPUT_DIR=${MODEL_TF_SRC_DIR}/resnet50_chk
     MODEL_PT_SRC=${SCRIPT_WORK_DIR}/${MODEL_PT_FILE}
+    CONDA_INSTALL_DIR="${SCRIPT_WORK_DIR}/conda"
 
     if [[ ${FULL_SCOPE} = "1" ]]
     then
@@ -572,8 +579,8 @@ pt_test() {
     fi
 
     echo_log "===================================== Basic PT test ==========================================="
-    echo_log "python -c \"import torch; import torch_ipex; print(torch.__version__)\""
-    python -c "import torch; import torch_ipex; print(torch.__version__)"
+    echo_log "python -c \"import torch; import ipex; print(torch.__version__)\""
+    python -c "import torch; import ipex; print(torch.__version__)"
     CheckCommandExitCode $? "Basic PT test failed"
     echo_log "===================================== ************* ==========================================="
 }
@@ -645,7 +652,6 @@ download_conda() {
     CONDA_FILENAME="conda.sh"
     wget -O ${CONDA_FILENAME} ${CONDA_LINK}
     chmod +x ${CONDA_FILENAME}
-    CONDA_INSTALL_DIR="${SCRIPT_WORK_DIR}/conda"
     ./${CONDA_FILENAME} -b -p ${CONDA_INSTALL_DIR}
     export CONDA_ENVS_PATH="${CONDA_INSTALL_DIR}/envs"
     export CONDA_PKGS_DIRS="${CONDA_INSTALL_DIR}/pkgs"
@@ -671,7 +677,7 @@ create_conda() {
         fi
     fi
 
-    echo_log `which conda`
+    echo_log "which conda: `which conda`"
 
     echo_log "\n=== create conda env ===\n"
     env_count=`conda env list | grep "${CONDA_ENV_NAME} " | wc -l`

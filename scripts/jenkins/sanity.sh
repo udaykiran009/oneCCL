@@ -382,6 +382,11 @@ function run_compatibitily_tests()
 
 function run_horovod_tests()
 {
+
+    # IPEX has a dependency for mkl and tbb
+    source ${CCL_ONEAPI_DIR}/mkl/_install/mkl/latest/env/vars.sh
+    source ${CCL_ONEAPI_DIR}/tbb/_install/tbb/latest/env/vars.sh
+
     pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
     ./horovod.sh -download_pt 1 -install_pt 1 \
                  -download_ipex 1 -install_ipex 1 \
