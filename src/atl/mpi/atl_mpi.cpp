@@ -175,8 +175,8 @@ atl_status_t atl_mpi::atl_ep_poll(atl_ep_t* ep) {
     return atl_mpi_ep_poll(ep);
 }
 
-atl_status_t atl_mpi::atl_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t* req) {
-    return atl_mpi_ep_check(ep, is_completed, req);
+atl_status_t atl_mpi::atl_ep_check(atl_ep_t* ep, atl_req_t* req) {
+    return atl_mpi_ep_check(ep, req);
 }
 atl_mpi::~atl_mpi() {
     if (!is_finalized)

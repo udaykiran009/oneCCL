@@ -97,7 +97,7 @@ private:
     void send_sync_flag(int idx);
     void recv_sync_flag(int idx);
     void validate_sync_flags();
-    bool is_atl_req_completed(atl_req_t* req);
+    bool check_atl_req(atl_req_t* req);
     void reset_atl_reqs();
 
     /* gpu */

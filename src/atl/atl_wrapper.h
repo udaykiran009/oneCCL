@@ -207,8 +207,8 @@ public:
         return transport->atl_ep_poll(eps[ep_idx]);
     }
 
-    atl_status_t atl_ep_check(size_t ep_idx, int* is_completed, atl_req_t* req) {
-        return transport->atl_ep_check(eps[ep_idx], is_completed, req);
+    atl_status_t atl_ep_check(size_t ep_idx, atl_req_t* req) {
+        return transport->atl_ep_check(eps[ep_idx], req);
     }
 
     size_t get_threads_per_process() {

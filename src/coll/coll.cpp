@@ -404,6 +404,9 @@ ccl::status ccl_coll_build_reduce(ccl_sched* sched,
     param.dtype = dtype;
     param.comm = comm;
     param.stream = sched->coll_param.stream;
+#ifdef CCL_ENABLE_SYCL
+    param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
+#endif // CCL_ENABLE_SYCL
     param.hint_algo = sched->hint_algo;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_reduce>(param);

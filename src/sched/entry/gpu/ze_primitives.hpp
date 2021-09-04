@@ -100,9 +100,11 @@ struct ze_group_size_t {
     uint32_t groupSizeZ = 0;
 };
 
-void get_suggested_group_size(ze_kernel_handle_t kernel, size_t count, ze_group_size_t* group_size);
+void get_suggested_group_size(ze_kernel_handle_t kernel,
+                              size_t elem_count,
+                              ze_group_size_t* group_size);
 void get_suggested_group_count(const ze_group_size_t& group_size,
-                               size_t count,
+                               size_t elem_count,
                                ze_group_count_t* group_count);
 
 using ze_kernel_arg_t = std::pair<size_t, const void*>;

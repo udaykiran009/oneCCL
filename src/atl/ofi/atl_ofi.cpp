@@ -615,14 +615,10 @@ atl_status_t atl_ofi::atl_ep_send(atl_ep_t* ep,
 
     prov = atl_ofi_get_prov(ep, dst_proc_idx, len);
     prov_ep = &(prov->eps[ep->idx]);
+
+    atl_ofi_init_req(req, prov_ep, prov_ep->tx);
+
     ofi_req = ((atl_ofi_req_t*)req->internal);
-
-    req->tag = tag;
-    req->remote_proc_idx = dst_proc_idx;
-    ofi_req->comp_state = ATL_OFI_COMP_POSTED;
-
-    ofi_req->prov_ep = prov_ep;
-    ofi_req->fi_ep = prov_ep->tx;
 
     cache.get(ep->idx, prov->domain, const_cast<void*>(buf), len, &ofi_req->mr);
     void* desc = (ofi_req->mr) ? fi_mr_desc(ofi_req->mr) : nullptr;
@@ -660,14 +656,10 @@ atl_status_t atl_ofi::atl_ep_recv(atl_ep_t* ep,
 
     prov = atl_ofi_get_prov(ep, src_proc_idx, len);
     prov_ep = &(prov->eps[ep->idx]);
+
+    atl_ofi_init_req(req, prov_ep, prov_ep->rx);
+
     ofi_req = ((atl_ofi_req_t*)req->internal);
-
-    req->tag = tag;
-    req->remote_proc_idx = src_proc_idx;
-    ofi_req->comp_state = ATL_OFI_COMP_POSTED;
-
-    ofi_req->prov_ep = prov_ep;
-    ofi_req->fi_ep = prov_ep->rx;
 
     cache.get(ep->idx, prov->domain, const_cast<void*>(buf), len, &ofi_req->mr);
     void* desc = (ofi_req->mr) ? fi_mr_desc(ofi_req->mr) : nullptr;
@@ -886,14 +878,10 @@ atl_status_t atl_ofi::atl_ep_read(atl_ep_t* ep,
 
     prov = atl_ofi_get_prov(ep, dst_proc_idx, len);
     prov_ep = &(prov->eps[ep->idx]);
+
+    atl_ofi_init_req(req, prov_ep, prov_ep->tx);
+
     ofi_req = ((atl_ofi_req_t*)req->internal);
-
-    req->tag = 0;
-    req->remote_proc_idx = dst_proc_idx;
-    ofi_req->comp_state = ATL_OFI_COMP_POSTED;
-
-    ofi_req->prov_ep = prov_ep;
-    ofi_req->fi_ep = prov_ep->tx;
 
     ATL_OFI_RETRY(fi_read(prov_ep->tx,
                           buf,
@@ -924,14 +912,10 @@ atl_status_t atl_ofi::atl_ep_write(atl_ep_t* ep,
 
     prov = atl_ofi_get_prov(ep, dst_proc_idx, len);
     prov_ep = &(prov->eps[ep->idx]);
+
+    atl_ofi_init_req(req, prov_ep, prov_ep->tx);
+
     ofi_req = ((atl_ofi_req_t*)req->internal);
-
-    req->tag = 0;
-    req->remote_proc_idx = dst_proc_idx;
-    ofi_req->comp_state = ATL_OFI_COMP_POSTED;
-
-    ofi_req->prov_ep = prov_ep;
-    ofi_req->fi_ep = prov_ep->tx;
 
     ATL_OFI_RETRY(fi_write(prov_ep->tx,
                            buf,
@@ -996,9 +980,7 @@ atl_status_t atl_ofi::atl_ep_poll(atl_ep_t* ep) {
     return ATL_STATUS_SUCCESS;
 }
 
-atl_status_t atl_ofi::atl_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t* req) {
-    CCL_THROW_IF_NOT(is_completed);
-
+atl_status_t atl_ofi::atl_ep_check(atl_ep_t* ep, atl_req_t* req) {
     atl_status_t status;
     atl_ofi_req_t* ofi_req;
     atl_ofi_ctx_t* ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
@@ -1006,14 +988,14 @@ atl_status_t atl_ofi::atl_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t* r
     status = ATL_STATUS_SUCCESS;
     ofi_req = ((atl_ofi_req_t*)req->internal);
 
-    *is_completed = (ofi_req->comp_state == ATL_OFI_COMP_COMPLETED);
-    if (*is_completed) {
+    req->is_completed = (ofi_req->comp_state == ATL_OFI_COMP_COMPLETED);
+    if (req->is_completed) {
         return ATL_STATUS_SUCCESS;
     }
 
     if (ofi_ctx->progress_mode == ATL_PROGRESS_CHECK) {
         status = atl_ep_progress(ep);
-        *is_completed = (ofi_req->comp_state == ATL_OFI_COMP_COMPLETED);
+        req->is_completed = (ofi_req->comp_state == ATL_OFI_COMP_COMPLETED);
     }
 
     return status;

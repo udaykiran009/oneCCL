@@ -81,7 +81,7 @@ public:
     ~ze_kernel();
 
     void set_args(ze_kernel_args_t kernel_args);
-    void calculate_group_size(size_t count);
+    void calculate_group_size(size_t elem_count);
     ze_kernel_handle_t get_kernel() const;
     const ze_group_count_t *get_group_count() const;
 

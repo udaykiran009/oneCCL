@@ -135,11 +135,9 @@ typedef struct {
 } atl_proc_coord_t;
 
 typedef struct atl_req {
-    uint64_t tag;
-    size_t remote_proc_idx;
+    int is_completed;
     void* internal[ATL_REQ_SIZE];
-
-    atl_req() : tag(0), remote_proc_idx(0) {
+    atl_req() : is_completed(0) {
         memset(internal, 0, ATL_REQ_SIZE * sizeof(void*));
     }
 } atl_req_t;

@@ -127,7 +127,7 @@ public:
 
     atl_status_t atl_ep_poll(atl_ep_t* ep) override;
 
-    atl_status_t atl_ep_check(atl_ep_t* ep, int* is_completed, atl_req_t* req) override;
+    atl_status_t atl_ep_check(atl_ep_t* ep, atl_req_t* req) override;
 
     atl_status_t atl_finalize() override;
 

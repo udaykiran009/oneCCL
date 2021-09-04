@@ -79,39 +79,44 @@ void create_kernel(ze_module_handle_t module, std::string kernel_name, ze_kernel
 }
 
 void get_suggested_group_size(ze_kernel_handle_t kernel,
-                              size_t count,
+                              size_t elem_count,
                               ze_group_size_t* group_size) {
-    CCL_ASSERT(count > 0, "count == 0");
+    group_size->groupSizeX = group_size->groupSizeY = group_size->groupSizeZ = 1;
+    if (!elem_count) {
+        return;
+    }
+
     ZE_CALL(zeKernelSuggestGroupSize,
             (kernel,
-             count,
+             elem_count,
              1,
              1,
              &group_size->groupSizeX,
              &group_size->groupSizeY,
              &group_size->groupSizeZ));
+
     CCL_THROW_IF_NOT(group_size->groupSizeX >= 1,
-                     "wrong group size calculation: group size: ",
+                     "wrong group size calculation: size: ",
                      to_string(*group_size),
-                     ", count: ",
-                     count);
+                     ", elem_count: ",
+                     elem_count);
 }
 
 void get_suggested_group_count(const ze_group_size_t& group_size,
-                               size_t count,
+                               size_t elem_count,
                                ze_group_count_t* group_count) {
-    group_count->groupCountX = count / group_size.groupSizeX;
+    group_count->groupCountX = std::max((elem_count / group_size.groupSizeX), 1ul);
     group_count->groupCountY = 1;
     group_count->groupCountZ = 1;
 
-    auto rem = count % group_size.groupSizeX;
+    auto rem = elem_count % group_size.groupSizeX;
     CCL_THROW_IF_NOT(group_count->groupCountX >= 1 && rem == 0,
-                     "wrong group count calculation: group size: ",
+                     "wrong group calculation: size: ",
                      to_string(group_size),
-                     ", group count: ",
-                     to_string(*group_count),
                      ", count: ",
-                     std::to_string(count));
+                     to_string(*group_count),
+                     ", elem_count: ",
+                     std::to_string(elem_count));
 }
 
 void set_kernel_args(ze_kernel_handle_t kernel, const ze_kernel_args_t& kernel_args) {

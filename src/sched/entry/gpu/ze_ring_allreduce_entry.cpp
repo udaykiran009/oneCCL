@@ -107,11 +107,12 @@ void ze_ring_allreduce_entry::send_sync_flag(int idx) {
     CCL_THROW_IF_NOT(status == ATL_STATUS_SUCCESS, "atl status: ", atl_status_to_str(status));
 }
 
-bool ze_ring_allreduce_entry::is_atl_req_completed(atl_req_t* req) {
-    int is_completed = 0;
-    auto status = comm->atl->atl_ep_check(sched->bin->get_atl_ep(), &is_completed, req);
-    CCL_THROW_IF_NOT(status == ATL_STATUS_SUCCESS, "atl status: ", atl_status_to_str(status));
-    return is_completed;
+bool ze_ring_allreduce_entry::check_atl_req(atl_req_t* req) {
+    if (!req->is_completed) {
+        auto status = comm->atl->atl_ep_check(sched->bin->get_atl_ep(), req);
+        CCL_THROW_IF_NOT(status == ATL_STATUS_SUCCESS, "atl status: ", atl_status_to_str(status));
+    }
+    return req->is_completed;
 }
 
 void ze_ring_allreduce_entry::validate_sync_flags() {
@@ -267,7 +268,7 @@ void ze_ring_allreduce_entry::start() {
     ze_base_entry::start();
 
     for (size_t i = 0; i < send_reqs.size(); ++i) {
-        CCL_THROW_IF_NOT(!is_atl_req_completed(&send_reqs[i]));
+        CCL_THROW_IF_NOT(!send_reqs[i].is_completed);
     }
 
     for (int i = 0; i < stage_iter_count; ++i) {
@@ -296,7 +297,7 @@ void ze_ring_allreduce_entry::update() {
         }
 
         if (!rs_reduce_started[iter_idx]) {
-            auto recv_is_completed = is_atl_req_completed(&recv_reqs[iter_idx]);
+            auto recv_is_completed = check_atl_req(&recv_reqs[iter_idx]);
             if (recv_is_completed) {
                 ZE_CALL(zeEventHostSignal, (rs_reduce_wait_events[iter_idx]));
                 rs_reduce_started[iter_idx] = true;
@@ -307,7 +308,7 @@ void ze_ring_allreduce_entry::update() {
         }
 
         if ((ze_base_entry::is_event_completed(rs_reduce_signal_events[iter_idx])) &&
-            rs_sync_sent[iter_idx] && is_atl_req_completed(&send_reqs[iter_idx])) {
+            rs_sync_sent[iter_idx] && check_atl_req(&send_reqs[iter_idx])) {
             LOG_DEBUG("completed reduce_scatter iter ", iter_idx);
             iter_idx++;
         }
@@ -331,9 +332,10 @@ void ze_ring_allreduce_entry::update() {
             ag_sync_sent[iter_idx] = true;
         }
 
-        auto is_send_completed = is_atl_req_completed(&send_reqs[iter_idx + stage_iter_count]);
-        auto is_recv_completed = is_atl_req_completed(&recv_reqs[iter_idx + stage_iter_count]);
-        if (ag_sync_sent[iter_idx] && is_send_completed && is_recv_completed) {
+        auto is_send_completed =
+            ag_sync_sent[iter_idx] && check_atl_req(&send_reqs[iter_idx + stage_iter_count]);
+        auto is_recv_completed = check_atl_req(&recv_reqs[iter_idx + stage_iter_count]);
+        if (is_send_completed && is_recv_completed) {
             LOG_DEBUG("completed allgatherv iter ", iter_idx);
             ++iter_idx;
         }

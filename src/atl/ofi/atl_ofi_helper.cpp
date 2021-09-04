@@ -1303,3 +1303,11 @@ err:
     ret = ATL_STATUS_FAILURE;
     goto exit;
 }
+
+void atl_ofi_init_req(atl_req_t* req, atl_ofi_prov_ep_t* prov_ep, struct fid_ep* fi_ep) {
+    atl_ofi_req_t* ofi_req = ((atl_ofi_req_t*)req->internal);
+    ofi_req->prov_ep = prov_ep;
+    ofi_req->fi_ep = fi_ep;
+    ofi_req->comp_state = ATL_OFI_COMP_POSTED;
+    req->is_completed = 0;
+}

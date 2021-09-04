@@ -86,15 +86,13 @@ public:
     }
 
     void update() override {
-        int req_status;
-        atl_status_t atl_status =
-            comm->atl->atl_ep_check(sched->bin->get_atl_ep(), &req_status, &req);
+        atl_status_t atl_status = comm->atl->atl_ep_check(sched->bin->get_atl_ep(), &req);
 
         if (unlikely(atl_status != ATL_STATUS_SUCCESS)) {
             CCL_THROW("RECV_REDUCE entry failed. atl_status: ", atl_status_to_str(atl_status));
         }
 
-        if (req_status) {
+        if (req.is_completed) {
             LOG_DEBUG("completed RECV in RECV_REDUCE entry, req=", &req, ", starting REDUCE");
             size_t bytes = in_cnt * dtype.size();
             size_t offset = inout_buf.get_offset();
