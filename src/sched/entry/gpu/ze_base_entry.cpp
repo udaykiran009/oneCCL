@@ -188,7 +188,7 @@ void ze_base_entry::get_comp_primitives(const ze_queue_properties_t &queue_props
                                         cmd_primitives &comp_primitives) {
     uint32_t ordinal, queue_index;
     get_comp_queue_ordinal(device, queue_props, &ordinal);
-    get_queue_index(queue_props, ordinal, comm_rank, &queue_index);
+    get_queue_index(queue_props, ordinal, 0, &queue_index);
 
     comp_primitives.queue_desc.ordinal = ordinal;
     comp_primitives.queue_desc.index = queue_index;
@@ -207,10 +207,10 @@ void ze_base_entry::get_copy_primitives(const ze_queue_properties_t &queue_props
     // Need to think, how we'd calculate the index for every queue.
     // Hang in case of CCL_KERNEL_1S_USE_COPY_OPS=1 CCL_ZE_COPY_ENGINE=none
     if (ze_init_mode == (init_mode::compute | init_mode::copy)) {
-        get_queue_index(queue_props, ordinal, comm_rank + 1, &queue_index);
+        get_queue_index(queue_props, ordinal, 1, &queue_index);
     }
     else {
-        get_queue_index(queue_props, ordinal, comm_rank, &queue_index);
+        get_queue_index(queue_props, ordinal, 0, &queue_index);
     }
 
     copy_primitives.queue_desc.ordinal = ordinal;

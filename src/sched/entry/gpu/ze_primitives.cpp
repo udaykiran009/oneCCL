@@ -228,11 +228,8 @@ void get_queue_index(const ze_queue_properties_t& props,
                      int idx,
                      uint32_t* index) {
     CCL_ASSERT(props.size() > ordinal, "props.size() <= ordinal");
-    // In case if we have kernel output enabled use a different index
-    // to avoid intersection with SYCL queue provided by the user
-    // which have index 0
-    if (ccl::global_data::env().enable_kernel_output_event)
-        idx += 1;
+
+    idx += ccl::global_data::env().ze_queue_index;
 
     *index = idx % props[ordinal].numQueues;
     LOG_DEBUG("set queue index: ", *index);
