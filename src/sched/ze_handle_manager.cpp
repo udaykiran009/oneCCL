@@ -1,4 +1,5 @@
 #include "common/comm/comm.hpp"
+#include "common/global/global.hpp"
 #include "sched/entry/gpu/ze_call.hpp"
 #include "sched/ze_handle_manager.hpp"
 
@@ -91,7 +92,15 @@ void ipc_handle_manager::clear() {
             if (mem_ptr) {
                 ze_result_t res{};
                 if (mem_type == ipc_mem_type::memory) {
-                    res = zeMemCloseIpcHandle(context, mem_ptr);
+                    // There is a bug in L0 that results in hang in this function
+                    // when we use kernel output event, as a workaround skip it
+                    // for now.
+                    if (!ccl::global_data::env().enable_kernel_output_event) {
+                        res = zeMemCloseIpcHandle(context, mem_ptr);
+                    }
+                    else {
+                        res = ZE_RESULT_SUCCESS;
+                    }
                 }
                 else if (mem_type == ipc_mem_type::pool) {
                     res = zeEventPoolCloseIpcHandle((ze_event_pool_handle_t)mem_ptr);
