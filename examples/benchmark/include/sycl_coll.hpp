@@ -153,7 +153,7 @@ struct sycl_base_coll : base_coll, private strategy {
                     .wait();
 
                 if (!base_coll::get_inplace()) {
-                    stream.get_native().memset(recv_bufs[b_idx][rank_idx], 0, recv_bytes).wait();
+                    stream.get_native().memset(recv_bufs[b_idx][rank_idx], -1, recv_bytes).wait();
                 }
             }
             else {
@@ -173,7 +173,7 @@ struct sycl_base_coll : base_coll, private strategy {
                             (static_cast<sycl_buffer_t<Dtype>*>(recv_bufs[b_idx][rank_idx]));
                         auto recv_buf_acc =
                             recv_buf->template get_access<mode::write>(h, recv_count);
-                        h.fill(recv_buf_acc, static_cast<Dtype>(0));
+                        h.fill(recv_buf_acc, static_cast<Dtype>(-1));
                     })
                     .wait();
             }

@@ -988,6 +988,8 @@ atl_status_t atl_ofi::atl_ep_check(atl_ep_t* ep, atl_req_t* req) {
     status = ATL_STATUS_SUCCESS;
     ofi_req = ((atl_ofi_req_t*)req->internal);
 
+    CCL_THROW_IF_NOT(!req->is_completed, "request is already completed");
+
     req->is_completed = (ofi_req->comp_state == ATL_OFI_COMP_COMPLETED);
     if (req->is_completed) {
         return ATL_STATUS_SUCCESS;

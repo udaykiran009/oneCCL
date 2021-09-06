@@ -95,7 +95,7 @@ struct cpu_base_coll : base_coll, protected strategy {
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
             memcpy(send_bufs[b_idx][rank_idx], fill_vector.data(), send_bytes);
             if (!base_coll::get_inplace()) {
-                memset(recv_bufs[b_idx][rank_idx], 0, recv_bytes);
+                memset(recv_bufs[b_idx][rank_idx], -1, recv_bytes);
             }
         }
     }

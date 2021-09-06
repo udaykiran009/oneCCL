@@ -6,7 +6,7 @@
 class alltoallv_entry : public base_coll_entry {
 public:
     static constexpr const char* class_name() noexcept {
-        return "alltoallv";
+        return "ALLTOALLV";
     }
 
     alltoallv_entry() = delete;

@@ -27,7 +27,7 @@ protected:
                            ccl_comm *comm = nullptr,
                            uint32_t add_event_count = 0);
 
-    void init(init_mode ze_init_mode);
+    void init(init_mode mode);
     virtual void start() override;
     virtual void update() override;
     void finalize();
@@ -37,7 +37,7 @@ protected:
     void init_primitives(cmd_primitives &cmd_primitives);
     void get_copy_primitives(const ze_queue_properties_t &queue_props,
                              cmd_primitives &copy_primitives,
-                             init_mode ze_init_mode);
+                             init_mode mode);
     void get_comp_primitives(const ze_queue_properties_t &queue_props,
                              cmd_primitives &comp_primitives);
 

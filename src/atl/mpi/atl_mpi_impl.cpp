@@ -1421,9 +1421,10 @@ static inline atl_status_t atl_mpi_ep_poll(atl_ep_t* ep) {
 static atl_status_t atl_mpi_ep_check(atl_ep_t* ep, atl_req_t* req) {
     atl_status_t status = ATL_STATUS_SUCCESS;
 
-    CCL_THROW_IF_NOT(!req->is_completed, "request is already is_completed");
-
     atl_mpi_req_t* mpi_req = ((atl_mpi_req_t*)req->internal);
+
+    CCL_THROW_IF_NOT(!req->is_completed, "request is already completed");
+    CCL_THROW_IF_NOT(mpi_req->comp_state == ATL_MPI_COMP_POSTED, "request is already completed");
 
     req->is_completed = (mpi_req->comp_state == ATL_MPI_COMP_COMPLETED);
     if (req->is_completed) {

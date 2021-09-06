@@ -533,7 +533,7 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
 
     sched->add_barrier();
 
-    if (comm_size > 2) {
+    if (comm_size != 2) {
         LOG_DEBUG("node_comm: id: ",
                   node_comm->id(),
                   ", size: ",
@@ -623,13 +623,11 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
                 sched->add_barrier();
             }
         }
-        else if ((node_comm_size >= 3) && (comm_size == node_comm_size)) {
+        else if (((node_comm_size >= 3) || (node_comm_size == 1)) &&
+                 (comm_size == node_comm_size)) {
             entry_factory::create<ze_ring_allreduce_entry>(
                 sched, send_buf, recv_buf, count, dtype, op, comm);
             sched->add_barrier();
-
-            barrier_param.comm = comm;
-            coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
         }
         else {
             CCL_THROW("unexpected node_comm size: ", node_comm_size);
@@ -642,12 +640,13 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
             sched->add_barrier();
         }
 
+        barrier_param.comm = comm;
+        coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
+        sched->add_barrier();
+
         // entry_factory::create<ze_ring_allreduce_entry>(
         //         sched, send_buf, recv_buf, count, dtype, op, comm);
         // sched->add_barrier();
-
-        barrier_param.comm = comm;
-        coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
     }
     else {
         CCL_THROW("unexpected comm size: ", comm_size, ", node comm size: ", node_comm_size);

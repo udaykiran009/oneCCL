@@ -25,7 +25,7 @@ ze_base_entry::ze_base_entry(ccl_sched *sched, ccl_comm *comm, uint32_t add_even
     events.resize(add_event_count + 1, nullptr); // at least one event to track progress
 }
 
-void ze_base_entry::init(init_mode ze_init_mode) {
+void ze_base_entry::init(init_mode mode) {
     if (is_initialized) {
         return;
     }
@@ -46,23 +46,25 @@ void ze_base_entry::init(init_mode ze_init_mode) {
     context = sycl_context.template get_native<sycl::backend::level_zero>();
 
     /* get queue properties */
-    uint32_t num_queue_groups;
-    get_num_queue_groups(device, &num_queue_groups);
-
     ze_queue_properties_t queue_props;
-    get_queues_properties(device, num_queue_groups, &queue_props);
+    get_queues_properties(device, &queue_props);
 
-    /* init compute queue, list */
-    if (init_mode::compute & ze_init_mode) {
+    if ((queue_props.size() == 1) && (queue_props[0].numQueues == 1)) {
+        LOG_DEBUG("numQueues = 1, switch to compute init mode");
+        mode = init_mode::compute;
+    }
+
+    /* init compute queue and list */
+    if (init_mode::compute & mode) {
         LOG_DEBUG("compute init mode is enabled");
         get_comp_primitives(queue_props, comp_primitives);
         init_primitives(comp_primitives);
     }
 
-    /* init copy queue, list */
-    if (init_mode::copy & ze_init_mode) {
+    /* init copy queue and list */
+    if (init_mode::copy & mode) {
         LOG_DEBUG("copy init mode is enabled");
-        get_copy_primitives(queue_props, copy_primitives, ze_init_mode);
+        get_copy_primitives(queue_props, copy_primitives, mode);
         init_primitives(copy_primitives);
     }
 
@@ -197,7 +199,7 @@ void ze_base_entry::get_comp_primitives(const ze_queue_properties_t &queue_props
 
 void ze_base_entry::get_copy_primitives(const ze_queue_properties_t &queue_props,
                                         cmd_primitives &copy_primitives,
-                                        init_mode ze_init_mode) {
+                                        init_mode mode) {
     uint32_t ordinal, queue_index;
     get_copy_queue_ordinal(device, queue_props, &ordinal);
 
@@ -206,7 +208,7 @@ void ze_base_entry::get_copy_primitives(const ze_queue_properties_t &queue_props
     // WA is adding optional counter, which says the order number of a queue.
     // Need to think, how we'd calculate the index for every queue.
     // Hang in case of CCL_KERNEL_1S_USE_COPY_OPS=1 CCL_ZE_COPY_ENGINE=none
-    if (ze_init_mode == (init_mode::compute | init_mode::copy)) {
+    if (mode == (init_mode::compute | init_mode::copy)) {
         get_queue_index(queue_props, ordinal, 1, &queue_index);
     }
     else {

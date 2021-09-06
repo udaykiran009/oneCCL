@@ -95,12 +95,12 @@ void ipc_handle_manager::clear() {
                     // There is a bug in L0 that results in hang in this function
                     // when we use kernel output event, as a workaround skip it
                     // if the knob is set
-                    if (!ccl::global_data::env().ze_ipc_close_wa) {
-                        res = zeMemCloseIpcHandle(context, mem_ptr);
+                    if (ccl::global_data::env().ze_close_ipc_wa) {
+                        LOG_DEBUG("skip zeMemCloseIpcHandle");
+                        res = ZE_RESULT_SUCCESS;
                     }
                     else {
-                        LOG_DEBUG("Skipping zeMemCloseIpcHandle");
-                        res = ZE_RESULT_SUCCESS;
+                        res = zeMemCloseIpcHandle(context, mem_ptr);
                     }
                 }
                 else if (mem_type == ipc_mem_type::pool) {
@@ -245,10 +245,14 @@ void ipc_handle_manager::get_address_range(const void* ptr, void** base_ptr, siz
 void ipc_handle_manager::check_rank(int rank, ccl_comm* check_comm) {
     CCL_THROW_IF_NOT(
         (rank >= 0) && (rank < static_cast<int>(handles.size())) && (rank < check_comm->size()),
-        "rank is not valid value: ",
-        rank);
+        "invalid rank: ",
+        rank,
+        ", handles.size: ",
+        handles.size(),
+        ", comm.size: ",
+        check_comm->size());
     CCL_THROW_IF_NOT(
-        rank != check_comm->rank(), "don't expect to open handle for own rank: ", rank);
+        rank != check_comm->rank(), "do not expect to open handle for own rank: ", rank);
 }
 
 } // namespace ze

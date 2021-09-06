@@ -113,10 +113,7 @@ void set_kernel_args(ze_kernel_handle_t kernel, const ze_kernel_args_t& kernel_a
 
 using ze_queue_properties_t = std::vector<ze_command_queue_group_properties_t>;
 
-void get_num_queue_groups(ze_device_handle_t device, uint32_t* num);
-void get_queues_properties(ze_device_handle_t device,
-                           uint32_t num_queue_groups,
-                           ze_queue_properties_t* props);
+void get_queues_properties(ze_device_handle_t device, ze_queue_properties_t* props);
 void get_comp_queue_ordinal(ze_device_handle_t device,
                             const ze_queue_properties_t& props,
                             uint32_t* ordinal);

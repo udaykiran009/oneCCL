@@ -526,7 +526,7 @@ function run_tests()
     if [ ${runtime} == "ofi_adjust" ]
     then
         allgatherv_algos="${allgatherv_algos} multi_bcast"
-        allreduce_algos="${allreduce_algos} ring_rma 2d"
+        allreduce_algos="${allreduce_algos} 2d" # ring_rma
     fi
 
     if [ ${node_label} == "mlsl2_test_gpu_ft" ]

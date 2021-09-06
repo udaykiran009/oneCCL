@@ -216,7 +216,9 @@ bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
 #endif // MULTI_GPU_SUPPORT
 #endif // CCL_ENABLE_SYCL
 
-    if ((comm_size < 2) || (local_proc_count == 1) ||
+    if ((((param.ctype == ccl_coll_bcast) || (param.ctype == ccl_coll_reduce)) &&
+         ((comm_size < 2) || (local_proc_count == 1))) ||
+
         ((comm_size != static_cast<int>(local_proc_count)) && (local_proc_count != 2)) ||
 
         // need subcomms support from atl/mpi

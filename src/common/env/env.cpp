@@ -131,7 +131,7 @@ env_data::env_data()
           ze_serialize_mode(0),
           ze_copy_engine(ccl_ze_copy_engine_none),
           ze_queue_index(1),
-          ze_ipc_close_wa(0),
+          ze_close_ipc_wa(0),
 
           bf16_impl_type(ccl_bf16_no_compiler_support),
           fp16_impl_type(ccl_fp16_no_compiler_support) {
@@ -288,7 +288,7 @@ void env_data::parse() {
     env_2_type(CCL_ZE_SERIALIZE, ze_serialize_mode);
     env_2_enum(CCL_ZE_COPY_ENGINE, ze_copy_engine_names, ze_copy_engine);
     env_2_type(CCL_ZE_QUEUE_INDEX, ze_queue_index);
-    env_2_type(CCL_ZE_IPC_CLOSE_WA, ze_ipc_close_wa);
+    env_2_type(CCL_ZE_CLOSE_IPC_WA, ze_close_ipc_wa);
 
     auto bf16_impl_types = ccl_bf16_get_impl_types();
     ccl_bf16_impl_type bf16_env_impl_type;
@@ -483,7 +483,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_ZE_SERIALIZE, ": ", ze_serialize_mode);
     LOG_INFO(CCL_ZE_COPY_ENGINE, ": ", str_by_enum(ze_copy_engine_names, ze_copy_engine));
     LOG_INFO(CCL_ZE_QUEUE_INDEX, ": ", ze_queue_index);
-    LOG_INFO(CCL_ZE_IPC_CLOSE_WA, ": ", ze_ipc_close_wa);
+    LOG_INFO(CCL_ZE_CLOSE_IPC_WA, ": ", ze_close_ipc_wa);
 #endif // CCL_ENABLE_SYCL
 
     LOG_INFO(CCL_BF16, ": ", str_by_enum(bf16_impl_names, bf16_impl_type));

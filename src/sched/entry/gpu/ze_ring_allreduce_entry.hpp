@@ -26,6 +26,7 @@ public:
 
     void init();
     void start() override;
+    void update_multi_ranks();
     void update() override;
     void finalize();
     void reset_fields();
@@ -56,6 +57,7 @@ protected:
 
 private:
     static constexpr uint32_t local_events_count{ 3 };
+    static constexpr uint32_t op_id_offset{ 16 };
 
     const ccl_buffer send_buf;
     const ccl_buffer recv_buf;
@@ -86,8 +88,8 @@ private:
     std::vector<uint64_t> send_tags;
     std::vector<uint64_t> recv_tags;
 
-    std::vector<char> sync_send_flags;
-    std::vector<char> sync_recv_flags;
+    std::vector<int> sync_send_flags;
+    std::vector<int> sync_recv_flags;
 
     std::vector<bool> rs_sync_sent;
     std::vector<bool> ag_sync_sent;
@@ -96,7 +98,7 @@ private:
     void atl_ops_finalize();
     void send_sync_flag(int idx);
     void recv_sync_flag(int idx);
-    void validate_sync_flags();
+    void validate_sync_flags(int limit);
     bool check_atl_req(atl_req_t* req);
     void reset_atl_reqs();
 

@@ -34,14 +34,18 @@ void ze_ring_allreduce_entry::atl_ops_init() {
     right_peer = (comm_rank + 1) % comm_size;
     recv_tags.resize(total_iter_count);
     send_tags.resize(total_iter_count);
-    sync_recv_flags.resize(total_iter_count, 0);
-    sync_send_flags.resize(total_iter_count, { static_cast<char>(comm_rank) });
+    sync_recv_flags.resize(total_iter_count, ccl_comm::invalid_rank);
+    sync_send_flags.resize(total_iter_count, comm_rank);
 
     for (int i = 0; i < total_iter_count; ++i) {
-        send_tags[i] = comm->atl->tag->create(
-            sched->get_comm_id(), right_peer, sched->sched_id, sched->get_op_id() + i);
-        recv_tags[i] = comm->atl->tag->create(
-            sched->get_comm_id(), comm_rank, sched->sched_id, sched->get_op_id() + i);
+        send_tags[i] = comm->atl->tag->create(right_peer,
+                                              sched->get_comm_id(),
+                                              sched->sched_id,
+                                              sched->get_op_id() + i + op_id_offset);
+        recv_tags[i] = comm->atl->tag->create(comm_rank,
+                                              sched->get_comm_id(),
+                                              sched->sched_id,
+                                              sched->get_op_id() + i + op_id_offset);
     }
 
     rs_sync_sent.resize(stage_iter_count, false);
@@ -91,6 +95,15 @@ void ze_ring_allreduce_entry::recv_sync_flag(int idx) {
     auto src = comm->get_global_rank(left_peer);
     auto tag = recv_tags.at(idx);
     atl_req_t* req = &recv_reqs[idx];
+
+    CCL_THROW_IF_NOT((src != comm_size) && (src == left_peer),
+                     "unexpected src ",
+                     src,
+                     ", my rank ",
+                     comm_rank,
+                     ", left peer ",
+                     left_peer);
+
     LOG_DEBUG("start recv: { src: ", src, ", tag: ", tag, ", bytes: ", bytes, "}");
     auto status = comm->atl->atl_ep_recv(sched->bin->get_atl_ep(), buf, bytes, src, tag, req);
     CCL_THROW_IF_NOT(status == ATL_STATUS_SUCCESS, "atl status: ", atl_status_to_str(status));
@@ -102,7 +115,24 @@ void ze_ring_allreduce_entry::send_sync_flag(int idx) {
     auto dst = comm->get_global_rank(right_peer);
     auto tag = send_tags.at(idx);
     atl_req_t* req = &send_reqs[idx];
-    LOG_DEBUG("start send: { dst: ", dst, ", tag: ", tag, ", bytes: ", bytes, "}");
+
+    CCL_THROW_IF_NOT((dst != comm_size) && (dst == right_peer),
+                     "unexpected dst ",
+                     dst,
+                     ", my rank ",
+                     comm_rank,
+                     ", right peer ",
+                     right_peer);
+
+    LOG_DEBUG("start send: { dst: ",
+              dst,
+              ", tag: ",
+              tag,
+              ", bytes: ",
+              bytes,
+              ", value: ",
+              sync_send_flags[idx],
+              "}");
     auto status = comm->atl->atl_ep_send(sched->bin->get_atl_ep(), buf, bytes, dst, tag, req);
     CCL_THROW_IF_NOT(status == ATL_STATUS_SUCCESS, "atl status: ", atl_status_to_str(status));
 }
@@ -115,12 +145,13 @@ bool ze_ring_allreduce_entry::check_atl_req(atl_req_t* req) {
     return req->is_completed;
 }
 
-void ze_ring_allreduce_entry::validate_sync_flags() {
-    for (int i = 0; i < stage_iter_count; ++i) {
+void ze_ring_allreduce_entry::validate_sync_flags(int limit) {
+    for (int i = 0; i < total_iter_count; ++i) {
         int value = sync_send_flags[i];
         CCL_THROW_IF_NOT(value == comm_rank);
         value = sync_recv_flags[i];
-        CCL_THROW_IF_NOT(value == left_peer);
+        if (i < limit)
+            CCL_THROW_IF_NOT(value == left_peer);
     }
 }
 
@@ -130,6 +161,23 @@ void ze_ring_allreduce_entry::init() {
     }
 
     LOG_DEBUG("init");
+
+    size_t dtype_size = dtype.size();
+
+    if (comm_size == 1) {
+        ze_base_entry::init(init_mode::copy);
+        ZE_CALL(zeCommandListAppendMemoryCopy,
+                (ze_base_entry::get_copy_list(),
+                 recv_buf.get_ptr(),
+                 send_buf.get_ptr(),
+                 cnt * dtype_size,
+                 ze_base_entry::entry_event,
+                 0,
+                 nullptr));
+        ze_base_entry::close_lists();
+        LOG_DEBUG("init for comm_size = 1 completed");
+        return;
+    }
 
     ze_base_entry::init(init_mode::compute | init_mode::copy);
 
@@ -152,8 +200,7 @@ void ze_ring_allreduce_entry::init() {
     // reduce_scatter stage
 
     size_t main_block_count = cnt / comm_size;
-    size_t dtype_size = dtype.size();
-    int block_idx = comm_rank;
+    int block_idx = (comm_size + comm_rank - 1) % comm_size;
 
     for (int i = 0; i < stage_iter_count; ++i) {
         size_t block_count = main_block_count;
@@ -267,8 +314,9 @@ void ze_ring_allreduce_entry::start() {
 
     ze_base_entry::start();
 
-    for (size_t i = 0; i < send_reqs.size(); ++i) {
+    for (int i = 0; i < total_iter_count; ++i) {
         CCL_THROW_IF_NOT(!send_reqs[i].is_completed);
+        CCL_THROW_IF_NOT(!recv_reqs[i].is_completed);
     }
 
     for (int i = 0; i < stage_iter_count; ++i) {
@@ -283,11 +331,39 @@ void ze_ring_allreduce_entry::start() {
     status = ccl_sched_entry_status_started;
 }
 
-void ze_ring_allreduce_entry::update() {
+void ze_ring_allreduce_entry::update_multi_ranks() {
+    if (iter_idx > 0) {
+        validate_sync_flags(iter_idx - 1);
+    }
+
     while (!is_rs_completed && (iter_idx < stage_iter_count)) {
+        for (int i = iter_idx + 1; i < stage_iter_count; ++i) {
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(rs_copy_signal_events[i]));
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(rs_copy_wait_events[i]));
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(rs_reduce_signal_events[i]));
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(rs_reduce_wait_events[i]));
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(ag_copy_signal_events[i]));
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(ag_copy_wait_events[i]));
+            CCL_THROW_IF_NOT(!send_reqs[i].is_completed);
+            CCL_THROW_IF_NOT(!recv_reqs[i].is_completed);
+        }
+
         if (!rs_copy_started[iter_idx]) {
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(rs_copy_wait_events[iter_idx]));
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(rs_copy_signal_events[iter_idx]));
+
+            if (iter_idx > 0) {
+                CCL_THROW_IF_NOT(
+                    ze_base_entry::is_event_completed(rs_reduce_signal_events[iter_idx - 1]));
+                CCL_THROW_IF_NOT(
+                    ze_base_entry::is_event_completed(rs_reduce_wait_events[iter_idx - 1]));
+                CCL_THROW_IF_NOT(recv_reqs[iter_idx - 1].is_completed);
+            }
+
             ZE_CALL(zeEventHostSignal, (rs_copy_wait_events[iter_idx]));
             rs_copy_started[iter_idx] = true;
+
+            CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(rs_copy_wait_events[iter_idx]));
         }
 
         if (!rs_sync_sent[iter_idx] &&
@@ -297,10 +373,28 @@ void ze_ring_allreduce_entry::update() {
         }
 
         if (!rs_reduce_started[iter_idx]) {
-            auto recv_is_completed = check_atl_req(&recv_reqs[iter_idx]);
-            if (recv_is_completed) {
+            auto is_recv_completed = check_atl_req(&recv_reqs[iter_idx]);
+            if (is_recv_completed) {
+                CCL_THROW_IF_NOT(sync_recv_flags[iter_idx] == left_peer,
+                                 "iter ",
+                                 iter_idx,
+                                 ", expected ",
+                                 left_peer,
+                                 ", got ",
+                                 sync_recv_flags[iter_idx]);
+                if (iter_idx + 1 < stage_iter_count) {
+                    CCL_THROW_IF_NOT(sync_recv_flags[iter_idx + 1] == ccl_comm::invalid_rank);
+                }
+                CCL_THROW_IF_NOT(
+                    !ze_base_entry::is_event_completed(rs_reduce_wait_events[iter_idx]));
+                CCL_THROW_IF_NOT(
+                    !ze_base_entry::is_event_completed(rs_reduce_signal_events[iter_idx]));
+
                 ZE_CALL(zeEventHostSignal, (rs_reduce_wait_events[iter_idx]));
                 rs_reduce_started[iter_idx] = true;
+
+                CCL_THROW_IF_NOT(
+                    ze_base_entry::is_event_completed(rs_reduce_wait_events[iter_idx]));
             }
             else {
                 return;
@@ -310,20 +404,65 @@ void ze_ring_allreduce_entry::update() {
         if ((ze_base_entry::is_event_completed(rs_reduce_signal_events[iter_idx])) &&
             rs_sync_sent[iter_idx] && check_atl_req(&send_reqs[iter_idx])) {
             LOG_DEBUG("completed reduce_scatter iter ", iter_idx);
+
+            CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(rs_copy_signal_events[iter_idx]));
+            CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(rs_copy_wait_events[iter_idx]));
+            CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(rs_reduce_signal_events[iter_idx]));
+            CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(rs_reduce_wait_events[iter_idx]));
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(ag_copy_signal_events[iter_idx]));
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(ag_copy_wait_events[iter_idx]));
+            CCL_THROW_IF_NOT(send_reqs[iter_idx].is_completed);
+            CCL_THROW_IF_NOT(recv_reqs[iter_idx].is_completed);
+
+            validate_sync_flags(iter_idx);
+
             iter_idx++;
         }
         else {
             return;
         }
     }
-    is_rs_completed = true;
 
-    iter_idx = 0;
+    if (!is_rs_completed) {
+        is_rs_completed = true;
+        iter_idx = 0;
+
+        for (int i = 0; i < stage_iter_count; ++i) {
+            CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(rs_copy_signal_events[i]));
+            CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(rs_copy_wait_events[i]));
+            CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(rs_reduce_signal_events[i]));
+            CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(rs_reduce_wait_events[i]));
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(ag_copy_signal_events[i]));
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(ag_copy_wait_events[i]));
+            CCL_THROW_IF_NOT(send_reqs[i].is_completed);
+            CCL_THROW_IF_NOT(recv_reqs[i].is_completed);
+        }
+    }
+
+    validate_sync_flags(stage_iter_count);
 
     while (!is_ag_completed && (iter_idx < stage_iter_count)) {
+        for (int i = iter_idx + 1; i < stage_iter_count; ++i) {
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(ag_copy_signal_events[i]));
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(ag_copy_wait_events[i]));
+            CCL_THROW_IF_NOT(!send_reqs[i + stage_iter_count].is_completed);
+            CCL_THROW_IF_NOT(!recv_reqs[i + stage_iter_count].is_completed);
+        }
+
         if (!ag_copy_started[iter_idx]) {
+            CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(ag_copy_wait_events[iter_idx]));
+            if (iter_idx > 0) {
+                CCL_THROW_IF_NOT(
+                    ze_base_entry::is_event_completed(ag_copy_signal_events[iter_idx - 1]));
+                CCL_THROW_IF_NOT(
+                    ze_base_entry::is_event_completed(ag_copy_wait_events[iter_idx - 1]));
+                CCL_THROW_IF_NOT(recv_reqs[stage_iter_count + iter_idx - 1].is_completed);
+            }
+
             ZE_CALL(zeEventHostSignal, (ag_copy_wait_events[iter_idx]));
             ag_copy_started[iter_idx] = true;
+
+            CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(ag_copy_wait_events[iter_idx]));
         }
 
         if (!ag_sync_sent[iter_idx] &&
@@ -337,6 +476,20 @@ void ze_ring_allreduce_entry::update() {
         auto is_recv_completed = check_atl_req(&recv_reqs[iter_idx + stage_iter_count]);
         if (is_send_completed && is_recv_completed) {
             LOG_DEBUG("completed allgatherv iter ", iter_idx);
+
+            CCL_THROW_IF_NOT(sync_recv_flags[iter_idx + stage_iter_count] == left_peer);
+            if ((iter_idx + stage_iter_count + 1) < stage_iter_count) {
+                CCL_THROW_IF_NOT(sync_recv_flags[iter_idx + stage_iter_count + 1] ==
+                                 ccl_comm::invalid_rank);
+            }
+
+            CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(ag_copy_signal_events[iter_idx]));
+            CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(ag_copy_wait_events[iter_idx]));
+            CCL_THROW_IF_NOT(send_reqs[iter_idx + stage_iter_count].is_completed);
+            CCL_THROW_IF_NOT(recv_reqs[iter_idx + stage_iter_count].is_completed);
+
+            validate_sync_flags(iter_idx);
+
             ++iter_idx;
         }
         else {
@@ -346,10 +499,32 @@ void ze_ring_allreduce_entry::update() {
 
     is_ag_completed = true;
 
-    validate_sync_flags();
+    for (int i = 0; i < stage_iter_count; ++i) {
+        CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(rs_copy_signal_events[i]));
+        CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(rs_copy_wait_events[i]));
+        CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(rs_reduce_signal_events[i]));
+        CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(rs_reduce_wait_events[i]));
+        CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(ag_copy_signal_events[i]));
+        CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(ag_copy_wait_events[i]));
+
+        CCL_THROW_IF_NOT(send_reqs[i].is_completed);
+        CCL_THROW_IF_NOT(recv_reqs[i].is_completed);
+        CCL_THROW_IF_NOT(send_reqs[i + stage_iter_count].is_completed);
+        CCL_THROW_IF_NOT(recv_reqs[i + stage_iter_count].is_completed);
+    }
+    validate_sync_flags(total_iter_count);
 
     ZE_CALL(zeEventHostSignal, (ze_base_entry::entry_event));
     status = ccl_sched_entry_status_complete;
+}
+
+void ze_ring_allreduce_entry::update() {
+    if (comm_size == 1) {
+        ze_base_entry::update();
+    }
+    else {
+        update_multi_ranks();
+    }
 
     if (status == ccl_sched_entry_status_complete && !sched->coll_attr.to_cache) {
         finalize();
@@ -372,6 +547,10 @@ void ze_ring_allreduce_entry::finalize() {
 }
 
 void ze_ring_allreduce_entry::reset_fields() {
+    if (comm_size == 1) {
+        return;
+    }
+
     iter_idx = 0;
     is_rs_completed = is_ag_completed = false;
 
@@ -380,7 +559,7 @@ void ze_ring_allreduce_entry::reset_fields() {
     recv_reqs.clear();
     recv_reqs.resize(total_iter_count);
 
-    std::fill(sync_recv_flags.begin(), sync_recv_flags.end(), 0);
+    std::fill(sync_recv_flags.begin(), sync_recv_flags.end(), ccl_comm::invalid_rank);
 
     std::fill(rs_sync_sent.begin(), rs_sync_sent.end(), false);
     std::fill(ag_sync_sent.begin(), ag_sync_sent.end(), false);

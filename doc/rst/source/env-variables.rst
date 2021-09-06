@@ -92,8 +92,6 @@ Available algorithms for each collective operation (``<algo_name>``):
      - reduce_scatter + allgather ring.
        Use ``CCL_RS_CHUNK_COUNT`` and ``CCL_RS_MIN_CHUNK_SIZE``
        to control pipelining on reduce_scatter phase.
-   * - ``ring_rma``
-     - reduce_scatter+allgather ring using RMA communications
    * - ``double_tree``
      - Double-tree algorithm
    * - ``recursive_doubling``

@@ -29,8 +29,13 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
           comm_size(comm->size()),
           skip_rank(skip_rank) {
     LOG_DEBUG("initialization");
+
     CCL_THROW_IF_NOT(sched, "no sched");
     CCL_THROW_IF_NOT(!in_buffers.empty(), "in_buffers should be non empty");
+
+    if (comm_size == 1) {
+        skip_rank = rank;
+    }
 
     poll_fds.reserve(max_pfds);
 
@@ -112,6 +117,10 @@ void ze_handle_exchange_entry::start() {
     start_buf_idx = start_peer_idx = 0;
     skip_first_send = false;
     status = ccl_sched_entry_status_started;
+
+    if (comm_size == 1) {
+        status = ccl_sched_entry_status_complete;
+    }
 }
 
 void ze_handle_exchange_entry::update() {
