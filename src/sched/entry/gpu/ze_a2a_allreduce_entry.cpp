@@ -1,7 +1,7 @@
 #include "common/stream/stream.hpp"
-#include "sched/entry/gpu/ze_primitives.hpp"
-#include "sched/entry/gpu/ze_cache.hpp"
 #include "sched/entry/gpu/ze_a2a_allreduce_entry.hpp"
+#include "sched/entry/gpu/ze_cache.hpp"
+#include "sched/entry/gpu/ze_primitives.hpp"
 #include "sched/queue/queue.hpp"
 
 #include <string>
@@ -19,40 +19,44 @@ ze_a2a_allreduce_entry::ze_a2a_allreduce_entry(ccl_sched* sched,
         : ze_base_entry(sched, comm, comm->size() * event_group_count),
           send_buf(send_buf),
           recv_buf(recv_buf),
-          cnt(cnt),
           dtype(dtype),
           op(op),
-          buf_size_bytes(dtype.size() * cnt),
+          buf_count(cnt),
+          buf_bytes(dtype.size() * buf_count),
           peer_count(comm->size() - 1) {}
 
 ze_a2a_allreduce_entry::~ze_a2a_allreduce_entry() {
     finalize();
 }
 
-void ze_a2a_allreduce_entry::kernel_init(size_t segment_count, size_t segment_size) {
+void ze_a2a_allreduce_entry::kernel_init(size_t main_block_count, size_t block_count) {
     global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
     std::string kernel_name =
         "reduce_local_inplace_kernel_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
 
+    /* reduce peer values */
     kernels.reserve(peer_count);
+    unsigned long count = block_count;
     for (int i = 1; i < peer_count; ++i) {
-        void* input_buf = (char*)tmp_buf + i * segment_size;
+        void* input_buf = static_cast<char*>(tmp_buf) + i * block_count * dtype.size();
         void* inoutput_buf = tmp_buf;
         kernels.emplace_back(module, kernel_name, worker_idx);
-        kernels.back().set_args({ { sizeof(segment_count), &segment_count },
+        kernels.back().set_args({ { sizeof(count), &count },
                                   { sizeof(input_buf), &input_buf },
                                   { sizeof(inoutput_buf), &inoutput_buf } });
-        kernels.back().calculate_group_size(segment_count);
+        kernels.back().calculate_group_size(count);
         kernel_events.emplace_back(ze_base_entry::create_event());
     }
 
-    void* input_buf = send_buf.get_ptr();
+    /* reduce with send_buf */
+    void* input_buf =
+        static_cast<char*>(send_buf.get_ptr()) + comm_rank * main_block_count * dtype.size();
     void* inoutput_buf = tmp_buf;
     kernels.emplace_back(module, kernel_name, worker_idx);
-    kernels.back().set_args({ { sizeof(segment_count), &segment_count },
+    kernels.back().set_args({ { sizeof(count), &count },
                               { sizeof(input_buf), &input_buf },
                               { sizeof(inoutput_buf), &inoutput_buf } });
-    kernels.back().calculate_group_size(segment_count);
+    kernels.back().calculate_group_size(count);
     kernel_events.emplace_back(ze_base_entry::create_event());
 }
 
@@ -70,54 +74,67 @@ void ze_a2a_allreduce_entry::init() {
     std::vector<ccl_buffer> peer_recv_bufs(peer_count);
 
     for (int i = 0; i < peer_count; ++i) {
-        int peer_rank = (ze_base_entry::comm_rank + i + 1) % comm->size();
+        int peer_rank = (comm_rank + i + 1) % comm->size();
         sched->get_memory().handle_manager.get(peer_rank, 0, peer_send_bufs[i], comm);
         CCL_THROW_IF_NOT(peer_send_bufs[i].get_ptr(), "null IPC buffer is received");
         sched->get_memory().handle_manager.get(peer_rank, 1, peer_recv_bufs[i], comm);
         CCL_THROW_IF_NOT(peer_recv_bufs[i].get_ptr(), "null IPC buffer is received");
     }
 
-    size_t segment_count = cnt / ze_base_entry::comm_size;
-    CCL_THROW_IF_NOT(cnt % ze_base_entry::comm_size == 0,
-                     "buffer size must be divisible by the comm size");
+    size_t main_block_count = buf_count / comm_size;
+    if (main_block_count == 0 && static_cast<size_t>(comm_rank) < buf_count) {
+        main_block_count = 1;
+    }
 
-    size_t segment_size = buf_size_bytes / ze_base_entry::comm_size;
-    CCL_THROW_IF_NOT(buf_size_bytes % ze_base_entry::comm_size == 0,
-                     "buffer size must be divisible by the comm size");
-    CCL_THROW_IF_NOT(segment_size % dtype.size() == 0, "buffer size must be divisible by datatype");
-    CCL_THROW_IF_NOT(segment_count * dtype.size() == segment_size);
+    size_t block_count = main_block_count;
+    if (comm_rank == comm_size - 1) {
+        block_count += buf_count - main_block_count * comm_size;
+    }
 
-    barrier_event = ze_base_entry::create_event();
+    CCL_THROW_IF_NOT(main_block_count > 0, "wrong segment count");
 
-    tmp_buf_size_bytes = peer_count * segment_count * dtype.size();
+    tmp_buf_bytes = peer_count * block_count * dtype.size();
+    LOG_DEBUG("rank ",
+              comm_size,
+              ", main_block_count: ",
+              main_block_count,
+              ", block_count: ",
+              block_count,
+              ", tmp buf size: ",
+              tmp_buf_bytes,
+              ", buf_count: ",
+              buf_count);
 
     /* alloc temp buffer */
     global_data::get().ze_cache->get(worker_idx,
                                      ze_base_entry::context,
                                      ze_base_entry::device,
                                      default_device_mem_alloc_desc,
-                                     tmp_buf_size_bytes,
+                                     tmp_buf_bytes,
                                      0, /*alignment*/
                                      &tmp_buf);
 
-    kernel_init(segment_count, segment_size);
+    kernel_init(main_block_count, block_count);
 
     /* copy peer segments to temp buffer */
-    pre_copy_events.reserve(peer_count + 1);
+    size_t main_block_bytes = main_block_count * dtype.size();
+    size_t block_bytes = block_count * dtype.size();
+    pre_copy_events.reserve(peer_count);
     for (int i = 0; i < peer_count; ++i) {
         pre_copy_events.emplace_back(ze_base_entry::create_event());
-        void* src = (char*)peer_send_bufs[i].get_ptr() + ze_base_entry::comm_rank * segment_size;
-        void* dst = (char*)tmp_buf + i * segment_size;
+        void* src = static_cast<char*>(peer_send_bufs[i].get_ptr()) + comm_rank * main_block_bytes;
+        void* dst = static_cast<char*>(tmp_buf) + i * block_bytes;
         ZE_CALL(zeCommandListAppendMemoryCopy,
                 (ze_base_entry::get_copy_list(),
                  dst,
                  src,
-                 segment_size,
+                 block_bytes,
                  pre_copy_events.back(),
                  0,
                  nullptr));
     }
 
+    barrier_event = ze_base_entry::create_event();
     ZE_CALL(zeCommandListAppendBarrier,
             (ze_base_entry::get_copy_list(),
              barrier_event,
@@ -140,12 +157,12 @@ void ze_a2a_allreduce_entry::init() {
     for (int i = 0; i < peer_count; ++i) {
         post_copy_events.emplace_back(ze_base_entry::create_event());
         void* src = tmp_buf;
-        void* dst = (char*)peer_recv_bufs[i].get_ptr() + ze_base_entry::comm_rank * segment_size;
+        void* dst = static_cast<char*>(peer_recv_bufs[i].get_ptr()) + comm_rank * main_block_bytes;
         ZE_CALL(zeCommandListAppendMemoryCopy,
                 (ze_base_entry::get_copy_list(),
                  dst,
                  src,
-                 segment_size,
+                 block_bytes,
                  post_copy_events.back(),
                  1,
                  &kernel_events.back()));
@@ -154,12 +171,12 @@ void ze_a2a_allreduce_entry::init() {
     /* copy result to my buffer */
     post_copy_events.emplace_back(ze_base_entry::create_event());
     void* src = tmp_buf;
-    void* dst = (char*)recv_buf.get_ptr() + ze_base_entry::comm_rank * segment_size;
+    void* dst = static_cast<char*>(recv_buf.get_ptr()) + comm_rank * main_block_bytes;
     ZE_CALL(zeCommandListAppendMemoryCopy,
             (ze_base_entry::get_copy_list(),
              dst,
              src,
-             segment_size,
+             block_bytes,
              post_copy_events.back(),
              1,
              &kernel_events.back()));
@@ -202,7 +219,7 @@ void ze_a2a_allreduce_entry::finalize() {
                                       context,
                                       device,
                                       default_device_mem_alloc_desc,
-                                      tmp_buf_size_bytes,
+                                      tmp_buf_bytes,
                                       0, /*alignment*/
                                       tmp_buf);
 

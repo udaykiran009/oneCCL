@@ -72,7 +72,7 @@ export CCL_ATL_TRANSPORT=ofi
 #export CCL_LOG_LEVEL=info
 
 affinity="0,1 0.0,1.0,2.0,3.0" #MDFI+ANR usage, ANR only useage
-allreduce="topo_ring ring"
+allreduce="topo_ring topo_a2a ring"
 copy_ops="0 1"
 copy_engine="none main link"
 mpirun_cmd="mpirun -n 4 -l $CCL_PATH/examples/benchmark/benchmark -w 10 -i 16 -c last -t 262144 -j off"

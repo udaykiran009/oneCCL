@@ -690,9 +690,12 @@ ccl::status ccl_coll_build_topo_a2a_allreduce(ccl_sched* sched,
 
     sched->add_barrier();
 
-    entry_factory::create<ze_a2a_allreduce_entry>(
-        sched, send_buf, recv_buf, count, dtype, op, comm);
-    sched->add_barrier();
+    size_t segment_count = count / comm->size();
+    if ((segment_count > 0) || (segment_count == 0 && static_cast<size_t>(comm->rank()) < count)) {
+        entry_factory::create<ze_a2a_allreduce_entry>(
+            sched, send_buf, recv_buf, count, dtype, op, comm);
+        sched->add_barrier();
+    }
 
     coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
 

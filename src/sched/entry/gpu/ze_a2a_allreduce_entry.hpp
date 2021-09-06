@@ -32,8 +32,6 @@ public:
     void update() override;
     void finalize();
 
-    void reset_sync_objects();
-
     bool is_strict_order_satisfied() override {
         return (status >= ccl_sched_entry_status_complete);
     }
@@ -43,8 +41,8 @@ protected:
         ccl_logger::format(str,
                            "dt ",
                            ccl::global_data::get().dtypes->name(dtype),
-                           ", cnt ",
-                           cnt,
+                           ", buf_cnt ",
+                           buf_count,
                            ", send_buf ",
                            send_buf,
                            ", recv_buf ",
@@ -63,14 +61,14 @@ private:
 
     const ccl_buffer send_buf;
     const ccl_buffer recv_buf;
-    const unsigned long cnt;
     const ccl_datatype dtype;
     const ccl::reduction op;
-    const size_t buf_size_bytes;
+    const size_t buf_count;
+    const size_t buf_bytes;
     const int peer_count;
 
     void* tmp_buf{};
-    size_t tmp_buf_size_bytes{};
+    size_t tmp_buf_bytes{};
     std::vector<ze_event_handle_t> pre_copy_events;
     std::vector<ze_event_handle_t> post_copy_events;
     ze_event_handle_t barrier_event{};
@@ -79,5 +77,5 @@ private:
     std::vector<ze_kernel> kernels;
     std::vector<ze_event_handle_t> kernel_events;
 
-    void kernel_init(size_t segment_count, size_t segment_size);
+    void kernel_init(size_t main_block_count, size_t block_count);
 };
