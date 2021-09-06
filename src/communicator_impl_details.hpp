@@ -177,8 +177,8 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
             "Create single device communicator from SYCL device (sycl and !mgpu), after find_if rank ",
             rank);
 
-        std::shared_ptr<atl_wrapper> atl =
-            std::shared_ptr<atl_wrapper>(new atl_wrapper(cluster_devices_size, { rank }, kvs));
+        std::shared_ptr<iatl_comm> atl =
+            atl_comm_manager::create_atl_comm(cluster_devices_size, { rank }, kvs);
 
         ccl::communicator_interface_ptr impl =
             ccl::communicator_interface::create_communicator_impl(device,

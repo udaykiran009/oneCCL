@@ -51,7 +51,7 @@ struct communicator_interface_dispatcher {
         size_t thread_idx,
         size_t process_idx,
         const comm_split_attr& attr,
-        std::shared_ptr<atl_wrapper> atl,
+        std::shared_ptr<iatl_comm> atl,
         ccl::group_split_type preferred_topology_group = ccl::group_split_type::undetermined);
 
     // create communicator for device & cpu types (from device index)
@@ -66,7 +66,7 @@ struct communicator_interface_dispatcher {
         size_t thread_idx,
         size_t process_idx,
         const comm_split_attr& attr,
-        std::shared_ptr<atl_wrapper> atl,
+        std::shared_ptr<iatl_comm> atl,
         ccl::group_split_type preferred_topology_group = ccl::group_split_type::undetermined);
 
     // create communicator for host
@@ -88,7 +88,7 @@ private:
         size_t thread_idx,
         size_t process_idx,
         const comm_split_attr& attr,
-        std::shared_ptr<atl_wrapper> atl,
+        std::shared_ptr<iatl_comm> atl,
         ccl::group_split_type preferred_topology_group = ccl::group_split_type::undetermined);
 };
 } // namespace ccl

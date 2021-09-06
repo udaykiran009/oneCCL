@@ -28,7 +28,7 @@ void ccl_comm::allocate_resources() {
 ccl_comm::ccl_comm(int rank,
                    int size,
                    ccl_comm_id_storage::comm_id&& id,
-                   std::shared_ptr<atl_wrapper> atl,
+                   std::shared_ptr<iatl_comm> atl,
                    bool share_resources,
                    ccl::host_communicator* host_comm)
         : ccl_comm(rank,
@@ -43,7 +43,7 @@ ccl_comm::ccl_comm(int rank,
                    int size,
                    ccl_comm_id_storage::comm_id&& id,
                    ccl_rank2rank_map&& rank_map,
-                   std::shared_ptr<atl_wrapper> atl,
+                   std::shared_ptr<iatl_comm> atl,
                    bool share_resources,
                    ccl::host_communicator* host_comm)
         : atl(atl),
@@ -82,7 +82,7 @@ ccl_comm::ccl_comm(const std::vector<int>& local_ranks,
           host_comm(host_comm) {
     std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs_instance));
 
-    atl = std::shared_ptr<atl_wrapper>(new atl_wrapper(comm_size, local_ranks, kvs_wrapper));
+    atl = atl_comm_manager::create_comm(comm_size, local_ranks, kvs_wrapper);
 
     thread_number = atl->get_threads_per_process();
     on_process_ranks_number = atl->get_ranks_per_process();

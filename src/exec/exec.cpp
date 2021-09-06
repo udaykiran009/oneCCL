@@ -64,8 +64,8 @@ ccl_executor::ccl_executor(const char* main_addr) {
                             : &ccl_executor::get_worker_idx_round_robin;
 
     /* generate ATL attr for all future communicators */
-    atl_wrapper::attr = generate_atl_attr(env);
-    atl_wrapper::set_exec(this);
+    atl_comm_manager::set_internal_env(generate_atl_attr(env));
+    atl_comm_manager::set_exec(this);
 }
 
 void ccl_executor::start_workers(int proc_idx, int proc_count) {

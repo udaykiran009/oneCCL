@@ -501,7 +501,7 @@ void env_data::print(int rank) {
 
 void env_data::set_internal_env() {
     auto attr = ccl_executor::generate_atl_attr(*this);
-    atl_wrapper::set_internal_env(attr);
+    atl_comm_manager::set_internal_env(attr);
     if (log_level >= ccl_log_level::info) {
         setenv("I_MPI_DEBUG", "4", 0);
     }

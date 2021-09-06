@@ -107,15 +107,15 @@ public:
     host_communicator(int size, int rank, shared_ptr_class<ikvs_wrapper> kvs);
     host_communicator(ccl::unified_device_type&& device,
                       ccl::unified_context_type&& context,
-                      std::shared_ptr<atl_wrapper> atl);
-    host_communicator(std::shared_ptr<atl_wrapper> atl);
+                      std::shared_ptr<iatl_comm> atl);
+    host_communicator(std::shared_ptr<iatl_comm> atl);
     host_communicator(std::shared_ptr<ccl_comm> impl, bool is_sub_communicator = false);
     host_communicator(host_communicator& src) = delete;
     host_communicator(host_communicator&& src) = default;
     host_communicator& operator=(host_communicator& src) = delete;
     host_communicator& operator=(host_communicator&& src) = default;
     ~host_communicator() = default;
-    std::shared_ptr<atl_wrapper> get_atl();
+    std::shared_ptr<iatl_comm> get_atl();
     std::shared_ptr<host_communicator> get_r2r_comm();
     std::shared_ptr<host_communicator> get_node_comm();
     std::shared_ptr<host_communicator> get_even_comm();
@@ -146,7 +146,7 @@ private:
     }
 
     void exchange_colors(std::vector<int>& colors);
-    void create_sub_comms(std::shared_ptr<atl_wrapper> atl);
+    void create_sub_comms(std::shared_ptr<iatl_comm> atl);
     ccl_comm* create_with_color(int color,
                                 ccl_comm_id_storage* comm_ids,
                                 const ccl_comm* parent_comm);

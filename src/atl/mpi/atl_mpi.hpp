@@ -1,3 +1,4 @@
+#pragma once
 #ifdef CCL_ENABLE_MPI
 
 #include "atl.h"

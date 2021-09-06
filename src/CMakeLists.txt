@@ -71,6 +71,8 @@ set(CCL_SRC
     native_device_api/sycl_l0/export.cpp
     native_device_api/empty/export.cpp
     atl/atl_wrapper.cpp
+    atl/atl_ofi_comm.cpp
+    atl/atl_mpi_comm.cpp
     atl/mpi/atl_mpi.cpp
     atl/ofi/atl_ofi.cpp
     atl/ofi/atl_ofi_helper.cpp
