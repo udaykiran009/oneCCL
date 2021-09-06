@@ -94,11 +94,12 @@ void ipc_handle_manager::clear() {
                 if (mem_type == ipc_mem_type::memory) {
                     // There is a bug in L0 that results in hang in this function
                     // when we use kernel output event, as a workaround skip it
-                    // for now.
-                    if (!ccl::global_data::env().enable_kernel_output_event) {
+                    // if the knob is set
+                    if (!ccl::global_data::env().ze_ipc_close_wa) {
                         res = zeMemCloseIpcHandle(context, mem_ptr);
                     }
                     else {
+                        LOG_DEBUG("Skipping zeMemCloseIpcHandle");
                         res = ZE_RESULT_SUCCESS;
                     }
                 }
@@ -172,9 +173,10 @@ void ipc_handle_manager::get(int rank, size_t buf_idx, ccl_buffer& buf, ccl_comm
     }
     CCL_THROW_IF_NOT(buf_idx < handles[rank].size(), "buf_idx is not valid value: ", buf_idx);
 
-    const auto& handle_info = handles[rank][buf_idx];
+    auto& handle_info = handles[rank][buf_idx];
     auto handle = handle_info.handle;
-    auto mem_ptr = handle_info.ptr;
+    // Must be a ref so it can be updated when handle is opened
+    auto& mem_ptr = handle_info.ptr;
     auto mem_type = handle_info.type;
 
     LOG_DEBUG("context: ", context, ", device: ", device, ", rank: ", rank, ", buf_idx: ", buf_idx);
