@@ -16,9 +16,13 @@ ccl_stream::ccl_stream(stream_type type,
     native_stream = stream;
 
 #ifdef CCL_ENABLE_SYCL
+    cl::sycl::property_list props{};
+    if (stream.is_in_order())
+        props = { cl::sycl::property::queue::in_order{} };
+
     native_streams.resize(ccl::global_data::env().worker_count);
     for (size_t idx = 0; idx < native_streams.size(); idx++) {
-        native_streams[idx] = stream_native_t(stream.get_context(), stream.get_device());
+        native_streams[idx] = stream_native_t(stream.get_context(), stream.get_device(), props);
     }
 
     backend = stream.get_device().get_backend();
