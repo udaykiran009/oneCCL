@@ -1,29 +1,34 @@
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
 #include <memory>
+#include <mutex>
+#include <list>
+#include <vector>
 
-#include "atl_def.h"
-#include "common/log/log.hpp"
-#include "util/pm/pm_rt.h"
+#include "atl/atl.h"
+#include "common/comm/atl_tag.hpp"
+#include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/ikvs_wrapper.h"
+#include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.h"
+#include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/users_kvs.h"
 
-#ifdef __cplusplus
-class iatl {
+class ccl_executor;
+
+class atl_base_comm {
+protected:
+    atl_base_comm() = default;
+
 public:
-    virtual ~iatl() = default;
+    virtual ~atl_base_comm() = default;
 
-    virtual atl_status_t init(int* argc,
-                              char*** argv,
-                              atl_attr_t* attr,
-                              const char* main_addr,
-                              std::unique_ptr<ipmi>& pmi) = 0;
+    virtual atl_status_t main_addr_reserve(char* main_addr) = 0;
 
     virtual atl_status_t finalize() = 0;
 
-    virtual atl_status_t update(std::unique_ptr<ipmi>& pmi) = 0;
+    virtual atl_status_t update() = 0;
 
-    virtual atl_ep_t** get_eps() = 0;
+    virtual atl_status_t wait_notification() = 0;
+
+    virtual atl_status_t set_resize_function(atl_resize_fn_t fn) = 0;
 
     virtual atl_proc_coord_t* get_proc_coord() = 0;
 
@@ -31,27 +36,27 @@ public:
 
     virtual atl_status_t mr_dereg(atl_mr_t* mr) = 0;
 
-    virtual atl_status_t send(atl_ep_t* ep,
+    virtual atl_status_t send(size_t ep_idx,
                               const void* buf,
                               size_t len,
                               int dst_proc_idx,
                               uint64_t tag,
                               atl_req_t* req) = 0;
 
-    virtual atl_status_t recv(atl_ep_t* ep,
+    virtual atl_status_t recv(size_t ep_idx,
                               void* buf,
                               size_t len,
                               int src_proc_idx,
                               uint64_t tag,
                               atl_req_t* req) = 0;
 
-    virtual atl_status_t probe(atl_ep_t* ep,
+    virtual atl_status_t probe(size_t ep_idx,
                                int src_proc_idx,
                                uint64_t tag,
                                int* found,
                                size_t* recv_len) = 0;
 
-    virtual atl_status_t allgatherv(atl_ep_t* ep,
+    virtual atl_status_t allgatherv(size_t ep_idx,
                                     const void* send_buf,
                                     size_t send_len,
                                     void* recv_buf,
@@ -59,7 +64,7 @@ public:
                                     const int* offsets,
                                     atl_req_t* req) = 0;
 
-    virtual atl_status_t allreduce(atl_ep_t* ep,
+    virtual atl_status_t allreduce(size_t ep_idx,
                                    const void* send_buf,
                                    void* recv_buf,
                                    size_t len,
@@ -67,13 +72,13 @@ public:
                                    atl_reduction_t op,
                                    atl_req_t* req) = 0;
 
-    virtual atl_status_t alltoall(atl_ep_t* ep,
+    virtual atl_status_t alltoall(size_t ep_idx,
                                   const void* send_buf,
                                   void* recv_buf,
                                   int len,
                                   atl_req_t* req) = 0;
 
-    virtual atl_status_t alltoallv(atl_ep_t* ep,
+    virtual atl_status_t alltoallv(size_t ep_idx,
                                    const void* send_buf,
                                    const int* send_lens,
                                    const int* send_offsets,
@@ -82,11 +87,11 @@ public:
                                    const int* recv_offsets,
                                    atl_req_t* req) = 0;
 
-    virtual atl_status_t barrier(atl_ep_t* ep, atl_req_t* req) = 0;
+    virtual atl_status_t barrier(size_t ep_idx, atl_req_t* req) = 0;
 
-    virtual atl_status_t bcast(atl_ep_t* ep, void* buf, size_t len, int root, atl_req_t* req) = 0;
+    virtual atl_status_t bcast(size_t ep_idx, void* buf, size_t len, int root, atl_req_t* req) = 0;
 
-    virtual atl_status_t reduce(atl_ep_t* ep,
+    virtual atl_status_t reduce(size_t ep_idx,
                                 const void* send_buf,
                                 void* recv_buf,
                                 size_t len,
@@ -95,7 +100,7 @@ public:
                                 atl_reduction_t op,
                                 atl_req_t* req) = 0;
 
-    virtual atl_status_t reduce_scatter(atl_ep_t* ep,
+    virtual atl_status_t reduce_scatter(size_t ep_idx,
                                         const void* send_buf,
                                         void* recv_buf,
                                         size_t recv_len,
@@ -103,7 +108,7 @@ public:
                                         atl_reduction_t op,
                                         atl_req_t* req) = 0;
 
-    virtual atl_status_t read(atl_ep_t* ep,
+    virtual atl_status_t read(size_t ep_idx,
                               void* buf,
                               size_t len,
                               atl_mr_t* mr,
@@ -112,7 +117,7 @@ public:
                               int dst_proc_idx,
                               atl_req_t* req) = 0;
 
-    virtual atl_status_t write(atl_ep_t* ep,
+    virtual atl_status_t write(size_t ep_idx,
                                const void* buf,
                                size_t len,
                                atl_mr_t* mr,
@@ -121,15 +126,62 @@ public:
                                int dst_proc_idx,
                                atl_req_t* req) = 0;
 
-    virtual atl_status_t wait(atl_ep_t* ep, atl_req_t* req) = 0;
+    virtual atl_status_t wait(size_t ep_idx, atl_req_t* req) = 0;
 
-    virtual atl_status_t wait_all(atl_ep_t* ep, atl_req_t* req, size_t count) = 0;
+    virtual atl_status_t wait_all(size_t ep_idx, atl_req_t* req, size_t count) = 0;
 
-    virtual atl_status_t cancel(atl_ep_t* ep, atl_req_t* req) = 0;
+    virtual atl_status_t cancel(size_t ep_idx, atl_req_t* req) = 0;
 
-    virtual atl_status_t poll(atl_ep_t* ep) = 0;
+    virtual atl_status_t poll(size_t ep_idx) = 0;
 
-    virtual atl_status_t check(atl_ep_t* ep, atl_req_t* req) = 0;
-    virtual bool is_inited() = 0;
+    virtual atl_status_t check(size_t ep_idx, atl_req_t* req) = 0;
+
+    virtual size_t get_threads_per_process() = 0;
+
+    virtual size_t get_ranks_per_process() = 0;
+
+    virtual int get_rank() = 0;
+
+    virtual int get_size() = 0;
+
+    virtual int get_r2r_color() = 0;
+
+    virtual int get_host_color() = 0;
+
+    /*
+     * TODO: Temporary change.
+     * Need to define correct to unique id
+     */
+    virtual size_t get_id() = 0;
+    std::unique_ptr<ccl_atl_tag> tag;
+    static atl_attr_t attr;
+
+protected:
+    void init_tag();
+    void executor_update();
+
+    friend class atl_comm_manager;
+    static ccl_executor* executor;
+
+    int rank;
+    int size;
+
+    size_t threads_per_process;
+    size_t ranks_per_process;
+
+    std::unique_ptr<ipmi> pmi;
+    atl_ep_t** eps = nullptr;
 };
-#endif
+
+class atl_comm_manager {
+public:
+    static std::shared_ptr<atl_base_comm> create_comm();
+
+    static std::shared_ptr<atl_base_comm> create_comm(std::shared_ptr<ikvs_wrapper> k);
+
+    static std::shared_ptr<atl_base_comm> create_comm(int total_rank_count,
+                                                      const std::vector<int>& ranks,
+                                                      std::shared_ptr<ikvs_wrapper> k);
+    static void set_internal_env(const atl_attr_t& attr);
+    static void set_exec(ccl_executor* exec);
+};

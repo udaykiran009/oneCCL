@@ -151,11 +151,11 @@ atl_status_t atl_ofi::atl_set_env(const atl_attr_t& attr) {
     return atl_ofi_set_env(attr);
 }
 
-atl_status_t atl_ofi::atl_init(int* argc,
-                               char*** argv,
-                               atl_attr_t* attr,
-                               const char* main_addr,
-                               std::unique_ptr<ipmi>& pmi) {
+atl_status_t atl_ofi::init(int* argc,
+                           char*** argv,
+                           atl_attr_t* attr,
+                           const char* main_addr,
+                           std::unique_ptr<ipmi>& pmi) {
     inited = true;
     struct fi_info *prov_list = nullptr, *base_hints = nullptr, *prov_hints = nullptr;
     int fi_version;
@@ -456,12 +456,12 @@ err:
     }
 
     if (ctx != nullptr)
-        atl_finalize();
+        finalize();
 
     return ATL_STATUS_FAILURE;
 }
 
-atl_status_t atl_ofi::atl_finalize() {
+atl_status_t atl_ofi::finalize() {
     is_finalized = true;
     int ret = 0;
     size_t idx;
@@ -501,7 +501,7 @@ atl_status_t atl_ofi::atl_finalize() {
     return RET2ATL(ret);
 }
 
-atl_status_t atl_ofi::atl_update(std::unique_ptr<ipmi>& pmi) {
+atl_status_t atl_ofi::update(std::unique_ptr<ipmi>& pmi) {
     int ret;
     size_t prov_idx;
 
@@ -549,15 +549,15 @@ atl_status_t atl_ofi::atl_update(std::unique_ptr<ipmi>& pmi) {
     return RET2ATL(ret);
 }
 
-atl_ep_t** atl_ofi::atl_get_eps() {
+atl_ep_t** atl_ofi::get_eps() {
     return ctx->eps;
 }
 
-atl_proc_coord_t* atl_ofi::atl_get_proc_coord() {
+atl_proc_coord_t* atl_ofi::get_proc_coord() {
     return &(ctx->coord);
 }
 
-atl_status_t atl_ofi::atl_mr_reg(const void* buf, size_t len, atl_mr_t** mr) {
+atl_status_t atl_ofi::mr_reg(const void* buf, size_t len, atl_mr_t** mr) {
     int ret;
     atl_ofi_ctx_t* ofi_ctx;
     ofi_ctx = container_of(ctx, atl_ofi_ctx_t, ctx);
@@ -593,7 +593,7 @@ mr_reg_err:
     return ATL_STATUS_FAILURE;
 }
 
-atl_status_t atl_ofi::atl_mr_dereg(atl_mr_t* mr) {
+atl_status_t atl_ofi::mr_dereg(atl_mr_t* mr) {
     atl_ofi_mr_t* ofi_mr;
     ofi_mr = container_of(mr, atl_ofi_mr_t, mr);
     int ret = fi_close(&ofi_mr->fi_mr->fid);
@@ -601,12 +601,12 @@ atl_status_t atl_ofi::atl_mr_dereg(atl_mr_t* mr) {
     return RET2ATL(ret);
 }
 
-atl_status_t atl_ofi::atl_ep_send(atl_ep_t* ep,
-                                  const void* buf,
-                                  size_t len,
-                                  int dst_proc_idx,
-                                  uint64_t tag,
-                                  atl_req_t* req) {
+atl_status_t atl_ofi::send(atl_ep_t* ep,
+                           const void* buf,
+                           size_t len,
+                           int dst_proc_idx,
+                           uint64_t tag,
+                           atl_req_t* req) {
     ssize_t ret;
 
     atl_ofi_prov_t* prov;
@@ -642,12 +642,12 @@ atl_status_t atl_ofi::atl_ep_send(atl_ep_t* ep,
     return RET2ATL(ret);
 }
 
-atl_status_t atl_ofi::atl_ep_recv(atl_ep_t* ep,
-                                  void* buf,
-                                  size_t len,
-                                  int src_proc_idx,
-                                  uint64_t tag,
-                                  atl_req_t* req) {
+atl_status_t atl_ofi::recv(atl_ep_t* ep,
+                           void* buf,
+                           size_t len,
+                           int src_proc_idx,
+                           uint64_t tag,
+                           atl_req_t* req) {
     ssize_t ret;
 
     atl_ofi_prov_t* prov;
@@ -683,11 +683,11 @@ atl_status_t atl_ofi::atl_ep_recv(atl_ep_t* ep,
     return RET2ATL(ret);
 }
 
-atl_status_t atl_ofi::atl_ep_probe(atl_ep_t* ep,
-                                   int src_proc_idx,
-                                   uint64_t tag,
-                                   int* found,
-                                   size_t* recv_len) {
+atl_status_t atl_ofi::probe(atl_ep_t* ep,
+                            int src_proc_idx,
+                            uint64_t tag,
+                            int* found,
+                            size_t* recv_len) {
     CCL_THROW("unexpected path");
 
     atl_status_t ret;
@@ -743,7 +743,7 @@ atl_status_t atl_ofi::atl_ep_probe(atl_ep_t* ep,
     }
 
     do {
-        ret = atl_ep_poll(ep);
+        ret = poll(ep);
         if (ret != ATL_STATUS_SUCCESS)
             return ret;
 
@@ -794,82 +794,82 @@ atl_status_t atl_ofi::atl_ep_probe(atl_ep_t* ep,
     return RET2ATL(ofi_ret);
 }
 
-atl_status_t atl_ofi::atl_ep_allgatherv(atl_ep_t* ep,
-                                        const void* send_buf,
-                                        size_t send_len,
-                                        void* recv_buf,
-                                        const int* recv_lens,
-                                        const int* offsets,
-                                        atl_req_t* req) {
+atl_status_t atl_ofi::allgatherv(atl_ep_t* ep,
+                                 const void* send_buf,
+                                 size_t send_len,
+                                 void* recv_buf,
+                                 const int* recv_lens,
+                                 const int* offsets,
+                                 atl_req_t* req) {
     return ATL_STATUS_UNSUPPORTED;
 }
 
-atl_status_t atl_ofi::atl_ep_allreduce(atl_ep_t* ep,
-                                       const void* send_buf,
-                                       void* recv_buf,
-                                       size_t len,
-                                       atl_datatype_t dtype,
-                                       atl_reduction_t op,
-                                       atl_req_t* req) {
+atl_status_t atl_ofi::allreduce(atl_ep_t* ep,
+                                const void* send_buf,
+                                void* recv_buf,
+                                size_t len,
+                                atl_datatype_t dtype,
+                                atl_reduction_t op,
+                                atl_req_t* req) {
     return ATL_STATUS_UNSUPPORTED;
 }
 
-atl_status_t atl_ofi::atl_ep_alltoall(atl_ep_t* ep,
-                                      const void* send_buf,
-                                      void* recv_buf,
-                                      int len,
-                                      atl_req_t* req) {
+atl_status_t atl_ofi::alltoall(atl_ep_t* ep,
+                               const void* send_buf,
+                               void* recv_buf,
+                               int len,
+                               atl_req_t* req) {
     return ATL_STATUS_UNSUPPORTED;
 }
 
-atl_status_t atl_ofi::atl_ep_alltoallv(atl_ep_t* ep,
-                                       const void* send_buf,
-                                       const int* send_lens,
-                                       const int* send_offsets,
-                                       void* recv_buf,
-                                       const int* recv_lens,
-                                       const int* recv_offsets,
-                                       atl_req_t* req) {
+atl_status_t atl_ofi::alltoallv(atl_ep_t* ep,
+                                const void* send_buf,
+                                const int* send_lens,
+                                const int* send_offsets,
+                                void* recv_buf,
+                                const int* recv_lens,
+                                const int* recv_offsets,
+                                atl_req_t* req) {
     return ATL_STATUS_UNSUPPORTED;
 }
 
-atl_status_t atl_ofi::atl_ep_barrier(atl_ep_t* ep, atl_req_t* req) {
+atl_status_t atl_ofi::barrier(atl_ep_t* ep, atl_req_t* req) {
     return ATL_STATUS_UNSUPPORTED;
 }
 
-atl_status_t atl_ofi::atl_ep_bcast(atl_ep_t* ep, void* buf, size_t len, int root, atl_req_t* req) {
+atl_status_t atl_ofi::bcast(atl_ep_t* ep, void* buf, size_t len, int root, atl_req_t* req) {
     return ATL_STATUS_UNSUPPORTED;
 }
 
-atl_status_t atl_ofi::atl_ep_reduce(atl_ep_t* ep,
-                                    const void* send_buf,
-                                    void* recv_buf,
-                                    size_t len,
-                                    int root,
-                                    atl_datatype_t dtype,
-                                    atl_reduction_t op,
-                                    atl_req_t* req) {
+atl_status_t atl_ofi::reduce(atl_ep_t* ep,
+                             const void* send_buf,
+                             void* recv_buf,
+                             size_t len,
+                             int root,
+                             atl_datatype_t dtype,
+                             atl_reduction_t op,
+                             atl_req_t* req) {
     return ATL_STATUS_UNSUPPORTED;
 }
 
-atl_status_t atl_ofi::atl_ep_reduce_scatter(atl_ep_t* ep,
-                                            const void* send_buf,
-                                            void* recv_buf,
-                                            size_t recv_len,
-                                            atl_datatype_t dtype,
-                                            atl_reduction_t op,
-                                            atl_req_t* req) {
+atl_status_t atl_ofi::reduce_scatter(atl_ep_t* ep,
+                                     const void* send_buf,
+                                     void* recv_buf,
+                                     size_t recv_len,
+                                     atl_datatype_t dtype,
+                                     atl_reduction_t op,
+                                     atl_req_t* req) {
     return ATL_STATUS_UNSUPPORTED;
 }
 
-atl_status_t atl_ofi::atl_ep_read(atl_ep_t* ep,
-                                  void* buf,
-                                  size_t len,
-                                  atl_mr_t* mr,
-                                  uint64_t addr,
-                                  uintptr_t remote_key,
-                                  int dst_proc_idx,
-                                  atl_req_t* req) {
+atl_status_t atl_ofi::read(atl_ep_t* ep,
+                           void* buf,
+                           size_t len,
+                           atl_mr_t* mr,
+                           uint64_t addr,
+                           uintptr_t remote_key,
+                           int dst_proc_idx,
+                           atl_req_t* req) {
     ssize_t ret;
 
     atl_ofi_prov_t* prov;
@@ -896,14 +896,14 @@ atl_status_t atl_ofi::atl_ep_read(atl_ep_t* ep,
     return RET2ATL(ret);
 }
 
-atl_status_t atl_ofi::atl_ep_write(atl_ep_t* ep,
-                                   const void* buf,
-                                   size_t len,
-                                   atl_mr_t* mr,
-                                   uint64_t addr,
-                                   uintptr_t remote_key,
-                                   int dst_proc_idx,
-                                   atl_req_t* req) {
+atl_status_t atl_ofi::write(atl_ep_t* ep,
+                            const void* buf,
+                            size_t len,
+                            atl_mr_t* mr,
+                            uint64_t addr,
+                            uintptr_t remote_key,
+                            int dst_proc_idx,
+                            atl_req_t* req) {
     ssize_t ret;
 
     atl_ofi_prov_t* prov;
@@ -930,7 +930,7 @@ atl_status_t atl_ofi::atl_ep_write(atl_ep_t* ep,
     return RET2ATL(ret);
 }
 
-atl_status_t atl_ofi::atl_ep_wait(atl_ep_t* ep, atl_req_t* req) {
+atl_status_t atl_ofi::wait(atl_ep_t* ep, atl_req_t* req) {
     atl_status_t ret;
     atl_ofi_req_t* ofi_req;
 
@@ -938,18 +938,18 @@ atl_status_t atl_ofi::atl_ep_wait(atl_ep_t* ep, atl_req_t* req) {
     ofi_req = ((atl_ofi_req_t*)req->internal);
 
     while ((ofi_req->comp_state != ATL_OFI_COMP_COMPLETED) &&
-           ((ret = atl_ep_poll(ep)) == ATL_STATUS_SUCCESS))
+           ((ret = poll(ep)) == ATL_STATUS_SUCCESS))
         ;
 
     return ret;
 }
 
-atl_status_t atl_ofi::atl_ep_wait_all(atl_ep_t* ep, atl_req_t* reqs, size_t count) {
+atl_status_t atl_ofi::wait_all(atl_ep_t* ep, atl_req_t* reqs, size_t count) {
     size_t i;
     atl_status_t ret;
 
     for (i = 0; i < count; i++) {
-        ret = atl_ep_wait(ep, &reqs[i]);
+        ret = wait(ep, &reqs[i]);
         if (ret != ATL_STATUS_SUCCESS)
             return ret;
     }
@@ -957,7 +957,7 @@ atl_status_t atl_ofi::atl_ep_wait_all(atl_ep_t* ep, atl_req_t* reqs, size_t coun
     return ATL_STATUS_SUCCESS;
 }
 
-atl_status_t atl_ofi::atl_ep_cancel(atl_ep_t* ep, atl_req_t* req) {
+atl_status_t atl_ofi::cancel(atl_ep_t* ep, atl_req_t* req) {
     int ret;
     atl_ofi_req_t* ofi_req;
 
@@ -972,7 +972,7 @@ atl_status_t atl_ofi::atl_ep_cancel(atl_ep_t* ep, atl_req_t* req) {
     return ATL_STATUS_SUCCESS;
 }
 
-atl_status_t atl_ofi::atl_ep_poll(atl_ep_t* ep) {
+atl_status_t atl_ofi::poll(atl_ep_t* ep) {
     atl_ofi_ctx_t* ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
     if (ofi_ctx->progress_mode == ATL_PROGRESS_POLL) {
         atl_ep_progress(ep);
@@ -980,7 +980,7 @@ atl_status_t atl_ofi::atl_ep_poll(atl_ep_t* ep) {
     return ATL_STATUS_SUCCESS;
 }
 
-atl_status_t atl_ofi::atl_ep_check(atl_ep_t* ep, atl_req_t* req) {
+atl_status_t atl_ofi::check(atl_ep_t* ep, atl_req_t* req) {
     atl_status_t status;
     atl_ofi_req_t* ofi_req;
     atl_ofi_ctx_t* ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
@@ -1005,7 +1005,7 @@ atl_status_t atl_ofi::atl_ep_check(atl_ep_t* ep, atl_req_t* req) {
 
 atl_ofi::~atl_ofi() {
     if (!is_finalized) {
-        atl_finalize();
+        finalize();
     }
 }
 

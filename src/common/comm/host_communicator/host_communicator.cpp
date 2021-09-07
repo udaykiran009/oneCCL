@@ -11,7 +11,7 @@
 #include "coll/ccl_allgather_op_attr.hpp"
 
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/ikvs_wrapper.h"
-#include "atl/atl_wrapper.h"
+#include "atl/atl_base_comm.h"
 
 #include "common/comm/comm.hpp"
 
@@ -51,7 +51,7 @@ host_communicator::host_communicator(int size, int rank, shared_ptr_class<ikvs_w
     LOG_DEBUG("ctor");
 
     ccl::global_data& data = ccl::global_data::get();
-    std::shared_ptr<iatl_comm> atl_tmp = atl_comm_manager::create_comm(size, { rank }, kvs);
+    std::shared_ptr<atl_base_comm> atl_tmp = atl_comm_manager::create_comm(size, { rank }, kvs);
     comm_impl = std::shared_ptr<ccl_comm>(
         new ccl_comm(rank, size, data.comm_ids->acquire(), atl_tmp, false, this));
     create_sub_comms(atl_tmp);
@@ -59,10 +59,10 @@ host_communicator::host_communicator(int size, int rank, shared_ptr_class<ikvs_w
 
 host_communicator::host_communicator(ccl::unified_device_type&& d,
                                      ccl::unified_context_type&& c,
-                                     std::shared_ptr<iatl_comm> atl)
+                                     std::shared_ptr<atl_base_comm> atl)
         : host_communicator(atl) {}
 
-host_communicator::host_communicator(std::shared_ptr<iatl_comm> atl)
+host_communicator::host_communicator(std::shared_ptr<atl_base_comm> atl)
         : device(ccl::device_index_type(ccl::unused_index_value,
                                         ccl::unused_index_value,
                                         ccl::unused_index_value)),
@@ -141,7 +141,7 @@ void host_communicator::exchange_colors(std::vector<int>& colors) {
         .wait();
 }
 
-void host_communicator::create_sub_comms(std::shared_ptr<iatl_comm> atl) {
+void host_communicator::create_sub_comms(std::shared_ptr<atl_base_comm> atl) {
     bool is_sub_comm = true;
     if (ccl::global_data::env().atl_transport == ccl_atl_mpi) {
         r2r_comm =
@@ -442,7 +442,7 @@ ccl::event host_communicator::sparse_allreduce_impl(const void* send_ind_buf,
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
-std::shared_ptr<iatl_comm> host_communicator::get_atl() {
+std::shared_ptr<atl_base_comm> host_communicator::get_atl() {
     return comm_impl->atl;
 }
 

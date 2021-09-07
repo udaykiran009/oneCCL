@@ -80,7 +80,7 @@ void ccl_fusion_manager::reset() {
 }
 
 bool ccl_fusion_manager::can_fuse(ccl_master_sched* sched) {
-    if (iatl_comm::attr.out.enable_hmem) {
+    if (atl_base_comm::attr.out.enable_hmem) {
         /* TODO: implement fusion with D2D copies */
         return false;
     }

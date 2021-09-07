@@ -4,12 +4,12 @@
 #endif // CCL_ENABLE_MPI
 
 #include "atl/atl_ofi_comm.h"
-#include "atl/atl_wrapper.h"
+#include "atl/atl_base_comm.h"
 #include "atl/ofi/atl_ofi.hpp"
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
 
-atl_attr_t iatl_comm::attr = {
+atl_attr_t atl_base_comm::attr = {
     /* in */
     {
         0, /* enable_shm */
@@ -36,9 +36,9 @@ atl_attr_t iatl_comm::attr = {
     }
 };
 
-ccl_executor* iatl_comm::executor = nullptr;
+ccl_executor* atl_base_comm::executor = nullptr;
 
-void iatl_comm::init_tag() {
+void atl_base_comm::init_tag() {
     tag = std::unique_ptr<ccl_atl_tag>(new ccl_atl_tag(attr.out.tag_bits, attr.out.max_tag));
 
     if (rank == 0) {
@@ -65,9 +65,9 @@ void iatl_comm::init_tag() {
     }
 }
 
-void iatl_comm::executor_update() {
+void atl_base_comm::executor_update() {
     if (!executor->are_workers_started()) {
-        atl_proc_coord_t* coord = atl_get_proc_coord();
+        atl_proc_coord_t* coord = get_proc_coord();
         if (rank < coord->local_count)
             LOG_INFO("start workers for local process [",
                      coord->local_idx,
@@ -78,50 +78,50 @@ void iatl_comm::executor_update() {
     }
 }
 
-std::shared_ptr<iatl_comm> atl_comm_manager::create_comm() {
-    std::shared_ptr<iatl_comm> atl_comm;
+std::shared_ptr<atl_base_comm> atl_comm_manager::create_comm() {
+    std::shared_ptr<atl_base_comm> atl_comm;
 
     auto transport_type = ccl::global_data::env().atl_transport;
 
     switch (transport_type) {
-        case ccl_atl_ofi: atl_comm = std::shared_ptr<iatl_comm>(new atl_ofi_comm()); break;
+        case ccl_atl_ofi: atl_comm = std::shared_ptr<atl_base_comm>(new atl_ofi_comm()); break;
 #ifdef CCL_ENABLE_MPI
-        case ccl_atl_mpi: atl_comm = std::shared_ptr<iatl_comm>(new atl_mpi_comm()); break;
+        case ccl_atl_mpi: atl_comm = std::shared_ptr<atl_base_comm>(new atl_mpi_comm()); break;
 #endif // CCL_ENABLE_MPI
         default: LOG_ERROR("Unsupported yet"); break;
     }
     return atl_comm;
 }
 
-std::shared_ptr<iatl_comm> atl_comm_manager::create_comm(std::shared_ptr<ikvs_wrapper> k) {
-    std::shared_ptr<iatl_comm> atl_comm;
+std::shared_ptr<atl_base_comm> atl_comm_manager::create_comm(std::shared_ptr<ikvs_wrapper> k) {
+    std::shared_ptr<atl_base_comm> atl_comm;
 
     auto transport_type = ccl::global_data::env().atl_transport;
 
     switch (transport_type) {
-        case ccl_atl_ofi: atl_comm = std::shared_ptr<iatl_comm>(new atl_ofi_comm(k)); break;
+        case ccl_atl_ofi: atl_comm = std::shared_ptr<atl_base_comm>(new atl_ofi_comm(k)); break;
 #ifdef CCL_ENABLE_MPI
-        case ccl_atl_mpi: atl_comm = std::shared_ptr<iatl_comm>(new atl_mpi_comm(k)); break;
+        case ccl_atl_mpi: atl_comm = std::shared_ptr<atl_base_comm>(new atl_mpi_comm(k)); break;
 #endif // CCL_ENABLE_MPI
         default: LOG_ERROR("Unsupported yet"); break;
     }
     return atl_comm;
 }
 
-std::shared_ptr<iatl_comm> atl_comm_manager::create_comm(int total_rank_count,
-                                                         const std::vector<int>& ranks,
-                                                         std::shared_ptr<ikvs_wrapper> k) {
-    std::shared_ptr<iatl_comm> atl_comm;
+std::shared_ptr<atl_base_comm> atl_comm_manager::create_comm(int total_rank_count,
+                                                             const std::vector<int>& ranks,
+                                                             std::shared_ptr<ikvs_wrapper> k) {
+    std::shared_ptr<atl_base_comm> atl_comm;
 
     auto transport_type = ccl::global_data::env().atl_transport;
 
     switch (transport_type) {
         case ccl_atl_ofi:
-            atl_comm = std::shared_ptr<iatl_comm>(new atl_ofi_comm(total_rank_count, ranks, k));
+            atl_comm = std::shared_ptr<atl_base_comm>(new atl_ofi_comm(total_rank_count, ranks, k));
             break;
 #ifdef CCL_ENABLE_MPI
         case ccl_atl_mpi:
-            atl_comm = std::shared_ptr<iatl_comm>(new atl_mpi_comm(total_rank_count, ranks, k));
+            atl_comm = std::shared_ptr<atl_base_comm>(new atl_mpi_comm(total_rank_count, ranks, k));
             break;
 #endif // CCL_ENABLE_MPI
         default: LOG_ERROR("Unsupported yet"); break;
@@ -131,7 +131,7 @@ std::shared_ptr<iatl_comm> atl_comm_manager::create_comm(int total_rank_count,
 
 void atl_comm_manager::set_internal_env(const atl_attr_t& attr) {
     auto transport_type = ccl::global_data::env().atl_transport;
-    iatl_comm::attr = attr;
+    atl_base_comm::attr = attr;
 
     if (transport_type == ccl_atl_ofi)
         atl_ofi::atl_set_env(attr);
@@ -142,5 +142,5 @@ void atl_comm_manager::set_internal_env(const atl_attr_t& attr) {
 }
 
 void atl_comm_manager::set_exec(ccl_executor* exec) {
-    iatl_comm::executor = exec;
+    atl_base_comm::executor = exec;
 }

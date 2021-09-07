@@ -37,11 +37,11 @@ void atl_mpi_comm::init_transport() {
         std::lock_guard<std::mutex> lock(memory_mutex);
         if (!transport->is_inited()) {
             CCL_THROW_IF_NOT(
-                transport->atl_init(nullptr, nullptr, &attr, nullptr, pmi) == ATL_STATUS_SUCCESS,
+                transport->init(nullptr, nullptr, &attr, nullptr, pmi) == ATL_STATUS_SUCCESS,
                 "failed to initialize ATL");
         }
     }
-    eps = transport->atl_get_eps();
+    eps = transport->get_eps();
 
     threads_per_process = 1;
     ranks_per_process = 1;

@@ -202,7 +202,7 @@ void ccl_executor::update_workers() {
 //    }
 //
 //    if (resize_func != NULL)
-//        ccl::global_data::get().atl->atl_set_resize_function((atl_resize_fn_t)resize_func);
+//        ccl::global_data::get().atl->set_resize_function((atl_resize_fn_t)resize_func);
 //
 //    /* pin listener thread together with first worker thread */
 //    auto worker_affinity = ccl::global_data::env().worker_affinity;

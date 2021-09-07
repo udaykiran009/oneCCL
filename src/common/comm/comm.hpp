@@ -3,7 +3,7 @@
 #include <atomic>
 #include <unordered_map>
 
-#include "atl/atl_wrapper.h"
+#include "atl/atl_base_comm.h"
 #include "coll/algorithms/allreduce/allreduce_2d.hpp"
 #include "common/comm/comm_id_storage.hpp"
 #include "common/comm/atl_tag.hpp"
@@ -38,7 +38,7 @@ public:
     ccl_comm(int rank,
              int size,
              ccl_comm_id_storage::comm_id&& id,
-             std::shared_ptr<iatl_comm> atl,
+             std::shared_ptr<atl_base_comm> atl,
              bool share_resources = false,
              ccl::host_communicator* host_comm = nullptr);
 
@@ -46,7 +46,7 @@ public:
              int size,
              ccl_comm_id_storage::comm_id&& id,
              ccl_rank2rank_map&& ranks,
-             std::shared_ptr<iatl_comm> atl,
+             std::shared_ptr<atl_base_comm> atl,
              bool share_resources = false,
              ccl::host_communicator* host_comm = nullptr);
 
@@ -154,7 +154,7 @@ public:
      */
     static constexpr ccl_sched_id_t max_sched_count = std::numeric_limits<ccl_sched_id_t>::max();
 
-    std::shared_ptr<iatl_comm> atl;
+    std::shared_ptr<atl_base_comm> atl;
     std::unique_ptr<ccl_unordered_coll_manager> unordered_coll_manager;
     std::unique_ptr<ccl_allreduce_2d_builder> allreduce_2d_builder;
 

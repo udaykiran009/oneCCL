@@ -32,7 +32,7 @@ public:
         int global_src = comm->get_global_rank(src);
 
         atl_status_t atl_status =
-            comm->atl->atl_ep_probe(sched->bin->get_atl_ep(), global_src, atl_tag, &found, &len);
+            comm->atl->probe(sched->bin->get_atl_ep(), global_src, atl_tag, &found, &len);
 
         update_status(atl_status);
 

@@ -28,7 +28,7 @@ void ccl_comm::allocate_resources() {
 ccl_comm::ccl_comm(int rank,
                    int size,
                    ccl_comm_id_storage::comm_id&& id,
-                   std::shared_ptr<iatl_comm> atl,
+                   std::shared_ptr<atl_base_comm> atl,
                    bool share_resources,
                    ccl::host_communicator* host_comm)
         : ccl_comm(rank,
@@ -43,7 +43,7 @@ ccl_comm::ccl_comm(int rank,
                    int size,
                    ccl_comm_id_storage::comm_id&& id,
                    ccl_rank2rank_map&& rank_map,
-                   std::shared_ptr<iatl_comm> atl,
+                   std::shared_ptr<atl_base_comm> atl,
                    bool share_resources,
                    ccl::host_communicator* host_comm)
         : atl(atl),

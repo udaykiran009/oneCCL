@@ -105,7 +105,7 @@ void ze_ring_allreduce_entry::recv_sync_flag(int idx) {
                      left_peer);
 
     LOG_DEBUG("start recv: { src: ", src, ", tag: ", tag, ", bytes: ", bytes, "}");
-    auto status = comm->atl->atl_ep_recv(sched->bin->get_atl_ep(), buf, bytes, src, tag, req);
+    auto status = comm->atl->recv(sched->bin->get_atl_ep(), buf, bytes, src, tag, req);
     CCL_THROW_IF_NOT(status == ATL_STATUS_SUCCESS, "atl status: ", atl_status_to_str(status));
 }
 
@@ -133,13 +133,13 @@ void ze_ring_allreduce_entry::send_sync_flag(int idx) {
               ", value: ",
               sync_send_flags[idx],
               "}");
-    auto status = comm->atl->atl_ep_send(sched->bin->get_atl_ep(), buf, bytes, dst, tag, req);
+    auto status = comm->atl->send(sched->bin->get_atl_ep(), buf, bytes, dst, tag, req);
     CCL_THROW_IF_NOT(status == ATL_STATUS_SUCCESS, "atl status: ", atl_status_to_str(status));
 }
 
 bool ze_ring_allreduce_entry::check_atl_req(atl_req_t* req) {
     if (!req->is_completed) {
-        auto status = comm->atl->atl_ep_check(sched->bin->get_atl_ep(), req);
+        auto status = comm->atl->check(sched->bin->get_atl_ep(), req);
         CCL_THROW_IF_NOT(status == ATL_STATUS_SUCCESS, "atl status: ", atl_status_to_str(status));
     }
     return req->is_completed;

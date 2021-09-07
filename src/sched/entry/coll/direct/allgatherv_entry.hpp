@@ -49,13 +49,13 @@ public:
         }
 
         LOG_DEBUG("ALLGATHERV entry req ", &req, ", send_bytes ", send_bytes);
-        atl_status_t atl_status = comm->atl->atl_ep_allgatherv(sched->bin->get_atl_ep(),
-                                                               send_buf.get_ptr(send_bytes),
-                                                               send_bytes,
-                                                               recv_buf.get_ptr(sum_recv_bytes),
-                                                               recv_bytes,
-                                                               offsets,
-                                                               &req);
+        atl_status_t atl_status = comm->atl->allgatherv(sched->bin->get_atl_ep(),
+                                                        send_buf.get_ptr(send_bytes),
+                                                        send_bytes,
+                                                        recv_buf.get_ptr(sum_recv_bytes),
+                                                        recv_bytes,
+                                                        offsets,
+                                                        &req);
 
         if (unlikely(atl_status != ATL_STATUS_SUCCESS)) {
             CCL_THROW("ALLGATHERV entry failed. atl_status: ", atl_status_to_str(atl_status));
@@ -65,7 +65,7 @@ public:
     }
 
     void update() override {
-        atl_status_t atl_status = comm->atl->atl_ep_check(sched->bin->get_atl_ep(), &req);
+        atl_status_t atl_status = comm->atl->check(sched->bin->get_atl_ep(), &req);
 
         if (unlikely(atl_status != ATL_STATUS_SUCCESS)) {
             CCL_THROW("ALLGATHERV entry failed. atl_status: ", atl_status_to_str(atl_status));
