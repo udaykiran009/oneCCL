@@ -69,6 +69,49 @@ std::string atl_ofi_get_nic_name(const struct fi_info* prov) {
     return ss.str();
 }
 
+const char* atl_ofi_link_state_str(enum fi_link_state state) {
+    switch (state) {
+        case FI_LINK_DOWN: return "down";
+        case FI_LINK_UP: return "up";
+        default: return "unknown";
+    }
+}
+
+std::string atl_ofi_get_nic_info(const struct fi_info* prov) {
+    std::stringstream ss;
+
+    ss << "{ ";
+
+    ss << "name " << atl_ofi_get_nic_name(prov);
+
+    if (prov->nic && prov->nic->link_attr) {
+        ss << ", state " << atl_ofi_link_state_str(prov->nic->link_attr->state);
+
+        if (prov->nic->link_attr->mtu) {
+            ss << ", mtu " << prov->nic->link_attr->mtu;
+        }
+
+        if (prov->nic->link_attr->speed) {
+            ss << ", speed " << prov->nic->link_attr->speed / 1000 * 1000 * 1000 << " GB/s";
+        }
+
+        if (prov->nic->link_attr->address) {
+            ss << ", address " << prov->nic->link_attr->address;
+        }
+
+        if (prov->nic->link_attr->network_type) {
+            ss << ", network_type " << prov->nic->link_attr->network_type;
+        }
+    }
+    else {
+        ss << ", no link attr";
+    }
+
+    ss << " }";
+
+    return ss.str();
+}
+
 atl_ofi_prov_t* atl_ofi_get_prov(atl_ep_t* ep, int peer_proc_idx, size_t msg_size) {
     size_t prov_idx;
     atl_ofi_ctx_t* ofi_ctx = container_of(ep->ctx, atl_ofi_ctx_t, ctx);
@@ -885,7 +928,7 @@ atl_status_t atl_ofi_prov_init(atl_ctx_t* ctx,
 
     if (ctx->coord.global_idx == 0) {
         LOG_INFO("provider: ", info->fabric_attr->prov_name);
-        LOG_INFO("  nic: ", atl_ofi_get_nic_name(info));
+        LOG_INFO("  nic: ", atl_ofi_get_nic_info(info));
         LOG_INFO("  mr_mode: ", info->domain_attr->mr_mode);
         LOG_INFO("  threading: ", info->domain_attr->threading);
         LOG_INFO("  tx_ctx_cnt: ", info->domain_attr->tx_ctx_cnt);
@@ -986,6 +1029,14 @@ atl_status_t atl_ofi_adjust_out_tag(atl_ofi_prov_t* prov, atl_attr_t* attr) {
              mem_tag_format);
 
     return ATL_STATUS_SUCCESS;
+}
+
+static bool atl_ofi_is_nic_down(struct fi_info* prov) {
+    if (prov->nic && prov->nic->link_attr->state == FI_LINK_DOWN) {
+        return true;
+    }
+
+    return false;
 }
 
 /* determine if NIC has already been included in others */
@@ -1182,7 +1233,10 @@ atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
     prov_iter = prov_list;
     while (prov_iter) {
         LOG_DEBUG("name filter: check nic ", atl_ofi_get_nic_name(prov_iter));
-        if (!atl_ofi_nic_already_used(prov_iter, name_prov_list, name_prov_count)) {
+        if (atl_ofi_is_nic_down(prov_iter)) {
+            LOG_DEBUG("nic ", atl_ofi_get_nic_name(prov_iter), " is in down state, skip");
+        }
+        else if (!atl_ofi_nic_already_used(prov_iter, name_prov_list, name_prov_count)) {
             all_nic_names.insert(atl_ofi_get_short_nic_name(prov_iter));
             if (atl_ofi_is_allowed_nic_name(ofi_ctx, prov_iter)) {
                 LOG_DEBUG("name filter: found suitable nic ", atl_ofi_get_nic_name(prov_iter));

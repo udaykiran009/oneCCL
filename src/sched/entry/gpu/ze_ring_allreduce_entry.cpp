@@ -382,9 +382,6 @@ void ze_ring_allreduce_entry::update_multi_ranks() {
                                  left_peer,
                                  ", got ",
                                  sync_recv_flags[iter_idx]);
-                if (iter_idx + 1 < stage_iter_count) {
-                    CCL_THROW_IF_NOT(sync_recv_flags[iter_idx + 1] == ccl_comm::invalid_rank);
-                }
                 CCL_THROW_IF_NOT(
                     !ze_base_entry::is_event_completed(rs_reduce_wait_events[iter_idx]));
                 CCL_THROW_IF_NOT(
@@ -478,11 +475,6 @@ void ze_ring_allreduce_entry::update_multi_ranks() {
             LOG_DEBUG("completed allgatherv iter ", iter_idx);
 
             CCL_THROW_IF_NOT(sync_recv_flags[iter_idx + stage_iter_count] == left_peer);
-            if ((iter_idx + stage_iter_count + 1) < stage_iter_count) {
-                CCL_THROW_IF_NOT(sync_recv_flags[iter_idx + stage_iter_count + 1] ==
-                                 ccl_comm::invalid_rank);
-            }
-
             CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(ag_copy_signal_events[iter_idx]));
             CCL_THROW_IF_NOT(ze_base_entry::is_event_completed(ag_copy_wait_events[iter_idx]));
             CCL_THROW_IF_NOT(send_reqs[iter_idx + stage_iter_count].is_completed);
