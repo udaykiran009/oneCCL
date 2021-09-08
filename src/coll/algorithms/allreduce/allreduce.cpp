@@ -697,6 +697,7 @@ ccl::status ccl_coll_build_topo_a2a_allreduce(ccl_sched* sched,
     }
 
     coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
+    sched->add_barrier();
 
     return ccl::status::success;
 }
