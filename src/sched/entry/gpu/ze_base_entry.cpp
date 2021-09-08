@@ -90,7 +90,7 @@ void ze_base_entry::finalize() {
     global_data::get().ze_cache->push(worker_idx, context, event_pool_desc, event_pool);
 
     if (comp_primitives.list && comp_primitives.queue) {
-        LOG_DEBUG("push from cache for compute list and queue");
+        LOG_DEBUG("push to cache compute list and queue");
         /* list */
         global_data::get().ze_cache->push(
             worker_idx, context, device, comp_primitives.list_desc, comp_primitives.list);
@@ -101,7 +101,7 @@ void ze_base_entry::finalize() {
     }
 
     if (copy_primitives.list && copy_primitives.queue) {
-        LOG_DEBUG("push from cache for copy list and queue");
+        LOG_DEBUG("push to cache copy list and queue");
         /* copy list */
         global_data::get().ze_cache->push(
             worker_idx, context, device, copy_primitives.list_desc, copy_primitives.list);

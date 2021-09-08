@@ -88,11 +88,12 @@ std::string atl_ofi_get_nic_info(const struct fi_info* prov) {
         ss << ", state " << atl_ofi_link_state_str(prov->nic->link_attr->state);
 
         if (prov->nic->link_attr->mtu) {
-            ss << ", mtu " << prov->nic->link_attr->mtu;
+            ss << ", mtu " << prov->nic->link_attr->mtu << " bytes";
         }
 
         if (prov->nic->link_attr->speed) {
-            ss << ", speed " << prov->nic->link_attr->speed / 1000 * 1000 * 1000 << " GB/s";
+            const float bits_to_gbytes_coef = 8.0 * 1000 * 1000 * 1000;
+            ss << ", speed " << (float)prov->nic->link_attr->speed / bits_to_gbytes_coef << " GB/s";
         }
 
         if (prov->nic->link_attr->address) {

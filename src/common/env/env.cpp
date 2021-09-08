@@ -81,6 +81,7 @@ env_data::env_data()
           mnic_type(ATL_MNIC_NONE),
           mnic_count(CCL_ENV_SIZET_NOT_SPECIFIED),
 
+          enable_algo_fallback(1),
           enable_unordered_coll(0),
 
           enable_fusion(0),
@@ -191,6 +192,7 @@ void env_data::parse() {
         mnic_count = worker_count;
     }
 
+    env_2_type(CCL_ALGO_FALLBACK, enable_algo_fallback);
     env_2_type(CCL_ALLGATHERV, allgatherv_algo_raw);
     env_2_type(CCL_ALLREDUCE, allreduce_algo_raw);
     env_2_type(CCL_ALLTOALL, alltoall_algo_raw);
@@ -390,6 +392,7 @@ void env_data::print(int rank) {
         CCL_MNIC_NAME, ": ", (mnic_name_raw.length()) ? mnic_name_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_MNIC_COUNT, ": ", mnic_count);
 
+    LOG_INFO(CCL_ALGO_FALLBACK, ": ", enable_algo_fallback);
     LOG_INFO(CCL_ALLGATHERV,
              ": ",
              (allgatherv_algo_raw.length()) ? allgatherv_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);

@@ -48,6 +48,7 @@ constexpr const char* CCL_MNIC = "CCL_MNIC";
 constexpr const char* CCL_MNIC_NAME = "CCL_MNIC_NAME";
 constexpr const char* CCL_MNIC_COUNT = "CCL_MNIC_COUNT";
 
+constexpr const char* CCL_ALGO_FALLBACK = "CCL_ALGO_FALLBACK";
 constexpr const char* CCL_ALLGATHERV = "CCL_ALLGATHERV";
 constexpr const char* CCL_ALLREDUCE = "CCL_ALLREDUCE";
 constexpr const char* CCL_ALLTOALL = "CCL_ALLTOALL";
@@ -178,6 +179,7 @@ public:
        so hide it inside algorithm_selector module
        and store only raw strings in env_data
     */
+    int enable_algo_fallback;
     std::string allgatherv_algo_raw;
     std::string allreduce_algo_raw;
     std::string alltoall_algo_raw;
