@@ -300,7 +300,7 @@ run()
     #TODO: when small msg size support will be applied
     # for all colls set 2 3 4  ranks to test all use cases
     ranks_per_proc="4"
-    ccl_base_env="FI_PROVIDER=tcp CCL_STAGING_BUFFER=usm"
+    ccl_base_env="FI_PROVIDER=tcp"
     transport_list="ofi mpi"
 
     sycl_example_selector_list="none"
