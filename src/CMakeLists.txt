@@ -27,7 +27,9 @@ if (CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)
         native_device_api/l0/primitives.cpp
         native_device_api/interop_utils.cpp
 
-        sched/entry/gpu/ze_a2a_allreduce_entry.cpp
+        sched/entry/gpu/allreduce/ze_a2a_allreduce_entry.cpp
+        sched/entry/gpu/allreduce/ze_onesided_allreduce_entry.cpp
+        sched/entry/gpu/allreduce/ze_ring_allreduce_entry.cpp
         sched/entry/gpu/ze_base_entry.cpp
         sched/entry/gpu/ze_cache.cpp
         sched/entry/gpu/ze_call.cpp
@@ -35,10 +37,8 @@ if (CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)
         sched/entry/gpu/ze_handle_exchange_entry.cpp
         sched/entry/gpu/ze_event_signal_entry.cpp
         sched/entry/gpu/ze_event_wait_entry.cpp
-        sched/entry/gpu/ze_onesided_allreduce_entry.cpp
         sched/entry/gpu/ze_primitives.cpp
         sched/entry/gpu/ze_reduce_entry.cpp
-        sched/entry/gpu/ze_ring_allreduce_entry.cpp
         sched/entry/reduce_local_entry.cpp
         sched/ze_handle_manager.cpp
 

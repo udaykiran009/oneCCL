@@ -1,5 +1,5 @@
 #include "common/stream/stream.hpp"
-#include "sched/entry/gpu/ze_a2a_allreduce_entry.hpp"
+#include "sched/entry/gpu/allreduce/ze_a2a_allreduce_entry.hpp"
 #include "sched/entry/gpu/ze_cache.hpp"
 #include "sched/entry/gpu/ze_primitives.hpp"
 #include "sched/queue/queue.hpp"
@@ -34,7 +34,7 @@ void ze_a2a_allreduce_entry::kernel_init(size_t main_block_count, size_t block_c
     std::string kernel_name =
         "reduce_local_inplace_kernel_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
 
-    /* reduce peer values */
+    /* reduce peer values in tmp_buf only */
     kernels.reserve(peer_count);
     unsigned long count = block_count;
     for (int i = 1; i < peer_count; ++i) {
@@ -48,7 +48,7 @@ void ze_a2a_allreduce_entry::kernel_init(size_t main_block_count, size_t block_c
         kernel_events.emplace_back(ze_base_entry::create_event());
     }
 
-    /* reduce with send_buf */
+    /* reduce send_buf + tmp_buf */
     void* input_buf =
         static_cast<char*>(send_buf.get_ptr()) + comm_rank * main_block_count * dtype.size();
     void* inoutput_buf = tmp_buf;
@@ -152,7 +152,7 @@ void ze_a2a_allreduce_entry::init() {
                  (i == 0) ? &barrier_event : &kernel_events.at(i - 1)));
     }
 
-    /* copy segments to peer buffers */
+    /* copy tmp_buf to peer buffers */
     post_copy_events.reserve(peer_count + 1);
     for (int i = 0; i < peer_count; ++i) {
         post_copy_events.emplace_back(ze_base_entry::create_event());
@@ -168,7 +168,7 @@ void ze_a2a_allreduce_entry::init() {
                  &kernel_events.back()));
     }
 
-    /* copy result to my buffer */
+    /* copy tmp_buf to my buffer */
     post_copy_events.emplace_back(ze_base_entry::create_event());
     void* src = tmp_buf;
     void* dst = static_cast<char*>(recv_buf.get_ptr()) + comm_rank * main_block_bytes;
