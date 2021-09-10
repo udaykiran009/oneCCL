@@ -146,39 +146,48 @@ bool ze_base_entry::is_event_completed(ze_event_handle_t event) {
     return (res == ZE_RESULT_SUCCESS);
 }
 
+bool ze_base_entry::is_queue_completed(ze_command_queue_handle_t queue) {
+    ze_result_t res = zeHostSynchronize(queue);
+    CCL_THROW_IF_NOT(res == ZE_RESULT_SUCCESS || res == ZE_RESULT_NOT_READY,
+                     "unexpected result from zeHostSynchronize: ",
+                     to_string(res));
+    return (res == ZE_RESULT_SUCCESS);
+}
+
 void ze_base_entry::update() {
-    ze_result_t query_status;
+    bool complete{};
 
     if (global_data::env().kernel_debug == 0) {
-        query_status = zeEventQueryStatus(entry_event);
+        complete = is_event_completed(entry_event);
     }
     else {
+        bool copy_q_complete{ true };
+        bool comp_q_complete{ true };
         if (copy_primitives.queue)
-            query_status = zeHostSynchronize(copy_primitives.queue);
+            copy_q_complete = is_queue_completed(copy_primitives.queue);
         if (comp_primitives.queue)
-            query_status = zeHostSynchronize(comp_primitives.queue);
+            comp_q_complete = complete && is_queue_completed(comp_primitives.queue);
+        complete = copy_q_complete && comp_q_complete;
     }
 
-    if (query_status == ZE_RESULT_SUCCESS) {
+    if (complete) {
         LOG_DEBUG("command list complete");
         status = ccl_sched_entry_status_complete;
     }
-    else if (query_status == ZE_RESULT_NOT_READY) {
-        // just return in case if the kernel is not ready yet, will check again on the next iteration
-        return;
-    }
     else {
-        CCL_THROW("error at zeEventQueryStatus");
+        // just return in case if the kernel is not ready yet
+        // will check again on the next iteration
+        return;
     }
 }
 
 ze_command_list_handle_t ze_base_entry::get_copy_list() {
-    ze_command_list_handle_t list = nullptr;
+    ze_command_list_handle_t list{};
     if (copy_primitives.list) {
         list = copy_primitives.list;
         LOG_DEBUG("copy list is returned");
     }
-    else {
+    else if (comp_primitives.list) {
         list = comp_primitives.list;
         LOG_DEBUG("compute list is returned");
     }
@@ -188,7 +197,7 @@ ze_command_list_handle_t ze_base_entry::get_copy_list() {
 
 void ze_base_entry::get_comp_primitives(const ze_queue_properties_t &queue_props,
                                         cmd_primitives &comp_primitives) {
-    uint32_t ordinal, queue_index;
+    uint32_t ordinal{}, queue_index{};
     get_comp_queue_ordinal(device, queue_props, &ordinal);
     get_queue_index(queue_props, ordinal, 0, &queue_index);
 
@@ -200,7 +209,7 @@ void ze_base_entry::get_comp_primitives(const ze_queue_properties_t &queue_props
 void ze_base_entry::get_copy_primitives(const ze_queue_properties_t &queue_props,
                                         cmd_primitives &copy_primitives,
                                         init_mode mode) {
-    uint32_t ordinal, queue_index;
+    uint32_t ordinal{}, queue_index{};
     get_copy_queue_ordinal(device, queue_props, &ordinal);
 
     // TODO: index depends on rank's changing, when > 1 queues are created,
@@ -235,7 +244,7 @@ void ze_base_entry::init_primitives(cmd_primitives &cmd_primitives) {
 }
 
 ze_event_handle_t ze_base_entry::create_event() {
-    ze_event_desc_t event_desc = default_event_desc;
+    ze_event_desc_t event_desc{ default_event_desc };
     event_desc.signal = ZE_EVENT_SCOPE_FLAG_DEVICE;
     event_desc.wait = ZE_EVENT_SCOPE_FLAG_DEVICE;
     event_desc.index = event_counter++;

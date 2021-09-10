@@ -54,7 +54,8 @@ void reduce_local_entry::init() {
              ze_base_entry::entry_event,
              0,
              nullptr));
-    ZE_CALL(zeCommandListClose, (ze_base_entry::comp_primitives.list));
+
+    ze_base_entry::close_lists();
 
     LOG_DEBUG("initialization complete");
 }

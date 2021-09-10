@@ -71,6 +71,8 @@ private:
     ze_event_pool_desc_t event_pool_desc{};
     ze_event_pool_handle_t event_pool{};
     std::vector<ze_event_handle_t> events;
+
+    bool is_queue_completed(ze_command_queue_handle_t queue);
 };
 
 class ze_kernel {
