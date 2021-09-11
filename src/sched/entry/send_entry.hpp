@@ -74,11 +74,13 @@ public:
 
         if (proxy_mode == proxy_copy_mode::enabled) {
             if (!proxy_buf) {
-                ccl_sched_buf_type buf_type =
+                ccl::buffer_type buf_type =
                     (ccl::global_data::env().atl_send_proxy == ccl_atl_send_proxy_regular)
-                        ? ccl_sched_buf_system
-                        : ccl_sched_buf_runtime;
-                send_buf = proxy_buf = sched->alloc_buffer(cnt * dtype.size(), buf_type);
+                        ? ccl::buffer_type::regular
+                        : ccl::buffer_type::sycl;
+                ccl::alloc_param alloc_param(
+                    cnt * dtype.size(), buf_type, ccl::buffer_place::host, 1);
+                send_buf = proxy_buf = sched->alloc_buffer(alloc_param);
             }
             if (!proxy_copy_entry) {
                 proxy_copy_entry =

@@ -12,6 +12,7 @@ using namespace ccl::ze;
 ze_ring_allreduce_entry::ze_ring_allreduce_entry(ccl_sched* sched,
                                                  ccl_buffer send_buf,
                                                  ccl_buffer recv_buf,
+                                                 ccl_buffer tmp_buf,
                                                  size_t cnt,
                                                  const ccl_datatype& dtype,
                                                  reduction op,
@@ -19,6 +20,7 @@ ze_ring_allreduce_entry::ze_ring_allreduce_entry(ccl_sched* sched,
         : ze_base_entry(sched, comm, (comm->size() - 1) * event_group_count),
           send_buf(send_buf),
           recv_buf(recv_buf),
+          tmp_buf(tmp_buf),
           cnt(cnt),
           dtype(dtype),
           op(op),
@@ -163,6 +165,7 @@ void ze_ring_allreduce_entry::init() {
     LOG_DEBUG("init");
 
     size_t dtype_size = dtype.size();
+    bool inplace = (send_buf == recv_buf);
 
     if (comm_size == 1) {
         ze_base_entry::init(init_mode::copy);
@@ -185,17 +188,21 @@ void ze_ring_allreduce_entry::init() {
     gpu_init();
 
     // create kernels
-    ccl_buffer right_send_buf;
-    ccl_buffer right_recv_buf;
-    int peer_rank = (comm_rank + 1) % comm_size;
-    sched->get_memory().handle_manager.get(peer_rank, 0, right_send_buf, comm);
-    sched->get_memory().handle_manager.get(peer_rank, 1, right_recv_buf, comm);
 
     send_buf_ptr = send_buf.get_ptr();
     recv_buf_ptr = recv_buf.get_ptr();
+    tmp_buf_ptr = tmp_buf.get_ptr();
+
+    ccl_buffer right_recv_buf;
+    int peer_rank = (comm_rank + 1) % comm_size;
+    sched->get_memory().handle_manager.get(peer_rank, 1, right_recv_buf, comm);
     right_recv_buf_ptr = right_recv_buf.get_ptr();
 
-    CCL_THROW_IF_NOT(send_buf != recv_buf, "in-place not supported yet");
+    if (inplace) {
+        ccl_buffer right_tmp_buf;
+        sched->get_memory().handle_manager.get(peer_rank, 0, right_tmp_buf, comm);
+        right_tmp_buf_ptr = right_tmp_buf.get_ptr();
+    }
 
     // reduce_scatter stage
 
@@ -217,11 +224,19 @@ void ze_ring_allreduce_entry::init() {
                   ", block_count: ",
                   block_count,
                   " }");
-        void* src = (char*)recv_buf_ptr + copy_offset;
-        void* dst = (char*)right_recv_buf_ptr + copy_offset;
-        if (i == 0) {
-            src = (char*)send_buf_ptr + copy_offset;
+
+        void* src = nullptr;
+        void* dst = nullptr;
+        if (inplace) {
+            src = recv_buf_ptr;
+            dst = right_tmp_buf_ptr;
         }
+        else {
+            src = (i == 0) ? send_buf_ptr : recv_buf_ptr;
+            dst = right_recv_buf_ptr;
+        }
+        src = (char*)src + copy_offset;
+        dst = (char*)dst + copy_offset;
 
         ZE_CALL(zeCommandListAppendMemoryCopy,
                 (ze_base_entry::get_copy_list(),
@@ -247,7 +262,9 @@ void ze_ring_allreduce_entry::init() {
                   ", block_count: ",
                   block_count,
                   " }");
-        void* input_buf = (char*)send_buf_ptr + kernel_offset;
+
+        void* input_buf = (inplace) ? tmp_buf_ptr : send_buf_ptr;
+        input_buf = (char*)input_buf + kernel_offset;
         void* output_buf = (char*)recv_buf_ptr + kernel_offset;
 
         ze_kernel_args_t kernel_args = { { sizeof(block_count), &block_count },
@@ -304,6 +321,11 @@ void ze_ring_allreduce_entry::init() {
 }
 
 void ze_ring_allreduce_entry::start() {
+    if ((comm_size == 1) && (send_buf == recv_buf)) {
+        status = ccl_sched_entry_status_complete;
+        return;
+    }
+
     init();
 
     reset_fields();

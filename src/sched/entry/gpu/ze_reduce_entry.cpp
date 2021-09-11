@@ -66,6 +66,9 @@ void ze_reduce_entry::init() {
 
     right_send_buf_ptr = right_send_buf.get_ptr();
 
+    ccl::alloc_param alloc_param(buf_size_bytes, buffer_type::ze, buffer_place::device);
+    void* tmp_buf_ptr = sched->alloc_buffer(alloc_param).get_ptr();
+
     ze_kernel_args_t reduce_local_kernel_args = { { sizeof(comm_rank), &comm_rank },
                                                   { sizeof(comm_size), &comm_size },
                                                   { sizeof(cnt), &cnt },
@@ -74,15 +77,6 @@ void ze_reduce_entry::init() {
                                                   { sizeof(recv_buf_ptr), &recv_buf_ptr } };
 
     ccl::global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
-
-    device_mem_alloc_desc = default_device_mem_alloc_desc;
-    ccl::global_data::get().ze_cache->get(worker_idx,
-                                          context,
-                                          device,
-                                          device_mem_alloc_desc,
-                                          buf_size_bytes,
-                                          0, /*alignment*/
-                                          &tmp_buf_ptr);
 
     main_kernel_name =
         "reduce_local_outofplace_kernel_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
@@ -187,15 +181,6 @@ void ze_reduce_entry::finalize() {
     }
 
     LOG_DEBUG("finalization");
-
-    /* device mem */
-    ccl::global_data::get().ze_cache->push(worker_idx,
-                                           context,
-                                           device,
-                                           device_mem_alloc_desc,
-                                           buf_size_bytes,
-                                           0, /*alignment*/
-                                           tmp_buf_ptr);
 
     /* kernels */
     if (empty_kernel_event) {

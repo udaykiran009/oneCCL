@@ -293,6 +293,13 @@ run()
     cd ${EXAMPLE_WORK_DIR}/
     pwd
 
+    if [ -z "${CCL_WORKER_COUNT}" ]
+    then
+        worker_count="1"
+    else
+        worker_count="${CCL_WORKER_COUNT}"
+    fi
+
     ppns="1 2"
     n=2
     dtype_list="int8,int32,float32"
@@ -300,7 +307,7 @@ run()
     #TODO: when small msg size support will be applied
     # for all colls set 2 3 4  ranks to test all use cases
     ranks_per_proc="4"
-    ccl_base_env="FI_PROVIDER=tcp"
+    ccl_base_env="FI_PROVIDER=tcp CCL_WORKER_COUNT=${worker_count}"
     transport_list="ofi mpi"
 
     sycl_example_selector_list="none"

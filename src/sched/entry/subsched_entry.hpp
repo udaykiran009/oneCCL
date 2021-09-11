@@ -23,8 +23,8 @@ public:
             LOG_DEBUG("subsched name: ", subsched_name);
         }
 
-        subsched.reset(new ccl_extra_sched(sched->coll_param, sched->sched_id));
-        subsched->coll_param.ctype = ccl_coll_internal;
+        subsched.reset(new ccl_extra_sched({ sched->sched_id, sched->coll_param }));
+        subsched->coll_param.ctype = ccl_coll_undefined;
         subsched->set_op_id(this->op_id);
         subsched->flow_control.set_max_credits(sched->flow_control.get_max_credits());
 

@@ -11,7 +11,7 @@ public:
         return "master_sched";
     }
 
-    ccl_master_sched(const ccl_coll_param& coll_param);
+    ccl_master_sched(const ccl_sched_create_param& param);
 
     ccl_master_sched(const ccl_master_sched& src) = delete;
 

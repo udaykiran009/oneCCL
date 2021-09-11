@@ -264,6 +264,11 @@ function set_environment()
     fi
 }
 
+function set_reg_tests_environment()
+{
+    export CCL_WORKER_COUNT=1
+}
+
 function set_impi_environment()
 {
     if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
@@ -340,6 +345,8 @@ function run_valgrind_check()
 function run_reg_tests()
 {
     set_external_env
+    set_reg_tests_environment
+
     if [ ${node_label} == "mlsl2_test_gpu" ]
     then
         ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode gpu

@@ -58,6 +58,8 @@ protected:
 
     bool is_initialized{};
 
+    ze_module_handle_t module{};
+
     ze_device_handle_t device{};
     ze_context_handle_t context{};
 

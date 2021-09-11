@@ -59,20 +59,6 @@ ccl_coll_attr::ccl_coll_attr(const ccl::sparse_allreduce_attr& attr) {
     sparse_coalesce_mode = attr.get<ccl::sparse_allreduce_attr_id::coalesce_mode>();
 }
 
-bool operator==(const coll_param_gpu& lhs, const coll_param_gpu& rhs) {
-    CCL_ASSERT((lhs.is_reduction() && rhs.is_reduction()) ||
-               (!lhs.is_reduction() && !rhs.is_reduction()));
-
-    bool res =
-        lhs.get_coll_type() == rhs.get_coll_type() && lhs.get_datatype() == rhs.get_datatype();
-
-    if (lhs.is_reduction()) {
-        res = res && (lhs.get_reduction() == rhs.get_reduction());
-    }
-
-    return res;
-}
-
 std::string ccl_coll_attr::to_string() const {
     std::stringstream ss;
 

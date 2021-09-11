@@ -29,7 +29,9 @@ ze_a2a_allreduce_entry::~ze_a2a_allreduce_entry() {
     finalize();
 }
 
-void ze_a2a_allreduce_entry::kernel_init(size_t main_block_count, size_t block_count) {
+void ze_a2a_allreduce_entry::kernel_init(size_t main_block_count,
+                                         size_t block_count,
+                                         void* base_ptr) {
     global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
     std::string kernel_name =
         "reduce_local_inplace_kernel_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
@@ -38,8 +40,8 @@ void ze_a2a_allreduce_entry::kernel_init(size_t main_block_count, size_t block_c
     kernels.reserve(peer_count);
     unsigned long count = block_count;
     for (int i = 1; i < peer_count; ++i) {
-        void* input_buf = static_cast<char*>(tmp_buf) + i * block_count * dtype.size();
-        void* inoutput_buf = tmp_buf;
+        void* input_buf = static_cast<char*>(base_ptr) + i * block_count * dtype.size();
+        void* inoutput_buf = base_ptr;
         kernels.emplace_back(module, kernel_name, worker_idx);
         kernels.back().set_args({ { sizeof(count), &count },
                                   { sizeof(input_buf), &input_buf },
@@ -51,7 +53,7 @@ void ze_a2a_allreduce_entry::kernel_init(size_t main_block_count, size_t block_c
     /* reduce send_buf + tmp_buf */
     void* input_buf =
         static_cast<char*>(send_buf.get_ptr()) + comm_rank * main_block_count * dtype.size();
-    void* inoutput_buf = tmp_buf;
+    void* inoutput_buf = base_ptr;
     kernels.emplace_back(module, kernel_name, worker_idx);
     kernels.back().set_args({ { sizeof(count), &count },
                               { sizeof(input_buf), &input_buf },
@@ -93,7 +95,11 @@ void ze_a2a_allreduce_entry::init() {
 
     CCL_THROW_IF_NOT(main_block_count > 0, "wrong segment count");
 
-    tmp_buf_bytes = peer_count * block_count * dtype.size();
+    /* alloc temp buffer */
+    size_t tmp_buf_bytes = peer_count * block_count * dtype.size();
+    ccl::alloc_param alloc_param(tmp_buf_bytes, buffer_type::ze, buffer_place::device);
+    void* tmp_buf = sched->alloc_buffer(alloc_param).get_ptr();
+
     LOG_DEBUG("rank ",
               comm_size,
               ", main_block_count: ",
@@ -105,16 +111,7 @@ void ze_a2a_allreduce_entry::init() {
               ", buf_count: ",
               buf_count);
 
-    /* alloc temp buffer */
-    global_data::get().ze_cache->get(worker_idx,
-                                     ze_base_entry::context,
-                                     ze_base_entry::device,
-                                     default_device_mem_alloc_desc,
-                                     tmp_buf_bytes,
-                                     0, /*alignment*/
-                                     &tmp_buf);
-
-    kernel_init(main_block_count, block_count);
+    kernel_init(main_block_count, block_count, tmp_buf);
 
     /* copy peer segments to temp buffer */
     size_t main_block_bytes = main_block_count * dtype.size();
@@ -213,15 +210,6 @@ void ze_a2a_allreduce_entry::finalize() {
     }
 
     LOG_DEBUG("finalization");
-
-    /* temp buffer memory */
-    global_data::get().ze_cache->push(worker_idx,
-                                      context,
-                                      device,
-                                      default_device_mem_alloc_desc,
-                                      tmp_buf_bytes,
-                                      0, /*alignment*/
-                                      tmp_buf);
 
     kernels.clear();
 

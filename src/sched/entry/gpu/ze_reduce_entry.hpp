@@ -65,7 +65,6 @@ private:
     void* send_buf_ptr;
     void* recv_buf_ptr;
     void* right_send_buf_ptr;
-    void* tmp_buf_ptr;
     const unsigned long cnt;
     const ccl_datatype dtype;
     const ccl::reduction op;
@@ -75,8 +74,6 @@ private:
 
     ze_event_handle_t empty_kernel_event;
     ze_event_handle_t copy_from_peer_event;
-
-    ze_module_handle_t module;
 
     ze_group_count_t group_count;
 

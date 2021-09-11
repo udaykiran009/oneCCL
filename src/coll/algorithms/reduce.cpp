@@ -74,7 +74,7 @@ ccl::status ccl_coll_build_rabenseifner_reduce(ccl_sched* sched,
     comm_size = comm->size();
     rank = comm->rank();
 
-    ccl_buffer tmp_buf = sched->alloc_buffer(count * dtype_size);
+    ccl_buffer tmp_buf = sched->alloc_buffer({ count * dtype_size, send_buf });
 
     /* get nearest power-of-two less than or equal to comm_size */
     pof2 = comm->pof2();
@@ -84,7 +84,7 @@ ccl::status ccl_coll_build_rabenseifner_reduce(ccl_sched* sched,
     /* If I'm not the root, then my recv_buf may not be valid, therefore
      * I have to allocate a temporary one */
     if (rank != local_root) {
-        recv_buf = sched->alloc_buffer(count * dtype_size);
+        recv_buf = sched->alloc_buffer({ count * dtype_size, send_buf });
     }
 
     if ((rank != local_root) || (send_buf != recv_buf))
@@ -357,12 +357,12 @@ ccl::status ccl_coll_build_binomial_reduce(ccl_sched* sched,
 
     /* Create a temporary buffer */
     size_t dtype_size = dtype.size();
-    ccl_buffer tmp_buf = sched->alloc_buffer(count * dtype_size);
+    ccl_buffer tmp_buf = sched->alloc_buffer({ count * dtype_size, send_buf });
 
     /* If I'm not the root, then my recv_buf may not be valid, therefore
      * I have to allocate a temporary one */
     if (rank != local_root) {
-        recv_buf = sched->alloc_buffer(count * dtype_size);
+        recv_buf = sched->alloc_buffer({ count * dtype_size, send_buf });
     }
 
     if ((rank != local_root) || (send_buf != recv_buf)) {

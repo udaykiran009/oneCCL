@@ -8,10 +8,7 @@ public:
         return "extra_sched";
     }
 
-    ccl_extra_sched(ccl_coll_param& coll_param, ccl_sched_id_t id)
-            : ccl_request(),
-              ccl_sched(coll_param, this) {
-        sched_id = id;
+    ccl_extra_sched(const ccl_sched_create_param& param) : ccl_request(), ccl_sched(param, this) {
 #ifdef ENABLE_DEBUG
         set_dump_callback([this](std::ostream& out) {
             dump(out);

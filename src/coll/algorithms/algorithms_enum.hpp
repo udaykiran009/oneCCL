@@ -122,8 +122,8 @@ enum ccl_coll_type {
     ccl_coll_sparse_allreduce,
     ccl_coll_last_regular = ccl_coll_sparse_allreduce,
 
-    ccl_coll_internal,
     ccl_coll_partial,
+    ccl_coll_undefined,
 
     ccl_coll_last_value
 };

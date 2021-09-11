@@ -32,7 +32,7 @@ public:
         return "worker_sched";
     }
 
-    ccl_sched(const ccl_coll_param& coll_param, ccl_request* master_request);
+    ccl_sched(const ccl_sched_create_param& param, ccl_request* master_request);
     ccl_sched() = delete;
     ccl_sched(const ccl_sched& other) = delete;
     ccl_sched& operator=(const ccl_sched& other) = delete;

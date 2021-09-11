@@ -234,7 +234,7 @@ public:
              size_t bytes,
              size_t alignment,
              void** pptr) {
-        device_mems.at(instance_idx)
+        device_mems.at(instance_idx % device_mems.size())
             .get(context, device, device_mem_alloc_desc, bytes, alignment, pptr);
     }
 
@@ -290,7 +290,7 @@ public:
               size_t bytes,
               size_t alignment,
               void* ptr) {
-        device_mems.at(instance_idx)
+        device_mems.at(instance_idx % device_mems.size())
             .push(context, device, device_mem_alloc_desc, bytes, alignment, ptr);
     }
 

@@ -8,7 +8,7 @@
 #include "exec/exec.hpp"
 #include "fusion/fusion.hpp"
 #include "parallelizer/parallelizer.hpp"
-#include "sched/buffer_cache.hpp"
+#include "sched/buffer/buffer_cache.hpp"
 #include "sched/cache/cache.hpp"
 
 #ifdef MULTI_GPU_SUPPORT

@@ -273,6 +273,7 @@ void ze_base_entry::destroy_events() {
         if (events[idx])
             ZE_CALL(zeEventDestroy, (events[idx]));
     }
+    events.clear();
 }
 
 void ze_base_entry::close_lists() {

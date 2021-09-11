@@ -1,5 +1,5 @@
 #include "common/global/global.hpp"
-#include "sched/buffer_cache.hpp"
+#include "sched/buffer/buffer_cache.hpp"
 
 namespace ccl {
 

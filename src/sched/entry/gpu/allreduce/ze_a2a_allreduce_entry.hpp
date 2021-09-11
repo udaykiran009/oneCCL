@@ -67,15 +67,12 @@ private:
     const size_t buf_bytes;
     const int peer_count;
 
-    void* tmp_buf{};
-    size_t tmp_buf_bytes{};
     std::vector<ze_event_handle_t> pre_copy_events;
     std::vector<ze_event_handle_t> post_copy_events;
     ze_event_handle_t barrier_event{};
 
-    ze_module_handle_t module{};
     std::vector<ze_kernel> kernels;
     std::vector<ze_event_handle_t> kernel_events;
 
-    void kernel_init(size_t main_block_count, size_t block_count);
+    void kernel_init(size_t main_block_count, size_t block_count, void* base_ptr);
 };

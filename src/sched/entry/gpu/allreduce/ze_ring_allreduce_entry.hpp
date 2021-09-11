@@ -18,6 +18,7 @@ public:
     explicit ze_ring_allreduce_entry(ccl_sched* sched,
                                      ccl_buffer send_buf,
                                      ccl_buffer recv_buf,
+                                     ccl_buffer tmp_buf,
                                      size_t cnt,
                                      const ccl_datatype& dtype,
                                      ccl::reduction op,
@@ -61,14 +62,15 @@ private:
 
     const ccl_buffer send_buf;
     const ccl_buffer recv_buf;
+    const ccl_buffer tmp_buf;
     void* send_buf_ptr{};
     void* recv_buf_ptr{};
+    void* tmp_buf_ptr{};
     void* right_recv_buf_ptr{};
+    void* right_tmp_buf_ptr{};
     const unsigned long cnt;
     const ccl_datatype dtype;
     const ccl::reduction op;
-
-    ze_module_handle_t module{};
 
     int iter_idx{};
     const int stage_iter_count;

@@ -31,8 +31,8 @@ constexpr ze_event_pool_desc_t get_event_pool_desc() {
 }
 #endif
 
-ccl_master_sched::ccl_master_sched(const ccl_coll_param& coll_param)
-        : ccl_sched_base(coll_param),
+ccl_master_sched::ccl_master_sched(const ccl_sched_create_param& param)
+        : ccl_sched_base(param),
           ccl_request(),
           partial_scheds() {
 #ifdef ENABLE_DEBUG
@@ -108,8 +108,9 @@ void ccl_master_sched::commit(ccl_parallelizer* parallelizer) {
         update_id();
         if (parallelizer) {
             parallelizer->process(this);
-            CCL_ASSERT(!partial_scheds.empty(),
-                       "ccl_master_sched must have at least 1 partial sched after parallelized");
+            CCL_THROW_IF_NOT(
+                !partial_scheds.empty(),
+                "ccl_master_sched must have at least 1 partial sched after parallelized");
         }
     }
     else {
@@ -191,8 +192,10 @@ ccl_request* ccl_master_sched::reset_request() {
 }
 
 void ccl_master_sched::add_partial_sched(const ccl_coll_param& coll_param) {
-    partial_scheds.emplace_back(std::make_shared<ccl_sched>(coll_param, this));
-    partial_scheds.back()->internal_type = internal_type;
+    partial_scheds.emplace_back(std::make_shared<ccl_sched>(
+        ccl_sched_create_param(
+            sched_type, coll_param.comm->get_sched_id(sched_type != ccl_sched_regular), coll_param),
+        this));
 }
 
 void ccl_master_sched::prepare_partial_scheds() {
@@ -269,7 +272,7 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
     ccl_master_sched_ptr sched;
     bool is_created = false;
     auto create_fn = [param]() -> ccl_master_sched_ptr {
-        return new ccl_master_sched(param);
+        return new ccl_master_sched({ ccl_sched_regular, param.comm->get_sched_id(false), param });
     };
 
     if (attr.to_cache) {

@@ -63,6 +63,23 @@ void ze_onesided_allreduce_entry::init() {
     right_send_buf_ptr = right_send_buf.get_ptr();
     right_recv_buf_ptr = right_recv_buf.get_ptr();
 
+    void* tmp_buf_ptr{};
+
+    if (global_data::env().enable_kernel_1s_copy_ops) {
+        main_kernel_name = "reduce_local_outofplace_kernel_";
+        ccl::alloc_param alloc_param(buf_size_bytes, buffer_type::ze, buffer_place::device);
+        tmp_buf_ptr = sched->alloc_buffer(alloc_param).get_ptr();
+    }
+    else {
+        main_kernel_name = "allreduce_kernel_";
+    }
+
+    main_kernel_name += to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
+    LOG_DEBUG("get kernel: name: ", main_kernel_name);
+
+    global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
+    global_data::get().ze_cache->get(worker_idx, module, main_kernel_name, &main_kernel);
+
     ze_kernel_args_t allreduce_kernel_args = { { sizeof(comm_rank), &comm_rank },
                                                { sizeof(comm_size), &comm_size },
                                                { sizeof(cnt), &cnt },
@@ -78,26 +95,6 @@ void ze_onesided_allreduce_entry::init() {
                                                   { sizeof(send_buf_ptr), &send_buf_ptr },
                                                   { sizeof(tmp_buf_ptr), &tmp_buf_ptr },
                                                   { sizeof(recv_buf_ptr), &recv_buf_ptr } };
-
-    global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
-
-    if (global_data::env().enable_kernel_1s_copy_ops) {
-        main_kernel_name = "reduce_local_outofplace_kernel_";
-        device_mem_alloc_desc = default_device_mem_alloc_desc;
-        global_data::get().ze_cache->get(worker_idx,
-                                         context,
-                                         device,
-                                         device_mem_alloc_desc,
-                                         buf_size_bytes,
-                                         0, /*alignment*/
-                                         &tmp_buf_ptr);
-    }
-    else {
-        main_kernel_name = "allreduce_kernel_";
-    }
-    main_kernel_name += to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
-    LOG_DEBUG("get kernel: name: ", main_kernel_name);
-    global_data::get().ze_cache->get(worker_idx, module, main_kernel_name, &main_kernel);
 
     auto& main_kernel_args = (global_data::env().enable_kernel_1s_copy_ops)
                                  ? reduce_local_kernel_args
@@ -225,17 +222,6 @@ void ze_onesided_allreduce_entry::finalize() {
     }
 
     LOG_DEBUG("finalization");
-
-    if (global_data::env().enable_kernel_1s_copy_ops) {
-        /* device mem */
-        global_data::get().ze_cache->push(worker_idx,
-                                          context,
-                                          device,
-                                          device_mem_alloc_desc,
-                                          buf_size_bytes,
-                                          0, /*alignment*/
-                                          tmp_buf_ptr);
-    }
 
     /* kernels */
     if (empty_kernel_event) {

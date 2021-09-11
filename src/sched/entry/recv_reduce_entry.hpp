@@ -45,10 +45,8 @@ public:
                 (result_buf_type == ccl_recv_reduce_comm_buf && comm_buf.get_ptr() != nullptr),
             "result buffer should be non null");
 
-        if (comm_buf.get_ptr() == nullptr || comm_buf == inout_buf) {
-            size_t comm_buf_size = in_cnt * dtype.size();
-            this->comm_buf.set(CCL_MALLOC(comm_buf_size, "recv_reduce.comm_buf"), comm_buf_size);
-            own_comm_buff = true;
+        if ((comm_buf.get_ptr() == nullptr || comm_buf == inout_buf) && in_cnt) {
+            this->comm_buf = sched->alloc_buffer({ in_cnt * dtype.size(), inout_buf });
         }
     }
 
@@ -58,10 +56,6 @@ public:
             LOG_DEBUG(
                 "cancel RECV in RECV_REDUCE entry, src ", src, ", req ", &req, ", bytes", bytes);
             comm->atl->cancel(sched->bin->get_atl_ep(), &req);
-        }
-
-        if (own_comm_buff) {
-            CCL_FREE(comm_buf.get_ptr());
         }
     }
 
@@ -164,7 +158,6 @@ private:
     int src;
     ccl_buffer comm_buf;
     ccl_comm* comm;
-    bool own_comm_buff = false;
     ccl_recv_reduce_result_buf_type result_buf_type;
     uint64_t atl_tag = 0;
     ccl::reduction_fn fn;

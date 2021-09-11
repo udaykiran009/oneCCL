@@ -60,7 +60,7 @@ ccl::status ccl_coll_build_ring_reduce_scatter_block(ccl_sched* sched,
     }
 
     /* allocate temporary buffer to store incoming data */
-    ccl_buffer tmp_buf = sched->alloc_buffer(recv_count * dtype_size);
+    ccl_buffer tmp_buf = sched->alloc_buffer({ recv_count * dtype_size, recv_buf });
 
     for (idx = 1; idx < comm_size; idx++) {
         src = (comm_size + rank - idx) % comm_size;
@@ -172,7 +172,7 @@ ccl::status ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
     ccl_buffer tmp_buf;
 
     if (inplace) {
-        tmp_buf = sched->alloc_buffer(count * dtype_size);
+        tmp_buf = sched->alloc_buffer({ count * dtype_size, recv_buf });
     }
 
     ccl_buffer sbuf, rbuf;

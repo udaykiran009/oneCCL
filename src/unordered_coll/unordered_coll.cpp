@@ -142,13 +142,13 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
     CCL_THROW_IF_NOT(!match_id.empty(), "match_id is empty");
 
     ccl_coll_param coll_param{};
-    coll_param.ctype = ccl_coll_internal;
+    coll_param.ctype = ccl_coll_undefined;
     coll_param.dtype = ccl_datatype_int8;
     coll_param.comm = coordination_comm.get();
 
-    std::unique_ptr<ccl_extra_sched> service_sched(
-        new ccl_extra_sched(coll_param, coordination_comm->get_sched_id(true)));
-    service_sched->internal_type = ccl_sched_internal_unordered_coll;
+    std::unique_ptr<ccl_extra_sched> service_sched(new ccl_extra_sched(
+        { ccl_sched_unordered_coll, coordination_comm->get_sched_id(true), coll_param }));
+
     if (ccl::global_data::env().priority_mode == ccl_priority_lifo) {
         service_sched->coll_attr.priority = ccl_sched_base::get_lifo_priority();
     }

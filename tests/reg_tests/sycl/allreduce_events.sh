@@ -11,7 +11,11 @@ source ${ROOT_DIR}/utils.sh
 check_impi
 check_ccl
 
-CCL_KERNEL_OUTPUT_EVENT=1 EnableDirectSubmission=1 CCL_ZE_CLOSE_IPC_WA=1 mpiexec.hydra -n 2 -ppn 1 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
+export CCL_KERNEL_OUTPUT_EVENT=1
+export CCL_ZE_CLOSE_IPC_WA=1
+export EnableDirectSubmission=1
+
+mpiexec.hydra -n 2 -ppn 2 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
 rc=$?
 
 if [[ ${rc} -ne 0 ]] ; then

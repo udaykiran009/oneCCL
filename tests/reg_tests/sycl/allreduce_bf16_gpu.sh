@@ -11,7 +11,9 @@ source ${ROOT_DIR}/utils.sh
 check_impi
 check_ccl
 
-mpiexec.hydra -n 2 -ppn 1 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
+export CCL_LOG_LEVEL=debug
+
+mpiexec.hydra -n 2 -ppn 2 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
 rc=$?
 
 if [[ ${rc} -ne 0 ]] ; then

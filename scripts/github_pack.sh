@@ -19,10 +19,9 @@ excluded=".git
 ./deps/ofi/update_ofi.sh
 ./ccl_public
 ./ccl_oneapi
-./src/kernels/legacy
 ./tests/cfgs
+./tests/reg_tests
 ./tests/reproducer
-./tests/unit
 .tools"
 
 count=0

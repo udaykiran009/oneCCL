@@ -42,7 +42,7 @@ ccl::status ccl_coll_build_rabenseifner_allreduce(ccl_sched* sched,
 
     comm_size = comm->size();
     rank = comm->rank();
-    ccl_buffer tmp_buf = sched->alloc_buffer(count * dtype_size);
+    ccl_buffer tmp_buf = sched->alloc_buffer({ count * dtype_size, send_buf });
 
     /* copy local data into recv_buf */
 
@@ -273,7 +273,7 @@ ccl::status ccl_coll_build_recursive_doubling_allreduce(ccl_sched* sched,
 
     size_t dtype_size = dtype.size();
 
-    ccl_buffer tmp_buf = sched->alloc_buffer(count * dtype_size);
+    ccl_buffer tmp_buf = sched->alloc_buffer({ count * dtype_size, send_buf });
 
     /* copy local data into recv_buf */
     if (send_buf != recv_buf) {
@@ -402,8 +402,9 @@ ccl::status ccl_coll_build_starlike_allreduce(ccl_sched* sched,
     size_t this_rank_buf_size = buffer_counts[this_rank] * dtype_size;
 
     ccl_buffer tmp_buf;
-    if (this_rank_buf_size)
-        tmp_buf = sched->alloc_buffer(this_rank_buf_size * (comm_size - 1));
+    if (this_rank_buf_size) {
+        tmp_buf = sched->alloc_buffer({ this_rank_buf_size * (comm_size - 1), send_buf });
+    }
 
     size_t tmp_buf_recv_idx = 0;
     for (int rank_idx = 0; rank_idx < comm_size; ++rank_idx) {
@@ -494,7 +495,7 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
                                                ccl_comm* comm) {
     LOG_DEBUG("build topo_ring allreduce");
 
-    const std::vector<ze_handle_exchange_entry::mem_desc_t> in_buffers{
+    std::vector<ze_handle_exchange_entry::mem_desc_t> in_buffers{
         { send_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 0
         { recv_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 1
     };
@@ -511,6 +512,18 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
 
     int comm_size = comm->size();
     int node_comm_size = node_comm->size();
+
+    ccl_buffer tmp_buf;
+
+    if ((send_buf == recv_buf) && (comm_size > 1) && (comm_size == node_comm_size)) {
+        /* alloc tmp buffer for ze_ring_allreduce */
+        ccl::alloc_param alloc_param(
+            count * dtype.size(), ccl::buffer_type::ze, ccl::buffer_place::device);
+        tmp_buf = sched->alloc_buffer(alloc_param);
+
+        /* place tmp buffer instead of send buffer */
+        in_buffers[0] = { tmp_buf.get_ptr(), ccl::ze::ipc_mem_type::memory };
+    }
 
     int skip_rank = -1;
     if (ccl::global_data::env().enable_kernel_1s_ipc_wa) {
@@ -554,7 +567,11 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
                 entry_factory::create<ze_reduce_entry>(
                     sched, send_buf, recv_buf, count, dtype, op, node_comm->rank(), node_comm);
                 sched->add_barrier();
-                ccl_buffer host_buf = sched->alloc_buffer(count * dtype.size());
+
+                ccl::alloc_param alloc_param(
+                    count * dtype.size(), ccl::buffer_type::regular, ccl::buffer_place::host);
+                ccl_buffer host_buf = sched->alloc_buffer(alloc_param);
+
                 entry_factory::create<copy_entry>(
                     sched, recv_buf, host_buf, count, dtype, copy_attr(copy_direction::d2h));
                 sched->add_barrier();
@@ -626,7 +643,7 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         else if (((node_comm_size >= 3) || (node_comm_size == 1)) &&
                  (comm_size == node_comm_size)) {
             entry_factory::create<ze_ring_allreduce_entry>(
-                sched, send_buf, recv_buf, count, dtype, op, comm);
+                sched, send_buf, recv_buf, tmp_buf, count, dtype, op, comm);
             sched->add_barrier();
         }
         else {
@@ -645,7 +662,7 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         sched->add_barrier();
 
         // entry_factory::create<ze_ring_allreduce_entry>(
-        //         sched, send_buf, recv_buf, count, dtype, op, comm);
+        //     sched, send_buf, recv_buf, tmp_buf, count, dtype, op, comm);
         // sched->add_barrier();
     }
     else {

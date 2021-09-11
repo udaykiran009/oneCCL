@@ -164,7 +164,8 @@ ccl::status ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
         ccl_buffer recv_buf;
 
         if (inplace)
-            recv_buf = scheds[sched_idx]->alloc_buffer(recv_counts[idx] * dtype_size);
+            recv_buf = scheds[sched_idx]->alloc_buffer(
+                { recv_counts[idx] * dtype_size, coll_param.get_recv_buf() });
         else
             recv_buf = ccl_buffer(coll_param.get_recv_buf_ptr(),
                                   total_recv_bytes,
@@ -261,7 +262,8 @@ ccl::status ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
         ccl_buffer recv_buf;
 
         if (inplace) {
-            recv_buf = scheds[sched_idx]->alloc_buffer(recv_counts[src] * dtype_size);
+            recv_buf = scheds[sched_idx]->alloc_buffer(
+                { recv_counts[src] * dtype_size, coll_param.get_recv_buf() });
             recv_bufs[src] = recv_buf;
         }
         else
@@ -405,7 +407,8 @@ ccl::status ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sche
         ccl_buffer recv_buf;
 
         if (inplace) {
-            recv_buf = sched->alloc_buffer(recv_counts[src] * dtype_size);
+            recv_buf =
+                sched->alloc_buffer({ recv_counts[src] * dtype_size, coll_param.get_recv_buf() });
             recv_bufs[src] = recv_buf;
         }
         else

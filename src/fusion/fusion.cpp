@@ -1,6 +1,6 @@
 #include "exec/exec.hpp"
 #include "fusion/fusion.hpp"
-#include "sched/buffer_cache.hpp"
+#include "sched/buffer/buffer_cache.hpp"
 #include "sched/cache/cache.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
@@ -182,8 +182,7 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
                                                                                    coll_attr,
                                                                                    comm,
                                                                                    stream);
-                sched = new ccl_master_sched(coll_param);
-                sched->internal_type = ccl_sched_internal_fusion;
+                sched = new ccl_master_sched({ ccl_sched_fusion, coll_param });
             } break;
             default: CCL_FATAL("not supported"); break;
         }

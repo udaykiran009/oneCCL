@@ -271,7 +271,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
                 if (part_count < max_data_partition_count)
                     part_count = max_data_partition_count;
             }
-            if (ccl_is_topo_ring_algo(selector_param) || ccl_is_topo_a2a_algo(selector_param)) {
+            if (ccl_is_device_side_algo(selector_param)) {
                 part_count = 1;
             }
             break;

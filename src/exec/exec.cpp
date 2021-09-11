@@ -219,7 +219,7 @@ void ccl_executor::update_workers() {
 //}
 
 void ccl_executor::start(ccl_extra_sched* extra_sched) {
-    CCL_ASSERT(extra_sched->internal_type == ccl_sched_internal_unordered_coll,
+    CCL_ASSERT(extra_sched->sched_type == ccl_sched_unordered_coll,
                "should be unordered_coll for now");
 
     extra_sched->set_counter(1);
