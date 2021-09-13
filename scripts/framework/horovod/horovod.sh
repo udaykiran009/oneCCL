@@ -34,6 +34,7 @@ set_run_env() {
     export HOROVOD_LOG_LEVEL=INFO
     export HOROVOD_THREAD_AFFINITY=0,1
     export HOROVOD_CCL_FIN_THREADS=1
+    export HOROVOD_CCL_ADD_EXTRA_WAIT=1
     #export HOROVOD_FUSION_THRESHOLD=150000000
     #export HOROVOD_DISABLE_GROUP_FUSION=1
     #export HOROVOD_CYCLE_TIME=0.1
@@ -82,13 +83,12 @@ MODEL_TF_SRC_COMMIT="74b72acf1436255987a238afb414185008631d09"
 MODEL_PT_FILE="bench_pt.py"
 MODEL_PT_BASE_LINK="https://gitlab.devtools.intel.com/aemani/dlutils/-/raw/master"
 
-TF_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww35/itex_wenjun/ubuntu/tensorflow-2.5.0-cp37-cp37m-linux_x86_64.whl"
-ITEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww35/itex_wenjun/ubuntu/intel_extension_for_tensorflow-0.2.1-cp37-cp37m-linux_x86_64.whl"
+TF_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww37/tensorflow/tensorflow-2.5.0-cp37-cp37m-linux_x86_64.whl"
+ITEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww37/tensorflow/intel_extension_for_tensorflow-0.2.1-cp37-cp37m-linux_x86_64.whl"
 
 TF_NAME=`basename $TF_LINK`
 ITEX_NAME=`basename $ITEX_LINK`
 
-#PT_LINK="http://10.165.58.120:8080/whls_063021_dpcpp060321/torch-1.7.0a0-cp37-cp37m-linux_x86_64.whl"
 PT_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww36/pytorch/ubuntu/dpcpp0824/torch-2021.07.15.14820cec71-cp37-cp37m-linux_x86_64.whl"
 IPEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww36/pytorch/ubuntu/dpcpp0824/ipex-2021.08.28.082f03e7-cp37-cp37m-linux_x86_64.whl"
 
@@ -540,7 +540,7 @@ hvd_test() {
         if [[ ${CCL_CONFIGURATION} = "" ]]
         then
             echo_log "============================= Horovod/TF bench =================================="
-            cmd="mpiexec -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_tf_bench.py --xpu gpu"
+            cmd="mpiexec -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_bench.py --xpu gpu --framework tf"
             echo_log ${cmd}
             eval ${cmd}
             CheckCommandExitCode $? "Basic Horovod/TF test failed"
@@ -556,6 +556,16 @@ hvd_test() {
         eval ${cmd}
         CheckCommandExitCode $? "Basic Horovod/PT test failed"
         echo_log "============================= ****************** =================================="
+
+        if [[ ${CCL_CONFIGURATION} = "" ]]
+        then
+            echo_log "============================= Horovod/PT bench =================================="
+            cmd="mpiexec -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_bench.py --xpu gpu --framework pt"
+            echo_log ${cmd}
+            eval ${cmd}
+            CheckCommandExitCode $? "Basic Horovod/PT test failed"
+            echo_log "============================= ****************** =================================="
+        fi
     fi
 }
 
