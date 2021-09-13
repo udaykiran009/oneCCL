@@ -71,6 +71,32 @@ set_run_env() {
     export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib"
 }
 
+clone_repo()
+{
+    name=$1
+    link=$2
+    branch=$3
+    output_dir=$4
+    extra_env=$5
+
+    echo_log "\nclone repo"
+    echo_log "name: ${name}"
+    echo_log "link: ${link}"
+    echo_log "branch: ${branch}"
+    echo_log "output_dir: ${output_dir}"
+    echo_log "extra_env: ${extra_env}\n"
+
+    cmd="${extra_env} git clone --single-branch --branch ${branch} ${link} ${output_dir}"
+    echo_log ${cmd}
+    eval ${cmd}
+    CheckCommandExitCode $? "git clone for repo ${name} (${repo}) failed"
+
+    echo_log "\nrepo: ${name} (${link})\n"
+    cd ${output_dir}
+    echo_log "`git log -1`\n"
+    cd -
+}
+
 CONDA_LINK="https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux-x86_64.sh"
 CONDA_INSTALL_DIR=""
 
@@ -619,9 +645,9 @@ download_ccl() {
         rm -rf ${CCL_SRC_DIR}
     fi
 
-    cd ${SCRIPT_WORK_DIR}    
-    GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S} git clone --branch master --single-branch \
-        https://${USERNAME_1S}${CCL_BASE_LINK} ${CCL_SRC_DIR}
+    cd ${SCRIPT_WORK_DIR}
+    clone_repo "CCL" "https://${USERNAME_1S}${CCL_BASE_LINK}" "master" \
+        ${CCL_SRC_DIR} "GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S}"
 }
 
 install_ccl() {
@@ -881,8 +907,8 @@ download_hvd() {
     fi
 
     cd ${SCRIPT_WORK_DIR}
-    GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S} git clone --recursive --branch ${HVD_BRANCH} --single-branch \
-        https://${USERNAME_1S}${HOROVOD_BASE_LINK} ${HVD_SRC_DIR}
+    clone_repo "Horovod" "https://${USERNAME_1S}${HOROVOD_BASE_LINK}" "${HVD_BRANCH} --recursive" \
+        ${HVD_SRC_DIR} "GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S}"
 }
 
 install_hvd() {
@@ -958,8 +984,8 @@ download_model_tf() {
     fi
 
     cd ${SCRIPT_WORK_DIR}
-    GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S} git clone --branch ${MODEL_TF_SRC_BRANCH} --single-branch \
-        https://${USERNAME_1S}${MODEL_TF_BASE_LINK} ${MODEL_TF_SRC_DIR}
+    clone_repo "TF_MODEL" "https://${USERNAME_1S}${MODEL_TF_BASE_LINK}" ${MODEL_TF_SRC_BRANCH} \
+        ${MODEL_TF_SRC_DIR} "GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S}"
     cd ${MODEL_TF_SRC_DIR}
     git checkout ${MODEL_TF_SRC_COMMIT}
 }
