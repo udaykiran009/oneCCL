@@ -232,7 +232,20 @@ void get_queue_index(const ze_queue_properties_t& props,
     LOG_DEBUG("set queue index: ", *index);
 }
 
-std::string to_string(const ze_result_t result) {
+device_family get_device_family(ze_device_handle_t device) {
+    ze_device_properties_t device_prop;
+    zeDeviceGetProperties(device, &device_prop);
+    uint32_t family = device_prop.deviceId & 0xfff0;
+    using enum_t = typename std::underlying_type<device_family>::type;
+
+    switch (family) {
+        case static_cast<enum_t>(device_family::family1): return device_family::family1;
+        case static_cast<enum_t>(device_family::family2): return device_family::family2;
+        default: return device_family::unknown;
+    }
+}
+
+std::string to_string(ze_result_t result) {
     switch (result) {
         case ZE_RESULT_SUCCESS: return "ZE_RESULT_SUCCESS";
         case ZE_RESULT_NOT_READY: return "ZE_RESULT_NOT_READY";
@@ -334,6 +347,20 @@ std::string to_string(const ze_command_queue_group_property_flag_t& flag) {
     }
 }
 
+template <typename T>
+std::string flags_to_string(uint32_t flags) {
+    constexpr size_t bits = 8;
+    std::vector<std::string> output;
+    for (size_t i = 0; i < sizeof(flags) * bits; ++i) {
+        const size_t mask = 1UL << i;
+        const auto flag = flags & mask;
+        if (flag != 0) {
+            output.emplace_back(to_string(static_cast<T>(flag)));
+        }
+    }
+    return join_strings(output, " | ");
+}
+
 std::string to_string(const ze_command_queue_group_properties_t& queue_property) {
     std::stringstream ss;
     ss << "stype: " << queue_property.stype << ", pNext: " << (void*)queue_property.pNext
@@ -342,6 +369,14 @@ std::string to_string(const ze_command_queue_group_properties_t& queue_property)
        << ", maxMemoryFillPatternSize: " << queue_property.maxMemoryFillPatternSize
        << ", numQueues: " << queue_property.numQueues;
     return ss.str();
+}
+
+std::string to_string(device_family family) {
+    switch (family) {
+        case device_family::family1: return "family1";
+        case device_family::family2: return "family2";
+        default: return "unknown";
+    }
 }
 
 std::string join_strings(const std::vector<std::string>& tokens, const std::string& delimeter) {
@@ -353,20 +388,6 @@ std::string join_strings(const std::vector<std::string>& tokens, const std::stri
         }
     }
     return ss.str();
-}
-
-template <typename T>
-std::string flags_to_string(uint32_t flags) {
-    const size_t bits = 8;
-    std::vector<std::string> output;
-    for (size_t i = 0; i < sizeof(flags) * bits; ++i) {
-        const size_t mask = 1UL << i;
-        const auto flag = flags & mask;
-        if (flag != 0) {
-            output.emplace_back(to_string(static_cast<T>(flag)));
-        }
-    }
-    return join_strings(output, " | ");
 }
 
 } // namespace ze

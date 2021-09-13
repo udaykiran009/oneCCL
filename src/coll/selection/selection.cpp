@@ -2,6 +2,11 @@
 #include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/global/global.hpp"
 
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#include <CL/sycl/backend/level_zero.hpp>
+#include "sched/entry/gpu/ze_primitives.hpp"
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+
 bool ccl_is_direct_algo(const ccl_selector_param& param) {
     bool res = false;
 
@@ -78,6 +83,20 @@ bool ccl_is_device_side_algo(const ccl_selector_param& param) {
     return ccl_is_device_side_algo(algo, param);
 }
 
+static bool is_family1_card(const ccl_selector_param& param) {
+    bool result = false;
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+    if (param.stream && param.stream->get_backend() == sycl::backend::level_zero) {
+        auto sycl_device = param.stream->get_native_stream().get_device();
+        auto device = sycl_device.template get_native<sycl::backend::level_zero>();
+        if (ccl::ze::get_device_family(device) == ccl::ze::device_family::family1) {
+            result = true;
+        }
+    }
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+    return result;
+}
+
 bool ccl_can_use_topo_a2a_algo(const ccl_selector_param& param) {
     if (param.ctype != ccl_coll_allreduce) {
         return false;
@@ -106,8 +125,8 @@ bool ccl_can_use_topo_a2a_algo(const ccl_selector_param& param) {
 
     if ((comm_size < 2) || (comm_size != static_cast<int>(local_proc_count)) ||
         (!param.stream || param.stream->get_type() != stream_type::gpu) || is_sycl_buf ||
-        !is_device_buf || !is_l0_backend || ccl::global_data::env().enable_fusion ||
-        ccl::global_data::env().enable_unordered_coll ||
+        !is_device_buf || !is_l0_backend || is_family1_card(param) ||
+        ccl::global_data::env().enable_fusion || ccl::global_data::env().enable_unordered_coll ||
         (ccl::global_data::env().priority_mode != ccl_priority_none) ||
         (ccl::global_data::env().worker_count != 1)) {
         return false;
@@ -145,7 +164,7 @@ bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
 
     if ((((param.ctype == ccl_coll_bcast) || (param.ctype == ccl_coll_reduce)) &&
          ((comm_size < 2) || (local_proc_count == 1))) ||
-
+        ((comm_size > 2) && (param.ctype == ccl_coll_allreduce) && is_family1_card(param)) ||
         ((comm_size != static_cast<int>(local_proc_count)) && (local_proc_count != 2)) ||
 
         // need subcomms support from atl/mpi
