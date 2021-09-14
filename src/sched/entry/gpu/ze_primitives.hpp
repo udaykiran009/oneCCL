@@ -107,11 +107,19 @@ void get_suggested_group_count(const ze_group_size_t& group_size,
                                size_t elem_count,
                                ze_group_count_t* group_count);
 
-using ze_kernel_arg_t = std::pair<size_t, const void*>;
-using ze_kernel_args_t = std::initializer_list<ze_kernel_arg_t>;
+struct ze_kernel_arg_t {
+    template <class T>
+    constexpr ze_kernel_arg_t(const T* arg) noexcept
+            : size{ sizeof(T) },
+              ptr{ static_cast<const void*>(arg) } {}
+    const size_t size;
+    const void* ptr;
+};
+
+using ze_kernel_args_t = typename std::initializer_list<ze_kernel_arg_t>;
 void set_kernel_args(ze_kernel_handle_t kernel, const ze_kernel_args_t& kernel_args);
 
-using ze_queue_properties_t = std::vector<ze_command_queue_group_properties_t>;
+using ze_queue_properties_t = typename std::vector<ze_command_queue_group_properties_t>;
 
 void get_queues_properties(ze_device_handle_t device, ze_queue_properties_t* props);
 void get_comp_queue_ordinal(ze_device_handle_t device,

@@ -40,10 +40,7 @@ void reduce_local_entry::init() {
     size_t bytes = in_cnt * dtype.size();
     in_buf_ptr = in_buf.get_ptr(bytes);
     inout_buf_ptr = inout_buf.get_ptr(bytes);
-    ze_kernel_args_t kernel_args = { { sizeof(in_cnt), &in_cnt },
-                                     { sizeof(in_buf_ptr), &in_buf_ptr },
-                                     { sizeof(inout_buf_ptr), &inout_buf_ptr } };
-
+    ze_kernel_args_t kernel_args{ &in_cnt, &in_buf_ptr, &inout_buf_ptr };
     LOG_DEBUG("kernel ", kernel, " args:\n", to_string(kernel_args));
     set_kernel_args(kernel, kernel_args);
 

@@ -69,12 +69,8 @@ void ze_reduce_entry::init() {
     ccl::alloc_param alloc_param(buf_size_bytes, buffer_type::ze, buffer_place::device);
     void* tmp_buf_ptr = sched->alloc_buffer(alloc_param).get_ptr();
 
-    ze_kernel_args_t reduce_local_kernel_args = { { sizeof(comm_rank), &comm_rank },
-                                                  { sizeof(comm_size), &comm_size },
-                                                  { sizeof(cnt), &cnt },
-                                                  { sizeof(send_buf_ptr), &send_buf_ptr },
-                                                  { sizeof(tmp_buf_ptr), &tmp_buf_ptr },
-                                                  { sizeof(recv_buf_ptr), &recv_buf_ptr } };
+    ze_kernel_args_t reduce_local_kernel_args{ &comm_rank,    &comm_size,   &cnt,
+                                               &send_buf_ptr, &tmp_buf_ptr, &recv_buf_ptr };
 
     ccl::global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
 
@@ -83,9 +79,8 @@ void ze_reduce_entry::init() {
     LOG_DEBUG("get kernel: name: ", main_kernel_name);
     ccl::global_data::get().ze_cache->get(worker_idx, module, main_kernel_name, &main_kernel);
 
-    auto& main_kernel_args = reduce_local_kernel_args;
-    LOG_DEBUG("kernel ", main_kernel, " args:\n", to_string(main_kernel_args));
-    set_kernel_args(main_kernel, main_kernel_args);
+    LOG_DEBUG("kernel ", main_kernel, " args:\n", to_string(reduce_local_kernel_args));
+    set_kernel_args(main_kernel, reduce_local_kernel_args);
 
     ze_group_size_t group_size;
     get_suggested_group_size(main_kernel, cnt, &group_size);
@@ -102,7 +97,7 @@ void ze_reduce_entry::init() {
         ccl::global_data::get().ze_cache->get(worker_idx, module, empty_kernel_name, &empty_kernel);
         CCL_THROW_IF_NOT(empty_kernel, "null empty_kernel");
         /* use allreduce_kernel_args since they have pointers to peer mem */
-        set_kernel_args(empty_kernel, main_kernel_args);
+        set_kernel_args(empty_kernel, reduce_local_kernel_args);
     }
 
     if (empty_kernel) {

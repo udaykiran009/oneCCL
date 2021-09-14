@@ -267,10 +267,7 @@ void ze_ring_allreduce_entry::init() {
         input_buf = (char*)input_buf + kernel_offset;
         void* output_buf = (char*)recv_buf_ptr + kernel_offset;
 
-        ze_kernel_args_t kernel_args = { { sizeof(block_count), &block_count },
-                                         { sizeof(input_buf), &input_buf },
-                                         { sizeof(output_buf), &output_buf } };
-        kernels[i].set_args(kernel_args);
+        kernels[i].set_args({ &block_count, &input_buf, &output_buf });
         kernels[i].calculate_group_size(block_count);
 
         ZE_CALL(zeCommandListAppendLaunchKernel,

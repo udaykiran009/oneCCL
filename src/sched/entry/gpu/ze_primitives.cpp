@@ -122,14 +122,14 @@ void get_suggested_group_count(const ze_group_size_t& group_size,
 void set_kernel_args(ze_kernel_handle_t kernel, const ze_kernel_args_t& kernel_args) {
     uint32_t idx = 0;
     for (const auto& arg : kernel_args) {
-        auto res = zeKernelSetArgumentValue(kernel, idx, arg.first, arg.second);
+        auto res = zeKernelSetArgumentValue(kernel, idx, arg.size, arg.ptr);
         if (res != ZE_RESULT_SUCCESS) {
             CCL_THROW("zeKernelSetArgumentValue failed with error ",
                       to_string(res),
                       " on idx ",
                       idx,
                       " with value ",
-                      *((void**)arg.second));
+                      *((void**)arg.ptr));
         }
         ++idx;
     }
@@ -322,7 +322,7 @@ std::string to_string(const ze_kernel_args_t& kernel_args) {
     for (const auto& arg : kernel_args) {
         // TODO: can we distinguish argument types in order to properly print them instead of printing
         // as a void* ptr?
-        ss << "  idx: " << idx << ", { " << arg.first << ", " << *(void**)arg.second << " }\n";
+        ss << "  idx: " << idx << ", { " << arg.size << ", " << *(void**)arg.ptr << " }\n";
         ++idx;
     }
     ss << "}";

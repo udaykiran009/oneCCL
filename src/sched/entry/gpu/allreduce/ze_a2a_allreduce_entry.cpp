@@ -43,9 +43,7 @@ void ze_a2a_allreduce_entry::kernel_init(size_t main_block_count,
         void* input_buf = static_cast<char*>(base_ptr) + i * block_count * dtype.size();
         void* inoutput_buf = base_ptr;
         kernels.emplace_back(module, kernel_name, worker_idx);
-        kernels.back().set_args({ { sizeof(count), &count },
-                                  { sizeof(input_buf), &input_buf },
-                                  { sizeof(inoutput_buf), &inoutput_buf } });
+        kernels.back().set_args({ &count, &input_buf, &inoutput_buf });
         kernels.back().calculate_group_size(count);
         kernel_events.emplace_back(ze_base_entry::create_event());
     }
@@ -55,9 +53,7 @@ void ze_a2a_allreduce_entry::kernel_init(size_t main_block_count,
         static_cast<char*>(send_buf.get_ptr()) + comm_rank * main_block_count * dtype.size();
     void* inoutput_buf = base_ptr;
     kernels.emplace_back(module, kernel_name, worker_idx);
-    kernels.back().set_args({ { sizeof(count), &count },
-                              { sizeof(input_buf), &input_buf },
-                              { sizeof(inoutput_buf), &inoutput_buf } });
+    kernels.back().set_args({ &count, &input_buf, &inoutput_buf });
     kernels.back().calculate_group_size(count);
     kernel_events.emplace_back(ze_base_entry::create_event());
 }

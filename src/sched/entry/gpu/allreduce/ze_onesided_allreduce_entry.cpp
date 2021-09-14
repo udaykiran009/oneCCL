@@ -80,21 +80,11 @@ void ze_onesided_allreduce_entry::init() {
     global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
     global_data::get().ze_cache->get(worker_idx, module, main_kernel_name, &main_kernel);
 
-    ze_kernel_args_t allreduce_kernel_args = { { sizeof(comm_rank), &comm_rank },
-                                               { sizeof(comm_size), &comm_size },
-                                               { sizeof(cnt), &cnt },
-                                               { sizeof(send_buf_ptr), &send_buf_ptr },
-                                               { sizeof(recv_buf_ptr), &recv_buf_ptr },
-                                               { sizeof(right_send_buf_ptr), &right_send_buf_ptr },
-                                               { sizeof(right_recv_buf_ptr),
-                                                 &right_recv_buf_ptr } };
-
-    ze_kernel_args_t reduce_local_kernel_args = { { sizeof(comm_rank), &comm_rank },
-                                                  { sizeof(comm_size), &comm_size },
-                                                  { sizeof(cnt), &cnt },
-                                                  { sizeof(send_buf_ptr), &send_buf_ptr },
-                                                  { sizeof(tmp_buf_ptr), &tmp_buf_ptr },
-                                                  { sizeof(recv_buf_ptr), &recv_buf_ptr } };
+    ze_kernel_args_t allreduce_kernel_args{ &comm_rank,         &comm_size,    &cnt,
+                                            &send_buf_ptr,      &recv_buf_ptr, &right_send_buf_ptr,
+                                            &right_recv_buf_ptr };
+    ze_kernel_args_t reduce_local_kernel_args{ &comm_rank,    &comm_size,   &cnt,
+                                               &send_buf_ptr, &tmp_buf_ptr, &recv_buf_ptr };
 
     auto& main_kernel_args = (global_data::env().enable_kernel_1s_copy_ops)
                                  ? reduce_local_kernel_args
