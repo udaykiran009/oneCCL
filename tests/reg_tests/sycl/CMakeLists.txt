@@ -1,6 +1,7 @@
 set(sources
     allgatherv_vector.cpp
     allreduce_events.cpp
+    allreduce_events_inorder.cpp
     alltoallv_empty_count.cpp
     allreduce_bf16_gpu.cpp)
 
