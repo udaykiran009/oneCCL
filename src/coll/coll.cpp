@@ -142,6 +142,7 @@ ccl::status ccl_coll_build_allgatherv(ccl_sched* sched,
     param.comm = comm;
     param.is_vector_buf = sched->coll_attr.is_vector_buf;
     param.hint_algo = sched->hint_algo;
+    param.stream = sched->coll_param.stream;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_allgatherv>(param);
 
@@ -158,6 +159,12 @@ ccl::status ccl_coll_build_allgatherv(ccl_sched* sched,
             CCL_CALL(ccl_coll_build_ring_allgatherv(
                 sched, send_buf, send_count, recv_buf, recv_counts, dtype, comm));
             break;
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+        case ccl_coll_allgatherv_topo_a2a:
+            CCL_CALL(ccl_coll_build_topo_a2a_allgatherv(
+                sched, send_buf, send_count, recv_buf, recv_counts, dtype, comm));
+            break;
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
         default:
             CCL_FATAL("unexpected allgatherv_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl::status::invalid_arguments;

@@ -1,5 +1,7 @@
 #include "coll/selection/selection.hpp"
 
+#include <numeric>
+
 template <>
 std::map<ccl_coll_allgatherv_algo, std::string>
     ccl_algorithm_selector_helper<ccl_coll_allgatherv_algo>::algo_names = {
@@ -7,7 +9,8 @@ std::map<ccl_coll_allgatherv_algo, std::string>
         std::make_pair(ccl_coll_allgatherv_naive, "naive"),
         std::make_pair(ccl_coll_allgatherv_ring, "ring"),
         std::make_pair(ccl_coll_allgatherv_flat, "flat"),
-        std::make_pair(ccl_coll_allgatherv_multi_bcast, "multi_bcast")
+        std::make_pair(ccl_coll_allgatherv_multi_bcast, "multi_bcast"),
+        std::make_pair(ccl_coll_allgatherv_topo_a2a, "topo_a2a")
     };
 
 ccl_algorithm_selector<ccl_coll_allgatherv>::ccl_algorithm_selector() {
@@ -31,8 +34,11 @@ bool ccl_algorithm_selector_helper<ccl_coll_allgatherv_algo>::can_use(
     const ccl_selection_table_t<ccl_coll_allgatherv_algo>& table) {
     bool can_use = true;
 
-    if (param.is_vector_buf && algo != ccl_coll_allgatherv_flat &&
-        algo != ccl_coll_allgatherv_multi_bcast)
+    if (algo == ccl_coll_allgatherv_topo_a2a && !ccl_can_use_topo_a2a_algo(param)) {
+        can_use = false;
+    }
+    else if (param.is_vector_buf && algo != ccl_coll_allgatherv_flat &&
+             algo != ccl_coll_allgatherv_multi_bcast)
         can_use = false;
     else if (ccl::global_data::env().atl_transport == ccl_atl_mpi &&
              algo == ccl_coll_allgatherv_multi_bcast)
@@ -48,11 +54,11 @@ CCL_SELECTION_DEFINE_HELPER_METHODS(ccl_coll_allgatherv_algo,
                                     ccl_coll_allgatherv,
                                     ccl::global_data::env().allgatherv_algo_raw,
                                     ({
-                                        CCL_ASSERT(param.recv_counts);
-                                        size_t count = 0;
-                                        for (int idx = 0; idx < param.comm->size(); idx++) {
-                                            count += param.recv_counts[idx];
-                                        }
+                                        CCL_THROW_IF_NOT(param.recv_counts);
+                                        size_t count =
+                                            std::accumulate(param.recv_counts,
+                                                            param.recv_counts + param.comm->size(),
+                                                            0);
                                         count /= param.comm->size();
                                         count;
                                     }));

@@ -34,6 +34,7 @@
 #include "sched/entry/gpu/allreduce/ze_a2a_allreduce_entry.hpp"
 #include "sched/entry/gpu/allreduce/ze_onesided_allreduce_entry.hpp"
 #include "sched/entry/gpu/allreduce/ze_ring_allreduce_entry.hpp"
+#include "sched/entry/gpu/ze_a2a_allgatherv_entry.hpp"
 #include "sched/entry/gpu/ze_copy_entry.hpp"
 #include "sched/entry/gpu/ze_handle_exchange_entry.hpp"
 #include "sched/entry/gpu/ze_event_signal_entry.hpp"

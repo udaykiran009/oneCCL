@@ -142,6 +142,7 @@ default structure and identifies the file types stored in each sub-directory:
 				|       |-- CMakeLists.txt                                                                             
 				|       |-- sycl_allgatherv_test.cpp                                                               
 				|       |-- sycl_allgatherv_usm_test.cpp                                                                   
+				|       |-- sycl_allgatherv_inplace_usm_test.cpp                                                   
 				|       |-- sycl_allreduce_test.cpp                                                                
 				|       |-- sycl_allreduce_usm_test.cpp                                                                
 				|       |-- sycl_allreduce_inplace_usm_test.cpp                                                                

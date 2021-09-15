@@ -43,7 +43,10 @@ bool ccl_is_direct_algo(const ccl_selector_param& param) {
 static bool ccl_is_device_side_algo(ccl_coll_algo algo, const ccl_selector_param& param) {
     CCL_THROW_IF_NOT(algo.has_value(), "empty algo value");
 
-    if (param.ctype == ccl_coll_allreduce) {
+    if (param.ctype == ccl_coll_allgatherv) {
+        return algo.allgatherv == ccl_coll_allgatherv_topo_a2a;
+    }
+    else if (param.ctype == ccl_coll_allreduce) {
         return algo.allreduce == ccl_coll_allreduce_topo_ring ||
                algo.allreduce == ccl_coll_allreduce_topo_a2a;
     }
@@ -62,15 +65,18 @@ bool ccl_is_device_side_algo(const ccl_selector_param& param) {
     return false;
 #endif // CCL_ENABLE_SYCL
 
-    if ((param.ctype != ccl_coll_allreduce) && (param.ctype != ccl_coll_bcast) &&
-        (param.ctype != ccl_coll_reduce)) {
+    if ((param.ctype != ccl_coll_allgatherv) && (param.ctype != ccl_coll_allreduce) &&
+        (param.ctype != ccl_coll_bcast) && (param.ctype != ccl_coll_reduce)) {
         return false;
     }
 
     ccl_coll_algo algo{};
     auto& selector = ccl::global_data::get().algorithm_selector;
 
-    if (param.ctype == ccl_coll_allreduce) {
+    if (param.ctype == ccl_coll_allgatherv) {
+        algo.allgatherv = selector->get<ccl_coll_allgatherv>(param);
+    }
+    else if (param.ctype == ccl_coll_allreduce) {
         algo.allreduce = selector->get<ccl_coll_allreduce>(param);
     }
     else if (param.ctype == ccl_coll_bcast) {
@@ -98,7 +104,7 @@ static bool is_family1_card(const ccl_selector_param& param) {
 }
 
 bool ccl_can_use_topo_a2a_algo(const ccl_selector_param& param) {
-    if (param.ctype != ccl_coll_allreduce) {
+    if ((param.ctype != ccl_coll_allreduce) && (param.ctype != ccl_coll_allgatherv)) {
         return false;
     }
 

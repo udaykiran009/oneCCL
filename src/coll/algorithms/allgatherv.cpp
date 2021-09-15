@@ -290,3 +290,50 @@ ccl::status ccl_coll_build_multi_bcast_allgatherv(ccl_master_sched* main_sched,
 
     return ccl::status::success;
 }
+
+#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+
+ccl::status ccl_coll_build_topo_a2a_allgatherv(ccl_sched* sched,
+                                               ccl_buffer send_buf,
+                                               size_t send_count,
+                                               ccl_buffer recv_buf,
+                                               const size_t* recv_counts,
+                                               const ccl_datatype& dtype,
+                                               ccl_comm* comm) {
+    LOG_DEBUG("build topo_a2a allgatherv, send_count ", send_count);
+
+    const std::vector<ze_handle_exchange_entry::mem_desc_t> in_buffers{
+        { recv_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 0
+    };
+
+    ccl_coll_entry_param barrier_param{};
+    barrier_param.ctype = ccl_coll_barrier;
+    barrier_param.comm = comm;
+    barrier_param.hint_algo.barrier = ccl_coll_barrier_ring;
+
+    if (sched->coll_attr.to_cache) {
+        sched->set_entry_exec_mode(ccl_sched_entry_exec_once);
+        entry_factory::create<ze_handle_exchange_entry>(sched, comm, in_buffers);
+        sched->add_barrier();
+        sched->set_entry_exec_mode(ccl_sched_entry_exec_regular);
+
+        // TODO: no need barrier for the first iteration where ze_handle_exchange_entry exists
+        coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
+    }
+    else {
+        entry_factory::create<ze_handle_exchange_entry>(sched, comm, in_buffers);
+    }
+
+    sched->add_barrier();
+
+    entry_factory::create<ze_a2a_allgatherv_entry>(
+        sched, send_buf, send_count, recv_buf, recv_counts, dtype, comm);
+    sched->add_barrier();
+
+    coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
+    sched->add_barrier();
+
+    return ccl::status::success;
+}
+
+#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT

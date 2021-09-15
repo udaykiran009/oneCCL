@@ -1,5 +1,6 @@
 #include "common/stream/stream.hpp"
 #include "sched/entry/gpu/allreduce/ze_a2a_allreduce_entry.hpp"
+#include "sched/entry/gpu/ze_a2a_allgatherv_entry.hpp"
 #include "sched/entry/gpu/ze_cache.hpp"
 #include "sched/entry/gpu/ze_primitives.hpp"
 #include "sched/queue/queue.hpp"
@@ -145,34 +146,21 @@ void ze_a2a_allreduce_entry::init() {
                  (i == 0) ? &barrier_event : &kernel_events.at(i - 1)));
     }
 
-    /* copy tmp_buf to peer buffers */
-    post_copy_events.reserve(peer_count + 1);
-    for (int i = 0; i < peer_count; ++i) {
-        post_copy_events.emplace_back(ze_base_entry::create_event());
-        void* src = tmp_buf;
-        void* dst = static_cast<char*>(peer_recv_bufs[i].get_ptr()) + comm_rank * main_block_bytes;
-        ZE_CALL(zeCommandListAppendMemoryCopy,
-                (ze_base_entry::get_copy_list(),
-                 dst,
-                 src,
-                 block_bytes,
-                 post_copy_events.back(),
-                 1,
-                 &kernel_events.back()));
+    post_copy_events.resize(comm_size);
+    for (auto& event : post_copy_events) {
+        event = ze_base_entry::create_event();
     }
 
-    /* copy tmp_buf to my buffer */
-    post_copy_events.emplace_back(ze_base_entry::create_event());
-    void* src = tmp_buf;
-    void* dst = static_cast<char*>(recv_buf.get_ptr()) + comm_rank * main_block_bytes;
-    ZE_CALL(zeCommandListAppendMemoryCopy,
-            (ze_base_entry::get_copy_list(),
-             dst,
-             src,
-             block_bytes,
-             post_copy_events.back(),
-             1,
-             &kernel_events.back()));
+    ze_a2a_allgatherv_entry::fill_list(ze_base_entry::get_copy_list(),
+                                       tmp_buf,
+                                       recv_buf.get_ptr(),
+                                       peer_recv_bufs,
+                                       peer_count,
+                                       block_bytes,
+                                       comm_rank * main_block_bytes,
+                                       false,
+                                       post_copy_events,
+                                       kernel_events.back());
 
     ze_base_entry::close_lists();
 

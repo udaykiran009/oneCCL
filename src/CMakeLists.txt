@@ -30,6 +30,7 @@ if (CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)
         sched/entry/gpu/allreduce/ze_a2a_allreduce_entry.cpp
         sched/entry/gpu/allreduce/ze_onesided_allreduce_entry.cpp
         sched/entry/gpu/allreduce/ze_ring_allreduce_entry.cpp
+        sched/entry/gpu/ze_a2a_allgatherv_entry.cpp
         sched/entry/gpu/ze_base_entry.cpp
         sched/entry/gpu/ze_cache.cpp
         sched/entry/gpu/ze_call.cpp

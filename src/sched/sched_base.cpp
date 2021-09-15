@@ -291,6 +291,7 @@ void ccl_sched_base::alloc_buffers_for_pre_post_copy() {
     selector_param.comm = param.comm;
     selector_param.stream = param.stream;
     selector_param.is_sycl_buf = coll_attr.is_sycl_buf;
+    selector_param.recv_counts = param.recv_counts.data();
 
     if (!param.stream || !param.stream->is_sycl_device_stream() ||
         ccl_is_device_side_algo(selector_param)) {

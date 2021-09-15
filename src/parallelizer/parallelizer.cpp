@@ -298,7 +298,8 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
             algo.allgatherv = data.algorithm_selector->get<ccl_coll_allgatherv>(selector_param);
             if (algo.allgatherv == ccl_coll_allgatherv_direct ||
                 algo.allgatherv == ccl_coll_allgatherv_naive ||
-                algo.allgatherv == ccl_coll_allgatherv_ring) {
+                algo.allgatherv == ccl_coll_allgatherv_ring ||
+                ccl_is_device_side_algo(selector_param)) {
                 part_count = 1;
             }
             else if (algo.allgatherv == ccl_coll_allgatherv_multi_bcast ||
@@ -400,9 +401,11 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
         case ccl_coll_allgatherv:
             counts[0] = coll_param.get_recv_count(0);
             offsets[0] = 0;
+            selector_param.recv_counts = coll_param.recv_counts.data();
             if (algo.allgatherv == ccl_coll_allgatherv_direct ||
                 algo.allgatherv == ccl_coll_allgatherv_naive ||
-                algo.allgatherv == ccl_coll_allgatherv_ring) {
+                algo.allgatherv == ccl_coll_allgatherv_ring ||
+                ccl_is_device_side_algo(selector_param)) {
             }
             else {
                 for (idx = 1; idx < comm_size; idx++) {
@@ -625,9 +628,11 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
         }
 
         case ccl_coll_allgatherv: {
+            selector_param.recv_counts = coll_param.recv_counts.data();
             if (algo.allgatherv == ccl_coll_allgatherv_direct ||
                 algo.allgatherv == ccl_coll_allgatherv_naive ||
-                algo.allgatherv == ccl_coll_allgatherv_ring) {
+                algo.allgatherv == ccl_coll_allgatherv_ring ||
+                ccl_is_device_side_algo(selector_param)) {
                 ccl_coll_entry_param param{};
                 param.ctype = ccl_coll_allgatherv;
                 param.send_buf = ccl_buffer(coll_param.get_send_buf_ptr(),
@@ -639,6 +644,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
                 param.recv_counts = coll_param.recv_counts.data();
                 param.dtype = dtype;
                 param.comm = comm;
+                param.stream = coll_param.stream;
                 coll_entry_helper::add_coll_entry<ccl_coll_allgatherv>(part_scheds[0].get(), param);
             }
             else {

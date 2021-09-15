@@ -15,7 +15,8 @@ enum ccl_coll_allgatherv_algo {
     ccl_coll_allgatherv_naive,
     ccl_coll_allgatherv_ring,
     ccl_coll_allgatherv_flat,
-    ccl_coll_allgatherv_multi_bcast
+    ccl_coll_allgatherv_multi_bcast,
+    ccl_coll_allgatherv_topo_a2a
 };
 
 enum ccl_coll_allreduce_algo {
