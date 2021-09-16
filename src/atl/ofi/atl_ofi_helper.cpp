@@ -1042,9 +1042,8 @@ static bool atl_ofi_is_nic_down(struct fi_info* prov) {
 
 /* determine if NIC has already been included in others */
 int atl_ofi_nic_already_used(const struct fi_info* prov,
-                             struct fi_info** others,
-                             size_t nic_count) {
-    for (size_t i = 0; i < nic_count; i++) {
+                             const std::vector<struct fi_info*>& others) {
+    for (size_t i = 0; i < others.size(); i++) {
         if (prov->nic && others[i]->nic && prov->nic->bus_attr->bus_type == FI_BUS_PCI &&
             others[i]->nic->bus_attr->bus_type == FI_BUS_PCI) {
             struct fi_pci_attr pci = prov->nic->bus_attr->attr.pci;
@@ -1201,6 +1200,16 @@ int atl_ofi_is_allowed_nic_name(atl_ofi_ctx_t* ofi_ctx, struct fi_info* info) {
     return (should_include && !should_exclude);
 }
 
+bool atl_ofi_compare_nics(const struct fi_info* nic1, const struct fi_info* nic2) {
+    if (nic1->nic && !nic2->nic) {
+        return true;
+    }
+    else if (!nic1->nic && nic2->nic) {
+        return false;
+    }
+    return (atl_ofi_get_short_nic_name(nic1) < atl_ofi_get_short_nic_name(nic2));
+}
+
 atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
                                    struct fi_info* base_hints,
                                    atl_attr_t* attr,
@@ -1211,12 +1220,9 @@ atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
     size_t idx = 0, prov_idx = 0;
     char* prov_name = nullptr;
     atl_ofi_prov_t* prov = nullptr;
-    size_t name_prov_count = 0;
-    size_t topo_prov_count = 0;
-    size_t final_prov_count = 0;
-    struct fi_info* name_prov_list[ATL_OFI_MAX_NW_PROV_COUNT] = { 0 };
-    struct fi_info* topo_prov_list[ATL_OFI_MAX_NW_PROV_COUNT] = { 0 };
-    struct fi_info* final_prov_list[ATL_OFI_MAX_NW_PROV_COUNT] = { 0 };
+    std::vector<struct fi_info*> name_provs;
+    std::vector<struct fi_info*> topo_provs;
+    std::vector<struct fi_info*> final_provs;
     std::set<std::string> all_nic_names;
 
     atl_ofi_ctx_t* ofi_ctx = container_of(ctx, atl_ofi_ctx_t, ctx);
@@ -1237,18 +1243,20 @@ atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
         if (atl_ofi_is_nic_down(prov_iter)) {
             LOG_DEBUG("nic ", atl_ofi_get_nic_name(prov_iter), " is in down state, skip");
         }
-        else if (!atl_ofi_nic_already_used(prov_iter, name_prov_list, name_prov_count)) {
+        else if (!atl_ofi_nic_already_used(prov_iter, name_provs)) {
             all_nic_names.insert(atl_ofi_get_short_nic_name(prov_iter));
             if (atl_ofi_is_allowed_nic_name(ofi_ctx, prov_iter)) {
                 LOG_DEBUG("name filter: found suitable nic ", atl_ofi_get_nic_name(prov_iter));
-                name_prov_list[name_prov_count] = fi_dupinfo(prov_iter);
-                name_prov_count++;
+                name_provs.push_back(fi_dupinfo(prov_iter));
             }
         }
         prov_iter = prov_iter->next;
     }
 
-    if (!name_prov_count) {
+    /* sort by names */
+    std::sort(name_provs.begin(), name_provs.end(), atl_ofi_compare_nics);
+
+    if (name_provs.empty()) {
         LOG_ERROR("name filter: can not find network providers",
                   ", include names: ",
                   vec_to_string(ofi_ctx->mnic_include_names),
@@ -1261,13 +1269,12 @@ atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
 
     /* 3. filter out by topo */
     if (ofi_ctx->mnic_type == ATL_MNIC_NONE) {
-        topo_prov_list[topo_prov_count] = fi_dupinfo(name_prov_list[0]);
-        topo_prov_count++;
+        topo_provs.push_back(fi_dupinfo(name_provs[0]));
     }
     else {
         struct fid_nic* nic = nullptr;
-        for (idx = 0; idx < name_prov_count; idx++) {
-            prov_iter = name_prov_list[idx];
+        for (idx = 0; idx < name_provs.size(); idx++) {
+            prov_iter = name_provs[idx];
             LOG_DEBUG("topo filter: check nic ", atl_ofi_get_nic_name(prov_iter));
             nic = prov_iter->nic;
 
@@ -1276,15 +1283,14 @@ atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
                       ", has nic_attr ",
                       (nic != nullptr));
 
-            if (!atl_ofi_nic_already_used(prov_iter, topo_prov_list, topo_prov_count)) {
+            if (!atl_ofi_nic_already_used(prov_iter, topo_provs)) {
                 int is_local = atl_ofi_is_nic_local(prov_iter);
                 LOG_DEBUG(
                     "topo filter: nic ", atl_ofi_get_nic_name(prov_iter), ", is_local ", is_local);
                 if (ofi_ctx->mnic_type == ATL_MNIC_GLOBAL ||
                     (ofi_ctx->mnic_type == ATL_MNIC_LOCAL && is_local)) {
                     LOG_DEBUG("topo filter: found suitable nic ", atl_ofi_get_nic_name(prov_iter));
-                    topo_prov_list[topo_prov_count] = fi_dupinfo(prov_iter);
-                    topo_prov_count++;
+                    topo_provs.push_back(fi_dupinfo(prov_iter));
                 }
             }
             else {
@@ -1293,58 +1299,57 @@ atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
         }
     }
 
-    if (!topo_prov_count) {
+    if (topo_provs.empty()) {
         LOG_ERROR("topo filter: can not find network providers, mnic_type ", ofi_ctx->mnic_type);
         goto err;
     }
 
     /* 4. filter out by count */
-    for (idx = 0; idx < topo_prov_count; idx++) {
-        prov_iter = topo_prov_list[idx];
+    for (idx = 0; idx < topo_provs.size(); idx++) {
+        prov_iter = topo_provs[idx];
         LOG_DEBUG("count filter: check nic ", atl_ofi_get_nic_name(prov_iter));
-        if (final_prov_count < ofi_ctx->mnic_count) {
+        if (final_provs.size() < ofi_ctx->mnic_count) {
             LOG_DEBUG("count filter: found suitable nic ",
                       atl_ofi_get_nic_name(prov_iter),
                       ", nic idx ",
-                      final_prov_count);
-            final_prov_list[final_prov_count] = fi_dupinfo(prov_iter);
-            final_prov_count++;
+                      final_provs.size());
+            final_provs.push_back(fi_dupinfo(prov_iter));
         }
         else {
             break;
         }
     }
 
-    if (!final_prov_count) {
+    if (final_provs.empty()) {
         LOG_ERROR("count filter: can not find network providers, mnic_count ", ofi_ctx->mnic_count);
         goto err;
     }
 
     /* 5. create network providers */
-    LOG_INFO("found ", final_prov_count, " nic(s) according to all filters");
-    ofi_ctx->nw_prov_count = final_prov_count;
+    LOG_INFO("found ", final_provs.size(), " nic(s) according to all filters");
+    ofi_ctx->nw_prov_count = final_provs.size();
     for (idx = 0; idx < ofi_ctx->nw_prov_count; idx++) {
         prov_idx = ofi_ctx->nw_prov_first_idx + idx;
         prov = &ofi_ctx->provs[prov_idx];
         prov->idx = prov_idx;
         prov->is_shm = 0;
-        ATL_CALL(atl_ofi_prov_init(ctx, final_prov_list[idx], prov, attr, pmi), goto err);
+        ATL_CALL(atl_ofi_prov_init(ctx, final_provs[idx], prov, attr, pmi), goto err);
     }
 
 exit:
-    for (idx = 0; idx < final_prov_count; idx++) {
-        if (final_prov_list[idx])
-            fi_freeinfo(final_prov_list[idx]);
+    for (idx = 0; idx < final_provs.size(); idx++) {
+        if (final_provs[idx])
+            fi_freeinfo(final_provs[idx]);
     }
 
-    for (idx = 0; idx < topo_prov_count; idx++) {
-        if (topo_prov_list[idx])
-            fi_freeinfo(topo_prov_list[idx]);
+    for (idx = 0; idx < topo_provs.size(); idx++) {
+        if (topo_provs[idx])
+            fi_freeinfo(topo_provs[idx]);
     }
 
-    for (idx = 0; idx < name_prov_count; idx++) {
-        if (name_prov_list[idx])
-            fi_freeinfo(name_prov_list[idx]);
+    for (idx = 0; idx < name_provs.size(); idx++) {
+        if (name_provs[idx])
+            fi_freeinfo(name_provs[idx]);
     }
 
     fi_freeinfo(prov_list);
