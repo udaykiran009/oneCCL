@@ -10,7 +10,7 @@ if (CCL_ENABLE_SYCL)
         )
 endif(CCL_ENABLE_SYCL)
 
-if (CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)
+if (CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
     list (APPEND EXTENSIONS_SRC
 
         ccl_cpp_utils.cpp
@@ -44,7 +44,7 @@ if (CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)
         sched/ze_handle_manager.cpp
 
         )
-endif(CCL_ENABLE_SYCL AND MULTI_GPU_SUPPORT)
+endif(CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
 
 set(CCL_SRC
 

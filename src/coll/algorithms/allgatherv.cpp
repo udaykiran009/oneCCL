@@ -291,7 +291,7 @@ ccl::status ccl_coll_build_multi_bcast_allgatherv(ccl_master_sched* main_sched,
     return ccl::status::success;
 }
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 
 ccl::status ccl_coll_build_topo_a2a_allgatherv(ccl_sched* sched,
                                                ccl_buffer send_buf,
@@ -336,4 +336,4 @@ ccl::status ccl_coll_build_topo_a2a_allgatherv(ccl_sched* sched,
     return ccl::status::success;
 }
 
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE

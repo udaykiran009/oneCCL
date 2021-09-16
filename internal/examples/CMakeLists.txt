@@ -66,8 +66,8 @@ if (COMPUTE_BACKEND)
     list(APPEND CCL_INC_DIRS ${COMPUTE_BACKEND_INCLUDE_DIRS})
     list(APPEND EXTERNAL_LIBS ${COMPUTE_BACKEND_LIBRARIES})
 
-    set(MULTI_GPU_SUPPORT ON)
-    message ("Enable multi GPU support: ${MULTI_GPU_SUPPORT}")
+    set(CCL_ENABLE_ZE ON)
+    message ("Enable Level Zero support: ${CCL_ENABLE_ZE}")
     message ("COMPUTE_BACKEND_TARGET_NAME: ${COMPUTE_BACKEND_TARGET_NAME}")
 
     if ((${COMPUTE_BACKEND_TARGET_NAME} STREQUAL "Intel::SYCL_level_zero"))

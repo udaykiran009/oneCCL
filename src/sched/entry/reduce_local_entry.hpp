@@ -3,15 +3,15 @@
 #include "comp/comp.hpp"
 #include "sched/entry/entry.hpp"
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 #include "sched/entry/gpu/ze_base_entry.hpp"
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 class reduce_local_entry : public ze_base_entry {
 #else
 class reduce_local_entry : public sched_entry {
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 public:
     static constexpr const char* class_name() noexcept {
         return "REDUCE_LOCAL";
@@ -26,11 +26,11 @@ public:
                        const ccl_datatype& dtype,
                        ccl::reduction reduction_op)
             :
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
               ze_base_entry(sched),
-#else // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#else // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
               sched_entry(sched),
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
               in_buf(in_buf),
               in_cnt(in_cnt),
               inout_buf(inout_buf),
@@ -45,7 +45,7 @@ public:
                          "custom reduction requires user provided callback");
     }
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     ~reduce_local_entry() override {
         finalize();
     }
@@ -54,10 +54,10 @@ public:
     void update() override;
     void check_use_device();
     void start_on_device();
-#else // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#else // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
     void check_use_device() {}
     void start_on_device() {}
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
     void start_on_host() {
         size_t bytes = in_cnt * dtype.size();
         size_t offset = inout_buf.get_offset();
@@ -125,10 +125,10 @@ private:
 
     bool use_device;
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     ze_module_handle_t module;
     ze_kernel_handle_t kernel;
     std::string kernel_name;
     ze_group_count_t group_count;
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 };

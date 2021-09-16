@@ -10,7 +10,7 @@
 #include <mpi.h>
 #include "base_utils.hpp"
 
-#if defined(MULTI_GPU_SUPPORT) && defined(CCL_ENABLE_SYCL)
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 #include <ze_api.h>
 #include <CL/sycl/backend/level_zero.hpp>
 #endif
@@ -103,7 +103,7 @@ ccl::device_index_type from_string(const std::string& device_id_str) {
     return path;
 }
 
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
 
 template <>
 void str_to_mset(const char* input, std::multiset<ccl::device_index_type>& output, char delimiter) {
@@ -159,7 +159,7 @@ inline size_t take_mpi_rank_id_offest(const size_t mpi_rank_in_cluster,
 
 #ifdef CCL_ENABLE_SYCL
 
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
 size_t get_sycl_device_id(const cl::sycl::device& device) {
     if (!device.is_gpu()) {
         throw std::runtime_error(std::string(__FUNCTION__) +
@@ -217,7 +217,7 @@ size_t get_sycl_subdevice_id(const cl::sycl::device& device) {
     }
     return subdevice_id;
 }
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
 
 cl::sycl::device create_device_from_index(
     const ccl::device_index_type& device_vendor_id,
@@ -245,7 +245,7 @@ cl::sycl::device create_device_from_index(
     }
 
     auto devices = platform_it->get_devices(type);
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
     for (auto it_device = devices.begin(); it_device != devices.end(); ++it_device) {
         const cl::sycl::device& device = *it_device;
         if (!device.is_gpu()) {
@@ -331,7 +331,7 @@ std::vector<ccl::communicator::device_type> set_union_devices_in_current_process
     return devices_in_process;
 }
 
-#endif //MULTI_GPU_SUPPORT
+#endif //CCL_ENABLE_ZE
 } // namespace utils
 
 #endif //INTERNAL_UTILS_HPP

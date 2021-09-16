@@ -14,10 +14,10 @@
 #include <CL/sycl.hpp>
 #include <CL/sycl/backend/level_zero.hpp>
 
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
 #include "sched/entry/gpu/ze_cache.hpp"
 #include "sched/entry/gpu/ze_primitives.hpp"
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_SYCL
@@ -41,7 +41,7 @@ ccl_master_sched::ccl_master_sched(const ccl_sched_create_param& param)
     });
 #endif
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     if (ccl::utils::should_use_sycl_output_event(coll_param.stream)) {
         auto l0_context = coll_param.stream->get_native_stream()
                               .get_context()
@@ -72,7 +72,7 @@ ccl_master_sched::~ccl_master_sched() {
     if (!memory.mr_list.empty())
         LOG_WARN("memory region list should be empty for master sched");
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     if (ccl::utils::should_use_sycl_output_event(coll_param.stream)) {
         auto l0_context = coll_param.stream->get_native_stream()
                               .get_context()
@@ -133,7 +133,7 @@ void ccl_master_sched::commit(ccl_parallelizer* parallelizer) {
 void ccl_master_sched::reset_state() {
     reset_request();
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     if (ccl::utils::should_use_sycl_output_event(coll_param.stream)) {
         // Reset sycl event while it's in complete state, similar case to destruction in ~ccl_master_sched
         set_sync_event(sycl::event());
@@ -161,7 +161,7 @@ ccl_request* ccl_master_sched::start(ccl_executor* exec, bool reset_sched) {
         logger.info(ostream.str());
     }
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     if (ccl::utils::should_use_sycl_output_event(coll_param.stream)) {
         LOG_DEBUG("convert L0 event: ",
                   get_memory().sync_event,

@@ -2,10 +2,10 @@
 #include "common/comm/host_communicator/host_communicator.hpp"
 #include "common/global/global.hpp"
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 #include <CL/sycl/backend/level_zero.hpp>
 #include "sched/entry/gpu/ze_primitives.hpp"
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
 bool ccl_is_direct_algo(const ccl_selector_param& param) {
     bool res = false;
@@ -91,7 +91,7 @@ bool ccl_is_device_side_algo(const ccl_selector_param& param) {
 
 static bool is_family1_card(const ccl_selector_param& param) {
     bool result = false;
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     if (param.stream && param.stream->get_backend() == sycl::backend::level_zero) {
         auto sycl_device = param.stream->get_native_stream().get_device();
         auto device = sycl_device.template get_native<sycl::backend::level_zero>();
@@ -99,7 +99,7 @@ static bool is_family1_card(const ccl_selector_param& param) {
             result = true;
         }
     }
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
     return result;
 }
 
@@ -122,11 +122,11 @@ bool ccl_can_use_topo_a2a_algo(const ccl_selector_param& param) {
         is_device_buf =
             (sycl::get_pointer_type(param.buf, ctx) == sycl::usm::alloc::device) ? true : false;
     }
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
     if (param.stream && param.stream->get_backend() == sycl::backend::level_zero) {
         is_l0_backend = true;
     }
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
 #endif // CCL_ENABLE_SYCL
 
     if ((comm_size < 2) || (comm_size != static_cast<int>(local_proc_count)) ||
@@ -161,11 +161,11 @@ bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
         is_device_buf =
             (sycl::get_pointer_type(param.buf, ctx) == sycl::usm::alloc::device) ? true : false;
     }
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
     if (param.stream && param.stream->get_backend() == sycl::backend::level_zero) {
         is_l0_backend = true;
     }
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
 #endif // CCL_ENABLE_SYCL
 
     if ((((param.ctype == ccl_coll_bcast) || (param.ctype == ccl_coll_reduce)) &&

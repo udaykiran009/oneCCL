@@ -52,7 +52,7 @@ struct comm_impl_base_dispatch {
 template <cl_backend_type type>
 struct comm_impl_dispatch_selector {};
 
-#if !defined(CCL_ENABLE_SYCL) and !defined(MULTI_GPU_SUPPORT)
+#if !defined(CCL_ENABLE_SYCL) and !defined(CCL_ENABLE_ZE)
 template <>
 struct comm_impl_dispatch_selector<cl_backend_type::empty_backend>
         : public comm_impl_base_dispatch<
@@ -87,7 +87,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::empty_backend>
 };
 #endif
 
-#if defined(CCL_ENABLE_SYCL) and !defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) and !defined(CCL_ENABLE_ZE)
 template <>
 struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
         : public comm_impl_base_dispatch<comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>> {
@@ -194,17 +194,17 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
         return ret;
     }
 };
-#endif //defined(CCL_ENABLE_SYCL) and !defined(MULTI_GPU_SUPPORT)
+#endif //defined(CCL_ENABLE_SYCL) and !defined(CCL_ENABLE_ZE)
 
-#if defined(MULTI_GPU_SUPPORT) and !defined(CCL_ENABLE_SYCL)
+#if defined(CCL_ENABLE_ZE) and !defined(CCL_ENABLE_SYCL)
 template <>
 struct comm_impl_dispatch_selector<cl_backend_type::l0>
         : public comm_impl_base_dispatch<comm_impl_dispatch_selector<cl_backend_type::l0>> {
     using base_t = comm_impl_base_dispatch<comm_impl_dispatch_selector<cl_backend_type::l0>>;
 };
-#endif //defined(MULTI_GPU_SUPPORT) and !defined(CCL_ENABLE_SYCL)
+#endif //defined(CCL_ENABLE_ZE) and !defined(CCL_ENABLE_SYCL)
 
-#if defined(MULTI_GPU_SUPPORT) and defined(CCL_ENABLE_SYCL)
+#if defined(CCL_ENABLE_ZE) and defined(CCL_ENABLE_SYCL)
 template <>
 struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0>
         : public comm_impl_base_dispatch<
@@ -212,5 +212,5 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0>
     using base_t =
         comm_impl_base_dispatch<comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl_l0>>;
 };
-#endif //defined(MULTI_GPU_SUPPORT) and defined(CCL_ENABLE_SYCL)
+#endif //defined(CCL_ENABLE_ZE) and defined(CCL_ENABLE_SYCL)
 } // namespace ccl

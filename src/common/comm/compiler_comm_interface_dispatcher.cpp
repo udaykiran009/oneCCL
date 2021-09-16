@@ -15,7 +15,7 @@
 
 #include "common/global/global.hpp"
 
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
 #include "supported_topologies.hpp"
 #endif
 
@@ -125,7 +125,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
     }
 
     switch (preferred_topology_group) {
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+#if defined(CCL_ENABLE_ZE) || defined(CCL_ENABLE_SYCL)
         case ccl::group_split_type::single: {
             return communicator_interface_ptr(
                 new host_communicator(std::move(device_id), std::move(context), atl));

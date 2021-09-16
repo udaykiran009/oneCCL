@@ -107,7 +107,7 @@ int host_communicator::size() const {
     return comm_size;
 }
 
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
 void host_communicator::visit(ccl::gpu_comm_attr& comm_attr) {
     (void)(comm_attr);
 }

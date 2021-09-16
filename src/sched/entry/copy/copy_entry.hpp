@@ -3,17 +3,17 @@
 #include "sched/entry/copy/copy_helper.hpp"
 #include "sched/entry/entry.hpp"
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 #include "sched/entry/gpu/ze_copy_entry.hpp"
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
 enum class copy_type : int { regular, sycl, ze };
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 class copy_entry : public ze_copy_entry,
 #else
 class copy_entry : public sched_entry,
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
                    public postponed_fields<copy_entry,
                                            ccl_sched_entry_field_in_buf,
                                            ccl_sched_entry_field_cnt,

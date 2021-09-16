@@ -2,18 +2,18 @@
 #include "common/log/log.hpp"
 #include "common/utils/enums.hpp"
 
-#if defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_ZE)
 #include "oneapi/ccl/native_device_api/l0/primitives.hpp"
 #endif
 
-#if defined(MULTI_GPU_SUPPORT) && defined(CCL_ENABLE_SYCL)
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 #include <CL/sycl/backend/level_zero.hpp>
 #include "oneapi/ccl/native_device_api/l0/primitives.hpp"
 #endif
 
 namespace native {
 namespace detail {
-#if defined(MULTI_GPU_SUPPORT) && defined(CCL_ENABLE_SYCL)
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 
 size_t get_sycl_device_id(const cl::sycl::device& device) {
     if (!device.is_gpu()) {

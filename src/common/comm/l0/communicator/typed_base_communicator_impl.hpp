@@ -130,7 +130,7 @@ ccl::communicator_interface_ptr typed_base_communicator<TEMPLATE_DEF_ARG>::split
                              " - TODO `comm_split_attr`: supports `group` only");
     }
 //TODO
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
     auto id = get_impl()->get_comm_group_id();
     ccl::group_context::comm_group_t my_group =
         ccl::group_context::instance().get_existing_group_by_id(id);
@@ -138,7 +138,7 @@ ccl::communicator_interface_ptr typed_base_communicator<TEMPLATE_DEF_ARG>::split
     auto ctx = get_impl()->get_context();
     return my_group->create_communicator_from_group<cl::sycl::device>(get_device(), ctx, attr);
 #else
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
     auto ctx = get_impl()->get_context();
     return my_group->create_communicator_from_group(get_impl()->get_device_path(), ctx, attr);
 #endif

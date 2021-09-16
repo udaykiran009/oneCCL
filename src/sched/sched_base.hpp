@@ -12,9 +12,9 @@
 #include "sched/buffer/buffer_manager.hpp"
 #include "sched/entry/entry.hpp"
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 #include "sched/ze_handle_manager.hpp"
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
 class ccl_sched_queue;
 class ccl_sched_bin;
@@ -35,7 +35,7 @@ std::string to_string(ccl_sched_add_mode mode);
 
 struct ccl_sched_memory {
     ccl::buffer_manager buffer_manager;
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
     ccl::ze::ipc_handle_manager handle_manager;
     // sync event which we use to signal to the user about collective completion
     // and the pool it's created from(need to keep it to know what to return to the cache)
@@ -43,7 +43,7 @@ struct ccl_sched_memory {
     // to ccl_master_sched where they actually used
     ze_event_handle_t sync_event;
     ze_event_pool_handle_t sync_pool;
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
     std::list<atl_mr_t*> mr_list;
 };
 

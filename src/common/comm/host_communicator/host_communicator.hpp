@@ -58,7 +58,7 @@ public:
         return true;
     }
 
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
     void visit(ccl::gpu_comm_attr& comm_attr) override;
 #endif
 

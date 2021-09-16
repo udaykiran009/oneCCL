@@ -1,7 +1,7 @@
 #include "oneapi/ccl/native_device_api/l0/utils.hpp"
 #include "common/log/log.hpp"
 
-#if defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_ZE)
 #include "oneapi/ccl/native_device_api/l0/device.hpp"
 #include "oneapi/ccl/native_device_api/l0/context.hpp"
 
@@ -88,4 +88,4 @@ ccl::device_index_type deserialize_device_path(const uint8_t** data, size_t& siz
 
 } // namespace detail
 } // namespace native
-#endif //#if defined(MULTI_GPU_SUPPORT)
+#endif //#if defined(CCL_ENABLE_ZE)

@@ -4,9 +4,9 @@
 #include "common/comm/host_communicator/host_communicator.hpp"
 #include "oneapi/ccl/exception.hpp"
 
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+#if defined(CCL_ENABLE_ZE) || defined(CCL_ENABLE_SYCL)
 #include "common/comm/comm_interface.hpp"
-#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+#endif //#if defined(CCL_ENABLE_ZE) || defined(CCL_ENABLE_SYCL)
 
 #include "ccl_api_functions_generators.hpp"
 #include "common/global/global.hpp"

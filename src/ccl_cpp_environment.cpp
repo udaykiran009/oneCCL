@@ -3,9 +3,9 @@
 #include "exec/exec.hpp"
 #include "common/utils/version.hpp"
 
-#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+#if defined(CCL_ENABLE_ZE) || defined(CCL_ENABLE_SYCL)
 #include "common/comm/comm_interface.hpp"
-#endif //#if defined(MULTI_GPU_SUPPORT) || defined(CCL_ENABLE_SYCL)
+#endif //#if defined(CCL_ENABLE_ZE) || defined(CCL_ENABLE_SYCL)
 
 #include <memory>
 

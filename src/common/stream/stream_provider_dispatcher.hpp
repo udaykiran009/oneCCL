@@ -1,5 +1,5 @@
 #pragma once
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
 #include <ze_api.h>
 #endif
 

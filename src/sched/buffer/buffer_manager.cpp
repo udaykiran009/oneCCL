@@ -2,9 +2,9 @@
 #include "sched/buffer/buffer_cache.hpp"
 #include "sched/buffer/buffer_manager.hpp"
 
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
 #include "sched/entry/gpu/ze_cache.hpp"
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
 
 namespace ccl {
 
@@ -78,7 +78,7 @@ void buffer_manager::clear() {
     sycl_buffers.clear();
 #endif // CCL_ENABLE_SYCL
 
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
     for (auto it = ze_buffers.begin(); it != ze_buffers.end(); it++) {
         global_data::get().ze_cache->push(instance_idx,
                                           it->ctx,
@@ -89,7 +89,7 @@ void buffer_manager::clear() {
                                           it->ptr);
     }
     ze_buffers.clear();
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
 }
 
 void* buffer_manager::alloc(const alloc_param& param) {
@@ -127,7 +127,7 @@ void* buffer_manager::alloc(const alloc_param& param) {
         }
     }
 #endif // CCL_ENABLE_SYCL
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
     else if (param.buf_type == buffer_type::ze) {
         CCL_THROW_IF_NOT(param.buf_place == buffer_place::device,
                          "unexpected buf_place ",
@@ -150,7 +150,7 @@ void* buffer_manager::alloc(const alloc_param& param) {
             ze_buffers.emplace_back(ptr, bytes, context, device);
         }
     }
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
 
     CCL_THROW_IF_NOT(ptr, "null pointer");
 
@@ -178,7 +178,7 @@ void buffer_manager::dealloc(const dealloc_param& param) {
         ccl::global_data::get().buffer_cache->push(instance_idx, bytes, sycl_ctx, ptr);
     }
 #endif // CCL_ENABLE_SYCL
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
     else if (param.buf_type == buffer_type::ze) {
         CCL_THROW_IF_NOT(param.stream, "null stream");
         auto sycl_stream = param.stream->get_native_stream();
@@ -194,7 +194,7 @@ void buffer_manager::dealloc(const dealloc_param& param) {
         global_data::get().ze_cache->push(
             instance_idx, context, device, ze::default_device_mem_alloc_desc, bytes, 0, ptr);
     }
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
 }
 
 } // namespace ccl

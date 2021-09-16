@@ -13,11 +13,11 @@ copy_entry::copy_entry(ccl_sched* sched,
                        const ccl_datatype& dtype,
                        copy_attr attr)
         :
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
           ze_copy_entry(sched, in_buf, out_buf, count, dtype, attr),
 #else
           sched_entry(sched),
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
           sched(sched),
           in_buf(in_buf),
           out_buf(out_buf),
@@ -106,12 +106,12 @@ void copy_entry::start() {
         ccl_tuple_for_each_indexed<ccl_sycl_buffer_one_dim_types>(copier);
         status = ccl_sched_entry_status_started;
     }
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
     else {
         ctype = copy_type::ze;
         ze_copy_entry::start(); // status
     }
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
 #endif // CCL_ENABLE_SYCL
 }
 
@@ -122,11 +122,11 @@ void copy_entry::update() {
             status = ccl_sched_entry_status_complete;
         }
     }
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
     else {
         ze_copy_entry::update();
     }
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
 #endif // CCL_ENABLE_SYCL
 }
 

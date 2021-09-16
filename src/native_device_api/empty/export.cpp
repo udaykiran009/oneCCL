@@ -1,5 +1,5 @@
 #include "oneapi/ccl/config.h"
-#if !defined(MULTI_GPU_SUPPORT) and !defined(CCL_ENABLE_SYCL)
+#if !defined(CCL_ENABLE_ZE) and !defined(CCL_ENABLE_SYCL)
 
 #include "oneapi/ccl/native_device_api/empty/export.hpp"
 #include "oneapi/ccl/type_traits.hpp"
@@ -21,4 +21,4 @@ generic_context_type<cl_backend_type::empty_backend>::get() const noexcept {
 }
 } // namespace ccl
 
-#endif //#if !defined(MULTI_GPU_SUPPORT) and !defined(CCL_ENABLE_SYCL)
+#endif //#if !defined(CCL_ENABLE_ZE) and !defined(CCL_ENABLE_SYCL)

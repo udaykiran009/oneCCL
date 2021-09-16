@@ -23,14 +23,14 @@ ccl::status ccl_coll_build_scatter_ring_allgather_bcast(ccl_sched* sched,
                                                         int root,
                                                         ccl_comm* comm);
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 ccl::status ccl_coll_build_gpu_bcast(ccl_sched* sched,
                                      ccl_buffer buf,
                                      size_t count,
                                      const ccl_datatype& dtype,
                                      int root,
                                      ccl_comm* comm);
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
 ccl::status ccl_coll_build_dissemination_barrier(ccl_sched* sched, ccl_comm* comm);
 
@@ -43,7 +43,7 @@ ccl::status ccl_coll_build_rabenseifner_reduce(ccl_sched* sched,
                                                int root,
                                                ccl_comm* comm);
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
                                       ccl_buffer send_buf,
                                       ccl_buffer recv_buf,
@@ -52,7 +52,7 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
                                       ccl::reduction reduction,
                                       int root,
                                       ccl_comm* comm);
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
 ccl::status ccl_coll_build_rabenseifner_allreduce(ccl_sched* sched,
                                                   ccl_buffer send_buf,
@@ -103,7 +103,7 @@ ccl::status ccl_coll_build_starlike_allreduce(ccl_sched* sched,
                                               ccl::reduction reduction,
                                               ccl_comm* comm);
 
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
                                                ccl_buffer send_buf,
                                                ccl_buffer recv_buf,
@@ -119,7 +119,7 @@ ccl::status ccl_coll_build_topo_a2a_allreduce(ccl_sched* sched,
                                               const ccl_datatype& dtype,
                                               ccl::reduction reduction,
                                               ccl_comm* comm);
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
 ccl::status ccl_coll_build_naive_allgatherv(ccl_sched* sched,
                                             ccl_buffer send_buf,

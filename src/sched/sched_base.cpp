@@ -14,13 +14,13 @@ ccl_sched_base::ccl_sched_base(const ccl_sched_create_param& param)
           sched_id(param.id),
           coll_param(param.coll_param) {
     memory.buffer_manager.init(sched_id);
-#if defined(CCL_ENABLE_SYCL) && defined(MULTI_GPU_SUPPORT)
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     if (coll_param.stream) {
         ccl_comm* node_comm =
             coll_param.comm->get_host_comm()->get_node_comm().get()->get_ccl_comm().get();
         memory.handle_manager.init(node_comm, coll_param.stream);
     }
-#endif // CCL_ENABLE_SYCL && MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 }
 
 std::string to_string(ccl_sched_add_mode mode) {
@@ -154,9 +154,9 @@ void ccl_sched_base::dealloc_buffer(const ccl::dealloc_param& user_param) {
 
 void ccl_sched_base::clear_memory() {
     memory.buffer_manager.clear();
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
     memory.handle_manager.clear();
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
     free_memory_regions();
 }
 

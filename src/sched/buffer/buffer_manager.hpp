@@ -1,8 +1,8 @@
 #pragma once
 
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
 #include <ze_api.h>
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
 #include <CL/sycl/backend/level_zero.hpp>
@@ -95,7 +95,7 @@ struct sycl_buffer_desc : public buffer_desc {
 };
 #endif // CCL_ENABLE_SYCL
 
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
 struct ze_buffer_desc : public buffer_desc {
     const ze_context_handle_t ctx;
     const ze_device_handle_t dev;
@@ -109,7 +109,7 @@ struct ze_buffer_desc : public buffer_desc {
               ctx(ctx),
               dev(dev) {}
 };
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
 
 class buffer_manager {
 public:
@@ -136,9 +136,9 @@ private:
     std::list<sycl_buffer_desc> sycl_buffers;
 #endif // CCL_ENABLE_SYCL
 
-#ifdef MULTI_GPU_SUPPORT
+#ifdef CCL_ENABLE_ZE
     std::list<ze_buffer_desc> ze_buffers;
-#endif // MULTI_GPU_SUPPORT
+#endif // CCL_ENABLE_ZE
 };
 
 } // namespace ccl
