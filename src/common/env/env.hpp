@@ -94,7 +94,7 @@ constexpr const char* CCL_ALLTOALL_SCATTER_PLAIN = "CCL_ALLTOALL_SCATTER_PLAIN";
 constexpr const char* CCL_COMM_KERNELS = "CCL_COMM_KERNELS";
 constexpr const char* CCL_KERNEL_PATH = "CCL_KERNEL_PATH";
 constexpr const char* CCL_KERNEL_DEBUG = "CCL_KERNEL_DEBUG";
-constexpr const char* CCL_KERNEL_CACHE = "CCL_KERNEL_CACHE";
+constexpr const char* CCL_ZE_CACHE = "CCL_ZE_CACHE";
 constexpr const char* CCL_KERNEL_GROUP_SIZE = "CCL_KERNEL_GROUP_SIZE";
 constexpr const char* CCL_KERNEL_GROUP_COUNT = "CCL_KERNEL_GROUP_COUNT";
 constexpr const char* CCL_KERNEL_SYNC = "CCL_KERNEL_SYNC";
@@ -224,7 +224,6 @@ public:
 
     std::string kernel_path;
     int kernel_debug;
-    int enable_kernel_cache;
     ssize_t kernel_group_size;
     ssize_t kernel_group_count;
     int enable_kernel_sync;
@@ -232,6 +231,8 @@ public:
     int enable_kernel_1s_copy_ops;
     int enable_kernel_1s_ipc_wa;
     int enable_kernel_output_event;
+
+    int enable_ze_cache;
     int ze_serialize_mode;
     ccl_ze_copy_engine_mode ze_copy_engine;
     int ze_queue_index;

@@ -10,7 +10,7 @@ template <class map_t, class... keys_t>
 bool get_from_cache(map_t& cache, typename map_t::mapped_type& object, keys_t... keys) {
     bool success{};
 
-    if (!global_data::env().enable_kernel_cache)
+    if (!global_data::env().enable_ze_cache)
         return success;
 
     typename map_t::key_type key(keys...);
@@ -28,7 +28,7 @@ template <class map_t, class... keys_t>
 bool push_to_cache(map_t& cache, const typename map_t::mapped_type& object, keys_t... keys) {
     bool success{};
 
-    if (!global_data::env().enable_kernel_cache)
+    if (!global_data::env().enable_ze_cache)
         return success;
 
     typename map_t::key_type key(keys...);
@@ -273,7 +273,7 @@ void device_mem_cache::clear() {
     LOG_DEBUG("clear device memory cache: size: ", cache.size());
     //for (auto& key_value : cache) {
     // TODO: there is a segfault on this call, when ~cache is invoked w/ or w/0 api cache.
-    // But it passes, when CCL_KERNEL_CACHE=0 (calls of zeMemAllocDevice and ZeMemFree happen on every iteration).
+    // But it passes, when CCL_ZE_CACHE=0 (calls of zeMemAllocDevice and ZeMemFree happen on every iteration).
     // We don't control destroying phase and may be key_value.second (mem_ptr) is already away to free?
     // ZE_CALL(zeMemFree, (std::get<0>(key_value.first), key_value.second))
     //}
