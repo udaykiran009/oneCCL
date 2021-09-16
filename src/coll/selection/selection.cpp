@@ -170,8 +170,8 @@ bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
 
     if ((((param.ctype == ccl_coll_bcast) || (param.ctype == ccl_coll_reduce)) &&
          ((comm_size < 2) || (local_proc_count == 1))) ||
+        ((param.ctype == ccl_coll_allreduce) && (comm_size <= 2) && (local_proc_count == 1)) ||
         ((comm_size > 2) && (param.ctype == ccl_coll_allreduce) && is_family1_card(param)) ||
-        ((comm_size != static_cast<int>(local_proc_count)) && (local_proc_count != 2)) ||
 
         // need subcomms support from atl/mpi
         ((comm_size != static_cast<int>(local_proc_count)) &&

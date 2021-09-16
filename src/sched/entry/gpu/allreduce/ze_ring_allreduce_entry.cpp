@@ -16,7 +16,8 @@ ze_ring_allreduce_entry::ze_ring_allreduce_entry(ccl_sched* sched,
                                                  size_t cnt,
                                                  const ccl_datatype& dtype,
                                                  reduction op,
-                                                 ccl_comm* comm)
+                                                 ccl_comm* comm,
+                                                 size_t peer_tmp_buf_idx)
         : ze_base_entry(sched, comm, (comm->size() - 1) * event_group_count),
           send_buf(send_buf),
           recv_buf(recv_buf),
@@ -24,6 +25,7 @@ ze_ring_allreduce_entry::ze_ring_allreduce_entry(ccl_sched* sched,
           cnt(cnt),
           dtype(dtype),
           op(op),
+          peer_tmp_buf_idx(peer_tmp_buf_idx),
           stage_iter_count(comm->size() - 1),
           total_iter_count(stage_iter_count * 2) {}
 
@@ -98,7 +100,7 @@ void ze_ring_allreduce_entry::recv_sync_flag(int idx) {
     auto tag = recv_tags.at(idx);
     atl_req_t* req = &recv_reqs[idx];
 
-    CCL_THROW_IF_NOT((src != comm_size) && (src == left_peer),
+    CCL_THROW_IF_NOT((left_peer != comm_rank) && (left_peer < comm_size),
                      "unexpected src ",
                      src,
                      ", my rank ",
@@ -118,7 +120,7 @@ void ze_ring_allreduce_entry::send_sync_flag(int idx) {
     auto tag = send_tags.at(idx);
     atl_req_t* req = &send_reqs[idx];
 
-    CCL_THROW_IF_NOT((dst != comm_size) && (dst == right_peer),
+    CCL_THROW_IF_NOT((right_peer != comm_rank) && (right_peer < comm_size),
                      "unexpected dst ",
                      dst,
                      ", my rank ",
@@ -200,7 +202,7 @@ void ze_ring_allreduce_entry::init() {
 
     if (inplace) {
         ccl_buffer right_tmp_buf;
-        sched->get_memory().handle_manager.get(peer_rank, 0, right_tmp_buf, comm);
+        sched->get_memory().handle_manager.get(peer_rank, peer_tmp_buf_idx, right_tmp_buf, comm);
         right_tmp_buf_ptr = right_tmp_buf.get_ptr();
     }
 

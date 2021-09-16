@@ -22,7 +22,8 @@ public:
                                      size_t cnt,
                                      const ccl_datatype& dtype,
                                      ccl::reduction op,
-                                     ccl_comm* comm);
+                                     ccl_comm* comm,
+                                     size_t peer_tmp_buf_idx = 0);
     ~ze_ring_allreduce_entry();
 
     void init();
@@ -71,6 +72,7 @@ private:
     const unsigned long cnt;
     const ccl_datatype dtype;
     const ccl::reduction op;
+    const size_t peer_tmp_buf_idx;
 
     int iter_idx{};
     const int stage_iter_count;

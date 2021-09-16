@@ -13,13 +13,15 @@ ze_a2a_allgatherv_entry::ze_a2a_allgatherv_entry(ccl_sched* sched,
                                                  ccl_buffer recv_buf,
                                                  const size_t* recv_counts,
                                                  const ccl_datatype& dtype,
-                                                 ccl_comm* comm)
+                                                 ccl_comm* comm,
+                                                 size_t peer_buf_idx)
         : ze_base_entry(sched, comm, comm->size() * event_group_count),
           send_buf(send_buf),
           send_bytes(send_count * dtype.size()),
           recv_buf(recv_buf),
-          recv_counts(recv_counts),
+          recv_counts(recv_counts, recv_counts + comm->size()),
           dtype(dtype),
+          peer_buf_idx(peer_buf_idx),
           peer_count(comm->size() - 1) {}
 
 ze_a2a_allgatherv_entry::~ze_a2a_allgatherv_entry() {
@@ -71,7 +73,7 @@ void ze_a2a_allgatherv_entry::init() {
 
     for (int i = 0; i < peer_count; ++i) {
         int peer_rank = (comm_rank + i + 1) % comm->size();
-        sched->get_memory().handle_manager.get(peer_rank, 0, peer_recv_bufs[i], comm);
+        sched->get_memory().handle_manager.get(peer_rank, peer_buf_idx, peer_recv_bufs[i], comm);
         CCL_THROW_IF_NOT(peer_recv_bufs[i].get_ptr(), "null IPC buffer is received");
     }
 
@@ -80,7 +82,7 @@ void ze_a2a_allgatherv_entry::init() {
         is_inplace = true;
     }
 
-    size_t offset_count = std::accumulate(recv_counts, recv_counts + comm_rank, 0);
+    size_t offset_count = std::accumulate(recv_counts.begin(), recv_counts.begin() + comm_rank, 0);
     size_t offset_bytes = offset_count * dtype.size();
     size_t block_bytes = (!is_inplace) ? send_bytes : recv_counts[comm_rank] * dtype.size();
     LOG_DEBUG("rank: ", comm_rank, ", block_bytes: ", block_bytes);

@@ -163,6 +163,7 @@ void host_communicator::create_sub_comms(std::shared_ptr<atl_base_comm> atl) {
             new host_communicator(std::shared_ptr<ccl_comm>(this->create_with_color(
                                       atl->get_host_color(), data.comm_ids.get(), comm_impl.get())),
                                   is_sub_comm));
+        // TODO: fix get_host_color() hash
         even_comm = std::shared_ptr<host_communicator>(new host_communicator(
             std::shared_ptr<ccl_comm>(this->create_with_color(
                 atl->get_host_color() + atl->get_rank() % 2, data.comm_ids.get(), comm_impl.get())),

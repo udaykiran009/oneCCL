@@ -23,7 +23,8 @@ public:
                                      ccl_buffer recv_buf,
                                      const size_t* recv_counts,
                                      const ccl_datatype& dtype,
-                                     ccl_comm* comm);
+                                     ccl_comm* comm,
+                                     size_t peer_buf_idx = 0);
     ~ze_a2a_allgatherv_entry();
 
     void init();
@@ -48,8 +49,9 @@ private:
     const ccl_buffer send_buf;
     const size_t send_bytes;
     const ccl_buffer recv_buf;
-    const size_t* recv_counts;
+    const std::vector<size_t> recv_counts;
     const ccl_datatype dtype;
+    const size_t peer_buf_idx;
     const int peer_count;
 
     std::vector<ze_event_handle_t> copy_events;
