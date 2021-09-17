@@ -153,9 +153,10 @@ std::shared_ptr<ccl_comm> ccl_comm::clone_with_new_id(ccl_comm_id_storage::comm_
                                       true /*share_resources*/,
                                       get_host_comm());
 }
-
-int ccl_comm::get_global_rank(int rank) const {
-    if (m_local2global_map.empty()) {
+//TODO: will fix it after OFI refactoring
+int ccl_comm::get_global_rank(int rank, bool only_global) const {
+    if (m_local2global_map.empty() ||
+        (ccl::global_data::env().atl_transport == ccl_atl_mpi && !only_global)) {
         // global comm and its copies do not have entries in the map
         return rank;
     }

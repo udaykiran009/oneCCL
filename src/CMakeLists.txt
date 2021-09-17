@@ -51,6 +51,7 @@ set(CCL_SRC
     atl/atl_base_comm.cpp
     atl/atl_ofi_comm.cpp
     atl/atl_mpi_comm.cpp
+    atl/atl_mpi_global_data.cpp
     atl/mpi/atl_mpi.cpp
     atl/ofi/atl_ofi.cpp
     atl/ofi/atl_ofi_helper.cpp

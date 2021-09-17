@@ -11,7 +11,7 @@
 #include "coll/ccl_allgather_op_attr.hpp"
 
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/ikvs_wrapper.h"
-#include "atl/atl_base_comm.h"
+#include "atl/atl_base_comm.hpp"
 
 #include "common/comm/comm.hpp"
 
@@ -143,52 +143,56 @@ void host_communicator::exchange_colors(std::vector<int>& colors) {
 
 void host_communicator::create_sub_comms(std::shared_ptr<atl_base_comm> atl) {
     bool is_sub_comm = true;
-    if (ccl::global_data::env().atl_transport == ccl_atl_mpi) {
-        r2r_comm =
-            std::shared_ptr<host_communicator>(new host_communicator(comm_impl, is_sub_comm));
-        node_comm =
-            std::shared_ptr<host_communicator>(new host_communicator(comm_impl, is_sub_comm));
-        pair_comm =
-            std::shared_ptr<host_communicator>(new host_communicator(comm_impl, is_sub_comm));
-        even_comm =
-            std::shared_ptr<host_communicator>(new host_communicator(comm_impl, is_sub_comm));
-    }
-    else {
-        ccl::global_data& data = ccl::global_data::get();
-        r2r_comm = std::shared_ptr<host_communicator>(
-            new host_communicator(std::shared_ptr<ccl_comm>(this->create_with_color(
-                                      atl->get_r2r_color(), data.comm_ids.get(), comm_impl.get())),
-                                  is_sub_comm));
-        node_comm = std::shared_ptr<host_communicator>(
-            new host_communicator(std::shared_ptr<ccl_comm>(this->create_with_color(
-                                      atl->get_host_color(), data.comm_ids.get(), comm_impl.get())),
-                                  is_sub_comm));
-        // TODO: fix get_host_color() hash
-        even_comm = std::shared_ptr<host_communicator>(new host_communicator(
-            std::shared_ptr<ccl_comm>(this->create_with_color(
-                atl->get_host_color() + atl->get_rank() % 2, data.comm_ids.get(), comm_impl.get())),
-            is_sub_comm));
-        pair_comm = std::shared_ptr<host_communicator>(new host_communicator(
-            std::shared_ptr<ccl_comm>(this->create_with_color(
-                atl->get_host_color() + atl->get_rank() / 2, data.comm_ids.get(), comm_impl.get())),
-            is_sub_comm));
-    }
+
+    ccl::global_data& data = ccl::global_data::get();
+    r2r_comm = std::shared_ptr<host_communicator>(
+        new host_communicator(std::shared_ptr<ccl_comm>(this->create_with_color(
+                                  atl->get_r2r_color(), data.comm_ids.get(), comm_impl.get())),
+                              is_sub_comm));
+    node_comm = std::shared_ptr<host_communicator>(
+        new host_communicator(std::shared_ptr<ccl_comm>(this->create_with_color(
+                                  atl->get_host_color(), data.comm_ids.get(), comm_impl.get())),
+                              is_sub_comm));
+    even_comm = std::shared_ptr<host_communicator>(new host_communicator(
+        std::shared_ptr<ccl_comm>(this->create_with_color(
+            atl->get_host_color() + atl->get_rank() % 2, data.comm_ids.get(), comm_impl.get())),
+        is_sub_comm));
+    pair_comm = std::shared_ptr<host_communicator>(new host_communicator(
+        std::shared_ptr<ccl_comm>(this->create_with_color(
+            atl->get_host_color() + atl->get_rank() / 2, data.comm_ids.get(), comm_impl.get())),
+        is_sub_comm));
 }
 
 ccl_comm* host_communicator::create_with_color(int color,
                                                ccl_comm_id_storage* comm_ids,
                                                const ccl_comm* parent_comm) {
     if (ccl::global_data::env().atl_transport == ccl_atl_mpi) {
-        throw ccl::exception(
-            "MPI transport doesn't support creation of communicator with color yet");
+        std::shared_ptr<atl_base_comm> atl_comm = parent_comm->atl->comm_split(color);
+        ccl_comm* comm = new ccl_comm(atl_comm->get_rank(),
+                                      atl_comm->get_size(),
+                                      comm_ids->acquire(),
+                                      atl_comm->get_rank2rank_map(),
+                                      atl_comm,
+                                      true);
+
+        LOG_INFO("new comm: color ",
+                 color,
+                 ", rank ",
+                 comm->rank(),
+                 ", size ",
+                 comm->size(),
+                 ", comm_id ",
+                 comm->id());
+        return comm;
     }
+    else {
+        std::vector<int> colors(this->size());
+        colors[this->rank()] = color;
+        this->exchange_colors(colors);
 
-    std::vector<int> colors(this->size());
-    colors[this->rank()] = color;
-    this->exchange_colors(colors);
-
-    // TODO we can replace this func with own
-    return ccl_comm::create_with_colors(colors, comm_ids, parent_comm, true);
+        // TODO we can replace this func with own
+        return ccl_comm::create_with_colors(colors, comm_ids, parent_comm, true);
+    }
 }
 
 ccl::communicator_interface_ptr host_communicator::split(const comm_split_attr& attr) {

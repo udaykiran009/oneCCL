@@ -148,6 +148,10 @@ public:
 
     virtual int get_host_color() = 0;
 
+    virtual std::shared_ptr<atl_base_comm> comm_split(size_t color) = 0;
+
+    virtual std::vector<int> get_rank2rank_map() = 0;
+
     /*
      * TODO: Temporary change.
      * Need to define correct to unique id
@@ -170,7 +174,6 @@ protected:
     size_t ranks_per_process;
 
     std::unique_ptr<ipmi> pmi;
-    atl_ep_t** eps = nullptr;
 };
 
 class atl_comm_manager {

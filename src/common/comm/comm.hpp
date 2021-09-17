@@ -3,7 +3,7 @@
 #include <atomic>
 #include <unordered_map>
 
-#include "atl/atl_base_comm.h"
+#include "atl/atl_base_comm.hpp"
 #include "coll/algorithms/allreduce/allreduce_2d.hpp"
 #include "common/comm/comm_id_storage.hpp"
 #include "common/comm/atl_tag.hpp"
@@ -139,7 +139,7 @@ public:
      * @param rank a rank which is part of the current communicator
      * @return number of @c rank in the global communicator
      */
-    int get_global_rank(int rank) const;
+    int get_global_rank(int rank, bool only_global = false) const;
 
     const ccl_double_tree& dtree() const {
         return m_dtree;

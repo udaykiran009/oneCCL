@@ -5,7 +5,7 @@
 #include "oneapi/ccl/types.hpp"
 #include "supported_topologies.hpp"
 #include "communicator_traits.hpp"
-#include "atl/atl_base_comm.h"
+#include "atl/atl_base_comm.hpp"
 
 namespace native {
 struct ccl_device;

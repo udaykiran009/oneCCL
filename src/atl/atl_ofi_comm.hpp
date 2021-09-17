@@ -1,6 +1,6 @@
 #pragma once
 
-#include "atl/atl_base_comm.h"
+#include "atl/atl_base_comm.hpp"
 #include "atl/ofi/atl_ofi.hpp"
 
 class atl_ofi_comm : public atl_base_comm {
@@ -216,8 +216,17 @@ public:
         return 0;
     }
 
+    std::shared_ptr<atl_base_comm> comm_split(size_t color) override {
+        CCL_THROW("Function not supported");
+    }
+
+    std::vector<int> get_rank2rank_map() override {
+        CCL_THROW("Function not supported");
+    }
+
 private:
     std::shared_ptr<atl_ofi> transport;
+    atl_ep_t** eps = nullptr;
 
     void init_transport();
 };

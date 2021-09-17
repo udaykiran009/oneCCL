@@ -4,7 +4,7 @@
 
 #include <mpi.h>
 
-#include "atl/atl_base_comm.h"
+#include "atl/atl_base_comm.hpp"
 #include "atl/mpi/atl_mpi.hpp"
 
 class atl_mpi_comm : public atl_base_comm {
@@ -22,7 +22,8 @@ public:
     }
 
     atl_status_t finalize() override {
-        return transport->finalize();
+        transport->comms_free(eps);
+        return ATL_STATUS_SUCCESS;
     }
 
     atl_status_t update() override {
@@ -38,7 +39,7 @@ public:
     }
 
     atl_proc_coord_t* get_proc_coord() override {
-        return transport->get_proc_coord();
+        return &coord;
     }
 
     atl_status_t mr_reg(const void* buf, size_t len, atl_mr_t** mr) override {
@@ -204,11 +205,11 @@ public:
     }
 
     int get_r2r_color() override {
-        return transport->get_proc_coord()->local_idx;
+        return coord.local_idx;
     }
 
     int get_host_color() override {
-        return transport->get_proc_coord()->hostname_hash;
+        return coord.hostname_hash;
     }
 
     /*
@@ -219,8 +220,23 @@ public:
         return 0;
     }
 
+    std::shared_ptr<atl_base_comm> comm_split(size_t color) override;
+
+    std::vector<int> get_rank2rank_map() override;
+
 private:
+    atl_mpi_comm(std::shared_ptr<atl_mpi> transport,
+                 std::vector<atl_mpi_ep_t>& parent_eps,
+                 int parent_rank,
+                 int parent_size,
+                 int color);
+    void eps_update();
     std::shared_ptr<atl_mpi> transport;
+    std::vector<atl_mpi_ep_t> eps;
+    std::vector<int> rank2rank_map;
+    atl_proc_coord_t coord;
+    int parent_rank;
+    int parent_size;
 
     void init_transport();
 };

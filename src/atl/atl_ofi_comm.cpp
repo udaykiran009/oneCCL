@@ -1,4 +1,4 @@
-#include "atl/atl_ofi_comm.h"
+#include "atl/atl_ofi_comm.hpp"
 #include "atl/util/pm/pmi_resizable_rt/pmi_resizable_simple.h"
 #include "atl/util/pm/pmi_rt/pmi_simple.h"
 #include "atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.h"

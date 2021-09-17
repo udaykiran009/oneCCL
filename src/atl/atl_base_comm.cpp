@@ -1,10 +1,10 @@
 #ifdef CCL_ENABLE_MPI
 #include "atl/mpi/atl_mpi.hpp"
-#include "atl_mpi_comm.h"
+#include "atl_mpi_comm.hpp"
 #endif // CCL_ENABLE_MPI
 
-#include "atl/atl_ofi_comm.h"
-#include "atl/atl_base_comm.h"
+#include "atl/atl_ofi_comm.hpp"
+#include "atl/atl_base_comm.hpp"
 #include "atl/ofi/atl_ofi.hpp"
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
@@ -137,7 +137,7 @@ void atl_comm_manager::set_internal_env(const atl_attr_t& attr) {
         atl_ofi::atl_set_env(attr);
 #ifdef CCL_ENABLE_MPI
     else if (transport_type == ccl_atl_mpi)
-        atl_mpi::atl_set_env(attr);
+        atl_mpi::set_env(attr);
 #endif // CCL_ENABLE_MPI
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "atl/atl_base_comm.h"
+#include "atl/atl_base_comm.hpp"
 #include "common/comm/comm.hpp"
 #include "common/stream/stream.hpp"
 #include "oneapi/ccl/types.hpp"
