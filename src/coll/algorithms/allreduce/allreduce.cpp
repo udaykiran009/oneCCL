@@ -506,12 +506,16 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
     ccl_comm* r2r_comm = comm->get_host_comm()->get_r2r_comm().get()->get_ccl_comm().get();
 
     int comm_size = comm->size();
+    int even_comm_size = even_comm->size();
     int node_comm_size = node_comm->size();
 
-    bool is_single_node = (comm_size == 2) && (comm_size == node_comm_size);
+    bool is_single_node = comm_size == node_comm_size;
+    bool is_onesided = (comm_size == 2) && is_single_node;
+    bool is_inplace = send_buf == recv_buf;
+    bool tmp_buf_is_needed = (!is_onesided && !is_single_node) || (is_single_node && is_inplace);
 
     ccl_buffer tmp_buf{};
-    if (!is_single_node) {
+    if (tmp_buf_is_needed) {
         ccl::alloc_param alloc_param(
             count * dtype.size(), ccl::buffer_type::ze, ccl::buffer_place::device);
         tmp_buf = sched->alloc_buffer(alloc_param);
@@ -522,9 +526,10 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         { recv_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 1
     };
 
-    if (!is_single_node) {
+    if (tmp_buf_is_needed) {
         in_buffers.push_back({ tmp_buf.get_ptr(), ccl::ze::ipc_mem_type::memory });
     }
+    size_t peer_tmp_buf_idx = 2;
 
     int skip_rank = -1;
     if (ccl::global_data::env().enable_kernel_1s_ipc_wa) {
@@ -538,7 +543,6 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         sched->set_entry_exec_mode(ccl_sched_entry_exec_regular);
 
         // TODO: no need barrier for the first iteration where ze_handle_exchange_entry exists
-        // TODO: think about the right way
         coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
     }
     else {
@@ -547,7 +551,7 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
 
     sched->add_barrier();
 
-    if (is_single_node) {
+    if (is_onesided) {
         LOG_DEBUG("use onesided allreduce");
 
         if (comm->rank() == ccl::global_data::env().kernel_1s_lead) {
@@ -559,12 +563,15 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         barrier_param.comm = comm;
         coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
         sched->add_barrier();
-
-        // entry_factory::create<ze_ring_allreduce_entry>(
-        //     sched, send_buf, recv_buf, tmp_buf, count, dtype, op, comm);
-        // sched->add_barrier();
     }
-    else if ((node_comm_size % 2) == 0) {
+    else if (is_single_node) {
+        LOG_DEBUG("use single node allreduce");
+
+        entry_factory::create<ze_ring_allreduce_entry>(
+            sched, send_buf, recv_buf, tmp_buf, count, dtype, op, comm, peer_tmp_buf_idx);
+        sched->add_barrier();
+    }
+    else if (node_comm_size % 2 == 0) {
         LOG_DEBUG("use multi level allreduce");
 
         if (pair_comm->rank() == ccl::global_data::env().kernel_1s_lead) {
@@ -576,55 +583,61 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
 
             /* gpu allreduce stage */
 
+            // TODO: replace by reduce_scatter
             entry_factory::create<ze_ring_allreduce_entry>(
-                sched, recv_buf, recv_buf, tmp_buf, count, dtype, op, even_comm, 2);
+                sched, recv_buf, recv_buf, tmp_buf, count, dtype, op, even_comm, peer_tmp_buf_idx);
             sched->add_barrier();
 
             /* host allreduce stage */
 
-            size_t main_block_count = (count / even_comm->size());
-            size_t offset_count = main_block_count * even_comm->rank();
+            size_t main_block_count = count / even_comm_size;
             size_t block_count = main_block_count;
-            if (even_comm->rank() == even_comm->size() - 1) {
-                block_count += count % even_comm->size();
+            if (even_comm->rank() == even_comm_size - 1) {
+                block_count += count % even_comm_size;
             }
 
-            // if node_size < comm_size
-            ccl::alloc_param host_buf_param(
-                block_count * dtype.size(), ccl::buffer_type::regular, ccl::buffer_place::host);
-            ccl_buffer host_buf = sched->alloc_buffer(host_buf_param);
-            ccl_buffer partial_recv_buf = recv_buf + offset_count * dtype.size();
-            entry_factory::create<copy_entry>(sched,
-                                              partial_recv_buf,
-                                              host_buf,
-                                              block_count,
-                                              dtype,
-                                              copy_attr(copy_direction::d2h));
-            sched->add_barrier();
-
-            ccl_coll_build_allreduce(sched, host_buf, host_buf, block_count, dtype, op, r2r_comm);
-            sched->add_barrier();
-
-            /* gpu allgatherv stage */
-
-            entry_factory::create<copy_entry>(sched,
-                                              host_buf,
-                                              partial_recv_buf,
-                                              block_count,
-                                              dtype,
-                                              copy_attr(copy_direction::h2d));
-            sched->add_barrier();
-            //
-
-            if (even_comm->size() > 1) {
-                // TODO: barrier is no needed?
-                barrier_param.comm = even_comm;
-                coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
+            if (!is_single_node) {
+                ccl::alloc_param host_buf_param(
+                    block_count * dtype.size(), ccl::buffer_type::regular, ccl::buffer_place::host);
+                ccl_buffer host_buf = sched->alloc_buffer(host_buf_param);
+                size_t offset_bytes = main_block_count * even_comm->rank() * dtype.size();
+                ccl_buffer partial_recv_buf = recv_buf + offset_bytes;
+                entry_factory::create<copy_entry>(sched,
+                                                  partial_recv_buf,
+                                                  host_buf,
+                                                  block_count,
+                                                  dtype,
+                                                  copy_attr(copy_direction::d2h));
                 sched->add_barrier();
 
-                std::vector<size_t> recv_counts(
-                    even_comm->size(),
-                    block_count); // TODO: need correct counts for all ranks in even_comm
+                ccl_coll_build_allreduce(
+                    sched, host_buf, host_buf, block_count, dtype, op, r2r_comm);
+                sched->add_barrier();
+
+                entry_factory::create<copy_entry>(sched,
+                                                  host_buf,
+                                                  partial_recv_buf,
+                                                  block_count,
+                                                  dtype,
+                                                  copy_attr(copy_direction::h2d));
+                sched->add_barrier();
+            }
+
+            if (even_comm_size > 1) {
+                /* gpu allgatherv stage */
+
+                // We believe that here we do not need to wait for peers in even_comm
+                // in case of one node launch, because ze_ring_allreduce_entry is a blocking entry
+                // and ze_a2a_allgatherv_entry is implemented as a broadcast
+                // (we do not read from the peer receive buffer).
+                // Otherwise, if there are any changes here or instability,
+                // then a barrier is needed here.
+                // barrier_param.comm = even_comm;
+                // coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
+                // sched->add_barrier();
+
+                std::vector<size_t> recv_counts(even_comm_size, main_block_count);
+                recv_counts.at(even_comm->rank()) = block_count;
                 entry_factory::create<ze_a2a_allgatherv_entry>(sched,
                                                                recv_buf,
                                                                block_count,
@@ -632,7 +645,7 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
                                                                recv_counts.data(),
                                                                dtype,
                                                                even_comm,
-                                                               1);
+                                                               1 /* peer_recv_buf_idx */);
                 sched->add_barrier();
 
                 barrier_param.comm = even_comm;
@@ -642,149 +655,26 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
 
             /* gpu copy to peer stage */
 
-            entry_factory::create<copy_entry>(sched,
-                                              recv_buf,
-                                              ccl_buffer(),
-                                              count,
-                                              dtype,
-                                              copy_attr((pair_comm->rank() + 1) % pair_comm->size(),
-                                                        1,
-                                                        copy_direction::d2d,
-                                                        pair_comm));
+            int peer_copy_rank = (pair_comm->rank() + 1) % pair_comm->size();
+            entry_factory::create<copy_entry>(
+                sched,
+                recv_buf,
+                ccl_buffer(),
+                count,
+                dtype,
+                copy_attr(
+                    peer_copy_rank, 1 /* peer_recv_buf_idx */, copy_direction::d2d, pair_comm));
             sched->add_barrier();
         }
 
-        // TODO: fix tag in barriers
-        barrier_param.comm = comm;
+        // TODO: fix tag matching in barriers
+        barrier_param.comm = pair_comm;
         coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
         sched->add_barrier();
     }
     else {
         CCL_THROW("unexpected comm size: ", comm_size, ", node comm size: ", node_comm_size);
     }
-
-    // if (comm_size != 2) {
-    //     LOG_DEBUG("node_comm: id: ",
-    //               node_comm->id(),
-    //               ", size: ",
-    //               node_comm_size,
-    //               ", rank: ",
-    //               node_comm->rank());
-
-    //     // TODO: change condition when reduce/bcast for > 2 ranks will be supported
-    //     if (node_comm_size == 2) {
-    //         LOG_DEBUG("r2r_comm: id: ",
-    //                   r2r_comm->id(),
-    //                   ", size: ",
-    //                   r2r_comm->size(),
-    //                   ", rank: ",
-    //                   r2r_comm->rank());
-
-    //         if (node_comm->rank() == ccl::global_data::env().kernel_1s_lead) {
-    //             entry_factory::create<ze_reduce_entry>(
-    //                 sched, send_buf, recv_buf, count, dtype, op, node_comm->rank(), node_comm);
-    //             sched->add_barrier();
-
-    //             ccl::alloc_param alloc_param(
-    //                 count * dtype.size(), ccl::buffer_type::regular, ccl::buffer_place::host);
-    //             ccl_buffer host_buf = sched->alloc_buffer(alloc_param);
-
-    //             entry_factory::create<copy_entry>(
-    //                 sched, recv_buf, host_buf, count, dtype, copy_attr(copy_direction::d2h));
-    //             sched->add_barrier();
-    //             ccl_coll_build_allreduce(sched, host_buf, host_buf, count, dtype, op, r2r_comm);
-    //             sched->add_barrier();
-    //             entry_factory::create<copy_entry>(
-    //                 sched, host_buf, recv_buf, count, dtype, copy_attr(copy_direction::h2d));
-    //             sched->add_barrier();
-    //             entry_factory::create<copy_entry>(
-    //                 sched,
-    //                 recv_buf,
-    //                 ccl_buffer(),
-    //                 count,
-    //                 dtype,
-    //                 copy_attr((node_comm->rank() + 1) % node_comm_size, 1, copy_direction::d2d));
-    //             sched->add_barrier();
-    //         }
-    //         barrier_param.comm = comm;
-    //         coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
-    //     }
-    //     /* TODO: fix correctness */
-    //     else if (0) { //(node_comm_size == 4) && (comm_size == node_comm_size)) {
-    //         LOG_DEBUG("pair_comm: id: ",
-    //                   pair_comm->id(),
-    //                   ", size: ",
-    //                   pair_comm->size(),
-    //                   ", rank: ",
-    //                   pair_comm->rank());
-
-    //         LOG_DEBUG("even_comm: id: ",
-    //                   even_comm->id(),
-    //                   ", size: ",
-    //                   even_comm->size(),
-    //                   ", rank: ",
-    //                   even_comm->rank());
-
-    //         if (pair_comm->rank() == ccl::global_data::env().kernel_1s_lead) {
-    //             entry_factory::create<ze_reduce_entry>(
-    //                 sched, send_buf, recv_buf, count, dtype, op, pair_comm->rank(), pair_comm);
-    //             sched->add_barrier();
-
-    //             barrier_param.comm = even_comm;
-    //             coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
-    //             sched->add_barrier();
-
-    //             entry_factory::create<ze_onesided_allreduce_entry>(
-    //                 sched, recv_buf, recv_buf, count, dtype, op, even_comm);
-    //             sched->add_barrier();
-    //         }
-
-    //         barrier_param.comm = comm;
-    //         coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
-    //         sched->add_barrier();
-
-    //         if (pair_comm->rank() != ccl::global_data::env().kernel_1s_lead) {
-    //             entry_factory::create<copy_entry>(
-    //                 sched,
-    //                 ccl_buffer(),
-    //                 recv_buf,
-    //                 count,
-    //                 dtype,
-    //                 copy_attr((pair_comm->rank() + 1) % pair_comm->size(),
-    //                           1,
-    //                           copy_direction::d2d,
-    //                           pair_comm));
-    //             sched->add_barrier();
-    //         }
-    //     }
-    //     else if (((node_comm_size >= 3) || (node_comm_size == 1)) &&
-    //              (comm_size == node_comm_size)) {
-    //         entry_factory::create<ze_ring_allreduce_entry>(
-    //             sched, send_buf, recv_buf, tmp_buf, count, dtype, op, comm);
-    //         sched->add_barrier();
-    //     }
-    //     else {
-    //         CCL_THROW("unexpected node_comm size: ", node_comm_size);
-    //     }
-    // }
-    // else if ((comm_size == 2) && (comm_size == node_comm_size)) {
-    //     if (comm->rank() == ccl::global_data::env().kernel_1s_lead) {
-    //         entry_factory::create<ze_onesided_allreduce_entry>(
-    //             sched, send_buf, recv_buf, count, dtype, op, comm);
-    //         sched->add_barrier();
-    //     }
-
-    //     barrier_param.comm = comm;
-    //     coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
-    //     sched->add_barrier();
-
-    //     // entry_factory::create<ze_ring_allreduce_entry>(
-    //     //     sched, send_buf, recv_buf, tmp_buf, count, dtype, op, comm);
-    //     // sched->add_barrier();
-    // }
-    // else {
-    //     CCL_THROW("unexpected comm size: ", comm_size, ", node comm size: ", node_comm_size);
-    // }
 
     return ccl::status::success;
 }

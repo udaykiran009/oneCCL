@@ -129,7 +129,9 @@ bool ccl_can_use_topo_a2a_algo(const ccl_selector_param& param) {
 #endif // CCL_ENABLE_ZE
 #endif // CCL_ENABLE_SYCL
 
-    if ((comm_size < 2) || (comm_size != static_cast<int>(local_proc_count)) ||
+    bool is_single_node = static_cast<size_t>(comm_size) == local_proc_count;
+
+    if ((comm_size < 2) || !is_single_node ||
         (!param.stream || param.stream->get_type() != stream_type::gpu) || is_sycl_buf ||
         !is_device_buf || !is_l0_backend || is_family1_card(param) ||
         ccl::global_data::env().enable_fusion || ccl::global_data::env().enable_unordered_coll ||
@@ -168,14 +170,19 @@ bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
 #endif // CCL_ENABLE_ZE
 #endif // CCL_ENABLE_SYCL
 
+    bool is_single_node = static_cast<size_t>(comm_size) == local_proc_count;
+    bool is_onesided = (comm_size == 2) && is_single_node;
+
     if ((((param.ctype == ccl_coll_bcast) || (param.ctype == ccl_coll_reduce)) &&
          ((comm_size < 2) || (local_proc_count == 1))) ||
         ((param.ctype == ccl_coll_allreduce) && (comm_size <= 2) && (local_proc_count == 1)) ||
-        ((comm_size > 2) && (param.ctype == ccl_coll_allreduce) && is_family1_card(param)) ||
+
+        // because of ze_ring_allreduce_entry and ze_a2a_allgatherv_entry
+        (!is_onesided && (param.ctype == ccl_coll_allreduce) && is_family1_card(param)) ||
+        (!is_onesided && !is_single_node && (local_proc_count % 2 != 0)) ||
 
         // need subcomms support from atl/mpi
-        ((comm_size != static_cast<int>(local_proc_count)) &&
-         (ccl::global_data::env().atl_transport == ccl_atl_mpi)) ||
+        (!is_single_node && (ccl::global_data::env().atl_transport == ccl_atl_mpi)) ||
 
         !param.stream || (param.stream->get_type() != stream_type::gpu) || is_sycl_buf ||
         !is_device_buf || !is_l0_backend || ccl::global_data::env().enable_fusion ||
