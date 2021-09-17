@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sched/entry/gpu/ze_call.hpp"
+#include "sched/entry/ze/ze_call.hpp"
 
 #include <initializer_list>
 #include <string>
@@ -17,6 +17,8 @@ enum class init_mode : int {
     compute = 1,
     copy = 2,
 };
+
+enum class device_id : uint32_t { unknown = 0x0, id1 = 0x200, id2 = 0xbd0 };
 
 constexpr ze_context_desc_t default_context_desc = { .stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC,
                                                      .pNext = nullptr,
@@ -133,12 +135,6 @@ void get_queue_index(const ze_queue_properties_t& props,
                      int idx,
                      uint32_t* index);
 
-enum class device_family : uint32_t {
-    unknown = 0x0,
-    family1 = 0x200,
-    family2 = 0xbd0,
-};
-
 device_family get_device_family(ze_device_handle_t device);
 
 std::string to_string(ze_result_t result);
@@ -147,7 +143,6 @@ std::string to_string(const ze_group_count_t& group_count);
 std::string to_string(const ze_kernel_args_t& kernel_args);
 std::string to_string(const ze_command_queue_group_property_flag_t& flag);
 std::string to_string(const ze_command_queue_group_properties_t& queue_property);
-std::string to_string(device_family family);
 
 std::string join_strings(const std::vector<std::string>& tokens, const std::string& delimeter);
 

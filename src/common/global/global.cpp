@@ -12,8 +12,8 @@
 #include "sched/cache/cache.hpp"
 
 #ifdef CCL_ENABLE_ZE
-#include "sched/entry/gpu/ze_cache.hpp"
-#include "sched/entry/gpu/ze_primitives.hpp"
+#include "sched/entry/ze/ze_cache.hpp"
+#include "sched/entry/ze/ze_primitives.hpp"
 #endif // CCL_ENABLE_ZE
 
 namespace ccl {

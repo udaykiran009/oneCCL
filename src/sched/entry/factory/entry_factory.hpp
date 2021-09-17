@@ -31,15 +31,15 @@
 #include "sched/entry/write_entry.hpp"
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
-#include "sched/entry/gpu/allreduce/ze_a2a_allreduce_entry.hpp"
-#include "sched/entry/gpu/allreduce/ze_onesided_allreduce_entry.hpp"
-#include "sched/entry/gpu/allreduce/ze_ring_allreduce_entry.hpp"
-#include "sched/entry/gpu/ze_a2a_allgatherv_entry.hpp"
-#include "sched/entry/gpu/ze_copy_entry.hpp"
-#include "sched/entry/gpu/ze_handle_exchange_entry.hpp"
-#include "sched/entry/gpu/ze_event_signal_entry.hpp"
-#include "sched/entry/gpu/ze_event_wait_entry.hpp"
-#include "sched/entry/gpu/ze_reduce_entry.hpp"
+#include "sched/entry/ze/allreduce/ze_a2a_allreduce_entry.hpp"
+#include "sched/entry/ze/allreduce/ze_onesided_allreduce_entry.hpp"
+#include "sched/entry/ze/allreduce/ze_ring_allreduce_entry.hpp"
+#include "sched/entry/ze/ze_a2a_allgatherv_entry.hpp"
+#include "sched/entry/ze/ze_copy_entry.hpp"
+#include "sched/entry/ze/ze_handle_exchange_entry.hpp"
+#include "sched/entry/ze/ze_event_signal_entry.hpp"
+#include "sched/entry/ze/ze_event_wait_entry.hpp"
+#include "sched/entry/ze/ze_onesided_reduce_entry.hpp"
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
 #include "sched/sched.hpp"

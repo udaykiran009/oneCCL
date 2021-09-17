@@ -1,8 +1,8 @@
 #include "common/datatype/datatype.hpp"
 #include "common/stream/stream.hpp"
 #include "common/utils/sycl_utils.hpp"
-#include "sched/entry/gpu/ze_primitives.hpp"
-#include "sched/entry/gpu/ze_cache.hpp"
+#include "sched/entry/ze/ze_primitives.hpp"
+#include "sched/entry/ze/ze_cache.hpp"
 #include "sched/entry/reduce_local_entry.hpp"
 #include "sched/queue/queue.hpp"
 

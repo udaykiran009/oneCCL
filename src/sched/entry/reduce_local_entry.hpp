@@ -4,7 +4,7 @@
 #include "sched/entry/entry.hpp"
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-#include "sched/entry/gpu/ze_base_entry.hpp"
+#include "sched/entry/ze/ze_base_entry.hpp"
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)

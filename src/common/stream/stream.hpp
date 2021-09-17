@@ -12,9 +12,15 @@
 #include "oneapi/ccl/type_traits.hpp"
 
 namespace ccl {
+
 namespace detail {
 class environment;
 }
+
+enum class device_family { unknown, family1, family2 };
+
+std::string to_string(device_family family);
+
 } // namespace ccl
 
 using stream_str_enum = utils::enum_to_str<utils::enum_to_underlying(stream_type::last_value)>;
@@ -39,6 +45,10 @@ public:
 
     stream_type get_type() const {
         return type;
+    }
+
+    ccl::device_family get_device_family() const {
+        return device_family;
     }
 
     bool is_sycl_device_stream() const {
@@ -78,9 +88,12 @@ private:
                stream_native_t& native_stream,
                const ccl::library_version& version);
 
+    const ccl::library_version version;
+
     stream_type type;
+    ccl::device_family device_family;
+
 #ifdef CCL_ENABLE_SYCL
     cl::sycl::backend backend;
 #endif // CCL_ENBALE_SYCL
-    const ccl::library_version version;
 };

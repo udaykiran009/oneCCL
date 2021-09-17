@@ -1,4 +1,4 @@
-#include "sched/entry/gpu/ze_event_wait_entry.hpp"
+#include "sched/entry/ze/ze_event_wait_entry.hpp"
 
 #include <ze_api.h>
 

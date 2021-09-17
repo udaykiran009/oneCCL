@@ -1,6 +1,4 @@
-#include "sched/entry/gpu/ze_copy_entry.hpp"
-
-#include <ze_api.h>
+#include "sched/entry/ze/ze_copy_entry.hpp"
 
 using namespace ccl;
 

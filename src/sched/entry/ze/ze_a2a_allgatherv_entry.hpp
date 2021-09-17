@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common/utils/buffer.hpp"
-#include "sched/entry/gpu/ze_base_entry.hpp"
+#include "sched/entry/ze/ze_base_entry.hpp"
 
 class ze_a2a_allgatherv_entry : public ze_base_entry {
 public:

@@ -1,6 +1,6 @@
 #include "common/comm/comm.hpp"
 #include "common/global/global.hpp"
-#include "sched/entry/gpu/ze_call.hpp"
+#include "sched/entry/ze/ze_call.hpp"
 #include "sched/ze_handle_manager.hpp"
 
 #include <CL/sycl/backend/level_zero.hpp>

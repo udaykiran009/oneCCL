@@ -1,5 +1,5 @@
 #include "common/global/global.hpp"
-#include "sched/entry/gpu/ze_cache.hpp"
+#include "sched/entry/ze/ze_cache.hpp"
 
 #include <iterator>
 

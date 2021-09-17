@@ -1,4 +1,4 @@
-#include "sched/entry/gpu/ze_handle_exchange_entry.hpp"
+#include "sched/entry/ze/ze_handle_exchange_entry.hpp"
 #include "sched/queue/queue.hpp"
 #include "sched/ze_handle_manager.hpp"
 

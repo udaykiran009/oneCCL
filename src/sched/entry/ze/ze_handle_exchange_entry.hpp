@@ -2,7 +2,7 @@
 
 #include "common/comm/comm.hpp"
 #include "sched/entry/entry.hpp"
-#include "sched/entry/gpu/ze_primitives.hpp"
+#include "sched/entry/ze/ze_primitives.hpp"
 #include "sched/sched.hpp"
 #include "sched/ze_handle_manager.hpp"
 

@@ -1,11 +1,12 @@
 #pragma once
+
 #ifdef CCL_ENABLE_ZE
 #include <ze_api.h>
-#endif
+#endif // CCL_ENABLE_ZE
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
-#endif
+#endif // CCL_ENABLE_SYCL
 
 #include "oneapi/ccl/type_traits.hpp"
 

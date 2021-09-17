@@ -1,6 +1,6 @@
-#include "sched/entry/gpu/ze_a2a_allgatherv_entry.hpp"
-#include "sched/entry/gpu/ze_cache.hpp"
-#include "sched/entry/gpu/ze_primitives.hpp"
+#include "sched/entry/ze/ze_a2a_allgatherv_entry.hpp"
+#include "sched/entry/ze/ze_cache.hpp"
+#include "sched/entry/ze/ze_primitives.hpp"
 
 #include <numeric>
 

@@ -1,7 +1,7 @@
 #include "common/stream/stream.hpp"
-#include "sched/entry/gpu/allreduce/ze_onesided_allreduce_entry.hpp"
-#include "sched/entry/gpu/ze_primitives.hpp"
-#include "sched/entry/gpu/ze_cache.hpp"
+#include "sched/entry/ze/allreduce/ze_onesided_allreduce_entry.hpp"
+#include "sched/entry/ze/ze_primitives.hpp"
+#include "sched/entry/ze/ze_cache.hpp"
 #include "sched/queue/queue.hpp"
 
 #include <string>

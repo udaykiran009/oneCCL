@@ -1,6 +1,6 @@
 #include "common/global/global.hpp"
 #include "common/log/log.hpp"
-#include "sched/entry/gpu/ze_call.hpp"
+#include "sched/entry/ze/ze_call.hpp"
 
 namespace ccl {
 namespace ze {

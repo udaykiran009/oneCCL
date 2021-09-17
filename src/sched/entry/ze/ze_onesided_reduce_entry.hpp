@@ -2,31 +2,31 @@
 
 #include "common/utils/buffer.hpp"
 #include "comp/comp.hpp"
-#include "sched/entry/gpu/ze_base_entry.hpp"
+#include "sched/entry/ze/ze_base_entry.hpp"
 
 #include <atomic>
 #include <sstream>
 
-class ze_reduce_entry : public ze_base_entry {
+class ze_onesided_reduce_entry : public ze_base_entry {
 public:
     static constexpr const char* class_name() noexcept {
-        return "ZE_REDUCE";
+        return "ZE_1S_REDUCE";
     }
 
     const char* name() const noexcept override {
         return class_name();
     }
 
-    ze_reduce_entry() = delete;
-    explicit ze_reduce_entry(ccl_sched* sched,
-                             ccl_buffer send_buf,
-                             ccl_buffer recv_buf,
-                             size_t cnt,
-                             const ccl_datatype& dtype,
-                             ccl::reduction op,
-                             int root,
-                             ccl_comm* comm);
-    ~ze_reduce_entry();
+    ze_onesided_reduce_entry() = delete;
+    explicit ze_onesided_reduce_entry(ccl_sched* sched,
+                                      ccl_buffer send_buf,
+                                      ccl_buffer recv_buf,
+                                      size_t cnt,
+                                      const ccl_datatype& dtype,
+                                      ccl::reduction op,
+                                      int root,
+                                      ccl_comm* comm);
+    ~ze_onesided_reduce_entry();
 
     void init();
     void start() override;

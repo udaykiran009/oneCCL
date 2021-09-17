@@ -474,7 +474,7 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
     sched->add_barrier();
 
     if (comm->rank() == root) {
-        entry_factory::create<ze_reduce_entry>(
+        entry_factory::create<ze_onesided_reduce_entry>(
             sched, send_buf, recv_buf, count, dtype, reduction, root, comm);
         sched->add_barrier();
     }

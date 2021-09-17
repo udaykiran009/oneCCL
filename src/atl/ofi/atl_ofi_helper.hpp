@@ -23,7 +23,7 @@
 #include "common/global/global.hpp"
 #include "hwloc/hwloc_wrapper.hpp"
 #ifdef CCL_ENABLE_OFI_HMEM
-#include "sched/entry/gpu/ze_primitives.hpp"
+#include "sched/entry/ze/ze_primitives.hpp"
 #endif // CCL_ENABLE_OFI_HMEM
 
 #define ATL_OFI_BASE_PM_KEY     "atl-ofi"

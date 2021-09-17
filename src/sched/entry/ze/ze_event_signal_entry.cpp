@@ -1,4 +1,4 @@
-#include "sched/entry/gpu/ze_event_signal_entry.hpp"
+#include "sched/entry/ze/ze_event_signal_entry.hpp"
 #include "sched/queue/queue.hpp"
 #include "common/utils/sycl_utils.hpp"
 

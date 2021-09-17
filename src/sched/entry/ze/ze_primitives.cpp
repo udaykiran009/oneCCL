@@ -3,7 +3,7 @@
 
 #include "common/global/global.hpp"
 #include "common/log/log.hpp"
-#include "sched/entry/gpu/ze_primitives.hpp"
+#include "sched/entry/ze/ze_primitives.hpp"
 
 namespace ccl {
 
@@ -234,13 +234,13 @@ void get_queue_index(const ze_queue_properties_t& props,
 
 device_family get_device_family(ze_device_handle_t device) {
     ze_device_properties_t device_prop;
-    zeDeviceGetProperties(device, &device_prop);
-    uint32_t family = device_prop.deviceId & 0xfff0;
+    ZE_CALL(zeDeviceGetProperties, (device, &device_prop));
+    uint32_t id = device_prop.deviceId & 0xfff0;
     using enum_t = typename std::underlying_type<device_family>::type;
 
-    switch (family) {
-        case static_cast<enum_t>(device_family::family1): return device_family::family1;
-        case static_cast<enum_t>(device_family::family2): return device_family::family2;
+    switch (id) {
+        case static_cast<enum_t>(device_id::id1): return device_family::family1;
+        case static_cast<enum_t>(device_id::id2): return device_family::family2;
         default: return device_family::unknown;
     }
 }
@@ -369,14 +369,6 @@ std::string to_string(const ze_command_queue_group_properties_t& queue_property)
        << ", maxMemoryFillPatternSize: " << queue_property.maxMemoryFillPatternSize
        << ", numQueues: " << queue_property.numQueues;
     return ss.str();
-}
-
-std::string to_string(device_family family) {
-    switch (family) {
-        case device_family::family1: return "family1";
-        case device_family::family2: return "family2";
-        default: return "unknown";
-    }
 }
 
 std::string join_strings(const std::vector<std::string>& tokens, const std::string& delimeter) {

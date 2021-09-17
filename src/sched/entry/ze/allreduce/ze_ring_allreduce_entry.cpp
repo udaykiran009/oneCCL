@@ -1,7 +1,7 @@
 #include "common/stream/stream.hpp"
-#include "sched/entry/gpu/allreduce/ze_ring_allreduce_entry.hpp"
-#include "sched/entry/gpu/ze_primitives.hpp"
-#include "sched/entry/gpu/ze_cache.hpp"
+#include "sched/entry/ze/allreduce/ze_ring_allreduce_entry.hpp"
+#include "sched/entry/ze/ze_primitives.hpp"
+#include "sched/entry/ze/ze_cache.hpp"
 #include "sched/queue/queue.hpp"
 
 #include <string>
@@ -17,7 +17,7 @@ ze_ring_allreduce_entry::ze_ring_allreduce_entry(ccl_sched* sched,
                                                  const ccl_datatype& dtype,
                                                  reduction op,
                                                  ccl_comm* comm,
-                                                 size_t peer_tmp_buf_idx)
+                                                 size_t tmp_buf_idx)
         : ze_base_entry(sched, comm, (comm->size() - 1) * event_group_count),
           send_buf(send_buf),
           recv_buf(recv_buf),
@@ -25,7 +25,7 @@ ze_ring_allreduce_entry::ze_ring_allreduce_entry(ccl_sched* sched,
           cnt(cnt),
           dtype(dtype),
           op(op),
-          peer_tmp_buf_idx(peer_tmp_buf_idx),
+          tmp_buf_idx(tmp_buf_idx),
           stage_iter_count(comm->size() - 1),
           total_iter_count(stage_iter_count * 2) {}
 
@@ -202,7 +202,7 @@ void ze_ring_allreduce_entry::init() {
 
     if (inplace) {
         ccl_buffer right_tmp_buf;
-        sched->get_memory().handle_manager.get(peer_rank, peer_tmp_buf_idx, right_tmp_buf, comm);
+        sched->get_memory().handle_manager.get(peer_rank, tmp_buf_idx, right_tmp_buf, comm);
         right_tmp_buf_ptr = right_tmp_buf.get_ptr();
     }
 

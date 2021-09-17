@@ -1,10 +1,10 @@
 #include "common/stream/stream.hpp"
 #include "sched/queue/queue.hpp"
 
-#include "sched/entry/gpu/ze_base_entry.hpp"
-#include "sched/entry/gpu/ze_cache.hpp"
-#include "sched/entry/gpu/ze_call.hpp"
-#include "ze_primitives.hpp"
+#include "sched/entry/ze/ze_base_entry.hpp"
+#include "sched/entry/ze/ze_cache.hpp"
+#include "sched/entry/ze/ze_call.hpp"
+#include "sched/entry/ze/ze_primitives.hpp"
 
 #include <CL/sycl/backend/level_zero.hpp>
 
@@ -50,6 +50,8 @@ void ze_base_entry::init(init_mode mode) {
     get_queues_properties(device, &queue_props);
 
     if ((queue_props.size() == 1) && (queue_props[0].numQueues == 1)) {
+        CCL_THROW_IF_NOT(sched->coll_param.stream->get_device_family() ==
+                         ccl::device_family::unknown);
         LOG_DEBUG("numQueues = 1, switch to compute init mode");
         mode = init_mode::compute;
     }

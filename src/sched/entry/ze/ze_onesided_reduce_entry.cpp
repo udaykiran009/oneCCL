@@ -1,7 +1,7 @@
 #include "common/stream/stream.hpp"
-#include "sched/entry/gpu/ze_cache.hpp"
-#include "sched/entry/gpu/ze_primitives.hpp"
-#include "sched/entry/gpu/ze_reduce_entry.hpp"
+#include "sched/entry/ze/ze_cache.hpp"
+#include "sched/entry/ze/ze_onesided_reduce_entry.hpp"
+#include "sched/entry/ze/ze_primitives.hpp"
 #include "sched/queue/queue.hpp"
 
 #include <string>
@@ -9,14 +9,14 @@
 using namespace ccl;
 using namespace ccl::ze;
 
-ze_reduce_entry::ze_reduce_entry(ccl_sched* sched,
-                                 ccl_buffer send_buf,
-                                 ccl_buffer recv_buf,
-                                 size_t cnt,
-                                 const ccl_datatype& dtype,
-                                 reduction op,
-                                 int root,
-                                 ccl_comm* comm)
+ze_onesided_reduce_entry::ze_onesided_reduce_entry(ccl_sched* sched,
+                                                   ccl_buffer send_buf,
+                                                   ccl_buffer recv_buf,
+                                                   size_t cnt,
+                                                   const ccl_datatype& dtype,
+                                                   reduction op,
+                                                   int root,
+                                                   ccl_comm* comm)
         : ze_base_entry(sched, comm, 2 /* request additional events */),
           send_buf(send_buf),
           recv_buf(recv_buf),
@@ -30,11 +30,11 @@ ze_reduce_entry::ze_reduce_entry(ccl_sched* sched,
           empty_kernel(nullptr),
           empty_kernel_name("empty_kernel") {}
 
-ze_reduce_entry::~ze_reduce_entry() {
+ze_onesided_reduce_entry::~ze_onesided_reduce_entry() {
     finalize();
 }
 
-void ze_reduce_entry::init() {
+void ze_onesided_reduce_entry::init() {
     if (is_initialized) {
         return;
     }
@@ -141,7 +141,7 @@ void ze_reduce_entry::init() {
     LOG_DEBUG("initialization complete");
 }
 
-void ze_reduce_entry::start() {
+void ze_onesided_reduce_entry::start() {
     init();
 
     size_t kernel_counter = 0;
@@ -159,7 +159,7 @@ void ze_reduce_entry::start() {
     }
 }
 
-void ze_reduce_entry::update() {
+void ze_onesided_reduce_entry::update() {
     ze_base_entry::update();
     if (status == ccl_sched_entry_status_complete && !sched->coll_attr.to_cache) {
         finalize();
@@ -170,7 +170,7 @@ void ze_reduce_entry::update() {
     }
 }
 
-void ze_reduce_entry::finalize() {
+void ze_onesided_reduce_entry::finalize() {
     if (!is_initialized) {
         return;
     }

@@ -3,7 +3,7 @@
 #include "common/log/log.hpp"
 #include "common/stream/stream.hpp"
 #include "common/utils/buffer.hpp"
-#include "sched/entry/gpu/ze_primitives.hpp"
+#include "sched/entry/ze/ze_primitives.hpp"
 
 #include <unordered_map>
 #include <ze_api.h>

@@ -4,7 +4,7 @@
 #include "sched/entry/entry.hpp"
 #include "sched/sched.hpp"
 
-#include "sched/entry/gpu/ze_base_entry.hpp"
+#include "sched/entry/ze/ze_base_entry.hpp"
 
 struct copy_attr;
 

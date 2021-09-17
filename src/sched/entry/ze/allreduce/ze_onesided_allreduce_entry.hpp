@@ -2,7 +2,7 @@
 
 #include "common/utils/buffer.hpp"
 #include "comp/comp.hpp"
-#include "sched/entry/gpu/ze_base_entry.hpp"
+#include "sched/entry/ze/ze_base_entry.hpp"
 
 #include <atomic>
 #include <sstream>
