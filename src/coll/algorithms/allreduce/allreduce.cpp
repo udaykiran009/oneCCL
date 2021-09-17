@@ -509,13 +509,13 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
     int even_comm_size = even_comm->size();
     int node_comm_size = node_comm->size();
 
-    bool is_single_node = comm_size == node_comm_size;
+    bool is_single_node = (comm_size == node_comm_size);
     bool is_onesided = (comm_size == 2) && is_single_node;
-    bool is_inplace = send_buf == recv_buf;
-    bool tmp_buf_is_needed = (!is_onesided && !is_single_node) || (is_single_node && is_inplace);
+    bool is_inplace = (send_buf == recv_buf);
+    bool use_tmp_buf = (!is_onesided && !is_single_node) || (is_single_node && is_inplace);
 
     ccl_buffer tmp_buf{};
-    if (tmp_buf_is_needed) {
+    if (use_tmp_buf) {
         ccl::alloc_param alloc_param(
             count * dtype.size(), ccl::buffer_type::ze, ccl::buffer_place::device);
         tmp_buf = sched->alloc_buffer(alloc_param);
@@ -526,7 +526,7 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         { recv_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 1
     };
 
-    if (tmp_buf_is_needed) {
+    if (use_tmp_buf) {
         in_buffers.push_back({ tmp_buf.get_ptr(), ccl::ze::ipc_mem_type::memory });
     }
     size_t peer_tmp_buf_idx = 2;
@@ -596,7 +596,7 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
                 block_count += count % even_comm_size;
             }
 
-            if (!is_single_node) {
+            if (!is_single_node && block_count) {
                 ccl::alloc_param host_buf_param(
                     block_count * dtype.size(), ccl::buffer_type::regular, ccl::buffer_place::host);
                 ccl_buffer host_buf = sched->alloc_buffer(host_buf_param);
