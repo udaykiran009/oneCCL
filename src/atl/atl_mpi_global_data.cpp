@@ -545,15 +545,17 @@ atl_status_t atl_mpi_global_data::set_mpich_env(const atl_attr_t& attr) {
     setenv("MPIR_CVAR_CH4_MT_MODEL", "direct", 0);
     setenv("MPIR_CVAR_CH4_NUM_VCIS", ep_count_str, 0);
     setenv("MPIR_CVAR_CH4_OFI_MAX_VCIS", ep_count_str, 0);
-    setenv("MPIR_CVAR_CH4_ASYNC_PROGRESS_ID_KEY", EP_IDX_KEY, 0);
-    setenv("MPIR_CVAR_CH4_OFI_ENABLE_SCALABLE_ENDPOINTS", "1", 0);
+    setenv("MPIR_COMM_HINT_VCI", EP_IDX_KEY, 0);
 
     if (attr.in.mnic_type != ATL_MNIC_NONE) {
         setenv("MPIR_CVAR_CH4_OFI_ENABLE_NIC_SELECTION", "1", 0);
-        auto& env = ccl::global_data::env();
-        if (env.log_level >= ccl_log_level::info) {
-            setenv("MPIR_CVAR_CH4_OFI_DUMP_NIC_SETTINGS", "1", 0);
-        }
+    }
+
+    auto& env = ccl::global_data::env();
+    if (env.log_level >= ccl_log_level::info) {
+        setenv("MPIR_CVAR_CH4_RUNTIME_CONF_DEBUG", "1", 0);
+        setenv("MPIR_CVAR_CH4_OFI_CAPABILITY_SETS_DEBUG", "1", 0);
+        setenv("MPIR_CVAR_CH4_OFI_DUMP_NIC_SETTINGS", "1", 0);
     }
 
     setenv("FI_PSM2_DELAY", "0", 0);

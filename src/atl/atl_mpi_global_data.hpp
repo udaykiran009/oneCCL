@@ -86,7 +86,7 @@ private:
     size_t get_nic_count(const char* nic_count_key);
 
 public:
-    const char* EP_IDX_KEY = "ep_idx";
+    const char* EP_IDX_KEY = "vci";
     const char* GLOBAL_NIC_IDX_KEY = "pref_nic";
     const char* LOCAL_NIC_IDX_KEY = "pref_close_nic";
     const char* LOCAL_NIC_COUNT_KEY = "num_close_nics";
