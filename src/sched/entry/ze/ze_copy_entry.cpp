@@ -8,7 +8,7 @@ ze_copy_entry::ze_copy_entry(ccl_sched* sched,
                              size_t count,
                              const ccl_datatype& dtype,
                              copy_attr attr)
-        : ze_base_entry(sched),
+        : ze_base_entry(sched, init_mode::copy),
           sched(sched),
           in_buf(in_buf),
           out_buf(out_buf),
@@ -18,19 +18,7 @@ ze_copy_entry::ze_copy_entry(ccl_sched* sched,
     CCL_THROW_IF_NOT(sched, "no sched");
 }
 
-ze_copy_entry::~ze_copy_entry() {
-    finalize();
-}
-
-void ze_copy_entry::init() {
-    if (ze_base_entry::is_initialized) {
-        return;
-    }
-
-    LOG_DEBUG("initialization");
-
-    ze_base_entry::init(init_mode::copy);
-
+void ze_copy_entry::init_ze_hook() {
     if (attr.peer_rank != ccl_comm::invalid_rank) {
         if (!out_buf) {
             sched->get_memory().handle_manager.get(
@@ -49,35 +37,4 @@ void ze_copy_entry::init() {
 
     ZE_CALL(zeCommandListAppendMemoryCopy,
             (list, dst, src, buf_size_bytes, ze_base_entry::entry_event, 0, nullptr));
-
-    ze_base_entry::close_lists();
-
-    LOG_DEBUG("initialization complete");
-}
-
-void ze_copy_entry::start() {
-    init();
-
-    ze_base_entry::start();
-
-    status = ccl_sched_entry_status_started;
-}
-
-void ze_copy_entry::update() {
-    ze_base_entry::update();
-    if (status == ccl_sched_entry_status_complete && !sched->coll_attr.to_cache) {
-        finalize();
-    }
-}
-
-void ze_copy_entry::finalize() {
-    if (!ze_base_entry::is_initialized) {
-        return;
-    }
-
-    LOG_DEBUG("finalization");
-
-    ze_base_entry::finalize();
-
-    LOG_DEBUG("finalization complete");
 }

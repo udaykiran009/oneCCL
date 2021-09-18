@@ -17,7 +17,12 @@ ze_onesided_reduce_entry::ze_onesided_reduce_entry(ccl_sched* sched,
                                                    reduction op,
                                                    int root,
                                                    ccl_comm* comm)
-        : ze_base_entry(sched, comm, 2 /* request additional events */),
+        : ze_base_entry(sched,
+                        global_data::env().enable_kernel_1s_copy_ops
+                            ? (init_mode::compute | init_mode::copy)
+                            : init_mode::compute,
+                        comm,
+                        2 /* request additional events */),
           send_buf(send_buf),
           recv_buf(recv_buf),
           cnt(cnt),
@@ -30,28 +35,8 @@ ze_onesided_reduce_entry::ze_onesided_reduce_entry(ccl_sched* sched,
           empty_kernel(nullptr),
           empty_kernel_name("empty_kernel") {}
 
-ze_onesided_reduce_entry::~ze_onesided_reduce_entry() {
-    finalize();
-}
-
-void ze_onesided_reduce_entry::init() {
-    if (is_initialized) {
-        return;
-    }
-
-    LOG_DEBUG("initialization");
-
-    init_mode init_mode_type;
-    if (global_data::env().enable_kernel_1s_copy_ops) {
-        init_mode_type = (init_mode::copy | init_mode::compute);
-    }
-    else {
-        init_mode_type = init_mode::compute;
-    }
-
+void ze_onesided_reduce_entry::init_ze_hook() {
     CCL_THROW_IF_NOT(comm_rank == root, "unexpected comm_rank ", comm_rank, ", expected ", root);
-
-    ze_base_entry::init(init_mode_type);
 
     /* create kernels */
     ccl_buffer right_send_buf;
@@ -133,17 +118,16 @@ void ze_onesided_reduce_entry::init() {
     ZE_CALL(
         zeCommandListAppendLaunchKernel,
         (comp_primitives.list, main_kernel, &group_count, entry_event, 1, &copy_from_peer_event));
+}
 
-    ze_base_entry::close_lists();
-
-    is_initialized = true;
-
-    LOG_DEBUG("initialization complete");
+void ze_onesided_reduce_entry::finalize_ze_hook() {
+    if (empty_kernel_event) {
+        ccl::global_data::get().ze_cache->push(worker_idx, module, empty_kernel_name, empty_kernel);
+    }
+    ccl::global_data::get().ze_cache->push(worker_idx, module, main_kernel_name, main_kernel);
 }
 
 void ze_onesided_reduce_entry::start() {
-    init();
-
     size_t kernel_counter = 0;
     if (ccl::global_data::env().enable_kernel_sync) {
         kernel_counter = ccl::global_data::get().kernel_counter++;
@@ -151,7 +135,6 @@ void ze_onesided_reduce_entry::start() {
 
     if (kernel_counter == 0) {
         ze_base_entry::start();
-        status = ccl_sched_entry_status_started;
     }
     else {
         ccl::global_data::get().kernel_counter--;
@@ -161,31 +144,8 @@ void ze_onesided_reduce_entry::start() {
 
 void ze_onesided_reduce_entry::update() {
     ze_base_entry::update();
-    if (status == ccl_sched_entry_status_complete && !sched->coll_attr.to_cache) {
-        finalize();
-    }
 
     if (ccl::global_data::env().enable_kernel_sync && ccl::global_data::get().kernel_counter > 0) {
         ccl::global_data::get().kernel_counter--;
     }
-}
-
-void ze_onesided_reduce_entry::finalize() {
-    if (!is_initialized) {
-        return;
-    }
-
-    LOG_DEBUG("finalization");
-
-    /* kernels */
-    if (empty_kernel_event) {
-        ccl::global_data::get().ze_cache->push(worker_idx, module, empty_kernel_name, empty_kernel);
-    }
-    ccl::global_data::get().ze_cache->push(worker_idx, module, main_kernel_name, main_kernel);
-
-    ze_base_entry::finalize();
-
-    is_initialized = false;
-
-    LOG_DEBUG("finalization complete");
 }

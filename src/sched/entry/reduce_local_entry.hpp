@@ -1,4 +1,5 @@
 #pragma once
+
 #include "common/global/global.hpp"
 #include "comp/comp.hpp"
 #include "sched/entry/entry.hpp"
@@ -27,7 +28,7 @@ public:
                        ccl::reduction reduction_op)
             :
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-              ze_base_entry(sched),
+              ze_base_entry(sched, init_mode::compute),
 #else // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
               sched_entry(sched),
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
@@ -42,22 +43,26 @@ public:
               inout_buf_ptr(nullptr),
               use_device(false) {
         CCL_THROW_IF_NOT(op != ccl::reduction::custom || fn,
-                         "custom reduction requires user provided callback");
+                         "custom reduction requires user provided callback",
+                         ", op ",
+                         ccl_reduction_to_str(op),
+                         ", fn ",
+                         fn);
     }
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-    ~reduce_local_entry() override {
-        finalize();
-    }
-    void init();
-    void finalize();
-    void update() override;
-    void check_use_device();
+    void init_ze_hook() override;
+    void finalize_ze_hook() override;
+
     void start_on_device();
+    void update() override;
+
+    void check_use_device();
 #else // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
     void check_use_device() {}
     void start_on_device() {}
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
+
     void start_on_host() {
         size_t bytes = in_cnt * dtype.size();
         size_t offset = inout_buf.get_offset();

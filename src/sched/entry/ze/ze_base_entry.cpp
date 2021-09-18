@@ -11,9 +11,12 @@
 using namespace ccl;
 using namespace ccl::ze;
 
-ze_base_entry::ze_base_entry(ccl_sched *sched, ccl_comm *comm, uint32_t add_event_count)
+ze_base_entry::ze_base_entry(ccl_sched *sched,
+                             init_mode mode,
+                             ccl_comm *comm,
+                             uint32_t add_event_count)
         : sched_entry(sched),
-          sched(sched),
+          mode(mode),
           comm(comm) {
     CCL_THROW_IF_NOT(sched, "no sched");
     if (!comm) {
@@ -23,12 +26,20 @@ ze_base_entry::ze_base_entry(ccl_sched *sched, ccl_comm *comm, uint32_t add_even
     comm_rank = comm->rank();
     comm_size = comm->size();
     events.resize(add_event_count + 1, nullptr); // at least one event to track progress
+    CCL_THROW_IF_NOT(events.size(), "no events");
 }
 
-void ze_base_entry::init(init_mode mode) {
+ze_base_entry::~ze_base_entry() {
+    finalize();
+}
+
+void ze_base_entry::init() {
     if (is_initialized) {
         return;
     }
+
+    LOG_DEBUG("init");
+
     worker_idx = sched->queue->get_idx();
 
     CCL_THROW_IF_NOT(sched->coll_param.stream, "null stream");
@@ -71,6 +82,7 @@ void ze_base_entry::init(init_mode mode) {
     }
 
     /* create event pool */
+    CCL_THROW_IF_NOT(events.size(), "no events");
     event_pool_desc = default_event_pool_desc;
     event_pool_desc.count = events.size();
     global_data::get().ze_cache->get(worker_idx, context, event_pool_desc, &event_pool);
@@ -78,7 +90,12 @@ void ze_base_entry::init(init_mode mode) {
 
     entry_event = create_event();
 
+    init_ze_hook();
+    close_lists();
+
     is_initialized = true;
+
+    LOG_DEBUG("init completed");
 }
 
 void ze_base_entry::finalize() {
@@ -86,6 +103,9 @@ void ze_base_entry::finalize() {
         return;
     }
 
+    LOG_DEBUG("finalize");
+
+    finalize_ze_hook();
     destroy_events();
 
     /* event pool */
@@ -114,9 +134,12 @@ void ze_base_entry::finalize() {
     }
 
     is_initialized = false;
+
+    LOG_DEBUG("finalize completed");
 }
 
 void ze_base_entry::start() {
+    init();
     reset_events();
 
     if (comp_primitives.list && comp_primitives.queue) {
@@ -138,6 +161,8 @@ void ze_base_entry::start() {
         if (comp_primitives.queue)
             ZE_CALL(zeHostSynchronize, (comp_primitives.queue));
     }
+
+    status = ccl_sched_entry_status_started;
 }
 
 bool ze_base_entry::is_event_completed(ze_event_handle_t event) {
@@ -175,6 +200,10 @@ void ze_base_entry::update() {
     if (complete) {
         LOG_DEBUG("command list complete");
         status = ccl_sched_entry_status_complete;
+
+        if (!sched->coll_attr.to_cache) {
+            finalize();
+        }
     }
     else {
         // just return in case if the kernel is not ready yet

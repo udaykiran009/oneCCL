@@ -14,10 +14,6 @@ public:
         return class_name();
     }
 
-    bool is_strict_order_satisfied() override {
-        return (status >= ccl_sched_entry_status_complete);
-    }
-
     ze_event_signal_entry() = delete;
     explicit ze_event_signal_entry(ccl_sched* sched, ccl_master_sched* master_sched);
     ze_event_signal_entry(const ze_event_signal_entry&) = delete;

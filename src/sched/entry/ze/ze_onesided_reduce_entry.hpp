@@ -26,18 +26,14 @@ public:
                                       ccl::reduction op,
                                       int root,
                                       ccl_comm* comm);
-    ~ze_onesided_reduce_entry();
 
-    void init();
+    void init_ze_hook() override;
+    void finalize_ze_hook() override;
+
     void start() override;
     void update() override;
-    void finalize();
 
     void reset_sync_objects();
-
-    bool is_strict_order_satisfied() override {
-        return (status >= ccl_sched_entry_status_complete);
-    }
 
 protected:
     void dump_detail(std::stringstream& str) const override {

@@ -16,7 +16,12 @@ ze_onesided_allreduce_entry::ze_onesided_allreduce_entry(ccl_sched* sched,
                                                          const ccl_datatype& dtype,
                                                          reduction op,
                                                          ccl_comm* comm)
-        : ze_base_entry(sched, comm, 3 /* request additional events */),
+        : ze_base_entry(sched,
+                        global_data::env().enable_kernel_1s_copy_ops
+                            ? (init_mode::compute | init_mode::copy)
+                            : init_mode::compute,
+                        comm,
+                        3 /* request additional events */),
           send_buf(send_buf),
           recv_buf(recv_buf),
           cnt(cnt),
@@ -24,27 +29,7 @@ ze_onesided_allreduce_entry::ze_onesided_allreduce_entry(ccl_sched* sched,
           op(op),
           buf_size_bytes(dtype.size() * cnt) {}
 
-ze_onesided_allreduce_entry::~ze_onesided_allreduce_entry() {
-    finalize();
-}
-
-void ze_onesided_allreduce_entry::init() {
-    if (ze_base_entry::is_initialized) {
-        return;
-    }
-
-    LOG_DEBUG("initialization");
-
-    init_mode init_mode_type;
-    if (global_data::env().enable_kernel_1s_copy_ops) {
-        init_mode_type = (init_mode::compute | init_mode::copy);
-    }
-    else {
-        init_mode_type = init_mode::compute;
-    }
-
-    ze_base_entry::init(init_mode_type);
-
+void ze_onesided_allreduce_entry::init_ze_hook() {
     /* create kernels */
     ccl_buffer right_send_buf;
     ccl_buffer right_recv_buf;
@@ -171,15 +156,16 @@ void ze_onesided_allreduce_entry::init() {
                  (empty_kernel_event) ? 1 : 0,
                  &empty_kernel_event));
     }
+}
 
-    ze_base_entry::close_lists();
-
-    LOG_DEBUG("initialization complete");
+void ze_onesided_allreduce_entry::finalize_ze_hook() {
+    if (empty_kernel_event) {
+        global_data::get().ze_cache->push(worker_idx, module, empty_kernel_name, empty_kernel);
+    }
+    global_data::get().ze_cache->push(worker_idx, module, main_kernel_name, main_kernel);
 }
 
 void ze_onesided_allreduce_entry::start() {
-    init();
-
     size_t kernel_counter = 0;
     if (global_data::env().enable_kernel_sync) {
         kernel_counter = global_data::get().kernel_counter++;
@@ -187,7 +173,6 @@ void ze_onesided_allreduce_entry::start() {
 
     if (kernel_counter == 0) {
         ze_base_entry::start();
-        status = ccl_sched_entry_status_started;
     }
     else {
         global_data::get().kernel_counter--;
@@ -197,29 +182,8 @@ void ze_onesided_allreduce_entry::start() {
 
 void ze_onesided_allreduce_entry::update() {
     ze_base_entry::update();
-    if (status == ccl_sched_entry_status_complete && !sched->coll_attr.to_cache) {
-        finalize();
-    }
 
     if (global_data::env().enable_kernel_sync && global_data::get().kernel_counter > 0) {
         global_data::get().kernel_counter--;
     }
-}
-
-void ze_onesided_allreduce_entry::finalize() {
-    if (!ze_base_entry::is_initialized) {
-        return;
-    }
-
-    LOG_DEBUG("finalization");
-
-    /* kernels */
-    if (empty_kernel_event) {
-        global_data::get().ze_cache->push(worker_idx, module, empty_kernel_name, empty_kernel);
-    }
-    global_data::get().ze_cache->push(worker_idx, module, main_kernel_name, main_kernel);
-
-    ze_base_entry::finalize();
-
-    LOG_DEBUG("finalization complete");
 }

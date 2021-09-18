@@ -25,16 +25,10 @@ public:
                                     const ccl_datatype& dtype,
                                     ccl::reduction op,
                                     ccl_comm* comm);
-    ~ze_a2a_allreduce_entry();
 
-    void init();
-    void start() override;
+    void init_ze_hook() override;
+
     void update() override;
-    void finalize();
-
-    bool is_strict_order_satisfied() override {
-        return (status >= ccl_sched_entry_status_complete);
-    }
 
 protected:
     void dump_detail(std::stringstream& str) const override {
@@ -57,7 +51,7 @@ protected:
     }
 
 private:
-    static constexpr size_t event_group_count{ 3 }; // copy + kernels + copy phases
+    static constexpr size_t event_group_count{ 3 }; // copy + kernel + copy
 
     const ccl_buffer send_buf;
     const ccl_buffer recv_buf;

@@ -15,7 +15,7 @@ ze_a2a_allgatherv_entry::ze_a2a_allgatherv_entry(ccl_sched* sched,
                                                  const ccl_datatype& dtype,
                                                  ccl_comm* comm,
                                                  size_t peer_buf_idx)
-        : ze_base_entry(sched, comm, comm->size() * event_group_count),
+        : ze_base_entry(sched, init_mode::copy, comm, comm->size() * event_group_count),
           send_buf(send_buf),
           send_bytes(send_count * dtype.size()),
           recv_buf(recv_buf),
@@ -23,10 +23,6 @@ ze_a2a_allgatherv_entry::ze_a2a_allgatherv_entry(ccl_sched* sched,
           dtype(dtype),
           peer_buf_idx(peer_buf_idx),
           peer_count(comm->size() - 1) {}
-
-ze_a2a_allgatherv_entry::~ze_a2a_allgatherv_entry() {
-    finalize();
-}
 
 void ze_a2a_allgatherv_entry::fill_list(ze_command_list_handle_t list,
                                         void* send_buf,
@@ -59,15 +55,7 @@ void ze_a2a_allgatherv_entry::fill_list(ze_command_list_handle_t list,
     }
 }
 
-void ze_a2a_allgatherv_entry::init() {
-    if (ze_base_entry::is_initialized) {
-        return;
-    }
-
-    LOG_DEBUG("init");
-
-    ze_base_entry::init(init_mode::copy);
-
+void ze_a2a_allgatherv_entry::init_ze_hook() {
     /* get peer recv buffers */
     std::vector<ccl_buffer> peer_recv_bufs(peer_count);
 
@@ -101,17 +89,6 @@ void ze_a2a_allgatherv_entry::init() {
               offset_bytes,
               is_inplace,
               copy_events);
-
-    ze_base_entry::close_lists();
-
-    LOG_DEBUG("init completed");
-}
-
-void ze_a2a_allgatherv_entry::start() {
-    init();
-
-    ze_base_entry::start();
-    status = ccl_sched_entry_status_started;
 }
 
 void ze_a2a_allgatherv_entry::update() {
@@ -123,19 +100,4 @@ void ze_a2a_allgatherv_entry::update() {
 
     ZE_CALL(zeEventHostSignal, (ze_base_entry::entry_event));
     ze_base_entry::update();
-    if (status == ccl_sched_entry_status_complete && !sched->coll_attr.to_cache) {
-        finalize();
-    }
-}
-
-void ze_a2a_allgatherv_entry::finalize() {
-    if (!ze_base_entry::is_initialized) {
-        return;
-    }
-
-    LOG_DEBUG("finalization");
-
-    ze_base_entry::finalize();
-
-    LOG_DEBUG("finalization complete");
 }

@@ -17,7 +17,10 @@ ze_a2a_allreduce_entry::ze_a2a_allreduce_entry(ccl_sched* sched,
                                                const ccl_datatype& dtype,
                                                reduction op,
                                                ccl_comm* comm)
-        : ze_base_entry(sched, comm, comm->size() * event_group_count),
+        : ze_base_entry(sched,
+                        (init_mode::compute | init_mode::copy),
+                        comm,
+                        comm->size() * event_group_count),
           send_buf(send_buf),
           recv_buf(recv_buf),
           dtype(dtype),
@@ -25,10 +28,6 @@ ze_a2a_allreduce_entry::ze_a2a_allreduce_entry(ccl_sched* sched,
           buf_count(cnt),
           buf_bytes(dtype.size() * buf_count),
           peer_count(comm->size() - 1) {}
-
-ze_a2a_allreduce_entry::~ze_a2a_allreduce_entry() {
-    finalize();
-}
 
 void ze_a2a_allreduce_entry::kernel_init(size_t main_block_count,
                                          size_t block_count,
@@ -59,15 +58,7 @@ void ze_a2a_allreduce_entry::kernel_init(size_t main_block_count,
     kernel_events.emplace_back(ze_base_entry::create_event());
 }
 
-void ze_a2a_allreduce_entry::init() {
-    if (ze_base_entry::is_initialized) {
-        return;
-    }
-
-    LOG_DEBUG("init");
-
-    ze_base_entry::init(init_mode::compute | init_mode::copy);
-
+void ze_a2a_allreduce_entry::init_ze_hook() {
     /* get peer buffers */
     std::vector<ccl_buffer> peer_send_bufs(peer_count);
     std::vector<ccl_buffer> peer_recv_bufs(peer_count);
@@ -161,17 +152,6 @@ void ze_a2a_allreduce_entry::init() {
                                        false,
                                        post_copy_events,
                                        kernel_events.back());
-
-    ze_base_entry::close_lists();
-
-    LOG_DEBUG("init completed");
-}
-
-void ze_a2a_allreduce_entry::start() {
-    init();
-
-    ze_base_entry::start();
-    status = ccl_sched_entry_status_started;
 }
 
 void ze_a2a_allreduce_entry::update() {
@@ -183,21 +163,4 @@ void ze_a2a_allreduce_entry::update() {
 
     ZE_CALL(zeEventHostSignal, (ze_base_entry::entry_event));
     ze_base_entry::update();
-    if (status == ccl_sched_entry_status_complete && !sched->coll_attr.to_cache) {
-        finalize();
-    }
-}
-
-void ze_a2a_allreduce_entry::finalize() {
-    if (!ze_base_entry::is_initialized) {
-        return;
-    }
-
-    LOG_DEBUG("finalization");
-
-    kernels.clear();
-
-    ze_base_entry::finalize();
-
-    LOG_DEBUG("finalization complete");
 }

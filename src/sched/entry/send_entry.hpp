@@ -80,8 +80,9 @@ public:
                         : ccl::buffer_type::sycl;
                 ccl::alloc_param alloc_param(
                     cnt * dtype.size(), buf_type, ccl::buffer_place::host, 1);
-                send_buf = proxy_buf = sched->alloc_buffer(alloc_param);
+                proxy_buf = sched->alloc_buffer(alloc_param);
             }
+
             if (!proxy_copy_entry) {
                 proxy_copy_entry =
                     std::shared_ptr<copy_entry>(new copy_entry(sched, buf, proxy_buf, cnt, dtype));
@@ -93,6 +94,8 @@ public:
                 status = ccl_sched_entry_status_again;
                 return;
             }
+
+            send_buf = proxy_buf;
         }
 #endif // CCL_ENABLE_SYCL
 

@@ -170,6 +170,6 @@ int ccl_comm::get_global_rank(int rank, bool only_global) const {
                      m_id.value());
     int global_rank = m_local2global_map[rank];
     LOG_DEBUG(
-        "comm , ", this, " id ", m_id.value(), ", map rank ", rank, " to global ", global_rank);
+        "comm ", this, ", id ", m_id.value(), ", map rank ", rank, " to global ", global_rank);
     return global_rank;
 }

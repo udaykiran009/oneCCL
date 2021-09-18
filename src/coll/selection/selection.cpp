@@ -129,7 +129,8 @@ bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
         // because of ze_ring_allreduce_entry and ze_a2a_allgatherv_entry
         (!is_single_card && (param.ctype == ccl_coll_allreduce) &&
          (stream->get_device_family() == ccl::device_family::family1)) ||
-        (!is_single_card && !is_single_node && (local_proc_count % 2 != 0)) ||
+
+        (local_proc_count % 2 != 0) ||
 
         !is_device_buf || !is_l0_backend || ccl::global_data::env().enable_fusion ||
         ccl::global_data::env().enable_unordered_coll ||

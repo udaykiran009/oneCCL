@@ -24,18 +24,14 @@ public:
                                      ccl::reduction op,
                                      ccl_comm* comm,
                                      size_t tmp_buf_idx = 0);
-    ~ze_ring_allreduce_entry();
 
-    void init();
+    void init_ze_hook() override;
+    void finalize_ze_hook() override;
+
     void start() override;
-    void update_multi_ranks();
     void update() override;
-    void finalize();
-    void reset_fields();
 
-    bool is_strict_order_satisfied() override {
-        return (status >= ccl_sched_entry_status_complete);
-    }
+    void reset_fields();
 
 protected:
     void dump_detail(std::stringstream& str) const override {
@@ -99,7 +95,6 @@ private:
     std::vector<bool> ag_sync_sent;
 
     void atl_ops_init();
-    void atl_ops_finalize();
     void send_sync_flag(int idx);
     void recv_sync_flag(int idx);
     void validate_sync_flags(int limit);
@@ -121,7 +116,4 @@ private:
     std::vector<bool> rs_copy_started;
     std::vector<bool> rs_reduce_started;
     std::vector<bool> ag_copy_started;
-
-    void gpu_init();
-    void gpu_finalize();
 };

@@ -39,7 +39,7 @@ ipc_handle_manager::~ipc_handle_manager() {
 }
 
 void ipc_handle_manager::init(const ccl_comm* init_comm, const ccl_stream* init_stream) {
-    LOG_DEBUG("initialization");
+    LOG_DEBUG("init");
     CCL_THROW_IF_NOT(init_comm, "no comm");
     CCL_THROW_IF_NOT(init_stream, "no stream");
 
@@ -58,7 +58,7 @@ void ipc_handle_manager::init(const ccl_comm* init_comm, const ccl_stream* init_
     CCL_THROW_IF_NOT(device, "device is not valid");
     CCL_THROW_IF_NOT(context, "context is not valid");
 
-    LOG_DEBUG("initialization completed");
+    LOG_DEBUG("init completed");
 }
 
 void ipc_handle_manager::clear() {

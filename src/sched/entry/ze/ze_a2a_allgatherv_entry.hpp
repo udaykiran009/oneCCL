@@ -13,10 +13,6 @@ public:
         return class_name();
     }
 
-    bool is_strict_order_satisfied() override {
-        return (status >= ccl_sched_entry_status_complete);
-    }
-
     explicit ze_a2a_allgatherv_entry(ccl_sched* sched,
                                      ccl_buffer send_buf,
                                      size_t send_count,
@@ -25,12 +21,10 @@ public:
                                      const ccl_datatype& dtype,
                                      ccl_comm* comm,
                                      size_t peer_buf_idx = 0);
-    ~ze_a2a_allgatherv_entry();
 
-    void init();
-    void start() override;
+    void init_ze_hook() override;
+
     void update() override;
-    void finalize();
 
     static void fill_list(ze_command_list_handle_t list,
                           void* send_buf,

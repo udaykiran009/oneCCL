@@ -18,7 +18,11 @@ ze_ring_allreduce_entry::ze_ring_allreduce_entry(ccl_sched* sched,
                                                  reduction op,
                                                  ccl_comm* comm,
                                                  size_t tmp_buf_idx)
-        : ze_base_entry(sched, comm, (comm->size() - 1) * event_group_count),
+        : ze_base_entry(
+              sched,
+              (comm->size() == 1) ? init_mode::copy : (init_mode::compute | init_mode::copy),
+              comm,
+              (comm->size() - 1) * event_group_count),
           send_buf(send_buf),
           recv_buf(recv_buf),
           tmp_buf(tmp_buf),
@@ -27,10 +31,8 @@ ze_ring_allreduce_entry::ze_ring_allreduce_entry(ccl_sched* sched,
           op(op),
           tmp_buf_idx(tmp_buf_idx),
           stage_iter_count(comm->size() - 1),
-          total_iter_count(stage_iter_count * 2) {}
-
-ze_ring_allreduce_entry::~ze_ring_allreduce_entry() {
-    finalize();
+          total_iter_count(stage_iter_count * 2) {
+    atl_ops_init();
 }
 
 void ze_ring_allreduce_entry::atl_ops_init() {
@@ -38,7 +40,6 @@ void ze_ring_allreduce_entry::atl_ops_init() {
     right_peer = (comm_rank + 1) % comm_size;
     recv_tags.resize(total_iter_count);
     send_tags.resize(total_iter_count);
-    sync_recv_flags.resize(total_iter_count, ccl_comm::invalid_rank);
     sync_send_flags.resize(total_iter_count, comm_rank);
 
     for (int i = 0; i < total_iter_count; ++i) {
@@ -52,45 +53,7 @@ void ze_ring_allreduce_entry::atl_ops_init() {
                                               sched->get_op_id() + i + op_id_offset);
     }
 
-    rs_sync_sent.resize(stage_iter_count, false);
-    ag_sync_sent.resize(stage_iter_count, false);
-
     LOG_DEBUG("atl_ops_init completed");
-}
-
-void ze_ring_allreduce_entry::atl_ops_finalize() {}
-
-void ze_ring_allreduce_entry::gpu_init() {
-    rs_copy_signal_events.resize(stage_iter_count);
-    rs_copy_wait_events.resize(stage_iter_count);
-    rs_reduce_signal_events.resize(stage_iter_count);
-    rs_reduce_wait_events.resize(stage_iter_count);
-    ag_copy_signal_events.resize(stage_iter_count);
-    ag_copy_wait_events.resize(stage_iter_count);
-
-    rs_copy_started.resize(stage_iter_count, false);
-    rs_reduce_started.resize(stage_iter_count, false);
-    ag_copy_started.resize(stage_iter_count, false);
-
-    global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
-
-    std::string kernel_name =
-        "reduce_local_inplace_kernel_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
-    kernels.reserve(stage_iter_count);
-
-    for (int i = 0; i < stage_iter_count; ++i) {
-        rs_copy_signal_events[i] = ze_base_entry::create_event();
-        rs_copy_wait_events[i] = ze_base_entry::create_event();
-        rs_reduce_signal_events[i] = ze_base_entry::create_event();
-        rs_reduce_wait_events[i] = ze_base_entry::create_event();
-        ag_copy_signal_events[i] = ze_base_entry::create_event();
-        ag_copy_wait_events[i] = ze_base_entry::create_event();
-        kernels.emplace_back(module, kernel_name, worker_idx);
-    }
-}
-
-void ze_ring_allreduce_entry::gpu_finalize() {
-    kernels.clear();
 }
 
 void ze_ring_allreduce_entry::recv_sync_flag(int idx) {
@@ -159,18 +122,11 @@ void ze_ring_allreduce_entry::validate_sync_flags(int limit) {
     }
 }
 
-void ze_ring_allreduce_entry::init() {
-    if (ze_base_entry::is_initialized) {
-        return;
-    }
-
-    LOG_DEBUG("init");
-
+void ze_ring_allreduce_entry::init_ze_hook() {
     size_t dtype_size = dtype.size();
     bool inplace = (send_buf == recv_buf);
 
     if (comm_size == 1) {
-        ze_base_entry::init(init_mode::copy);
         ZE_CALL(zeCommandListAppendMemoryCopy,
                 (ze_base_entry::get_copy_list(),
                  recv_buf.get_ptr(),
@@ -179,17 +135,30 @@ void ze_ring_allreduce_entry::init() {
                  ze_base_entry::entry_event,
                  0,
                  nullptr));
-        ze_base_entry::close_lists();
-        LOG_DEBUG("init for comm_size = 1 completed");
         return;
     }
 
-    ze_base_entry::init(init_mode::compute | init_mode::copy);
+    rs_copy_signal_events.resize(stage_iter_count);
+    rs_copy_wait_events.resize(stage_iter_count);
+    rs_reduce_signal_events.resize(stage_iter_count);
+    rs_reduce_wait_events.resize(stage_iter_count);
+    ag_copy_signal_events.resize(stage_iter_count);
+    ag_copy_wait_events.resize(stage_iter_count);
 
-    atl_ops_init();
-    gpu_init();
+    global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
+    std::string kernel_name =
+        "reduce_local_inplace_kernel_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
+    kernels.reserve(stage_iter_count);
 
-    // create kernels
+    for (int i = 0; i < stage_iter_count; ++i) {
+        rs_copy_signal_events[i] = ze_base_entry::create_event();
+        rs_copy_wait_events[i] = ze_base_entry::create_event();
+        rs_reduce_signal_events[i] = ze_base_entry::create_event();
+        rs_reduce_wait_events[i] = ze_base_entry::create_event();
+        ag_copy_signal_events[i] = ze_base_entry::create_event();
+        ag_copy_wait_events[i] = ze_base_entry::create_event();
+        kernels.emplace_back(module, kernel_name, worker_idx);
+    }
 
     send_buf_ptr = send_buf.get_ptr();
     recv_buf_ptr = recv_buf.get_ptr();
@@ -313,10 +282,10 @@ void ze_ring_allreduce_entry::init() {
 
         block_idx = (block_idx + comm_size - 1) % comm_size;
     }
+}
 
-    ze_base_entry::close_lists();
-
-    LOG_DEBUG("init completed");
+void ze_ring_allreduce_entry::finalize_ze_hook() {
+    kernels.clear();
 }
 
 void ze_ring_allreduce_entry::start() {
@@ -324,8 +293,6 @@ void ze_ring_allreduce_entry::start() {
         status = ccl_sched_entry_status_complete;
         return;
     }
-
-    init();
 
     reset_fields();
 
@@ -348,11 +315,14 @@ void ze_ring_allreduce_entry::start() {
         CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(ag_copy_signal_events[i]));
         CCL_THROW_IF_NOT(!ze_base_entry::is_event_completed(ag_copy_wait_events[i]));
     }
-
-    status = ccl_sched_entry_status_started;
 }
 
-void ze_ring_allreduce_entry::update_multi_ranks() {
+void ze_ring_allreduce_entry::update() {
+    if (comm_size == 1) {
+        ze_base_entry::update();
+        return;
+    }
+
     if (iter_idx > 0) {
         validate_sync_flags(iter_idx - 1);
     }
@@ -528,35 +498,7 @@ void ze_ring_allreduce_entry::update_multi_ranks() {
     validate_sync_flags(total_iter_count);
 
     ZE_CALL(zeEventHostSignal, (ze_base_entry::entry_event));
-    status = ccl_sched_entry_status_complete;
-}
-
-void ze_ring_allreduce_entry::update() {
-    if (comm_size == 1) {
-        ze_base_entry::update();
-    }
-    else {
-        update_multi_ranks();
-    }
-
-    if (status == ccl_sched_entry_status_complete && !sched->coll_attr.to_cache) {
-        finalize();
-    }
-}
-
-void ze_ring_allreduce_entry::finalize() {
-    if (!ze_base_entry::is_initialized) {
-        return;
-    }
-
-    LOG_DEBUG("finalization");
-
-    gpu_finalize();
-    atl_ops_finalize();
-
-    ze_base_entry::finalize();
-
-    LOG_DEBUG("finalization complete");
+    ze_base_entry::update();
 }
 
 void ze_ring_allreduce_entry::reset_fields() {
@@ -572,12 +514,24 @@ void ze_ring_allreduce_entry::reset_fields() {
     recv_reqs.clear();
     recv_reqs.resize(total_iter_count);
 
-    std::fill(sync_recv_flags.begin(), sync_recv_flags.end(), ccl_comm::invalid_rank);
+    if (sync_recv_flags.empty()) {
+        sync_recv_flags.resize(total_iter_count, ccl_comm::invalid_rank);
 
-    std::fill(rs_sync_sent.begin(), rs_sync_sent.end(), false);
-    std::fill(ag_sync_sent.begin(), ag_sync_sent.end(), false);
+        rs_sync_sent.resize(stage_iter_count, false);
+        ag_sync_sent.resize(stage_iter_count, false);
 
-    std::fill(rs_copy_started.begin(), rs_copy_started.end(), false);
-    std::fill(rs_reduce_started.begin(), rs_reduce_started.end(), false);
-    std::fill(ag_copy_started.begin(), ag_copy_started.end(), false);
+        rs_copy_started.resize(stage_iter_count, false);
+        rs_reduce_started.resize(stage_iter_count, false);
+        ag_copy_started.resize(stage_iter_count, false);
+    }
+    else {
+        std::fill(sync_recv_flags.begin(), sync_recv_flags.end(), ccl_comm::invalid_rank);
+
+        std::fill(rs_sync_sent.begin(), rs_sync_sent.end(), false);
+        std::fill(ag_sync_sent.begin(), ag_sync_sent.end(), false);
+
+        std::fill(rs_copy_started.begin(), rs_copy_started.end(), false);
+        std::fill(rs_reduce_started.begin(), rs_reduce_started.end(), false);
+        std::fill(ag_copy_started.begin(), ag_copy_started.end(), false);
+    }
 }

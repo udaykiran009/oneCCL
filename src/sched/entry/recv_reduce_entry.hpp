@@ -37,10 +37,14 @@ public:
               comm(comm),
               result_buf_type(result_buf_type),
               fn(sched->coll_attr.reduction_fn) {
-        CCL_ASSERT(op != ccl::reduction::custom || fn,
-                   "custom reduction requires user provided callback");
+        CCL_THROW_IF_NOT(op != ccl::reduction::custom || fn,
+                         "custom reduction requires user provided callback",
+                         ", op ",
+                         ccl_reduction_to_str(op),
+                         ", fn ",
+                         fn);
 
-        CCL_ASSERT(
+        CCL_THROW_IF_NOT(
             (result_buf_type == ccl_recv_reduce_local_buf && inout_buf.get_ptr() != nullptr) ||
                 (result_buf_type == ccl_recv_reduce_comm_buf && comm_buf.get_ptr() != nullptr),
             "result buffer should be non null");

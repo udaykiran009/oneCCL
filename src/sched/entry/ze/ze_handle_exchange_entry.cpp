@@ -28,7 +28,7 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
           rank(comm->rank()),
           comm_size(comm->size()),
           skip_rank(skip_rank) {
-    LOG_DEBUG("initialization");
+    LOG_DEBUG("init");
 
     CCL_THROW_IF_NOT(sched, "no sched");
     CCL_THROW_IF_NOT(!in_buffers.empty(), "in_buffers should be non empty");
@@ -105,7 +105,7 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
         left_peer_socket_name += std::string("-") + mpi_uuid;
     }
 
-    LOG_DEBUG("initialization complete");
+    LOG_DEBUG("init completed");
 }
 
 ze_handle_exchange_entry::~ze_handle_exchange_entry() {

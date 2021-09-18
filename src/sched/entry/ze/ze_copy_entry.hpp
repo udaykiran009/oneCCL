@@ -24,12 +24,8 @@ public:
                            size_t count,
                            const ccl_datatype& dtype,
                            copy_attr attr = {});
-    ~ze_copy_entry();
 
-    void init();
-    void start() override;
-    void update() override;
-    void finalize();
+    void init_ze_hook() override;
 
 private:
     ccl_sched* const sched;

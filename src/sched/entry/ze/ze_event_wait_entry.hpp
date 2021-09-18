@@ -13,10 +13,6 @@ public:
         return class_name();
     }
 
-    bool is_strict_order_satisfied() override {
-        return (status >= ccl_sched_entry_status_complete);
-    }
-
     explicit ze_event_wait_entry(ccl_sched* sched, ze_event_handle_t event);
 
     void start() override;

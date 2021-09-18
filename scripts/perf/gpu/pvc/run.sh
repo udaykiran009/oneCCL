@@ -224,6 +224,21 @@ check_run_env() {
     else
         echo_log "\nANR check passed"
     fi
+
+    # hdr=y
+    # for f in $(ls /sys/kernel/debug/iaf/iaf.*/sd.*/port.*/port_show)
+    # do
+    #     if [ $hdr == "y" ]
+    #     then
+    #         echo -n "PortName "
+    #         cat ${f} | tr -d ' ' | cut -d: -f 1 | tr '\n' ' '
+    #         hdr=n
+    #         echo
+    #     fi
+    #     echo "${f}" | cut -d/ -f 6-8 | tr '\n' ' '
+    #     cat ${f} | tr -d ' ' | cut -d: -f 2 | tr '\n' ' '
+    #     echo
+    # done | grep -e VARIABLE | grep -v -e HEALTHY
 }
 
 build_ccl() {
@@ -252,7 +267,7 @@ build_ccl() {
 
     cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=dpcpp \
         -DCOMPUTE_BACKEND=dpcpp_level_zero \
-        -DBUILD_CONFIG=0 -DBUILD_FT=0 -DBUILD_EXAMPLES=0 \
+        -DBUILD_CONFIG=0 -DBUILD_FT=0 -DBUILD_EXAMPLES=1 \
         -DCMAKE_INSTALL_PREFIX=${CCL_INSTALL_DIR}
     check_exit_code $? "Configure CCL failed"
 

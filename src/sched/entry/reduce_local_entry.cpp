@@ -9,17 +9,12 @@
 #include <string>
 
 using namespace ccl;
+
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+
 using namespace ccl::ze;
 
-void reduce_local_entry::init() {
-    if (ze_base_entry::is_initialized) {
-        return;
-    }
-
-    LOG_DEBUG("initialization");
-
-    ze_base_entry::init(init_mode::compute);
-
+void reduce_local_entry::init_ze_hook() {
     ccl::global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
 
     kernel_name =
@@ -51,20 +46,22 @@ void reduce_local_entry::init() {
              ze_base_entry::entry_event,
              0,
              nullptr));
+}
 
-    ze_base_entry::close_lists();
+void reduce_local_entry::finalize_ze_hook() {
+    ccl::global_data::get().ze_cache->push(worker_idx, module, kernel_name, kernel);
+}
 
-    LOG_DEBUG("initialization complete");
+void reduce_local_entry::start_on_device() {
+    ze_base_entry::start();
 }
 
 void reduce_local_entry::update() {
     CCL_THROW_IF_NOT(use_device);
-
     ze_base_entry::update();
-    if (status == ccl_sched_entry_status_complete && !sched->coll_attr.to_cache) {
-        finalize();
-    }
 }
+
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
 void reduce_local_entry::check_use_device() {
     use_device = false;
@@ -90,26 +87,4 @@ void reduce_local_entry::check_use_device() {
     if ((in_ptr_type == sycl::usm::alloc::device) && (inout_ptr_type == sycl::usm::alloc::device)) {
         use_device = true;
     }
-}
-
-void reduce_local_entry::start_on_device() {
-    init();
-
-    ze_base_entry::start();
-    status = ccl_sched_entry_status_started;
-}
-
-void reduce_local_entry::finalize() {
-    if (!ze_base_entry::is_initialized) {
-        return;
-    }
-
-    LOG_DEBUG("finalization");
-
-    // kernel cache
-    ccl::global_data::get().ze_cache->push(worker_idx, module, kernel_name, kernel);
-
-    ze_base_entry::finalize();
-
-    LOG_DEBUG("finalization complete");
 }

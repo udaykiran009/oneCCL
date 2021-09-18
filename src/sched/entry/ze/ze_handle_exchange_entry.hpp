@@ -32,10 +32,6 @@ public:
     void start() override;
     void update() override;
 
-    bool is_strict_order_satisfied() noexcept override {
-        return (status >= ccl_sched_entry_status_complete);
-    }
-
 protected:
     void dump_detail(std::stringstream& str) const override {
         ccl_logger::format(str,

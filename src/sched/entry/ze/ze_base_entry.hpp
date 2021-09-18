@@ -20,17 +20,23 @@ class ze_base_entry : public sched_entry {
 public:
     ze_base_entry() = delete;
     ze_base_entry(const ze_base_entry &) = delete;
-    virtual ~ze_base_entry(){};
+    virtual ~ze_base_entry();
 
 protected:
     explicit ze_base_entry(ccl_sched *sched,
+                           init_mode mode = init_mode::compute,
                            ccl_comm *comm = nullptr,
                            uint32_t add_event_count = 0);
 
-    void init(init_mode mode);
+    void init();
+    void finalize();
+
+    /* ze hooks which can be implemented in derived entry */
+    virtual void init_ze_hook(){};
+    virtual void finalize_ze_hook(){};
+
     virtual void start() override;
     virtual void update() override;
-    void finalize();
 
     ze_command_list_handle_t get_copy_list();
 
@@ -48,7 +54,7 @@ protected:
 
     void close_lists();
 
-    ccl_sched *const sched;
+    init_mode mode;
 
     ccl_comm *comm{};
     int comm_rank{};
