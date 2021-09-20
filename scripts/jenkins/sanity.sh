@@ -175,17 +175,41 @@ function enable_unordered_coll_test_scope()
     export CCL_TEST_REDUCTION_TYPE=0
 }
 
+function set_ats_environment()
+{
+    source ${SCRIPT_DIR}/ats_helper.sh
+    source ~/.jenkins_helper
+
+    ATS_WORKSPACE_DIR="/home/sys_ctlab/workspace/workspace/"
+    ATS_ARTEFACT_DIR="${ATS_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
+    export BUILD_COMPILER_TYPE="clang"
+    export SYCL_BUNDLE_ROOT="/home/sys_ctlab/oneapi/compiler/last/compiler/latest/linux/"
+    export IMPI_PATH="/home/sys_ctlab/oneapi/mpi_oneapi/last/mpi/latest/"
+
+    if [ -z ${CCL_ROOT} ]
+    then
+        install_oneccl_package ${ATS_ARTEFACT_DIR}
+        source ${ATS_ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+        export DASHBOARD_GPU_DEVICE_PRESENT="yes"
+    fi
+}
+
 function set_environment()
 {
-    if [ -z "$build_type" ]
+    if [ -z "${build_type}" ]
     then
         build_type="release"
+    fi
+
+    if [[ "${node_label}" = "ats2t" ]]
+    then
+        set_ats_environment
     fi
 
     # $BUILD_COMPILER_TYPE may be set up by user: clang/gnu/intel
     if [ -z "${BUILD_COMPILER_TYPE}" ]
     then
-        if [ $node_label == "mlsl2_test_gpu" ] || [ $node_label == "mlsl2_test_gpu_vlgd" ] || [ ${build_compiler} == "sycl" ]
+        if [ ${node_label} == "mlsl2_test_gpu" ] || [ ${node_label} == "mlsl2_test_gpu_vlgd" ] || [ ${build_compiler} == "sycl" ]
         then
             BUILD_COMPILER_TYPE="clang"
             source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
@@ -204,7 +228,7 @@ function set_environment()
     fi
 
     if [ "${BUILD_COMPILER_TYPE}" == "gnu" ]
-     then
+    then
         BUILD_COMPILER_PATH=/usr/bin
         C_COMPILER=${BUILD_COMPILER_PATH}/gcc
         CXX_COMPILER=${BUILD_COMPILER_PATH}/g++
@@ -214,7 +238,8 @@ function set_environment()
         BUILD_COMPILER_PATH=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/bin/intel64/
         C_COMPILER=${BUILD_COMPILER_PATH}/icc
         CXX_COMPILER=${BUILD_COMPILER_PATH}/icpc
-    else
+    elif [ "${BUILD_COMPILER_TYPE}" = "clang" ]
+    then
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
             SYCL_BUNDLE_ROOT="${CCL_ONEAPI_DIR}/compiler/last/compiler/latest/linux/"
@@ -225,6 +250,9 @@ function set_environment()
         C_COMPILER=${BUILD_COMPILER_PATH}/clang
         CXX_COMPILER=${BUILD_COMPILER_PATH}/dpcpp
         COMPUTE_BACKEND=dpcpp_level_zero
+    else
+        echo "ERROR: unsupported BUILD_COMPILER_TYPE"
+        exit 1
     fi
 
     if [ -z "$worker_count" ]
@@ -367,7 +395,7 @@ function run_reg_tests()
 function run_compatibitily_tests()
 {
     set_external_env
-    if [ ${node_label} == "mlsl2_test_gpu" ]
+    if [[ ${node_label} == "mlsl2_test_gpu" ]] || [[ ${node_label} == "ats2t" ]]
     then
         export FI_TCP_IFACE=eno1
         export DASHBOARD_GPU_DEVICE_PRESENT=1
