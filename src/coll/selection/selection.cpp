@@ -40,6 +40,71 @@ bool ccl_is_direct_algo(const ccl_selector_param& param) {
     return res;
 }
 
+namespace checkers {
+
+bool is_family1_card(const ccl_selector_param& param) {
+    if (param.stream) {
+        return param.stream->get_device_family() == ccl::device_family::family1;
+    }
+    return false;
+}
+
+bool is_coll_supported(std::initializer_list<ccl_coll_type> colls, ccl_coll_type value) {
+    return std::find(colls.begin(), colls.end(), value) != colls.end();
+}
+
+bool is_sycl_buf(const ccl_selector_param& param) {
+#ifdef CCL_ENABLE_SYCL
+    return param.is_sycl_buf;
+#endif // CCL_ENABLE_SYCL
+    return false;
+}
+
+bool is_device_buf(const ccl_selector_param& param) {
+#ifdef CCL_ENABLE_SYCL
+    if (param.buf && param.stream) {
+        auto ctx = param.stream->get_native_stream().get_context();
+        return sycl::get_pointer_type(param.buf, ctx) == sycl::usm::alloc::device;
+    }
+#endif // CCL_ENABLE_SYCL
+    return true;
+}
+
+bool is_l0_backend(const ccl_selector_param& param) {
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+    if (param.stream) {
+        return param.stream->get_backend() == sycl::backend::level_zero;
+    }
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
+    return false;
+}
+
+bool is_gpu_stream(const ccl_selector_param& param) {
+    if (param.stream) {
+        return param.stream->get_type() == stream_type::gpu;
+    }
+    return false;
+}
+
+bool is_single_node(const ccl_selector_param& param) {
+    size_t local_proc_count = ccl::global_data::get().executor->get_local_proc_count();
+    return static_cast<size_t>(param.comm->size()) == local_proc_count;
+}
+
+bool is_single_card(const ccl_selector_param& param) {
+    return (param.comm->size() == 2) && is_single_node(param);
+}
+
+} // namespace checkers
+
+#define RETURN_FALSE_IF(cond, ...) \
+    do { \
+        if (cond) { \
+            LOG_DEBUG("selection checker: ", ##__VA_ARGS__); \
+            return false; \
+        } \
+    } while (0)
+
 static bool ccl_is_device_side_algo(ccl_coll_algo algo, const ccl_selector_param& param) {
     CCL_THROW_IF_NOT(algo.has_value(), "empty algo value");
 
@@ -65,10 +130,13 @@ bool ccl_is_device_side_algo(const ccl_selector_param& param) {
     return false;
 #endif // CCL_ENABLE_SYCL
 
-    if ((param.ctype != ccl_coll_allgatherv) && (param.ctype != ccl_coll_allreduce) &&
-        (param.ctype != ccl_coll_bcast) && (param.ctype != ccl_coll_reduce)) {
-        return false;
-    }
+    auto supported_colls = {
+        ccl_coll_allgatherv, ccl_coll_allreduce, ccl_coll_bcast, ccl_coll_reduce
+    };
+    RETURN_FALSE_IF(!checkers::is_coll_supported(supported_colls, param.ctype),
+                    "coll ",
+                    ccl_coll_type_to_str(param.ctype),
+                    " is not supported");
 
     ccl_coll_algo algo{};
     auto& selector = ccl::global_data::get().algorithm_selector;
@@ -90,95 +158,67 @@ bool ccl_is_device_side_algo(const ccl_selector_param& param) {
 }
 
 bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
-    if ((param.ctype != ccl_coll_allreduce) && (param.ctype != ccl_coll_bcast) &&
-        (param.ctype != ccl_coll_reduce)) {
-        return false;
-    }
-
-    bool is_sycl_buf = false;
-    bool is_device_buf = true;
-    bool is_l0_backend = false;
+    auto supported_colls = { ccl_coll_allreduce, ccl_coll_bcast, ccl_coll_reduce };
+    RETURN_FALSE_IF(!checkers::is_coll_supported(supported_colls, param.ctype),
+                    "coll is not supported");
 
     size_t local_proc_count = ccl::global_data::get().executor->get_local_proc_count();
     int comm_size = param.comm->size();
-    ccl_stream* stream = param.stream;
 
-#ifdef CCL_ENABLE_SYCL
-    is_sycl_buf = param.is_sycl_buf;
-    if (param.buf && stream) {
-        auto ctx = stream->get_native_stream().get_context();
-        is_device_buf =
-            (sycl::get_pointer_type(param.buf, ctx) == sycl::usm::alloc::device) ? true : false;
-    }
-#ifdef CCL_ENABLE_ZE
-    if (stream && stream->get_backend() == sycl::backend::level_zero) {
-        is_l0_backend = true;
-    }
-#endif // CCL_ENABLE_ZE
-#endif // CCL_ENABLE_SYCL
+    RETURN_FALSE_IF(!checkers::is_gpu_stream(param), "non-gpu stream is not supported");
+    RETURN_FALSE_IF(checkers::is_sycl_buf(param), "sycl buffer is not supported");
+    RETURN_FALSE_IF(!checkers::is_device_buf(param), "non-device buffers is not supported");
+    RETURN_FALSE_IF(!checkers::is_l0_backend(param), "non-l0 backend is not supported");
 
-    bool is_single_node = static_cast<size_t>(comm_size) == local_proc_count;
-    bool is_single_card = (comm_size == 2) && is_single_node;
+    RETURN_FALSE_IF(ccl::global_data::env().enable_fusion, "fusion is not supported");
+    RETURN_FALSE_IF(ccl::global_data::env().enable_unordered_coll,
+                    "unordered coll is not supported");
+    RETURN_FALSE_IF(ccl::global_data::env().priority_mode != ccl_priority_none, "wrong priority");
+    RETURN_FALSE_IF(ccl::global_data::env().worker_count != 1, "unsupported count of workers");
 
-    if ((((param.ctype == ccl_coll_bcast) || (param.ctype == ccl_coll_reduce)) &&
+    // because of ze_ring_allreduce_entry and ze_a2a_allgatherv_entry
+    RETURN_FALSE_IF(!checkers::is_single_card(param) && checkers::is_family1_card(param) &&
+                        (param.ctype == ccl_coll_allreduce),
+                    "family1 multicard for ",
+                    ccl_coll_type_to_str(param.ctype),
+                    " is not supported");
+
+    RETURN_FALSE_IF(
+        (((param.ctype == ccl_coll_bcast) || (param.ctype == ccl_coll_reduce)) &&
          ((comm_size < 2) || (local_proc_count == 1))) ||
-        ((param.ctype == ccl_coll_allreduce) && (comm_size <= 2) && (local_proc_count == 1)) ||
+            ((param.ctype == ccl_coll_allreduce) && (comm_size <= 2) && (local_proc_count == 1)),
+        "unsupported comm size for ",
+        ccl_coll_type_to_str(param.ctype));
 
-        !stream || (stream->get_type() != stream_type::gpu) || is_sycl_buf ||
-
-        // because of ze_ring_allreduce_entry and ze_a2a_allgatherv_entry
-        (!is_single_card && (param.ctype == ccl_coll_allreduce) &&
-         (stream->get_device_family() == ccl::device_family::family1)) ||
-
-        (local_proc_count % 2 != 0) ||
-
-        !is_device_buf || !is_l0_backend || ccl::global_data::env().enable_fusion ||
-        ccl::global_data::env().enable_unordered_coll ||
-        (ccl::global_data::env().priority_mode != ccl_priority_none) ||
-        (ccl::global_data::env().worker_count != 1)) {
-        return false;
-    }
+    RETURN_FALSE_IF(!checkers::is_single_card(param) && !checkers::is_single_node(param) &&
+                        (local_proc_count % 2 != 0),
+                    "odd proc count per node is not supported");
 
     return true;
 }
 
 bool ccl_can_use_topo_a2a_algo(const ccl_selector_param& param) {
-    if ((param.ctype != ccl_coll_allreduce) && (param.ctype != ccl_coll_allgatherv)) {
-        return false;
-    }
+    auto supported_colls = { ccl_coll_allreduce, ccl_coll_allgatherv };
+    RETURN_FALSE_IF(!checkers::is_coll_supported(supported_colls, param.ctype),
+                    "coll is not supported");
 
-    bool is_sycl_buf = false;
-    bool is_device_buf = true;
-    bool is_l0_backend = false;
-
-    size_t local_proc_count = ccl::global_data::get().executor->get_local_proc_count();
     int comm_size = param.comm->size();
-    ccl_stream* stream = param.stream;
 
-#ifdef CCL_ENABLE_SYCL
-    is_sycl_buf = param.is_sycl_buf;
-    if (param.buf && stream) {
-        auto ctx = stream->get_native_stream().get_context();
-        is_device_buf =
-            (sycl::get_pointer_type(param.buf, ctx) == sycl::usm::alloc::device) ? true : false;
-    }
-#ifdef CCL_ENABLE_ZE
-    if (stream && stream->get_backend() == sycl::backend::level_zero) {
-        is_l0_backend = true;
-    }
-#endif // CCL_ENABLE_ZE
-#endif // CCL_ENABLE_SYCL
+    RETURN_FALSE_IF(!checkers::is_gpu_stream(param), "non-gpu stream is not supported");
+    RETURN_FALSE_IF(checkers::is_sycl_buf(param), "sycl buffer is not supported");
+    RETURN_FALSE_IF(!checkers::is_device_buf(param), "non-device buffers is not supported");
+    RETURN_FALSE_IF(!checkers::is_l0_backend(param), "non-l0 backend is not supported");
 
-    bool is_single_node = static_cast<size_t>(comm_size) == local_proc_count;
+    RETURN_FALSE_IF(ccl::global_data::env().enable_fusion, "fusion is not supported");
+    RETURN_FALSE_IF(ccl::global_data::env().enable_unordered_coll,
+                    "unordered coll is not supported");
+    RETURN_FALSE_IF(ccl::global_data::env().priority_mode != ccl_priority_none, "wrong priority");
+    RETURN_FALSE_IF(ccl::global_data::env().worker_count != 1, "unsupported count of workers");
 
-    if ((comm_size < 2) || !is_single_node || (!stream || stream->get_type() != stream_type::gpu) ||
-        is_sycl_buf || !is_device_buf || !is_l0_backend ||
-        (stream->get_device_family() == ccl::device_family::family1) ||
-        ccl::global_data::env().enable_fusion || ccl::global_data::env().enable_unordered_coll ||
-        (ccl::global_data::env().priority_mode != ccl_priority_none) ||
-        (ccl::global_data::env().worker_count != 1)) {
-        return false;
-    }
+    RETURN_FALSE_IF(checkers::is_family1_card(param), "family1 card is not supported");
+    RETURN_FALSE_IF(comm_size < 2, "unsupported comm size");
+
+    RETURN_FALSE_IF(!checkers::is_single_node(param), "multi level is not supported");
 
     return true;
 }
