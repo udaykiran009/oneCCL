@@ -237,7 +237,7 @@ bool ccl_can_use_datatype(ccl_coll_algo algo, const ccl_selector_param& param) {
     // algorithms running on device side support fp16 and bf16 both
     // so we don't need to require their support on the host
     if (!device_side_algo) {
-        if (param.dtype.idx() == ccl::datatype::bfloat16) {
+        if (param.dtype == ccl::datatype::bfloat16) {
             bool bf16_hw_support =
                 ccl::global_data::env().bf16_impl_type != ccl_bf16_no_hardware_support;
             bool bf16_compiler_support =
@@ -254,7 +254,7 @@ bool ccl_can_use_datatype(ccl_coll_algo algo, const ccl_selector_param& param) {
                           bf16_compiler_support);
             }
         }
-        else if (param.dtype.idx() == ccl::datatype::float16) {
+        else if (param.dtype == ccl::datatype::float16) {
             bool fp16_hw_support =
                 ccl::global_data::env().fp16_impl_type != ccl_fp16_no_hardware_support;
             bool fp16_compiler_support =

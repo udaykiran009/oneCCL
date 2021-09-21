@@ -403,7 +403,7 @@ void ccl_fusion_manager::execute() {
 
             for (auto it = postponed_queue.begin(); it != postponed_queue.end();) {
                 auto s = *it;
-                if (s->coll_param.dtype.idx() == first_sched->coll_param.dtype.idx() &&
+                if (s->coll_param.dtype == first_sched->coll_param.dtype &&
                     s->coll_param.comm == first_sched->coll_param.comm &&
                     s->coll_param.ctype == first_sched->coll_param.ctype &&
                     s->coll_param.reduction == first_sched->coll_param.reduction &&
