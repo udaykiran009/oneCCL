@@ -304,7 +304,6 @@ atl_status_t atl_mpi::allgatherv(atl_mpi_ep_t& ep,
                              offsets,
                              MPI_CHAR,
                              ep.mpi_comm);
-        mpi_req->comp_state = ATL_MPI_COMP_COMPLETED;
     }
     else {
         ret = MPI_Iallgatherv((send_buf && (send_buf == recv_buf)) ? MPI_IN_PLACE : send_buf,
@@ -346,7 +345,6 @@ atl_status_t atl_mpi::allreduce(atl_mpi_ep_t& ep,
                             mpi_dtype,
                             mpi_op,
                             ep.mpi_comm);
-        mpi_req->comp_state = ATL_MPI_COMP_COMPLETED;
     }
     else {
         //printf("atl_mpi: send_buf %p, recv_buf %p\n", send_buf, recv_buf);
@@ -383,7 +381,6 @@ atl_status_t atl_mpi::alltoall(atl_mpi_ep_t& ep,
                            len,
                            MPI_CHAR,
                            ep.mpi_comm);
-        mpi_req->comp_state = ATL_MPI_COMP_COMPLETED;
     }
     else {
         ret = MPI_Ialltoall((send_buf && (send_buf == recv_buf)) ? MPI_IN_PLACE : send_buf,
@@ -425,7 +422,6 @@ atl_status_t atl_mpi::alltoallv(atl_mpi_ep_t& ep,
                             recv_offsets,
                             MPI_CHAR,
                             ep.mpi_comm);
-        mpi_req->comp_state = ATL_MPI_COMP_COMPLETED;
     }
     else {
         ret = MPI_Ialltoallv((send_buf && (send_buf == recv_buf)) ? MPI_IN_PLACE : send_buf,
@@ -454,7 +450,6 @@ atl_status_t atl_mpi::barrier(atl_mpi_ep_t& ep, atl_req_t* req) {
 
     if (sync_coll) {
         ret = MPI_Barrier(ep.mpi_comm);
-        mpi_req->comp_state = ATL_MPI_COMP_COMPLETED;
     }
     else {
         ret = MPI_Ibarrier(ep.mpi_comm, &mpi_req->native_req);
@@ -474,7 +469,6 @@ atl_status_t atl_mpi::bcast(atl_mpi_ep_t& ep, void* buf, size_t len, int root, a
 
     if (sync_coll) {
         ret = MPI_Bcast(buf, len, MPI_CHAR, root, ep.mpi_comm);
-        mpi_req->comp_state = ATL_MPI_COMP_COMPLETED;
     }
     else {
         ret = MPI_Ibcast(buf, len, MPI_CHAR, root, ep.mpi_comm, &mpi_req->native_req);
@@ -512,7 +506,6 @@ atl_status_t atl_mpi::reduce(atl_mpi_ep_t& ep,
             mpi_op,
             root,
             ep.mpi_comm);
-        mpi_req->comp_state = ATL_MPI_COMP_COMPLETED;
     }
     else {
         ret = MPI_Ireduce(
@@ -555,7 +548,6 @@ atl_status_t atl_mpi::reduce_scatter(atl_mpi_ep_t& ep,
                                      mpi_dtype,
                                      mpi_op,
                                      ep.mpi_comm);
-        mpi_req->comp_state = ATL_MPI_COMP_COMPLETED;
     }
     else {
         ret = MPI_Ireduce_scatter_block(
@@ -627,6 +619,10 @@ atl_status_t atl_mpi::check(atl_mpi_ep_t& ep, atl_req_t* req) {
 
     CCL_THROW_IF_NOT(!req->is_completed, "request is already completed");
     CCL_THROW_IF_NOT(mpi_req->comp_state == ATL_MPI_COMP_POSTED, "request is already completed");
+
+    if (mpi_req->native_req == MPI_REQUEST_NULL) {
+        mpi_req->comp_state = ATL_MPI_COMP_COMPLETED;
+    }
 
     req->is_completed = (mpi_req->comp_state == ATL_MPI_COMP_COMPLETED);
     if (req->is_completed) {

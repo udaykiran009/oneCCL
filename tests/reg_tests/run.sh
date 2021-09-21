@@ -152,6 +152,11 @@ run_tests() {
         print_header "Run tests..."
         declare -a failed_test
         test_dirs="common"
+
+        if [[ ${MODE} = "cpu" ]]; then
+            test_dirs="${test_dirs} cpu"
+        fi
+
         if [[ ${MODE} = "gpu" ]]; then
             test_dirs="${test_dirs} sycl"
         fi
