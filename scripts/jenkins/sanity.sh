@@ -805,10 +805,6 @@ else
         "-functional_tests" )
             make_tests
             check_command_exit_code $? "Compilation of functional tests is FAILED"
-            if [[ $(hostname) == *"nnlmpiclx04"* ]] || [[ $(hostname) == *"nnlmpiclx06"* ]]
-            then
-                export FI_PROVIDER="^mlx"	
-            fi  
             run_tests
             shift
             ;;

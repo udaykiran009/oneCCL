@@ -840,6 +840,8 @@ atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
     setenv("FI_SHM_DISABLE_CMA", "1", 0);
 #endif // CCL_ENABLE_SYCL
 
+    setenv("FI_MLX_MULTI_EP", "1", 0);
+
     atl_ofi_adjust_env(attr);
 
     /*
