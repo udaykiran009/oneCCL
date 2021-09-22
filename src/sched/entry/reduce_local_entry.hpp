@@ -29,6 +29,8 @@ public:
             :
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
               ze_base_entry(sched, init_mode::compute),
+              in_buf_ptr(nullptr),
+              inout_buf_ptr(nullptr),
 #else // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
               sched_entry(sched),
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
@@ -39,8 +41,6 @@ public:
               dtype(dtype),
               op(reduction_op),
               fn(sched->coll_attr.reduction_fn),
-              in_buf_ptr(nullptr),
-              inout_buf_ptr(nullptr),
               use_device(false) {
         CCL_THROW_IF_NOT(op != ccl::reduction::custom || fn,
                          "custom reduction requires user provided callback",
@@ -118,6 +118,14 @@ protected:
     }
 
 private:
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+    void* in_buf_ptr;
+    void* inout_buf_ptr;
+    ze_module_handle_t module;
+    ze_kernel_handle_t kernel;
+    std::string kernel_name;
+    ze_group_count_t group_count;
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
     ccl_buffer in_buf;
     size_t in_cnt;
     ccl_buffer inout_buf;
@@ -125,15 +133,6 @@ private:
     ccl_datatype dtype;
     ccl::reduction op;
     ccl::reduction_fn fn;
-    void* in_buf_ptr;
-    void* inout_buf_ptr;
 
     bool use_device;
-
-#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-    ze_module_handle_t module;
-    ze_kernel_handle_t kernel;
-    std::string kernel_name;
-    ze_group_count_t group_count;
-#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 };

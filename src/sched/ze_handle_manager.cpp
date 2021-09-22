@@ -147,7 +147,7 @@ void ipc_handle_manager::set(const mem_handle_map_t& handles_arg) {
     LOG_DEBUG("handles are set successfully, size of handles: ", handles.size());
 }
 
-void ipc_handle_manager::get(int rank, size_t buf_idx, ccl_buffer& buf, ccl_comm* map_comm) {
+void* ipc_handle_manager::get_ptr(int rank, size_t buf_idx, ccl_comm* map_comm) {
     check_rank(rank, (map_comm) ? map_comm : comm);
     if (map_comm && (map_comm->id() != comm->id())) {
         int old_rank = rank;
@@ -180,6 +180,7 @@ void ipc_handle_manager::get(int rank, size_t buf_idx, ccl_buffer& buf, ccl_comm
     auto mem_type = handle_info.type;
 
     LOG_DEBUG("context: ", context, ", device: ", device, ", rank: ", rank, ", buf_idx: ", buf_idx);
+
     if (mem_ptr == nullptr) {
         if (mem_type == ccl::ze::ipc_mem_type::memory) {
             open_handle(handle, &mem_ptr);
@@ -205,9 +206,20 @@ void ipc_handle_manager::get(int rank, size_t buf_idx, ccl_buffer& buf, ccl_comm
               " }");
 
     // add offset that we received along with the handle
-    size_t mem_offset = handle_info.offset;
-    void* final_ptr = static_cast<void*>(static_cast<char*>(mem_ptr) + mem_offset);
-    buf.set(final_ptr);
+    if (mem_type == ccl::ze::ipc_mem_type::pool)
+        CCL_THROW_IF_NOT(handle_info.offset == 0, "offsets should be 0 for event pool");
+    return static_cast<void*>(static_cast<char*>(mem_ptr) + handle_info.offset);
+}
+
+void ipc_handle_manager::get(int rank, size_t buf_idx, ccl_buffer& buf, ccl_comm* map_comm) {
+    buf.set(get_ptr(rank, buf_idx, map_comm));
+}
+
+void ipc_handle_manager::get(int rank,
+                             size_t buf_idx,
+                             ze_event_pool_handle_t& buf,
+                             ccl_comm* map_comm) {
+    buf = (ze_event_pool_handle_t)get_ptr(rank, buf_idx, map_comm);
 }
 
 void ipc_handle_manager::get_handle(const void* ptr, ze_ipc_mem_handle_t* handle) {
@@ -253,6 +265,14 @@ void ipc_handle_manager::check_rank(int rank, ccl_comm* check_comm) {
         check_comm->size());
     CCL_THROW_IF_NOT(
         rank != check_comm->rank(), "do not expect to open handle for own rank: ", rank);
+}
+
+ze_context_handle_t ipc_handle_manager::get_context() {
+    return context;
+}
+
+ze_device_handle_t ipc_handle_manager::get_device() {
+    return device;
 }
 
 } // namespace ze

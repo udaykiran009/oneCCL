@@ -274,17 +274,27 @@ void ze_base_entry::init_primitives(cmd_primitives &cmd_primitives) {
     LOG_DEBUG("get list: { ordinal: ", cmd_primitives.list_desc.commandQueueGroupOrdinal, " }");
 }
 
+ze_event_handle_t ze_base_entry::create_event(ze_event_pool_handle_t event_pool,
+                                              ze_event_desc_t event_desc) {
+    ze_event_handle_t event;
+    ZE_CALL(zeEventCreate, (event_pool, &event_desc, &event));
+    return event;
+}
+
 ze_event_handle_t ze_base_entry::create_event() {
     ze_event_desc_t event_desc{ default_event_desc };
     event_desc.signal = ZE_EVENT_SCOPE_FLAG_DEVICE;
     event_desc.wait = ZE_EVENT_SCOPE_FLAG_DEVICE;
     event_desc.index = event_counter++;
     LOG_DEBUG("create event with index ", event_desc.index);
-    CCL_THROW_IF_NOT(event_desc.index < event_pool_desc.count, "event creation limit exceeded");
+    CCL_THROW_IF_NOT(event_desc.index < event_pool_desc.count,
+                     ", event creation limit exceeded: ",
+                     event_desc.index,
+                     ", event_pool_desc.count: ",
+                     event_pool_desc.count);
     CCL_THROW_IF_NOT(event_desc.index < events.size());
 
-    ze_event_handle_t event;
-    ZE_CALL(zeEventCreate, (event_pool, &event_desc, &event));
+    ze_event_handle_t event = create_event(event_pool, event_desc);
     events[event_desc.index] = event;
 
     return event;

@@ -43,7 +43,10 @@ public:
     void clear();
 
     void set(const mem_handle_map_t& handles_arg);
+
+    void* get_ptr(int rank, size_t buf_idx, ccl_comm* map_comm);
     void get(int rank, size_t buf_idx, ccl_buffer& buf, ccl_comm* map_comm = nullptr);
+    void get(int rank, size_t buf_idx, ze_event_pool_handle_t& buf, ccl_comm* map_comm);
 
     void get_handle(const void* buffer, ze_ipc_mem_handle_t* handle);
     void get_handle(ze_event_pool_handle_t pool, ze_ipc_event_pool_handle_t* handle);
@@ -51,6 +54,9 @@ public:
     void open_handle(const ze_ipc_event_pool_handle_t& handle, ze_event_pool_handle_t* pool);
 
     void get_address_range(const void* ptr, void** base_ptr, size_t* size);
+
+    ze_context_handle_t get_context();
+    ze_device_handle_t get_device();
 
 private:
     ze_context_handle_t context{};

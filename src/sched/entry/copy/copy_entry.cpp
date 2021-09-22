@@ -15,7 +15,7 @@ copy_entry::copy_entry(ccl_sched* sched,
         :
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
           ze_copy_entry(sched, in_buf, out_buf, count, dtype, attr),
-#else
+#else // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
           sched_entry(sched),
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
           sched(sched),

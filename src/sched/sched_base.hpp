@@ -14,6 +14,7 @@
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 #include "sched/ze_handle_manager.hpp"
+#include "sched/ze_ipc_event_pool_manager.hpp"
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
 class ccl_sched_queue;
@@ -37,6 +38,7 @@ struct ccl_sched_memory {
     ccl::buffer_manager buffer_manager;
 #ifdef CCL_ENABLE_ZE
     ccl::ze::ipc_handle_manager handle_manager;
+    ccl::ze::ipc_event_pool_manager ipc_event_pool_manager;
     // sync event which we use to signal to the user about collective completion
     // and the pool it's created from(need to keep it to know what to return to the cache)
     // TODO: this is not the best place for these objects, think about moving them

@@ -116,6 +116,7 @@ private:
     using key_t = typename std::tuple<ze_context_handle_t, ze_event_pool_flags_t, uint32_t>;
     using value_t = ze_event_pool_handle_t;
     std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
+    std::mutex mutex;
 };
 
 class device_mem_cache {

@@ -10,6 +10,9 @@
 #include "sched/entry/coll/coll_entry_helper.hpp"
 #include "sched/entry/factory/chunked_entry_factory.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
+#include "coll/coll_util.hpp"
+#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
 ccl::status ccl_coll_build_direct_allreduce(ccl_sched* sched,
                                             ccl_buffer send_buf,
@@ -495,10 +498,16 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
                                                ccl_comm* comm) {
     LOG_DEBUG("build topo_ring allreduce");
 
-    ccl_coll_entry_param barrier_param{};
-    barrier_param.ctype = ccl_coll_barrier;
-    barrier_param.comm = comm;
-    barrier_param.hint_algo.barrier = ccl_coll_barrier_ring;
+    std::vector<ze_handle_exchange_entry::mem_desc_t> in_buffers{
+        { send_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 0
+        { recv_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 1
+    };
+
+    ze_event_pool_handle_t ipc_event_pool{};
+    if (ccl::global_data::env().enable_ze_barrier) {
+        ipc_event_pool = sched->get_memory().ipc_event_pool_manager.create(3 /*event count*/);
+        in_buffers.push_back({ (void*)ipc_event_pool, ccl::ze::ipc_mem_type::pool });
+    }
 
     ccl_comm* pair_comm = comm->get_host_comm()->get_pair_comm().get()->get_ccl_comm().get();
     ccl_comm* even_comm = comm->get_host_comm()->get_even_comm().get()->get_ccl_comm().get();
@@ -521,11 +530,6 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         tmp_buf = sched->alloc_buffer(alloc_param);
     }
 
-    std::vector<ze_handle_exchange_entry::mem_desc_t> in_buffers{
-        { send_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 0
-        { recv_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 1
-    };
-
     size_t recv_buf_idx = 1;
     size_t tmp_buf_idx = std::numeric_limits<size_t>::max();
     if (use_tmp_buf) {
@@ -544,8 +548,9 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         sched->add_barrier();
         sched->set_entry_exec_mode(ccl_sched_entry_exec_regular);
 
-        // TODO: no need barrier for the first iteration where ze_handle_exchange_entry exists
-        coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
+        // TODO: no need barrier for the first iteration
+        // where ze_handle_exchange_entry exists
+        ccl::add_comm_barrier(sched, node_comm, ipc_event_pool, 0);
     }
     else {
         entry_factory::create<ze_handle_exchange_entry>(sched, node_comm, in_buffers, skip_rank);
@@ -623,8 +628,7 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
                                                            recv_buf_idx);
             sched->add_barrier();
 
-            barrier_param.comm = even_comm;
-            coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
+            ccl::add_comm_barrier(sched, even_comm, ipc_event_pool, 1);
             sched->add_barrier();
 
             LOG_DEBUG("topo_ring/scale_up/intra: use ze_onesided_bcast");
@@ -640,9 +644,7 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         }
     }
 
-    // TODO: fix tag matching in barriers
-    barrier_param.comm = pair_comm;
-    coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
+    ccl::add_comm_barrier(sched, pair_comm, ipc_event_pool, 2);
     sched->add_barrier();
 
     return ccl::status::success;

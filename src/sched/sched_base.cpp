@@ -19,6 +19,7 @@ ccl_sched_base::ccl_sched_base(const ccl_sched_create_param& param)
         ccl_comm* node_comm =
             coll_param.comm->get_host_comm()->get_node_comm().get()->get_ccl_comm().get();
         memory.handle_manager.init(node_comm, coll_param.stream);
+        memory.ipc_event_pool_manager.init(coll_param.stream);
     }
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 }
@@ -156,6 +157,7 @@ void ccl_sched_base::clear_memory() {
     memory.buffer_manager.clear();
 #ifdef CCL_ENABLE_ZE
     memory.handle_manager.clear();
+    memory.ipc_event_pool_manager.clear();
 #endif // CCL_ENABLE_ZE
     free_memory_regions();
 }

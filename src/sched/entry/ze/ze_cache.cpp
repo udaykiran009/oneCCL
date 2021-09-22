@@ -234,6 +234,7 @@ event_pool_cache::~event_pool_cache() {
 
 void event_pool_cache::clear() {
     LOG_DEBUG("clear event pool cache: size: ", cache.size());
+    std::lock_guard<std::mutex> lock(mutex);
     for (auto& key_value : cache) {
         ZE_CALL(zeEventPoolDestroy, (key_value.second));
     }
@@ -245,6 +246,7 @@ void event_pool_cache::get(ze_context_handle_t context,
                            ze_event_pool_handle_t* event_pool) {
     CCL_THROW_IF_NOT(context);
     CCL_THROW_IF_NOT(event_pool);
+    std::lock_guard<std::mutex> lock(mutex);
     // TODO: we can potentially use pool with count >= pool_desc.count
     if (!get_from_cache(cache, *event_pool, context, pool_desc.flags, pool_desc.count)) {
         ZE_CALL(zeEventPoolCreate, (context, &pool_desc, 0, nullptr, event_pool));
@@ -256,6 +258,7 @@ void event_pool_cache::push(ze_context_handle_t context,
                             ze_event_pool_handle_t event_pool) {
     CCL_THROW_IF_NOT(context);
     CCL_THROW_IF_NOT(event_pool);
+    std::lock_guard<std::mutex> lock(mutex);
     if (!push_to_cache(cache, event_pool, context, pool_desc.flags, pool_desc.count)) {
         ZE_CALL(zeEventPoolDestroy, (event_pool));
     }

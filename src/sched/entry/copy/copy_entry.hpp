@@ -65,10 +65,12 @@ private:
     const size_t count;
     const ccl_datatype dtype;
     copy_attr attr;
-    copy_type ctype{ copy_type::regular };
 
 #ifdef CCL_ENABLE_SYCL
     sycl_copier copier{};
+#ifdef CCL_ENABLE_ZE
+    copy_type ctype{ copy_type::regular };
+#endif // CCL_ENABLE_ZE
 #endif // CCL_ENABLE_SYCL
 
     void do_regular_copy();

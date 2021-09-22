@@ -33,6 +33,7 @@ if (CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
         sched/entry/ze/ze_a2a_allgatherv_entry.cpp
         sched/entry/ze/ze_a2a_gatherv_entry.cpp
         sched/entry/ze/ze_base_entry.cpp
+        sched/entry/ze/ze_barrier_entry.cpp
         sched/entry/ze/ze_cache.cpp
         sched/entry/ze/ze_call.cpp
         sched/entry/ze/ze_copy_entry.cpp
@@ -41,10 +42,12 @@ if (CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
         sched/entry/ze/ze_event_wait_entry.cpp
         sched/entry/ze/ze_onesided_reduce_entry.cpp
         sched/entry/ze/ze_primitives.cpp
-        
+
         sched/entry/reduce_local_entry.cpp
         sched/ze_handle_manager.cpp
+        sched/ze_ipc_event_pool_manager.cpp
 
+        coll/coll_util.cpp
         )
 endif(CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
 

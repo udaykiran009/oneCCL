@@ -22,6 +22,10 @@ public:
     ze_base_entry(const ze_base_entry &) = delete;
     virtual ~ze_base_entry();
 
+    static ze_event_handle_t create_event(ze_event_pool_handle_t event_pool,
+                                          ze_event_desc_t event_desc);
+    static bool is_event_completed(ze_event_handle_t event);
+
 protected:
     explicit ze_base_entry(ccl_sched *sched,
                            init_mode mode = init_mode::compute,
@@ -48,7 +52,6 @@ protected:
                              cmd_primitives &comp_primitives);
 
     ze_event_handle_t create_event();
-    static bool is_event_completed(ze_event_handle_t event);
     void reset_events();
     void destroy_events();
 

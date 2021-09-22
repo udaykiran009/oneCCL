@@ -102,6 +102,7 @@ constexpr const char* CCL_KERNEL_1S_LEAD = "CCL_KERNEL_1S_LEAD";
 constexpr const char* CCL_KERNEL_1S_USE_COPY_OPS = "CCL_KERNEL_1S_USE_COPY_OPS";
 constexpr const char* CCL_KERNEL_1S_IPC_WA = "CCL_KERNEL_1S_IPC_WA";
 constexpr const char* CCL_KERNEL_OUTPUT_EVENT = "CCL_KERNEL_OUTPUT_EVENT";
+constexpr const char* CCL_ZE_BARRIER = "CCL_ZE_BARRIER";
 constexpr const char* CCL_ZE_SERIALIZE = "CCL_ZE_SERIALIZE";
 constexpr const char* CCL_ZE_COPY_ENGINE = "CCL_ZE_COPY_ENGINE";
 constexpr const char* CCL_ZE_QUEUE_INDEX = "CCL_ZE_QUEUE_INDEX";
@@ -231,6 +232,7 @@ public:
     int enable_kernel_1s_copy_ops;
     int enable_kernel_1s_ipc_wa;
     int enable_kernel_output_event;
+    int enable_ze_barrier;
 
     int enable_ze_cache;
     int ze_serialize_mode;
