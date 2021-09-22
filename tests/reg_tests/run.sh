@@ -28,11 +28,14 @@ print_help() {
     echo "      Specific path to the file with excluded tests"
     echo "  --build-only"
     echo "      Enable only the build stage"
+    echo "  --platform <ats|gen9> (default ats)"
+    echo "      Discrete GPU platform name"
     echo ""
     echo "Usage examples:"
     echo "  ${BASENAME}.sh --mode cpu"
     echo "  ${BASENAME}.sh --exclude-list /p/pdsd/Users/asoluyan/GitHub/oneccl/tests/reg_tests/exclude_list"
     echo "  ${BASENAME}.sh --build-only"
+    echo "  ${BASENAME}.sh --mode gpu --platform gen9"
     echo ""
 }
 
@@ -44,13 +47,22 @@ print_header() {
 
 is_exclude_test() {
     local TEST_NAME=${1}
-    echo $(grep ${TEST_NAME} ${EXCLUDE_LIST} | wc -l)
+    res=$(grep -w ${TEST_NAME} ${EXCLUDE_LIST})
+    if [[ -z ${res} ]]
+    then
+        rc=0
+    else
+        EXCLUDE_PLATFORM=$(echo ${res} | awk '{print $2}')
+        [[ "${EXCLUDE_PLATFORM}" = *"${PLATFORM_HW_DISCRETE_GPU}"* ]]; rc=1 || rc=0
+    fi
+    echo ${rc}
 }
 
 set_default_values() {
     ENABLE_BUILD="yes"
     ENABLE_TESTING="yes"
     EXCLUDE_LIST="${SCRIPT_DIR}/exclude_list"
+    PLATFORM_HW_DISCRETE_GPU="ats"
 }
 
 parse_arguments() {
@@ -73,6 +85,10 @@ parse_arguments() {
                 ENABLE_BUILD="yes"
                 ENABLE_TESTING="no"
                 ;;
+            "-platform"|"--platform")
+                PLATFORM_HW_DISCRETE_GPU=${2}
+                shift
+                ;;
             *)
                 echo "$(basename $0): ERROR: unknown option ($1)"
                 print_help
@@ -87,10 +103,11 @@ parse_arguments() {
     echo "-----------------------------------------------------------"
     echo "PARAMETERS"
     echo "-----------------------------------------------------------"
-    echo "MODE           = ${MODE}"
-    echo "ENABLE_BUILD   = ${ENABLE_BUILD}"
-    echo "ENABLE_TESTING = ${ENABLE_TESTING}"
-    echo "EXCLUDE_LIST   = ${EXCLUDE_LIST}"
+    echo "MODE                     = ${MODE}"
+    echo "ENABLE_BUILD             = ${ENABLE_BUILD}"
+    echo "ENABLE_TESTING           = ${ENABLE_TESTING}"
+    echo "EXCLUDE_LIST             = ${EXCLUDE_LIST}"
+    echo "PLATFORM_HW_DISCRETE_GPU = ${PLATFORM_HW_DISCRETE_GPU}"
 
 }
 
@@ -134,7 +151,7 @@ define_compiler() {
     esac
 }
 
-build () {
+build() {
     if [[ ${ENABLE_BUILD} = "yes" ]]; then
         print_header "Build tests..."
         rm -rf build
@@ -168,6 +185,7 @@ run_tests() {
             for test in ${tests}; do
                 is_exclude=$(is_exclude_test $(basename ${test} .sh))
                 if [[ ${is_exclude} -ne 0 ]]; then
+                    echo "${test} was excluded. Skip"
                     continue 
                 fi
                 echo "${test}"

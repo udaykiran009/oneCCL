@@ -5,18 +5,23 @@
 #IMPI# Implemented in: Intel(R) Collective Communication Library 2021.4 (Gold) Update  4 #
 ##########################################################################################
 
-TOOLS_DIR="/nfs/inn/proj/mpi/pdsd/opt/tools"
-SUPPORTED_SHELLS="bash ${TOOLS_DIR}/dash/bin/dash ${TOOLS_DIR}/ksh/bin/ksh ${TOOLS_DIR}/mksh/bin/mksh"
+if [[ $(hostname) == *"ats"* ]]
+then
+    SUPPORTED_SHELLS="bash dash ksh mksh zsh"
+else
+    TOOLS_DIR="/nfs/inn/proj/mpi/pdsd/opt/tools"
+    SUPPORTED_SHELLS="bash ${TOOLS_DIR}/dash/bin/dash ${TOOLS_DIR}/ksh/bin/ksh ${TOOLS_DIR}/mksh/bin/mksh"
 
-if [[ $(lsb_release -d) = *"Ubuntu"* ]]; then
-    ub_majver=$(lsb_release -sr | grep -Eo '^[0-9]+')
-    if [[ ${ub_majver} = "20" ]]; then
-        SUPPORTED_SHELLS="${SUPPORTED_SHELLS} ${TOOLS_DIR}/zsh/u20/bin/zsh"
+    if [[ $(lsb_release -d 2>/dev/null) = *"Ubuntu"* ]]; then
+        ub_majver=$(lsb_release -sr | grep -Eo '^[0-9]+')
+        if [[ ${ub_majver} = "20" ]]; then
+            SUPPORTED_SHELLS="${SUPPORTED_SHELLS} ${TOOLS_DIR}/zsh/u20/bin/zsh"
+        else
+            SUPPORTED_SHELLS="${SUPPORTED_SHELLS} ${TOOLS_DIR}/zsh/bin/zsh"
+        fi
     else
         SUPPORTED_SHELLS="${SUPPORTED_SHELLS} ${TOOLS_DIR}/zsh/bin/zsh"
     fi
-else
-    SUPPORTED_SHELLS="${SUPPORTED_SHELLS} ${TOOLS_DIR}/zsh/bin/zsh"
 fi
 
 SCRIPT_DIR=$(cd $(dirname "${BASH_SOURCE}") && pwd -P)

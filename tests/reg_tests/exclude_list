@@ -1,2 +1,4 @@
-allreduce_events
-allreduce_events_inorder
+# MLSL-1100
+allreduce_events gen9,ats
+allreduce_events_inorder gen9,ats
+allgatherv_vector ats

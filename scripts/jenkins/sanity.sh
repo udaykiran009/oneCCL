@@ -141,7 +141,7 @@ function enable_default_env()
     # in case of caching and large number of different match_ids
     export CCL_CACHE_FLUSH=1
     export CCL_MNIC=global
-    export CCL_MNIC_NAME=eno,mlx,hfi,^unknown
+    export CCL_MNIC_NAME=eth,eno,mlx,hfi,^unknown
     export I_MPI_DEBUG=12
 }
 
@@ -184,7 +184,9 @@ function set_ats_environment()
     ATS_ARTEFACT_DIR="${ATS_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
     export BUILD_COMPILER_TYPE="clang"
     export SYCL_BUNDLE_ROOT="/home/sys_ctlab/oneapi/compiler/last/compiler/latest/linux/"
-    export IMPI_PATH="/home/sys_ctlab/oneapi/mpi_oneapi/last/mpi/latest/"
+    export IMPI_PATH="/home/sys_ctlab/oneapi/mpi_oneapi/l_oneapi_mpi_2021.5.0_ENG_ww38.20210917/"
+    #export CCL_STAGING_BUFFER=regular
+
 
     if [ -z ${CCL_ROOT} ]
     then
@@ -375,9 +377,12 @@ function run_reg_tests()
     set_external_env
     set_reg_tests_environment
 
-    if [ ${node_label} == "mlsl2_test_gpu" ]
+    if [[ ${node_label} == "mlsl2_test_gpu" ]]
     then
-        ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode gpu
+        ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode gpu --platform gen9
+    elif [[ ${node_label} == "ats2t" ]]
+    then
+        ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode gpu --platform ats
     else
         ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode cpu
     fi
@@ -560,7 +565,11 @@ function run_tests()
 
     if [ ${runtime} == "ofi_adjust" ]
     then
-        allgatherv_algos="${allgatherv_algos} multi_bcast"
+        # MLSL-1095
+        if [[ "${node_label}" != "ats2t" ]]
+        then
+            allgatherv_algos="${allgatherv_algos} multi_bcast"
+        fi
         allreduce_algos="${allreduce_algos} 2d" # ring_rma
     fi
 
@@ -805,6 +814,10 @@ else
         "-functional_tests" )
             make_tests
             check_command_exit_code $? "Compilation of functional tests is FAILED"
+            if [[ "$(hostname)" =~ ("atsci") ]]
+            then
+                export FI_PROVIDER="tcp"
+            fi
             run_tests
             shift
             ;;
