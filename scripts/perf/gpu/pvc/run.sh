@@ -165,9 +165,9 @@ set_run_env() {
     export LD_LIBRARY_PATH=/usr/lib64/:${LD_LIBRARY_PATH}
 
     # UMD with ULLS support
-    module unload graphics-compute-runtime
-    module use /home/ftartagl/graphics-compute-runtime/modulefilesmodule \
-        load graphics-compute-runtime/ci-neo-020957
+    # module unload graphics-compute-runtime
+    # module use /home/ftartagl/graphics-compute-runtime/modulefilesmodule \
+    #     load graphics-compute-runtime/ci-neo-020957
 }
 
 check_run_env() {
@@ -183,6 +183,10 @@ check_run_env() {
     echo_log "\nDevice list:"
     echo_log "${device_list}"
 
+    sycl_ls=`sycl-ls`
+    echo_log "\nsycl-ls:"
+    echo_log "${sycl_ls}"
+
     cxi_state=`fi_info -p cxi -v | grep -i state | grep -i up | wc -l`
     if [ "${cxi_state}" != 8 ]
     then
@@ -193,28 +197,29 @@ check_run_env() {
 
     return
 
-    # ANR
+    # ANR check
     check_log="anr_check.log"
     test_path="/home/mshiryae/shared/zello_ipc_copy_dma_buf_p2p.out"
     total_fails=0
-    for first_idx in `seq 0 5`
+
+    for tile_idx in `seq 0 1`
     do
-        for second_idx in `seq 0 5`
+        for first_card_idx in `seq 0 5`
         do
-            if [ "${first_idx}" == "${second_idx}" ]
-            then
-                continue
-            fi
-            cmd="ZE_AFFINITY_MASK=${first_idx}.0,${second_idx}.0 EnableCrossDeviceAccess=1"
-            cmd="${cmd} ${test_path} > ${check_log} 2>&1"
-            eval ${cmd}
-            failed=$(cat ${check_log} | grep "FAILED" | wc -l)
-            passed=$(cat ${check_log} | grep "PASSED" | wc -l)
-            if [ "${failed}" == "1" ]
-            then
-                echo "config: ${first_idx}:${second_idx} failed"
-                total_fails=$((total_fails + 1))
-            fi
+            for second_card_idx in `seq $((first_card_idx+1)) 5`
+            do
+                cmd="ZE_AFFINITY_MASK=${first_card_idx}.${tile_idx},${second_card_idx}.${tile_idx} EnableCrossDeviceAccess=1"
+                cmd="${cmd} ${test_path} > ${check_log} 2>&1"
+                echo_log "${cmd}"
+                eval ${cmd}
+                failed=$(cat ${check_log} | grep "FAILED" | wc -l)
+                passed=$(cat ${check_log} | grep "PASSED" | wc -l)
+                if [ "${failed}" == "1" ]
+                then
+                    echo "config: ${first_card_idx}.${tile_idx}:${second_card_idx}.${tile_idx} failed"
+                    total_fails=$((total_fails + 1))
+                fi
+            done
         done
     done
 
@@ -276,33 +281,38 @@ build_ccl() {
 }
 
 run_bench() {
-    #scales="2 12 24"
-    scales="4"
-    #algos="ring topo_ring"
-    algos="topo_ring"
-    #copy_engines="none main link"
-    copy_engines="none"
+    node_counts="1 2"
+    ppns="2 6 12"
+    algos="ring topo_ring"
+    copy_engines="none main link"
     bench_params="-w 4 -i 16 -c off -t 8388608 -j off"
     hosts="-hosts c001n0001,c001n0002"
 
-    base_env="CCL_LOG_LEVEL=debug FI_PROVIDER=cxi EnableDirectSubmission=1"
-    base_env="CCL_LOG_LEVEL=debug FI_PROVIDER=cxi CCL_STAGING_BUFFER=regular"
+    base_env="CCL_LOG_LEVEL=info FI_PROVIDER=cxi CCL_STAGING_BUFFER=regular"
     base_env="${base_env} SYCL_DEVICE_FILTER=level_zero"
 
-    for scale in ${scales}
-    do
-        for algo in ${algos}
-        do
-            for copy_engine in ${copy_engines}
-            do
-                if [[ ${algo} = "ring" ]] && [[ ${copy_engine} != "none" ]]
-                then
-                    continue
-                fi
+    # https://jira.devtools.intel.com/browse/XDEPS-2701
+    # base_env="${base_env} EnableDirectSubmission=1"
 
-                exec_env="${base_env} CCL_ALLREDUCE=${algo} CCL_ZE_COPY_ENGINE=${copy_engine}"
-                cmd="${exec_env} mpirun -n ${scale} -ppn 12 -l ${hosts} ${CCL_ROOT}/examples/benchmark/benchmark ${bench_params}"
-                run_cmd "${cmd}"
+    for node_count in ${node_counts}
+    do
+        for ppn in ${ppns}
+        do
+            for algo in ${algos}
+            do
+                for copy_engine in ${copy_engines}
+                do
+                    if [[ ${algo} = "ring" ]] && [[ ${copy_engine} != "none" ]]
+                    then
+                        continue
+                    fi
+
+                    proc_count=$((node_count*ppn))
+
+                    exec_env="${base_env} CCL_ALLREDUCE=${algo} CCL_ZE_COPY_ENGINE=${copy_engine}"
+                    cmd="${exec_env} mpirun -n ${proc_count} -ppn ${ppn} -l ${hosts} ${CCL_ROOT}/examples/benchmark/benchmark ${bench_params}"
+                    run_cmd "${cmd}"
+                done
             done
         done
     done
