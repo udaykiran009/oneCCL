@@ -296,6 +296,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
         case ccl_coll_allgatherv:
             selector_param.recv_counts = coll_param.recv_counts.data();
             algo.allgatherv = data.algorithm_selector->get<ccl_coll_allgatherv>(selector_param);
+
             if (algo.allgatherv == ccl_coll_allgatherv_direct ||
                 algo.allgatherv == ccl_coll_allgatherv_naive ||
                 algo.allgatherv == ccl_coll_allgatherv_ring ||
@@ -307,11 +308,13 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
                 part_count = comm_size;
                 ag_recv_bufs.resize(comm_size);
                 if (algo.allgatherv == ccl_coll_allgatherv_multi_bcast) {
-                    selector_param.ctype = ccl_coll_bcast;
-                    selector_param.count = sched->coll_param.get_send_count();
-                    selector_param.dtype = dtype;
+                    ccl_selector_param bcast_selector_param;
+                    bcast_selector_param.ctype = ccl_coll_bcast;
+                    bcast_selector_param.count = selector_param.count;
+                    bcast_selector_param.dtype = selector_param.dtype;
+                    bcast_selector_param.comm = selector_param.comm;
                     internal_algo.bcast =
-                        data.algorithm_selector->get<ccl_coll_bcast>(selector_param);
+                        data.algorithm_selector->get<ccl_coll_bcast>(bcast_selector_param);
                     if (internal_algo.bcast == ccl_coll_bcast_direct) {
                         /*
                             group all direct bcasts for specific worker together into single schedule w/o

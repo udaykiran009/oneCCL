@@ -42,10 +42,12 @@ bool ccl_algorithm_selector_helper<ccl_coll_bcast_algo>::can_use(
         can_use = false;
     }
     else if (algo == ccl_coll_bcast_direct &&
-             (ccl::global_data::env().atl_transport == ccl_atl_ofi))
+             (ccl::global_data::env().atl_transport == ccl_atl_ofi)) {
         can_use = false;
-    else if (algo == ccl_coll_bcast_topo_ring && !ccl_can_use_topo_ring_algo(param))
+    }
+    else if (algo == ccl_coll_bcast_topo_ring && !ccl_can_use_topo_ring_algo(param)) {
         can_use = false;
+    }
 
     return can_use;
 }

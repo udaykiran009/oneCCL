@@ -557,7 +557,7 @@ function run_tests()
         allgatherv_algos="${allgatherv_algos} direct"
         allreduce_algos="${allreduce_algos} direct"
         alltoall_algos="${alltoall_algos} direct"
-        alltoallv_algos="${alltoallv_algos} direct"
+        alltoallv_algos=${alltoall_algos}
         bcast_algos="${bcast_algos} direct"
         reduce_algos="${reduce_algos} direct"
         reduce_scatter_algos="${reduce_scatter_algos} direct"
@@ -565,15 +565,11 @@ function run_tests()
 
     if [ ${runtime} == "ofi_adjust" ]
     then
-        # MLSL-1095
-        if [[ "${node_label}" != "ats2t" ]]
-        then
-            allgatherv_algos="${allgatherv_algos} multi_bcast"
-        fi
+        allgatherv_algos="${allgatherv_algos} multi_bcast"
         allreduce_algos="${allreduce_algos} 2d" # ring_rma
     fi
 
-    if [ ${node_label} == "mlsl2_test_gpu_ft" ]
+    if [ ${node_label} == "mlsl2_test_gpu_ft" ] || [ "${node_label}" == "ats2t" ]
     then
         allreduce_algos="${allreduce_algos} topo_ring"
         bcast_algos="${bcast_algos} topo_ring"
@@ -699,7 +695,7 @@ function run_tests()
                     done
                 done
 
-                for algo in "naive" "scatter" "scatter_barrier"
+                for algo in ${alltoall_algos}
                 do
                     if [ "$algo" == "scatter_barrier" ];
                     then
@@ -709,7 +705,7 @@ function run_tests()
                     CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"
                 done
 
-                for algo in "naive" "scatter" "scatter_barrier"
+                for algo in ${alltoallv_algos}
                 do
                     if [ "$algo" == "scatter_barrier" ];
                     then

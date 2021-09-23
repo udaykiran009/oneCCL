@@ -7,6 +7,44 @@
 #include "sched/entry/ze/ze_primitives.hpp"
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
+std::string to_string(const ccl_selector_param& param) {
+    std::stringstream ss;
+
+    ss << "{ "
+       << "coll: " << ccl_coll_type_to_str(param.ctype) << ", count: " << param.count
+       << ", dt: " << ccl::global_data::get().dtypes->name(param.dtype);
+
+    if (param.comm) {
+        ss << ", comm: { rank: " << param.comm->rank() << ", size: " << param.comm->size() << " }";
+    }
+
+    if (param.stream) {
+        ss << ", stream: " << param.stream->to_string();
+    }
+
+    if (param.buf) {
+        ss << ", buf: " << param.buf;
+    }
+
+    if (param.is_vector_buf) {
+        ss << ", vector_buf";
+    }
+
+#ifdef CCL_ENABLE_SYCL
+    if (param.is_sycl_buf) {
+        ss << ", sycl_buf";
+    }
+#endif // CCL_ENABLE_SYCL
+
+    if (param.hint_algo.has_value()) {
+        ss << ", hint_algo: " << param.hint_algo.value;
+    }
+
+    ss << " }";
+
+    return ss.str();
+}
+
 bool ccl_is_direct_algo(const ccl_selector_param& param) {
     bool res = false;
 
@@ -193,7 +231,6 @@ bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
     RETURN_FALSE_IF(!checkers::is_single_card(param) && !checkers::is_single_node(param) &&
                         (local_proc_count % 2 != 0),
                     "odd proc count per node is not supported");
-
     return true;
 }
 

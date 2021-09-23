@@ -22,6 +22,7 @@ public:
         selector_param.dtype = param.dtype;
         selector_param.comm = param.comm;
         selector_param.stream = param.stream;
+        selector_param.buf = (param.send_buf) ? param.send_buf.get_ptr() : param.recv_buf.get_ptr();
         selector_param.is_vector_buf = sched->coll_attr.is_vector_buf;
 #ifdef CCL_ENABLE_SYCL
         selector_param.is_sycl_buf = sched->coll_attr.is_sycl_buf;

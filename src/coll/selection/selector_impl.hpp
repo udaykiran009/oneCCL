@@ -14,6 +14,8 @@
 #define CCL_SELECTION_ALGO_DELIMETER    ':'
 #define CCL_SELECTION_SIZE_DELIMETER    '-'
 
+std::string to_string(const ccl_selector_param& param);
+
 template <typename algo_group_type>
 void ccl_selection_unpack_elem(size_t& size,
                                algo_group_type& algo,
@@ -227,6 +229,8 @@ algo_group_type ccl_algorithm_selector_base<algo_group_type>::get(
     size_t elem_size;
     algo_group_type elem_algo;
     ccl_selection_border_type elem_border;
+
+    LOG_DEBUG("param: ", ::to_string(param));
 
     size_t count = ccl_algorithm_selector_helper<algo_group_type>::get_count(param);
 
