@@ -1,4 +1,4 @@
 DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCondition	InstalledFilePermission	Redistributable	InstalledFileOwner	SymbolicLink
-<deliverydir>/l_cmake_configs/cmake/oneCCL/oneCCLConfig.cmake	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cmake/oneCCL/oneCCLConfig.cmake		external	Dmitriy Sazanov		1	755	redistributable	root	<installroot>/lib/cmake/oneCCL/oneCCLConfig.cmake
-<deliverydir>/l_cmake_configs/cmake/oneCCL/oneCCLConfigVersion.cmake	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cmake/oneCCL/oneCCLConfigVersion.cmake		external	Dmitriy Sazanov		1	755	redistributable	root	<installroot>/lib/cmake/oneCCL/oneCCLConfigVersion.cmake
+<deliverydir>/l_cmake_configs/cmake/oneCCL/oneCCLConfig.cmake	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cmake/oneCCL/oneCCLConfig.cmake		external	Maria1 Petrova		1	755	redistributable	root	<installroot>/lib/cmake/oneCCL/oneCCLConfig.cmake
+<deliverydir>/l_cmake_configs/cmake/oneCCL/oneCCLConfigVersion.cmake	<installdir><l_ccl_install_path><l_ccl_platform>/lib/cmake/oneCCL/oneCCLConfigVersion.cmake		external	Maria1 Petrova		1	755	redistributable	root	<installroot>/lib/cmake/oneCCL/oneCCLConfigVersion.cmake
 #Intel Confidential

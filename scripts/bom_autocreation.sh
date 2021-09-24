@@ -29,7 +29,7 @@ echo "DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileIns
 for FILE in ${CONTENT}
 do
     FILE=`echo ${FILE} | sed -e "s|${DOC_DIR}/||"`
-    echo "${BOM_COMPONENT}/${FILE}	${INSTALL_PATH}/${FILE}		external	Ksenya Kochanova		1	644	redistributable	root	${SRC_PATH}/${FILE}" >> ${DEST_BOM_FILE}
+    echo "${BOM_COMPONENT}/${FILE}	${INSTALL_PATH}/${FILE}		external	Maria1 Petrova		1	644	redistributable	root	${SRC_PATH}/${FILE}" >> ${DEST_BOM_FILE}
 done
 
 echo "#Intel Confidential" >> ${DEST_BOM_FILE}
