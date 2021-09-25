@@ -119,6 +119,10 @@ parse_arguments() {
         fi
     fi
 
+    echo_log "CCL_ROOT: $CCL_ROOT"
+    ccl_vars_file_1="${CCL_ROOT}/env/setvars.sh"
+    ccl_vars_file_2="${CCL_INSTALL_DIR}/env/setvars.sh"
+
     echo_log "-----------------------------------------------------------"
     echo_log "PARAMETERS"
     echo_log "-----------------------------------------------------------"
@@ -148,15 +152,16 @@ set_run_env() {
     module load oneapi/2021.3.0.20210816
     source /home/aanenkov/intel/oneapi/compiler/latest/env/vars.sh
 
-    ccl_vars_file="${CCL_INSTALL_DIR}/env/setvars.sh"
-    if [[ -f ${ccl_vars_file} ]]
+    # CCL
+    if [[ -f ${ccl_vars_file_1} ]]
     then
-        source ${ccl_vars_file}
+        source ${ccl_vars_file_1}
+    elif [[ -f ${ccl_vars_file_2} ]]
+    then
+        source ${ccl_vars_file_2}
     else
-        check_exit_code 1 "Can not find CCL vars file: ${ccl_vars_file}"
+        check_exit_code 1 "Can not find CCL vars file: ${ccl_vars_file_1} or ${ccl_vars_file_2}"
     fi
-
-    echo_log "CCL_ROOT: $CCL_ROOT"
 
     # MPICH
     module unload mpich/icc-cxi
@@ -210,7 +215,7 @@ check_run_env() {
                 cmd="ZE_AFFINITY_MASK=${first_card_idx}.${tile_idx},${second_card_idx}.${tile_idx} EnableCrossDeviceAccess=1"
                 cmd="${cmd} ${test_path} > ${check_log} 2>&1"
                 echo_log "${cmd}"
-                eval ${cmd}
+                timeout 4s bash -c "eval ${cmd}"
 
                 test_exit_code=$?
                 failed=$(cat ${check_log} | grep "FAILED" | wc -l)
@@ -291,14 +296,18 @@ run_bench() {
     hosts="-hosts c001n0001,c001n0002"
 
     base_env="FI_PROVIDER=cxi"
-    base_env="${base_env} CCL_LOG_LEVEL=info"
+    base_env+=" CCL_LOG_LEVEL=info I_MPI_DEBUG=12"
 
     # https://jira.devtools.intel.com/browse/XDEPS-2195
-    base_env="${base_env} CCL_STAGING_BUFFER=regular"
+    base_env+=" CCL_STAGING_BUFFER=regular"
 
-    base_env="${base_env} I_MPI_PIN_PROCESSOR_LIST=1-6,56-61 CCL_WORKER_AFFINITY=7-12,62-67"
-    base_env="${base_env} SYCL_DEVICE_FILTER=level_zero"
-    base_env="${base_env} EnableDirectSubmission=1"
+    base_env+=" I_MPI_PIN_PROCESSOR_LIST=1-6,56-61 CCL_WORKER_AFFINITY=7-12,62-67"
+    base_env+=" SYCL_DEVICE_FILTER=level_zero"
+    base_env+=" EnableDirectSubmission=1"
+
+    # TODO: get nodes with all ANR functional
+    ppns="2 4"
+    base_env+=" ZE_AFFINITY_MASK=0.0,0.1,1.0,1.1"
 
     for node_count in ${node_counts}
     do
@@ -316,7 +325,7 @@ run_bench() {
                     proc_count=$((node_count*ppn))
 
                     exec_env="${base_env} CCL_ALLREDUCE=${algo} CCL_ZE_COPY_ENGINE=${copy_engine}"
-                    cmd="${exec_env} mpirun -n ${proc_count} -ppn ${ppn} -l ${hosts} ${CCL_ROOT}/examples/benchmark/benchmark ${bench_params}"
+                    cmd="${exec_env} ${CCL_ROOT}/bin/mpirun -n ${proc_count} -ppn ${ppn} -l ${hosts} ${CCL_ROOT}/examples/benchmark/benchmark ${bench_params}"
                     run_cmd "${cmd}"
                 done
             done

@@ -175,14 +175,14 @@ ccl_comm* host_communicator::create_with_color(int color,
                                       atl_comm,
                                       true);
 
-        LOG_INFO("new comm: color ",
-                 color,
-                 ", rank ",
-                 comm->rank(),
-                 ", size ",
-                 comm->size(),
-                 ", comm_id ",
-                 comm->id());
+        LOG_DEBUG("new comm: color ",
+                  color,
+                  ", rank ",
+                  comm->rank(),
+                  ", size ",
+                  comm->size(),
+                  ", comm_id ",
+                  comm->id());
         return comm;
     }
     else {

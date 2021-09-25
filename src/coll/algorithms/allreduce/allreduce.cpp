@@ -630,7 +630,9 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
 
             ccl::add_comm_barrier(sched, even_comm, ipc_event_pool, 1);
             sched->add_barrier();
+        }
 
+        if (!is_single_card) {
             LOG_DEBUG("topo_ring/scale_up/intra: use ze_onesided_bcast");
             int peer_rank = (pair_comm->rank() + 1) % pair_comm->size();
             entry_factory::create<copy_entry>(
