@@ -173,3 +173,23 @@ int ccl_comm::get_global_rank(int rank, bool only_global) const {
         "comm ", this, ", id ", m_id.value(), ", map rank ", rank, " to global ", global_rank);
     return global_rank;
 }
+
+int ccl_comm::get_rank_from_global(int global_rank) const {
+    if (m_local2global_map.empty()) {
+        // global comm and its copies do not have entries in the map
+        return global_rank;
+    }
+
+    int rank = ccl_comm::invalid_rank;
+
+    for (size_t i = 0; i < m_local2global_map.size(); ++i) {
+        if (m_local2global_map[i] == global_rank) {
+            rank = static_cast<int>(i);
+            break;
+        }
+    }
+
+    CCL_THROW_IF_NOT(rank != ccl_comm::invalid_rank, "can't find rank");
+
+    return rank;
+}

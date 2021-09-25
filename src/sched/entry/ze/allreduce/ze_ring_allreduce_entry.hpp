@@ -23,6 +23,7 @@ public:
                                      const ccl_datatype& dtype,
                                      ccl::reduction op,
                                      ccl_comm* comm,
+                                     size_t recv_buf_idx = 1,
                                      size_t tmp_buf_idx = 0);
 
     void init_ze_hook() override;
@@ -68,6 +69,7 @@ private:
     const unsigned long cnt;
     const ccl_datatype dtype;
     const ccl::reduction op;
+    const size_t recv_buf_idx;
     const size_t tmp_buf_idx;
 
     int iter_idx{};

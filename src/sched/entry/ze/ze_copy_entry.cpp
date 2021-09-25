@@ -31,7 +31,7 @@ void ze_copy_entry::init_ze_hook() {
         }
     }
 
-    void* dst = out_buf.get_ptr();
+    void* dst = static_cast<char*>(out_buf.get_ptr()) + attr.out_buf_offset * dtype.size();
     void* src = static_cast<char*>(in_buf.get_ptr()) + attr.in_buf_offset * dtype.size();
     ze_command_list_handle_t list = ze_base_entry::get_copy_list();
 

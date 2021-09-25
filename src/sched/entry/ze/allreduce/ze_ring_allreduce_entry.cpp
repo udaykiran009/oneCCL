@@ -17,6 +17,7 @@ ze_ring_allreduce_entry::ze_ring_allreduce_entry(ccl_sched* sched,
                                                  const ccl_datatype& dtype,
                                                  reduction op,
                                                  ccl_comm* comm,
+                                                 size_t recv_buf_idx,
                                                  size_t tmp_buf_idx)
         : ze_base_entry(
               sched,
@@ -29,6 +30,7 @@ ze_ring_allreduce_entry::ze_ring_allreduce_entry(ccl_sched* sched,
           cnt(cnt),
           dtype(dtype),
           op(op),
+          recv_buf_idx(recv_buf_idx),
           tmp_buf_idx(tmp_buf_idx),
           stage_iter_count(comm->size() - 1),
           total_iter_count(stage_iter_count * 2) {
@@ -166,7 +168,7 @@ void ze_ring_allreduce_entry::init_ze_hook() {
 
     ccl_buffer right_recv_buf;
     int peer_rank = (comm_rank + 1) % comm_size;
-    sched->get_memory().handle_manager.get(peer_rank, 1, right_recv_buf, comm);
+    sched->get_memory().handle_manager.get(peer_rank, recv_buf_idx, right_recv_buf, comm);
     right_recv_buf_ptr = right_recv_buf.get_ptr();
 
     if (inplace) {

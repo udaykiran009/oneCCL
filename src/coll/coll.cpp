@@ -404,6 +404,7 @@ ccl::status ccl_coll_build_reduce(ccl_sched* sched,
                                   int root,
                                   ccl_comm* comm) {
     ccl::status status = ccl::status::success;
+    CCL_THROW_IF_NOT(root >= 0 && root < comm->size(), "wrong root");
 
     ccl_selector_param param;
     param.ctype = ccl_coll_reduce;
@@ -411,6 +412,7 @@ ccl::status ccl_coll_build_reduce(ccl_sched* sched,
     param.dtype = dtype;
     param.comm = comm;
     param.stream = sched->coll_param.stream;
+    param.buf = send_buf.get_ptr();
 #ifdef CCL_ENABLE_SYCL
     param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
 #endif // CCL_ENABLE_SYCL

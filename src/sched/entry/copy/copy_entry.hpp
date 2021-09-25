@@ -55,6 +55,8 @@ protected:
                            out_buf,
                            ", in_buf_offset ",
                            attr.in_buf_offset,
+                           ", out_buf_offset ",
+                           attr.out_buf_offset,
                            "\n");
     }
 

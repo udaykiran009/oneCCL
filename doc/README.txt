@@ -153,6 +153,8 @@ default structure and identifies the file types stored in each sub-directory:
 				|       |-- sycl_broadcast_test.cpp                                                                    
 				|       |-- sycl_broadcast_usm_test.cpp                                                                        
 				|       |-- sycl_reduce_test.cpp                                                                   
+				|       |-- sycl_reduce_usm_test.cpp                                                                   
+				|       |-- sycl_reduce_inplace_usm_test.cpp                                                                   
 				|-- include                                                                                            
 				|   |-- cpu_gpu_dpcpp                                                                                  
 				|   |   |-- ccl_config.h                                                                               

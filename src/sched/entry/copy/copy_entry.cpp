@@ -100,8 +100,14 @@ void copy_entry::start() {
             }
         }
 
-        copier = sycl_copier(
-            attr.direction, in_buf, out_buf, count, dtype, is_sycl_buf, attr.in_buf_offset);
+        copier = sycl_copier(attr.direction,
+                             in_buf,
+                             out_buf,
+                             count,
+                             dtype,
+                             is_sycl_buf,
+                             attr.in_buf_offset,
+                             attr.out_buf_offset);
         copier.set_queue(q);
         ccl_tuple_for_each_indexed<ccl_sycl_buffer_one_dim_types>(copier);
         status = ccl_sched_entry_status_started;

@@ -9,8 +9,7 @@ void add_comm_barrier(ccl_sched* sched,
                       ccl_comm* comm,
                       ze_event_pool_handle_t pool,
                       size_t event_idx) {
-    if (ccl::global_data::env().enable_ze_barrier) {
-        CCL_THROW_IF_NOT(pool, "no event pool");
+    if (pool && global_data::env().enable_ze_barrier) {
         entry_factory::create<ze_barrier_entry>(sched, comm, pool, event_idx);
     }
     else {

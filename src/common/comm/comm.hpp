@@ -141,6 +141,13 @@ public:
      */
     int get_global_rank(int rank, bool only_global = false) const;
 
+    /**
+     * Returns the number of @c rank in the current communicator
+     * @param global_rank a rank which is part of the global communicator
+     * @return number of @c rank in the current communicator
+     */
+    int get_rank_from_global(int global_rank) const;
+
     const ccl_double_tree& dtree() const {
         return m_dtree;
     }
