@@ -165,9 +165,8 @@ set_run_env() {
     export LD_LIBRARY_PATH=/usr/lib64/:${LD_LIBRARY_PATH}
 
     # UMD with ULLS support
-    # module unload graphics-compute-runtime
-    # module use /home/ftartagl/graphics-compute-runtime/modulefilesmodule \
-    #     load graphics-compute-runtime/ci-neo-020957
+    module use -a /opt/hit/hpval/modulefiles
+    module add umd/agama-ci-prerelease-205
 }
 
 check_run_env() {
@@ -212,11 +211,14 @@ check_run_env() {
                 cmd="${cmd} ${test_path} > ${check_log} 2>&1"
                 echo_log "${cmd}"
                 eval ${cmd}
+
+                test_exit_code=$?
                 failed=$(cat ${check_log} | grep "FAILED" | wc -l)
                 passed=$(cat ${check_log} | grep "PASSED" | wc -l)
-                if [ "${failed}" == "1" ]
+
+                if [ "${failed}" == "1" ] || [ "${test_exit_code}" != "0" ]
                 then
-                    echo "config: ${first_card_idx}.${tile_idx}:${second_card_idx}.${tile_idx} failed"
+                    echo_log "config: ${first_card_idx}.${tile_idx}:${second_card_idx}.${tile_idx} failed"
                     total_fails=$((total_fails + 1))
                 fi
             done
@@ -285,14 +287,18 @@ run_bench() {
     ppns="2 6 12"
     algos="ring topo_ring"
     copy_engines="none main link"
-    bench_params="-w 4 -i 16 -c off -t 8388608 -j off"
+    bench_params="-w 4 -i 16 -c off -t 33554432 -j off"
     hosts="-hosts c001n0001,c001n0002"
 
-    base_env="CCL_LOG_LEVEL=info FI_PROVIDER=cxi CCL_STAGING_BUFFER=regular"
-    base_env="${base_env} SYCL_DEVICE_FILTER=level_zero"
+    base_env="FI_PROVIDER=cxi"
+    base_env="${base_env} CCL_LOG_LEVEL=info"
 
-    # https://jira.devtools.intel.com/browse/XDEPS-2701
-    # base_env="${base_env} EnableDirectSubmission=1"
+    # https://jira.devtools.intel.com/browse/XDEPS-2195
+    base_env="${base_env} CCL_STAGING_BUFFER=regular"
+
+    base_env="${base_env} I_MPI_PIN_PROCESSOR_LIST=1-6,56-61 CCL_WORKER_AFFINITY=7-12,62-67"
+    base_env="${base_env} SYCL_DEVICE_FILTER=level_zero"
+    base_env="${base_env} EnableDirectSubmission=1"
 
     for node_count in ${node_counts}
     do
