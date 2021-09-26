@@ -15,9 +15,6 @@ namespace v1 {
 class comm_split_attr;
 }
 
-#ifdef CCL_ENABLE_ZE
-struct gpu_comm_attr;
-#endif
 struct communicator_interface;
 
 using communicator_interface_ptr = std::shared_ptr<communicator_interface>;
@@ -27,10 +24,6 @@ struct communicator_interface_dispatcher {
     using context_t = typename ccl::unified_context_type::ccl_native_t;
 
     virtual ~communicator_interface_dispatcher() = default;
-
-#ifdef CCL_ENABLE_ZE
-    virtual void visit(ccl::gpu_comm_attr& comm_attr) = 0;
-#endif //CCL_ENABLE_ZE
 
     virtual ccl::device_index_type get_device_path() const = 0;
     virtual device_t get_device() const = 0;

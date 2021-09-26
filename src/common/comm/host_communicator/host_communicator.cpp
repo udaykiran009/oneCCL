@@ -107,12 +107,6 @@ int host_communicator::size() const {
     return comm_size;
 }
 
-#ifdef CCL_ENABLE_ZE
-void host_communicator::visit(ccl::gpu_comm_attr& comm_attr) {
-    (void)(comm_attr);
-}
-#endif
-
 ccl::device_index_type host_communicator::get_device_path() const {
     return ccl::device_index_type{ ccl::unused_index_value,
                                    ccl::unused_index_value,

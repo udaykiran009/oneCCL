@@ -58,10 +58,6 @@ public:
         return true;
     }
 
-#ifdef CCL_ENABLE_ZE
-    void visit(ccl::gpu_comm_attr& comm_attr) override;
-#endif
-
     ccl::device_index_type get_device_path() const override;
     ccl::communicator_interface::device_t get_device() const override;
     ccl::communicator_interface::context_t get_context() const override;

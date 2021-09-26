@@ -32,8 +32,6 @@ class reduce_attr;
 class reduce_scatter_attr;
 class sparse_allreduce_attr;
 } // namespace v1
-
-struct gpu_comm_attr;
 } // namespace ccl
 
 #include "types_generator_defines.hpp"
