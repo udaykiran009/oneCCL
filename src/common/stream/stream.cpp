@@ -2,6 +2,7 @@
 #include "common/log/log.hpp"
 #include "common/stream/stream.hpp"
 #include "common/stream/stream_provider_dispatcher_impl.hpp"
+#include "common/utils/enums.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
 namespace ccl {
@@ -15,6 +16,7 @@ std::string to_string(device_family family) {
 } // namespace ccl
 
 std::string to_string(const stream_type& type) {
+    using stream_str_enum = utils::enum_to_str<utils::enum_to_underlying(stream_type::last_value)>;
     return stream_str_enum({ "host", "cpu", "gpu" }).choose(type, "unknown");
 }
 

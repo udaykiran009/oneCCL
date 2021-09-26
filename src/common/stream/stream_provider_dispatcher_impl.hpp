@@ -30,15 +30,8 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
                 native_stream.get_device().template get_info<cl::sycl::info::device::name>() +
                 std::string("supported types: host, cpu, gpu"));
     }
-
-    std::unique_ptr<ccl_stream> ret(new ccl_stream(type, native_stream, version));
-    ret->native_device.second = native_stream.get_device();
-    ret->native_device.first = true;
-    ret->native_context.second = native_stream.get_context();
-    ret->native_context.first = true;
-#else // CCL_ENABLE_SYCL
-    std::unique_ptr<ccl_stream> ret(new ccl_stream(type, native_stream, version));
 #endif // CCL_ENABLE_SYCL
+    std::unique_ptr<ccl_stream> ret(new ccl_stream(type, native_stream, version));
 
     LOG_INFO("stream: ", ret->to_string());
 
@@ -52,9 +45,6 @@ stream_provider_dispatcher::stream_native_t stream_provider_dispatcher::get_nati
 #ifdef CCL_ENABLE_SYCL
 stream_provider_dispatcher::stream_native_t* stream_provider_dispatcher::get_native_stream(
     size_t idx) {
-    if (idx >= native_streams.size()) {
-        throw ccl::exception("unexpected stream idx");
-    }
-    return &(native_streams[idx]);
+    return &(native_streams.at(idx));
 }
 #endif // CCL_ENABLE_SYCL
