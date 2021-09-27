@@ -245,6 +245,31 @@ device_family get_device_family(ze_device_handle_t device) {
     }
 }
 
+// Returns start and end values for the provided event(measured in ns)
+std::pair<uint64_t, uint64_t> calculate_event_time(ze_event_handle_t event,
+                                                   ze_device_handle_t device) {
+    ze_kernel_timestamp_result_t timestamp = {};
+    ZE_CALL(zeEventQueryKernelTimestamp, (event, &timestamp));
+
+    ze_device_properties_t device_prop;
+    ZE_CALL(zeDeviceGetProperties, (device, &device_prop));
+
+    // use global counter as we calculate value across different contexts
+    uint64_t start = timestamp.global.kernelStart;
+    uint64_t end = timestamp.global.kernelEnd;
+
+    // gpu counters might be limited to 32-bit, so we need to handle a potential overlap
+    if (end <= start) {
+        const uint64_t timestamp_max_value = (1LL << device_prop.kernelTimestampValidBits) - 1;
+        end += timestamp_max_value - start;
+    }
+
+    start *= device_prop.timerResolution;
+    end *= device_prop.timerResolution;
+
+    return { start, end };
+}
+
 std::string to_string(ze_result_t result) {
     switch (result) {
         case ZE_RESULT_SUCCESS: return "ZE_RESULT_SUCCESS";

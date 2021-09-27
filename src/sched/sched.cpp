@@ -5,9 +5,12 @@
 #include "sched/queue/queue.hpp"
 #include "sched/sched.hpp"
 
-ccl_sched::ccl_sched(const ccl_sched_create_param& param, ccl_request* master_request)
-        : ccl_sched_base(param) {
-    req = master_request;
+ccl_sched::ccl_sched(const ccl_sched_create_param& param,
+                     ccl_request* master_request,
+                     ccl_master_sched* master_sched)
+        : ccl_sched_base(param),
+          req(master_request),
+          master_sched(master_sched) {
     strict_order = ccl::global_data::env().enable_strict_order;
 }
 
@@ -109,6 +112,13 @@ void ccl_sched::complete() {
     if (!coll_attr.to_cache) {
         /* don't wait sched dtor to clear memory */
         clear_memory();
+    }
+
+    // we keep time measurements in our master sched, if this sched belongs to it
+    // and all the timestamps are ready, print the data
+    if (ccl::global_data::env().enable_kernel_profile && master_sched) {
+        if (master_sched->print_kernel_timer())
+            master_sched->reset_kernel_timer();
     }
 
     req->complete();

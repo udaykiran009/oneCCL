@@ -39,7 +39,16 @@ public:
     using ccl_master_sched_ptr = ccl_master_sched*;
     static ccl_master_sched_ptr create(const ccl_coll_param& param, const ccl_coll_attr& attr);
 
+    bool print_kernel_timer() const;
+    void reset_kernel_timer();
+
+    ccl::kernel_timer& get_kernel_timer() {
+        return timer;
+    }
+
 private:
     void reset_state();
     void prepare_partial_scheds();
+
+    ccl::kernel_timer timer;
 };

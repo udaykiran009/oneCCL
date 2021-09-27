@@ -85,6 +85,9 @@ void ze_base_entry::init() {
     CCL_THROW_IF_NOT(events.size(), "no events");
     event_pool_desc = default_event_pool_desc;
     event_pool_desc.count = events.size();
+    if (ccl::global_data::env().enable_kernel_profile) {
+        event_pool_desc.flags |= ZE_EVENT_POOL_FLAG_KERNEL_TIMESTAMP;
+    }
     global_data::get().ze_cache->get(worker_idx, context, event_pool_desc, &event_pool);
     LOG_DEBUG("get event pool: { max event count: ", event_pool_desc.count, " }");
 
@@ -201,6 +204,17 @@ void ze_base_entry::update() {
         LOG_DEBUG("command list complete");
         status = ccl_sched_entry_status_complete;
 
+        if (ccl::global_data::env().enable_kernel_profile) {
+            auto kernel_time = calculate_event_time(entry_event, device);
+
+            // if we run this code, this sched must be a sub-sched of some master sched
+            // so the field must be non null
+            CCL_THROW_IF_NOT(sched->master_sched, "field must be set");
+            sched->master_sched->get_kernel_timer().set_name(name());
+            sched->master_sched->get_kernel_timer().set_kernel_time(kernel_time);
+        }
+
+        // Finalize must go after all operation with the event because it's destroyed there.
         if (!sched->coll_attr.to_cache) {
             finalize();
         }

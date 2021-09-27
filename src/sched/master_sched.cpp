@@ -195,6 +195,7 @@ void ccl_master_sched::add_partial_sched(const ccl_coll_param& coll_param) {
     partial_scheds.emplace_back(std::make_shared<ccl_sched>(
         ccl_sched_create_param(
             sched_type, coll_param.comm->get_sched_id(sched_type != ccl_sched_regular), coll_param),
+        this,
         this));
 }
 
@@ -302,4 +303,18 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
     }
 
     return sched;
+}
+
+bool ccl_master_sched::print_kernel_timer() const {
+    if (ccl::global_data::env().enable_kernel_profile) {
+        return timer.print();
+    }
+
+    // if we don't have env variable set, just return false to say that we haven't printed
+    // anything so no more work would be done
+    return false;
+}
+
+void ccl_master_sched::reset_kernel_timer() {
+    timer.reset();
 }
