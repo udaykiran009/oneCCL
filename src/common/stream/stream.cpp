@@ -5,6 +5,10 @@
 #include "common/utils/enums.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
+#ifdef CCL_ENABLE_SYCL
+#include <CL/sycl/backend/level_zero.hpp>
+#endif // CCL_ENABLE_SYCL
+
 namespace ccl {
 std::string to_string(device_family family) {
     switch (family) {
@@ -50,8 +54,8 @@ ccl_stream::ccl_stream(stream_type type,
     }
 
     native_streams.resize(ccl::global_data::env().worker_count);
-    for (size_t idx = 0; idx < native_streams.size(); idx++) {
-        native_streams[idx] = stream_native_t(stream.get_context(), stream.get_device(), props);
+    for (auto& native_stream : native_streams) {
+        native_stream = stream_native_t(stream.get_context(), stream.get_device(), props);
     }
 
     backend = stream.get_device().get_backend();
@@ -59,9 +63,9 @@ ccl_stream::ccl_stream(stream_type type,
 
 #ifdef CCL_ENABLE_ZE
     if (backend == sycl::backend::level_zero) {
-        auto sycl_device = native_stream.get_device();
-        auto ze_device = sycl_device.template get_native<sycl::backend::level_zero>();
-        device_family = ccl::ze::get_device_family(ze_device);
+        device = stream.get_device().template get_native<sycl::backend::level_zero>();
+        context = stream.get_context().template get_native<sycl::backend::level_zero>();
+        device_family = ccl::ze::get_device_family(device);
     }
 #endif // CCL_ENABLE_ZE
 }
@@ -97,3 +101,39 @@ std::string ccl_stream::to_string() const {
 #endif // CCL_ENABLE_SYCL
     return ss.str();
 }
+
+stream_type ccl_stream::get_type() const {
+    return type;
+}
+
+ccl::device_family ccl_stream::get_device_family() const {
+    return device_family;
+}
+
+bool ccl_stream::is_sycl_device_stream() const {
+    return (type == stream_type::cpu || type == stream_type::gpu);
+}
+
+bool ccl_stream::is_gpu() const {
+    return type == stream_type::gpu;
+}
+
+#ifdef CCL_ENABLE_SYCL
+cl::sycl::backend ccl_stream::get_backend() const {
+    return backend;
+}
+#ifdef CCL_ENABLE_ZE
+
+ze_device_handle_t ccl_stream::get_ze_device() const {
+    CCL_THROW_IF_NOT(backend == sycl::backend::level_zero);
+    CCL_THROW_IF_NOT(device, "no device");
+    return device;
+}
+
+ze_context_handle_t ccl_stream::get_ze_context() const {
+    CCL_THROW_IF_NOT(backend == sycl::backend::level_zero);
+    CCL_THROW_IF_NOT(context, "no context");
+    return context;
+}
+#endif // CCL_ENABLE_ZE
+#endif // CCL_ENBALE_SYCL

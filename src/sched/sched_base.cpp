@@ -15,7 +15,7 @@ ccl_sched_base::ccl_sched_base(const ccl_sched_create_param& param)
           coll_param(param.coll_param) {
     memory.buffer_manager.init(sched_id);
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-    if (coll_param.stream) {
+    if (coll_param.stream && coll_param.stream->get_backend() == cl::sycl::backend::level_zero) {
         ccl_comm* node_comm =
             coll_param.comm->get_host_comm()->get_node_comm().get()->get_ccl_comm().get();
         memory.handle_manager.init(node_comm, coll_param.stream);
@@ -156,8 +156,10 @@ void ccl_sched_base::dealloc_buffer(const ccl::dealloc_param& user_param) {
 void ccl_sched_base::clear_memory() {
     memory.buffer_manager.clear();
 #ifdef CCL_ENABLE_ZE
-    memory.handle_manager.clear();
-    memory.ipc_event_pool_manager.clear();
+    if (coll_param.stream && coll_param.stream->get_backend() == cl::sycl::backend::level_zero) {
+        memory.handle_manager.clear();
+        memory.ipc_event_pool_manager.clear();
+    }
 #endif // CCL_ENABLE_ZE
     free_memory_regions();
 }

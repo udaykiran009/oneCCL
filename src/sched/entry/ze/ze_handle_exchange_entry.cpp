@@ -3,7 +3,6 @@
 #include "sched/ze_handle_manager.hpp"
 
 #include <arpa/inet.h>
-#include <CL/sycl/backend/level_zero.hpp>
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>

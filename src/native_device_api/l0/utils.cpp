@@ -5,12 +5,6 @@
 #include "oneapi/ccl/native_device_api/l0/device.hpp"
 #include "oneapi/ccl/native_device_api/l0/context.hpp"
 
-#if defined(CCL_ENABLE_SYCL)
-//#ifdef CCL_ENABLE_SYCL
-#include <CL/sycl/backend/level_zero.hpp>
-//static cl::sycl::vector_class<cl::sycl::device> gpu_sycl_devices;
-#endif
-
 namespace native {
 namespace detail {
 

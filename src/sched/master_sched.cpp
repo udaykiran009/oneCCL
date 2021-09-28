@@ -43,13 +43,9 @@ ccl_master_sched::ccl_master_sched(const ccl_sched_create_param& param)
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     if (ccl::utils::should_use_sycl_output_event(coll_param.stream)) {
-        auto l0_context = coll_param.stream->get_native_stream()
-                              .get_context()
-                              .template get_native<cl::sycl::backend::level_zero>();
-
+        auto ze_context = coll_param.stream->get_ze_context();
         auto pool_desc = get_event_pool_desc();
-
-        ccl::global_data::get().ze_cache->get(0, l0_context, pool_desc, &get_memory().sync_pool);
+        ccl::global_data::get().ze_cache->get(0, ze_context, pool_desc, &get_memory().sync_pool);
 
         ze_event_desc_t event_desc = ccl::ze::default_event_desc;
         event_desc.signal = ZE_EVENT_SCOPE_FLAG_HOST;
@@ -74,10 +70,6 @@ ccl_master_sched::~ccl_master_sched() {
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     if (ccl::utils::should_use_sycl_output_event(coll_param.stream)) {
-        auto l0_context = coll_param.stream->get_native_stream()
-                              .get_context()
-                              .template get_native<cl::sycl::backend::level_zero>();
-
         // Sycl event might call wait on destruction meaning that it should be valid at that time
         // The problem is that the sync event is stored in request, which descrutor is called
         // after ccl_master_sched, which means its underlying l0 event will be already destroyed
@@ -88,9 +80,9 @@ ccl_master_sched::~ccl_master_sched() {
         LOG_DEBUG("destroying sync event: ", get_memory().sync_event);
         ZE_CALL(zeEventDestroy, (get_memory().sync_event));
 
+        auto ze_context = coll_param.stream->get_ze_context();
         auto pool_desc = get_event_pool_desc();
-
-        ccl::global_data::get().ze_cache->push(0, l0_context, pool_desc, get_memory().sync_pool);
+        ccl::global_data::get().ze_cache->push(0, ze_context, pool_desc, get_memory().sync_pool);
     }
     else {
         LOG_DEBUG("skip sync event destruction");

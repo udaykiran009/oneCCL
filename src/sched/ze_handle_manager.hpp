@@ -55,9 +55,6 @@ public:
 
     void get_address_range(const void* ptr, void** base_ptr, size_t* size);
 
-    ze_context_handle_t get_context();
-    ze_device_handle_t get_device();
-
 private:
     ze_context_handle_t context{};
     ze_device_handle_t device{};

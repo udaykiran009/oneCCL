@@ -3,8 +3,6 @@
 #include "sched/entry/ze/ze_call.hpp"
 #include "sched/ze_handle_manager.hpp"
 
-#include <CL/sycl/backend/level_zero.hpp>
-
 namespace ccl {
 
 namespace ze {
@@ -49,14 +47,8 @@ void ipc_handle_manager::init(const ccl_comm* init_comm, const ccl_stream* init_
         rank_map.insert({ comm->get_global_rank(idx, true), idx });
     }
 
-    auto sycl_device = init_stream->get_native_stream().get_device();
-    auto sycl_context = init_stream->get_native_stream().get_context();
-
-    device = sycl_device.template get_native<sycl::backend::level_zero>();
-    context = sycl_context.template get_native<sycl::backend::level_zero>();
-
-    CCL_THROW_IF_NOT(device, "device is not valid");
-    CCL_THROW_IF_NOT(context, "context is not valid");
+    device = init_stream->get_ze_device();
+    context = init_stream->get_ze_context();
 
     LOG_DEBUG("init completed");
 }
@@ -265,14 +257,6 @@ void ipc_handle_manager::check_rank(int rank, ccl_comm* check_comm) {
         check_comm->size());
     CCL_THROW_IF_NOT(
         rank != check_comm->rank(), "do not expect to open handle for own rank: ", rank);
-}
-
-ze_context_handle_t ipc_handle_manager::get_context() {
-    return context;
-}
-
-ze_device_handle_t ipc_handle_manager::get_device() {
-    return device;
 }
 
 } // namespace ze

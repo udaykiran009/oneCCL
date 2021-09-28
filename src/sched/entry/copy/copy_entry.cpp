@@ -3,7 +3,7 @@
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
-#include <CL/sycl/backend/level_zero.hpp>
+#include <CL/sycl/backend_types.hpp>
 #endif // CCL_ENABLE_SYCL
 
 copy_entry::copy_entry(ccl_sched* sched,

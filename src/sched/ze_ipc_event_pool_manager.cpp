@@ -4,8 +4,6 @@
 #include "common/log/log.hpp"
 #include "sched/entry/ze/ze_cache.hpp"
 
-#include <CL/sycl/backend/level_zero.hpp>
-
 using namespace ccl;
 using namespace ccl::ze;
 
@@ -13,9 +11,7 @@ void ipc_event_pool_manager::init(const ccl_stream* init_stream) {
     LOG_DEBUG("init");
     CCL_THROW_IF_NOT(init_stream, "no stream");
 
-    auto sycl_context = init_stream->get_native_stream().get_context();
-    context = sycl_context.template get_native<sycl::backend::level_zero>();
-
+    context = init_stream->get_ze_context();
     CCL_THROW_IF_NOT(context, "context is not valid");
     LOG_DEBUG("init completed");
 }

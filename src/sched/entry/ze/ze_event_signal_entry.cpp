@@ -2,6 +2,8 @@
 #include "sched/queue/queue.hpp"
 #include "common/utils/sycl_utils.hpp"
 
+#include <CL/sycl/backend/level_zero.hpp>
+
 ze_event_signal_entry::ze_event_signal_entry(ccl_sched* sched, ccl_master_sched* master_sched)
         : sched_entry(sched),
           master_sched(master_sched) {
@@ -22,9 +24,7 @@ void ze_event_signal_entry::update() {
         LOG_DEBUG("native and sync events are completed");
         status = ccl_sched_entry_status_complete;
         if (ccl::global_data::env().enable_kernel_profile) {
-            auto native_dev = sched->coll_param.stream->get_native_stream(sched->queue->get_idx())
-                                  ->get_device()
-                                  .get_native<sycl::backend::level_zero>();
+            auto native_dev = sched->coll_param.stream->get_ze_device();
             auto native_event_time = ccl::ze::calculate_event_time(
                 master_sched->get_native_event().get_native<sycl::backend::level_zero>(),
                 native_dev);

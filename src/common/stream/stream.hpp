@@ -8,6 +8,10 @@
 #include "oneapi/ccl/types.hpp"
 #include "oneapi/ccl/type_traits.hpp"
 
+#ifdef CCL_ENABLE_SYCL
+#include <CL/sycl/backend_types.hpp>
+#endif // CCL_ENABLE_SYCL
+
 namespace ccl {
 
 enum class device_family { unknown, family1, family2 };
@@ -32,26 +36,17 @@ public:
 
     std::string to_string() const;
 
-    stream_type get_type() const {
-        return type;
-    }
-
-    ccl::device_family get_device_family() const {
-        return device_family;
-    }
-
-    bool is_sycl_device_stream() const {
-        return (type == stream_type::cpu || type == stream_type::gpu);
-    }
-
-    bool is_gpu() const {
-        return type == stream_type::gpu;
-    }
+    stream_type get_type() const;
+    ccl::device_family get_device_family() const;
+    bool is_sycl_device_stream() const;
+    bool is_gpu() const;
 
 #ifdef CCL_ENABLE_SYCL
-    cl::sycl::backend get_backend() const noexcept {
-        return backend;
-    }
+    cl::sycl::backend get_backend() const;
+#ifdef CCL_ENABLE_ZE
+    ze_device_handle_t get_ze_device() const;
+    ze_context_handle_t get_ze_context() const;
+#endif // CCL_ENABLE_ZE
 #endif // CCL_ENBALE_SYCL
 
     static std::unique_ptr<ccl_stream> create(stream_native_t& native_stream,
@@ -84,5 +79,10 @@ private:
 
 #ifdef CCL_ENABLE_SYCL
     cl::sycl::backend backend;
+
+#ifdef CCL_ENABLE_ZE
+    ze_device_handle_t device{};
+    ze_context_handle_t context{};
+#endif // CCL_ENABLE_ZE
 #endif // CCL_ENBALE_SYCL
 };

@@ -64,7 +64,7 @@ public:
             (ccl::global_data::env().atl_send_proxy != ccl_atl_send_proxy_none) &&
             (proxy_mode == proxy_copy_mode::unknown)) {
             sycl::usm::alloc ptr_type = sycl::usm::alloc::unknown;
-            if (sched->coll_param.stream->get_type() == stream_type::gpu) {
+            if (sched->coll_param.stream->is_gpu()) {
                 auto sycl_queue = sched->coll_param.stream->get_native_stream();
                 ptr_type = sycl::get_pointer_type(buf.get_ptr(), sycl_queue.get_context());
             }

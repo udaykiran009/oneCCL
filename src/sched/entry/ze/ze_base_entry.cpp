@@ -6,8 +6,6 @@
 #include "sched/entry/ze/ze_call.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
 
-#include <CL/sycl/backend/level_zero.hpp>
-
 using namespace ccl;
 using namespace ccl::ze;
 
@@ -42,19 +40,9 @@ void ze_base_entry::init() {
 
     worker_idx = sched->queue->get_idx();
 
-    CCL_THROW_IF_NOT(sched->coll_param.stream, "null stream");
-
-    LOG_DEBUG("getting a native stream");
-    auto native_stream = sched->coll_param.stream->get_native_stream(worker_idx);
-    if (native_stream->get_backend() != sycl::backend::level_zero) {
-        CCL_THROW("unsupported SYCL backend");
-    }
-
-    auto sycl_device = native_stream->get_device();
-    device = sycl_device.template get_native<sycl::backend::level_zero>();
-
-    auto sycl_context = native_stream->get_context();
-    context = sycl_context.template get_native<sycl::backend::level_zero>();
+    CCL_THROW_IF_NOT(sched->coll_param.stream, "no stream");
+    device = sched->coll_param.stream->get_ze_device();
+    context = sched->coll_param.stream->get_ze_context();
 
     /* get queue properties */
     ze_queue_properties_t queue_props;

@@ -134,16 +134,8 @@ void* buffer_manager::alloc(const alloc_param& param) {
                          to_string(param.buf_place));
         CCL_THROW_IF_NOT(param.stream, "null stream");
 
-        auto sycl_stream = param.stream->get_native_stream();
-        CCL_THROW_IF_NOT(sycl_stream.get_backend() == sycl::backend::level_zero,
-                         "unsupported SYCL backend");
-
-        auto sycl_context = sycl_stream.get_context();
-        auto sycl_device = sycl_stream.get_device();
-
-        ze_context_handle_t context = sycl_context.template get_native<sycl::backend::level_zero>();
-        ze_device_handle_t device = sycl_device.template get_native<sycl::backend::level_zero>();
-
+        auto context = param.stream->get_ze_context();
+        auto device = param.stream->get_ze_device();
         global_data::get().ze_cache->get(
             instance_idx, context, device, ze::default_device_mem_alloc_desc, bytes, 0, &ptr);
         if (param.is_managed) {
@@ -181,16 +173,8 @@ void buffer_manager::dealloc(const dealloc_param& param) {
 #ifdef CCL_ENABLE_ZE
     else if (param.buf_type == buffer_type::ze) {
         CCL_THROW_IF_NOT(param.stream, "null stream");
-        auto sycl_stream = param.stream->get_native_stream();
-        CCL_THROW_IF_NOT(sycl_stream.get_backend() == sycl::backend::level_zero,
-                         "unsupported SYCL backend");
-
-        auto sycl_context = sycl_stream.get_context();
-        auto sycl_device = sycl_stream.get_device();
-
-        ze_context_handle_t context = sycl_context.template get_native<sycl::backend::level_zero>();
-        ze_device_handle_t device = sycl_device.template get_native<sycl::backend::level_zero>();
-
+        auto context = param.stream->get_ze_context();
+        auto device = param.stream->get_ze_device();
         global_data::get().ze_cache->push(
             instance_idx, context, device, ze::default_device_mem_alloc_desc, bytes, 0, ptr);
     }

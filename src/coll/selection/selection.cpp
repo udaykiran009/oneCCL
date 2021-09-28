@@ -3,7 +3,7 @@
 #include "common/global/global.hpp"
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-#include <CL/sycl/backend/level_zero.hpp>
+#include <CL/sycl/backend_types.hpp>
 #include "sched/entry/ze/ze_primitives.hpp"
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
@@ -119,7 +119,7 @@ bool is_l0_backend(const ccl_selector_param& param) {
 
 bool is_gpu_stream(const ccl_selector_param& param) {
     if (param.stream) {
-        return param.stream->get_type() == stream_type::gpu;
+        return param.stream->is_gpu();
     }
     return false;
 }

@@ -5,7 +5,6 @@
 #endif // CCL_ENABLE_ZE
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
-#include <CL/sycl/backend/level_zero.hpp>
 #endif // CCL_ENABLE_SYCL
 #include <list>
 
