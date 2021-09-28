@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
     vector<ccl::event> deps;
     deps.push_back(ccl::create_event(e));
 
-    /* invoke allagtherv */
+    /* invoke allgatherv */
     auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
     ccl::allgatherv(recv_buf, count, recv_buf, recv_counts, comm, stream, attr, deps).wait();
 

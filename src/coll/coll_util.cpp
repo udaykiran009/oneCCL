@@ -22,6 +22,26 @@ void add_comm_barrier(ccl_sched* sched,
 
         coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
     }
+    sched->add_barrier();
+}
+
+void add_handle_exchange(ccl_sched* sched,
+                         ccl_comm* comm,
+                         const std::vector<ze_handle_exchange_entry::mem_desc_t>& in_buffers,
+                         int skip_rank) {
+    if (sched->coll_attr.to_cache) {
+        sched->set_entry_exec_mode(ccl_sched_entry_exec_once);
+        entry_factory::create<ze_handle_exchange_entry>(sched, comm, in_buffers, skip_rank);
+        sched->add_barrier();
+        sched->set_entry_exec_mode(ccl_sched_entry_exec_regular);
+
+        // TODO: no need barrier for the first iteration where ze_handle_exchange_entry exists
+        add_comm_barrier(sched, comm);
+    }
+    else {
+        entry_factory::create<ze_handle_exchange_entry>(sched, comm, in_buffers, skip_rank);
+        sched->add_barrier();
+    }
 }
 
 } // namespace ccl

@@ -16,8 +16,7 @@ ccl_sched_base::ccl_sched_base(const ccl_sched_create_param& param)
     memory.buffer_manager.init(sched_id);
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     if (coll_param.stream && coll_param.stream->get_backend() == cl::sycl::backend::level_zero) {
-        ccl_comm* node_comm =
-            coll_param.comm->get_host_comm()->get_node_comm().get()->get_ccl_comm().get();
+        auto node_comm = coll_param.comm->get_host_comm()->get_node_comm()->get_ccl_comm().get();
         memory.handle_manager.init(node_comm, coll_param.stream);
         memory.ipc_event_pool_manager.init(coll_param.stream);
     }

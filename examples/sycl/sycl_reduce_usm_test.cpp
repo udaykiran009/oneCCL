@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
     vector<ccl::event> deps;
     deps.push_back(ccl::create_event(e));
 
-    /* invoke allreduce */
+    /* invoke reduce */
     auto attr = ccl::create_operation_attr<ccl::reduce_attr>();
     ccl::reduce(send_buf, recv_buf, count, ccl::reduction::sum, root_rank, comm, stream, attr, deps)
         .wait();
