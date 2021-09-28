@@ -582,8 +582,16 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         if (is_multi_card) {
             LOG_DEBUG("topo_ring/scale_up/inter: use ze_ring_allreduce");
             // TODO: replace by reduce_scatter
-            entry_factory::create<ze_ring_allreduce_entry>(
-                sched, recv_buf, recv_buf, tmp_buf, count, dtype, op, even_comm, tmp_buf_idx);
+            entry_factory::create<ze_ring_allreduce_entry>(sched,
+                                                           recv_buf,
+                                                           recv_buf,
+                                                           tmp_buf,
+                                                           count,
+                                                           dtype,
+                                                           op,
+                                                           even_comm,
+                                                           recv_buf_idx,
+                                                           tmp_buf_idx);
             sched->add_barrier();
         }
 
