@@ -135,7 +135,8 @@ parse_arguments() {
 
 set_build_env() {
     module unload oneapi
-    source /home/aanenkov/intel/oneapi/compiler/latest/env/vars.sh
+    module use /home/ftartagl/modulefiles
+    module load oneapi-testing/2021.3.1.001.rc1.20210921
 }
 
 check_build_env() {
@@ -147,10 +148,7 @@ check_build_env() {
 }
 
 set_run_env() {
-    module use -a /opt/hit/hpval/modulefiles
-    module avail oneapi
-    module load oneapi/2021.3.0.20210816
-    source /home/aanenkov/intel/oneapi/compiler/latest/env/vars.sh
+    set_build_env
 
     # CCL
     if [[ -f ${ccl_vars_file_1} ]]
@@ -171,7 +169,9 @@ set_run_env() {
 
     # UMD with ULLS support
     module use -a /opt/hit/hpval/modulefiles
-    module add umd/agama-ci-prerelease-205
+    module add umd/agama-ci-prerelease-207
+
+    # TODO: frequency script
 }
 
 check_run_env() {
@@ -214,7 +214,7 @@ check_run_env() {
             do
                 cmd="ZE_AFFINITY_MASK=${first_card_idx}.${tile_idx},${second_card_idx}.${tile_idx} EnableCrossDeviceAccess=1"
                 cmd="${cmd} ${test_path} > ${check_log} 2>&1"
-                echo_log "${cmd}"
+                echo "${cmd}"
                 timeout 4s bash -c "eval ${cmd}"
 
                 test_exit_code=$?
@@ -223,7 +223,7 @@ check_run_env() {
 
                 if [ "${failed}" == "1" ] || [ "${test_exit_code}" != "0" ]
                 then
-                    echo_log "config: ${first_card_idx}.${tile_idx}:${second_card_idx}.${tile_idx} failed"
+                    echo "config: ${first_card_idx}.${tile_idx}:${second_card_idx}.${tile_idx} failed"
                     total_fails=$((total_fails + 1))
                 fi
             done
@@ -292,7 +292,7 @@ run_bench() {
     ppns="2 6 12"
     algos="ring topo_ring"
     copy_engines="none main link"
-    bench_params="-w 4 -i 16 -c off -t 33554432 -j off"
+    bench_params="-w 4 -i 16 -c last -t 33554432 -j off"
     hosts="-hosts c001n0001,c001n0002"
 
     base_env="FI_PROVIDER=cxi"
