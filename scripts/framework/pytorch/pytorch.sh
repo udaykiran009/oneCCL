@@ -54,17 +54,18 @@ set_run_env() {
     # OFI
     #export FI_LOG_LEVEL=INFO
     export FI_PROVIDER=verbs
+    export FI_VERBS_DEVICE_NAME=hfi
     #export FI_VERBS_IFACE=ib0
     if [[ ${CLUSTER} = "fabric" ]]
     then
         export FI_PROVIDER=verbs
         #export CCL_KVS_IFACE=ib0
     else
-        export FI_PROVIDER=psm3
+        #export FI_PROVIDER=psm3
         export PSM3_MULTI_EP=1 # to handle case when MPI initializes PSM3 before CCL
         export PSM3_RDMA=2 # enables user space RC QP RDMA
         export PSM3_MR_CACHE_MODE=2 # near term workaround until a MR cache solution completed
-        export FI_PROVIDER_PATH=${PSM3_INSTALL_DIR}/lib/libfabric
+        #export FI_PROVIDER_PATH=${PSM3_INSTALL_DIR}/lib/libfabric
     fi
 }
 
@@ -87,6 +88,8 @@ CONDA_LINK="https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux-x86_
 
 TORCH_UCC_LINK="https://github.com/facebookresearch/torch_ucc.git"
 TORCH_UCC_BRANCH="main"
+# TODO: remove after UCC rebase
+TORCH_UCC_COMMIT="18fc9a1ca2f6ec4d5924922b89c09e68a86d904b"
 
 PARAM_LINK="https://github.com/facebookresearch/param.git"
 PARAM_BRANCH="master"
@@ -741,6 +744,8 @@ download_torch_ucc() {
         rm -rf ${TORCH_UCC_SRC_DIR}
     fi
     git clone --branch ${TORCH_UCC_BRANCH} --single-branch ${TORCH_UCC_LINK} ${TORCH_UCC_SRC_DIR}
+    cd ${TORCH_UCC_SRC_DIR}
+    git checkout ${TORCH_UCC_COMMIT}
     check_exit_code $? "Download torch-ucc failed"
 }
 
