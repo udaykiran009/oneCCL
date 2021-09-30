@@ -236,5 +236,9 @@ echo -e "\ncompleted\n"
 # git clone https://github.com/NVIDIA/nccl-tests.git
 # cd nccl-tests
 # make  NCCL_HOME=/panfs/users/ksenyako/nccl_experiments/nccl/build/ CUDA_HOME=/opt/crtdc/cuda/11.3 
+# in case you want enable MPI in NCCL tests run
+# make NCCL_HOME=<nccl_path> CUDA_HOME=<cuda_path> MPI=1 MPI_HOME=<mpi_path>
 # export LD_LIBRARY_PATH=/panfs/users/ksenyako/nccl_experiments/nccl/build/lib/:$LD_LIBRARY_PATH                                        ldd ./build/all_reduce_perf
 # ./build/all_reduce_perf -b 8 -e 256M -f 2 -g 1
+# to run with mpirun on Endeavour cluster nodes with Nvidia cards you might need a workaround to run processes like 1 per 1 GPU
+# mpirun -bootstrap ssh -n 2 -ppn 1 -hosts-group `hostname` ./build/all_reduce_perf -b 8 -e 256M -f 2 -g 1
