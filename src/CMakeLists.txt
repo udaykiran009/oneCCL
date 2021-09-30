@@ -42,8 +42,8 @@ if (CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
         sched/entry/ze/ze_event_wait_entry.cpp
         sched/entry/ze/ze_onesided_reduce_entry.cpp
         sched/entry/ze/ze_primitives.cpp
+        sched/entry/ze/ze_reduce_local_entry.cpp
 
-        sched/entry/reduce_local_entry.cpp
         sched/ze_handle_manager.cpp
         sched/ze_ipc_event_pool_manager.cpp
 
@@ -164,6 +164,7 @@ set(CCL_SRC
     sched/entry/copy/copy_helper.cpp
     sched/entry/entry.cpp
     sched/entry/factory/chunked_entry_factory.cpp
+    sched/entry/reduce_local_entry.cpp
     sched/queue/flow_control.cpp
     sched/queue/queue.cpp
     sched/queue/strict_queue.cpp

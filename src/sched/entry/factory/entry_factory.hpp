@@ -42,6 +42,7 @@
 #include "sched/entry/ze/ze_event_signal_entry.hpp"
 #include "sched/entry/ze/ze_event_wait_entry.hpp"
 #include "sched/entry/ze/ze_onesided_reduce_entry.hpp"
+#include "sched/entry/ze/ze_reduce_local_entry.hpp"
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
 #include "sched/sched.hpp"
