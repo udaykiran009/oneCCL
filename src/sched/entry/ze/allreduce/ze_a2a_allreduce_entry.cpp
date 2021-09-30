@@ -16,17 +16,20 @@ ze_a2a_allreduce_entry::ze_a2a_allreduce_entry(ccl_sched* sched,
                                                size_t cnt,
                                                const ccl_datatype& dtype,
                                                reduction op,
-                                               ccl_comm* comm)
+                                               ccl_comm* comm,
+                                               size_t send_buf_idx,
+                                               size_t recv_buf_idx)
         : ze_base_entry(sched,
                         (init_mode::compute | init_mode::copy),
                         comm,
                         comm->size() * event_group_count),
           send_buf(send_buf),
           recv_buf(recv_buf),
+          cnt(cnt),
           dtype(dtype),
           op(op),
-          buf_count(cnt),
-          buf_bytes(dtype.size() * buf_count),
+          send_buf_idx(send_buf_idx),
+          recv_buf_idx(recv_buf_idx),
           peer_count(comm->size() - 1) {}
 
 void ze_a2a_allreduce_entry::kernel_init(size_t main_block_count,
@@ -65,20 +68,20 @@ void ze_a2a_allreduce_entry::init_ze_hook() {
 
     for (int i = 0; i < peer_count; ++i) {
         int peer_rank = (comm_rank + i + 1) % comm->size();
-        sched->get_memory().handle_manager.get(peer_rank, 0, peer_send_bufs[i], comm);
+        sched->get_memory().handle_manager.get(peer_rank, send_buf_idx, peer_send_bufs[i], comm);
         CCL_THROW_IF_NOT(peer_send_bufs[i].get_ptr(), "null IPC buffer is received");
-        sched->get_memory().handle_manager.get(peer_rank, 1, peer_recv_bufs[i], comm);
+        sched->get_memory().handle_manager.get(peer_rank, recv_buf_idx, peer_recv_bufs[i], comm);
         CCL_THROW_IF_NOT(peer_recv_bufs[i].get_ptr(), "null IPC buffer is received");
     }
 
-    size_t main_block_count = buf_count / comm_size;
-    if (main_block_count == 0 && static_cast<size_t>(comm_rank) < buf_count) {
+    size_t main_block_count = cnt / comm_size;
+    if (main_block_count == 0 && static_cast<size_t>(comm_rank) < cnt) {
         main_block_count = 1;
     }
 
     size_t block_count = main_block_count;
     if (comm_rank == comm_size - 1) {
-        block_count += buf_count - main_block_count * comm_size;
+        block_count += cnt - main_block_count * comm_size;
     }
 
     CCL_THROW_IF_NOT(main_block_count > 0, "wrong segment count");
@@ -96,8 +99,8 @@ void ze_a2a_allreduce_entry::init_ze_hook() {
               block_count,
               ", tmp buf size: ",
               tmp_buf_bytes,
-              ", buf_count: ",
-              buf_count);
+              ", cnt: ",
+              cnt);
 
     kernel_init(main_block_count, block_count, tmp_buf);
 
@@ -152,6 +155,21 @@ void ze_a2a_allreduce_entry::init_ze_hook() {
                                        false,
                                        post_copy_events,
                                        kernel_events.back());
+}
+
+void ze_a2a_allreduce_entry::start() {
+    if ((comm_size == 1) && (send_buf == recv_buf)) {
+        status = ccl_sched_entry_status_complete;
+        return;
+    }
+
+    size_t main_block_count = cnt / comm_size;
+    if ((main_block_count == 0 && static_cast<size_t>(comm_rank) >= cnt)) {
+        status = ccl_sched_entry_status_complete;
+        return;
+    }
+
+    ze_base_entry::start();
 }
 
 void ze_a2a_allreduce_entry::update() {

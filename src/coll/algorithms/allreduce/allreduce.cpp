@@ -503,9 +503,11 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         { recv_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 1
     };
 
+    size_t ipc_event_count = 0;
+    size_t max_ipc_event_count = 4;
     ze_event_pool_handle_t ipc_event_pool{};
     if (ccl::global_data::env().enable_ze_barrier) {
-        ipc_event_pool = sched->get_memory().ipc_event_pool_manager.create(3 /*event count*/);
+        ipc_event_pool = sched->get_memory().ipc_event_pool_manager.create(max_ipc_event_count);
         in_buffers.push_back({ (void*)ipc_event_pool, ccl::ze::ipc_mem_type::pool });
     }
 
@@ -542,7 +544,8 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         skip_rank = ccl::global_data::env().kernel_1s_lead;
     }
 
-    ccl::add_handle_exchange(sched, node_comm, in_buffers, skip_rank);
+    ccl::add_handle_exchange(
+        sched, node_comm, in_buffers, skip_rank, ipc_event_pool, ipc_event_count++);
 
     CCL_THROW_IF_NOT(comm_size % 2 == 0, "unexpected comm_size ", comm_size);
     CCL_THROW_IF_NOT(node_comm_size % 2 == 0, "unexpected node_comm_size ", node_comm_size);
@@ -567,19 +570,29 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         }
 
         if (is_multi_card) {
-            LOG_DEBUG("topo_ring/scale_up/inter: use ze_ring_allreduce");
-            // TODO: replace by reduce_scatter
-            entry_factory::create<ze_ring_allreduce_entry>(sched,
-                                                           recv_buf,
-                                                           recv_buf,
-                                                           tmp_buf,
-                                                           count,
-                                                           dtype,
-                                                           op,
-                                                           even_comm,
-                                                           recv_buf_idx,
-                                                           tmp_buf_idx);
-            sched->add_barrier();
+            if (is_single_node) {
+                ccl::add_comm_barrier(sched, even_comm, ipc_event_pool, ipc_event_count++);
+                LOG_DEBUG("topo_ring/scale_up/inter: use ze_a2a_allreduce");
+                entry_factory::create<ze_a2a_allreduce_entry>(
+                    sched, recv_buf, recv_buf, count, dtype, op, even_comm, recv_buf_idx);
+                sched->add_barrier();
+                ccl::add_comm_barrier(sched, even_comm, ipc_event_pool, ipc_event_count++);
+            }
+            else {
+                LOG_DEBUG("topo_ring/scale_up/inter: use ze_ring_allreduce");
+                // TODO: replace by reduce_scatter
+                entry_factory::create<ze_ring_allreduce_entry>(sched,
+                                                               recv_buf,
+                                                               recv_buf,
+                                                               tmp_buf,
+                                                               count,
+                                                               dtype,
+                                                               op,
+                                                               even_comm,
+                                                               recv_buf_idx,
+                                                               tmp_buf_idx);
+                sched->add_barrier();
+            }
         }
 
         if (!is_single_node && block_count) {
@@ -609,7 +622,7 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
             sched->add_barrier();
         }
 
-        if (is_multi_card) {
+        if (is_multi_card && !is_single_node) {
             LOG_DEBUG("topo_ring/scale_up/inter: use ze_a2a_allgatherv");
             std::vector<size_t> recv_counts(even_comm_size, main_block_count);
             recv_counts.at(even_comm->rank()) = block_count;
@@ -623,7 +636,7 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
                                                            recv_buf_idx);
             sched->add_barrier();
 
-            ccl::add_comm_barrier(sched, even_comm, ipc_event_pool, 1);
+            ccl::add_comm_barrier(sched, even_comm, ipc_event_pool, ipc_event_count++);
         }
 
         if (!is_single_card) {
@@ -640,7 +653,13 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         }
     }
 
-    ccl::add_comm_barrier(sched, pair_comm, ipc_event_pool, 2);
+    ccl::add_comm_barrier(sched, pair_comm, ipc_event_pool, ipc_event_count++);
+
+    CCL_THROW_IF_NOT(ipc_event_count <= max_ipc_event_count,
+                     "unexpected ipc_event_count ",
+                     ipc_event_count,
+                     ", expected max ",
+                     max_ipc_event_count);
 
     return ccl::status::success;
 }
@@ -661,12 +680,9 @@ ccl::status ccl_coll_build_topo_a2a_allreduce(ccl_sched* sched,
 
     ccl::add_handle_exchange(sched, comm, in_buffers);
 
-    size_t segment_count = count / comm->size();
-    if ((segment_count > 0) || (segment_count == 0 && static_cast<size_t>(comm->rank()) < count)) {
-        entry_factory::create<ze_a2a_allreduce_entry>(
-            sched, send_buf, recv_buf, count, dtype, op, comm);
-        sched->add_barrier();
-    }
+    entry_factory::create<ze_a2a_allreduce_entry>(
+        sched, send_buf, recv_buf, count, dtype, op, comm);
+    sched->add_barrier();
 
     ccl::add_comm_barrier(sched, comm);
 

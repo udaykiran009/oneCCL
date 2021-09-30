@@ -24,10 +24,13 @@ public:
                                     size_t cnt,
                                     const ccl_datatype& dtype,
                                     ccl::reduction op,
-                                    ccl_comm* comm);
+                                    ccl_comm* comm,
+                                    size_t send_buf_idx = 0,
+                                    size_t recv_buf_idx = 1);
 
     void init_ze_hook() override;
 
+    void start() override;
     void update() override;
 
 protected:
@@ -35,8 +38,8 @@ protected:
         ccl_logger::format(str,
                            "dt ",
                            ccl::global_data::get().dtypes->name(dtype),
-                           ", buf_cnt ",
-                           buf_count,
+                           ", cnt ",
+                           cnt,
                            ", send_buf ",
                            send_buf,
                            ", recv_buf ",
@@ -55,10 +58,13 @@ private:
 
     const ccl_buffer send_buf;
     const ccl_buffer recv_buf;
+    const size_t cnt;
     const ccl_datatype dtype;
     const ccl::reduction op;
-    const size_t buf_count;
-    const size_t buf_bytes;
+
+    const size_t send_buf_idx;
+    const size_t recv_buf_idx;
+
     const int peer_count;
 
     std::vector<ze_event_handle_t> pre_copy_events;

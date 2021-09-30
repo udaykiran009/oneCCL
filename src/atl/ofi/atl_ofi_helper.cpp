@@ -132,13 +132,15 @@ atl_ofi_prov_t* atl_ofi_get_prov(atl_ep_t* ep, int peer_proc_idx, size_t msg_siz
         prov_idx = ofi_ctx->shm_prov_idx;
     }
     else {
-        size_t nw_prov_offset = ep->idx % ofi_ctx->nw_prov_count;
+        size_t nw_prov_offset = (ep->idx + coord->local_idx) % ofi_ctx->nw_prov_count;
         prov_idx = ofi_ctx->nw_prov_first_idx + nw_prov_offset;
     }
 
-    LOG_DEBUG("get_prov: ep_idx ",
+    LOG_DEBUG("select nic: ep_idx ",
               ep->idx,
-              ", prov_idx ",
+              ", local_proc_idx ",
+              coord->local_idx,
+              ", nic_idx ",
               prov_idx,
               ", my_node_idx ",
               my_node_idx,

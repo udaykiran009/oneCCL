@@ -313,7 +313,6 @@ atl_status_t atl_ofi::init(int* argc,
     ofi_ctx->mnic_type = attr->in.mnic_type;
     ATL_CALL(atl_ofi_parse_mnic_name(ctx, attr->in.mnic_name), goto err);
     ofi_ctx->mnic_count = std::min(attr->in.mnic_count, (size_t)(ATL_OFI_MAX_NW_PROV_COUNT));
-    ofi_ctx->mnic_count = std::min(ofi_ctx->mnic_count, attr->in.ep_count);
     ofi_ctx->mnic_count = std::max(ofi_ctx->mnic_count, (size_t)(1));
 
     if ((ofi_ctx->mnic_type != ATL_MNIC_NONE) &&
@@ -372,7 +371,8 @@ atl_status_t atl_ofi::init(int* argc,
         }
         if (open_nw_provs) {
             ofi_ep->active_prov_idxs[ofi_ep->active_prov_count] =
-                ofi_ctx->nw_prov_first_idx + ep_idx % ofi_ctx->nw_prov_count;
+                ofi_ctx->nw_prov_first_idx +
+                (ep_idx + ctx->coord.local_idx) % ofi_ctx->nw_prov_count;
             ofi_ep->active_prov_count++;
         }
         CCL_THROW_IF_NOT(ofi_ep->active_prov_count, "no active providers for ep_idx ", ep_idx);

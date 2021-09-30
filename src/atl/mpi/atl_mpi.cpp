@@ -779,9 +779,16 @@ atl_status_t atl_mpi::comm_split(const std::vector<atl_mpi_ep_t>& base_eps,
 
         if (global_data.mnic_type != ATL_MNIC_NONE) {
             /* set NIC index */
-            nic_idx = (idx % global_data.mnic_count);
+            nic_idx = (idx + global_coord.local_idx) % global_data.mnic_count;
             snprintf(nic_idx_str, MPI_MAX_INFO_VAL, "%zu", nic_idx);
             MPI_Info_set(info, nic_idx_key, nic_idx_str);
+
+            LOG_DEBUG("select nic: ep_idx ",
+                      idx,
+                      ", local_proc_idx ",
+                      global_coord.local_idx,
+                      ", nic_idx ",
+                      nic_idx);
         }
 
         MPI_Comm_set_info(ep.mpi_comm, info);

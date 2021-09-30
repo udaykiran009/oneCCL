@@ -517,13 +517,12 @@ atl_status_t atl_mpi_global_data::update_global_data(atl_attr_t* attr) {
         mnic_count = get_nic_count(LOCAL_NIC_COUNT_KEY);
     }
     else if (mnic_type == ATL_MNIC_GLOBAL) {
-        mnic_count = get_nic_count(GLOBAL_NIC_IDX_KEY);
+        mnic_count = get_nic_count(GLOBAL_NIC_COUNT_KEY);
     }
     else if (mnic_type == ATL_MNIC_NONE) {
         mnic_count = 1;
     }
     mnic_count = std::min(mnic_count, attr->in.mnic_count);
-    mnic_count = std::min(mnic_count, attr->in.ep_count);
     mnic_count = std::max(mnic_count, (size_t)(1));
 
     if (bf16_init() == ATL_STATUS_FAILURE) {

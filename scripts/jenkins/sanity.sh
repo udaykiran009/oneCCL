@@ -141,8 +141,14 @@ function enable_default_env()
     # in case of caching and large number of different match_ids
     export CCL_CACHE_FLUSH=1
     export CCL_MNIC=global
-    export CCL_MNIC_NAME=eth,eno,mlx,hfi,^unknown
     export I_MPI_DEBUG=12
+
+    if [[ "${node_label}" = "ats2t" ]]
+    then
+        export CCL_MNIC_NAME=eno,eth,hfi,^mlx,unknown
+    else
+        export CCL_MNIC_NAME=eno,eth,hfi,mlx,^unknown
+    fi
 }
 
 function enable_default_test_scope()

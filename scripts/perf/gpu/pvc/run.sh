@@ -194,9 +194,9 @@ check_run_env() {
     cxi_state=`fi_info -p cxi -v | grep -i state | grep -i up | wc -l`
     if [ "${cxi_state}" != 8 ]
     then
-        check_exit_code 1 "\nCXI check failed"
+        check_exit_code 1 "\nCXI check failed\n"
     else
-        echo_log "\nCXI check passed"
+        echo_log "\nCXI check passed\n"
     fi
 
     return
@@ -232,9 +232,9 @@ check_run_env() {
 
     if [ "${total_fails}" != "0" ]
     then
-        check_exit_code 1 "\nANR check failed"
+        check_exit_code 1 "\nANR check failed\n"
     else
-        echo_log "\nANR check passed"
+        echo_log "\nANR check passed\n"
     fi
 
     # hdr=y
@@ -292,11 +292,14 @@ run_bench() {
     ppns="2 6 12"
     algos="ring topo_ring"
     copy_engines="none main link"
-    bench_params="-w 4 -i 16 -c last -t 33554432 -j off"
+    bench_params="-w 4 -i 16 -c last -t 33554432 -j off -q 0"
     hosts="-hosts c001n0001,c001n0002"
 
-    base_env="FI_PROVIDER=cxi"
+    base_env="FI_PROVIDER=cxi CCL_ATL_TRANSPORT=mpi"
     base_env+=" CCL_LOG_LEVEL=info I_MPI_DEBUG=12"
+
+    # TODO: debug hang
+    # base_env+=" CCL_MNIC=local CCL_MNIC_COUNT=3"
 
     # https://jira.devtools.intel.com/browse/XDEPS-2195
     base_env+=" CCL_STAGING_BUFFER=regular"
@@ -305,9 +308,8 @@ run_bench() {
     base_env+=" SYCL_DEVICE_FILTER=level_zero"
     base_env+=" EnableDirectSubmission=1"
 
-    # TODO: get nodes with all ANR functional
-    ppns="2 4"
-    base_env+=" ZE_AFFINITY_MASK=0.0,0.1,1.0,1.1"
+    # TODO: enable fast barrier
+    #base_env+=" I_MPI_FABRICS=shm:ofi CCL_BARRIER=direct CCL_ATL_SYNC_COLL=1"
 
     for node_count in ${node_counts}
     do
