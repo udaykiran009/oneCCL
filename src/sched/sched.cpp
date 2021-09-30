@@ -99,7 +99,7 @@ void ccl_sched::complete() {
                 ss << " count:" << profile_param->get_send_count();
             }
 
-            ss << " time(uses):\ntotal: " << timer.str() << "\n";
+            ss << " time(usec):\ntotal: " << timer.str() << "\n";
             for (size_t idx = 0; idx < entries.size(); ++idx) {
                 ss << "[" << idx << "] " << entries[idx]->name() << ": "
                    << entries[idx]->timer.str() << "\n";
@@ -117,6 +117,12 @@ void ccl_sched::complete() {
     // we keep time measurements in our master sched, if this sched belongs to it
     // and all the timestamps are ready, print the data
     if (ccl::global_data::env().enable_kernel_profile && master_sched) {
+        // here we reset the timer every time a corresponding sched is completed
+        // the last one will indicate the actual timestamp(previous ones won't be
+        // printed as not all the measurements are set by that time)
+        master_sched->get_kernel_timer().set_operation_end_time(
+            ccl::kernel_timer::get_current_time());
+
         if (master_sched->print_kernel_timer())
             master_sched->reset_kernel_timer();
     }

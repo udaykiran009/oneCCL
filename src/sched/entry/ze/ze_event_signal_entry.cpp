@@ -28,7 +28,7 @@ void ze_event_signal_entry::update() {
             auto native_event_time = ccl::ze::calculate_event_time(
                 master_sched->get_native_event().get_native<sycl::backend::level_zero>(),
                 native_dev);
-            master_sched->get_kernel_timer().set_operation_time(native_event_time);
+            master_sched->get_kernel_timer().set_operation_event_time(native_event_time);
         }
     }
 }

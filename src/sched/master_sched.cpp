@@ -141,6 +141,10 @@ ccl_request* ccl_master_sched::start(ccl_executor* exec, bool reset_sched) {
 
     LOG_DEBUG("starting schedule ", this, ", type ", ccl_coll_type_to_str(coll_param.ctype));
 
+    if (ccl::global_data::env().enable_kernel_profile) {
+        get_kernel_timer().set_operation_start_time(ccl::kernel_timer::get_current_time());
+    }
+
     prepare_partial_scheds();
 
     if (reset_sched) {

@@ -130,6 +130,11 @@ void ze_base_entry::finalize() {
 }
 
 void ze_base_entry::start() {
+    if (ccl::global_data::env().enable_kernel_profile) {
+        sched->master_sched->get_kernel_timer().set_kernel_submit_time(
+            ccl::kernel_timer::get_current_time());
+    }
+
     init();
     reset_events();
 
