@@ -53,6 +53,8 @@ print_help() {
     echo_log "      Run CCL benchmark with different configs"
     echo_log "  -p <url>"
     echo_log "      https proxy"
+    echo_log "  -freq <frequency>"
+    echo_log "      Sets a fixed frequency in megaherz on all tiles"
     echo_log ""
     echo_log "Usage example:"
     echo_log "  ${BASENAME}.sh -full 1"
@@ -93,6 +95,11 @@ parse_arguments() {
                 PROXY="${2}"
                 shift
                 ;;
+            "-freq")
+                GPU_FREQUENCY="${2}"
+                set_frequency
+                shift
+                ;;
             *)
                 echo "$(basename $0): ERROR: unknown option ($1)"
                 print_help
@@ -131,6 +138,14 @@ parse_arguments() {
     echo_log "BUILD_CCL       = ${BUILD_CCL}"
     echo_log "RUN_BENCH       = ${RUN_BENCH}"
     echo_log "PROXY           = ${PROXY}"
+}
+
+set_frequency() {
+    for freq_file in `ls /sys/class/drm/card*/gt/gt*/rps_m*_freq_mhz`
+    do
+        echo "${GPU_FREQUENCY}" | sudo tee ${freq_file} > /dev/null
+        echo `echo ${freq_file} | awk -F/ '{print $5,$7,$8 " = "}' && cat ${freq_file}`
+    done
 }
 
 set_build_env() {
