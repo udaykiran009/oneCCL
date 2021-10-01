@@ -495,6 +495,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
                 param.dtype = dtype;
                 param.reduction = coll_param.reduction;
                 param.comm = comm;
+                param.stream = coll_param.stream;
                 coll_entry_helper::add_coll_entry<ccl_coll_reduce_scatter>(part_scheds[idx].get(),
                                                                            param);
             }

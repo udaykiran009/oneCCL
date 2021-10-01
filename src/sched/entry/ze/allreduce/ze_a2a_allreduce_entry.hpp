@@ -73,6 +73,4 @@ private:
 
     std::vector<ze_kernel> kernels;
     std::vector<ze_event_handle_t> kernel_events;
-
-    void kernel_init(size_t main_block_count, size_t block_count, void* base_ptr);
 };

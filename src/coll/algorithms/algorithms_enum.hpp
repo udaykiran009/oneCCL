@@ -83,7 +83,8 @@ enum ccl_coll_reduce_scatter_algo {
     ccl_coll_reduce_scatter_undefined = 0,
 
     ccl_coll_reduce_scatter_direct,
-    ccl_coll_reduce_scatter_ring
+    ccl_coll_reduce_scatter_ring,
+    ccl_coll_reduce_scatter_topo_a2a
 };
 
 enum ccl_coll_sparse_allreduce_algo {

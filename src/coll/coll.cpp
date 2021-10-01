@@ -474,6 +474,7 @@ ccl::status ccl_coll_build_reduce_scatter(ccl_sched* sched,
     param.count = count;
     param.dtype = dtype;
     param.comm = comm;
+    param.stream = sched->coll_param.stream;
     param.hint_algo = sched->hint_algo;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_reduce_scatter>(param);
@@ -495,6 +496,12 @@ ccl::status ccl_coll_build_reduce_scatter(ccl_sched* sched,
                     sched, send_buf, recv_buf, count, dtype, reduction, comm));
             }
             break;
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+        case ccl_coll_reduce_scatter_topo_a2a:
+            CCL_CALL(ccl_coll_build_topo_a2a_reduce_scatter(
+                sched, send_buf, recv_buf, count, dtype, reduction, comm));
+            break;
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
         default:
             CCL_FATAL("unexpected reduce_scatter_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl::status::invalid_arguments;

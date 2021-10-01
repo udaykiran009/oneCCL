@@ -523,21 +523,8 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
     bool is_single_node = (comm_size == node_comm_size);
     bool is_single_card = (comm_size == 2) && is_single_node;
     bool is_multi_card = (even_comm_size > 1);
-    bool use_tmp_buf = is_multi_card;
-
-    ccl_buffer tmp_buf{};
-    if (use_tmp_buf) {
-        ccl::alloc_param alloc_param(
-            count * dtype.size(), ccl::buffer_type::ze, ccl::buffer_place::device);
-        tmp_buf = sched->alloc_buffer(alloc_param);
-    }
 
     size_t recv_buf_idx = 1;
-    size_t tmp_buf_idx = std::numeric_limits<size_t>::max();
-    if (use_tmp_buf) {
-        tmp_buf_idx = in_buffers.size();
-        in_buffers.push_back({ tmp_buf.get_ptr(), ccl::ze::ipc_mem_type::memory });
-    }
 
     int skip_rank = ccl_comm::invalid_rank;
     if (ccl::global_data::env().enable_kernel_1s_ipc_wa && is_single_card) {
@@ -570,8 +557,8 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         }
 
         if (is_multi_card) {
+            ccl::add_comm_barrier(sched, even_comm, ipc_event_pool, ipc_event_count++);
             if (is_single_node) {
-                ccl::add_comm_barrier(sched, even_comm, ipc_event_pool, ipc_event_count++);
                 LOG_DEBUG("topo_ring/scale_up/inter: use ze_a2a_allreduce");
                 entry_factory::create<ze_a2a_allreduce_entry>(
                     sched, recv_buf, recv_buf, count, dtype, op, even_comm, recv_buf_idx);
@@ -579,19 +566,19 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
                 ccl::add_comm_barrier(sched, even_comm, ipc_event_pool, ipc_event_count++);
             }
             else {
-                LOG_DEBUG("topo_ring/scale_up/inter: use ze_ring_allreduce");
-                // TODO: replace by reduce_scatter
-                entry_factory::create<ze_ring_allreduce_entry>(sched,
-                                                               recv_buf,
-                                                               recv_buf,
-                                                               tmp_buf,
-                                                               count,
-                                                               dtype,
-                                                               op,
-                                                               even_comm,
-                                                               recv_buf_idx,
-                                                               tmp_buf_idx);
+                size_t offset_bytes = main_block_count * even_comm->rank() * dtype.size();
+                ccl_buffer partial_recv_buf = recv_buf + offset_bytes;
+                LOG_DEBUG("topo_ring/scale_up/inter: use ze_a2a_reduce_scatter_entry");
+                entry_factory::create<ze_a2a_reduce_scatter_entry>(sched,
+                                                                   recv_buf,
+                                                                   partial_recv_buf,
+                                                                   block_count,
+                                                                   dtype,
+                                                                   op,
+                                                                   even_comm,
+                                                                   recv_buf_idx);
                 sched->add_barrier();
+                ccl::add_comm_barrier(sched, even_comm, ipc_event_pool, ipc_event_count++);
             }
         }
 

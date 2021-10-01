@@ -6,7 +6,11 @@
  */
 
 #include "coll/algorithms/algorithms.hpp"
+#include "sched/entry/coll/coll_entry_helper.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
+#include "coll/coll_util.hpp"
+#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
 ccl::status ccl_coll_build_direct_reduce_scatter(ccl_sched* sched,
                                                  ccl_buffer send_buf,
@@ -327,3 +331,33 @@ ccl::status ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
 
     return status;
 }
+
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+
+ccl::status ccl_coll_build_topo_a2a_reduce_scatter(ccl_sched* sched,
+                                                   ccl_buffer send_buf,
+                                                   ccl_buffer recv_buf,
+                                                   size_t send_count,
+                                                   const ccl_datatype& dtype,
+                                                   ccl::reduction reduction,
+                                                   ccl_comm* comm) {
+    LOG_DEBUG("build topo_a2a reduce_scatter, send_count ", send_count);
+
+    const std::vector<ze_handle_exchange_entry::mem_desc_t> in_buffers{
+        { send_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 0
+    };
+
+    size_t send_buf_idx = 0;
+
+    ccl::add_handle_exchange(sched, comm, in_buffers);
+
+    entry_factory::create<ze_a2a_reduce_scatter_entry>(
+        sched, send_buf, recv_buf, send_count, dtype, reduction, comm, send_buf_idx);
+    sched->add_barrier();
+
+    ccl::add_comm_barrier(sched, comm);
+
+    return ccl::status::success;
+}
+
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE

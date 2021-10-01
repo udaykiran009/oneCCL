@@ -32,6 +32,7 @@ if (CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
         sched/entry/ze/allreduce/ze_ring_allreduce_entry.cpp
         sched/entry/ze/ze_a2a_allgatherv_entry.cpp
         sched/entry/ze/ze_a2a_gatherv_entry.cpp
+        sched/entry/ze/ze_a2a_reduce_scatter_entry.cpp
         sched/entry/ze/ze_base_entry.cpp
         sched/entry/ze/ze_barrier_entry.cpp
         sched/entry/ze/ze_cache.cpp

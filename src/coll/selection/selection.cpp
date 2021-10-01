@@ -238,10 +238,9 @@ bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
 }
 
 bool ccl_can_use_topo_a2a_algo(const ccl_selector_param& param) {
-    auto supported_colls = { ccl_coll_allreduce, ccl_coll_allgatherv };
+    auto supported_colls = { ccl_coll_allreduce, ccl_coll_allgatherv, ccl_coll_reduce_scatter };
     RETURN_FALSE_IF(!checkers::is_coll_supported(supported_colls, param.ctype),
                     "coll is not supported");
-
     int comm_size = param.comm->size();
 
     RETURN_FALSE_IF(!checkers::is_gpu_stream(param), "non-gpu stream is not supported");
