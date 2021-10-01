@@ -112,6 +112,13 @@ private:
 
     void sendmsg_call(int sock, int fd, size_t mem_offset);
     void recvmsg_call(int sock, int& fd, size_t& mem_offset);
+    int check_msg_retval(std::string operation_name,
+                         ssize_t bytes,
+                         struct iovec iov,
+                         struct msghdr msg,
+                         size_t union_size,
+                         int sock,
+                         int fd);
 
     using mem_info_t = typename std::pair<void*, size_t>;
     mem_info_t get_mem_info(const void* ptr);

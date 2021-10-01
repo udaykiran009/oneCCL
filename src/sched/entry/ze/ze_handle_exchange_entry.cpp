@@ -242,6 +242,10 @@ void ze_handle_exchange_entry::update() {
 
     sched->get_memory().handle_manager.set(handles);
 
+    if (ccl::global_data::env().enable_close_fd_wa) {
+        close_sockets();
+    }
+
     status = ccl_sched_entry_status_complete;
 
     LOG_DEBUG("completed: ", name());
@@ -352,6 +356,39 @@ int ze_handle_exchange_entry::connect_call(int sock,
     return 0;
 }
 
+int ze_handle_exchange_entry::check_msg_retval(std::string operation_name,
+                                               ssize_t bytes,
+                                               struct iovec iov,
+                                               struct msghdr msg,
+                                               size_t union_size,
+                                               int sock,
+                                               int fd) {
+    LOG_DEBUG(operation_name,
+              ": ",
+              bytes,
+              ", expected_bytes:",
+              iov.iov_len,
+              ", expected size of cntr_buf: ",
+              union_size,
+              " -> gotten cntr_buf: ",
+              msg.msg_controllen,
+              ", socket: ",
+              sock,
+              ", fd: ",
+              fd);
+    int ret = -1;
+    if (bytes == static_cast<ssize_t>(iov.iov_len)) {
+        ret = 0;
+    }
+    else if (bytes < 0) {
+        ret = -errno;
+    }
+    else {
+        ret = -EIO;
+    }
+    return ret;
+}
+
 void ze_handle_exchange_entry::sendmsg_fd(int sock, int fd, size_t mem_offset) {
     CCL_THROW_IF_NOT(fd > 0, "unexpected fd value");
 
@@ -359,10 +396,14 @@ void ze_handle_exchange_entry::sendmsg_fd(int sock, int fd, size_t mem_offset) {
     iov.iov_base = &mem_offset;
     iov.iov_len = sizeof(size_t);
 
-    char ctrl_buf[CMSG_SPACE(sizeof(fd))]{};
+    union {
+        struct cmsghdr align;
+        char cntr_buf[CMSG_SPACE(sizeof(int))]{};
+    } u;
+
     struct msghdr msg {};
-    msg.msg_control = ctrl_buf;
-    msg.msg_controllen = CMSG_SPACE(sizeof(fd));
+    msg.msg_control = u.cntr_buf;
+    msg.msg_controllen = sizeof(u.cntr_buf);
     msg.msg_iov = &iov;
     msg.msg_iovlen = 1;
 
@@ -373,17 +414,12 @@ void ze_handle_exchange_entry::sendmsg_fd(int sock, int fd, size_t mem_offset) {
     *reinterpret_cast<int*>(CMSG_DATA(cmsg)) = fd;
 
     ssize_t send_bytes = sendmsg(sock, &msg, 0);
-    CCL_THROW_IF_NOT(send_bytes >= 0,
-                     "sendmsg error: ",
-                     send_bytes,
-                     ", socket: ",
-                     sock,
-                     ", fd: ",
-                     fd,
-                     ", from: ",
-                     comm->rank(),
-                     ", errno: ",
-                     strerror(errno));
+    CCL_THROW_IF_NOT(
+        !check_msg_retval("sendmsg", send_bytes, iov, msg, sizeof(u.cntr_buf), sock, fd),
+        ", from: ",
+        comm->rank(),
+        ", errno: ",
+        strerror(errno));
 }
 
 void ze_handle_exchange_entry::recvmsg_fd(int sock, int& fd, size_t& mem_offset) {
@@ -392,28 +428,35 @@ void ze_handle_exchange_entry::recvmsg_fd(int sock, int& fd, size_t& mem_offset)
     iov.iov_base = &buf;
     iov.iov_len = sizeof(size_t);
 
-    char ctrl_buf[CMSG_SPACE(sizeof(int))]{};
+    union {
+        struct cmsghdr align;
+        char cntr_buf[CMSG_SPACE(sizeof(int))]{};
+    } u;
+
     struct msghdr msg {};
-    msg.msg_control = ctrl_buf;
-    msg.msg_controllen = CMSG_SPACE(sizeof(int));
+    msg.msg_control = u.cntr_buf;
+    msg.msg_controllen = sizeof(u.cntr_buf);
     msg.msg_iov = &iov;
     msg.msg_iovlen = 1;
 
     ssize_t recv_bytes = recvmsg(sock, &msg, 0);
-    CCL_THROW_IF_NOT(recv_bytes >= 0,
-                     "recvmsg error: ",
-                     recv_bytes,
-                     ", socket: ",
-                     sock,
-                     ", fd: ",
-                     fd,
-                     ", from: ",
-                     comm->rank(),
-                     ", errno: ",
-                     strerror(errno));
+    CCL_THROW_IF_NOT(
+        !check_msg_retval("recvmsg", recv_bytes, iov, msg, sizeof(u.cntr_buf), sock, fd),
+        ", from: ",
+        comm->rank(),
+        ", errno: ",
+        strerror(errno));
 
-    if (msg.msg_flags & (MSG_TRUNC | MSG_CTRUNC)) {
-        CCL_THROW("control message is truncated");
+    if (msg.msg_flags & (MSG_CTRUNC | MSG_TRUNC)) {
+        std::string flag_str = "";
+        if (msg.msg_flags & MSG_CTRUNC) {
+            flag_str += " MSG_CTRUNC";
+        }
+        if (msg.msg_flags & MSG_TRUNC) {
+            flag_str += " MSG_TRUNC";
+        }
+
+        CCL_THROW("control or usual message is truncated:", flag_str);
     }
 
     for (auto cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
