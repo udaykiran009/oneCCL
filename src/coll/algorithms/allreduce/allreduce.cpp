@@ -503,12 +503,12 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         { recv_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 1
     };
 
-    size_t ipc_event_count = 0;
-    size_t max_ipc_event_count = 4;
+    size_t ipc_event_count{};
+    size_t max_ipc_event_count{ 6 };
     ze_event_pool_handle_t ipc_event_pool{};
     if (ccl::global_data::env().enable_ze_barrier) {
         ipc_event_pool = sched->get_memory().ipc_event_pool_manager.create(max_ipc_event_count);
-        in_buffers.push_back({ (void*)ipc_event_pool, ccl::ze::ipc_mem_type::pool });
+        in_buffers.push_back({ static_cast<void*>(ipc_event_pool), ccl::ze::ipc_mem_type::pool });
     }
 
     ccl_comm* pair_comm = comm->get_host_comm()->get_pair_comm()->get_ccl_comm().get();

@@ -507,6 +507,7 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
                 block_count += count % even_comm_size;
             }
 
+            ccl::add_comm_barrier(sched, even_comm);
             size_t offset_bytes = main_block_count * even_comm->rank() * dtype.size();
             ccl_buffer partial_tmp_buf = tmp_buf + offset_bytes;
             LOG_DEBUG("topo_ring/scale_up/inter: use ze_a2a_reduce_scatter_entry");
@@ -519,6 +520,7 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
                                                                even_comm,
                                                                tmp_buf_idx);
             sched->add_barrier();
+            ccl::add_comm_barrier(sched, even_comm);
 
             CCL_THROW_IF_NOT(comm->size() % node_comm_size == 0);
             int root_node_idx = root / node_comm_size;
