@@ -371,14 +371,9 @@ void module_cache::load(ze_context_handle_t context,
     CCL_THROW_IF_NOT(device);
     CCL_THROW_IF_NOT(!spv_name.empty());
     CCL_THROW_IF_NOT(module);
-    std::string modules_dir = global_data::env().kernel_path;
-    // TODO: remove
-    if (modules_dir.empty()) {
-        std::string ccl_root = getenv("CCL_ROOT");
-        CCL_THROW_IF_NOT(!ccl_root.empty(), "incorrect comm kernels path, CCL_ROOT not found!");
-        modules_dir = ccl_root + "/lib/kernels/";
-    }
-    load_module(modules_dir, spv_name, device, context, module);
+    const std::string& modules_dir = global_data::env().kernel_path;
+    std::string file_path = modules_dir + spv_name;
+    load_module(file_path, device, context, module);
 }
 
 // cache

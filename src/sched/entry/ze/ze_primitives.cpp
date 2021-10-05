@@ -10,37 +10,28 @@ namespace ccl {
 namespace ze {
 
 std::string get_build_log_string(ze_module_build_log_handle_t build_log) {
-    size_t build_log_size = 0;
-    ZE_CALL(zeModuleBuildLogGetString, (build_log, &build_log_size, nullptr));
+    size_t log_size{};
+    ZE_CALL(zeModuleBuildLogGetString, (build_log, &log_size, nullptr));
 
-    if (!build_log_size) {
-        LOG_WARN(build_log_size, "empty build log");
+    if (!log_size) {
+        LOG_DEBUG(log_size, "empty build log");
         return {};
     }
 
-    std::vector<char> build_log_c_string(build_log_size);
-    ZE_CALL(zeModuleBuildLogGetString, (build_log, &build_log_size, build_log_c_string.data()));
-    return std::string(build_log_c_string.begin(), build_log_c_string.end());
+    std::string log(log_size, '\0');
+    ZE_CALL(zeModuleBuildLogGetString, (build_log, &log_size, const_cast<char*>(log.data())));
+    return log;
 }
 
-void load_module(std::string dir,
-                 std::string file_name,
+void load_module(const std::string& file_path,
                  ze_device_handle_t device,
                  ze_context_handle_t context,
                  ze_module_handle_t* module) {
-    LOG_DEBUG("module loading started: directory: ", dir, ", file: ", file_name);
+    LOG_DEBUG("module loading started: file: ", file_path);
+    CCL_THROW_IF_NOT(!file_path.empty(), "no file");
 
-    if (!dir.empty()) {
-        if (*dir.rbegin() != '/') {
-            dir += '/';
-        }
-    }
-
-    std::string file_path = dir + file_name;
     std::ifstream file(file_path, std::ios_base::in | std::ios_base::binary);
-    if (!file.good() || dir.empty() || file_name.empty()) {
-        CCL_THROW("failed to load module: file: ", file_path);
-    }
+    CCL_THROW_IF_NOT(file.good(), "failed to load module: file: ", file_path);
 
     file.seekg(0, file.end);
     size_t filesize = file.tellg();
@@ -50,18 +41,19 @@ void load_module(std::string dir,
     file.read(reinterpret_cast<char*>(module_data.data()), filesize);
     file.close();
 
-    ze_module_build_log_handle_t build_log;
-    ze_module_desc_t desc = {};
+    ze_module_build_log_handle_t build_log{};
+    ze_module_desc_t desc{};
     ze_module_format_t format = ZE_MODULE_FORMAT_IL_SPIRV;
     desc.format = format;
     desc.pInputModule = reinterpret_cast<const uint8_t*>(module_data.data());
     desc.inputSize = module_data.size();
 
     if (zeModuleCreate(context, device, &desc, module, &build_log) != ZE_RESULT_SUCCESS) {
-        LOG_WARN("failed to build file: ", file_path, ", log: ", get_build_log_string(build_log));
+        CCL_THROW(
+            "failed to create module: ", file_path, ", log: ", get_build_log_string(build_log));
     }
     else {
-        LOG_DEBUG("module loading completed: directory: ", dir, ", file: ", file_name);
+        LOG_DEBUG("module loading completed: directory: file: ", file_path);
     }
 
     zeModuleBuildLogDestroy(build_log);

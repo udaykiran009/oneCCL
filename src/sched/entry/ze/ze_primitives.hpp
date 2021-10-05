@@ -87,8 +87,7 @@ inline bool operator&(init_mode mode1, init_mode mode2) {
     return static_cast<int>(mode1) & static_cast<int>(mode2);
 }
 
-void load_module(std::string dir,
-                 std::string file_name,
+void load_module(const std::string& file_path,
                  ze_device_handle_t device,
                  ze_context_handle_t context,
                  ze_module_handle_t* module);
