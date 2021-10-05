@@ -22,6 +22,20 @@ typedef struct {
     atl_proc_coord_t* coord;
 } atl_mpi_ep_t;
 
+typedef struct atl_mpi_comm_info {
+    int found;
+    MPI_Comm comm;
+    char key[MPI_MAX_INFO_KEY];
+    char value[MPI_MAX_INFO_VAL];
+
+    atl_mpi_comm_info() {
+        found = 0;
+        comm = MPI_COMM_WORLD;
+        memset(key, 0, MPI_MAX_INFO_KEY);
+        memset(value, 0, MPI_MAX_INFO_VAL);
+    }
+} atl_mpi_comm_info_t;
+
 class atl_mpi {
 public:
     atl_mpi() = default;
@@ -159,6 +173,8 @@ public:
     atl_status_t comm_split(const std::vector<atl_mpi_ep_t>& base_eps,
                             std::vector<atl_mpi_ep_t>& eps,
                             size_t color);
+
+    static atl_mpi_comm_info_t get_comm_info(MPI_Comm comm, const char* key);
 
 private:
     MPI_Datatype atl2mpi_dtype(atl_datatype_t dtype);

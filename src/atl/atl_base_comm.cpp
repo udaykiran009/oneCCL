@@ -20,7 +20,8 @@ atl_attr_t atl_base_comm::attr = {
         1, /* ep_count */
         ATL_MNIC_NONE, /* mnic_type */
         "", /* mnic_name */
-        1 /* mnic_count */
+        1, /* mnic_count */
+        ATL_MNIC_OFFSET_NONE /* mnic_offset */
     },
 
     /* out */
@@ -50,14 +51,15 @@ void atl_base_comm::init_tag() {
         LOG_INFO("  enable_sync_coll: ", attr.in.enable_sync_coll);
         LOG_INFO("  enable_extra_ep: ", attr.in.enable_extra_ep);
         LOG_INFO("  ep_count: ", attr.in.ep_count);
-        LOG_INFO("  mnic_type: ", attr.in.mnic_type);
+        LOG_INFO("  mnic_type: ", to_string(attr.in.mnic_type));
         LOG_INFO("  mnic_count: ", attr.in.mnic_count);
+        LOG_INFO("  mnic_offset: ", to_string(attr.in.mnic_offset));
 
         LOG_INFO("atl-out-attrs:");
         LOG_INFO("  enable_shm: ", attr.out.enable_shm);
         LOG_INFO("  enable_rma: ", attr.out.enable_rma);
         LOG_INFO("  enable_hmem: ", attr.out.enable_hmem);
-        LOG_INFO("  mnic_type: ", attr.out.mnic_type);
+        LOG_INFO("  mnic_type: ", to_string(attr.out.mnic_type));
         LOG_INFO("  mnic_count: ", attr.out.mnic_count);
         LOG_INFO("  tag_bits: ", attr.out.tag_bits);
         LOG_INFO("  max_tag: ", attr.out.max_tag);

@@ -198,6 +198,7 @@ typedef struct {
     std::vector<std::string> mnic_include_names;
     std::vector<std::string> mnic_exclude_names;
     size_t mnic_count;
+    atl_mnic_offset_t mnic_offset;
     int enable_hmem;
 } atl_ofi_ctx_t;
 
@@ -287,8 +288,6 @@ atl_status_t atl_ofi_prov_init(atl_ctx_t* ctx,
                                atl_attr_t* attr,
                                std::unique_ptr<ipmi>& pmi);
 atl_status_t atl_ofi_adjust_out_tag(atl_ofi_prov_t* prov, atl_attr_t* attr);
-int atl_ofi_nic_already_used(const struct fi_info* prov, struct fi_info** others, size_t nic_count);
-int atl_ofi_is_nic_local(struct fi_info* info);
 atl_status_t atl_ofi_parse_mnic_name(atl_ctx_t* ctx, std::string str_to_parse);
 int atl_ofi_is_allowed_nic_name(atl_ofi_ctx_t* ofi_ctx, struct fi_info* info);
 atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,

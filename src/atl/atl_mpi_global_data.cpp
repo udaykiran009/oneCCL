@@ -1,6 +1,7 @@
 #ifdef CCL_ENABLE_MPI
 
-#include "atl_mpi_global_data.hpp"
+#include "atl/atl_mpi_global_data.hpp"
+#include "atl/mpi/atl_mpi.hpp"
 #include "common/global/global.hpp"
 #include "common/log/log.hpp"
 
@@ -524,6 +525,7 @@ atl_status_t atl_mpi_global_data::update_global_data(atl_attr_t* attr) {
     }
     mnic_count = std::min(mnic_count, attr->in.mnic_count);
     mnic_count = std::max(mnic_count, (size_t)(1));
+    mnic_offset = attr->in.mnic_offset;
 
     if (bf16_init() == ATL_STATUS_FAILURE) {
         bf16_finalize();
@@ -664,42 +666,17 @@ void atl_mpi_global_data::print_log_info() {
         LOG_INFO("  mpi_lib_attr.type: ", mpi_lib_infos[mpi_lib_attr.type].name);
         LOG_INFO("  mpi_lib_attr.hmem: ", mpi_lib_attr.hmem);
         LOG_INFO("  extra_ep: ", extra_ep);
-        LOG_INFO("  mnic_type: ", mnic_type);
-        if (mnic_type != ATL_MNIC_NONE)
+        LOG_INFO("  mnic_type: ", to_string(mnic_type));
+        if (mnic_type != ATL_MNIC_NONE) {
             LOG_INFO("  mnic_count: ", mnic_count);
+            LOG_INFO("  mnic_offset: ", to_string(mnic_offset));
+        }
     }
-}
-// TODO: move it in one place(same struct and func in atl_mail.cpp)
-typedef struct atl_mpi_comm_info {
-    int found;
-    MPI_Comm comm;
-    char key[MPI_MAX_INFO_KEY];
-    char value[MPI_MAX_INFO_VAL];
-
-    atl_mpi_comm_info() {
-        found = 0;
-        comm = MPI_COMM_WORLD;
-        memset(key, 0, MPI_MAX_INFO_KEY);
-        memset(value, 0, MPI_MAX_INFO_VAL);
-    }
-} atl_mpi_comm_info_t;
-
-atl_mpi_comm_info_t atl_mpi_get_comm_info1(MPI_Comm comm, const char* key) {
-    MPI_Info info;
-    atl_mpi_comm_info_t res;
-    res.comm = comm;
-    snprintf(res.key, MPI_MAX_INFO_KEY, "%s", key);
-
-    MPI_Comm_get_info(res.comm, &info);
-    MPI_Info_get(info, key, MPI_MAX_INFO_VAL, res.value, &res.found);
-    MPI_Info_free(&info);
-
-    return res;
 }
 
 size_t atl_mpi_global_data::get_nic_count(const char* nic_count_key) {
     size_t count = 1;
-    atl_mpi_comm_info_t info = atl_mpi_get_comm_info1(MPI_COMM_WORLD, nic_count_key);
+    atl_mpi_comm_info_t info = atl_mpi::get_comm_info(MPI_COMM_WORLD, nic_count_key);
     CCL_THROW_IF_NOT(info.found, "MPI comm key ", nic_count_key, " was not set");
 
     count = atoi(info.value);
@@ -710,4 +687,4 @@ size_t atl_mpi_global_data::get_nic_count(const char* nic_count_key) {
     return count;
 }
 
-#endif
+#endif // CCL_ENABLE_MPI

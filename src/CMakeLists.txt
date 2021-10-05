@@ -55,6 +55,7 @@ endif(CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
 set(CCL_SRC
 
     atl/atl_base_comm.cpp
+    atl/atl_def.cpp
     atl/atl_ofi_comm.cpp
     atl/atl_mpi_comm.cpp
     atl/atl_mpi_global_data.cpp

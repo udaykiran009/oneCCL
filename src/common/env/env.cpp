@@ -40,12 +40,6 @@ std::map<ccl_staging_buffer, std::string> env_data::staging_buffer_names = {
     std::make_pair(ccl_staging_usm, "usm")
 };
 
-std::map<atl_mnic_t, std::string> env_data::mnic_type_names = {
-    std::make_pair(ATL_MNIC_NONE, "none"),
-    std::make_pair(ATL_MNIC_LOCAL, "local"),
-    std::make_pair(ATL_MNIC_GLOBAL, "global")
-};
-
 std::map<ccl_ze_copy_engine_mode, std::string> env_data::ze_copy_engine_names = {
     std::make_pair(ccl_ze_copy_engine_none, "none"),
     std::make_pair(ccl_ze_copy_engine_main, "main"),
@@ -80,6 +74,7 @@ env_data::env_data()
 
           mnic_type(ATL_MNIC_NONE),
           mnic_count(CCL_ENV_SIZET_NOT_SPECIFIED),
+          mnic_offset(ATL_MNIC_OFFSET_NONE),
 
           enable_algo_fallback(1),
           enable_unordered_coll(0),
@@ -197,6 +192,7 @@ void env_data::parse() {
     if (mnic_count == CCL_ENV_SIZET_NOT_SPECIFIED) {
         mnic_count = worker_count;
     }
+    env_2_enum(CCL_MNIC_OFFSET, mnic_offset_names, mnic_offset);
 
     env_2_type(CCL_ALGO_FALLBACK, enable_algo_fallback);
     env_2_type(CCL_ALLGATHERV, allgatherv_algo_raw);
@@ -407,6 +403,7 @@ void env_data::print(int rank) {
     LOG_INFO(
         CCL_MNIC_NAME, ": ", (mnic_name_raw.length()) ? mnic_name_raw : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_MNIC_COUNT, ": ", mnic_count);
+    LOG_INFO(CCL_MNIC_OFFSET, ": ", str_by_enum(mnic_offset_names, mnic_offset));
 
     LOG_INFO(CCL_ALGO_FALLBACK, ": ", enable_algo_fallback);
     LOG_INFO(CCL_ALLGATHERV,

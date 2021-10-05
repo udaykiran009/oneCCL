@@ -132,7 +132,7 @@ atl_ofi_prov_t* atl_ofi_get_prov(atl_ep_t* ep, int peer_proc_idx, size_t msg_siz
         prov_idx = ofi_ctx->shm_prov_idx;
     }
     else {
-        size_t nw_prov_offset = (ep->idx + coord->local_idx) % ofi_ctx->nw_prov_count;
+        size_t nw_prov_offset = ep->idx % ofi_ctx->nw_prov_count;
         prov_idx = ofi_ctx->nw_prov_first_idx + nw_prov_offset;
     }
 
@@ -1046,9 +1046,11 @@ static bool atl_ofi_is_nic_down(struct fi_info* prov) {
 
 /* determine if NIC has already been included in others */
 int atl_ofi_nic_already_used(const struct fi_info* prov,
-                             const std::vector<struct fi_info*>& others) {
+                             const std::vector<struct fi_info*>& others,
+                             bool check_pci = false) {
     for (size_t i = 0; i < others.size(); i++) {
-        if (prov->nic && others[i]->nic && prov->nic->bus_attr->bus_type == FI_BUS_PCI &&
+        if (check_pci && prov->nic && others[i]->nic &&
+            prov->nic->bus_attr->bus_type == FI_BUS_PCI &&
             others[i]->nic->bus_attr->bus_type == FI_BUS_PCI) {
             struct fi_pci_attr pci = prov->nic->bus_attr->attr.pci;
             struct fi_pci_attr other_pci = others[i]->nic->bus_attr->attr.pci;
@@ -1228,6 +1230,7 @@ atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
     std::vector<struct fi_info*> topo_provs;
     std::vector<struct fi_info*> final_provs;
     std::set<std::string> all_nic_names;
+    int prov_offset = 0;
 
     atl_ofi_ctx_t* ofi_ctx = container_of(ctx, atl_ofi_ctx_t, ctx);
 
@@ -1308,7 +1311,14 @@ atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
         goto err;
     }
 
-    /* 4. filter out by count */
+    /* 4. reorder according to desired offset */
+    if (ofi_ctx->mnic_offset == ATL_MNIC_OFFSET_LOCAL_PROC_IDX) {
+        prov_offset = ctx->coord.local_idx % topo_provs.size();
+    }
+    LOG_DEBUG("rotate: prov_offset ", prov_offset, ", vec_size ", topo_provs.size());
+    std::rotate(topo_provs.begin(), topo_provs.begin() + prov_offset, topo_provs.end());
+
+    /* 5. filter out by count */
     for (idx = 0; idx < topo_provs.size(); idx++) {
         prov_iter = topo_provs[idx];
         LOG_DEBUG("count filter: check nic ", atl_ofi_get_nic_name(prov_iter));
@@ -1329,7 +1339,7 @@ atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
         goto err;
     }
 
-    /* 5. create network providers */
+    /* 6. create network providers */
     LOG_INFO("found ", final_provs.size(), " nic(s) according to all filters");
     ofi_ctx->nw_prov_count = final_provs.size();
     for (idx = 0; idx < ofi_ctx->nw_prov_count; idx++) {

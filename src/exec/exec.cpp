@@ -42,6 +42,7 @@ atl_attr_t ccl_executor::generate_atl_attr(const ccl::env_data& env) {
     attr.in.mnic_type = env.mnic_type;
     attr.in.mnic_name = env.mnic_name_raw;
     attr.in.mnic_count = env.mnic_count;
+    attr.in.mnic_offset = env.mnic_offset;
 
     memset(&attr.out, 0, sizeof(attr.out));
 

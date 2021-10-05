@@ -47,6 +47,7 @@ constexpr const char* CCL_ATL_CACHE = "CCL_ATL_CACHE";
 constexpr const char* CCL_MNIC = "CCL_MNIC";
 constexpr const char* CCL_MNIC_NAME = "CCL_MNIC_NAME";
 constexpr const char* CCL_MNIC_COUNT = "CCL_MNIC_COUNT";
+constexpr const char* CCL_MNIC_OFFSET = "CCL_MNIC_OFFSET";
 
 constexpr const char* CCL_ALGO_FALLBACK = "CCL_ALGO_FALLBACK";
 constexpr const char* CCL_ALLGATHERV = "CCL_ALLGATHERV";
@@ -177,6 +178,7 @@ public:
     atl_mnic_t mnic_type;
     std::string mnic_name_raw;
     ssize_t mnic_count;
+    atl_mnic_offset_t mnic_offset;
 
     /*
        parsing logic can be quite complex
@@ -322,7 +324,6 @@ public:
     static std::map<ccl_atl_send_proxy, std::string> atl_send_proxy_names;
     static std::map<ccl_staging_buffer, std::string> staging_buffer_names;
     static std::map<ccl_ze_copy_engine_mode, std::string> ze_copy_engine_names;
-    static std::map<atl_mnic_t, std::string> mnic_type_names;
 
     int env_2_worker_affinity(int local_proc_idx, int local_proc_count);
     int env_2_worker_mem_affinity();

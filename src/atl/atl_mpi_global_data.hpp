@@ -97,6 +97,7 @@ public:
     int extra_ep;
     atl_mnic_t mnic_type;
     size_t mnic_count;
+    atl_mnic_offset_t mnic_offset;
     atl_mpi_lib_attr_t mpi_lib_attr;
     atl_mpi_bf16_data_t bf16;
     atl_mpi_fp16_data_t fp16;
@@ -106,7 +107,8 @@ public:
               ctx_count(0),
               extra_ep(0),
               mnic_type(ATL_MNIC_NONE),
-              mnic_count(1) {
+              mnic_count(1),
+              mnic_offset(ATL_MNIC_OFFSET_NONE) {
         mpi_lib_attr.type = ATL_MPI_LIB_NONE;
         mpi_lib_attr.hmem = 0;
 

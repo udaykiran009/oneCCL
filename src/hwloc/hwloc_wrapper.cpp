@@ -144,6 +144,7 @@ bool ccl_hwloc_wrapper::is_dev_close_by_pci(int domain, int bus, int dev, int fu
     CCL_THROW_IF_NOT(first_non_io);
 
     LOG_DEBUG("first_non_io object: ", obj_to_string(first_non_io));
+    LOG_DEBUG("pci info: [", domain, ":", bus, ":", dev, ":", func, "]");
 
     /* determine if PCI device is "close" to process by checking if process's affinity is included
      * in PCI device's affinity or if PCI device's affinity is included in process's affinity */

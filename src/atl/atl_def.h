@@ -1,10 +1,10 @@
 #pragma once
 
+#include <cstring>
+#include <map>
 #include <stddef.h>
 #include <stdint.h>
 #include <string>
-
-#include <cstring>
 
 #ifndef container_of
 #define container_of(ptr, type, field) ((type*)((char*)ptr - offsetof(type, field)))
@@ -94,6 +94,13 @@ typedef enum {
 } atl_reduction_t;
 
 typedef enum { ATL_MNIC_NONE, ATL_MNIC_LOCAL, ATL_MNIC_GLOBAL } atl_mnic_t;
+typedef enum { ATL_MNIC_OFFSET_NONE, ATL_MNIC_OFFSET_LOCAL_PROC_IDX } atl_mnic_offset_t;
+
+extern std::map<atl_mnic_t, std::string> mnic_type_names;
+extern std::map<atl_mnic_offset_t, std::string> mnic_offset_names;
+
+std::string to_string(atl_mnic_t type);
+std::string to_string(atl_mnic_offset_t offset);
 
 typedef struct {
     struct {
@@ -106,6 +113,7 @@ typedef struct {
         atl_mnic_t mnic_type;
         std::string mnic_name;
         size_t mnic_count;
+        atl_mnic_offset_t mnic_offset;
     } in;
     struct {
         int enable_shm;

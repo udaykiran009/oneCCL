@@ -324,6 +324,8 @@ atl_status_t atl_ofi::init(int* argc,
     if (ofi_ctx->mnic_type == ATL_MNIC_NONE)
         ofi_ctx->mnic_count = 1;
 
+    ofi_ctx->mnic_offset = attr->in.mnic_offset;
+
     attr->out.tag_bits = 64;
     attr->out.max_tag = 0xFFFFFFFFFFFFFFFF;
 
@@ -371,8 +373,7 @@ atl_status_t atl_ofi::init(int* argc,
         }
         if (open_nw_provs) {
             ofi_ep->active_prov_idxs[ofi_ep->active_prov_count] =
-                ofi_ctx->nw_prov_first_idx +
-                (ep_idx + ctx->coord.local_idx) % ofi_ctx->nw_prov_count;
+                ofi_ctx->nw_prov_first_idx + ep_idx % ofi_ctx->nw_prov_count;
             ofi_ep->active_prov_count++;
         }
         CCL_THROW_IF_NOT(ofi_ep->active_prov_count, "no active providers for ep_idx ", ep_idx);
@@ -416,10 +417,11 @@ atl_status_t atl_ofi::init(int* argc,
         LOG_INFO("  prov_count: ", ofi_ctx->prov_count);
         LOG_INFO("  nw_prov_count: ", ofi_ctx->nw_prov_count);
         LOG_INFO("  nw_prov_first_idx: ", ofi_ctx->nw_prov_first_idx);
-        LOG_INFO("  mnic_type: ", ofi_ctx->mnic_type);
+        LOG_INFO("  mnic_type: ", to_string(ofi_ctx->mnic_type));
         LOG_INFO("  mnic_include_names: ", vec_to_string(ofi_ctx->mnic_include_names));
         LOG_INFO("  mnic_exclude_names: ", vec_to_string(ofi_ctx->mnic_exclude_names));
         LOG_INFO("  mnic_count: ", ofi_ctx->mnic_count);
+        LOG_INFO("  mnic_offset: ", to_string(ofi_ctx->mnic_offset));
         LOG_INFO("  max_retry_count: ", ofi_ctx->max_retry_count);
         LOG_INFO("  progress_mode: ", ofi_ctx->progress_mode);
 #ifdef CCL_ENABLE_OFI_HMEM
