@@ -214,7 +214,7 @@ run_tests()
         sed -i "s|%PACKAGE_DIR%|${PACKAGE_DIR}|" ${PACKAGE_DIR}/abn-linux-settings.json
         for bench in $(grep -E -o "oneCCLBench([^\"]+)" abn_metadata.json);
         do
-            python3 ${PATH_TO_ABN}/src/abn_cmd.py -t "DynamicTest" -s ${bench} --settings-file ${PACKAGE_DIR}/abn-linux-settings.json
+            python3 ${PATH_TO_ABN}/src/abn_cmd.py -t "DynamicTest" -s ${bench} --settings-file ${PACKAGE_DIR}/abn-linux-settings.json --working_path ${SCRIPT_DIR}/tmp
             CheckCommandExitCode $? "${bench} failed"
         done
         rm -rf ${PACKAGE_DIR}/results/
