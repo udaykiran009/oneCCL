@@ -141,9 +141,11 @@ ccl_request* ccl_master_sched::start(ccl_executor* exec, bool reset_sched) {
 
     LOG_DEBUG("starting schedule ", this, ", type ", ccl_coll_type_to_str(coll_param.ctype));
 
+#ifdef CCL_ENABLE_SYCL
     if (ccl::global_data::env().enable_kernel_profile) {
         get_kernel_timer().set_operation_start_time(ccl::kernel_timer::get_current_time());
     }
+#endif // CCL_ENABLE_SYCL
 
     prepare_partial_scheds();
 
@@ -301,9 +303,10 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
     return sched;
 }
 
+#ifdef CCL_ENABLE_SYCL
 bool ccl_master_sched::print_kernel_timer() const {
     if (ccl::global_data::env().enable_kernel_profile) {
-        return timer.print();
+        return kernel_timer.print();
     }
 
     // if we don't have env variable set, just return false to say that we haven't printed
@@ -312,5 +315,6 @@ bool ccl_master_sched::print_kernel_timer() const {
 }
 
 void ccl_master_sched::reset_kernel_timer() {
-    timer.reset();
+    kernel_timer.reset();
 }
+#endif // CCL_ENABLE_SYCL

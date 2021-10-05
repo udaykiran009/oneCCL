@@ -114,6 +114,7 @@ void ccl_sched::complete() {
         clear_memory();
     }
 
+#ifdef CCL_ENABLE_SYCL
     // we keep time measurements in our master sched, if this sched belongs to it
     // and all the timestamps are ready, print the data
     if (ccl::global_data::env().enable_kernel_profile && master_sched) {
@@ -126,6 +127,7 @@ void ccl_sched::complete() {
         if (master_sched->print_kernel_timer())
             master_sched->reset_kernel_timer();
     }
+#endif // CCL_ENABLE_SYCL
 
     req->complete();
 }

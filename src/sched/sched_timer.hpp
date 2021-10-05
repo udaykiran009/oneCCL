@@ -21,6 +21,7 @@ private:
     long double get_time() const noexcept;
 };
 
+#ifdef CCL_ENABLE_SYCL
 class kernel_timer {
 public:
     kernel_timer();
@@ -59,5 +60,6 @@ private:
     uint64_t operation_end_time;
     uint64_t kernel_submit_time;
 };
+#endif // CCL_ENABLE_SYCL
 
 } //namespace ccl

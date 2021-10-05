@@ -217,7 +217,7 @@ bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
     // because of ze_ring_allreduce_entry and ze_a2a_allgatherv_entry
     RETURN_FALSE_IF(!checkers::is_single_card(param) && checkers::is_family1_card(param) &&
                         (param.ctype == ccl_coll_allreduce || param.ctype == ccl_coll_reduce),
-                    "family1 multicard for ",
+                    "family1 multi-card for ",
                     ccl_coll_type_to_str(param.ctype),
                     " is not supported");
 
@@ -227,6 +227,11 @@ bool ccl_can_use_topo_ring_algo(const ccl_selector_param& param) {
                          (comm_size <= 2) && (local_proc_count == 1)),
                     "unsupported comm size for ",
                     ccl_coll_type_to_str(param.ctype));
+
+    RETURN_FALSE_IF((param.ctype == ccl_coll_bcast) && !checkers::is_single_node(param),
+                    "multi-node for ",
+                    ccl_coll_type_to_str(param.ctype),
+                    " is not supported");
 
     RETURN_FALSE_IF(((param.ctype == ccl_coll_reduce) && (comm_size % local_proc_count != 0)),
                     "ppn must be equal");
@@ -257,7 +262,7 @@ bool ccl_can_use_topo_a2a_algo(const ccl_selector_param& param) {
     RETURN_FALSE_IF(checkers::is_family1_card(param), "family1 card is not supported");
     RETURN_FALSE_IF(comm_size < 2, "unsupported comm size");
 
-    RETURN_FALSE_IF(!checkers::is_single_node(param), "multi level is not supported");
+    RETURN_FALSE_IF(!checkers::is_single_node(param), "multi-node is not supported");
 
     return true;
 }

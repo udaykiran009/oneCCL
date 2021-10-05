@@ -119,6 +119,7 @@ env_data::env_data()
           alltoall_scatter_max_ops(CCL_ENV_SIZET_NOT_SPECIFIED),
           alltoall_scatter_plain(0),
 
+#ifdef CCL_ENABLE_SYCL
           kernel_path(),
           kernel_debug(0),
           kernel_group_size(CCL_ENV_SIZET_NOT_SPECIFIED),
@@ -137,6 +138,7 @@ env_data::env_data()
           ze_copy_engine(ccl_ze_copy_engine_none),
           ze_queue_index(1),
           ze_close_ipc_wa(0),
+#endif // CCL_ENABLE_SYCL
 
           bf16_impl_type(ccl_bf16_no_compiler_support),
           fp16_impl_type(ccl_fp16_no_compiler_support) {
@@ -275,9 +277,14 @@ void env_data::parse() {
     env_2_type(CCL_ALLTOALL_SCATTER_MAX_OPS, (size_t&)alltoall_scatter_max_ops);
     env_2_type(CCL_ALLTOALL_SCATTER_PLAIN, alltoall_scatter_plain);
 
+#ifdef CCL_ENABLE_SYCL
     env_2_type(CCL_KERNEL_PATH, kernel_path);
     if (kernel_path.empty()) {
-        std::string ccl_root = getenv("CCL_ROOT");
+        std::string ccl_root;
+        char* ccl_root_env_value = getenv("CCL_ROOT");
+        if (ccl_root_env_value) {
+            ccl_root = ccl_root_env_value;
+        }
         CCL_THROW_IF_NOT(!ccl_root.empty(), "incorrect comm kernels path, CCL_ROOT not found!");
         kernel_path = ccl_root + "/lib/kernels/";
     }
@@ -299,6 +306,7 @@ void env_data::parse() {
     env_2_enum(CCL_ZE_COPY_ENGINE, ze_copy_engine_names, ze_copy_engine);
     env_2_type(CCL_ZE_QUEUE_INDEX, ze_queue_index);
     env_2_type(CCL_ZE_CLOSE_IPC_WA, ze_close_ipc_wa);
+#endif // CCL_ENABLE_SYCL
 
     auto bf16_impl_types = ccl_bf16_get_impl_types();
     ccl_bf16_impl_type bf16_env_impl_type;

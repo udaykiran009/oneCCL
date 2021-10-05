@@ -37,6 +37,7 @@ long double sched_timer::get_time() const noexcept {
     return time_usec;
 }
 
+#ifdef CCL_ENABLE_SYCL
 kernel_timer::kernel_timer()
         : kernel_time{ get_uninit_values() },
           operation_event_time{ get_uninit_values() },
@@ -174,5 +175,6 @@ uint64_t kernel_timer::get_operation_end_time() const {
 uint64_t kernel_timer::get_kernel_submit_time() const {
     return kernel_submit_time;
 }
+#endif // CCL_ENABLE_SYCL
 
 } // namespace ccl

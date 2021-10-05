@@ -226,6 +226,7 @@ public:
     ssize_t alltoall_scatter_max_ops;
     int alltoall_scatter_plain;
 
+#ifdef CCL_ENABLE_SYCL
     std::string kernel_path;
     int kernel_debug;
     ssize_t kernel_group_size;
@@ -244,6 +245,7 @@ public:
     ccl_ze_copy_engine_mode ze_copy_engine;
     int ze_queue_index;
     int ze_close_ipc_wa;
+#endif // CCL_ENABLE_SYCL
 
     ccl_bf16_impl_type bf16_impl_type;
     ccl_fp16_impl_type fp16_impl_type;
