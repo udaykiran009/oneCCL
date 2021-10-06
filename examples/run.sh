@@ -328,6 +328,7 @@ run()
             transport_list="${transport_list} mpi_gpu"
         fi
 
+        ccl_base_env="OverrideDefaultFP64Settings=1 IGC_EnableDPEmulation=1 ${ccl_base_env}"
         ccl_base_env="ZE_ENABLE_VALIDATION_LAYER=1 ZE_ENABLE_PARAMETER_VALIDATION=1 ${ccl_base_env}"
         common_dir_list="benchmark common"
         if [[ ${SCOPE} = "pr" ]]
