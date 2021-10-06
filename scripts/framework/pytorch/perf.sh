@@ -14,17 +14,39 @@ current_date=`date "+%Y%m%d%H%M%S"`
 LOG_FILE="${SCRIPT_DIR}/perf_log_${current_date}"
 touch ${LOG_FILE}
 
-CCL_ENV="CCL_LOG_LEVEL=info CCL_ATL_TRANSPORT=ofi"
-CCL_ENV="${CCL_ENV} CCL_MNIC=global CCL_MNIC_COUNT=2"
-CCL_ENV="${CCL_ENV} CCL_ALLREDUCE=ring CCL_MAX_SHORT_SIZE=16384"
-MPI_ENV="I_MPI_DEBUG=12"
-PSM3_ENV="PSM3_MULTI_EP=1 PSM3_RDMA=0 PSM3_MR_CACHE_MODE=2 PSM3_IDENTIFY=1 PSM3_ALLOW_ROUTERS=1"
-BASE_ENV="${CCL_ENV} ${MPI_ENV}"
+set_base_env() {
 
-EXTERNAL_ITER_COUNT="5"
-PROVS="verbs psm3"
-NODE_COUNTS="2 4 8 16"
-WORKER_COUNTS="1 2 4 8"
+    CCL_ENV=""
+    MPI_ENV=""
+    PSM3_ENV=""
+
+    CCL_ENV+=" CCL_LOG_LEVEL=info CCL_ATL_TRANSPORT=ofi"
+    CCL_ENV+=" CCL_ALLREDUCE=${ALGO} CCL_MAX_SHORT_SIZE=16384 CCL_BUFFER_CACHE=1"
+    MPI_ENV+=" I_MPI_DEBUG=12"
+    PSM3_ENV+=" PSM3_MULTI_EP=1 PSM3_RDMA=1 PSM3_MR_CACHE_MODE=2"
+    PSM3_ENV+=" PSM3_IDENTIFY=1 PSM3_ALLOW_ROUTERS=1"
+    PSM3_ENV+=" PSM3_MQ_RNDV_NIC_THRESH=524288"
+
+    if [[ ${MNIC} = "1" ]]
+    then
+        CCL_ENV+=" CCL_MNIC=global CCL_MNIC_COUNT=2"
+        PSM3_ENV+=" PSM3_ADDR_FMT=3"
+    else
+        PSM3_ENV+=" PSM3_NIC=mlx5_1"
+    fi
+
+    if [[ ${CLUSTER} = "diamond" ]]
+    then
+        CCL_ENV+=" FI_PROVIDER_PATH=/home/files/psm3/11.2.0.0.90-rhel83"
+    fi
+
+    BASE_ENV="${CCL_ENV} ${MPI_ENV}"
+}
+
+EXTERNAL_ITER_COUNT="8"
+PROVS="psm3"
+NODE_COUNTS="16"
+WORKER_COUNTS="1 2 4 8 16"
 COLLS="allreduce"
 NUMA_NODES="0 1"
 
@@ -37,7 +59,10 @@ DEFAULT_DOWNLOAD_CCL="0"
 DEFAULT_INSTALL_CCL="0"
 DEFAULT_RUN_TESTS="0"
 DEFAULT_PROCESS_OUTPUT="0"
-DEFAULT_MSG_SIZES="trace"
+DEFAULT_MSG_SIZES="dlrm"
+DEFAULT_CLUSTER="lab"
+DEFAULT_MNIC="0"
+DEFAULT_ALGO="ring"
 
 echo_log() {
     echo -e "$*" 2>&1 | tee -a ${LOG_FILE}
@@ -71,6 +96,14 @@ print_help() {
     echo_log "      Run CCL benchmark with different options"
     echo_log "  -process_output <path>"
     echo_log "      Do post-processing for output file (convert raw log to csv log)"
+    echo_log "  -msg_sizes <name>"
+    echo_log "      Run with specified message sizes, possible names: regular, trace, dlrm"
+    echo_log "  -cluster <name>"
+    echo_log "      Name of cluster to adjust configuration, possible values: lab, diamond"
+    echo_log "  -mnic <bool_flag>"
+    echo_log "      Enable multi-NIC"
+    echo_log "  -algo <name>"
+    echo_log "      Run with specified allreduce algorithm"
     echo_log ""
     echo_log "Usage examples:"
     echo_log "  ${BASENAME}.sh -full 1"
@@ -87,6 +120,9 @@ parse_arguments() {
     RUN_TESTS=${DEFAULT_RUN_TESTS}
     PROCESS_OUTPUT=${DEFAULT_PROCESS_OUTPUT}
     MSG_SIZES=${DEFAULT_MSG_SIZES}
+    CLUSTER=${DEFAULT_CLUSTER}
+    MNIC=${DEFAULT_MNIC}
+    ALGO=${DEFAULT_ALGO}
 
     while [ $# -ne 0 ]
     do
@@ -121,6 +157,18 @@ parse_arguments() {
                 ;;
             "-msg_sizes")
                 MSG_SIZES=${2}
+                shift
+                ;;
+            "-cluster")
+                CLUSTER="${2}"
+                shift
+                ;;
+            "-mnic")
+                MNIC="${2}"
+                shift
+                ;;
+            "-algo")
+                ALGO="${2}"
                 shift
                 ;;
             *)
@@ -164,8 +212,16 @@ parse_arguments() {
     elif [[ ${MSG_SIZES} = "trace" ]]
     then
         msg_sizes_arg="-y 1,188418,821760,2650112,4201474,4773198,6553600,19142658,21077326,21703312,24188816,40465152,40598530"
+    elif [[ ${MSG_SIZES} = "dlrm" ]]
+    then
+        msg_sizes_arg="-y 4001,9960,288192,2251500,3001500,16004000,40580000"
     else
-        check_exit_code 1 "unknown msg_sizes '${MSG_SIZES}', select from: regular, trace"
+        check_exit_code 1 "unknown msg_sizes '${MSG_SIZES}', select from: regular, trace, dlrm"
+    fi
+
+    if [[ ${CLUSTER} != "lab" ]] && [[ ${CLUSTER} != "diamond" ]]
+    then
+        check_exit_code 1 "unknown cluster '${CLUSTER}', select from: lab, diamond"
     fi
 
     echo_log "-----------------------------------------------------------"
@@ -181,8 +237,13 @@ parse_arguments() {
     echo_log "PROCESS_OUTPUT      = ${PROCESS_OUTPUT}"
 
     echo_log "MSG_SIZES           = ${MSG_SIZES}"
+    echo_log "CLUSTER             = ${CLUSTER}"
+    echo_log "MNIC                = ${MNIC}"
+    echo_log "ALGO                = ${ALGO}"
 
     echo_log "EXTERNAL_ITER_COUNT = ${EXTERNAL_ITER_COUNT}"
+
+    set_base_env
 }
 
 download_ccl() {
