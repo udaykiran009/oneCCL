@@ -211,12 +211,8 @@ CheckCommandExitCode() {
 
 check_clang_path()
 {
-    if [ -z "${SYCL_BUNDLE_ROOT}" ]
-    then
-        SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/last/compiler/latest/linux/"
-        echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
-    fi
-    source ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
+    SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/dpcpp_1005"
+    source ${SYCL_BUNDLE_ROOT}/env.sh
 }
 
 check_gcc_path()
@@ -263,8 +259,8 @@ define_compiler()
     elif [ "${compiler}" == "clang" ]
     then
         check_clang_path
-        C_COMPILER=${SYCL_BUNDLE_ROOT}/bin/clang
-        CXX_COMPILER=${SYCL_BUNDLE_ROOT}/bin/dpcpp
+        C_COMPILER=/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/dpcpp_1005/bin/clang
+        CXX_COMPILER=/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/dpcpp_1005/bin/dpcpp
     fi
 }
 

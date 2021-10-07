@@ -189,7 +189,8 @@ function set_ats_environment()
     ATS_WORKSPACE_DIR="/home/sys_ctlab/workspace/workspace/"
     ATS_ARTEFACT_DIR="${ATS_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
     export BUILD_COMPILER_TYPE="clang"
-    export SYCL_BUNDLE_ROOT="/home/sys_ctlab/oneapi/compiler/last/compiler/latest/linux/"
+    export SYCL_BUNDLE_ROOT="/home/sys_ctlab/oneapi/compiler/dpcpp_1005"
+    source ${SYCL_BUNDLE_ROOT}/env.sh
     export IMPI_PATH="/home/sys_ctlab/oneapi/mpi_oneapi/l_oneapi_mpi_2021.5.0_ENG_ww38.20210917/"
     #export CCL_STAGING_BUFFER=regular
 
@@ -248,12 +249,8 @@ function set_environment()
         CXX_COMPILER=${BUILD_COMPILER_PATH}/icpc
     elif [ "${BUILD_COMPILER_TYPE}" = "clang" ]
     then
-        if [ -z "${SYCL_BUNDLE_ROOT}" ]
-        then
-            SYCL_BUNDLE_ROOT="${CCL_ONEAPI_DIR}/compiler/last/compiler/latest/linux/"
-            echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
-        fi
-        source ${SYCL_BUNDLE_ROOT}/../../../setvars.sh
+        SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/dpcpp_1005"
+        source ${SYCL_BUNDLE_ROOT}/env.sh
         BUILD_COMPILER_PATH=${SYCL_BUNDLE_ROOT}/bin
         C_COMPILER=${BUILD_COMPILER_PATH}/clang
         CXX_COMPILER=${BUILD_COMPILER_PATH}/dpcpp

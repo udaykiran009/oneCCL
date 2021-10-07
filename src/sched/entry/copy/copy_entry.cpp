@@ -90,7 +90,7 @@ void copy_entry::start() {
     }
 
 #ifdef CCL_ENABLE_SYCL
-    if (q->get_backend() != cl::sycl::backend::level_zero || is_sycl_buf) {
+    if (q->get_backend() != cl::sycl::backend::ext_oneapi_level_zero || is_sycl_buf) {
         ctype = copy_type::sycl;
         if (!is_sycl_buf) {
             if ((in_ptr_type != sycl::usm::alloc::device) &&

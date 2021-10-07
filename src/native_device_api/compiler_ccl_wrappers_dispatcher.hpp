@@ -54,7 +54,7 @@ template <class ContextType>
     static_assert(
         std::is_same<typename std::remove_cv<ContextType>::type, cl::sycl::context>::value,
         "Invalid ContextType");
-    auto l0_handle_ptr = ctx.template get_native<cl::sycl::backend::level_zero>();
+    auto l0_handle_ptr = sycl::get_native<cl::sycl::backend::ext_oneapi_level_zero>(ctx);
     if (!l0_handle_ptr) {
         CCL_THROW("failed for sycl context: handle is nullptr");
     }

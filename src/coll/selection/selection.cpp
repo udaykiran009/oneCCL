@@ -111,7 +111,7 @@ bool is_device_buf(const ccl_selector_param& param) {
 bool is_l0_backend(const ccl_selector_param& param) {
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     if (param.stream) {
-        return param.stream->get_backend() == sycl::backend::level_zero;
+        return param.stream->get_backend() == sycl::backend::ext_oneapi_level_zero;
     }
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
     return false;
