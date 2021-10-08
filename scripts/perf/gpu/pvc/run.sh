@@ -151,7 +151,7 @@ set_frequency() {
 set_build_env() {
     module unload oneapi
     module use /home/ftartagl/modulefiles
-    module load oneapi-testing/2021.3.1.001.rc1.20210921
+    module load oneapi-testing/2021.4.0.001.rc1.20211005
 }
 
 check_build_env() {
@@ -180,11 +180,20 @@ set_run_env() {
     module unload mpich/icc-cxi
     module use -a /home/tdoodi/drop42-release/install/modulefiles
     module load mpich/icc-cxi/42.2
+
+    # TODO: add ATL/MPI changes to enable 43.x
+    #module use -a /home/tdoodi/drop43-release/mpich-ofi/modulefiles
+    #module load mpich/43.x
+
     export LD_LIBRARY_PATH=/usr/lib64/:${LD_LIBRARY_PATH}
 
-    # UMD with ULLS support
-    module use -a /opt/hit/hpval/modulefiles
-    module add umd/agama-ci-prerelease-207
+    # UMD with ULLS fix 1 (for hang issue)
+    #module use -a /opt/hit/hpval/modulefiles
+    #module add umd/agama-ci-prerelease-207
+
+    # UMD with ULLS fix 2 (for CCS > 0)
+    module use -a /home/ftartagl/graphics-compute-runtime/modulefiles
+    module load graphics-compute-runtime/ci-neo-021202
 
     # TODO: frequency script
 }
