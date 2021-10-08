@@ -189,13 +189,7 @@ int ccl_comm::get_rank_from_global(int global_rank) const {
         }
     }
 
-    CCL_THROW_IF_NOT(rank != ccl_comm::invalid_rank,
-                     "no rank ",
-                     global_rank,
-                     " was found in comm ",
-                     this,
-                     ", id ",
-                     m_id.value());
+    CCL_THROW_IF_NOT(rank != ccl_comm::invalid_rank, "can't find rank");
 
     return rank;
 }

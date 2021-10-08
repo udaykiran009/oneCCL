@@ -20,8 +20,7 @@ public:
                                      const size_t* recv_counts,
                                      const ccl_datatype& dtype,
                                      ccl_comm* comm,
-                                     size_t peer_buf_idx = 0,
-                                     size_t peer_buf_offset = 0);
+                                     size_t peer_buf_idx = 0);
 
     void init_ze_hook() override;
 
@@ -47,7 +46,6 @@ private:
     const std::vector<size_t> recv_counts;
     const ccl_datatype dtype;
     const size_t peer_buf_idx;
-    const size_t peer_buf_offset;
     const int peer_count;
 
     std::vector<ze_event_handle_t> copy_events;
