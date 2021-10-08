@@ -490,6 +490,7 @@ atl_status_t atl_ofi::finalize() {
     if (global_data.ctx_count == 0) {
         if (global_data.dlhandle) {
             dlclose(global_data.dlhandle);
+            global_data.dlhandle = nullptr;
         }
 
         if (ctx->coord.global_idx == 0) {
