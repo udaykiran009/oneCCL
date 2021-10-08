@@ -728,6 +728,11 @@ make_package()
 #==============================================================================
 parse_arguments()
 {
+    if [ $# -eq 0 ]; then
+        print_help
+        exit 1
+    fi
+
     while [ $# -ne 0 ]
     do
         case $1 in

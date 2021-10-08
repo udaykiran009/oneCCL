@@ -33,7 +33,7 @@ export CCL_PACKAGE_PREFIX=l_ccl_release_
 tar xf ${ARTEFACT_DIR}/build_gpu_release.tgz
 tar xf ${ARTEFACT_DIR}/build_release.tgz
 
-if [ "$ENABLE_PRE_DROP_STAGE" == "true" ]
+if [ "${ENABLE_PRE_DROP_STAGE}" == "true" ]
 then
     run_in_fake_container /build/ccl/scripts/build.sh ${BUILD_OPTIONS} --post-build --pack --install --test-pre-drop --swf-pre-drop
     CheckCommandExitCode $? "post build and pack failed"
@@ -46,11 +46,11 @@ mv ${CCL_PACKAGE_PREFIX}* ${ARTEFACT_DIR}
 cp -r ${WORKSPACE}/_log ${ARTEFACT_DIR}
 cp -r ${WORKSPACE}/_predrop ${ARTEFACT_DIR}
 
-if [ ${BUILDER_NAME} == "ccl-nightly" ]
+if [[ ${BUILDER_NAME} == "ccl-nightly" ]] || [[ ${BUILDER_NAME} == "ccl-weekly" ]]
 then
-    if [ -d $ARTEFACT_ROOT_DIR/$BUILDER_NAME/last ]
+    if [ -d ${ARTEFACT_ROOT_DIR}/${BUILDER_NAME}/last ]
     then
-        rm -d $ARTEFACT_ROOT_DIR/$BUILDER_NAME/last
+        rm -d ${ARTEFACT_ROOT_DIR}/${BUILDER_NAME}/last
     fi
-    ln -s ${ARTEFACT_DIR} $ARTEFACT_ROOT_DIR/$BUILDER_NAME/last
+    ln -s ${ARTEFACT_DIR} ${ARTEFACT_ROOT_DIR}/${BUILDER_NAME}/last
 fi

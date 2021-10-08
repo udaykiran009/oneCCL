@@ -3,6 +3,9 @@
 BASENAME=$(basename $0 .sh)
 SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
 
+CORE_COUNT=$(( $(lscpu | grep "^Socket(s):" | awk '{print $2}' ) * $(lscpu | grep "^Core(s) per socket:" | awk '{print $4}') ))
+MAKE_JOB_COUNT=$(( CORE_COUNT / 3 > 4 ? CORE_COUNT / 3 : 4 ))
+
 pushd () {
     command pushd "$@" > /dev/null
 }
@@ -28,7 +31,7 @@ print_help() {
     echo "      Specific path to the file with excluded tests"
     echo "  --build-only"
     echo "      Enable only the build stage"
-    echo "  --platform <ats|gen9> (default ats)"
+    echo "  --platform <ats|gen9>"
     echo "      Discrete GPU platform name"
     echo ""
     echo "Usage examples:"
@@ -62,7 +65,6 @@ set_default_values() {
     ENABLE_BUILD="yes"
     ENABLE_TESTING="yes"
     EXCLUDE_LIST="${SCRIPT_DIR}/exclude_list"
-    PLATFORM_HW_DISCRETE_GPU="ats"
 }
 
 parse_arguments() {
@@ -90,7 +92,7 @@ parse_arguments() {
                 shift
                 ;;
             *)
-                echo "$(basename $0): ERROR: unknown option ($1)"
+                echo "$(basename ${0}): ERROR: unknown option (${1})"
                 print_help
                 exit 1
             ;;
@@ -99,6 +101,11 @@ parse_arguments() {
     done
 
     check_mode
+
+    if [[ ${MODE} = "gpu" ]] && [[ -z ${PLATFORM_HW_DISCRETE_GPU} ]]
+    then
+        PLATFORM_HW_DISCRETE_GPU="ats"
+    fi
 
     echo "-----------------------------------------------------------"
     echo "PARAMETERS"
@@ -158,7 +165,7 @@ build() {
         mkdir ${SCRIPT_DIR}/build
         pushd ${SCRIPT_DIR}/build
         cmake .. -DCMAKE_C_COMPILER=${C_COMPILER} -DCMAKE_CXX_COMPILER=${CXX_COMPILER}
-        make VERBOSE=1 install
+        make VERBOSE=1 -j${MAKE_JOB_COUNT} install
         CheckCommandExitCode $? "build failed"
         popd
     fi

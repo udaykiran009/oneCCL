@@ -15,8 +15,9 @@ then
     cd ${CCL_ROOT}/examples
     mkdir build
     cd build
-    cmake ..
-    make benchmark
+    cmake .. &>> ${TEST_LOG}
+    make benchmark &>> ${TEST_LOG}
+    CheckCommandExitCode $? "Benchmark build failed"
     cp ${CCL_ROOT}/examples/build/benchmark/benchmark ${SCRIPT_DIR}
 else
     cp ${CCL_ROOT}/examples/benchmark/benchmark ${SCRIPT_DIR}

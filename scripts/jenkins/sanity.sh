@@ -191,9 +191,8 @@ function set_ats_environment()
     export BUILD_COMPILER_TYPE="clang"
     export SYCL_BUNDLE_ROOT="/home/sys_ctlab/oneapi/compiler/dpcpp_1005"
     source ${SYCL_BUNDLE_ROOT}/env.sh
-    export IMPI_PATH="/home/sys_ctlab/oneapi/mpi_oneapi/l_oneapi_mpi_2021.5.0_ENG_ww38.20210917/"
+    export IMPI_PATH="/home/sys_ctlab/oneapi/mpi_oneapi/last/mpi/latest/"
     #export CCL_STAGING_BUFFER=regular
-
 
     if [ -z ${CCL_ROOT} ]
     then
@@ -207,10 +206,10 @@ function set_environment()
 {
     if [ -z "${build_type}" ]
     then
-        build_type="release"
+        export build_type="release"
     fi
 
-    if [[ "${node_label}" = "ats2t" ]]
+    if [[ "${node_label}" = "ccl_test_ats" ]]
     then
         set_ats_environment
     fi
@@ -218,11 +217,11 @@ function set_environment()
     # $BUILD_COMPILER_TYPE may be set up by user: clang/gnu/intel
     if [ -z "${BUILD_COMPILER_TYPE}" ]
     then
-        if [ ${node_label} == "mlsl2_test_gpu" ] || [ ${node_label} == "mlsl2_test_gpu_vlgd" ] || [ ${build_compiler} == "sycl" ]
+        if [ ${node_label} == "ccl_test_gen9" ] || [ ${node_label} == "ccl_vlgd" ] || [ ${build_compiler} == "sycl" ]
         then
             BUILD_COMPILER_TYPE="clang"
             source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
-        elif [ ${node_label} == "mlsl2_test_cpu" ] || [ ${build_compiler} == "gnu" ]
+        elif [ ${node_label} == "ccl_test_cpu" ] || [ ${build_compiler} == "gnu" ]
         then
             BUILD_COMPILER_TYPE="gnu"
             source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_icc
@@ -249,7 +248,11 @@ function set_environment()
         CXX_COMPILER=${BUILD_COMPILER_PATH}/icpc
     elif [ "${BUILD_COMPILER_TYPE}" = "clang" ]
     then
-        SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/dpcpp_1005"
+        if [ -z "${SYCL_BUNDLE_ROOT}" ]
+        then
+            SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/dpcpp_1005/"
+            echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
+        fi
         source ${SYCL_BUNDLE_ROOT}/env.sh
         BUILD_COMPILER_PATH=${SYCL_BUNDLE_ROOT}/bin
         C_COMPILER=${BUILD_COMPILER_PATH}/clang
@@ -273,14 +276,14 @@ function set_environment()
 
     if [ -z "$build_type" ]
     then
-        build_type="release"
+        export build_type="release"
     fi
     if [ -z ${CCL_ROOT} ]
     then
         if [ -z  "${node_label}" ]
         then
             source ${ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
-        elif [ $node_label == "mlsl2_test_gpu" ] || [ $node_label == "mlsl2_test_gpu_vlgd" ] || [ $node_label == "mlsl2_test_gpu_ft" ]
+        elif [ $node_label == "ccl_test_gen9" ] || [ $node_label == "ccl_vlgd" ]
         then
             source ${ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
             export DASHBOARD_GPU_DEVICE_PRESENT="yes"
@@ -289,12 +292,7 @@ function set_environment()
         fi
     fi
 
-    if [ "${ENABLE_CODECOV}" = "yes" ]
-    then
-        CODECOV_FLAGS="TRUE"
-    else
-        CODECOV_FLAGS=""
-    fi
+    export CCL_PROCESS_CLEANUP="yes"
 }
 
 function set_reg_tests_environment()
@@ -357,7 +355,7 @@ function run_valgrind_check()
     echo "EXAMPLE_WORK_DIR =" $EXAMPLE_WORK_DIR
     set_external_env
     cd ${EXAMPLE_WORK_DIR}
-    if [ ${node_label} == "mlsl2_test_gpu_vlgd" ]
+    if [ ${node_label} == "ccl_vlgd" ]
     then
         export FI_TCP_IFACE=eno1
         ${CURRENT_WORK_DIR}/scripts/valgrind/valgrind.sh gpu ${valgrind_scope}
@@ -380,10 +378,10 @@ function run_reg_tests()
     set_external_env
     set_reg_tests_environment
 
-    if [[ ${node_label} == "mlsl2_test_gpu" ]]
+    if [[ ${node_label} == "ccl_test_gen9" ]]
     then
         ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode gpu --platform gen9
-    elif [[ ${node_label} == "ats2t" ]]
+    elif [[ ${node_label} == "ccl_test_ats" ]]
     then
         ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode gpu --platform ats
     else
@@ -403,7 +401,7 @@ function run_reg_tests()
 function run_compatibitily_tests()
 {
     set_external_env
-    if [[ ${node_label} == "mlsl2_test_gpu" ]] || [[ ${node_label} == "ats2t" ]]
+    if [[ ${node_label} == "ccl_test_gen9" ]] || [[ ${node_label} == "ccl_test_ats" ]]
     then
         export FI_TCP_IFACE=eno1
         export DASHBOARD_GPU_DEVICE_PRESENT=1
@@ -572,7 +570,7 @@ function run_tests()
         allreduce_algos="${allreduce_algos} 2d" # ring_rma
     fi
 
-    if [ ${node_label} == "mlsl2_test_gpu_ft" ] || [ "${node_label}" == "ats2t" ]
+    if [ ${node_label} == "ccl_test_gen9" ] || [ "${node_label}" == "ccl_test_ats" ]
     then
         allreduce_algos="${allreduce_algos} topo_ring"
         bcast_algos="${bcast_algos} topo_ring"
@@ -761,21 +759,27 @@ function clean_nodes() {
     user='sys_ctl'
     exceptions='java\|awk\|bash\|grep\|intelremotemond\|sshd\|grep\|ps\|mc'
     for host_name in ${using_nodes}; do
-     ssh  "$host_name" "bash -s $user $exceptions " <<'EOF'
+     ssh  "${host_name}" "bash -s ${user} ${exceptions} " <<'EOF'
        echo "Host: $(hostname)"
        User=$1
        Exceptions=$2
        ps -aux | grep PID | grep -v 'grep'
        for pid in $(ps aux | grep -e "^${User}" \
-                   | grep -E -v "\b(${Exceptions})\b" \
+                   | grep -v "${Exceptions}" \
                    | awk '{print $2}'); do
-           echo "Killed:" &&  ps -aux | grep -v 'grep' | grep ${pid}
-           echo "-------------------------------------------------"
-           kill -6 ${pid}
+           (cat /proc/${pid}/environ | tr '\0' '\n' | grep "CCL_PROCESS_CLEANUP=yes") >/dev/null 2>&1
+           rc=$?
+           if [[ ${rc} = 0 ]]
+           then
+               echo "Killed:"
+               ps -aux | grep -v 'grep' | grep ${pid}
+               echo "-------------------------------------------------"
+               kill -9 ${pid}
+           fi
        done
 EOF
     done
-    echo "Cleaning was finished"
+    echo "Start cleaning nodes...DONE"
 }
 
 #==============================================================================
@@ -785,8 +789,7 @@ EOF
 if [ "$1" == "-help" ]; then
     print_help
 else
-    # INFRA-1449
-    #clean_nodes
+    clean_nodes
     set_default_values
     set_environment
     set_impi_environment
@@ -835,6 +838,5 @@ else
             ;;
         esac
     done
-    # INFRA-1449
-    #clean_nodes
+    clean_nodes
 fi
