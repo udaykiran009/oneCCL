@@ -118,7 +118,7 @@ endforeach()
 add_test (NAME allreduce_fusion CONFIGURATIONS allreduce_fusion COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_fusion_report.junit.xml)
 
 foreach(ppn 1; 2)
-    foreach(algo direct; rabenseifner; starlike; ring; ring_rma; double_tree; recursive_doubling; 2d; topo_ring)
+    foreach(algo direct; rabenseifner; nreduce; ring; ring_rma; double_tree; recursive_doubling; 2d; topo_ring)
         add_test (NAME allreduce_${algo}_${ppn} CONFIGURATIONS allreduce_${algo}_${ppn} COMMAND mpiexec.hydra -l -n 2 -ppn ${ppn} ${CCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_${algo}_${ppn}_report.junit.xml)
     endforeach()
 
@@ -132,7 +132,7 @@ foreach(ppn 1; 2)
 
 endforeach()
 
-foreach(algo starlike; ring; 2d)
+foreach(algo nreduce; ring; 2d)
 add_test (NAME allreduce_${algo}_chunked CONFIGURATIONS allreduce_${algo}_chunked COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_${algo}_chunked_report.junit.xml)
 endforeach()
 

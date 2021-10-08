@@ -138,7 +138,8 @@ void copy_entry::update() {
 
 void copy_entry::do_regular_copy() {
     size_t bytes = dtype.size() * count;
-    auto comp_status = ccl_comp_copy(in_buf.get_ptr(bytes), out_buf.get_ptr(bytes), count, dtype);
+    auto comp_status =
+        ccl_comp_copy(in_buf.get_ptr(bytes), out_buf.get_ptr(bytes), bytes, attr.use_nontemporal);
     CCL_ASSERT(comp_status == ccl::status::success, "bad status ", comp_status);
     status = ccl_sched_entry_status_complete;
 }

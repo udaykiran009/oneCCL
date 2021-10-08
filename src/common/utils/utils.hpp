@@ -50,8 +50,6 @@
 #define CCL_LARGE_MSG_ALIGNMENT (2 * 1024 * 1024)
 #define CCL_LARGE_MSG_THRESHOLD (1 * 1024 * 1024)
 
-#define CCL_MEMCPY(dest, src, n) std::copy((char*)(src), (char*)(src) + (n), (char*)(dest))
-
 /* malloc/realloc/free */
 
 #if 0 // defined(__INTEL_COMPILER) || defined(__ICC)

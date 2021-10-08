@@ -175,6 +175,7 @@ if (WITH_ASAN AND ${CMAKE_BUILD_TYPE_CASE_INSENSITIVE} STREQUAL "debug")
 endif()
 
 set_lp_env()
+set_avx_env()
 
 set(CCL_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 

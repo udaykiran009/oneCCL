@@ -110,6 +110,7 @@ env_data::env_data()
 
           allreduce_2d_base_size(CCL_ENV_SIZET_NOT_SPECIFIED),
           allreduce_2d_switch_dims(0),
+          allreduce_nreduce_buffering(0),
 
           alltoall_scatter_max_ops(CCL_ENV_SIZET_NOT_SPECIFIED),
           alltoall_scatter_plain(0),
@@ -269,6 +270,7 @@ void env_data::parse() {
 
     env_2_type(CCL_ALLREDUCE_2D_BASE_SIZE, (size_t&)allreduce_2d_base_size);
     env_2_type(CCL_ALLREDUCE_2D_SWITCH_DIMS, allreduce_2d_switch_dims);
+    env_2_type(CCL_ALLREDUCE_NREDUCE_BUFFERING, allreduce_nreduce_buffering);
 
     env_2_type(CCL_ALLTOALL_SCATTER_MAX_OPS, (size_t&)alltoall_scatter_max_ops);
     env_2_type(CCL_ALLTOALL_SCATTER_PLAIN, alltoall_scatter_plain);
@@ -469,6 +471,7 @@ void env_data::print(int rank) {
                  ? std::to_string(allreduce_2d_base_size)
                  : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_ALLREDUCE_2D_SWITCH_DIMS, ": ", allreduce_2d_switch_dims);
+    LOG_INFO(CCL_ALLREDUCE_NREDUCE_BUFFERING, ": ", allreduce_nreduce_buffering);
 
     LOG_INFO(CCL_ALLTOALL_SCATTER_MAX_OPS,
              ": ",

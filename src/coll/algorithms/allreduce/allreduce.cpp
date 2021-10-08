@@ -8,6 +8,7 @@
 #include "coll/algorithms/algorithms.hpp"
 #include "common/comm/host_communicator/host_communicator.hpp"
 #include "sched/entry/coll/coll_entry_helper.hpp"
+#include "sched/entry/copy/copy_helper.hpp"
 #include "sched/entry/factory/chunked_entry_factory.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
@@ -366,83 +367,122 @@ ccl::status ccl_coll_build_recursive_doubling_allreduce(ccl_sched* sched,
     return status;
 }
 
-ccl::status ccl_coll_build_starlike_allreduce(ccl_sched* sched,
-                                              ccl_buffer send_buf,
-                                              ccl_buffer recv_buf,
-                                              size_t count,
-                                              const ccl_datatype& dtype,
-                                              ccl::reduction op,
-                                              ccl_comm* comm) {
-    LOG_DEBUG("build starlike allreduce");
+ccl::status ccl_coll_build_nreduce_allreduce(ccl_sched* sched,
+                                             ccl_buffer send_buf,
+                                             ccl_buffer recv_buf,
+                                             size_t count,
+                                             const ccl_datatype& dtype,
+                                             ccl::reduction op,
+                                             ccl_comm* comm) {
+    LOG_DEBUG("build nreduce allreduce");
 
     ccl::status status = ccl::status::success;
     int comm_size = comm->size();
-    int this_rank = comm->rank();
-    size_t* buffer_counts =
-        static_cast<size_t*>(CCL_MALLOC(comm_size * sizeof(size_t), "buffer_count"));
-    size_t* buffer_offsets =
-        static_cast<size_t*>(CCL_MALLOC(comm_size * sizeof(size_t), "buffer_offsets"));
+    int comm_rank = comm->rank();
+    std::vector<size_t> elem_counts(comm_size);
+    std::vector<size_t> elem_offsets(comm_size);
     size_t dtype_size = dtype.size();
+    bool is_inplace = (send_buf == recv_buf);
 
-    // copy local data into recv_buf
-    if (send_buf != recv_buf) {
-        entry_factory::create<copy_entry>(sched, send_buf, recv_buf, count, dtype);
-        sched->add_barrier();
-    }
-
-    if (comm_size == 1)
+    if (comm_size == 1) {
+        if (!is_inplace) {
+            entry_factory::create<copy_entry>(sched, send_buf, recv_buf, count, dtype);
+        }
         return status;
+    }
 
     // calculate counts and offsets for each rank
     size_t common_buffer_count = count / comm_size;
-    for (int rank_idx = 0; rank_idx < comm_size; ++rank_idx) {
-        buffer_counts[rank_idx] = common_buffer_count;
-        buffer_offsets[rank_idx] = rank_idx * buffer_counts[rank_idx] * dtype_size;
+    for (int idx = 0; idx < comm_size; idx++) {
+        elem_counts[idx] = common_buffer_count;
+        elem_offsets[idx] = idx * elem_counts[idx] * dtype_size;
     }
-    buffer_counts[comm_size - 1] += count % comm_size;
+    elem_counts[comm_size - 1] += count % comm_size;
 
-    // recv_reduce buffer for current rank
-    size_t this_rank_buf_size = buffer_counts[this_rank] * dtype_size;
+    size_t elem_count = elem_counts[comm_rank];
+
+    int use_buffering = ccl::global_data::env().allreduce_nreduce_buffering;
+
+    size_t tmp_buf_count = elem_count * comm_size;
+    if (use_buffering) {
+        tmp_buf_count = std::max(count, tmp_buf_count);
+    }
 
     ccl_buffer tmp_buf;
-    if (this_rank_buf_size) {
-        tmp_buf = sched->alloc_buffer({ this_rank_buf_size * (comm_size - 1), send_buf });
+    if (tmp_buf_count) {
+        tmp_buf = sched->alloc_buffer({ tmp_buf_count * dtype_size, send_buf });
     }
 
-    size_t tmp_buf_recv_idx = 0;
-    for (int rank_idx = 0; rank_idx < comm_size; ++rank_idx) {
-        if (rank_idx != this_rank) {
-            // send buffer to others
-            entry_factory::make_chunked_send_entry(sched,
-                                                   recv_buf + buffer_offsets[rank_idx],
-                                                   buffer_counts[rank_idx],
-                                                   dtype,
-                                                   rank_idx,
-                                                   comm);
+    ccl_buffer reduce_buf;
+    if (use_buffering) {
+        reduce_buf = tmp_buf + elem_count * comm_rank * dtype_size;
+    }
+    else {
+        reduce_buf = recv_buf + elem_offsets[comm_rank];
+    }
 
-            // recv part of buffer from others and perform reduce
-            entry_factory::make_chunked_recv_reduce_entry(
-                sched,
-                recv_buf + buffer_offsets[this_rank],
-                buffer_counts[this_rank],
-                nullptr,
-                dtype,
-                op,
-                rank_idx,
-                tmp_buf + this_rank_buf_size * tmp_buf_recv_idx,
-                comm);
-            ++tmp_buf_recv_idx;
-        }
+    if (!is_inplace || use_buffering) {
+        entry_factory::create<copy_entry>(
+            sched, send_buf + elem_offsets[comm_rank], reduce_buf, elem_counts[comm_rank], dtype);
+        sched->add_barrier();
+    }
+
+    // reduce-scatter
+    for (int idx = 1; idx < comm_size; idx++) {
+        int dst = (comm_rank - idx + comm_size) % comm_size;
+        int src = (comm_rank + idx) % comm_size;
+
+        // send buffer to other ranks
+        entry_factory::make_chunked_send_entry(
+            sched, send_buf + elem_offsets[dst], elem_counts[dst], dtype, dst, comm);
+
+        // recv part of buffer from other rank and perform reduce
+        entry_factory::make_chunked_recv_reduce_entry(sched,
+                                                      reduce_buf,
+                                                      elem_count,
+                                                      nullptr, /* out_cnt */
+                                                      dtype,
+                                                      op,
+                                                      src,
+                                                      tmp_buf + elem_count * src * dtype_size,
+                                                      comm);
     }
 
     sched->add_barrier();
 
     // allgatherv
-    CCL_CALL(ccl_coll_build_naive_allgatherv(
-        sched, recv_buf, buffer_counts[this_rank], recv_buf, buffer_counts, dtype, comm));
+    if (use_buffering) {
+        copy_attr attr;
+        attr.direction = copy_direction::h2h;
+        attr.use_nontemporal = true;
 
-    CCL_FREE(buffer_counts);
-    CCL_FREE(buffer_offsets);
+        // copy own result from tmp to recv buffer
+        entry_factory::create<copy_entry>(
+            sched, reduce_buf, recv_buf + elem_offsets[comm_rank], elem_count, dtype, attr);
+        sched->add_barrier();
+
+        for (int idx = 1; idx < comm_size; idx++) {
+            int dst = (comm_rank - idx + comm_size) % comm_size;
+            int src = (comm_rank + idx) % comm_size;
+
+            // send own result to other ranks
+            entry_factory::create<send_entry>(
+                sched, reduce_buf, elem_counts[comm_rank], dtype, dst, comm);
+
+            // recv other's rank result into tmp buffer and copy to recv buffer
+            entry_factory::create<recv_copy_entry>(sched,
+                                                   tmp_buf + elem_offsets[src],
+                                                   recv_buf + elem_offsets[src],
+                                                   elem_counts[src] * dtype_size,
+                                                   src,
+                                                   comm,
+                                                   attr);
+        }
+    }
+    else {
+        CCL_CALL(ccl_coll_build_naive_allgatherv(
+            sched, recv_buf, elem_counts[comm_rank], recv_buf, elem_counts.data(), dtype, comm));
+    }
 
     return status;
 }

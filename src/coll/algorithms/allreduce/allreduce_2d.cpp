@@ -81,7 +81,7 @@ static void ccl_allreduce_2d_add_allreduce_allgather(ccl_sched* sched,
     if (ar_count) {
         /* TODO: add second level selection to distinguish high and low level algorithms */
         ccl_buffer ar_buf = rbuf + first_dim_comm->rank() * main_block_count * dtype_size;
-        ccl_coll_build_starlike_allreduce(
+        ccl_coll_build_nreduce_allreduce(
             sched, ar_buf, ar_buf, ar_count, dtype, op, second_dim_comm);
         sched->add_barrier();
     }

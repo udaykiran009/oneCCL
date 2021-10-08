@@ -546,7 +546,7 @@ function run_tests()
     ppns="1 2"
 
     allgatherv_algos="naive flat ring"
-    allreduce_algos="rabenseifner starlike ring double_tree recursive_doubling"
+    allreduce_algos="rabenseifner nreduce ring double_tree recursive_doubling"
     alltoall_algos="naive scatter scatter_barrier"
     alltoallv_algos=${alltoall_algos}
     bcast_algos="ring double_tree naive"
@@ -601,7 +601,7 @@ function run_tests()
                     if [ "$algo" == "ring" ];
                     then
                         CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
-                    elif [ "$algo" == "starlike" ];
+                    elif [ "$algo" == "nreduce" ];
                     then
                         CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
                     fi
@@ -665,7 +665,7 @@ function run_tests()
                     then
                         CCL_ATL_RMA=1 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"
                     else
-                        if [ "$algo" == "starlike" ];
+                        if [ "$algo" == "nreduce" ];
                         then
                             CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
                         elif [ "$algo" == "ring" ];

@@ -24,7 +24,7 @@ enum ccl_coll_allreduce_algo {
 
     ccl_coll_allreduce_direct,
     ccl_coll_allreduce_rabenseifner,
-    ccl_coll_allreduce_starlike,
+    ccl_coll_allreduce_nreduce,
     ccl_coll_allreduce_ring,
     ccl_coll_allreduce_ring_rma,
     ccl_coll_allreduce_double_tree,

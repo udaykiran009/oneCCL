@@ -19,3 +19,20 @@ function CheckCommandExitCode() {
         exit ${1}
     fi
 }
+
+function get_bench() {
+    dst_dir=$1
+    log_path=$2
+    if [ ! -f ${CCL_ROOT}/examples/benchmark/benchmark ]
+    then
+        cd ${CCL_ROOT}/examples
+        mkdir build
+        cd build
+        cmake .. &>> ${log_path}
+        make benchmark &>> ${log_path}
+        CheckCommandExitCode $? "Benchmark build failed"
+        cp ${CCL_ROOT}/examples/build/benchmark/benchmark ${dst_dir}
+    else
+        cp ${CCL_ROOT}/examples/benchmark/benchmark ${dst_dir}
+    fi
+}

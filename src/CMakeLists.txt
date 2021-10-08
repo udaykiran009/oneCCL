@@ -131,6 +131,7 @@ set(CCL_SRC
     common/log/log.cpp
     common/request/request.cpp
     common/stream/stream.cpp
+    common/utils/memcpy.cpp
     common/utils/spinlock.cpp
     common/utils/version.cpp
     common/utils/yield.cpp
@@ -166,6 +167,7 @@ set(CCL_SRC
     sched/entry/copy/copy_helper.cpp
     sched/entry/entry.cpp
     sched/entry/factory/chunked_entry_factory.cpp
+    sched/entry/recv_copy_entry.cpp
     sched/entry/reduce_local_entry.cpp
     sched/queue/flow_control.cpp
     sched/queue/queue.cpp

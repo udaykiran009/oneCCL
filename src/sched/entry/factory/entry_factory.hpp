@@ -20,6 +20,7 @@
 #include "sched/entry/probe_entry.hpp"
 #include "sched/entry/prologue_entry.hpp"
 #include "sched/entry/recv_entry.hpp"
+#include "sched/entry/recv_copy_entry.hpp"
 #include "sched/entry/recv_reduce_entry.hpp"
 #include "sched/entry/reduce_local_entry.hpp"
 #include "sched/entry/register_entry.hpp"

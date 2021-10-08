@@ -206,8 +206,8 @@ ccl::status ccl_coll_build_allreduce(ccl_sched* sched,
             CCL_CALL(ccl_coll_build_rabenseifner_allreduce(
                 sched, send_buf, recv_buf, count, dtype, reduction, comm));
             break;
-        case ccl_coll_allreduce_starlike:
-            CCL_CALL(ccl_coll_build_starlike_allreduce(
+        case ccl_coll_allreduce_nreduce:
+            CCL_CALL(ccl_coll_build_nreduce_allreduce(
                 sched, send_buf, recv_buf, count, dtype, reduction, comm));
             break;
         case ccl_coll_allreduce_ring:

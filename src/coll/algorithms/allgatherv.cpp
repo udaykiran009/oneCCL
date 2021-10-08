@@ -31,35 +31,37 @@ ccl::status ccl_coll_build_naive_allgatherv(ccl_sched* sched,
                                             ccl_comm* comm) {
     LOG_DEBUG("build naive allgatherv");
 
-    int comm_size = comm->size();
-    int this_rank = comm->rank();
-    size_t dtype_size = dtype.size();
-    size_t* offsets = static_cast<size_t*>(CCL_MALLOC(comm_size * sizeof(size_t), "offsets"));
     ccl::status status = ccl::status::success;
 
+    int comm_size = comm->size();
+    int comm_rank = comm->rank();
+    size_t dtype_size = dtype.size();
+    std::vector<size_t> offsets(comm_size);
+
     offsets[0] = 0;
-    for (int rank_idx = 1; rank_idx < comm_size; ++rank_idx) {
-        offsets[rank_idx] = offsets[rank_idx - 1] + recv_counts[rank_idx - 1] * dtype_size;
+    for (int rank = 1; rank < comm_size; rank++) {
+        offsets[rank] = offsets[rank - 1] + recv_counts[rank - 1] * dtype_size;
     }
 
     if (send_buf != recv_buf) {
         // out-of-place case
         entry_factory::create<copy_entry>(
-            sched, send_buf, recv_buf + offsets[this_rank], send_count, dtype);
+            sched, send_buf, recv_buf + offsets[comm_rank], send_count, dtype);
     }
 
-    for (int rank_idx = 0; rank_idx < comm_size; ++rank_idx) {
-        if (rank_idx != this_rank) {
-            // send own buffer to other ranks
-            entry_factory::make_chunked_send_entry(
-                sched, recv_buf + offsets[this_rank], send_count, dtype, rank_idx, comm);
-            // recv other's rank buffer
-            entry_factory::make_chunked_recv_entry(
-                sched, recv_buf + offsets[rank_idx], recv_counts[rank_idx], dtype, rank_idx, comm);
-        }
+    for (int idx = 1; idx < comm_size; idx++) {
+        int dst = (comm_rank - idx + comm_size) % comm_size;
+        int src = (comm_rank + idx) % comm_size;
+
+        // send own buffer to other ranks
+        entry_factory::make_chunked_send_entry(
+            sched, recv_buf + offsets[comm_rank], send_count, dtype, dst, comm);
+
+        // recv other's rank buffer
+        entry_factory::make_chunked_recv_entry(
+            sched, recv_buf + offsets[src], recv_counts[src], dtype, src, comm);
     }
 
-    CCL_FREE(offsets);
     return status;
 }
 

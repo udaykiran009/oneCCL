@@ -95,13 +95,13 @@ ccl::status ccl_coll_build_recursive_doubling_allreduce(ccl_sched* sched,
                                                         ccl::reduction reduction,
                                                         ccl_comm* comm);
 
-ccl::status ccl_coll_build_starlike_allreduce(ccl_sched* sched,
-                                              ccl_buffer send_buf,
-                                              ccl_buffer recv_buf,
-                                              size_t count,
-                                              const ccl_datatype& dtype,
-                                              ccl::reduction reduction,
-                                              ccl_comm* comm);
+ccl::status ccl_coll_build_nreduce_allreduce(ccl_sched* sched,
+                                             ccl_buffer send_buf,
+                                             ccl_buffer recv_buf,
+                                             size_t count,
+                                             const ccl_datatype& dtype,
+                                             ccl::reduction reduction,
+                                             ccl_comm* comm);
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,

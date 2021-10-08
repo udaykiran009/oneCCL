@@ -14,10 +14,7 @@ copy_attr::copy_attr(int peer_rank,
           out_buf_offset(out_buf_offset) {}
 
 copy_attr::copy_attr(copy_direction direction, size_t in_buf_offset, size_t out_buf_offset)
-        : peer_rank(ccl_comm::invalid_rank),
-          peer_buf_idx(0),
-          direction(direction),
-          map_comm(nullptr),
+        : direction(direction),
           in_buf_offset(in_buf_offset),
           out_buf_offset(out_buf_offset) {}
 

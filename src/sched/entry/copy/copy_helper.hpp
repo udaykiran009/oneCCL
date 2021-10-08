@@ -12,16 +12,19 @@ enum class copy_direction { undefined, h2h, d2h, h2d, d2d };
 std::string to_string(copy_direction val);
 
 struct copy_attr {
-    int peer_rank;
-    size_t peer_buf_idx;
-    copy_direction direction;
-    ccl_comm* map_comm;
-    size_t in_buf_offset;
-    size_t out_buf_offset;
+    int peer_rank = ccl_comm::invalid_rank;
+    size_t peer_buf_idx = 0;
+    copy_direction direction = copy_direction::undefined;
+    ccl_comm* map_comm = nullptr;
+    size_t in_buf_offset = 0;
+    size_t out_buf_offset = 0;
+    bool use_nontemporal = false;
 
-    copy_attr(int peer_rank = ccl_comm::invalid_rank,
-              size_t peer_buf_idx = 0,
-              copy_direction direction = copy_direction::undefined,
+    copy_attr() {}
+
+    copy_attr(int peer_rank,
+              size_t peer_buf_idx,
+              copy_direction direction,
               ccl_comm* map_comm = nullptr,
               size_t in_buf_offset = 0,
               size_t out_buf_offset = 0);

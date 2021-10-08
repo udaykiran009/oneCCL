@@ -86,7 +86,7 @@ Available algorithms for each collective operation (``<algo_name>``):
      - Based on ``MPI_Iallreduce``
    * - ``rabenseifner``
      - Rabenseifner’s algorithm
-   * - ``starlike``
+   * - ``nreduce``
      - May be beneficial for imbalanced workloads
    * - ``ring`` 
      - reduce_scatter + allgather ring.
