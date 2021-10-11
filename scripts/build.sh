@@ -328,7 +328,6 @@ post_build()
     then
         LDFLAGS="-L${LIBFABRIC_INSTALL_DIR}/lib/"
     fi
-    LDFLAGS="${LDFLAGS} -Wl,-rpath,\$ORIGIN/../../../../mpi/latest/lib/release_mt/"
     LDFLAGS="${LDFLAGS} ${HWLOC_DIR}/lib/libhwloc.a"
 
     g++ -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack \

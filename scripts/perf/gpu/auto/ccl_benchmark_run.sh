@@ -33,7 +33,7 @@ source_environment()
 {
     echo_log "MESSAGE: Source MPi & compiler"
     source ${PERF_WORK_DIR}/oneapi/compiler/_install/setvars.sh
-    source ${PERF_WORK_DIR}/oneapi/mpi_oneapi/_install/mpi/latest/env/vars.sh release_mt
+    source ${PERF_WORK_DIR}/oneapi/mpi_oneapi/_install/mpi/latest/env/vars.sh
 }
 
 build() 

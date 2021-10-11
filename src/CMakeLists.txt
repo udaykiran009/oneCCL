@@ -280,11 +280,6 @@ endif()
 add_library(ccl SHARED $<TARGET_OBJECTS:ccl-objects>)
 target_include_directories(ccl PUBLIC ${SRC_INCLUDE_DIRS})
 
-# link with release_mt libmpi.so for oneAPI Base toolkit
-# libccl.so -> cpu_icc/cpu_gpu_dpcpp -> lib -> latest -> ccl -> mpi -> ...
-set(ONEAPI_IMPI_RPATH "'$ORIGIN'/../../../../mpi/latest/lib/release_mt/")
-set_target_properties(ccl PROPERTIES LINK_FLAGS "-Wl,-rpath,${ONEAPI_IMPI_RPATH}")
-
 target_link_libraries(ccl PUBLIC ${SRC_LINK_LIBS})
 
 if (NOT LIB_SO_VERSION AND NOT LIB_MAJOR_VERSION)

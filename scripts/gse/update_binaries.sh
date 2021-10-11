@@ -166,7 +166,7 @@ prepare_mpi()
     echo_log "### Preparing IMPI..."
     mkdir ${PACKAGE_DIR}/mpi_lib
     pushd ${PACKAGE_DIR}/mpi_lib
-    cp -R ${PATH_TO_IMPI}/lib/release_mt/ .
+    cp -R ${PATH_TO_IMPI}/lib/release/ .
     cp -R ${PATH_TO_IMPI}/libfabric/ .
     cp -R ${PATH_TO_IMPI}/bin/ .
     popd

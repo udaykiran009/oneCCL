@@ -30,7 +30,7 @@ echo CONDA_DIR = ${CONDA_DIR}
 
 source /nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/bin/compilervars.sh intel64
 source ${SRC_DIR}/build/_install/env/vars.sh
-source /p/pdsd/scratch/jenkins/artefacts/impi-ch4-nightly/last/psxe_impi/intel64/bin/mpivars.sh release_mt
+source /p/pdsd/scratch/jenkins/artefacts/impi-ch4-nightly/last/psxe_impi/intel64/bin/mpivars.sh
 
 env
 

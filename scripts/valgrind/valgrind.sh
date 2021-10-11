@@ -95,7 +95,7 @@ check_and_set_impi_path()
             I_MPI_ROOT="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
         fi
     fi
-    source ${I_MPI_ROOT}/env/vars.sh -i_mpi_library_kind=release_mt
+    source ${I_MPI_ROOT}/env/vars.sh
 }
 
 
@@ -131,11 +131,11 @@ check_environment()
 set_debug_impi_env_and_timeout()
 {
     export I_MPI_JOB_TIMEOUT=600
-    source $I_MPI_ROOT/env/vars.sh --i_mpi_library_kind=debug_mt
+    source $I_MPI_ROOT/env/vars.sh --i_mpi_library_kind=debug
     IMPI_DEBUG_CHECK=$?
     if [ "$IMPI_DEBUG_CHECK" != "0" ]
     then
-        echo "Warning: $I_MPI_ROOT/env/vars.sh --i_mpi_library_kind=debug_mt wasn't sourced"
+        echo "Warning: $I_MPI_ROOT/env/vars.sh --i_mpi_library_kind=debug wasn't sourced"
         exit 1
     fi
     echo "LD_LIBRARY_PATH = $LD_LIBRARY_PATH"

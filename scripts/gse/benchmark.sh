@@ -5,7 +5,7 @@ set_env()
 	export I_MPI_ROOT=./mpi_lib/
 	export CCL_ROOT=./ccl/
 	export PATH=$I_MPI_ROOT/bin:$PATH
-	export LD_LIBRARY_PATH=$I_MPI_ROOT/libfabric/lib:$I_MPI_ROOT/release_mt:./compiler_lib:./compiler_lib/x64:./compiler_lib/intel64_lin:./compiler_lib/lib:$CCL_ROOT/lib/cpu_gpu_dpcpp::$LD_LIBRARY_PATH
+	export LD_LIBRARY_PATH=$I_MPI_ROOT/libfabric/lib:$I_MPI_ROOT/release:./compiler_lib:./compiler_lib/x64:./compiler_lib/intel64_lin:./compiler_lib/lib:$CCL_ROOT/lib/cpu_gpu_dpcpp::$LD_LIBRARY_PATH
 	export FI_PROVIDER_PATH=$I_MPI_ROOT/libfabric/lib/prov
 	
 	env

@@ -334,7 +334,7 @@ function set_impi_environment()
             export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
         fi
     fi
-    source ${IMPI_PATH}/env/vars.sh -i_mpi_library_kind=release_mt
+    source ${IMPI_PATH}/env/vars.sh
 }
 
 function make_tests()
