@@ -4,6 +4,7 @@
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 #include <CL/sycl/backend_types.hpp>
+#include "common/utils/sycl_utils.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
@@ -111,7 +112,7 @@ bool is_device_buf(const ccl_selector_param& param) {
 bool is_l0_backend(const ccl_selector_param& param) {
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     if (param.stream) {
-        return param.stream->get_backend() == sycl::backend::ext_oneapi_level_zero;
+        return param.stream->get_backend() == ccl::utils::get_level_zero_backend();
     }
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
     return false;

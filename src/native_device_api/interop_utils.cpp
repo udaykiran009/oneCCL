@@ -9,6 +9,7 @@
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 #include <CL/sycl/backend/level_zero.hpp>
 #include "oneapi/ccl/native_device_api/l0/primitives.hpp"
+#include "common/utils/sycl_utils.hpp"
 #endif
 
 namespace native {
@@ -22,7 +23,7 @@ size_t get_sycl_device_id(const cl::sycl::device& device) {
     size_t device_id = std::numeric_limits<size_t>::max();
     try {
         // extract native handle L0
-        auto l0_handle = sycl::get_native<cl::sycl::backend::ext_oneapi_level_zero>(device);
+        auto l0_handle = sycl::get_native<ccl::utils::get_level_zero_backend()>(device);
 
         ze_device_properties_t device_properties;
         ze_result_t ret = zeDeviceGetProperties(l0_handle, &device_properties);
@@ -46,7 +47,7 @@ size_t get_sycl_subdevice_id(const cl::sycl::device& device) {
     size_t subdevice_id = std::numeric_limits<size_t>::max();
     try {
         // extract native handle L0
-        auto l0_handle = sycl::get_native<cl::sycl::backend::ext_oneapi_level_zero>(device);
+        auto l0_handle = sycl::get_native<ccl::utils::get_level_zero_backend()>(device);
 
         ze_device_properties_t device_properties;
         ze_result_t ret = zeDeviceGetProperties(l0_handle, &device_properties);

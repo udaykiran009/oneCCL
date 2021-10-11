@@ -26,7 +26,7 @@ void ze_event_signal_entry::update() {
         if (ccl::global_data::env().enable_kernel_profile) {
             auto native_dev = sched->coll_param.stream->get_ze_device();
             auto native_event_time = ccl::ze::calculate_event_time(
-                sycl::get_native<sycl::backend::ext_oneapi_level_zero>(
+                sycl::get_native<ccl::utils::get_level_zero_backend()>(
                     master_sched->get_native_event()),
                 native_dev);
             master_sched->get_kernel_timer().set_operation_event_time(native_event_time);

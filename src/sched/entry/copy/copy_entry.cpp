@@ -4,6 +4,7 @@
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
 #include <CL/sycl/backend_types.hpp>
+#include "common/utils/sycl_utils.hpp"
 #endif // CCL_ENABLE_SYCL
 
 copy_entry::copy_entry(ccl_sched* sched,
@@ -90,7 +91,7 @@ void copy_entry::start() {
     }
 
 #ifdef CCL_ENABLE_SYCL
-    if (q->get_backend() != cl::sycl::backend::ext_oneapi_level_zero || is_sycl_buf) {
+    if (q->get_backend() != ccl::utils::get_level_zero_backend() || is_sycl_buf) {
         ctype = copy_type::sycl;
         if (!is_sycl_buf) {
             if ((in_ptr_type != sycl::usm::alloc::device) &&

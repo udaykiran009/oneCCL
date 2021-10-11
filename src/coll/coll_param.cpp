@@ -2,6 +2,7 @@
 
 #include "coll/coll_param.hpp"
 #include "common/global/global.hpp"
+#include "common/utils/sycl_utils.hpp"
 
 #define COPY_COMMON_OP_ATTRS(from, to) \
     to->prologue_fn = nullptr; /*from.get<ccl::operation_attr_id::prologue_fn>().get();*/ \
@@ -392,7 +393,7 @@ void ccl_coll_param::validate() const {
     }
 }
 
-// Optional extra event(from ext_oneapi_submit_barrier call) to add to our deps list
+// Optional extra event(from submit_barrier call) to add to our deps list
 void ccl_coll_param::copy_deps(const std::vector<ccl::event>& d, ccl::event* extra) {
 #ifdef CCL_ENABLE_SYCL
     deps.clear();
@@ -439,12 +440,12 @@ void ccl_coll_param::sync_deps(const ccl_stream* s, const std::vector<ccl::event
     // there is no ordering requirement unless dependencies are explicitly provided and which we
     // handle as well.
     if (s != nullptr && s->is_sycl_device_stream() && s->get_native_stream().is_in_order()) {
-        // TODO: it would be nice to pass here all the dependencies as parameters to ext_oneapi_submit_barrier
-        // and get a single event to use later. Note: ext_oneapi_submit_barrier with empty event vector doesn't
-        // do anything and just return an empty event as opposed to ext_oneapi_submit_barrier without paramers
+        // TODO: it would be nice to pass here all the dependencies as parameters to submit_barrier
+        // and get a single event to use later. Note: submit_barrier with empty event vector doesn't
+        // do anything and just return an empty event as opposed to submit_barrier without paramers
         // which submits a full queue barrier. And there is a bug which leads to a crash if
         // empty sycl event is passed to the function.
-        auto sycl_ev = s->get_native_stream().ext_oneapi_submit_barrier();
+        auto sycl_ev = ccl::utils::submit_barrier(s->get_native_stream());
         auto e = ccl::create_event(sycl_ev);
         copy_deps(ds, &e);
         return;

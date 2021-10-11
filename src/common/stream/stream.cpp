@@ -3,6 +3,7 @@
 #include "common/stream/stream.hpp"
 #include "common/stream/stream_provider_dispatcher_impl.hpp"
 #include "common/utils/enums.hpp"
+#include "common/utils/sycl_utils.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
 #ifdef CCL_ENABLE_SYCL
@@ -62,9 +63,9 @@ ccl_stream::ccl_stream(stream_type type,
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ZE
-    if (backend == sycl::backend::ext_oneapi_level_zero) {
-        device = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(stream.get_device());
-        context = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(stream.get_context());
+    if (backend == ccl::utils::get_level_zero_backend()) {
+        device = sycl::get_native<ccl::utils::get_level_zero_backend()>(stream.get_device());
+        context = sycl::get_native<ccl::utils::get_level_zero_backend()>(stream.get_context());
         device_family = ccl::ze::get_device_family(device);
     }
 #endif // CCL_ENABLE_ZE
@@ -125,13 +126,13 @@ cl::sycl::backend ccl_stream::get_backend() const {
 #ifdef CCL_ENABLE_ZE
 
 ze_device_handle_t ccl_stream::get_ze_device() const {
-    CCL_THROW_IF_NOT(backend == sycl::backend::ext_oneapi_level_zero);
+    CCL_THROW_IF_NOT(backend == ccl::utils::get_level_zero_backend());
     CCL_THROW_IF_NOT(device, "no device");
     return device;
 }
 
 ze_context_handle_t ccl_stream::get_ze_context() const {
-    CCL_THROW_IF_NOT(backend == sycl::backend::ext_oneapi_level_zero);
+    CCL_THROW_IF_NOT(backend == ccl::utils::get_level_zero_backend());
     CCL_THROW_IF_NOT(context, "no context");
     return context;
 }

@@ -50,7 +50,7 @@ private:
     std::atomic_int completion_counter{ 0 };
 
 #ifdef CCL_ENABLE_SYCL
-    // The actual event from ext_oneapi_submit_barrier. It's returned to the user via ccl::event.get_native()
+    // The actual event from submit_barrier. It's returned to the user via ccl::event.get_native()
     sycl::event native_event;
     // This is basically a wrapped l0 event from sched_base, we need to keep as sycl object because its destructor
     // implies wait on the event, but in our case it's not yet completed(right after we created it from l0 event).

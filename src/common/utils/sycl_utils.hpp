@@ -1,8 +1,10 @@
 #pragma once
 
-#ifdef CCL_ENABLE_SYCL
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 
+#include <ze_api.h>
 #include <CL/sycl.hpp>
+#include <CL/sycl/backend/level_zero.hpp>
 
 #include "common/stream/stream.hpp"
 #include "common/global/global.hpp"
@@ -48,7 +50,46 @@ static inline std::string sycl_device_to_str(const sycl::device& dev) {
     }
 }
 
+constexpr sycl::backend get_level_zero_backend() {
+#ifdef CCL_ENABLE_LATEST_DPCPP
+    return sycl::backend::ext_oneapi_level_zero;
+#else // CCL_ENABLE_LATEST_DPCPP
+    return sycl::backend::level_zero;
+#endif // CCL_ENABLE_LATEST_DPCPP
+}
+
+static inline sycl::event submit_barrier(cl::sycl::queue queue,
+                                         std::shared_ptr<sycl::event> ev_ptr = nullptr) {
+    sycl::event event;
+#ifdef CCL_ENABLE_LATEST_DPCPP
+    if (ev_ptr) {
+        event = queue.ext_oneapi_submit_barrier({ *ev_ptr.get() });
+    }
+    else {
+        event = queue.ext_oneapi_submit_barrier();
+    }
+#else // CCL_ENABLE_LATEST_DPCPP
+    if (ev_ptr) {
+        event = queue.submit_barrier({ *ev_ptr.get() });
+    }
+    else {
+        event = queue.submit_barrier();
+    }
+#endif // CCL_ENABLE_LATEST_DPCPP
+    return event;
+}
+
+static inline sycl::event make_event(sycl::context& context, ze_event_handle_t& sync_event) {
+#ifdef CCL_ENABLE_LATEST_DPCPP
+    return sycl::make_event<sycl::backend::ext_oneapi_level_zero>(
+        { sync_event, sycl::ext::oneapi::level_zero::ownership::keep }, context);
+#else // CCL_ENABLE_LATEST_DPCPP
+    return sycl::level_zero::make<sycl::event>(
+        context, sync_event, sycl::level_zero::ownership::keep);
+#endif // CCL_ENABLE_LATEST_DPCPP
+}
+
 } // namespace utils
 } // namespace ccl
 
-#endif // CCL_ENABLE_SYCL
+#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL

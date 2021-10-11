@@ -167,11 +167,10 @@ ccl_request* ccl_master_sched::start(ccl_executor* exec, bool reset_sched) {
         auto q = coll_param.stream->get_native_stream();
         auto context = q.get_context();
 #ifdef CCL_ENABLE_SYCL_INTEROP_EVENT
-        auto e = sycl::make_event<sycl::backend::ext_oneapi_level_zero>(
-            { get_memory().sync_event, sycl::ext::oneapi::level_zero::ownership::keep }, context);
-        set_sync_event(e);
+        auto e =
+            std::make_shared<sycl::event>(ccl::utils::make_event(context, get_memory().sync_event));
 
-        set_native_event(q.ext_oneapi_submit_barrier({ e }));
+        set_native_event(ccl::utils::submit_barrier(q, e));
 #else
         CCL_THROW(
             "interop event functionality is not available with current configuration, please rebuild oneCCL using ENABLE_SYCL_INTEROP_EVENT option"
