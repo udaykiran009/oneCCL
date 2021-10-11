@@ -160,33 +160,7 @@ void host_communicator::create_sub_comms(std::shared_ptr<atl_base_comm> atl) {
 ccl_comm* host_communicator::create_with_color(int color,
                                                ccl_comm_id_storage* comm_ids,
                                                const ccl_comm* parent_comm) {
-    if (ccl::global_data::env().atl_transport == ccl_atl_mpi) {
-        std::shared_ptr<atl_base_comm> atl_comm = parent_comm->atl->comm_split(color);
-        ccl_comm* comm = new ccl_comm(atl_comm->get_rank(),
-                                      atl_comm->get_size(),
-                                      comm_ids->acquire(),
-                                      atl_comm->get_rank2rank_map(),
-                                      atl_comm,
-                                      true);
-
-        LOG_DEBUG("new comm: color ",
-                  color,
-                  ", rank ",
-                  comm->rank(),
-                  ", size ",
-                  comm->size(),
-                  ", comm_id ",
-                  comm->id());
-        return comm;
-    }
-    else {
-        std::vector<int> colors(this->size());
-        colors[this->rank()] = color;
-        this->exchange_colors(colors);
-
-        // TODO we can replace this func with own
-        return ccl_comm::create_with_colors(colors, comm_ids, parent_comm, true);
-    }
+    return parent_comm->create_with_color(color, comm_ids, true);
 }
 
 ccl::communicator_interface_ptr host_communicator::split(const comm_split_attr& attr) {

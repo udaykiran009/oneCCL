@@ -38,10 +38,6 @@ public:
         return ATL_STATUS_UNSUPPORTED;
     }
 
-    atl_proc_coord_t* get_proc_coord() override {
-        return &coord;
-    }
-
     atl_status_t mr_reg(const void* buf, size_t len, atl_mr_t** mr) override {
         return transport->mr_reg(buf, len, mr);
     }
@@ -220,25 +216,21 @@ public:
         return 0;
     }
 
-    std::shared_ptr<atl_base_comm> comm_split(size_t color) override;
+    std::shared_ptr<atl_base_comm> comm_split(int color) override;
 
     std::vector<int> get_rank2rank_map() override;
 
 private:
-    atl_mpi_comm(std::shared_ptr<atl_mpi> transport,
-                 std::vector<atl_mpi_ep_t>& parent_eps,
+    atl_mpi_comm(std::vector<atl_mpi_ep_t>& parent_eps,
                  int parent_rank,
                  int parent_size,
                  int color);
     void eps_update();
-    std::shared_ptr<atl_mpi> transport;
     std::vector<atl_mpi_ep_t> eps;
-    std::vector<int> rank2rank_map;
-    atl_proc_coord_t coord;
-    int parent_rank;
-    int parent_size;
+    static atl_mpi* transport;
+    static std::atomic<size_t> comm_count;
 
-    void init_transport();
+    void init_transport(bool is_new);
 };
 
 #endif //CCL_ENABLE_MPI

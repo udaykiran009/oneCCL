@@ -34,10 +34,6 @@ public:
         return pmi->pmrt_set_resize_function(fn);
     }
 
-    atl_proc_coord_t* get_proc_coord() override {
-        return transport->get_proc_coord();
-    }
-
     atl_status_t mr_reg(const void* buf, size_t len, atl_mr_t** mr) override {
         return transport->mr_reg(buf, len, mr);
     }
@@ -52,7 +48,7 @@ public:
                       int dst_proc_idx,
                       uint64_t tag,
                       atl_req_t* req) override {
-        return transport->send(eps[ep_idx], buf, len, dst_proc_idx, tag, req);
+        return transport->send(eps[ep_idx], buf, len, rank2rank_map[dst_proc_idx], tag, req);
     }
 
     atl_status_t recv(size_t ep_idx,
@@ -61,7 +57,7 @@ public:
                       int src_proc_idx,
                       uint64_t tag,
                       atl_req_t* req) override {
-        return transport->recv(eps[ep_idx], buf, len, src_proc_idx, tag, req);
+        return transport->recv(eps[ep_idx], buf, len, rank2rank_map[src_proc_idx], tag, req);
     }
 
     atl_status_t probe(size_t ep_idx,
@@ -69,7 +65,7 @@ public:
                        uint64_t tag,
                        int* found,
                        size_t* recv_len) override {
-        return transport->probe(eps[ep_idx], src_proc_idx, tag, found, recv_len);
+        return transport->probe(eps[ep_idx], rank2rank_map[src_proc_idx], tag, found, recv_len);
     }
 
     atl_status_t allgatherv(size_t ep_idx,
@@ -79,8 +75,7 @@ public:
                             const int* recv_lens,
                             const int* offsets,
                             atl_req_t* req) override {
-        return transport->allgatherv(
-            eps[ep_idx], send_buf, send_len, recv_buf, recv_lens, offsets, req);
+        return ATL_STATUS_UNSUPPORTED;
     }
 
     atl_status_t allreduce(size_t ep_idx,
@@ -90,7 +85,7 @@ public:
                            atl_datatype_t dtype,
                            atl_reduction_t op,
                            atl_req_t* req) override {
-        return transport->allreduce(eps[ep_idx], send_buf, recv_buf, len, dtype, op, req);
+        return ATL_STATUS_UNSUPPORTED;
     }
 
     atl_status_t alltoall(size_t ep_idx,
@@ -98,7 +93,7 @@ public:
                           void* recv_buf,
                           int len,
                           atl_req_t* req) override {
-        return transport->alltoall(eps[ep_idx], send_buf, recv_buf, len, req);
+        return ATL_STATUS_UNSUPPORTED;
     }
 
     atl_status_t alltoallv(size_t ep_idx,
@@ -109,16 +104,15 @@ public:
                            const int* recv_lens,
                            const int* recv_offsets,
                            atl_req_t* req) override {
-        return transport->alltoallv(
-            eps[ep_idx], send_buf, send_lens, send_offsets, recv_buf, recv_lens, recv_offsets, req);
+        return ATL_STATUS_UNSUPPORTED;
     }
 
     atl_status_t barrier(size_t ep_idx, atl_req_t* req) override {
-        return transport->barrier(eps[ep_idx], req);
+        return ATL_STATUS_UNSUPPORTED;
     }
 
     atl_status_t bcast(size_t ep_idx, void* buf, size_t len, int root, atl_req_t* req) override {
-        return transport->bcast(eps[ep_idx], buf, len, root, req);
+        return ATL_STATUS_UNSUPPORTED;
     }
 
     atl_status_t reduce(size_t ep_idx,
@@ -129,7 +123,7 @@ public:
                         atl_datatype_t dtype,
                         atl_reduction_t op,
                         atl_req_t* req) override {
-        return transport->reduce(eps[ep_idx], send_buf, recv_buf, len, root, dtype, op, req);
+        return ATL_STATUS_UNSUPPORTED;
     }
 
     atl_status_t reduce_scatter(size_t ep_idx,
@@ -139,7 +133,7 @@ public:
                                 atl_datatype_t dtype,
                                 atl_reduction_t op,
                                 atl_req_t* req) override {
-        return transport->reduce_scatter(eps[ep_idx], send_buf, recv_buf, recv_len, dtype, op, req);
+        return ATL_STATUS_UNSUPPORTED;
     }
 
     atl_status_t read(size_t ep_idx,
@@ -150,7 +144,8 @@ public:
                       uintptr_t remote_key,
                       int dst_proc_idx,
                       atl_req_t* req) override {
-        return transport->read(eps[ep_idx], buf, len, mr, addr, remote_key, dst_proc_idx, req);
+        return transport->read(
+            eps[ep_idx], buf, len, mr, addr, remote_key, rank2rank_map[dst_proc_idx], req);
     }
 
     atl_status_t write(size_t ep_idx,
@@ -161,7 +156,8 @@ public:
                        uintptr_t remote_key,
                        int dst_proc_idx,
                        atl_req_t* req) override {
-        return transport->write(eps[ep_idx], buf, len, mr, addr, remote_key, dst_proc_idx, req);
+        return transport->write(
+            eps[ep_idx], buf, len, mr, addr, remote_key, rank2rank_map[dst_proc_idx], req);
     }
 
     atl_status_t wait(size_t ep_idx, atl_req_t* req) override {
@@ -201,11 +197,11 @@ public:
     }
 
     int get_r2r_color() override {
-        return transport->get_proc_coord()->local_idx;
+        return coord.local_idx;
     }
 
     int get_host_color() override {
-        return transport->get_proc_coord()->hostname_hash;
+        return coord.hostname_hash;
     }
 
     /*
@@ -216,17 +212,19 @@ public:
         return 0;
     }
 
-    std::shared_ptr<atl_base_comm> comm_split(size_t color) override {
-        CCL_THROW("Function not supported");
-    }
+    std::shared_ptr<atl_base_comm> comm_split(int color) override;
 
     std::vector<int> get_rank2rank_map() override {
-        CCL_THROW("Function not supported");
+        return rank2rank_map;
     }
 
 private:
-    std::shared_ptr<atl_ofi> transport;
-    atl_ep_t** eps = nullptr;
+    static atl_ofi* transport;
+    std::vector<atl_ep_t*> eps;
+    static std::atomic<size_t> comm_count;
 
-    void init_transport();
+    atl_ofi_comm(atl_ofi_comm* parent, int color);
+    void init_transport(bool is_new);
+    using rank_info_t = std::tuple<int, int, size_t>;
+    void rank_info_exchange(std::vector<rank_info_t>& ranks_info, rank_info_t rank_info);
 };

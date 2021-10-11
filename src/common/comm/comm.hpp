@@ -69,11 +69,9 @@ public:
 
     ~ccl_comm() = default;
 
-    /* version with user-provided colors, allows to skip allgatherv */
-    static ccl_comm* create_with_colors(const std::vector<int>& colors,
-                                        ccl_comm_id_storage* comm_ids,
-                                        const ccl_comm* parent_comm,
-                                        bool share_resources = false);
+    ccl_comm* create_with_color(int color,
+                                ccl_comm_id_storage* comm_ids,
+                                bool share_resources = false) const;
 
     std::shared_ptr<ccl_comm> clone_with_new_id(ccl_comm_id_storage::comm_id&& id);
 
@@ -139,7 +137,7 @@ public:
      * @param rank a rank which is part of the current communicator
      * @return number of @c rank in the global communicator
      */
-    int get_global_rank(int rank, bool only_global = false) const;
+    int get_global_rank(int rank, bool only_global) const;
 
     /**
      * Returns the number of @c rank in the current communicator

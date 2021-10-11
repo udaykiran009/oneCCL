@@ -154,7 +154,6 @@ struct atl_ctx {
     atl_proc_coord_t coord;
 
     size_t ep_count;
-    atl_ep_t** eps;
 };
 
 /*

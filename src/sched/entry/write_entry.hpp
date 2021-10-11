@@ -51,8 +51,6 @@ public:
             return;
         }
 
-        int global_dst = comm->get_global_rank(dst);
-
         size_t bytes = cnt * dtype.size();
         atl_status_t atl_status = comm->atl->write(sched->bin->get_atl_ep(),
                                                    src_buf.get_ptr(bytes),
@@ -60,7 +58,7 @@ public:
                                                    src_mr,
                                                    (uint64_t)dst_mr->buf + dst_buf_off,
                                                    dst_mr->remote_key,
-                                                   global_dst,
+                                                   dst,
                                                    &req);
         update_status(atl_status);
     }

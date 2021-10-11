@@ -17,11 +17,11 @@ public:
                               char*** argv,
                               atl_attr_t* attr,
                               const char* main_addr,
-                              std::unique_ptr<ipmi>& pmi) = 0;
+                              std::shared_ptr<ipmi> pmi) = 0;
 
     virtual atl_status_t finalize() = 0;
 
-    virtual atl_status_t update(std::unique_ptr<ipmi>& pmi) = 0;
+    virtual atl_status_t update(std::shared_ptr<ipmi> pmi) = 0;
 
     virtual atl_ep_t** get_eps() = 0;
 

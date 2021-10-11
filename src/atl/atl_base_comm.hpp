@@ -30,8 +30,6 @@ public:
 
     virtual atl_status_t set_resize_function(atl_resize_fn_t fn) = 0;
 
-    virtual atl_proc_coord_t* get_proc_coord() = 0;
-
     virtual atl_status_t mr_reg(const void* buf, size_t len, atl_mr_t** mr) = 0;
 
     virtual atl_status_t mr_dereg(atl_mr_t* mr) = 0;
@@ -148,7 +146,7 @@ public:
 
     virtual int get_host_color() = 0;
 
-    virtual std::shared_ptr<atl_base_comm> comm_split(size_t color) = 0;
+    virtual std::shared_ptr<atl_base_comm> comm_split(int color) = 0;
 
     virtual std::vector<int> get_rank2rank_map() = 0;
 
@@ -173,7 +171,12 @@ protected:
     size_t threads_per_process;
     size_t ranks_per_process;
 
-    std::unique_ptr<ipmi> pmi;
+    std::vector<int> rank2rank_map;
+    atl_proc_coord_t coord;
+    int parent_rank;
+    int parent_size;
+
+    std::shared_ptr<ipmi> pmi;
 };
 
 class atl_comm_manager {

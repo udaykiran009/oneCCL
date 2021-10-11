@@ -38,16 +38,14 @@ public:
     void start() override {
         update_fields();
 
-        int global_src = comm->get_global_rank(src);
-        atl_tag = comm->atl->tag->create(
-            global_src, sched->get_comm_id(), sched->sched_id, sched->get_op_id());
+        atl_tag =
+            comm->atl->tag->create(src, sched->get_comm_id(), sched->sched_id, sched->get_op_id());
         size_t bytes = cnt * dtype.size();
 
-        LOG_DEBUG(
-            "RECV entry src ", global_src, ", tag ", atl_tag, ", req ", &req, ", bytes ", bytes);
+        LOG_DEBUG("RECV entry src ", src, ", tag ", atl_tag, ", req ", &req, ", bytes ", bytes);
 
         atl_status_t atl_status = comm->atl->recv(
-            sched->bin->get_atl_ep(), buf.get_ptr(bytes), bytes, global_src, atl_tag, &req);
+            sched->bin->get_atl_ep(), buf.get_ptr(bytes), bytes, src, atl_tag, &req);
 
         update_status(atl_status);
     }

@@ -167,7 +167,7 @@ fi_addr_t atl_ofi_get_addr(atl_ctx_t* ctx, atl_ofi_prov_t* prov, int proc_idx, s
     return *(prov->addr_table + ((ctx->ep_count * (proc_idx - prov->first_proc_idx)) + ep_idx));
 }
 
-atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, std::unique_ptr<ipmi>& pmi) {
+atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, std::shared_ptr<ipmi> pmi) {
     CCL_THROW_IF_NOT(ofi_ctx, "ofi_ctx is null");
 
     atl_proc_coord_t* coord = &(ofi_ctx->ctx.coord);
@@ -256,7 +256,7 @@ fn_err:
 
 atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
                                             size_t prov_idx,
-                                            std::unique_ptr<ipmi>& pmi) {
+                                            std::shared_ptr<ipmi> pmi) {
     CCL_THROW_IF_NOT(ofi_ctx, "ofi_ctx is null");
 
     atl_ctx_t* ctx = &(ofi_ctx->ctx);
@@ -476,7 +476,7 @@ err_addr:
 
 atl_status_t atl_ofi_prov_eps_connect(atl_ofi_ctx_t* ofi_ctx,
                                       size_t prov_idx,
-                                      std::unique_ptr<ipmi>& pmi) {
+                                      std::shared_ptr<ipmi> pmi) {
     int ret;
     size_t ep_idx;
 
@@ -922,7 +922,7 @@ atl_status_t atl_ofi_prov_init(atl_ctx_t* ctx,
                                struct fi_info* info,
                                atl_ofi_prov_t* prov,
                                atl_attr_t* attr,
-                               std::unique_ptr<ipmi>& pmi) {
+                               std::shared_ptr<ipmi> pmi) {
     struct fi_av_attr av_attr;
     size_t ep_idx = 0;
     ssize_t ret = 0;
@@ -1219,7 +1219,7 @@ bool atl_ofi_compare_nics(const struct fi_info* nic1, const struct fi_info* nic2
 atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
                                    struct fi_info* base_hints,
                                    atl_attr_t* attr,
-                                   std::unique_ptr<ipmi>& pmi) {
+                                   std::shared_ptr<ipmi> pmi) {
     atl_status_t ret = ATL_STATUS_SUCCESS;
     struct fi_info* prov_list = nullptr;
     struct fi_info* prov_iter = nullptr;

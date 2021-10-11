@@ -8,11 +8,11 @@
 #include "atl_ofi_helper.hpp"
 #include "common/utils/hash.hpp"
 
-class atl_ofi final : public iatl {
+class atl_ofi {
 public:
     atl_ofi() = default;
 
-    ~atl_ofi() override;
+    ~atl_ofi();
 
     static atl_status_t atl_set_env(const atl_attr_t& attr);
 
@@ -20,89 +20,33 @@ public:
                       char*** argv,
                       atl_attr_t* attr,
                       const char* main_addr,
-                      std::unique_ptr<ipmi>& pmi) override;
+                      std::shared_ptr<ipmi> pmi);
 
-    atl_status_t update(std::unique_ptr<ipmi>& pmi) override;
+    atl_status_t update(std::shared_ptr<ipmi> pmi);
 
-    atl_ep_t** get_eps() override;
+    std::vector<atl_ep_t*> get_eps();
 
-    atl_proc_coord_t* get_proc_coord() override;
+    atl_proc_coord_t* get_proc_coord();
 
-    atl_status_t mr_reg(const void* buf, size_t len, atl_mr_t** mr) override;
+    atl_status_t mr_reg(const void* buf, size_t len, atl_mr_t** mr);
 
-    atl_status_t mr_dereg(atl_mr_t* mr) override;
+    atl_status_t mr_dereg(atl_mr_t* mr);
 
     atl_status_t send(atl_ep_t* ep,
                       const void* buf,
                       size_t len,
                       int dst_proc_idx,
                       uint64_t tag,
-                      atl_req_t* req) override;
+                      atl_req_t* req);
 
     atl_status_t recv(atl_ep_t* ep,
                       void* buf,
                       size_t len,
                       int src_proc_idx,
                       uint64_t tag,
-                      atl_req_t* req) override;
+                      atl_req_t* req);
 
-    atl_status_t probe(atl_ep_t* ep,
-                       int src_proc_idx,
-                       uint64_t tag,
-                       int* found,
-                       size_t* recv_len) override;
-
-    atl_status_t allgatherv(atl_ep_t* ep,
-                            const void* send_buf,
-                            size_t send_len,
-                            void* recv_buf,
-                            const int* recv_lens,
-                            const int* offsets,
-                            atl_req_t* req) override;
-
-    atl_status_t allreduce(atl_ep_t* ep,
-                           const void* send_buf,
-                           void* recv_buf,
-                           size_t len,
-                           atl_datatype_t dtype,
-                           atl_reduction_t op,
-                           atl_req_t* req) override;
-
-    atl_status_t alltoall(atl_ep_t* ep,
-                          const void* send_buf,
-                          void* recv_buf,
-                          int len,
-                          atl_req_t* req) override;
-
-    atl_status_t alltoallv(atl_ep_t* ep,
-                           const void* send_buf,
-                           const int* send_lens,
-                           const int* send_offsets,
-                           void* recv_buf,
-                           const int* recv_lens,
-                           const int* recv_offsets,
-                           atl_req_t* req) override;
-
-    atl_status_t barrier(atl_ep_t* ep, atl_req_t* req) override;
-
-    atl_status_t bcast(atl_ep_t* ep, void* buf, size_t len, int root, atl_req_t* req) override;
-
-    atl_status_t reduce(atl_ep_t* ep,
-                        const void* send_buf,
-                        void* recv_buf,
-                        size_t len,
-                        int root,
-                        atl_datatype_t dtype,
-                        atl_reduction_t op,
-                        atl_req_t* req) override;
-
-    atl_status_t reduce_scatter(atl_ep_t* ep,
-                                const void* send_buf,
-                                void* recv_buf,
-                                size_t recv_len,
-                                atl_datatype_t dtype,
-                                atl_reduction_t op,
-                                atl_req_t* req) override;
+    atl_status_t probe(atl_ep_t* ep, int src_proc_idx, uint64_t tag, int* found, size_t* recv_len);
 
     atl_status_t read(atl_ep_t* ep,
                       void* buf,
@@ -111,7 +55,7 @@ public:
                       uint64_t addr,
                       uintptr_t remote_key,
                       int dst_proc_idx,
-                      atl_req_t* req) override;
+                      atl_req_t* req);
 
     atl_status_t write(atl_ep_t* ep,
                        const void* buf,
@@ -120,21 +64,21 @@ public:
                        uint64_t addr,
                        uintptr_t remote_key,
                        int dst_proc_idx,
-                       atl_req_t* req) override;
+                       atl_req_t* req);
 
-    atl_status_t wait(atl_ep_t* ep, atl_req_t* req) override;
+    atl_status_t wait(atl_ep_t* ep, atl_req_t* req);
 
-    atl_status_t wait_all(atl_ep_t* ep, atl_req_t* req, size_t count) override;
+    atl_status_t wait_all(atl_ep_t* ep, atl_req_t* req, size_t count);
 
-    atl_status_t cancel(atl_ep_t* ep, atl_req_t* req) override;
+    atl_status_t cancel(atl_ep_t* ep, atl_req_t* req);
 
-    atl_status_t poll(atl_ep_t* ep) override;
+    atl_status_t poll(atl_ep_t* ep);
 
-    atl_status_t check(atl_ep_t* ep, atl_req_t* req) override;
+    atl_status_t check(atl_ep_t* ep, atl_req_t* req);
 
-    atl_status_t finalize() override;
+    atl_status_t finalize();
 
-    bool is_inited() override {
+    bool is_inited() {
         return inited;
     }
 
@@ -144,6 +88,7 @@ private:
     atl_status_t atl_prov_ep_handle_cq_err(atl_ofi_prov_ep_t* ep);
 
     atl_ctx_t* ctx = nullptr;
+    std::vector<atl_ep_t*> eps;
 
     class mr_cache {
     public:

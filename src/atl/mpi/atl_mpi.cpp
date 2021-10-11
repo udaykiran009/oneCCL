@@ -25,7 +25,7 @@ atl_status_t atl_mpi::init(int* argc,
                            char*** argv,
                            atl_attr_t* attr,
                            const char* main_addr,
-                           std::unique_ptr<ipmi>& pmi) {
+                           std::shared_ptr<ipmi> pmi) {
     inited = true;
     CCL_THROW_IF_NOT((sizeof(atl_mpi_req_t) <= sizeof(atl_req_t) - offsetof(atl_req_t, internal)),
                      "unexpected offset: atl_mpi_request size ",
@@ -183,7 +183,7 @@ atl_status_t atl_mpi::finalize() {
     return RET2ATL(ret);
 }
 
-atl_status_t atl_mpi::update(std::unique_ptr<ipmi>& pmi) {
+atl_status_t atl_mpi::update(std::shared_ptr<ipmi> pmi) {
     (void)pmi;
     return ATL_STATUS_UNSUPPORTED;
 }

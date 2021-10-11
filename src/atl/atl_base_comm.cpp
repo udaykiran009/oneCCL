@@ -69,14 +69,10 @@ void atl_base_comm::init_tag() {
 
 void atl_base_comm::executor_update() {
     if (!executor->are_workers_started()) {
-        atl_proc_coord_t* coord = get_proc_coord();
-        if (rank < coord->local_count)
-            LOG_INFO("start workers for local process [",
-                     coord->local_idx,
-                     ":",
-                     coord->local_count,
-                     "]");
-        executor->start_workers(coord->local_idx, coord->local_count);
+        if (rank < coord.local_count)
+            LOG_INFO(
+                "start workers for local process [", coord.local_idx, ":", coord.local_count, "]");
+        executor->start_workers(coord.local_idx, coord.local_count);
     }
 }
 

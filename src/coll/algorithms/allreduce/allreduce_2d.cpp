@@ -8,35 +8,30 @@ ccl_allreduce_2d_builder::ccl_allreduce_2d_builder(size_t base_size,
                                                    ccl_comm* comm) {
     parent_comm = comm;
 
-    size_t vector_size = comm->size();
-    std::vector<int> first_dim_colors(vector_size), second_dim_colors(vector_size);
+    int first_dim_color, second_dim_color;
 
-    for (size_t idx = 0; idx < vector_size; idx++) {
-        if (switch_dims) {
-            first_dim_colors[idx] = idx / base_size;
-            second_dim_colors[idx] = idx % base_size;
-        }
-        else {
-            first_dim_colors[idx] = idx % base_size;
-            second_dim_colors[idx] = idx / base_size;
-        }
+    if (switch_dims) {
+        first_dim_color = comm->rank() / base_size;
+        second_dim_color = comm->rank() % base_size;
+    }
+    else {
+        first_dim_color = comm->rank() % base_size;
+        second_dim_color = comm->rank() / base_size;
     }
 
-    first_dim_comm = std::shared_ptr<ccl_comm>(ccl_comm::create_with_colors(
-        first_dim_colors, ccl::global_data::get().comm_ids.get(), comm, true /*share_resources*/));
+    first_dim_comm = std::shared_ptr<ccl_comm>(comm->create_with_color(
+        first_dim_color, ccl::global_data::get().comm_ids.get(), true /*share_resources*/));
 
-    second_dim_comm = std::shared_ptr<ccl_comm>(ccl_comm::create_with_colors(
-        second_dim_colors, ccl::global_data::get().comm_ids.get(), comm, true /*share_resources*/));
+    second_dim_comm = std::shared_ptr<ccl_comm>(comm->create_with_color(
+        second_dim_color, ccl::global_data::get().comm_ids.get(), true /*share_resources*/));
 
     if (comm->rank() == 0) {
         std::string first_dim_ranks, second_dim_ranks;
         for (int idx = 0; idx < first_dim_comm->size(); idx++) {
-            first_dim_ranks +=
-                ((idx) ? " " : "") + std::to_string(first_dim_comm->get_global_rank(idx));
+            first_dim_ranks += ((idx) ? " " : "") + std::to_string(idx);
         }
         for (int idx = 0; idx < second_dim_comm->size(); idx++) {
-            second_dim_ranks +=
-                ((idx) ? " " : "") + std::to_string(second_dim_comm->get_global_rank(idx));
+            second_dim_ranks += ((idx) ? " " : "") + std::to_string(idx);
         }
 
         std::stringstream ss;

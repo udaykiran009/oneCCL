@@ -45,9 +45,9 @@ public:
                       char*** argv,
                       atl_attr_t* attr,
                       const char* main_addr,
-                      std::unique_ptr<ipmi>& pmi);
+                      std::shared_ptr<ipmi> pmi);
 
-    atl_status_t update(std::unique_ptr<ipmi>& pmi);
+    atl_status_t update(std::shared_ptr<ipmi> pmi);
 
     atl_status_t mr_reg(const void* buf, size_t len, atl_mr_t** mr);
 

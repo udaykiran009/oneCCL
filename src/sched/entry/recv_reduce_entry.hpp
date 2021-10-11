@@ -64,12 +64,11 @@ public:
     }
 
     void start() override {
-        int global_src = comm->get_global_rank(src);
-        atl_tag = comm->atl->tag->create(
-            global_src, sched->get_comm_id(), sched->sched_id, sched->get_op_id());
+        atl_tag =
+            comm->atl->tag->create(src, sched->get_comm_id(), sched->sched_id, sched->get_op_id());
         size_t bytes = in_cnt * dtype.size();
         LOG_DEBUG("starting RECV in RECV_REDUCE entry, src ",
-                  global_src,
+                  src,
                   ", tag ",
                   atl_tag,
                   ", req ",
@@ -78,7 +77,7 @@ public:
                   bytes);
 
         atl_status_t atl_status = comm->atl->recv(
-            sched->bin->get_atl_ep(), comm_buf.get_ptr(bytes), bytes, global_src, atl_tag, &req);
+            sched->bin->get_atl_ep(), comm_buf.get_ptr(bytes), bytes, src, atl_tag, &req);
 
         update_status(atl_status);
     }

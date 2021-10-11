@@ -61,7 +61,7 @@ void ze_ring_allreduce_entry::atl_ops_init() {
 void ze_ring_allreduce_entry::recv_sync_flag(int idx) {
     auto buf = &sync_recv_flags[idx];
     auto bytes = sizeof(sync_recv_flags[idx]);
-    auto src = comm->get_global_rank(left_peer);
+    auto src = left_peer;
     auto tag = recv_tags.at(idx);
     atl_req_t* req = &recv_reqs[idx];
 
@@ -81,7 +81,7 @@ void ze_ring_allreduce_entry::recv_sync_flag(int idx) {
 void ze_ring_allreduce_entry::send_sync_flag(int idx) {
     auto buf = &sync_send_flags[idx];
     auto bytes = sizeof(sync_send_flags[idx]);
-    auto dst = comm->get_global_rank(right_peer);
+    auto dst = right_peer;
     auto tag = send_tags.at(idx);
     atl_req_t* req = &send_reqs[idx];
 
