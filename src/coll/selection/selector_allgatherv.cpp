@@ -21,8 +21,9 @@ ccl_algorithm_selector<ccl_coll_allgatherv>::ccl_algorithm_selector() {
                CCL_SELECTION_MAX_COLL_SIZE,
                ccl_coll_allgatherv_ring);
     }
-    else if (ccl::global_data::env().atl_transport == ccl_atl_mpi)
+    else if (ccl::global_data::env().atl_transport == ccl_atl_mpi) {
         insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allgatherv_direct);
+    }
 
     insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allgatherv_flat);
 }

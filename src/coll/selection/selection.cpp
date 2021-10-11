@@ -254,6 +254,8 @@ bool ccl_can_use_topo_a2a_algo(const ccl_selector_param& param) {
     auto supported_colls = { ccl_coll_allreduce, ccl_coll_allgatherv, ccl_coll_reduce_scatter };
     RETURN_FALSE_IF(!checkers::is_coll_supported(supported_colls, param.ctype),
                     "coll is not supported");
+
+    size_t local_proc_count = ccl::global_data::get().executor->get_local_proc_count();
     int comm_size = param.comm->size();
 
     RETURN_FALSE_IF(!checkers::is_gpu_stream(param), "non-gpu stream is not supported");
@@ -268,9 +270,18 @@ bool ccl_can_use_topo_a2a_algo(const ccl_selector_param& param) {
     RETURN_FALSE_IF(ccl::global_data::env().worker_count != 1, "unsupported count of workers");
 
     RETURN_FALSE_IF(checkers::is_family1_card(param), "family1 card is not supported");
-    RETURN_FALSE_IF(comm_size < 2, "unsupported comm size");
+    RETURN_FALSE_IF((comm_size < 2) || (local_proc_count == 1), "unsupported comm size");
 
-    RETURN_FALSE_IF(!checkers::is_single_node(param), "multi-node is not supported");
+    RETURN_FALSE_IF((param.ctype != ccl_coll_allgatherv) && !checkers::is_single_node(param),
+                    "multi-node is not supported for ",
+                    ccl_coll_type_to_str(param.ctype));
+
+    RETURN_FALSE_IF(((param.ctype == ccl_coll_allgatherv) && (comm_size % local_proc_count != 0)),
+                    "ppn must be equal");
+
+    RETURN_FALSE_IF(!checkers::is_single_card(param) && !checkers::is_single_node(param) &&
+                        (local_proc_count % 2 != 0),
+                    "odd proc count per node is not supported");
 
     return true;
 }
