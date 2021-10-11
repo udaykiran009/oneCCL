@@ -49,8 +49,10 @@ print_help() {
     echo_log "      Run full scope of steps"
     echo_log "  -build <bool_flag>"
     echo_log "      Build CCL"
-    echo_log "  -run <bool_flag>"
-    echo_log "      Run CCL benchmark with different configs"
+    echo_log "  -run < 1 | 2 | 3 >"
+    echo_log "      1 - Run CCL benchmark with default config"
+    echo_log "      2 - Run CCL benchmark with PVC 1 node perf config"
+    echo_log "      3 - Run CCL benchmark with PVC 2 node perf config"
     echo_log "  -p <url>"
     echo_log "      https proxy"
     echo_log "  -freq <frequency>"
@@ -312,12 +314,43 @@ build_ccl() {
 }
 
 run_bench() {
-    node_counts="1 2"
-    ppns="2 6 12"
-    algos="ring topo_ring"
-    copy_engines="none main link"
-    bench_params="-w 4 -i 16 -c last -t 33554432 -j off -q 0"
-    hosts="-hosts c001n0001,c001n0002"
+    if [[ ${RUN_BENCH} = "1" ]]; then
+        node_counts="1 2"
+        ppns="2 6 12"
+        algos="ring topo_ring"
+        copy_engines="none main link"
+        hosts="-hosts c001n0001,c001n0002"
+        ulls_modes="1"
+        runtimes="level_zero"
+        colls="reduce"
+        cache_modes="1"
+    fi
+
+    if [[ ${RUN_BENCH} = "2" ]]; then
+        node_counts="1"
+        ppns="2 4 12"
+        algos="topo_ring"
+        copy_engines="none"
+        hosts="-hosts c001n0001"
+        ulls_modes="0 1"
+        runtimes="level_zero"
+        colls="reduce allreduce"
+        cache_modes="0 1"
+    fi
+
+    if [[ ${RUN_BENCH} = "3" ]]; then
+        node_counts="2"
+        ppns="4"
+        algos="topo_ring"
+        copy_engines="none"
+        hosts="-hosts c001n0001,c001n0002"
+        ulls_modes="0 1"
+        runtimes="level_zero"
+        colls="reduce allreduce"
+        cache_modes="0 1"
+    fi
+
+    bench_params="-w 4 -i 100 -c last -y 2097152 -j off"
 
     base_env="FI_PROVIDER=cxi CCL_ATL_TRANSPORT=mpi"
     base_env+=" CCL_LOG_LEVEL=info I_MPI_DEBUG=12"
@@ -329,30 +362,40 @@ run_bench() {
     base_env+=" CCL_STAGING_BUFFER=regular"
 
     base_env+=" I_MPI_PIN_PROCESSOR_LIST=1-6,56-61 CCL_WORKER_AFFINITY=7-12,62-67"
-    base_env+=" SYCL_DEVICE_FILTER=level_zero"
-    base_env+=" EnableDirectSubmission=1"
+    base_env+=" I_MPI_FABRICS=shm:ofi CCL_BARRIER=direct CCL_ATL_SYNC_COLL=1"
 
-    # TODO: enable fast barrier
-    #base_env+=" I_MPI_FABRICS=shm:ofi CCL_BARRIER=direct CCL_ATL_SYNC_COLL=1"
-
-    for node_count in ${node_counts}
-    do
-        for ppn in ${ppns}
+    for runtime in ${runtimes}
+    do    
+        for coll in ${colls}
         do
-            for algo in ${algos}
+            for cache_mode in ${cache_modes}
             do
-                for copy_engine in ${copy_engines}
+                for ulls_mode in ${ulls_modes}
                 do
-                    if [[ ${algo} = "ring" ]] && [[ ${copy_engine} != "none" ]]
-                    then
-                        continue
-                    fi
+                    for node_count in ${node_counts}
+                    do
+                        for ppn in ${ppns}
+                        do
+                            for algo in ${algos}
+                            do
+                                for copy_engine in ${copy_engines}
+                                do
+                                    if [[ ${algo} = "ring" ]] && [[ ${copy_engine} != "none" ]]
+                                    then
+                                        continue
+                                    fi
 
-                    proc_count=$((node_count*ppn))
+                                    proc_count=$((node_count*ppn))
 
-                    exec_env="${base_env} CCL_ALLREDUCE=${algo} CCL_ZE_COPY_ENGINE=${copy_engine}"
-                    cmd="${exec_env} ${CCL_ROOT}/bin/mpirun -n ${proc_count} -ppn ${ppn} -l ${hosts} ${CCL_ROOT}/examples/benchmark/benchmark ${bench_params}"
-                    run_cmd "${cmd}"
+                                    exec_env="${base_env} CCL_ALLREDUCE=${algo} CCL_ZE_COPY_ENGINE=${copy_engine}"
+                                    exec_env+=" EnableDirectSubmission=${ulls_mode} SYCL_DEVICE_FILTER=${sdf}"
+                                    cmd="${exec_env} ${CCL_ROOT}/bin/mpirun -n ${proc_count} -ppn ${ppn} -l ${hosts}"
+                                    cmd+=" ${CCL_ROOT}/examples/benchmark/benchmark ${bench_params} -p ${cache_mode} -l ${coll}"
+                                    run_cmd "${cmd}"
+                                done
+                            done
+                        done
+                    done
                 done
             done
         done
@@ -369,7 +412,7 @@ then
     build_ccl
 fi
 
-if [[ ${RUN_BENCH} = "1" ]]
+if [[ ${RUN_BENCH} = "1" || ${RUN_BENCH} = "2" || ${RUN_BENCH} = "3" ]]
 then
     set_run_env
     check_run_env
