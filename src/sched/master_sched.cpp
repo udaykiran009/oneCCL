@@ -167,8 +167,8 @@ ccl_request* ccl_master_sched::start(ccl_executor* exec, bool reset_sched) {
         auto q = coll_param.stream->get_native_stream();
         auto context = q.get_context();
 #ifdef CCL_ENABLE_SYCL_INTEROP_EVENT
-        auto e =
-            std::make_shared<sycl::event>(ccl::utils::make_event(context, get_memory().sync_event));
+        auto e = ccl::utils::make_event(context, get_memory().sync_event);
+        set_sync_event(e);
 
         set_native_event(ccl::utils::submit_barrier(q, e));
 #else

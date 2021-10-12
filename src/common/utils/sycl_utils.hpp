@@ -58,25 +58,20 @@ constexpr sycl::backend get_level_zero_backend() {
 #endif // CCL_ENABLE_LATEST_DPCPP
 }
 
-static inline sycl::event submit_barrier(cl::sycl::queue queue,
-                                         std::shared_ptr<sycl::event> ev_ptr = nullptr) {
-    sycl::event event;
+static inline sycl::event submit_barrier(cl::sycl::queue queue) {
 #ifdef CCL_ENABLE_LATEST_DPCPP
-    if (ev_ptr) {
-        event = queue.ext_oneapi_submit_barrier({ *ev_ptr.get() });
-    }
-    else {
-        event = queue.ext_oneapi_submit_barrier();
-    }
+    return queue.ext_oneapi_submit_barrier();
 #else // CCL_ENABLE_LATEST_DPCPP
-    if (ev_ptr) {
-        event = queue.submit_barrier({ *ev_ptr.get() });
-    }
-    else {
-        event = queue.submit_barrier();
-    }
+    return queue.submit_barrier();
 #endif // CCL_ENABLE_LATEST_DPCPP
-    return event;
+}
+
+static inline sycl::event submit_barrier(cl::sycl::queue queue, sycl::event event) {
+#ifdef CCL_ENABLE_LATEST_DPCPP
+    return queue.ext_oneapi_submit_barrier({ event });
+#else // CCL_ENABLE_LATEST_DPCPP
+    return queue.submit_barrier({ event });
+#endif // CCL_ENABLE_LATEST_DPCPP
 }
 
 static inline sycl::event make_event(sycl::context& context, ze_event_handle_t& sync_event) {
