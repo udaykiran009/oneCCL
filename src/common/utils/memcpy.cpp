@@ -22,6 +22,7 @@ __attribute__((__always_inline__)) inline int is_nts_supported() {
     }
     return is_avx_enabled;
 #else // CCL_AVX_COMPILER
+    LOG_DEBUG("AVX disabled due to compiler");
     return 0;
 #endif // CCL_AVX_COMPILER
 }
@@ -34,6 +35,10 @@ void memcpy_nontemporal(void *dst, const void *src, size_t size) {
     char *d = (char *)dst;
     const char *s = (const char *)src;
     size_t n = size;
+
+    if (!is_nts_supported()) {
+        LOG_DEBUG("NTS-based memcpy is requested but not supported, use regular memcpy");
+    }
 
 #ifdef CCL_AVX_COMPILER
     if ((n <= 256) || !is_nts_supported()) {

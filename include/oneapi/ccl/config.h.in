@@ -40,9 +40,5 @@
 /* Auto-generated configuration settings for SYCL support */
 #cmakedefine CCL_ENABLE_SYCL
 
-#ifdef CCL_ENABLE_SYCL
-@CCL_ENABLE_SYCL_CHECK_CONTRACT@
-#endif
-
 /* Auto-generated configuration settings for Level Zero support */
 #cmakedefine CCL_ENABLE_ZE
