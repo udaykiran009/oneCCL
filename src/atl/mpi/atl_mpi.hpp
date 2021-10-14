@@ -2,7 +2,6 @@
 #ifdef CCL_ENABLE_MPI
 #include <mpi.h>
 
-#include "atl.h"
 #include "atl_mpi_global_data.hpp"
 
 typedef enum { ATL_MPI_COMP_POSTED, ATL_MPI_COMP_COMPLETED } atl_mpi_comp_state_t;

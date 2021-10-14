@@ -1,6 +1,6 @@
 #ifdef CCL_ENABLE_MPI
 
-#include "atl/atl_mpi_comm.hpp"
+#include "atl/mpi/atl_mpi_comm.hpp"
 #include "exec/exec.hpp"
 
 std::atomic<size_t> atl_mpi_comm::comm_count{ 0 };

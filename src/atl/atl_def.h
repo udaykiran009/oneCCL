@@ -2,9 +2,13 @@
 
 #include <cstring>
 #include <map>
+#include <memory>
+#include <vector>
 #include <stddef.h>
 #include <stdint.h>
 #include <string>
+
+#include "common/log/log.hpp"
 
 #ifndef container_of
 #define container_of(ptr, type, field) ((type*)((char*)ptr - offsetof(type, field)))

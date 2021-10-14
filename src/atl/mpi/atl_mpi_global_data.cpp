@@ -1,7 +1,7 @@
 #ifdef CCL_ENABLE_MPI
 
-#include "atl/atl_mpi_global_data.hpp"
 #include "atl/mpi/atl_mpi.hpp"
+#include "atl/mpi/atl_mpi_global_data.hpp"
 #include "common/global/global.hpp"
 #include "common/log/log.hpp"
 

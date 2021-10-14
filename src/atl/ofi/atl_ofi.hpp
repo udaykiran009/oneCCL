@@ -4,7 +4,6 @@
 #include <rdma/fi_domain.h>
 #include <unordered_map>
 
-#include "atl.h"
 #include "atl_ofi_helper.hpp"
 #include "common/utils/hash.hpp"
 

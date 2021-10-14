@@ -1,7 +1,5 @@
 #pragma once
 
-#include "atl/atl.h"
-
 typedef struct {
     int wait_dst;
 

@@ -19,7 +19,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "atl.h"
+#include "atl/util/pm/pm_rt.h"
 #include "common/global/global.hpp"
 #include "hwloc/hwloc_wrapper.hpp"
 #ifdef CCL_ENABLE_OFI_HMEM

@@ -4,7 +4,7 @@
 #include <list>
 #include <memory>
 
-#include "atl/atl.h"
+#include "atl/atl_base_comm.hpp"
 #include "coll/coll_param.hpp"
 #include "common/comm/atl_tag.hpp"
 #include "common/request/request.hpp"

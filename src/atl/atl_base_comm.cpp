@@ -1,12 +1,12 @@
 #ifdef CCL_ENABLE_MPI
 #include "atl/mpi/atl_mpi.hpp"
-#include "atl_mpi_comm.hpp"
+#include "atl/mpi/atl_mpi_comm.hpp"
 #endif // CCL_ENABLE_MPI
 
-#include "atl/atl_ofi_comm.hpp"
 #include "atl/atl_base_comm.hpp"
+#include "atl/ofi/atl_ofi_comm.hpp"
 #include "atl/ofi/atl_ofi.hpp"
-#include "common/global/global.hpp"
+#include "atl/util/pm/pm_rt.h"
 #include "exec/exec.hpp"
 
 atl_attr_t atl_base_comm::attr = {
