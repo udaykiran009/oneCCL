@@ -1,7 +1,7 @@
 #include "oneapi/ccl/types.hpp"
 #include "oneapi/ccl/environment.hpp"
 #include "oneapi/ccl/api_functions.hpp"
-#include "common/comm/host_communicator/host_communicator.hpp"
+#include "common/comm/comm.hpp"
 #include "oneapi/ccl/exception.hpp"
 
 #if defined(CCL_ENABLE_ZE) || defined(CCL_ENABLE_SYCL)

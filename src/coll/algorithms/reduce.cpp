@@ -6,7 +6,7 @@
  */
 
 #include "coll/algorithms/algorithms.hpp"
-#include "common/comm/host_communicator/host_communicator.hpp"
+#include "common/comm/comm.hpp"
 #include "sched/entry/coll/coll_entry_helper.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
@@ -450,10 +450,10 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
                                       ccl_comm* comm) {
     LOG_DEBUG("build gpu reduce");
 
-    ccl_comm* pair_comm = comm->get_host_comm()->get_pair_comm()->get_ccl_comm().get();
-    ccl_comm* even_comm = comm->get_host_comm()->get_even_comm()->get_ccl_comm().get();
-    ccl_comm* node_comm = comm->get_host_comm()->get_node_comm()->get_ccl_comm().get();
-    ccl_comm* r2r_comm = comm->get_host_comm()->get_r2r_comm()->get_ccl_comm().get();
+    ccl_comm* pair_comm = comm->get_pair_comm().get();
+    ccl_comm* even_comm = comm->get_even_comm().get();
+    ccl_comm* node_comm = comm->get_node_comm().get();
+    ccl_comm* r2r_comm = comm->get_r2r_comm().get();
 
     int comm_size = comm->size();
     int even_comm_size = even_comm->size();

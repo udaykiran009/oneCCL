@@ -18,8 +18,9 @@ ccl_unordered_coll_manager::ccl_unordered_coll_manager(ccl_comm& parent_comm) {
         new ccl_comm(parent_comm.rank(),
                      parent_comm.size(),
                      ccl::global_data::get().comm_ids->acquire(true /*internal_id_space*/),
-                     parent_comm.atl,
-                     true /*share_resources*/));
+                     parent_comm.get_atl(),
+                     true /*share_resources*/,
+                     true /* is_sub_communicator */));
 
     CCL_ASSERT(coordination_comm.get(), "coordination_comm is null");
 

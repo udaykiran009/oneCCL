@@ -70,8 +70,9 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
     bool postpone_schedule = false;
     if (ccl::global_data::env().enable_unordered_coll) {
         if (!attr.match_id.empty()) {
-            auto comm =
-                param.comm->unordered_coll_manager->get_comm(std::string(attr.match_id)).get();
+            auto comm = param.comm->get_unordered_coll_manager()
+                            ->get_comm(std::string(attr.match_id))
+                            .get();
             if (!comm) {
                 if (attr.synchronous) {
                     CCL_THROW("unsupported collective (synchronous && unordered && !communicator)");
@@ -113,7 +114,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
             user has provided match_id that has not been resolved yet.
             schedule will be postponed until comm resolution
         */
-        return param.comm->unordered_coll_manager->postpone(sched);
+        return param.comm->get_unordered_coll_manager()->postpone(sched);
     }
 
     /* 6. regular schedule execution */
@@ -234,7 +235,7 @@ ccl::status ccl_coll_build_allreduce(ccl_sched* sched,
                 sched, send_buf, recv_buf, count, dtype, reduction, comm));
             break;
         case ccl_coll_allreduce_2d:
-            CCL_CALL(comm->allreduce_2d_builder->build(
+            CCL_CALL(comm->get_allreduce_2d_builder()->build(
                 sched, send_buf, recv_buf, count, dtype, reduction));
             break;
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)

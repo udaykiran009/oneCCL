@@ -19,25 +19,25 @@
 #include "supported_topologies.hpp"
 #endif
 
-#include "common/comm/host_communicator/host_communicator_impl.hpp"
+#include "common/comm/comm_impl.hpp"
 
 namespace ccl {
 
 communicator_interface_ptr communicator_interface_dispatcher::create_communicator_impl() {
-    return communicator_interface_ptr(new host_communicator());
+    return communicator_interface_ptr(new ccl_comm());
 }
 
 communicator_interface_ptr communicator_interface_dispatcher::create_communicator_impl(
     const size_t size,
     shared_ptr_class<ikvs_wrapper> kvs) {
-    return communicator_interface_ptr(new host_communicator(size, kvs));
+    return communicator_interface_ptr(new ccl_comm(size, kvs));
 }
 
 communicator_interface_ptr communicator_interface_dispatcher::create_communicator_impl(
     const size_t size,
     const int rank,
     shared_ptr_class<ikvs_wrapper> kvs) {
-    return communicator_interface_ptr(new host_communicator(size, rank, kvs));
+    return communicator_interface_ptr(new ccl_comm(size, rank, kvs));
 }
 
 template <class DeviceType,
@@ -128,7 +128,7 @@ communicator_interface_dispatcher::create_communicator_from_unified_device(
 #if defined(CCL_ENABLE_ZE) || defined(CCL_ENABLE_SYCL)
         case ccl::group_split_type::single: {
             return communicator_interface_ptr(
-                new host_communicator(std::move(device_id), std::move(context), atl));
+                new ccl_comm(std::move(device_id), std::move(context), atl));
         }
 #endif
         default:

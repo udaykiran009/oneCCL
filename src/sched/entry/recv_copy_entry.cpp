@@ -4,8 +4,8 @@
 #include "sched/queue/queue.hpp"
 
 void recv_copy_entry::start() {
-    atl_tag =
-        comm->atl->tag->create(src, sched->get_comm_id(), sched->sched_id, sched->get_op_id());
+    atl_tag = comm->get_atl()->tag->create(
+        src, sched->get_comm_id(), sched->sched_id, sched->get_op_id());
     LOG_DEBUG("starting RECV in RECV_COPY entry, src ",
               src,
               ", tag ",
@@ -15,14 +15,14 @@ void recv_copy_entry::start() {
               ", bytes ",
               bytes);
 
-    atl_status_t atl_status = comm->atl->recv(
+    atl_status_t atl_status = comm->get_atl()->recv(
         sched->bin->get_atl_ep(), recv_buf.get_ptr(bytes), bytes, src, atl_tag, &req);
 
     update_status(atl_status);
 }
 
 void recv_copy_entry::update() {
-    atl_status_t atl_status = comm->atl->check(sched->bin->get_atl_ep(), &req);
+    atl_status_t atl_status = comm->get_atl()->check(sched->bin->get_atl_ep(), &req);
 
     if (unlikely(atl_status != ATL_STATUS_SUCCESS)) {
         CCL_THROW("RECV_COPY entry failed. atl_status: ", atl_status_to_str(atl_status));

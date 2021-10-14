@@ -59,8 +59,8 @@ static void ccl_allreduce_2d_add_allreduce_allgather(ccl_sched* sched,
                                                      ccl_comm* comm,
                                                      size_t chunk_idx,
                                                      size_t chunk_count) {
-    ccl_comm* first_dim_comm = comm->allreduce_2d_builder->get_first_dim_comm();
-    ccl_comm* second_dim_comm = comm->allreduce_2d_builder->get_second_dim_comm();
+    ccl_comm* first_dim_comm = comm->get_allreduce_2d_builder()->get_first_dim_comm();
+    ccl_comm* second_dim_comm = comm->get_allreduce_2d_builder()->get_second_dim_comm();
 
     size_t dtype_size = dtype.size();
     size_t main_chunk_size = count / chunk_count;
@@ -96,7 +96,7 @@ static void ccl_allreduce_2d_add_reduce_scatter_allreduce_allgather(ccl_sched* s
                                                                     ccl_comm* comm,
                                                                     size_t chunk_idx,
                                                                     size_t chunk_count) {
-    ccl_comm* first_dim_comm = comm->allreduce_2d_builder->get_first_dim_comm();
+    ccl_comm* first_dim_comm = comm->get_allreduce_2d_builder()->get_first_dim_comm();
 
     size_t dtype_size = dtype.size();
     size_t main_chunk_size = count / chunk_count;

@@ -21,7 +21,7 @@ public:
         std::list<atl_mr_t*>::iterator it;
         for (it = mr_list.begin(); it != mr_list.end(); it++) {
             LOG_DEBUG("deregister mr ", *it);
-            atl_status = comm->atl->mr_dereg(*it);
+            atl_status = comm->get_atl()->mr_dereg(*it);
             if (unlikely(atl_status != ATL_STATUS_SUCCESS)) {
                 CCL_THROW("DEREGISTER entry failed. atl_status: ", atl_status_to_str(atl_status));
             }

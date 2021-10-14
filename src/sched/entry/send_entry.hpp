@@ -29,13 +29,13 @@ public:
               comm(comm) {}
 
     void start_send() {
-        atl_tag = comm->atl->tag->create(
+        atl_tag = comm->get_atl()->tag->create(
             comm->rank(), sched->get_comm_id(), sched->sched_id, sched->get_op_id());
         size_t bytes = cnt * dtype.size();
 
         LOG_DEBUG("SEND entry dst ", dst, ", tag ", atl_tag, ", req ", &req, ", bytes ", bytes);
 
-        atl_status_t atl_status = comm->atl->send(
+        atl_status_t atl_status = comm->get_atl()->send(
             sched->bin->get_atl_ep(), send_buf.get_ptr(bytes), bytes, dst, atl_tag, &req);
 
         update_status(atl_status);
@@ -99,7 +99,7 @@ public:
     }
 
     void update() override {
-        atl_status_t atl_status = comm->atl->check(sched->bin->get_atl_ep(), &req);
+        atl_status_t atl_status = comm->get_atl()->check(sched->bin->get_atl_ep(), &req);
 
         if (unlikely(atl_status != ATL_STATUS_SUCCESS)) {
             CCL_THROW("SEND entry failed. atl_status: ", atl_status_to_str(atl_status));

@@ -6,7 +6,7 @@
  */
 
 #include "coll/algorithms/algorithms.hpp"
-#include "common/comm/host_communicator/host_communicator.hpp"
+#include "common/comm/comm.hpp"
 #include "sched/entry/coll/coll_entry_helper.hpp"
 #include "sched/entry/copy/copy_helper.hpp"
 #include "sched/entry/factory/chunked_entry_factory.hpp"
@@ -551,10 +551,10 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
         in_buffers.push_back({ static_cast<void*>(ipc_event_pool), ccl::ze::ipc_mem_type::pool });
     }
 
-    ccl_comm* pair_comm = comm->get_host_comm()->get_pair_comm()->get_ccl_comm().get();
-    ccl_comm* even_comm = comm->get_host_comm()->get_even_comm()->get_ccl_comm().get();
-    ccl_comm* node_comm = comm->get_host_comm()->get_node_comm()->get_ccl_comm().get();
-    ccl_comm* r2r_comm = comm->get_host_comm()->get_r2r_comm()->get_ccl_comm().get();
+    ccl_comm* pair_comm = comm->get_pair_comm().get();
+    ccl_comm* even_comm = comm->get_even_comm().get();
+    ccl_comm* node_comm = comm->get_node_comm().get();
+    ccl_comm* r2r_comm = comm->get_r2r_comm().get();
 
     int comm_size = comm->size();
     int even_comm_size = even_comm->size();
