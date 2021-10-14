@@ -21,6 +21,8 @@ DEFAULT_SCRIPT_WORK_DIR="${SCRIPT_DIR}/work_dir_${current_date}"
 DEFAULT_FULL_SCOPE="0"
 DEFAULT_BUILD_CCL="0"
 DEFAULT_RUN_BENCH="0"
+DEFAULT_CHECK_ANR="0"
+DEFAULT_CHECK_CXI="0"
 DEFAULT_PROXY="http://proxy-us.intel.com:912"
 
 echo_log() {
@@ -52,11 +54,15 @@ print_help() {
     echo_log "  -run < 1 | 2 | 3 >"
     echo_log "      1 - Run CCL benchmark with default config"
     echo_log "      2 - Run CCL benchmark with PVC 1 node perf config"
-    echo_log "      3 - Run CCL benchmark with PVC 2 node perf config"
-    echo_log "  -p <url>"
-    echo_log "      https proxy"
+    echo_log "      3 - Run CCL benchmark with PVC 2 nodes perf config"
     echo_log "  -freq <frequency>"
     echo_log "      Sets a fixed frequency in megaherz on all tiles"
+    echo_log "  -check_anr <bool_flag>"
+    echo_log "      Perfom ANR links check"
+    echo_log "  -check_cxi <bool_flag>"
+    echo_log "      Perfom CXI cards check"
+    echo_log "  -p <url>"
+    echo_log "      https proxy"
     echo_log ""
     echo_log "Usage example:"
     echo_log "  ${BASENAME}.sh -full 1"
@@ -68,6 +74,8 @@ parse_arguments() {
     FULL_SCOPE=${DEFAULT_FULL_SCOPE}
     BUILD_CCL=${DEFAULT_BUILD_CCL}
     RUN_BENCH=${DEFAULT_RUN_BENCH}
+    CHECK_ANR=${DEFAULT_CHECK_ANR}
+    CHECK_CXI=${DEFAULT_CHECK_CXI}
     PROXY=${DEFAULT_PROXY}
 
     while [ $# -ne 0 ]
@@ -93,13 +101,21 @@ parse_arguments() {
                 RUN_BENCH=${2}
                 shift
                 ;;
-            "-proxy")
-                PROXY="${2}"
-                shift
-                ;;
             "-freq")
                 GPU_FREQUENCY="${2}"
                 set_frequency
+                shift
+                ;;
+            "-check_anr")
+                CHECK_ANR=${2}
+                shift
+                ;;
+            "-check_cxi")
+                CHECK_CXI=${2}
+                shift
+                ;;
+            "-proxy")
+                PROXY="${2}"
                 shift
                 ;;
             *)
@@ -120,6 +136,8 @@ parse_arguments() {
     then
         BUILD_CCL="1"
         RUN_BENCH="1"
+        CHECK_ANR="1"
+        CHECK_CXI="1"
 
         if [[ -d ${SCRIPT_WORK_DIR} ]]
         then
@@ -139,6 +157,8 @@ parse_arguments() {
     echo_log "FULL_SCOPE      = ${FULL_SCOPE}"
     echo_log "BUILD_CCL       = ${BUILD_CCL}"
     echo_log "RUN_BENCH       = ${RUN_BENCH}"
+    echo_log "CHECK_ANR       = ${CHECK_ANR}"
+    echo_log "CHECK_CXI       = ${CHECK_CXI}"
     echo_log "PROXY           = ${PROXY}"
 }
 
@@ -200,34 +220,7 @@ set_run_env() {
     # TODO: frequency script
 }
 
-check_run_env() {
-    level_zero_version=`rpm -qa | grep level-zero`
-    echo_log "\nLevel Zero version:"
-    echo_log "${level_zero_version}"
-
-    driver_version=`clinfo -a | grep -i "driver version"`
-    echo_log "\nDriver version:"
-    echo_log "${driver_version}"
-
-    device_list=`clinfo -l`
-    echo_log "\nDevice list:"
-    echo_log "${device_list}"
-
-    sycl_ls=`sycl-ls`
-    echo_log "\nsycl-ls:"
-    echo_log "${sycl_ls}"
-
-    cxi_state=`fi_info -p cxi -v | grep -i state | grep -i up | wc -l`
-    if [ "${cxi_state}" != 8 ]
-    then
-        check_exit_code 1 "\nCXI check failed\n"
-    else
-        echo_log "\nCXI check passed\n"
-    fi
-
-    return
-
-    # ANR check
+check_anr() {
     check_log="anr_check.log"
     test_path="/home/mshiryae/shared/zello_ipc_copy_dma_buf_p2p.out"
     total_fails=0
@@ -279,6 +272,34 @@ check_run_env() {
     # done | grep -e VARIABLE | grep -v -e HEALTHY
 }
 
+check_cxi() {
+    cxi_state=`fi_info -p cxi -v | grep -i state | grep -i up | wc -l`
+    if [ "${cxi_state}" != 8 ]
+    then
+        check_exit_code 1 "\nCXI check failed\n"
+    else
+        echo_log "\nCXI check passed\n"
+    fi
+}
+
+check_run_env() {
+    level_zero_version=`rpm -qa | grep level-zero`
+    echo_log "\nLevel Zero version:"
+    echo_log "${level_zero_version}"
+
+    driver_version=`clinfo -a | grep -i "driver version"`
+    echo_log "\nDriver version:"
+    echo_log "${driver_version}"
+
+    device_list=`clinfo -l`
+    echo_log "\nDevice list:"
+    echo_log "${device_list}"
+
+    sycl_ls=`sycl-ls`
+    echo_log "\nsycl-ls:"
+    echo_log "${sycl_ls}"
+}
+
 build_ccl() {
     if [[ -d ${CCL_SRC_DIR} ]]
     then
@@ -314,7 +335,11 @@ build_ccl() {
 }
 
 run_bench() {
-    if [[ ${RUN_BENCH} = "1" ]]; then
+
+    bench_params="-w 4 -i 20 -c last -j off"
+
+    if [[ ${RUN_BENCH} = "1" ]]
+    then
         node_counts="1 2"
         ppns="2 6 12"
         algos="ring topo_ring"
@@ -322,11 +347,13 @@ run_bench() {
         hosts="-hosts c001n0001,c001n0002"
         ulls_modes="1"
         runtimes="level_zero"
-        colls="reduce"
+        colls="allreduce"
         cache_modes="1"
+        bench_params+=" -t 8388608"
     fi
 
-    if [[ ${RUN_BENCH} = "2" ]]; then
+    if [[ ${RUN_BENCH} = "2" ]]
+    then
         node_counts="1"
         ppns="2 4 12"
         algos="topo_ring"
@@ -336,9 +363,11 @@ run_bench() {
         runtimes="level_zero"
         colls="reduce allreduce"
         cache_modes="0 1"
+        bench_params+=" -y 8388608"
     fi
 
-    if [[ ${RUN_BENCH} = "3" ]]; then
+    if [[ ${RUN_BENCH} = "3" ]]
+    then
         node_counts="2"
         ppns="4"
         algos="topo_ring"
@@ -348,9 +377,8 @@ run_bench() {
         runtimes="level_zero"
         colls="reduce allreduce"
         cache_modes="0 1"
+        bench_params+=" -y 8388608"
     fi
-
-    bench_params="-w 4 -i 100 -c last -y 2097152 -j off"
 
     base_env="FI_PROVIDER=cxi CCL_ATL_TRANSPORT=mpi"
     base_env+=" CCL_LOG_LEVEL=info I_MPI_DEBUG=12"
@@ -387,10 +415,15 @@ run_bench() {
 
                                     proc_count=$((node_count*ppn))
 
-                                    exec_env="${base_env} CCL_ALLREDUCE=${algo} CCL_ZE_COPY_ENGINE=${copy_engine}"
-                                    exec_env+=" EnableDirectSubmission=${ulls_mode} SYCL_DEVICE_FILTER=${sdf}"
-                                    cmd="${exec_env} ${CCL_ROOT}/bin/mpirun -n ${proc_count} -ppn ${ppn} -l ${hosts}"
-                                    cmd+=" ${CCL_ROOT}/examples/benchmark/benchmark ${bench_params} -p ${cache_mode} -l ${coll}"
+                                    exec_env="${base_env} CCL_ALLREDUCE=${algo}"
+                                    exec_env+=" CCL_ZE_COPY_ENGINE=${copy_engine}"
+                                    exec_env+=" EnableDirectSubmission=${ulls_mode}"
+                                    exec_env+=" SYCL_DEVICE_FILTER=${runtime}"
+
+                                    cmd="${exec_env} ${CCL_ROOT}/bin/mpirun"
+                                    cmd+=" -n ${proc_count} -ppn ${ppn} -l ${hosts}"
+                                    cmd+=" ${CCL_ROOT}/examples/benchmark/benchmark"
+                                    cmd+=" ${bench_params} -p ${cache_mode} -l ${coll}"
                                     run_cmd "${cmd}"
                                 done
                             done
@@ -410,6 +443,16 @@ check_build_env
 if [[ ${BUILD_CCL} = "1" ]]
 then
     build_ccl
+fi
+
+if [[ ${CHECK_ANR} = "1" ]]
+then
+    check_anr
+fi
+
+if [[ ${CHECK_CXI} = "1" ]]
+then
+    check_cxi
 fi
 
 if [[ ${RUN_BENCH} = "1" || ${RUN_BENCH} = "2" || ${RUN_BENCH} = "3" ]]
