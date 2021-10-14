@@ -511,10 +511,12 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
             size_t offset_bytes = main_block_count * even_comm->rank() * dtype.size();
             ccl_buffer partial_tmp_buf = tmp_buf + offset_bytes;
             LOG_DEBUG("topo_ring/scale_up/inter: use ze_a2a_reduce_scatter_entry");
+            std::vector<size_t> block_counts(even_comm->size(), main_block_count);
+            block_counts[even_comm->size() - 1] = block_count;
             entry_factory::create<ze_a2a_reduce_scatter_entry>(sched,
                                                                tmp_buf,
                                                                partial_tmp_buf,
-                                                               main_block_count,
+                                                               block_counts.data(),
                                                                dtype,
                                                                op,
                                                                even_comm,

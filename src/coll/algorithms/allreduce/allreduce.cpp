@@ -609,10 +609,12 @@ ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
                 size_t offset_bytes = main_block_count * even_comm->rank() * dtype.size();
                 ccl_buffer partial_recv_buf = recv_buf + offset_bytes;
                 LOG_DEBUG("topo_ring/scale_up/inter: use ze_a2a_reduce_scatter_entry");
+                std::vector<size_t> block_counts(even_comm->size(), main_block_count);
+                block_counts[even_comm->size() - 1] = block_count;
                 entry_factory::create<ze_a2a_reduce_scatter_entry>(sched,
                                                                    recv_buf,
                                                                    partial_recv_buf,
-                                                                   block_count,
+                                                                   block_counts.data(),
                                                                    dtype,
                                                                    op,
                                                                    even_comm,

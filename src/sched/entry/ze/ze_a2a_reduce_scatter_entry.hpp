@@ -18,7 +18,7 @@ public:
     explicit ze_a2a_reduce_scatter_entry(ccl_sched* sched,
                                          ccl_buffer send_buf,
                                          ccl_buffer recv_buf,
-                                         size_t cnt,
+                                         const size_t* recv_counts,
                                          const ccl_datatype& dtype,
                                          ccl::reduction op,
                                          ccl_comm* comm,
@@ -35,9 +35,7 @@ public:
                           const std::vector<ccl_buffer>& peer_send_bufs,
                           int peer_count,
                           int comm_rank,
-                          size_t main_block_count,
                           size_t block_count,
-                          size_t copy_bytes,
                           size_t offset_bytes,
                           std::vector<ze_event_handle_t>& copy_events,
                           std::vector<ze_kernel>& kernels,
@@ -57,8 +55,7 @@ private:
     const ccl_buffer recv_buf;
     const ccl_datatype dtype;
     const ccl::reduction op;
-    const size_t buf_count;
-    const size_t buf_bytes;
+    const std::vector<size_t> recv_counts;
     const size_t peer_buf_idx;
     const int peer_count;
 
