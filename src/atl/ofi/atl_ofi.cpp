@@ -179,10 +179,7 @@ atl_status_t atl_ofi::init(int* argc,
 
     if (global_data.ctx_count == 0) {
         ret = atl_ofi_set_env(*attr);
-        if (ret != ATL_STATUS_SUCCESS) {
-            LOG_ERROR("atl_ofi_set_env error");
-            return ATL_STATUS_FAILURE;
-        }
+        ATL_CHECK_STATUS(ret, "atl_ofi_set_env error");
 
         fi_version_env = getenv(ATL_OFI_MAJOR_VERSION);
         if (fi_version_env) {
@@ -387,7 +384,7 @@ atl_status_t atl_ofi::init(int* argc,
         eps[ep_idx] = ep;
     }
 
-    pmi->pmrt_barrier();
+    ATL_CHECK_STATUS(pmi->pmrt_barrier(), "barrier failed");
 
     max_retry_count_env = getenv(ATL_OFI_MAX_RETRY_COUNT_ENV);
     if (max_retry_count_env) {
@@ -508,7 +505,7 @@ atl_status_t atl_ofi::update(std::shared_ptr<ipmi> pmi) {
     atl_ofi_ctx_t* ofi_ctx;
     ofi_ctx = container_of(ctx, atl_ofi_ctx_t, ctx);
 
-    pmi->pmrt_barrier();
+    ATL_CHECK_STATUS(pmi->pmrt_barrier(), "barrier failed");
 
     atl_ofi_reset(ctx);
     memset(&(ctx->coord), 0, sizeof(atl_proc_coord_t));
@@ -543,7 +540,7 @@ atl_status_t atl_ofi::update(std::shared_ptr<ipmi> pmi) {
             return RET2ATL(ret);
     }
 
-    pmi->pmrt_barrier();
+    ATL_CHECK_STATUS(pmi->pmrt_barrier(), "barrier failed");
 
     /* normal end of execution */
     return RET2ATL(ret);

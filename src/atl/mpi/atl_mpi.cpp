@@ -579,7 +579,7 @@ atl_status_t atl_mpi::cancel(atl_mpi_ep_t& ep, atl_req_t* req) {
 
 atl_status_t atl_mpi::poll(atl_mpi_ep_t& ep) {
     if (progress_mode == ATL_PROGRESS_POLL) {
-        ep_progress(ep, &(ep.dummy_req));
+        return ep_progress(ep, &(ep.dummy_req));
     }
 
     return ATL_STATUS_SUCCESS;

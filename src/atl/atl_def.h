@@ -36,11 +36,36 @@
  * This is invoked by the ATL framework when the transport library is loaded.
  */
 
+#define ATL_CHECK_STATUS(expr, str) \
+    do { \
+        if (expr != ATL_STATUS_SUCCESS) { \
+            LOG_ERROR(str); \
+            return ATL_STATUS_FAILURE; \
+        } \
+    } while (0)
+
+#define KVS_2_ATL_CHECK_STATUS(expr, str) \
+    do { \
+        if (expr != KVS_STATUS_SUCCESS) { \
+            LOG_ERROR(str); \
+            return ATL_STATUS_FAILURE; \
+        } \
+    } while (0)
+
+#define ATL_SET_STR(dst, size, ...) \
+    do { \
+        if (snprintf(dst, size, __VA_ARGS__) > size) { \
+            printf("line too long (must be shorter %d)\n", size); \
+            printf(__VA_ARGS__); \
+            return ATL_STATUS_FAILURE; \
+        } \
+    } while (0)
+
 #define ATL_CALL(func, err_action) \
     do { \
         atl_status_t status = func; \
         if (status != FI_SUCCESS) { \
-            CCL_THROW(#func "\n fails with status: ", status); \
+            LOG_ERROR(#func "\n fails with status: ", status); \
             err_action; \
         } \
     } while (0)

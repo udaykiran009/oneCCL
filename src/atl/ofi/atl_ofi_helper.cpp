@@ -209,7 +209,7 @@ atl_status_t atl_ofi_get_local_proc_coord(atl_ofi_ctx_t* ofi_ctx, std::shared_pt
         goto fn_err;
     }
 
-    pmi->pmrt_barrier();
+    ATL_CHECK_STATUS(pmi->pmrt_barrier(), "barrier failed");
 
     all_hostnames = (char*)calloc(1, coord->global_count * ATL_MAX_HOSTNAME_LEN);
     if (!all_hostnames) {
@@ -317,7 +317,7 @@ atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
         return ATL_STATUS_FAILURE;
     }
 
-    pmi->pmrt_barrier();
+    ATL_CHECK_STATUS(pmi->pmrt_barrier(), "barrier failed");
 
     /* retrieve all OFI EP names in order */
     for (i = 0; i < ctx->coord.global_count; i++) {
@@ -1016,15 +1016,15 @@ atl_status_t atl_ofi_adjust_out_tag(atl_ofi_prov_t* prov, atl_attr_t* attr) {
 
     const char* prov_name = prov->info->fabric_attr->prov_name;
 
-    CCL_THROW_IF_NOT(attr->out.tag_bits > 0,
-                     "unexpected tag_bits ",
-                     attr->out.tag_bits,
-                     " for prov ",
-                     prov_name);
+    if (!(attr->out.tag_bits > 0)) {
+        LOG_ERROR("unexpected tag_bits ", attr->out.tag_bits, " for prov ", prov_name);
+        return ATL_STATUS_FAILURE;
+    }
 
-    CCL_THROW_IF_NOT(
-        attr->out.max_tag > 0, "unexpected max_tag ", attr->out.max_tag, " for prov ", prov_name);
-
+    if (!(attr->out.max_tag > 0)) {
+        LOG_ERROR("unexpected max_tag ", attr->out.max_tag, " for prov ", prov_name);
+        return ATL_STATUS_FAILURE;
+    }
     LOG_INFO(prov_name,
              " tag_bits: ",
              attr->out.tag_bits,

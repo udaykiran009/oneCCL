@@ -17,7 +17,7 @@ public:
     }
 
     atl_status_t finalize() override {
-        pmi->pmrt_finalize();
+        ATL_CHECK_STATUS(pmi->pmrt_finalize(), "failed to finalize PMI");
 
         return transport->finalize();
     }
@@ -224,7 +224,7 @@ private:
     static std::atomic<size_t> comm_count;
 
     atl_ofi_comm(atl_ofi_comm* parent, int color);
-    void init_transport(bool is_new);
+    atl_status_t init_transport(bool is_new);
     using rank_info_t = std::tuple<int, int, size_t>;
     void rank_info_exchange(std::vector<rank_info_t>& ranks_info, rank_info_t rank_info);
 };

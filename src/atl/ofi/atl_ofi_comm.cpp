@@ -40,7 +40,7 @@ atl_ofi_comm::atl_ofi_comm() {
         pmi = std::shared_ptr<ipmi>(new pmi_simple());
     }
 
-    init_transport(true);
+    CCL_THROW_IF_NOT(init_transport(true) == ATL_STATUS_SUCCESS, "init transport failed");
 }
 
 atl_ofi_comm::atl_ofi_comm(std::shared_ptr<ikvs_wrapper> k) {
@@ -61,7 +61,7 @@ atl_ofi_comm::atl_ofi_comm(std::shared_ptr<ikvs_wrapper> k) {
         pmi = std::shared_ptr<ipmi>(new pmi_simple());
     }
 
-    init_transport(true);
+    CCL_THROW_IF_NOT(init_transport(true) == ATL_STATUS_SUCCESS, "init transport failed");
 }
 
 atl_ofi_comm::atl_ofi_comm(int total_rank_count,
@@ -76,11 +76,12 @@ atl_ofi_comm::atl_ofi_comm(int total_rank_count,
         pmi = std::shared_ptr<ipmi>(new pmi_resizable_simple(total_rank_count, ranks, k));
     }
 
-    init_transport(true);
+    CCL_THROW_IF_NOT(init_transport(true) == ATL_STATUS_SUCCESS, "init transport failed");
 }
-void atl_ofi_comm::init_transport(bool is_new) {
+atl_status_t atl_ofi_comm::init_transport(bool is_new) {
     LOG_DEBUG("init ATL, requested ep_count ", attr.in.ep_count);
     if (is_new) {
+        ATL_CHECK_STATUS(pmi->pmrt_init(), "pmi init failed");
         static std::mutex memory_mutex;
         {
             std::lock_guard<std::mutex> lock(memory_mutex);
@@ -112,6 +113,7 @@ void atl_ofi_comm::init_transport(bool is_new) {
     if (pmi->get_local_thread_idx() == 0) {
         executor_update();
     }
+    return ATL_STATUS_SUCCESS;
 }
 
 std::shared_ptr<atl_base_comm> atl_ofi_comm::comm_split(int color) {
@@ -152,7 +154,7 @@ atl_ofi_comm::atl_ofi_comm(atl_ofi_comm* parent, int color) {
         }
     }
     coord.global_count = size;
-    init_transport(false);
+    CCL_THROW_IF_NOT(init_transport(false) == ATL_STATUS_SUCCESS, "init transport failed");
 }
 
 void atl_ofi_comm::rank_info_exchange(std::vector<rank_info_t>& ranks_info, rank_info_t rank_info) {
@@ -163,16 +165,20 @@ void atl_ofi_comm::rank_info_exchange(std::vector<rank_info_t>& ranks_info, rank
     for (int i = 0, j = 0; i < size; i++) {
         if (i == rank)
             continue;
-        while (send(ep_idx, &rank_info, sizeof(rank_info_t), i, rank * 1000 + i, &(send_reqs[j])) ==
-               ATL_STATUS_AGAIN) {
+        atl_status_t ret;
+        do {
+            ret =
+                send(ep_idx, &rank_info, sizeof(rank_info_t), i, rank * 1000 + i, &(send_reqs[j]));
+            CCL_THROW_IF_NOT(ret != ATL_STATUS_FAILURE, "send failed");
             ccl_yield(ccl::global_data::env().yield_type);
-        }
-        while (
-            recv(
-                ep_idx, &ranks_info[i], sizeof(rank_info_t), i, i * 1000 + rank, &(recv_reqs[j])) ==
-            ATL_STATUS_AGAIN) {
+        } while (ret == ATL_STATUS_AGAIN);
+
+        do {
+            ret = recv(
+                ep_idx, &ranks_info[i], sizeof(rank_info_t), i, i * 1000 + rank, &(recv_reqs[j]));
+            CCL_THROW_IF_NOT(ret != ATL_STATUS_FAILURE, "recv failed");
             ccl_yield(ccl::global_data::env().yield_type);
-        }
+        } while (ret == ATL_STATUS_AGAIN);
         j++;
     }
 
@@ -183,11 +189,13 @@ void atl_ofi_comm::rank_info_exchange(std::vector<rank_info_t>& ranks_info, rank
         poll(ep_idx);
         for (size_t i = 0; i < send_reqs.size(); i++) {
             if (!send_reqs[i].is_completed) {
-                check(ep_idx, &(send_reqs[i]));
+                CCL_THROW_IF_NOT(check(ep_idx, &(send_reqs[i])) != ATL_STATUS_FAILURE,
+                                 "check send failed");
                 is_completed = false;
             }
             if (!recv_reqs[i].is_completed) {
-                check(ep_idx, &(recv_reqs[i]));
+                CCL_THROW_IF_NOT(check(ep_idx, &(recv_reqs[i])) != ATL_STATUS_FAILURE,
+                                 "check recv failed");
                 is_completed = false;
             }
         }
