@@ -56,7 +56,13 @@ is_exclude_test() {
         rc=0
     else
         EXCLUDE_PLATFORM=$(echo ${res} | awk '{print $2}')
-        [[ "${EXCLUDE_PLATFORM}" = *"${PLATFORM_HW_DISCRETE_GPU}"* ]]; rc=1 || rc=0
+
+        if [[ "${EXCLUDE_PLATFORM}" = *"${PLATFORM_HW_DISCRETE_GPU}"* ]]; then
+            rc=1
+        else
+            rc=0
+        fi
+
     fi
     echo ${rc}
 }
@@ -148,10 +154,10 @@ define_compiler() {
         fi
         ;;
     "gpu"|* )
-        if [ -z "${C_COMPILER}" ]; then 
+        if [ -z "${C_COMPILER}" ]; then
             C_COMPILER=clang
         fi
-        if [ -z "${CXX_COMPILER}" ]; then 
+        if [ -z "${CXX_COMPILER}" ]; then
             CXX_COMPILER=dpcpp
         fi
         ;;
@@ -193,7 +199,7 @@ run_tests() {
                 is_exclude=$(is_exclude_test $(basename ${test} .sh))
                 if [[ ${is_exclude} -ne 0 ]]; then
                     echo "${test} was excluded. Skip"
-                    continue 
+                    continue
                 fi
                 echo "${test}"
                 ./${test}
@@ -210,7 +216,7 @@ run_tests() {
                 echo "    ${test}"
             done
             CheckCommandExitCode ${#failed_test[@]} "testing failed"
-        else 
+        else
             echo "All tests passed"
         fi
     fi
@@ -220,4 +226,4 @@ set_default_values
 parse_arguments $@
 define_compiler
 build
-run_tests   
+run_tests

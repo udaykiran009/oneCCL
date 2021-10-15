@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
 
     // Allocate enough memory to check results on each iteration without
     // additional memory transfer between host and device.
-    int *check_buf = allocator.allocate(count * num_iters, usm::alloc::shared);
+    sycl::buffer<int> check_buf{ count * num_iters };
 
     std::vector<ccl::event> ccl_events;
     std::vector<sycl::event> sycl_events;
@@ -83,9 +83,10 @@ int main(int argc, char *argv[]) {
 
         /* submit result checking after allreduce completion */
         sycl_events.push_back(q.submit([&](auto &h) {
+            auto check_buf_acc = check_buf.get_access<sycl::access_mode::write>(h);
             h.parallel_for(count, [=](auto id) {
                 if (recv_buf[id] != (i + 1) * (size * (size + 1) / 2)) {
-                    check_buf[count * i + id] = -1;
+                    check_buf_acc[count * i + id] = -1;
                 }
             });
         }));
@@ -104,9 +105,10 @@ int main(int argc, char *argv[]) {
         return -1;
 
     /* Check if we have an error on some iteration */
+    auto check_buf_acc = check_buf.get_access<sycl::access_mode::read>();
     {
         for (i = 0; i < count * num_iters; i++) {
-            if (check_buf[i] == -1) {
+            if (check_buf_acc[i] == -1) {
                 cout << "FAILED\n";
                 return -1;
             }

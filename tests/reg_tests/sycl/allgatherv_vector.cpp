@@ -46,10 +46,10 @@ int main(int argc, char *argv[]) {
     /* create stream */
     auto stream = ccl::create_stream(q);
 
-    auto send_buf = sycl::malloc_shared<int>(count, q);
+    auto send_buf = sycl::malloc_device<int>(count, q);
     std::vector<int *> recv_bufs;
     for (int i = 0; i < size; ++i) {
-        recv_bufs.push_back(sycl::malloc_shared<int>(count, q));
+        recv_bufs.push_back(sycl::malloc_device<int>(count, q));
     }
 
     sycl::buffer<int> expected_buf(count * size);
