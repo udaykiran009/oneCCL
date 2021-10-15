@@ -158,13 +158,6 @@ if (${ENABLE_SYCL_INTEROP_EVENT})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCCL_ENABLE_SYCL_INTEROP_EVENT=1")
 endif()
 
-if(CCL_ENABLE_SYCL)
-    if(${CMAKE_C_COMPILER_VERSION} VERSION_GREATER_EQUAL 14.0.0 AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 14.0.0)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCCL_ENABLE_LATEST_DPCPP=1")
-        message("set -DCCL_ENABLE_LATEST_DPCPP=1 to support the newest compiler version")
-    endif()
-endif()
-
 # Clang doesn't automatically detects ninja processes as supporting colored output
 # due to the way they are spawned. In order to fix the issue we need to use the option
 # to force colored output

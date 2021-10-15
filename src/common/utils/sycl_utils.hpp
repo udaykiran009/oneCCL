@@ -9,6 +9,12 @@
 #include "common/stream/stream.hpp"
 #include "common/global/global.hpp"
 
+#ifdef SYCL_LANGUAGE_VERSION
+#define DPCPP_VERSION __clang_major__ * 10000 + __clang_minor__ * 100 + __clang_patchlevel__
+#else // SYCL_LANGUAGE_VERSION
+#define DPCPP_VERSION 0
+#endif // SYCL_LANGUAGE_VERSION
+
 namespace ccl {
 namespace utils {
 
@@ -51,37 +57,37 @@ static inline std::string sycl_device_to_str(const sycl::device& dev) {
 }
 
 constexpr sycl::backend get_level_zero_backend() {
-#ifdef CCL_ENABLE_LATEST_DPCPP
+#if DPCPP_VERSION >= 140000
     return sycl::backend::ext_oneapi_level_zero;
-#else // CCL_ENABLE_LATEST_DPCPP
+#elif DPCPP_VERSION < 140000
     return sycl::backend::level_zero;
-#endif // CCL_ENABLE_LATEST_DPCPP
+#endif // DPCPP_VERSION
 }
 
 static inline sycl::event submit_barrier(cl::sycl::queue queue) {
-#ifdef CCL_ENABLE_LATEST_DPCPP
+#if DPCPP_VERSION >= 140000
     return queue.ext_oneapi_submit_barrier();
-#else // CCL_ENABLE_LATEST_DPCPP
+#elif DPCPP_VERSION < 140000
     return queue.submit_barrier();
-#endif // CCL_ENABLE_LATEST_DPCPP
+#endif // DPCPP_VERSION
 }
 
 static inline sycl::event submit_barrier(cl::sycl::queue queue, sycl::event event) {
-#ifdef CCL_ENABLE_LATEST_DPCPP
+#if DPCPP_VERSION >= 140000
     return queue.ext_oneapi_submit_barrier({ event });
-#else // CCL_ENABLE_LATEST_DPCPP
+#elif DPCPP_VERSION < 140000
     return queue.submit_barrier({ event });
-#endif // CCL_ENABLE_LATEST_DPCPP
+#endif // DPCPP_VERSION
 }
 
 static inline sycl::event make_event(sycl::context& context, ze_event_handle_t& sync_event) {
-#ifdef CCL_ENABLE_LATEST_DPCPP
+#if DPCPP_VERSION >= 140000
     return sycl::make_event<sycl::backend::ext_oneapi_level_zero>(
         { sync_event, sycl::ext::oneapi::level_zero::ownership::keep }, context);
-#else // CCL_ENABLE_LATEST_DPCPP
+#elif DPCPP_VERSION < 140000
     return sycl::level_zero::make<sycl::event>(
         context, sync_event, sycl::level_zero::ownership::keep);
-#endif // CCL_ENABLE_LATEST_DPCPP
+#endif // DPCPP_VERSION
 }
 
 } // namespace utils
