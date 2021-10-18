@@ -118,15 +118,15 @@ endforeach()
 add_test (NAME allreduce_fusion CONFIGURATIONS allreduce_fusion COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_fusion_report.junit.xml)
 
 foreach(ppn 1; 2)
-    foreach(algo direct; rabenseifner; nreduce; ring; ring_rma; double_tree; recursive_doubling; 2d; topo_ring)
+    foreach(algo direct; rabenseifner; nreduce; ring; ring_rma; double_tree; recursive_doubling; 2d; topo)
         add_test (NAME allreduce_${algo}_${ppn} CONFIGURATIONS allreduce_${algo}_${ppn} COMMAND mpiexec.hydra -l -n 2 -ppn ${ppn} ${CCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_${algo}_${ppn}_report.junit.xml)
     endforeach()
 
-    foreach(algo direct; ring; double_tree; naive; topo_ring)
+    foreach(algo direct; ring; double_tree; naive; topo)
         add_test (NAME bcast_${algo}_${ppn} CONFIGURATIONS bcast_${algo}_${ppn} COMMAND mpiexec.hydra -l -n 2 -ppn ${ppn} ${CCL_INSTALL_TESTS}/bcast_test --gtest_output=xml:${CCL_INSTALL_TESTS}/bcast_${algo}_${ppn}_report.junit.xml)
     endforeach()
 
-    foreach(algo direct; rabenseifner; tree; double_tree; topo_ring)
+    foreach(algo direct; rabenseifner; tree; double_tree; topo)
         add_test (NAME reduce_${algo}_${ppn} CONFIGURATIONS reduce_${algo}_${ppn} COMMAND mpiexec.hydra -l -n 2 -ppn ${ppn} ${CCL_INSTALL_TESTS}/reduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/reduce_${algo}_${ppn}_report.junit.xml)
     endforeach()
 

@@ -16,7 +16,7 @@ enum ccl_coll_allgatherv_algo {
     ccl_coll_allgatherv_ring,
     ccl_coll_allgatherv_flat,
     ccl_coll_allgatherv_multi_bcast,
-    ccl_coll_allgatherv_topo_a2a
+    ccl_coll_allgatherv_topo
 };
 
 enum ccl_coll_allreduce_algo {
@@ -30,8 +30,7 @@ enum ccl_coll_allreduce_algo {
     ccl_coll_allreduce_double_tree,
     ccl_coll_allreduce_recursive_doubling,
     ccl_coll_allreduce_2d,
-    ccl_coll_allreduce_topo_ring,
-    ccl_coll_allreduce_topo_a2a
+    ccl_coll_allreduce_topo
 };
 
 enum ccl_coll_alltoall_algo {
@@ -66,7 +65,7 @@ enum ccl_coll_bcast_algo {
     ccl_coll_bcast_ring,
     ccl_coll_bcast_double_tree,
     ccl_coll_bcast_naive,
-    ccl_coll_bcast_topo_ring
+    ccl_coll_bcast_topo
 };
 
 enum ccl_coll_reduce_algo {
@@ -76,7 +75,7 @@ enum ccl_coll_reduce_algo {
     ccl_coll_reduce_rabenseifner,
     ccl_coll_reduce_tree,
     ccl_coll_reduce_double_tree,
-    ccl_coll_reduce_topo_ring
+    ccl_coll_reduce_topo
 };
 
 enum ccl_coll_reduce_scatter_algo {
@@ -84,7 +83,7 @@ enum ccl_coll_reduce_scatter_algo {
 
     ccl_coll_reduce_scatter_direct,
     ccl_coll_reduce_scatter_ring,
-    ccl_coll_reduce_scatter_topo_a2a
+    ccl_coll_reduce_scatter_topo
 };
 
 enum ccl_coll_sparse_allreduce_algo {

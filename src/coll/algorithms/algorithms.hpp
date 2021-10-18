@@ -104,21 +104,14 @@ ccl::status ccl_coll_build_nreduce_allreduce(ccl_sched* sched,
                                              ccl_comm* comm);
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-ccl::status ccl_coll_build_topo_ring_allreduce(ccl_sched* sched,
-                                               ccl_buffer send_buf,
-                                               ccl_buffer recv_buf,
-                                               size_t count,
-                                               const ccl_datatype& dtype,
-                                               ccl::reduction reduction,
-                                               ccl_comm* comm);
+ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
+                                          ccl_buffer send_buf,
+                                          ccl_buffer recv_buf,
+                                          size_t count,
+                                          const ccl_datatype& dtype,
+                                          ccl::reduction reduction,
+                                          ccl_comm* comm);
 
-ccl::status ccl_coll_build_topo_a2a_allreduce(ccl_sched* sched,
-                                              ccl_buffer send_buf,
-                                              ccl_buffer recv_buf,
-                                              size_t count,
-                                              const ccl_datatype& dtype,
-                                              ccl::reduction reduction,
-                                              ccl_comm* comm);
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
 ccl::status ccl_coll_build_naive_allgatherv(ccl_sched* sched,
@@ -218,13 +211,13 @@ ccl::status ccl_coll_build_multi_bcast_allgatherv(ccl_master_sched* main_sched,
                                                   const ccl_coll_param& coll_param,
                                                   size_t data_partition_count);
 
-ccl::status ccl_coll_build_topo_a2a_allgatherv(ccl_sched* sched,
-                                               ccl_buffer send_buf,
-                                               size_t send_count,
-                                               ccl_buffer recv_buf,
-                                               const size_t* recv_counts,
-                                               const ccl_datatype& dtype,
-                                               ccl_comm* comm);
+ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* sched,
+                                           ccl_buffer send_buf,
+                                           size_t send_count,
+                                           ccl_buffer recv_buf,
+                                           const size_t* recv_counts,
+                                           const ccl_datatype& dtype,
+                                           ccl_comm* comm);
 
 ccl::status ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
                                            std::vector<ccl_sched*>& scheds,
@@ -297,10 +290,10 @@ ccl::status ccl_coll_build_direct_reduce_scatter(ccl_sched* sched,
                                                  ccl::reduction reduction,
                                                  ccl_comm* comm);
 
-ccl::status ccl_coll_build_topo_a2a_reduce_scatter(ccl_sched* sched,
-                                                   ccl_buffer send_buf,
-                                                   ccl_buffer recv_buf,
-                                                   size_t send_count,
-                                                   const ccl_datatype& dtype,
-                                                   ccl::reduction reduction,
-                                                   ccl_comm* comm);
+ccl::status ccl_coll_build_topo_reduce_scatter(ccl_sched* sched,
+                                               ccl_buffer send_buf,
+                                               ccl_buffer recv_buf,
+                                               size_t send_count,
+                                               const ccl_datatype& dtype,
+                                               ccl::reduction reduction,
+                                               ccl_comm* comm);

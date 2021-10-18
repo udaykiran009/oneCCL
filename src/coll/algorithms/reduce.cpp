@@ -485,7 +485,7 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
     ccl::add_handle_exchange(sched, node_comm, in_buffers);
 
     if (is_single_card) {
-        LOG_DEBUG("topo_ring/scale_up/intra: use ze_onesided_reduce");
+        LOG_DEBUG("topo/scale_up/intra: use ze_onesided_reduce");
         if (comm->rank() == root) {
             entry_factory::create<ze_onesided_reduce_entry>(
                 sched, send_buf, recv_buf, count, dtype, op, root, pair_comm);
@@ -496,7 +496,7 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
     }
     else {
         if (pair_comm->rank() == ccl::global_data::env().kernel_1s_lead) {
-            LOG_DEBUG("topo_ring/scale_up/intra: use ze_onesided_reduce");
+            LOG_DEBUG("topo/scale_up/intra: use ze_onesided_reduce");
             entry_factory::create<ze_onesided_reduce_entry>(
                 sched, send_buf, tmp_buf, count, dtype, op, pair_comm->rank(), pair_comm);
             sched->add_barrier();
@@ -510,7 +510,7 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
             ccl::add_comm_barrier(sched, even_comm);
             size_t offset_bytes = main_block_count * even_comm->rank() * dtype.size();
             ccl_buffer partial_tmp_buf = tmp_buf + offset_bytes;
-            LOG_DEBUG("topo_ring/scale_up/inter: use ze_a2a_reduce_scatter_entry");
+            LOG_DEBUG("topo/scale_up/inter: use ze_a2a_reduce_scatter_entry");
             std::vector<size_t> block_counts(even_comm->size(), main_block_count);
             block_counts[even_comm->size() - 1] = block_count;
             entry_factory::create<ze_a2a_reduce_scatter_entry>(sched,
@@ -528,7 +528,7 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
             int root_node_idx = root / node_comm_size;
             ccl_buffer host_buf{};
             if (!is_single_node && block_count) {
-                LOG_DEBUG("topo_ring/scale_out: use host_reduce");
+                LOG_DEBUG("topo/scale_out: use host_reduce");
                 ccl::alloc_param alloc_param(
                     block_count * dtype.size(), ccl::buffer_type::regular, ccl::buffer_place::host);
                 host_buf = sched->alloc_buffer(alloc_param);
@@ -552,7 +552,7 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
             }
 
             if (root_node_idx == r2r_comm->rank()) {
-                LOG_DEBUG("topo_ring/scale_up/intra: use ze_onesided_bcast");
+                LOG_DEBUG("topo/scale_up/intra: use ze_onesided_bcast");
                 int root_in_node_comm = node_comm->get_rank_from_global(root);
                 size_t offset_count = offset_bytes / dtype.size();
                 ccl_buffer src = (!is_single_node && block_count) ? host_buf : partial_tmp_buf;

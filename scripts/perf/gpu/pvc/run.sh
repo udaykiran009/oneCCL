@@ -342,7 +342,7 @@ run_bench() {
     then
         node_counts="1 2"
         ppns="2 6 12"
-        algos="ring topo_ring"
+        algos="ring topo"
         copy_engines="none main link"
         hosts="-hosts c001n0001,c001n0002"
         ulls_modes="1"
@@ -356,7 +356,7 @@ run_bench() {
     then
         node_counts="1"
         ppns="2 4 12"
-        algos="topo_ring"
+        algos="topo"
         copy_engines="none"
         hosts="-hosts c001n0001"
         ulls_modes="0 1"
@@ -370,7 +370,7 @@ run_bench() {
     then
         node_counts="2"
         ppns="4"
-        algos="topo_ring"
+        algos="topo"
         copy_engines="none"
         hosts="-hosts c001n0001,c001n0002"
         ulls_modes="0 1"

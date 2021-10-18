@@ -334,14 +334,14 @@ ccl::status ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 
-ccl::status ccl_coll_build_topo_a2a_reduce_scatter(ccl_sched* sched,
-                                                   ccl_buffer send_buf,
-                                                   ccl_buffer recv_buf,
-                                                   size_t recv_count,
-                                                   const ccl_datatype& dtype,
-                                                   ccl::reduction reduction,
-                                                   ccl_comm* comm) {
-    LOG_DEBUG("build topo_a2a reduce_scatter, recv_count ", recv_count);
+ccl::status ccl_coll_build_topo_reduce_scatter(ccl_sched* sched,
+                                               ccl_buffer send_buf,
+                                               ccl_buffer recv_buf,
+                                               size_t recv_count,
+                                               const ccl_datatype& dtype,
+                                               ccl::reduction reduction,
+                                               ccl_comm* comm) {
+    LOG_DEBUG("build topo reduce_scatter, recv_count ", recv_count);
 
     const std::vector<ze_handle_exchange_entry::mem_desc_t> in_buffers{
         { send_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 0

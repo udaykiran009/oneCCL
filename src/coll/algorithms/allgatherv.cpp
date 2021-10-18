@@ -299,14 +299,14 @@ ccl::status ccl_coll_build_multi_bcast_allgatherv(ccl_master_sched* main_sched,
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 
-ccl::status ccl_coll_build_topo_a2a_allgatherv(ccl_sched* sched,
-                                               ccl_buffer send_buf,
-                                               size_t send_count,
-                                               ccl_buffer recv_buf,
-                                               const size_t* recv_counts,
-                                               const ccl_datatype& dtype,
-                                               ccl_comm* comm) {
-    LOG_DEBUG("build topo_a2a allgatherv");
+ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* sched,
+                                           ccl_buffer send_buf,
+                                           size_t send_count,
+                                           ccl_buffer recv_buf,
+                                           const size_t* recv_counts,
+                                           const ccl_datatype& dtype,
+                                           ccl_comm* comm) {
+    LOG_DEBUG("build topo allgatherv");
 
     ccl_comm* pair_comm = comm->get_pair_comm().get();
     ccl_comm* even_comm = comm->get_even_comm().get();

@@ -5,7 +5,7 @@ std::map<ccl_coll_reduce_scatter_algo, std::string>
     ccl_algorithm_selector_helper<ccl_coll_reduce_scatter_algo>::algo_names = {
         std::make_pair(ccl_coll_reduce_scatter_direct, "direct"),
         std::make_pair(ccl_coll_reduce_scatter_ring, "ring"),
-        std::make_pair(ccl_coll_reduce_scatter_topo_a2a, "topo_a2a"),
+        std::make_pair(ccl_coll_reduce_scatter_topo, "topo"),
     };
 
 ccl_algorithm_selector<ccl_coll_reduce_scatter>::ccl_algorithm_selector() {
@@ -24,7 +24,7 @@ bool ccl_algorithm_selector_helper<ccl_coll_reduce_scatter_algo>::can_use(
     const ccl_selection_table_t<ccl_coll_reduce_scatter_algo>& table) {
     bool can_use = true;
 
-    if (algo == ccl_coll_reduce_scatter_topo_a2a && !ccl_can_use_topo_a2a_algo(param)) {
+    if (algo == ccl_coll_reduce_scatter_topo && !ccl_can_use_topo_algo(param)) {
         can_use = false;
     }
     else if (algo == ccl_coll_reduce_scatter_direct &&

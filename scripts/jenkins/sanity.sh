@@ -572,9 +572,9 @@ function run_tests()
 
     if [ ${node_label} == "ccl_test_gen9" ] || [ "${node_label}" == "ccl_test_ats" ]
     then
-        allreduce_algos="${allreduce_algos} topo_ring"
-        bcast_algos="${bcast_algos} topo_ring"
-        reduce_algos="${reduce_algos} topo_ring"
+        allreduce_algos="${allreduce_algos} topo"
+        bcast_algos="${bcast_algos} topo"
+        reduce_algos="${reduce_algos} topo"
     fi
 
     case "$runtime" in

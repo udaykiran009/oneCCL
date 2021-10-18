@@ -11,13 +11,12 @@ std::map<ccl_coll_allreduce_algo, std::string>
         std::make_pair(ccl_coll_allreduce_double_tree, "double_tree"),
         std::make_pair(ccl_coll_allreduce_recursive_doubling, "recursive_doubling"),
         std::make_pair(ccl_coll_allreduce_2d, "2d"),
-        std::make_pair(ccl_coll_allreduce_topo_ring, "topo_ring"),
-        std::make_pair(ccl_coll_allreduce_topo_a2a, "topo_a2a")
+        std::make_pair(ccl_coll_allreduce_topo, "topo"),
     };
 
 ccl_algorithm_selector<ccl_coll_allreduce>::ccl_algorithm_selector() {
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-    insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allreduce_topo_ring);
+    insert(main_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allreduce_topo);
     if (ccl::global_data::env().atl_transport == ccl_atl_ofi) {
         insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allreduce_ring);
         insert(
@@ -68,9 +67,7 @@ bool ccl_algorithm_selector_helper<ccl_coll_allreduce_algo>::can_use(
     else if (algo == ccl_coll_allreduce_direct &&
              (ccl::global_data::env().atl_transport == ccl_atl_ofi))
         can_use = false;
-    else if (algo == ccl_coll_allreduce_topo_ring && !ccl_can_use_topo_ring_algo(param))
-        can_use = false;
-    else if (algo == ccl_coll_allreduce_topo_a2a && !ccl_can_use_topo_a2a_algo(param))
+    else if (algo == ccl_coll_allreduce_topo && !ccl_can_use_topo_algo(param))
         can_use = false;
 
     return can_use;

@@ -161,8 +161,8 @@ ccl::status ccl_coll_build_allgatherv(ccl_sched* sched,
                 sched, send_buf, send_count, recv_buf, recv_counts, dtype, comm));
             break;
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-        case ccl_coll_allgatherv_topo_a2a:
-            CCL_CALL(ccl_coll_build_topo_a2a_allgatherv(
+        case ccl_coll_allgatherv_topo:
+            CCL_CALL(ccl_coll_build_topo_allgatherv(
                 sched, send_buf, send_count, recv_buf, recv_counts, dtype, comm));
             break;
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
@@ -239,12 +239,8 @@ ccl::status ccl_coll_build_allreduce(ccl_sched* sched,
                 sched, send_buf, recv_buf, count, dtype, reduction));
             break;
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-        case ccl_coll_allreduce_topo_ring:
-            CCL_CALL(ccl_coll_build_topo_ring_allreduce(
-                sched, send_buf, recv_buf, count, dtype, reduction, comm));
-            break;
-        case ccl_coll_allreduce_topo_a2a:
-            CCL_CALL(ccl_coll_build_topo_a2a_allreduce(
+        case ccl_coll_allreduce_topo:
+            CCL_CALL(ccl_coll_build_topo_allreduce(
                 sched, send_buf, recv_buf, count, dtype, reduction, comm));
             break;
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
@@ -385,7 +381,7 @@ ccl::status ccl_coll_build_bcast(ccl_sched* sched,
             CCL_CALL(ccl_coll_build_naive_bcast(sched, buf, count, dtype, root, comm));
             break;
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-        case ccl_coll_bcast_topo_ring:
+        case ccl_coll_bcast_topo:
             CCL_CALL(ccl_coll_build_gpu_bcast(sched, buf, count, dtype, root, comm));
             break;
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
@@ -447,7 +443,7 @@ ccl::status ccl_coll_build_reduce(ccl_sched* sched,
                 comm));
             break;
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-        case ccl_coll_reduce_topo_ring:
+        case ccl_coll_reduce_topo:
             CCL_CALL(ccl_coll_build_gpu_reduce(
                 sched, send_buf, recv_buf, count, dtype, reduction, root, comm));
             break;
@@ -498,8 +494,8 @@ ccl::status ccl_coll_build_reduce_scatter(ccl_sched* sched,
             }
             break;
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-        case ccl_coll_reduce_scatter_topo_a2a:
-            CCL_CALL(ccl_coll_build_topo_a2a_reduce_scatter(
+        case ccl_coll_reduce_scatter_topo:
+            CCL_CALL(ccl_coll_build_topo_reduce_scatter(
                 sched, send_buf, recv_buf, count, dtype, reduction, comm));
             break;
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
