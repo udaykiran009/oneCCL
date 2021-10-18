@@ -76,6 +76,12 @@ void atl_mpi_comm::init_transport(bool is_new) {
                 CCL_THROW_IF_NOT(
                     transport->init(nullptr, nullptr, &attr, nullptr, pmi) == ATL_STATUS_SUCCESS,
                     "failed to initialize ATL");
+
+                int mpi_rank;
+                MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+                if (mpi_rank == 0) {
+                    print_atl_attrs();
+                }
             }
         }
 
@@ -84,6 +90,7 @@ void atl_mpi_comm::init_transport(bool is_new) {
         parent_rank = rank = coord.global_idx;
         parent_size = size = coord.global_count;
         rank2rank_map.resize(size);
+
         for (int i = 0; i < size; i++) {
             rank2rank_map[i] = i;
         }
@@ -91,8 +98,10 @@ void atl_mpi_comm::init_transport(bool is_new) {
 
     threads_per_process = 1;
     ranks_per_process = 1;
+
     eps_update();
     init_tag();
+
     comm_count++;
 
     executor_update();

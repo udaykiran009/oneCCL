@@ -26,7 +26,7 @@ public:
 
     ~ccl_atl_tag() = default;
 
-    void print();
+    std::string to_string() const;
 
     /**
      * Generates the tag to be used by ATL communication operations

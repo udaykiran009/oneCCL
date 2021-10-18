@@ -160,6 +160,7 @@ public:
 
 protected:
     void init_tag();
+    void print_atl_attrs();
     void executor_update();
 
     friend class atl_comm_manager;

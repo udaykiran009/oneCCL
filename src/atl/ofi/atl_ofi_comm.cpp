@@ -80,6 +80,7 @@ atl_ofi_comm::atl_ofi_comm(int total_rank_count,
 }
 atl_status_t atl_ofi_comm::init_transport(bool is_new) {
     LOG_DEBUG("init ATL, requested ep_count ", attr.in.ep_count);
+
     if (is_new) {
         ATL_CHECK_STATUS(pmi->pmrt_init(), "pmi init failed");
         static std::mutex memory_mutex;
@@ -92,6 +93,10 @@ atl_status_t atl_ofi_comm::init_transport(bool is_new) {
                 CCL_THROW_IF_NOT(
                     transport->init(nullptr, nullptr, &attr, nullptr, pmi) == ATL_STATUS_SUCCESS,
                     "failed to initialize ATL");
+
+                if (pmi->get_rank() == 0) {
+                    print_atl_attrs();
+                }
             }
         }
         eps = transport->get_eps();
@@ -105,14 +110,17 @@ atl_status_t atl_ofi_comm::init_transport(bool is_new) {
             rank2rank_map[i] = i;
         }
     }
+
     threads_per_process = pmi->get_threads_per_process();
     ranks_per_process = pmi->get_ranks_per_process();
     comm_count++;
+
     init_tag();
 
     if (pmi->get_local_thread_idx() == 0) {
         executor_update();
     }
+
     return ATL_STATUS_SUCCESS;
 }
 
