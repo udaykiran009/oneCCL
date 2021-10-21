@@ -113,11 +113,11 @@ std::string ccl_hwloc_wrapper::to_string() {
         ss << "{\n";
         ss << "  membind_thread_supported: " << membind_thread_supported << "\n";
         for (auto& node : numa_nodes) {
-            ss << "  numa: {"
+            ss << "  numa: { "
                << "idx: " << node.idx << ", os idx: " << node.os_idx
                << ", memory: " << node.mem_in_mb << " MB"
                << ", cores: " << node.core_count << ", cpus: " << node.cpus.size()
-               << ", membind: " << node.membind_support << "}\n";
+               << ", membind: " << node.membind_support << " }\n";
         }
         ss << "}";
     }

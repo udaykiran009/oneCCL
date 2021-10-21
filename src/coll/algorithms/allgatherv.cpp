@@ -51,15 +51,15 @@ ccl::status ccl_coll_build_naive_allgatherv(ccl_sched* sched,
     }
 
     for (int idx = 1; idx < comm_size; idx++) {
-        int dst = (comm_rank - idx + comm_size) % comm_size;
-        int src = (comm_rank + idx) % comm_size;
+        int dst = (comm_rank + idx) % comm_size;
+        int src = (comm_rank - idx + comm_size) % comm_size;
 
         // send own buffer to other ranks
-        entry_factory::make_chunked_send_entry(
+        entry_factory::create<send_entry>(
             sched, recv_buf + offsets[comm_rank], send_count, dtype, dst, comm);
 
         // recv other's rank buffer
-        entry_factory::make_chunked_recv_entry(
+        entry_factory::create<recv_entry>(
             sched, recv_buf + offsets[src], recv_counts[src], dtype, src, comm);
     }
 

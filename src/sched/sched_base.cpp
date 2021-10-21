@@ -1,6 +1,6 @@
 #include <numeric>
 
-#include "coll/algorithms/algorithms_enum.hpp"
+#include "coll/algorithms/algorithm_utils.hpp"
 #include "coll/coll_param.hpp"
 #include "coll/selection/selection.hpp"
 #include "common/global/global.hpp"

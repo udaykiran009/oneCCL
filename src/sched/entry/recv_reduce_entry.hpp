@@ -19,22 +19,20 @@ public:
     recv_reduce_entry(ccl_sched* sched,
                       ccl_buffer inout_buf,
                       size_t cnt,
-                      size_t* out_cnt,
                       const ccl_datatype& dtype,
                       ccl::reduction reduction_op,
                       int src,
-                      ccl_buffer comm_buf,
                       ccl_comm* comm,
+                      ccl_buffer comm_buf = ccl_buffer(),
                       ccl_recv_reduce_result_buf_type result_buf_type = ccl_recv_reduce_local_buf)
             : sched_entry(sched),
               inout_buf(inout_buf),
               in_cnt(cnt),
-              out_cnt(out_cnt),
               dtype(dtype),
               op(reduction_op),
               src(src),
-              comm_buf(comm_buf),
               comm(comm),
+              comm_buf(comm_buf),
               result_buf_type(result_buf_type),
               fn(sched->coll_attr.reduction_fn) {
         CCL_THROW_IF_NOT(op != ccl::reduction::custom || fn,
@@ -109,7 +107,7 @@ public:
                                                   reduce_in_buf.get_ptr(bytes),
                                                   in_cnt,
                                                   reduce_inout_buf.get_ptr(bytes),
-                                                  out_cnt,
+                                                  nullptr, /* out_count */
                                                   dtype,
                                                   op,
                                                   fn,
@@ -133,20 +131,18 @@ protected:
                            inout_buf,
                            ", in_cnt ",
                            in_cnt,
-                           ", out_cnt ",
-                           out_cnt,
                            ", op ",
                            ccl_reduction_to_str(op),
                            ", red_fn  ",
                            fn,
                            ", src ",
                            src,
-                           ", comm_buf ",
-                           comm_buf,
                            ", atl_tag ",
                            atl_tag,
                            ", comm_id ",
                            sched->get_comm_id(),
+                           ", comm_buf ",
+                           comm_buf,
                            ", result_buf_type ",
                            result_buf_type,
                            ", req ",
@@ -157,12 +153,11 @@ protected:
 private:
     ccl_buffer inout_buf;
     size_t in_cnt;
-    size_t* out_cnt;
     ccl_datatype dtype;
     ccl::reduction op;
     int src;
-    ccl_buffer comm_buf;
     ccl_comm* comm;
+    ccl_buffer comm_buf;
     ccl_recv_reduce_result_buf_type result_buf_type;
     uint64_t atl_tag = 0;
     ccl::reduction_fn fn;

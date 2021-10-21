@@ -90,6 +90,7 @@ constexpr const char* CCL_ALLREDUCE_2D_BASE_SIZE = "CCL_ALLREDUCE_2D_BASE_SIZE";
 constexpr const char* CCL_ALLREDUCE_2D_SWITCH_DIMS = "CCL_ALLREDUCE_2D_SWITCH_DIMS";
 
 constexpr const char* CCL_ALLREDUCE_NREDUCE_BUFFERING = "CCL_ALLREDUCE_NREDUCE_BUFFERING";
+constexpr const char* CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE = "CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE";
 
 constexpr const char* CCL_ALLTOALL_SCATTER_MAX_OPS = "CCL_ALLTOALL_SCATTER_MAX_OPS";
 constexpr const char* CCL_ALLTOALL_SCATTER_PLAIN = "CCL_ALLTOALL_SCATTER_PLAIN";
@@ -227,6 +228,7 @@ public:
     ssize_t allreduce_2d_base_size;
     int allreduce_2d_switch_dims;
     int allreduce_nreduce_buffering;
+    ssize_t allreduce_nreduce_segment_size;
 
     ssize_t alltoall_scatter_max_ops;
     int alltoall_scatter_plain;
@@ -329,7 +331,7 @@ public:
     static std::map<ccl_ze_copy_engine_mode, std::string> ze_copy_engine_names;
 
     int env_2_worker_affinity(int local_proc_idx, int local_proc_count);
-    int env_2_worker_mem_affinity();
+    int env_2_worker_mem_affinity(int local_proc_count);
     void env_2_atl_transport();
 
 private:

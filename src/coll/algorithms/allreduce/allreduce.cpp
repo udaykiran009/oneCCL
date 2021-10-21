@@ -6,6 +6,7 @@
  */
 
 #include "coll/algorithms/algorithms.hpp"
+#include "coll/algorithms/algorithm_utils.hpp"
 #include "common/comm/comm.hpp"
 #include "sched/entry/coll/coll_entry_helper.hpp"
 #include "sched/entry/copy/copy_helper.hpp"
@@ -152,11 +153,9 @@ ccl::status ccl_coll_build_rabenseifner_allreduce(ccl_sched* sched,
                 entry_factory::create<recv_reduce_entry>(sched,
                                                          (recv_buf + disps[recv_idx] * dtype_size),
                                                          recv_cnt,
-                                                         nullptr,
                                                          dtype,
                                                          op,
                                                          dst,
-                                                         ccl_buffer(),
                                                          comm);
                 entry_factory::create<send_entry>(
                     sched, (recv_buf + disps[send_idx] * dtype_size), send_cnt, dtype, dst, comm);
@@ -391,97 +390,120 @@ ccl::status ccl_coll_build_nreduce_allreduce(ccl_sched* sched,
         return status;
     }
 
-    // calculate counts and offsets for each rank
-    size_t common_buffer_count = count / comm_size;
-    for (int idx = 0; idx < comm_size; idx++) {
-        elem_counts[idx] = common_buffer_count;
-        elem_offsets[idx] = idx * elem_counts[idx] * dtype_size;
-    }
-    elem_counts[comm_size - 1] += count % comm_size;
-
-    size_t elem_count = elem_counts[comm_rank];
-
     int use_buffering = ccl::global_data::env().allreduce_nreduce_buffering;
 
-    size_t tmp_buf_count = elem_count * comm_size;
-    if (use_buffering) {
-        tmp_buf_count = std::max(count, tmp_buf_count);
+    size_t segment_size = 2 * 1024 * 1024;
+    if (ccl::global_data::env().allreduce_nreduce_segment_size != CCL_ENV_SIZET_NOT_SPECIFIED) {
+        segment_size = ccl::global_data::env().allreduce_nreduce_segment_size;
     }
 
-    ccl_buffer tmp_buf;
-    if (tmp_buf_count) {
-        tmp_buf = sched->alloc_buffer({ tmp_buf_count * dtype_size, send_buf });
-    }
+    std::vector<size_t> segment_sizes;
+    ccl_get_segment_sizes(dtype_size, count, segment_size, segment_sizes);
 
-    ccl_buffer reduce_buf;
-    if (use_buffering) {
-        reduce_buf = tmp_buf + elem_count * comm_rank * dtype_size;
-    }
-    else {
-        reduce_buf = recv_buf + elem_offsets[comm_rank];
-    }
+    size_t tmp_buf_size = *segment_sizes.rbegin() * comm_size * dtype_size * 2;
+    ccl_buffer tmp_buf = sched->alloc_buffer({ tmp_buf_size, send_buf });
 
-    if (!is_inplace || use_buffering) {
-        entry_factory::create<copy_entry>(
-            sched, send_buf + elem_offsets[comm_rank], reduce_buf, elem_counts[comm_rank], dtype);
-        sched->add_barrier();
-    }
+    size_t seg_offset = 0;
 
-    // reduce-scatter
-    for (int idx = 1; idx < comm_size; idx++) {
-        int dst = (comm_rank - idx + comm_size) % comm_size;
-        int src = (comm_rank + idx) % comm_size;
+    for (size_t seg_idx = 0; seg_idx < segment_sizes.size(); seg_idx++) {
+        size_t seg_size = segment_sizes[seg_idx];
 
-        // send buffer to other ranks
-        entry_factory::make_chunked_send_entry(
-            sched, send_buf + elem_offsets[dst], elem_counts[dst], dtype, dst, comm);
+        ccl_buffer seg_send_buf = send_buf + seg_offset;
+        ccl_buffer seg_recv_buf = recv_buf + seg_offset;
+        ccl_buffer seg_tmp_buf = tmp_buf + (seg_idx % 2) * (tmp_buf_size / 2);
 
-        // recv part of buffer from other rank and perform reduce
-        entry_factory::make_chunked_recv_reduce_entry(sched,
-                                                      reduce_buf,
-                                                      elem_count,
-                                                      nullptr, /* out_cnt */
-                                                      dtype,
-                                                      op,
-                                                      src,
-                                                      tmp_buf + elem_count * src * dtype_size,
-                                                      comm);
-    }
+        seg_offset += seg_size * dtype_size;
 
-    sched->add_barrier();
+        // calculate counts and offsets for each rank
+        size_t common_buffer_count = seg_size / comm_size;
+        for (int idx = 0; idx < comm_size; idx++) {
+            elem_counts[idx] = common_buffer_count;
+            elem_offsets[idx] = idx * elem_counts[idx] * dtype_size;
+        }
+        elem_counts[comm_size - 1] += seg_size % comm_size;
 
-    // allgatherv
-    if (use_buffering) {
-        copy_attr attr;
-        attr.direction = copy_direction::h2h;
-        attr.use_nontemporal = true;
+        size_t elem_count = elem_counts[comm_rank];
 
-        // copy own result from tmp to recv buffer
-        entry_factory::create<copy_entry>(
-            sched, reduce_buf, recv_buf + elem_offsets[comm_rank], elem_count, dtype, attr);
-        sched->add_barrier();
+        ccl_buffer reduce_buf;
+        if (use_buffering) {
+            reduce_buf = seg_tmp_buf + elem_count * comm_rank * dtype_size;
+        }
+        else {
+            reduce_buf = seg_recv_buf + elem_offsets[comm_rank];
+        }
 
+        if (!is_inplace || use_buffering) {
+            entry_factory::create<copy_entry>(sched,
+                                              seg_send_buf + elem_offsets[comm_rank],
+                                              reduce_buf,
+                                              elem_counts[comm_rank],
+                                              dtype);
+            sched->add_barrier();
+        }
+
+        // reduce-scatter
         for (int idx = 1; idx < comm_size; idx++) {
             int dst = (comm_rank - idx + comm_size) % comm_size;
+
+            // send part of buffer to other rank
+            entry_factory::create<send_entry>(
+                sched, seg_send_buf + elem_offsets[dst], elem_counts[dst], dtype, dst, comm);
+        }
+
+        for (int idx = 1; idx < comm_size; idx++) {
             int src = (comm_rank + idx) % comm_size;
 
-            // send own result to other ranks
-            entry_factory::create<send_entry>(
-                sched, reduce_buf, elem_counts[comm_rank], dtype, dst, comm);
-
-            // recv other's rank result into tmp buffer and copy to recv buffer
-            entry_factory::create<recv_copy_entry>(sched,
-                                                   tmp_buf + elem_offsets[src],
-                                                   recv_buf + elem_offsets[src],
-                                                   elem_counts[src] * dtype_size,
-                                                   src,
-                                                   comm,
-                                                   attr);
+            // recv part of buffer from other rank and perform reduce
+            entry_factory::create<recv_reduce_entry>(sched,
+                                                     reduce_buf,
+                                                     elem_count,
+                                                     dtype,
+                                                     op,
+                                                     src,
+                                                     comm,
+                                                     seg_tmp_buf + elem_count * src * dtype_size);
         }
-    }
-    else {
-        CCL_CALL(ccl_coll_build_naive_allgatherv(
-            sched, recv_buf, elem_counts[comm_rank], recv_buf, elem_counts.data(), dtype, comm));
+
+        sched->add_barrier();
+
+        // allgatherv
+        if (use_buffering) {
+            copy_attr attr;
+            attr.direction = copy_direction::h2h;
+            attr.use_nontemporal = true;
+
+            // copy own result from tmp to recv buffer
+            entry_factory::create<copy_entry>(
+                sched, reduce_buf, seg_recv_buf + elem_offsets[comm_rank], elem_count, dtype, attr);
+            sched->add_barrier();
+
+            for (int idx = 1; idx < comm_size; idx++) {
+                int dst = (comm_rank + idx) % comm_size;
+                int src = (comm_rank - idx + comm_size) % comm_size;
+
+                // send own result to other ranks
+                entry_factory::create<send_entry>(
+                    sched, reduce_buf, elem_counts[comm_rank], dtype, dst, comm);
+
+                // recv other's rank result into tmp buffer and copy to recv buffer
+                entry_factory::create<recv_copy_entry>(sched,
+                                                       seg_tmp_buf + elem_offsets[src],
+                                                       seg_recv_buf + elem_offsets[src],
+                                                       elem_counts[src] * dtype_size,
+                                                       src,
+                                                       comm,
+                                                       attr);
+            }
+        }
+        else {
+            CCL_CALL(ccl_coll_build_naive_allgatherv(sched,
+                                                     seg_recv_buf,
+                                                     elem_counts[comm_rank],
+                                                     seg_recv_buf,
+                                                     elem_counts.data(),
+                                                     dtype,
+                                                     comm));
+        }
     }
 
     return status;

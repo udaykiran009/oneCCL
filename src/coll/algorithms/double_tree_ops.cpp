@@ -35,27 +35,13 @@ static void reduce_tree(const ccl_bin_tree& tree,
                         ccl_comm* comm) {
     if (tree.left() != -1) {
         LOG_DEBUG("recv_reduce left ", tree.left());
-        entry_factory::create<recv_reduce_entry>(sched,
-                                                 buffer,
-                                                 count,
-                                                 nullptr,
-                                                 dtype,
-                                                 reduction,
-                                                 static_cast<size_t>(tree.left()),
-                                                 ccl_buffer(),
-                                                 comm);
+        entry_factory::create<recv_reduce_entry>(
+            sched, buffer, count, dtype, reduction, static_cast<size_t>(tree.left()), comm);
     }
     if (tree.right() != -1) {
         LOG_DEBUG("recv_reduce right ", tree.right());
-        entry_factory::create<recv_reduce_entry>(sched,
-                                                 buffer,
-                                                 count,
-                                                 nullptr,
-                                                 dtype,
-                                                 reduction,
-                                                 static_cast<size_t>(tree.right()),
-                                                 ccl_buffer(),
-                                                 comm);
+        entry_factory::create<recv_reduce_entry>(
+            sched, buffer, count, dtype, reduction, static_cast<size_t>(tree.right()), comm);
     }
     if (tree.parent() != -1) {
         if (tree.left() != -1 || tree.right() != -1) {
@@ -76,27 +62,13 @@ static void reduce_bcast_tree(const ccl_bin_tree& tree,
                               ccl_comm* comm) {
     if (tree.left() != -1) {
         LOG_DEBUG("recv_reduce left ", tree.left());
-        entry_factory::create<recv_reduce_entry>(sched,
-                                                 buffer,
-                                                 count,
-                                                 nullptr,
-                                                 dtype,
-                                                 reduction,
-                                                 static_cast<size_t>(tree.left()),
-                                                 ccl_buffer(),
-                                                 comm);
+        entry_factory::create<recv_reduce_entry>(
+            sched, buffer, count, dtype, reduction, static_cast<size_t>(tree.left()), comm);
     }
     if (tree.right() != -1) {
         LOG_DEBUG("recv_reduce right ", tree.right());
-        entry_factory::create<recv_reduce_entry>(sched,
-                                                 buffer,
-                                                 count,
-                                                 nullptr,
-                                                 dtype,
-                                                 reduction,
-                                                 static_cast<size_t>(tree.right()),
-                                                 ccl_buffer(),
-                                                 comm);
+        entry_factory::create<recv_reduce_entry>(
+            sched, buffer, count, dtype, reduction, static_cast<size_t>(tree.right()), comm);
     }
     if (tree.parent() != -1) {
         if (tree.left() != -1 || tree.right() != -1) {

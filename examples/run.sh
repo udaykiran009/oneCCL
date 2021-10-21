@@ -375,7 +375,6 @@ run()
                     grep -v 'unordered_allreduce' |
                     grep -v 'custom_allreduce' |
                     grep -v 'datatype' |
-                    grep -v 'communicator' |
                     grep -v 'sparse_allreduce' |
                     grep -v 'run_binary.sh' |
                     grep -v 'run.sh' |

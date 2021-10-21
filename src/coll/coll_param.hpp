@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "coll/algorithms/algorithms_enum.hpp"
+#include "coll/algorithms/algorithm_utils.hpp"
 #include "common/datatype/datatype.hpp"
 #include "oneapi/ccl.hpp"
 

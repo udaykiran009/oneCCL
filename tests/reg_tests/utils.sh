@@ -26,7 +26,7 @@ function get_bench() {
     if [ ! -f ${CCL_ROOT}/examples/benchmark/benchmark ]
     then
         cd ${CCL_ROOT}/examples
-        mkdir build
+        mkdir -p build
         cd build
         cmake .. &>> ${log_path}
         make benchmark &>> ${log_path}

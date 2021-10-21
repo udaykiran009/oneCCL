@@ -274,12 +274,11 @@ ccl::status ccl_coll_build_ring_reduce_scatter(ccl_sched* sched,
                 entry_factory::create<recv_reduce_entry>(sched,
                                                          recv_reduce_local_buf,
                                                          recv_chunk_size,
-                                                         nullptr, /* out_cnt */
                                                          dtype,
                                                          op,
                                                          src,
-                                                         recv_reduce_comm_buf,
                                                          comm,
+                                                         recv_reduce_comm_buf,
                                                          recv_reduce_result_type);
             }
             else {

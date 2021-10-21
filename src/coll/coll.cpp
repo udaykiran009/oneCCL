@@ -36,7 +36,7 @@
 #include "common/global/global.hpp"
 
 #include "coll/algorithms/algorithms.hpp"
-#include "coll/algorithms/algorithms_enum.hpp"
+#include "coll/algorithms/algorithm_utils.hpp"
 #include "coll/algorithms/allreduce/allreduce_2d.hpp"
 #include "coll/algorithms/sparse_allreduce/sparse_allreduce.hpp"
 #include "coll/selection/selection.hpp"

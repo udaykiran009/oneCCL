@@ -111,6 +111,7 @@ env_data::env_data()
           allreduce_2d_base_size(CCL_ENV_SIZET_NOT_SPECIFIED),
           allreduce_2d_switch_dims(0),
           allreduce_nreduce_buffering(0),
+          allreduce_nreduce_segment_size(CCL_ENV_SIZET_NOT_SPECIFIED),
 
           alltoall_scatter_max_ops(CCL_ENV_SIZET_NOT_SPECIFIED),
           alltoall_scatter_plain(0),
@@ -271,6 +272,7 @@ void env_data::parse() {
     env_2_type(CCL_ALLREDUCE_2D_BASE_SIZE, (size_t&)allreduce_2d_base_size);
     env_2_type(CCL_ALLREDUCE_2D_SWITCH_DIMS, allreduce_2d_switch_dims);
     env_2_type(CCL_ALLREDUCE_NREDUCE_BUFFERING, allreduce_nreduce_buffering);
+    env_2_type(CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE, (size_t&)allreduce_nreduce_segment_size);
 
     env_2_type(CCL_ALLTOALL_SCATTER_MAX_OPS, (size_t&)alltoall_scatter_max_ops);
     env_2_type(CCL_ALLTOALL_SCATTER_PLAIN, alltoall_scatter_plain);
@@ -472,6 +474,11 @@ void env_data::print(int rank) {
                  : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_ALLREDUCE_2D_SWITCH_DIMS, ": ", allreduce_2d_switch_dims);
     LOG_INFO(CCL_ALLREDUCE_NREDUCE_BUFFERING, ": ", allreduce_nreduce_buffering);
+    LOG_INFO(CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE,
+             ": ",
+             (allreduce_nreduce_segment_size != CCL_ENV_SIZET_NOT_SPECIFIED)
+                 ? std::to_string(allreduce_nreduce_segment_size)
+                 : CCL_ENV_STR_NOT_SPECIFIED);
 
     LOG_INFO(CCL_ALLTOALL_SCATTER_MAX_OPS,
              ": ",
@@ -714,12 +721,14 @@ int env_data::env_2_worker_affinity(int local_proc_idx, int local_proc_count) {
     return 1;
 }
 
-int env_data::env_2_worker_mem_affinity() {
+int env_data::env_2_worker_mem_affinity(int local_proc_count) {
     CCL_THROW_IF_NOT(worker_affinity.size() > 0);
+    CCL_THROW_IF_NOT(local_proc_count > 0);
 
     size_t idx;
     char* env_to_parse = getenv(CCL_WORKER_MEM_AFFINITY);
-    size_t affinity_size = worker_affinity.size();
+    size_t affinity_size = local_proc_count * worker_count;
+    CCL_THROW_IF_NOT(affinity_size <= worker_affinity.size());
 
     if (!env_to_parse || (strlen(env_to_parse) == 0) || (strcmp(env_to_parse, "auto") == 0)) {
         worker_mem_affinity.assign(affinity_size, CCL_UNDEFINED_NUMA_NODE);

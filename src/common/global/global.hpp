@@ -1,6 +1,6 @@
 #pragma once
 
-#include "coll/algorithms/algorithms_enum.hpp"
+#include "coll/algorithms/algorithm_utils.hpp"
 #include "common/env/env.hpp"
 #include "common/utils/utils.hpp"
 #include "hwloc/hwloc_wrapper.hpp"

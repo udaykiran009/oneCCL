@@ -73,7 +73,7 @@ void ccl_executor::start_workers(int proc_idx, int proc_count) {
     set_local_coord(proc_idx, proc_count);
     auto& env = ccl::global_data::env();
     CCL_THROW_IF_NOT(env.env_2_worker_affinity(get_local_proc_idx(), get_local_proc_count()));
-    CCL_THROW_IF_NOT(env.env_2_worker_mem_affinity());
+    CCL_THROW_IF_NOT(env.env_2_worker_mem_affinity(get_local_proc_count()));
     start_workers();
 }
 

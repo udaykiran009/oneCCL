@@ -1,10 +1,10 @@
 #pragma once
 
-#include "coll/algorithms/algorithms_enum.hpp"
-#include "common/comm/comm.hpp"
+#include "coll/algorithms/algorithm_utils.hpp"
 #include "coll/coll_param.hpp"
-#include "common/stream/stream.hpp"
+#include "common/comm/comm.hpp"
 #include "common/datatype/datatype.hpp"
+#include "common/stream/stream.hpp"
 #include "common/utils/buffer.hpp"
 
 #include "coll/coll_common_attributes.hpp"
