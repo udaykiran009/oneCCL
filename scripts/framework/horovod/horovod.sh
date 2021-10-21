@@ -18,8 +18,9 @@ set_run_env() {
     # model
     export PYTHONPATH=${RN50_MODEL_TF_DIR}:${PYTHONPATH}
 
-    #ATS WA for event execution: remove after fix
+    # Node env variables
     export EnableDirectSubmission=1
+    export DisableIndirectAccess=1
 
     # Tensorflow
     export TF_ENABLE_LAYOUT_OPT=0
@@ -63,7 +64,7 @@ set_run_env() {
 
     # SYCL
     export SYCL_PI_LEVEL_ZERO_BATCH_SIZE=1
-    export SYCL_DEVICE_FILTER={level_zero:gpu:0}
+    export SYCL_DEVICE_FILTER=level_zero
     export ZE_ROOT=/usr/local
     export SYCL_PI_LEVEL_ZERO_TRACK_INDIRECT_ACCESS_MEMORY=1
 
@@ -104,13 +105,13 @@ CCL_BASE_LINK="github.com/intel-innersource/libraries.performance.communication.
 HOROVOD_BASE_LINK="github.com/intel-innersource/frameworks.ai.horovod.git"
 MODEL_TF_BASE_LINK="github.com/intel-innersource/frameworks.ai.models.intel-models"
 MODEL_TF_SRC_BRANCH="yang/resnet50-training-tmp"
-MODEL_TF_SRC_COMMIT="74b72acf1436255987a238afb414185008631d09"
+MODEL_TF_SRC_COMMIT="20a8b0075cd75a5534007df5ba8cfc112a5a41c3"
 
 MODEL_PT_FILE="bench_pt.py"
 MODEL_PT_BASE_LINK="https://gitlab.devtools.intel.com/aemani/dlutils/-/raw/master"
 
-TF_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww37/tensorflow/tensorflow-2.5.0-cp37-cp37m-linux_x86_64.whl"
-ITEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww37/tensorflow/intel_extension_for_tensorflow-0.2.1-cp37-cp37m-linux_x86_64.whl"
+TF_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww41/tensorflow/ubuntu/tensorflow-2.5.0-cp37-cp37m-linux_x86_64.whl"
+ITEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww41/tensorflow/ubuntu/intel_extension_for_tensorflow-0.2.1-cp37-cp37m-linux_x86_64.whl"
 
 TF_NAME=`basename $TF_LINK`
 ITEX_NAME=`basename $ITEX_LINK`
