@@ -68,7 +68,7 @@ elif [ $compiler == "ccl_build_dpcpp" ]
 then
 (
     export compute_backend="dpcpp"
-    export compiler="clang"
+    export compiler="dpcpp"
     run_in_fake_container /build/ccl/scripts/build.sh --conf --build-gpu $BUILD_OPTIONS
     CheckCommandExitCode $? "build with dpcpp compiler failed"
     (cd ${WORKSPACE} && tar cfz ${ARTEFACT_DIR}/${BUILD_FOLDER}_$build_type.tgz build)
@@ -79,6 +79,14 @@ then
     export compiler="intel"
     run_in_fake_container /build/ccl/scripts/build.sh --conf --build-cpu $BUILD_OPTIONS
     CheckCommandExitCode $? "build with intel compiler failed"
-    (cd ${WORKSPACE} && tar cfz ${ARTEFACT_DIR}/build_$build_type.tgz build)
+    (cd ${WORKSPACE} && tar cfz ${ARTEFACT_DIR}/build_cpu_$build_type.tgz build)
+)
+elif [ $compiler == "ccl_build_icx" ]
+then
+(
+    export compiler="icx"
+    run_in_fake_container /build/ccl/scripts/build.sh --conf --build-cpu $BUILD_OPTIONS
+    CheckCommandExitCode $? "build with icx compiler failed"
+    (cd ${WORKSPACE} && tar cfz ${ARTEFACT_DIR}/build_cpu_icx_$build_type.tgz build)
 )
 fi

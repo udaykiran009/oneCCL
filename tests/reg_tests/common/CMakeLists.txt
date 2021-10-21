@@ -6,11 +6,12 @@ set(pkg_sources
 set(CCL_INSTALL_TESTS "${CMAKE_CURRENT_SOURCE_DIR}")
 
 find_package(PkgConfig REQUIRED)
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "IntelLLVM")
+
+set(PKG_CCL_LIB "ccl-cpu")
+if ("${COMPUTE_BACKEND}" STREQUAL "dpcpp_level_zero")
     set(PKG_CCL_LIB "ccl-cpu_gpu_dpcpp")
-else()
-    set(PKG_CCL_LIB "ccl-cpu_icc")
 endif()
+
 pkg_check_modules(IMPI_PKG REQUIRED IMPORTED_TARGET impi)
 pkg_check_modules(CCL_PKG REQUIRED IMPORTED_TARGET ${PKG_CCL_LIB})
 

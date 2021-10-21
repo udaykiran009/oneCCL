@@ -324,7 +324,7 @@ build_ccl() {
     mkdir build
     cd build
 
-    cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=dpcpp \
+    cmake .. -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=dpcpp \
         -DCOMPUTE_BACKEND=dpcpp_level_zero \
         -DBUILD_CONFIG=0 -DBUILD_FT=0 -DBUILD_EXAMPLES=1 \
         -DCMAKE_INSTALL_PREFIX=${CCL_INSTALL_DIR}

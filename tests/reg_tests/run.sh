@@ -130,8 +130,8 @@ check_mode() {
         if [[ ! ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",dpcpp,"* ]] || [[ ! -n ${DASHBOARD_GPU_DEVICE_PRESENT} ]]
         then
             echo "WARNING: DASHBOARD_INSTALL_TOOLS_INSTALLED variable doesn't contain 'dpcpp' or the DASHBOARD_GPU_DEVICE_PRESENT variable is missing"
-            echo "WARNING: Using cpu_icc configuration of the library"
-            source ${CCL_ROOT}/env/vars.sh --ccl-configuration=cpu_icc
+            echo "WARNING: Using cpu configuration of the library"
+            source ${CCL_ROOT}/env/vars.sh --ccl-configuration=cpu
             MODE="cpu"
         else
             MODE="gpu"
@@ -142,23 +142,32 @@ check_mode() {
 define_compiler() {
     case ${MODE} in
     "cpu" )
-        if [[ -z "${C_COMPILER}" ]] && [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]; then
-            C_COMPILER=icc
-        else
-            C_COMPILER=gcc
+        if [[ -z "${C_COMPILER}" ]]; then
+            if [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icx,"* ]]; then
+                C_COMPILER=icx
+            elif [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]; then
+                C_COMPILER=icc
+            else
+                C_COMPILER=gcc
+            fi
         fi
-        if [[ -z "${CXX_COMPILER}" ]] && [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]; then
-            CXX_COMPILER=icpc
-        else
-            CXX_COMPILER=g++
+        if [[ -z "${CXX_COMPILER}" ]]; then
+            if [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icx,"* ]]; then
+                CXX_COMPILER=icpx
+            elif [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]; then
+                CXX_COMPILER=icpc
+            else
+                CXX_COMPILER=g++
+            fi
         fi
         ;;
     "gpu"|* )
-        if [ -z "${C_COMPILER}" ]; then
-            C_COMPILER=clang
+        if [ -z "${C_COMPILER}" ]; then 
+            C_COMPILER=icx
         fi
         if [ -z "${CXX_COMPILER}" ]; then
             CXX_COMPILER=dpcpp
+            COMPUTE_BACKEND="dpcpp_level_zero"
         fi
         ;;
     esac
@@ -170,7 +179,7 @@ build() {
         rm -rf build
         mkdir ${SCRIPT_DIR}/build
         pushd ${SCRIPT_DIR}/build
-        cmake .. -DCMAKE_C_COMPILER=${C_COMPILER} -DCMAKE_CXX_COMPILER=${CXX_COMPILER}
+        cmake .. -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DCOMPUTE_BACKEND="${COMPUTE_BACKEND}"
         make VERBOSE=1 -j${MAKE_JOB_COUNT} install
         CheckCommandExitCode $? "build failed"
         popd

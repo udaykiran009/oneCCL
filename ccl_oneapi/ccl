@@ -76,7 +76,7 @@ set ccl_conf "cpu_gpu_dpcpp"
 if { [info exists ::env(CCL_CONFIGURATION) ] } {
     switch "$::env(CCL_CONFIGURATION)" {
         "cpu_gpu_dpcpp" -
-        "cpu_icc" {
+        "cpu" {
             set ccl_conf "$::env(CCL_CONFIGURATION)"
         }
         default {

@@ -135,7 +135,7 @@ function run()
         source ${MPI_VARS}
     fi
 
-    export CCL_CONFIGURATION="cpu_icc"
+    export CCL_CONFIGURATION="cpu"
     source ${CCL_VARS} --ccl-configuration="${CCL_CONFIGURATION}"
 
     eval `echo $binary_env $binary_path $binary_arg ;` &> $LOG_FILE

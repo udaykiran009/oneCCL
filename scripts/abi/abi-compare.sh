@@ -17,7 +17,7 @@ print_help()
     echo "                          Default: system temp dir"
     echo "  --build-type TYPE       (optional) specify the build type."
     echo "                          Used ONLY if compared builds have passed the post build step."
-    echo "                          Example: cpu_icc or cpu_gpu_dpcpp"
+    echo "                          Example: cpu or cpu_gpu_dpcpp"
     echo
     echo "WARNING: Debug CCL build is needed:"
     echo "  build.sh --build-cpu --build-gpu --build-deb-conf"
@@ -31,7 +31,7 @@ print_help()
     echo "     ${BASENAME} --name libccl_gpu --old ./mlsl_old/build_gpu --new ./mlsl_new/build_gpu --report-dir ./report"
     echo
     echo "  2) Comparison of two builds after the post build step:"
-    echo "     ${BASENAME} --name libccl_cpu --old ./mlsl_old/build --new ./mlsl_new/build --report-dir ./report --build-type cpu_icc"
+    echo "     ${BASENAME} --name libccl_cpu --old ./mlsl_old/build --new ./mlsl_new/build --report-dir ./report --build-type cpu"
     echo "     or"
     echo "     ${BASENAME} --name libccl_gpu --old ./mlsl_old/build --new ./mlsl_new/build --report-dir ./report --build-type cpu_gpu_dpcpp"
 }
@@ -82,7 +82,7 @@ check_command()
 set_env()
 {
     source /p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/last/compiler/latest/env/vars.sh intel64
-    check_command clang++
+    check_command dpcpp
 
     UTILS_DIR=/nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Uploads/CCL/jenkins-utils/abi
     export PATH=${UTILS_DIR}/abi-compliance-checker/bin:$PATH

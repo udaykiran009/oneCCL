@@ -6,7 +6,7 @@ DEFAULT_CONFIGURATION="cpu_gpu_dpcpp"
 print_help()
 {
     echo ""
-    echo "Usage: vars.sh [--ccl-configuration[=cpu_icc|cpu_gpu_dpcpp]]"
+    echo "Usage: vars.sh [--ccl-configuration[=cpu|cpu_gpu_dpcpp]]"
     echo ""
     echo "By default, --ccl-configuration=${DEFAULT_CONFIGURATION}"
     echo "The arguments to the sourced script might be ignored"
@@ -125,7 +125,7 @@ do
     esac
 done
 case "$ccl_configuration" in
-    cpu_gpu_dpcpp|cpu_icc)
+    cpu_gpu_dpcpp|cpu)
         ;;
     *)
 	echo "Warning: ccl-configuration=${ccl_configuration} is incorrect"

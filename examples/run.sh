@@ -72,14 +72,14 @@ check_test()
     fi
 }
 
-check_clang()
+check_dpcpp()
 {
-    which clang++
+    which dpcpp
     COMPILER_INSTALL_CHECK=$?
     if [ "$COMPILER_INSTALL_CHECK" != "0" ]
     then
-        echo "Warning: clang++ compiler wasn't found, ccl-configuration=cpu_icc will be sourced"
-        source ${CCL_ROOT}/env/vars.sh --ccl-configuration=cpu_icc
+        echo "Warning: dpcpp compiler wasn't found, ccl-configuration=cpu will be sourced"
+        source ${CCL_ROOT}/env/vars.sh --ccl-configuration=cpu
         MODE="cpu"
     fi
 }
@@ -267,15 +267,9 @@ build()
     # please use line below for manual testing by run.sh
     # cp ${EXAMPLE_WORK_DIR}/../../ccl_oneapi/CMakeLists.txt ${EXAMPLE_WORK_DIR}/../
     echo "Building"
-    if [ -z "${COMPUTE_BACKEND}" ]
-    then
-        cmake .. -DCMAKE_C_COMPILER=${C_COMPILER} \
-                 -DCMAKE_CXX_COMPILER=${CXX_COMPILER} 2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
-    else
-        cmake .. -DCMAKE_C_COMPILER=${C_COMPILER} \
-                 -DCMAKE_CXX_COMPILER=${CXX_COMPILER} \
-                 -DCOMPUTE_BACKEND=${COMPUTE_BACKEND}  2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
-    fi
+    cmake .. -DCMAKE_C_COMPILER="${C_COMPILER}" \
+                -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" \
+                -DCOMPUTE_BACKEND="${COMPUTE_BACKEND}"  2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
     make -j 2>&1 | tee -a ${EXAMPLE_WORK_DIR}/build_output.log
     error_count=`grep -E -i -c 'error|abort|fail'  ${EXAMPLE_WORK_DIR}/build_output.log` > /dev/null 2>&1
     if [ "${error_count}" != "0" ]
@@ -634,8 +628,8 @@ print_help()
     echo_log "  ${BASENAME}.sh --mode gpu --scope pr"
     echo_log ""
     echo_log "Available knobs:"
-    echo_log "  C_COMPILER = clang|icc|gcc|<full path to compiler>, default is clang"
-    echo_log "  CXX_COMPILER = clang++|icpc|g++|<full path to compiler>, default is clang++"
+    echo_log "  C_COMPILER = clang|icc|icx|gcc|<full path to compiler>"
+    echo_log "  CXX_COMPILER = clang++|icpc|icpx|g++|<full path to compiler>"
     echo_log ""
 }
 
@@ -679,8 +673,8 @@ check_mode()
         if [[ ! ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",dpcpp,"* ]] || [[ ! -n ${DASHBOARD_GPU_DEVICE_PRESENT} ]]
         then
             echo "WARNING: DASHBOARD_INSTALL_TOOLS_INSTALLED variable doesn't contain 'dpcpp' or the DASHBOARD_GPU_DEVICE_PRESENT variable is missing"
-            echo "WARNING: Using cpu_icc configuration of the library"
-            source ${CCL_ROOT}/env/vars.sh --ccl-configuration=cpu_icc
+            echo "WARNING: Using cpu configuration of the library"
+            source ${CCL_ROOT}/env/vars.sh --ccl-configuration=cpu
             MODE="cpu"
         else
             MODE="gpu"
@@ -689,24 +683,30 @@ check_mode()
 
     case $MODE in
     "cpu" )
-        if [[ -z "${C_COMPILER}" ]] && [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]
-        then
-            C_COMPILER=icc
-        else
-            C_COMPILER=gcc
+        if [[ -z "${C_COMPILER}" ]]; then
+            if [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icx,"* ]]; then
+                C_COMPILER=icx
+            elif [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]; then
+                C_COMPILER=icc
+            else
+                C_COMPILER=gcc
+            fi
         fi
-        if [[ -z "${CXX_COMPILER}" ]] && [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]
-        then
-            CXX_COMPILER=icpc
-        else
-            CXX_COMPILER=g++
+        if [[ -z "${CXX_COMPILER}" ]]; then
+            if [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icx,"* ]]; then
+                CXX_COMPILER=icpx
+            elif [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]; then
+                CXX_COMPILER=icpc
+            else
+                CXX_COMPILER=g++
+            fi
         fi
         ;;
     "gpu"|* )
-        check_clang
+        check_dpcpp
         if [ -z "${C_COMPILER}" ]
         then
-            C_COMPILER=clang
+            C_COMPILER=icx
         fi
         if [ -z "${CXX_COMPILER}" ]
         then

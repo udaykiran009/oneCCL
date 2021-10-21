@@ -188,7 +188,7 @@ function set_ats_environment()
 
     ATS_WORKSPACE_DIR="/home/sys_ctlab/workspace/workspace/"
     ATS_ARTEFACT_DIR="${ATS_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
-    export BUILD_COMPILER_TYPE="clang"
+    export BUILD_COMPILER_TYPE="dpcpp"
     export SYCL_BUNDLE_ROOT="/home/sys_ctlab/oneapi/compiler/dpcpp_1005"
     source ${SYCL_BUNDLE_ROOT}/env.sh
     export IMPI_PATH="/home/sys_ctlab/oneapi/mpi_oneapi/last/mpi/latest/"
@@ -214,24 +214,28 @@ function set_environment()
         set_ats_environment
     fi
 
-    # $BUILD_COMPILER_TYPE may be set up by user: clang/gnu/intel
+    # $BUILD_COMPILER_TYPE may be set up by user: dpcpp/gnu/intel/icx
     if [ -z "${BUILD_COMPILER_TYPE}" ]
     then
         if [ ${node_label} == "ccl_test_gen9" ] || [ ${node_label} == "ccl_vlgd" ] || [ ${build_compiler} == "sycl" ]
         then
-            BUILD_COMPILER_TYPE="clang"
+            BUILD_COMPILER_TYPE="dpcpp"
             source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
         elif [ ${node_label} == "ccl_test_cpu" ] || [ ${build_compiler} == "gnu" ]
         then
             BUILD_COMPILER_TYPE="gnu"
-            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_icc
+            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu
         elif [ ${build_compiler} == "intel" ]
         then
             BUILD_COMPILER_TYPE="intel"
-            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_icc
+            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu
+        elif [ ${build_compiler} == "icx" ]
+        then
+            BUILD_COMPILER_TYPE="icx"
+            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu
         else
-            echo "WARNING: the 'node_label' variable is not set. Clang will be used by default."
-            BUILD_COMPILER_TYPE="clang"
+            echo "WARNING: the 'node_label' variable is not set. 'dpcpp' will be used by default."
+            BUILD_COMPILER_TYPE="dpcpp"
         fi
     fi
 
@@ -242,11 +246,17 @@ function set_environment()
         CXX_COMPILER=${BUILD_COMPILER_PATH}/g++
     elif [ "${BUILD_COMPILER_TYPE}" = "intel" ]
     then
-        source /nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/bin/compilervars.sh intel64
-        BUILD_COMPILER_PATH=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/bin/intel64/
-        C_COMPILER=${BUILD_COMPILER_PATH}/icc
-        CXX_COMPILER=${BUILD_COMPILER_PATH}/icpc
-    elif [ "${BUILD_COMPILER_TYPE}" = "clang" ]
+        BUILD_COMPILER_PATH=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/
+        source ${BUILD_COMPILER_PATH}/linux/bin/compilervars.sh intel64
+        C_COMPILER=${BUILD_COMPILER_PATH}/linux/bin/intel64/icc
+        CXX_COMPILER=${BUILD_COMPILER_PATH}/linux/bin/intel64/icpc
+    elif [ "${BUILD_COMPILER_TYPE}" = "icx" ]
+    then
+        BUILD_COMPILER_PATH=/p/pdsd/scratch/Uploads/CCL_oneAPI/l_dpcpp-cpp-compiler/l_dpcpp-cpp-compiler_p_2021.4.0.3201/compiler/latest/
+        source ${BUILD_COMPILER_PATH}/env/vars.sh intel64
+        C_COMPILER=${BUILD_COMPILER_PATH}/linux/bin/icx
+        CXX_COMPILER=${BUILD_COMPILER_PATH}/linux/bin/icpx
+    elif [ "${BUILD_COMPILER_TYPE}" = "dpcpp" ]
     then
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
@@ -255,7 +265,7 @@ function set_environment()
         fi
         source ${SYCL_BUNDLE_ROOT}/env.sh
         BUILD_COMPILER_PATH=${SYCL_BUNDLE_ROOT}/bin
-        C_COMPILER=${BUILD_COMPILER_PATH}/clang
+        C_COMPILER=${BUILD_COMPILER_PATH}/icx
         CXX_COMPILER=${BUILD_COMPILER_PATH}/dpcpp
         COMPUTE_BACKEND=dpcpp_level_zero
     else
@@ -282,13 +292,13 @@ function set_environment()
     then
         if [ -z  "${node_label}" ]
         then
-            source ${ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
+            source ${ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu
         elif [ $node_label == "ccl_test_gen9" ] || [ $node_label == "ccl_vlgd" ]
         then
             source ${ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
             export DASHBOARD_GPU_DEVICE_PRESENT="yes"
         else
-            source ${ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_icc
+            source ${ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu
         fi
     fi
 
@@ -484,7 +494,7 @@ function run_pytorch_tests()
 function set_modulefile_environment()
 {
     source /etc/profile.d/modules.sh
-    export CCL_CONFIGURATION=cpu_icc
+    export CCL_CONFIGURATION=cpu
     if [ -z "$build_type" ]
     then
         build_type="release"

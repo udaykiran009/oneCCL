@@ -7,6 +7,7 @@ BASENAME=`basename $0 .sh`
 
 ARTEFACT_DIR="/p/pdsd/scratch/jenkins/artefacts"
 CCL_ONEAPI_DIR="/p/pdsd/scratch/Uploads/CCL_oneAPI/"
+VALGRIND_DIR="/nfs/inn/proj/mpi/pdsd/opt/tools/valgrind/last"
 
 set_example_work_dir()
 {
@@ -52,7 +53,7 @@ check_test()
     fi
 }
 
-check_and_set_clang_path()
+check_and_set_dpcpp_path()
 {
     if [ -z "${SYCL_BUNDLE_ROOT}" ]
     then
@@ -62,13 +63,13 @@ check_and_set_clang_path()
     source ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
 }
 
-check_clang()
+check_dpcpp()
 {
-    which clang++
+    which dpcpp
     COMPILER_INSTALL_CHECK=$?
     if [ "$COMPILER_INSTALL_CHECK" != "0" ]
     then
-        check_and_set_clang_path
+        check_and_set_dpcpp_path
     fi
 }
 
@@ -115,6 +116,9 @@ check_environment()
         exit 1
     fi
 
+    export PATH="${VALGRIND_DIR}/bin:${PATH}"
+    which valgrind
+    valgrind --version
     vg_major_version=`valgrind --version | awk -F"[-.]" '{print $2}'`
     vg_minor_version=`valgrind --version | awk -F"[-.]" '{print $3}'`
     vg_patch_version=`valgrind --version | awk -F"[-.]" '{print $4}'`
@@ -386,8 +390,8 @@ print_help()
     echo_log "  ${BASENAME}.sh --mode gpu"
     echo_log ""
     echo_log "Available knobs:"
-    echo_log "  C_COMPILER = clang|icc|gcc|<full path to compiler>, default is clang"
-    echo_log "  CXX_COMPILER = clang++|icpc|g++|<full path to compiler>, default is clang++"
+    echo_log "  C_COMPILER = clang|icc|icx|gcc|<full path to compiler>"
+    echo_log "  CXX_COMPILER = clang++|icpc|icpx|g++|<full path to compiler>"
     echo_log ""
 }
 
@@ -440,8 +444,8 @@ check_mode()
         if [[ ! ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",dpcpp,"* ]] || [[ ! -n ${DASHBOARD_GPU_DEVICE_PRESENT} ]]
         then
             echo "WARNING: DASHBOARD_INSTALL_TOOLS_INSTALLED variable doesn't contain 'dpcpp' or the DASHBOARD_GPU_DEVICE_PRESENT variable is missing"
-            echo "WARNING: Using cpu_icc configuration of the library"
-            source ${CCL_ROOT}/env/vars.sh --ccl-configuration=cpu_icc
+            echo "WARNING: Using cpu configuration of the library"
+            source ${CCL_ROOT}/env/vars.sh --ccl-configuration=cpu
             MODE="cpu"
         else
             MODE="gpu"
@@ -450,24 +454,30 @@ check_mode()
 
     case $MODE in
     "cpu" )
-        if [[ -z "${C_COMPILER}" ]] && [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]
-        then
-            C_COMPILER=icc
-        else
-            C_COMPILER=gcc
+        if [[ -z "${C_COMPILER}" ]]; then
+            if [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icx,"* ]]; then
+                C_COMPILER=icx
+            elif [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]; then
+                C_COMPILER=icc
+            else
+                C_COMPILER=gcc
+            fi
         fi
-        if [[ -z "${CXX_COMPILER}" ]] && [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]
-        then
-            CXX_COMPILER=icpc
-        else
-            CXX_COMPILER=g++
+        if [[ -z "${CXX_COMPILER}" ]]; then
+            if [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icx,"* ]]; then
+                CXX_COMPILER=icpx
+            elif [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]; then
+                CXX_COMPILER=icpc
+            else
+                CXX_COMPILER=g++
+            fi
         fi
         ;;
     "gpu"|* )
-        check_clang
+        check_dpcpp
         if [ -z "${C_COMPILER}" ]
         then
-            C_COMPILER=clang
+            C_COMPILER=icx
         fi
         if [ -z "${CXX_COMPILER}" ]
         then

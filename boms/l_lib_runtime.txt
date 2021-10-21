@@ -2,9 +2,9 @@ DeliveryName	InstallName	FileCheckSum	FileOrigin	Owner	FileFeature	FileInstallCo
 <deliverydir>/l_lib_runtime/cpu_gpu_dpcpp/libccl.so.1.0	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_gpu_dpcpp_path>/libccl.so.1.0		external	Maria1 Petrova		1	755	redistributable	root	<installroot>/lib/cpu_gpu_dpcpp/libccl.so.1.0
 <N/A>	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_gpu_dpcpp_path>/libccl.so.1		external	Maria1 Petrova		1	755	redistributable	root	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_gpu_dpcpp_path>/libccl.so.1.0
 <N/A>	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_gpu_dpcpp_path>/libccl.so		external	Maria1 Petrova		1	755	redistributable	root	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_gpu_dpcpp_path>/libccl.so.1
-<deliverydir>/l_lib_runtime/cpu_icc/libccl.so.1.0	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_icc_path>/libccl.so.1.0		external	Maria1 Petrova		1	755	redistributable	root	<installroot>/lib/cpu_icc/libccl.so.1.0
-<N/A>	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_icc_path>/libccl.so.1		external	Maria1 Petrova		1	755	redistributable	root	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_icc_path>/libccl.so.1.0
-<N/A>	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_icc_path>/libccl.so		external	Maria1 Petrova		1	755	redistributable	root	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_icc_path>/libccl.so.1
+<deliverydir>/l_lib_runtime/cpu/libccl.so.1.0	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_path>/libccl.so.1.0		external	Maria1 Petrova		1	755	redistributable	root	<installroot>/lib/cpu/libccl.so.1.0
+<N/A>	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_path>/libccl.so.1		external	Maria1 Petrova		1	755	redistributable	root	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_path>/libccl.so.1.0
+<N/A>	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_path>/libccl.so		external	Maria1 Petrova		1	755	redistributable	root	<installdir><l_ccl_install_path><l_ccl_platform><l_ccl_cpu_path>/libccl.so.1
 
 <deliverydir>/l_lib_runtime/kernels/kernels.spv	<installdir><l_ccl_install_path><l_ccl_platform>/lib/kernels/kernels.spv		external	Maria1 Petrova		1	644	redistributable	root	<ccl_root>/src/kernels/kernels.spv
 #Intel Confidential

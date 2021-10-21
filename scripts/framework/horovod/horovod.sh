@@ -668,7 +668,7 @@ install_ccl() {
     mkdir build
     cd build
     cmake .. -DBUILD_FT=0 -DBUILD_EXAMPLES=0 \
-        -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_BACKEND=dpcpp_level_zero
+        -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_BACKEND=dpcpp_level_zero
     CheckCommandExitCode $? "Configure CCL failed"
 
     make -j install
@@ -928,7 +928,7 @@ install_hvd() {
     cmd="I_MPI_CXX=dpcpp"
     cmd="$cmd CXX=mpicxx"
     cmd="$cmd LDSHARED=\"dpcpp -shared -fPIC\""
-    cmd="$cmd CC=clang"
+    cmd="$cmd CC=icx"
     cmd="$cmd HOROVOD_GPU=DPCPP"
     cmd="$cmd HOROVOD_GPU_OPERATIONS=CCL"
 

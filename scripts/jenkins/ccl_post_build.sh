@@ -14,7 +14,7 @@ echo "DEBUG: ARTEFACT_DIR = ${ARTEFACT_DIR}"
 #debug
 export CCL_PACKAGE_PREFIX=l_ccl_debug_
 tar xf ${ARTEFACT_DIR}/build_gpu_debug.tgz
-tar xf ${ARTEFACT_DIR}/build_debug.tgz
+tar xf ${ARTEFACT_DIR}/build_cpu_icx_debug.tgz
 
 source ${WORKSPACE}/scripts/jenkins/fake_container.sh
 
@@ -31,7 +31,7 @@ tar xfz ${ARTEFACT_DIR}/ccl_src.tgz
 
 export CCL_PACKAGE_PREFIX=l_ccl_release_
 tar xf ${ARTEFACT_DIR}/build_gpu_release.tgz
-tar xf ${ARTEFACT_DIR}/build_release.tgz
+tar xf ${ARTEFACT_DIR}/build_cpu_icx_release.tgz
 
 if [ "${ENABLE_PRE_DROP_STAGE}" == "true" ]
 then

@@ -41,7 +41,7 @@ build()
     echo_log "MESSAGE: Build oneCCL"
     mkdir build
     cd build
-    cmake ..  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=dpcpp  -DCOMPUTE_BACKEND=dpcpp_level_zero
+    cmake ..  -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=dpcpp  -DCOMPUTE_BACKEND=dpcpp_level_zero
     CheckCommandExitCode $? "  ERROR: Build oneCCL - cmake .. error"
     make -j8 install
     CheckCommandExitCode $? "  ERROR: Build oneCCL - make error"

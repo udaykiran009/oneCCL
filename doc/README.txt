@@ -165,7 +165,7 @@ default structure and identifies the file types stored in each sub-directory:
 				|   |   |-- ccl_types.h                                                                                
 				|   |   |-- ccl_types.hpp                                                                              
 				|   |   `-- ccl_type_traits.hpp                                                                        
-				|   `-- cpu_icc                                                                                        
+				|   `-- cpu                                                                                        
 				|       |-- ccl_config.h                                                                               
 				|       |-- ccl_device_type_traits.hpp                                                                 
 				|       |-- ccl.h                                                                                      
@@ -194,7 +194,7 @@ default structure and identifies the file types stored in each sub-directory:
 				|   |   |-- libresizable_pmi.so -> libresizable_pmi.so.1.0                                             
 				|   |   |-- libresizable_pmi.so.1                                                                      
 				|   |   `-- libresizable_pmi.so.1.0 -> libresizable_pmi.so.1                                           
-				|   `-- cpu_icc                                                                                        
+				|   `-- cpu                                                                                        
 				|       |-- libccl.a                                                                                   
 				|       |-- libccl_atl_mpi.a                                                                           
 				|       |-- libccl_atl_mpi.so -> libccl_atl_mpi.so.1.0                                                 

@@ -22,8 +22,8 @@ check_ccl
 
 # '<path_to_lib> <reference release size> <reference debug size>'
 file_list=(
-    "/lib/cpu_icc/libccl.so 7047392 60091792"
-    "/lib/cpu_icc/libccl.a 16417716 212032324"
+    "/lib/cpu/libccl.so 7047392 60091792"
+    "/lib/cpu/libccl.a 16417716 212032324"
     "/lib/cpu_gpu_dpcpp/libccl.so 5145632 74595184"
     "/lib/cpu_gpu_dpcpp/libccl.a 12791488 301711710"
 )

@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(__INTEL_COMPILER) || defined(__ICC)
+#if defined(__INTEL_COMPILER) || defined(__ICC) || defined(__INTEL_LLVM_COMPILER)
 #include <immintrin.h>
 #endif
 

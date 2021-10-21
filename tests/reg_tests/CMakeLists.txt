@@ -24,7 +24,7 @@ if (${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUA
 endif()
 
 add_subdirectory(common)
-if (${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" OR(${CMAKE_CXX_COMPILER_ID} STREQUAL "IntelLLVM"))
+if ("${COMPUTE_BACKEND}" STREQUAL "dpcpp_level_zero")
     add_subdirectory(sycl)
 endif()
 

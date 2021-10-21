@@ -16,7 +16,7 @@ set_default_values() {
 }
 
 set_environment() {
-    source ${ARTEFACT_DIR}/_package/eng/env/vars.sh --ccl-configuration=cpu_icc
+    source ${ARTEFACT_DIR}/_package/eng/env/vars.sh --ccl-configuration=cpu
     source ${ICC_BUNDLE_ROOT}/linux/bin/compilervars.sh intel64
 
     export DASHBOARD_INSTALL_TOOLS_INSTALLED=icc

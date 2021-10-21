@@ -152,18 +152,18 @@ print_help()
     echo_log "    ./${BASENAME}.sh <options>"
     echo_log "The most appropriate scenario is running on nnlmpinuc0*: ./build.sh -eng-package"
     echo_log "If you want to build separate CPU and GPU, "
-    echo_log "recommended nodes for building CPU part is nnlmpibldl10, for GPU part - nnlmpinuc05"
+    echo_log "recommended nodes for building CPU part is nnlmpibldl10, for GPU part - nnlmpibdw05-06"
     echo_log ""
-    echo_log "Please set BUILD_COMPILER_TYPE=gnu|intel|clang. Clang will be used by default."
+    echo_log "Please set compiler=gnu|intel|icx|dpcpp. Default compilers - icx (host build), dpcpp (dpcpp_level_zero build)"
     echo_log ""
     echo_log "<options>:"
     echo_log "   ------------------------------------------------------------"
     echo_log "    -eng-package|--eng-package"
     echo_log "        Prepare CCL eng-package (gzipped tar archive)"
     echo_log "    -build-cpu|--build-cpu"
-    echo_log "        Prepare CCL build with icc/icpc"
+    echo_log "        Prepare CCL build with icx/icpx"
     echo_log "    -build-gpu|--build-gpu"
-    echo_log "        Prepare CCL build with clang/clang++ with SYCL"
+    echo_log "        Prepare CCL build with icx/dpcpp with SYCL"
     echo_log "    -conf|--conf"
     echo_log "        Run configure the library"
     echo_log "    -post-build|--post-build"
@@ -209,7 +209,7 @@ CheckCommandExitCode() {
     fi
 }
 
-check_clang_path()
+check_dpcpp_path()
 {
     SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/dpcpp_1005"
     source ${SYCL_BUNDLE_ROOT}/env.sh
@@ -229,21 +229,31 @@ check_icc_path()
     if [ -z "${ICC_BUNDLE_ROOT}" ]
     then
         ICC_BUNDLE_ROOT=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/
-        echo "WARNING: ICC_BUNDLE_ROOT is not defined, will be used default: $ICC_BUNDLE_ROOT"
+        echo "WARNING: ICC_BUNDLE_ROOT is not defined, will be used default: ${ICC_BUNDLE_ROOT}"
     fi
     source ${ICC_BUNDLE_ROOT}/bin/compilervars.sh intel64
+}
+
+check_icx_path()
+{
+    if [ -z "${ICX_BUNDLE_ROOT}" ]
+    then
+        ICX_BUNDLE_ROOT=/p/pdsd/scratch/Uploads/CCL_oneAPI/l_dpcpp-cpp-compiler/l_dpcpp-cpp-compiler_p_2021.4.0.3201/compiler/latest/
+        echo "WARNING: ICX_BUNDLE_ROOT is not defined, will be used default: ${ICX_BUNDLE_ROOT}"
+    fi
+    source ${ICX_BUNDLE_ROOT}/env/vars.sh intel64
 }
 
 define_compiler()
 {
     if [ -z "${compiler}" ] && [ -z "${compute_backend}" ]
     then
-        compiler="intel"
+        compiler="icx"
     fi
 
     if [[ "${compute_backend}" == "dpcpp"* ]]
     then
-        compiler="clang"
+        compiler="dpcpp"
     fi
 
     if [ "${compiler}" == "gnu" ]
@@ -256,10 +266,15 @@ define_compiler()
         check_icc_path
         C_COMPILER=${ICC_BUNDLE_ROOT}/bin/intel64/icc
         CXX_COMPILER=${ICC_BUNDLE_ROOT}/bin/intel64/icpc
-    elif [ "${compiler}" == "clang" ]
+    elif [ "${compiler}" == "icx" ]
     then
-        check_clang_path
-        C_COMPILER=/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/dpcpp_1005/bin/clang
+        check_icx_path
+        C_COMPILER=${ICX_BUNDLE_ROOT}/linux/bin/icx
+        CXX_COMPILER=${ICX_BUNDLE_ROOT}/linux/bin/icpx
+    elif [ "${compiler}" == "dpcpp" ]
+    then
+        check_dpcpp_path
+        C_COMPILER=/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/dpcpp_1005/bin/icx
         CXX_COMPILER=/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/dpcpp_1005/bin/dpcpp
     fi
 }
@@ -305,15 +320,23 @@ post_build()
     rm -rf ${TMP_DIR}/lib
     mkdir -p ${TMP_DIR}/lib
     cd ${TMP_DIR}/lib
+
+    if [[ ${compiler} = "intel" ]];
+    then
+        COMPILER_DIR=${ICC_BUNDLE_ROOT}
+    else
+        COMPILER_DIR=${ICX_BUNDLE_ROOT}/linux
+    fi
+
     # libccl.so
-    cp ${ICC_BUNDLE_ROOT}/compiler/lib/intel64/libirc.a ./
-    cp ${ICC_BUNDLE_ROOT}/compiler/lib/intel64/libsvml.a ./
-    cp ${ICC_BUNDLE_ROOT}/compiler/lib/intel64/libimf.a ./
+    cp ${COMPILER_DIR}/compiler/lib/intel64/libirc.a ./
+    cp ${COMPILER_DIR}/compiler/lib/intel64/libsvml.a ./
+    cp ${COMPILER_DIR}/compiler/lib/intel64/libimf.a ./
     cp ${WORKSPACE}/build/_install/lib/libccl.a ./
 
     if [ "${ENABLE_CODECOV}" = "yes" ]
     then
-        cp ${ICC_BUNDLE_ROOT}/compiler/lib/intel64/libipgo.a ./
+        cp ${COMPILER_DIR}/compiler/lib/intel64/libipgo.a ./
         ar x libipgo.a
     fi
 
@@ -341,12 +364,12 @@ post_build()
     rm -rf *.o
 
     mkdir -p ${WORKSPACE}/build/_install/lib/cpu_gpu_dpcpp
-    mkdir -p ${WORKSPACE}/build/_install/lib/cpu_icc
+    mkdir -p ${WORKSPACE}/build/_install/lib/cpu
     mkdir -p ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
-    mkdir -p ${WORKSPACE}/build/_install/include/cpu_icc
-    mv ${WORKSPACE}/build/_install/include/oneapi ${WORKSPACE}/build/_install/include/cpu_icc
-    mv ${TMP_DIR}/lib/lib* ${WORKSPACE}/build/_install/lib/cpu_icc
-    mv ${WORKSPACE}/build/_install/lib/prov ${WORKSPACE}/build/_install/lib/cpu_icc
+    mkdir -p ${WORKSPACE}/build/_install/include/cpu
+    mv ${WORKSPACE}/build/_install/include/oneapi ${WORKSPACE}/build/_install/include/cpu
+    mv ${TMP_DIR}/lib/lib* ${WORKSPACE}/build/_install/lib/cpu
+    mv ${WORKSPACE}/build/_install/lib/prov ${WORKSPACE}/build/_install/lib/cpu
     mv ${WORKSPACE}/build_gpu/_install/lib/* ${WORKSPACE}/build/_install/lib/cpu_gpu_dpcpp
     mv ${WORKSPACE}/build_gpu/_install/include/oneapi ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
     cp -r ${WORKSPACE}/examples ${WORKSPACE}/build/_install
@@ -678,7 +701,7 @@ prepare_pkgconfig()
 {
     echo_log "run_prepare_pkgconfig()..."
 
-    declare -a ccl_configurations=("cpu_icc" "cpu_gpu_dpcpp")
+    declare -a ccl_configurations=("cpu" "cpu_gpu_dpcpp")
 
     for i in "${ccl_configurations[@]}"
     do
@@ -997,7 +1020,7 @@ add_copyrights()
     ed ${PACKAGE_ENG_DIR}/modulefiles/ccl < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
     ed ${PACKAGE_ENG_DIR}/lib/cmake/oneCCL/oneCCLConfig.cmake < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
     ed ${PACKAGE_ENG_DIR}/lib/cmake/oneCCL/oneCCLConfigVersion.cmake < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
-    ed ${PACKAGE_ENG_DIR}/lib/pkgconfig/ccl-cpu_icc.pc < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
+    ed ${PACKAGE_ENG_DIR}/lib/pkgconfig/ccl-cpu.pc < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
     ed ${PACKAGE_ENG_DIR}/lib/pkgconfig/ccl-cpu_gpu_dpcpp.pc < ${COPYRIGHT_INTEL_SH} >/dev/null 2>&1
 
     rm -rf ${TMP_COPYRIGHT_DIR}
