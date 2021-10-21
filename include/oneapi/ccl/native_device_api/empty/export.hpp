@@ -44,6 +44,7 @@ struct generic_context_type<CL_BACKEND_TYPE> {
     using impl_t = native::ccl_context;
     using ccl_native_t = std::shared_ptr<impl_t>;
 
+    generic_context_type() = default;
     template <class T>
     generic_context_type(T&& not_used) {
         (void)not_used;

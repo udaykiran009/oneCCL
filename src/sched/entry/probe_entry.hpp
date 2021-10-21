@@ -18,7 +18,7 @@ public:
               comm(comm) {}
 
     void start() override {
-        atl_tag = comm->get_atl()->tag->create(
+        atl_tag = comm->get_atl_comm()->tag->create(
             src, sched->get_comm_id(), sched->sched_id, sched->get_op_id());
         LOG_DEBUG("PROBE entry src ", src, ", tag ", atl_tag);
         status = ccl_sched_entry_status_started;
@@ -29,7 +29,7 @@ public:
         size_t len = 0;
 
         atl_status_t atl_status =
-            comm->get_atl()->probe(sched->bin->get_atl_ep(), src, atl_tag, &found, &len);
+            comm->get_atl_comm()->probe(sched->bin->get_atl_ep(), src, atl_tag, &found, &len);
 
         update_status(atl_status);
 

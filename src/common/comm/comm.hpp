@@ -92,14 +92,6 @@ public:
         return m_pof2;
     }
 
-    size_t thread_count() const noexcept {
-        return thread_number;
-    }
-
-    size_t ranks_per_process() const noexcept {
-        return on_process_ranks_number;
-    }
-
     const ccl_double_tree& dtree() const {
         return m_dtree;
     }
@@ -134,9 +126,6 @@ private:
 
     ccl_rank2rank_map m_local2global_map{};
     ccl_double_tree m_dtree;
-
-    size_t thread_number;
-    size_t on_process_ranks_number;
 };
 
 class alignas(CACHELINE_SIZE) ccl_comm : public ccl::communicator_interface {
@@ -255,7 +244,7 @@ public:
     ccl_comm& operator=(ccl_comm& src) = delete;
     ccl_comm& operator=(ccl_comm&& src) = default;
     ~ccl_comm() = default;
-    std::shared_ptr<atl_base_comm> get_atl() const;
+    std::shared_ptr<atl_base_comm> get_atl_comm() const;
     std::shared_ptr<ccl_comm> get_r2r_comm();
     std::shared_ptr<ccl_comm> get_node_comm();
     std::shared_ptr<ccl_comm> get_even_comm();
@@ -263,6 +252,7 @@ public:
 
     // troubleshooting
     std::string to_string() const;
+    std::string to_string_ext() const;
 
     static constexpr int invalid_rank = -1;
 
@@ -287,15 +277,7 @@ public:
     }
 
     ccl_comm_id_t id() const noexcept {
-        return m_id->value();
-    }
-
-    size_t thread_count() const noexcept {
-        return comm_impl->thread_count();
-    }
-
-    size_t ranks_per_process() const noexcept {
-        return comm_impl->ranks_per_process();
+        return comm_id->value();
     }
 
     const ccl_double_tree& dtree() const {
@@ -317,7 +299,7 @@ public:
 
     ccl_sched_id_t get_sched_id(bool use_internal_space) {
         ccl_sched_id_t& next_sched_id =
-            (use_internal_space) ? m_next_sched_id_internal : m_next_sched_id_external;
+            (use_internal_space) ? next_sched_id_internal : next_sched_id_external;
 
         ccl_sched_id_t first_sched_id = (use_internal_space)
                                             ? static_cast<ccl_sched_id_t>(0)
@@ -352,15 +334,12 @@ public:
     void allocate_resources();
 
 private:
-    friend struct group_context;
-
     // This is an internal part of the communicator, we store there only the fileds should be shared
     // across ccl_comm copies/clones. Everything else must go to ccl_comm.
     std::shared_ptr<ccl_comm_internal> comm_impl;
 
     ccl::unified_device_type device;
-    // TODO: enable
-    //ccl::unified_context_type context;
+    ccl::unified_context_type context;
 
     // TODO: double check if these can be moved to comm_impl as shared fields
     std::shared_ptr<ccl_comm> r2r_comm;
@@ -375,9 +354,9 @@ private:
     int comm_size;
 
     // comm_id is not default constructible but ccl_comm is, so use unique_ptr here
-    std::unique_ptr<ccl_comm_id_storage::comm_id> m_id;
-    ccl_sched_id_t m_next_sched_id_internal;
-    ccl_sched_id_t m_next_sched_id_external;
+    std::unique_ptr<ccl_comm_id_storage::comm_id> comm_id;
+    ccl_sched_id_t next_sched_id_internal;
+    ccl_sched_id_t next_sched_id_external;
 
     ccl_comm* get_impl() {
         return this;
