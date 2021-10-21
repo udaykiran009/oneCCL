@@ -259,12 +259,7 @@ int set_datatypes(std::string option_value,
                   std::list<std::string>& datatypes) {
     datatypes.clear();
     if (option_value == "all") {
-        if (is_check_values_enabled(check_values)) {
-            datatypes = tokenize<std::string>(ALL_DTYPES_LIST_WITH_CHECK, ',');
-        }
-        else {
-            datatypes = tokenize<std::string>(ALL_DTYPES_LIST, ',');
-        }
+        datatypes = tokenize<std::string>(ALL_DTYPES_LIST, ',');
     }
     else {
         datatypes = tokenize<std::string>(option_value, ',');
@@ -273,19 +268,12 @@ int set_datatypes(std::string option_value,
         std::set<std::string> supported_option_values;
 
         for (auto p : dtype_names) {
-            if ((p.first == ccl::datatype::float16 || p.first == ccl::datatype::bfloat16) &&
-                is_check_values_enabled(check_values))
-                continue;
             supported_option_values.insert(p.second);
         }
 
         for (auto dt : datatypes) {
             if (check_supported_options(option_name, dt, supported_option_values)) {
-                if ((dt == dtype_names[ccl::datatype::float16] ||
-                     dt == dtype_names[ccl::datatype::bfloat16]) &&
-                    is_check_values_enabled(check_values)) {
-                    PRINT("WARN: correctness checking is not implemented for '%s'", dt.c_str());
-                }
+                return -1;
             }
         }
     }

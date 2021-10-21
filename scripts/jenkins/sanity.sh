@@ -200,6 +200,7 @@ function set_ats_environment()
         source ${ATS_ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
         export DASHBOARD_GPU_DEVICE_PRESENT="yes"
     fi
+    export DASHBOARD_PLATFORM_HW_DISCRETE_GPU="ats"
 }
 
 function set_environment()

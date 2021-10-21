@@ -9,7 +9,6 @@
 #include "sycl_base.hpp" /* from examples/include */
 
 #ifdef CCL_ENABLE_SYCL
-
 #include <CL/sycl.hpp>
 
 using namespace sycl;
@@ -144,7 +143,7 @@ struct sycl_base_coll : base_coll, private strategy {
         size_t send_bytes = send_count * base_coll::get_dtype_size();
         size_t recv_bytes = recv_count * base_coll::get_dtype_size();
 
-        std::fill(host_send_buf.begin(), host_send_buf.end(), comm_rank);
+        host_send_buf = get_initial_values<Dtype>(send_count, comm_rank);
 
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
             if (base_coll::get_sycl_mem_type() == SYCL_MEM_USM) {

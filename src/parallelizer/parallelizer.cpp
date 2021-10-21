@@ -447,6 +447,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
                 param.dtype = dtype;
                 param.root = coll_param.root;
                 param.comm = comm;
+                param.stream = coll_param.stream;
                 coll_entry_helper::add_coll_entry<ccl_coll_bcast>(part_scheds[idx].get(), param);
             }
             break;

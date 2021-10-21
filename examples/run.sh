@@ -296,7 +296,7 @@ run()
 
     ppns="1 2"
     n=2
-    dtype_list="int8,int32,float32"
+    base_dtype_list="int8,int32,float16,float32"
     reduction_list="sum"
     #TODO: when small msg size support will be applied
     # for all colls set 2 3 4  ranks to test all use cases
@@ -400,7 +400,7 @@ run()
                             runtime_list="none"
                             if [ "$backend" == "sycl" ];
                             then
-                                if [ "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU" == "atsm" ]
+                                if [ "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU" == "ats-m" ]
                                 then
                                     runtime_list="level_zero"
                                 else
@@ -424,6 +424,13 @@ run()
                                 if [ "$runtime" != "none" ]
                                 then
                                     ccl_runtime_env="SYCL_DEVICE_FILTER=${runtime} ${ccl_runtime_env}"
+                                fi
+
+                                if [[ "$runtime" == "level_zero" && "${DASHBOARD_PLATFORM_HW_DISCRETE_GPU}" == *"ats"* ]]
+                                then
+                                    dtype_list="${base_dtype_list},bfloat16"
+                                else
+                                    dtype_list="${base_dtype_list}"
                                 fi
 
                                 ccl_extra_env="${ccl_runtime_env}"
@@ -467,7 +474,7 @@ run()
                         do
                             if [ "$selector" == "gpu" ];
                             then
-                                if [ "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU" == "atsm" ]
+                                if [ "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU" == "ats-m" ]
                                 then
                                     runtime_list="level_zero"
                                 else
