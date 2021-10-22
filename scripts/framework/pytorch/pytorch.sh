@@ -73,7 +73,7 @@ PSM3_BASE_LINK="github.com/otcshare/psm3.git"
 PSM3_BRANCH="v11.1.0.0.84"
 
 OFI_LINK="https://github.com/ofiwg/libfabric.git"
-OFI_BRANCH="v1.12.1"
+OFI_BRANCH="v1.13.2"
 
 CCL_LINK="https://github.com/otcshare/oneccl.git"
 CCL_BRANCH="main"
@@ -92,7 +92,7 @@ TORCH_UCC_BRANCH="main"
 TORCH_UCC_COMMIT="18fc9a1ca2f6ec4d5924922b89c09e68a86d904b"
 
 PARAM_LINK="https://github.com/facebookresearch/param.git"
-PARAM_BRANCH="master"
+PARAM_BRANCH="main"
 
 TRACE_LINK="https://intel.sharepoint.com/sites/Facebook-CSPcollaboration/Shared%20Documents/SPR%20HBM%20Program/param_traces/trace_replay_files_040721.tgz"
 
@@ -846,7 +846,7 @@ run_tests() {
     MASTER_IP="--master-ip ${master_ip_value}"
 
     # param_coll_list="all_reduce all_to_all all_to_allv"
-    param_coll_list="all_reduce all_to_allv"
+    param_coll_list="all_reduce"
 
     for coll in ${param_coll_list}
     do
