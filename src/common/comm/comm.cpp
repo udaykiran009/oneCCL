@@ -570,3 +570,8 @@ void ccl_comm::allocate_resources() {
 std::shared_ptr<ccl_comm> ccl_comm::clone_with_new_id(ccl_comm_id_storage::comm_id&& id) {
     return std::shared_ptr<ccl_comm>(new ccl_comm(*this, std::move(id)));
 }
+
+COMM_INTERFACE_COLL_INSTANTIATION(ccl_comm);
+#ifdef CCL_ENABLE_SYCL
+SYCL_COMM_INTERFACE_COLL_INSTANTIATION(ccl_comm);
+#endif // CCL_ENABLE_SYCL

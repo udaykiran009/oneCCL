@@ -11,7 +11,7 @@ source ${ROOT_DIR}/utils.sh
 check_impi
 check_ccl
 
-export CCL_KERNEL_OUTPUT_EVENT=1
+export CCL_SYCL_OUTPUT_EVENT=1
 export CCL_ZE_CLOSE_IPC_WA=1
 export EnableDirectSubmission=1
 

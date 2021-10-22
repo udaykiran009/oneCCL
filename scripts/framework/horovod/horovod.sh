@@ -45,7 +45,7 @@ set_run_env() {
     export CCL_WORKER_COUNT=1
     export CCL_WORKER_AFFINITY=4-19
     export CCL_ATL_TRANSPORT=mpi
-    export CCL_KERNEL_OUTPUT_EVENT=1
+    export CCL_SYCL_OUTPUT_EVENT=1
     vars_file="${CCL_SRC_DIR}/build/_install/env/setvars.sh"
     if [[ -f ${vars_file} ]]
     then

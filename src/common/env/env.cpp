@@ -125,9 +125,10 @@ env_data::env_data()
           kernel_1s_lead(0),
           enable_kernel_1s_copy_ops(0),
           enable_kernel_1s_ipc_wa(0),
-          enable_kernel_output_event(0),
           enable_kernel_profile(0),
           enable_close_fd_wa(0),
+
+          enable_sycl_output_event(0),
 
           enable_ze_barrier(0),
           enable_ze_cache(1),
@@ -296,9 +297,10 @@ void env_data::parse() {
     env_2_type(CCL_KERNEL_1S_LEAD, kernel_1s_lead);
     env_2_type(CCL_KERNEL_1S_USE_COPY_OPS, enable_kernel_1s_copy_ops);
     env_2_type(CCL_KERNEL_1S_IPC_WA, enable_kernel_1s_ipc_wa);
-    env_2_type(CCL_KERNEL_OUTPUT_EVENT, enable_kernel_output_event);
     env_2_type(CCL_KERNEL_PROFILE, enable_kernel_profile);
     env_2_type(CCL_KERNEL_CLOSE_FD_WA, enable_close_fd_wa);
+
+    env_2_type(CCL_SYCL_OUTPUT_EVENT, enable_sycl_output_event);
 
     env_2_type(CCL_ZE_BARRIER, enable_ze_barrier);
     env_2_type(CCL_ZE_CACHE, enable_ze_cache);
@@ -504,9 +506,10 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_KERNEL_1S_LEAD, ": ", kernel_1s_lead);
     LOG_INFO(CCL_KERNEL_1S_USE_COPY_OPS, ": ", enable_kernel_1s_copy_ops);
     LOG_INFO(CCL_KERNEL_1S_IPC_WA, ": ", enable_kernel_1s_ipc_wa);
-    LOG_INFO(CCL_KERNEL_OUTPUT_EVENT, ": ", enable_kernel_output_event);
     LOG_INFO(CCL_KERNEL_PROFILE, ": ", enable_kernel_profile);
     LOG_INFO(CCL_KERNEL_CLOSE_FD_WA, ": ", enable_close_fd_wa);
+
+    LOG_INFO(CCL_SYCL_OUTPUT_EVENT, ": ", enable_sycl_output_event);
 
     LOG_INFO(CCL_ZE_BARRIER, ": ", enable_ze_barrier);
     LOG_INFO(CCL_ZE_CACHE, ": ", enable_ze_cache);

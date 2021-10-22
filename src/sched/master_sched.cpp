@@ -137,7 +137,7 @@ void ccl_master_sched::reset_state() {
 
 ccl_request* ccl_master_sched::start(ccl_executor* exec, bool reset_sched) {
     /* sanity check the schedule */
-    CCL_ASSERT(coll_param.comm);
+    CCL_THROW_IF_NOT(coll_param.comm);
 
     LOG_DEBUG("starting schedule ", this, ", type ", ccl_coll_type_to_str(coll_param.ctype));
 
@@ -169,15 +169,14 @@ ccl_request* ccl_master_sched::start(ccl_executor* exec, bool reset_sched) {
 #ifdef CCL_ENABLE_SYCL_INTEROP_EVENT
         auto e = ccl::utils::make_event(context, get_memory().sync_event);
         set_sync_event(e);
-
         set_native_event(ccl::utils::submit_barrier(q, e));
-#else
-        CCL_THROW(
-            "interop event functionality is not available with current configuration, please rebuild oneCCL using ENABLE_SYCL_INTEROP_EVENT option"
-            "and a DPCPP compiler that supports that feature");
-#endif
+#else // CCL_ENABLE_SYCL_INTEROP_EVENT
+        CCL_THROW("interop event functionality is not available with current configuration, "
+                  "please rebuild oneCCL using ENABLE_SYCL_INTEROP_EVENT option "
+                  "and a DPCPP compiler that supports that feature");
+#endif // CCL_ENABLE_SYCL_INTEROP_EVENT
     }
-#endif
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
     exec->start(this);
     return this;

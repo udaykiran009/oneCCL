@@ -25,7 +25,7 @@ static inline bool is_sycl_event_completed(sycl::event e) {
 
 static inline bool should_use_sycl_output_event(ccl_stream* stream) {
     return (stream && stream->is_sycl_device_stream() && stream->is_gpu() &&
-            ccl::global_data::env().enable_kernel_output_event);
+            ccl::global_data::env().enable_sycl_output_event);
 }
 
 static inline std::string usm_type_to_str(sycl::usm::alloc type) {

@@ -20,24 +20,46 @@ set_base_env() {
     MPI_ENV=""
     PSM3_ENV=""
 
-    CCL_ENV+=" CCL_LOG_LEVEL=info CCL_ATL_TRANSPORT=ofi"
+    if [[ ${ALGO} = "nreduce_impi" ]]
+    then
+        ALGO="direct"
+        CCL_ENV+=" CCL_ATL_TRANSPORT=mpi CCL_ATL_SYNC_COLL=1"
+        MPI_ENV+=" I_MPI_ADJUST_ALLREDUCE=13"
+    else
+        CCL_ENV+=" CCL_ATL_TRANSPORT=ofi"
+    fi
+
+    CCL_ENV+=" CCL_LOG_LEVEL=info"
     CCL_ENV+=" CCL_ALLREDUCE=${ALGO} CCL_MAX_SHORT_SIZE=16384 CCL_BUFFER_CACHE=1"
     MPI_ENV+=" I_MPI_DEBUG=12"
     PSM3_ENV+=" PSM3_MULTI_EP=1 PSM3_RDMA=1 PSM3_MR_CACHE_MODE=2"
     PSM3_ENV+=" PSM3_IDENTIFY=1 PSM3_ALLOW_ROUTERS=1"
     PSM3_ENV+=" PSM3_MQ_RNDV_NIC_THRESH=524288"
 
-    if [[ ${MNIC} = "1" ]]
+    if [[ ${CLUSTER} = "lab" ]]
     then
-        CCL_ENV+=" CCL_MNIC=global CCL_MNIC_COUNT=2"
-        PSM3_ENV+=" PSM3_ADDR_FMT=3"
-    else
-        PSM3_ENV+=" PSM3_NIC=mlx5_1"
+        SNIC_NAME="mlx5_0"
+        MNIC_NAME="mlx5_0,mlx5_1"
+    elif [[ ${CLUSTER} = "diamond_icx" ]]
+    then
+        SNIC_NAME="mlx5_1"
+        MNIC_NAME="mlx5_1,mlx5_3"
+        CCL_ENV+=" FI_PROVIDER_PATH=/home/files/psm3/11.2.0.0.90-rhel83"
+    elif [[ ${CLUSTER} = "diamond_spr" ]]
+    then
+        SNIC_NAME="mlx5_0"
+        MNIC_NAME="mlx5_0,mlx5_2"
+        CCL_ENV+=" FI_PROVIDER_PATH=/home/tmp/s9spsm3"
     fi
 
-    if [[ ${CLUSTER} = "diamond" ]]
+    MNIC_TOPO="global"
+
+    if [[ ${MNIC} = "1" ]]
     then
-        CCL_ENV+=" FI_PROVIDER_PATH=/home/files/psm3/11.2.0.0.90-rhel83"
+        CCL_ENV+=" CCL_MNIC=${MNIC_TOPO} CCL_MNIC_NAME=${MNIC_NAME} CCL_MNIC_COUNT=2"
+        PSM3_ENV+=" PSM3_ADDR_FMT=3"
+    else
+        PSM3_ENV+=" PSM3_NIC=${SNIC_NAME}"
     fi
 
     BASE_ENV="${CCL_ENV} ${MPI_ENV}"
@@ -99,7 +121,7 @@ print_help() {
     echo_log "  -msg_sizes <name>"
     echo_log "      Run with specified message sizes, possible names: regular, trace, dlrm"
     echo_log "  -cluster <name>"
-    echo_log "      Name of cluster to adjust configuration, possible values: lab, diamond"
+    echo_log "      Name of cluster to adjust configuration, possible values: lab, diamond_icx, diamond_spr"
     echo_log "  -mnic <bool_flag>"
     echo_log "      Enable multi-NIC"
     echo_log "  -algo <name>"
@@ -219,9 +241,9 @@ parse_arguments() {
         check_exit_code 1 "unknown msg_sizes '${MSG_SIZES}', select from: regular, trace, dlrm"
     fi
 
-    if [[ ${CLUSTER} != "lab" ]] && [[ ${CLUSTER} != "diamond" ]]
+    if [[ ${CLUSTER} != "lab" ]] && [[ ${CLUSTER} != "diamond_icx" ]] && [[ ${CLUSTER} != "diamond_spr" ]]
     then
-        check_exit_code 1 "unknown cluster '${CLUSTER}', select from: lab, diamond"
+        check_exit_code 1 "unknown cluster '${CLUSTER}', select from: lab, diamond_icx, diamond_spr"
     fi
 
     echo_log "-----------------------------------------------------------"
