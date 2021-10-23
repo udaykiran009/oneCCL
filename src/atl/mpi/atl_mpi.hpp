@@ -21,17 +21,23 @@ typedef struct {
     atl_proc_coord_t* coord;
 } atl_mpi_ep_t;
 
-typedef struct atl_mpi_comm_info {
+typedef struct atl_mpi_env_info {
     int found;
-    MPI_Comm comm;
     char key[MPI_MAX_INFO_KEY];
     char value[MPI_MAX_INFO_VAL];
 
-    atl_mpi_comm_info() {
+    atl_mpi_env_info() {
         found = 0;
-        comm = MPI_COMM_WORLD;
         memset(key, 0, MPI_MAX_INFO_KEY);
         memset(value, 0, MPI_MAX_INFO_VAL);
+    }
+} atl_mpi_env_info_t;
+
+typedef struct atl_mpi_comm_info : atl_mpi_env_info_t {
+    MPI_Comm comm;
+
+    atl_mpi_comm_info() {
+        comm = MPI_COMM_WORLD;
     }
 } atl_mpi_comm_info_t;
 
@@ -173,6 +179,7 @@ public:
                             std::vector<atl_mpi_ep_t>& eps,
                             size_t color);
 
+    static atl_mpi_env_info_t get_env_info(const char* key);
     static atl_mpi_comm_info_t get_comm_info(MPI_Comm comm, const char* key);
 
 private:
@@ -180,7 +187,7 @@ private:
     void init_req(atl_req_t* req);
     inline atl_status_t ep_progress(atl_mpi_ep_t& ep, atl_mpi_req_t* req);
     MPI_Op atl2mpi_op(atl_reduction_t rtype, MPI_Datatype dtype);
-    void check_comm_nic_idx(MPI_Comm comm, size_t expected_idx, const char* nic_idx_key);
+    void check_comm_nic_idx(MPI_Comm comm, size_t expected_idx);
     void check_comm_ep_idx(MPI_Comm comm, size_t expected_idx);
     void check_comm_info(MPI_Comm comm, const char* key, const char* expected_value);
     size_t get_ep_idx(size_t ep_idx);

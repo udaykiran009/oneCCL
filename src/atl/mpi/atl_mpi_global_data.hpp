@@ -87,9 +87,9 @@ private:
 
 public:
     const char* EP_IDX_KEY = "vci";
-    const char* GLOBAL_NIC_IDX_KEY = "pref_nic";
+
+    const char* NIC_IDX_KEY = "multi_nic_pref_nic";
     const char* GLOBAL_NIC_COUNT_KEY = "num_nics";
-    const char* LOCAL_NIC_IDX_KEY = "pref_close_nic";
     const char* LOCAL_NIC_COUNT_KEY = "num_close_nics";
 
     int is_external_init;

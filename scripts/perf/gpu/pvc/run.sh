@@ -10,7 +10,7 @@ else
     echo "SCRIPT_DIR: ${SCRIPT_DIR}"
 fi
 
-current_date=`date "+%Y%m%d%H%M%S"`
+current_date=`date "+%Y_%m_%d_%H%M%S"`
 LOG_FILE="${SCRIPT_DIR}/log_${current_date}.txt"
 touch ${LOG_FILE}
 
@@ -38,7 +38,7 @@ check_exit_code() {
 }
 
 run_cmd() {
-    echo_log ${1}
+    echo_log "\n${1}\n"
     eval ${1}
     check_exit_code $? "cmd failed"
 }
@@ -200,24 +200,13 @@ set_run_env() {
 
     # MPICH
     module unload mpich/icc-cxi
-    module use -a /home/tdoodi/drop42-release/install/modulefiles
-    module load mpich/icc-cxi/42.2
-
-    # TODO: add ATL/MPI changes to enable 43.x
-    #module use -a /home/tdoodi/drop43-release/mpich-ofi/modulefiles
-    #module load mpich/43.x
-
+    module use -a /home/tdoodi/drop43-release/mpich-ofi/modulefiles
+    module load mpich/43.x
     export LD_LIBRARY_PATH=/usr/lib64/:${LD_LIBRARY_PATH}
 
-    # UMD with ULLS fix 1 (for hang issue)
-    #module use -a /opt/hit/hpval/modulefiles
-    #module add umd/agama-ci-prerelease-207
-
-    # UMD with ULLS fix 2 (for CCS > 0)
+    # UMD with ULLS fixes (hang and CCS > 0)
     module use -a /home/ftartagl/graphics-compute-runtime/modulefiles
     module load graphics-compute-runtime/ci-neo-021202
-
-    # TODO: frequency script
 }
 
 check_anr() {
@@ -382,9 +371,7 @@ run_bench() {
 
     base_env="FI_PROVIDER=cxi CCL_ATL_TRANSPORT=mpi"
     base_env+=" CCL_LOG_LEVEL=info I_MPI_DEBUG=12"
-
-    # TODO: debug hang
-    # base_env+=" CCL_MNIC=local CCL_MNIC_COUNT=3"
+    base_env+=" CCL_MNIC=local CCL_MNIC_COUNT=4"
 
     # https://jira.devtools.intel.com/browse/XDEPS-2195
     base_env+=" CCL_STAGING_BUFFER=regular"
@@ -420,7 +407,7 @@ run_bench() {
                                     exec_env+=" EnableDirectSubmission=${ulls_mode}"
                                     exec_env+=" SYCL_DEVICE_FILTER=${runtime}"
 
-                                    cmd="${exec_env} ${CCL_ROOT}/bin/mpirun"
+                                    cmd="${exec_env} ${CCL_ROOT}/bin/mpiexec"
                                     cmd+=" -n ${proc_count} -ppn ${ppn} -l ${hosts}"
                                     cmd+=" ${CCL_ROOT}/examples/benchmark/benchmark"
                                     cmd+=" ${bench_params} -p ${cache_mode} -l ${coll}"
@@ -445,6 +432,9 @@ then
     build_ccl
 fi
 
+set_run_env
+check_run_env
+
 if [[ ${CHECK_ANR} = "1" ]]
 then
     check_anr
@@ -457,7 +447,5 @@ fi
 
 if [[ ${RUN_BENCH} = "1" || ${RUN_BENCH} = "2" || ${RUN_BENCH} = "3" ]]
 then
-    set_run_env
-    check_run_env
     run_bench
 fi

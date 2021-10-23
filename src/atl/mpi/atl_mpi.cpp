@@ -691,12 +691,12 @@ atl_status_t atl_mpi::ep_init(std::vector<atl_mpi_ep_t>& eps) {
 void atl_mpi::check_ep(atl_mpi_ep_t& ep) {
     check_comm_ep_idx(ep.mpi_comm, get_ep_idx(ep.idx));
 }
-#endif
+#endif // ENABLE_DEBUG
 
-void atl_mpi::check_comm_nic_idx(MPI_Comm comm, size_t expected_idx, const char* nic_idx_key) {
+void atl_mpi::check_comm_nic_idx(MPI_Comm comm, size_t expected_idx) {
     char expected_idx_str[MPI_MAX_INFO_VAL] = { 0 };
     snprintf(expected_idx_str, MPI_MAX_INFO_VAL, "%zu", expected_idx);
-    check_comm_info(comm, nic_idx_key, expected_idx_str);
+    check_comm_info(comm, global_data.NIC_IDX_KEY, expected_idx_str);
 }
 
 void atl_mpi::check_comm_ep_idx(MPI_Comm comm, size_t expected_idx) {
@@ -736,13 +736,12 @@ atl_status_t atl_mpi::comm_split(const std::vector<atl_mpi_ep_t>& base_eps,
 
         size_t nic_idx = 0;
         char nic_idx_str[MPI_MAX_INFO_VAL] = { 0 };
-        const char* nic_idx_key = (global_data.mnic_type == ATL_MNIC_GLOBAL)
-                                      ? global_data.GLOBAL_NIC_IDX_KEY
-                                      : global_data.LOCAL_NIC_IDX_KEY;
 
         ret = MPI_Comm_split(base_eps[idx].mpi_comm, color, 0, &ep.mpi_comm);
-        if (ret)
+        if (ret) {
+            LOG_ERROR("MPI_Comm_split error, ep_idx ", idx);
             break;
+        }
 
         MPI_Info info;
         MPI_Info_create(&info);
@@ -759,7 +758,7 @@ atl_status_t atl_mpi::comm_split(const std::vector<atl_mpi_ep_t>& base_eps,
             }
             nic_idx %= global_data.mnic_count;
             snprintf(nic_idx_str, MPI_MAX_INFO_VAL, "%zu", nic_idx);
-            MPI_Info_set(info, nic_idx_key, nic_idx_str);
+            MPI_Info_set(info, global_data.NIC_IDX_KEY, nic_idx_str);
 
             LOG_INFO("select nic: ep_idx ",
                      idx,
@@ -773,14 +772,16 @@ atl_status_t atl_mpi::comm_split(const std::vector<atl_mpi_ep_t>& base_eps,
 
         if (progress_mode == ATL_PROGRESS_POLL) {
             ret = MPI_Comm_split(base_eps[idx].dummy_comm, color, 0, &ep.dummy_comm);
-            if (ret)
+            if (ret) {
+                LOG_ERROR("MPI_Comm_split error, ep_idx ", idx);
                 break;
+            }
             MPI_Comm_set_info(ep.dummy_comm, info);
             MPI_Irecv(NULL, 0, MPI_CHAR, 0, 0, ep.dummy_comm, &(ep.dummy_req.native_req));
 
             check_comm_ep_idx(ep.dummy_comm, mpi_ep_idx);
             if (global_data.mnic_type != ATL_MNIC_NONE) {
-                check_comm_nic_idx(ep.dummy_comm, nic_idx, nic_idx_key);
+                check_comm_nic_idx(ep.dummy_comm, nic_idx);
             }
         }
 
@@ -788,7 +789,7 @@ atl_status_t atl_mpi::comm_split(const std::vector<atl_mpi_ep_t>& base_eps,
 
         check_comm_ep_idx(ep.mpi_comm, mpi_ep_idx);
         if (global_data.mnic_type != ATL_MNIC_NONE) {
-            check_comm_nic_idx(ep.mpi_comm, nic_idx, nic_idx_key);
+            check_comm_nic_idx(ep.mpi_comm, nic_idx);
         }
 
         LOG_DEBUG("atl-mpi-ep: ", idx, ", ep_idx ", mpi_ep_idx, ", nic_idx ", nic_idx);
@@ -812,9 +813,17 @@ atl_status_t atl_mpi::comm_split(const std::vector<atl_mpi_ep_t>& base_eps,
     return RET2ATL(ret);
 }
 
+atl_mpi_env_info_t atl_mpi::get_env_info(const char* key) {
+    atl_mpi_env_info_t res;
+    snprintf(res.key, MPI_MAX_INFO_KEY, "%s", key);
+    MPI_Info_get(MPI_INFO_ENV, key, MPI_MAX_INFO_VAL, res.value, &res.found);
+    return res;
+}
+
 atl_mpi_comm_info_t atl_mpi::get_comm_info(MPI_Comm comm, const char* key) {
     MPI_Info info;
     atl_mpi_comm_info_t res;
+
     res.comm = comm;
     snprintf(res.key, MPI_MAX_INFO_KEY, "%s", key);
 

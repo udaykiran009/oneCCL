@@ -547,17 +547,12 @@ atl_status_t atl_mpi_global_data::set_mpich_env(const atl_attr_t& attr) {
     setenv("MPIR_CVAR_CH4_NUM_VCIS", ep_count_str, 0);
     setenv("MPIR_CVAR_CH4_OFI_MAX_VCIS", ep_count_str, 0);
     setenv("MPIR_COMM_HINT_VCI", EP_IDX_KEY, 0);
-    setenv("MPIR_CVAR_CH4_ASYNC_PROGRESS_ID_KEY", EP_IDX_KEY, 0);
-
-    if (attr.in.mnic_type != ATL_MNIC_NONE) {
-        setenv("MPIR_CVAR_CH4_OFI_ENABLE_NIC_SELECTION", "1", 0);
-    }
 
     auto& env = ccl::global_data::env();
-    if (env.log_level >= ccl_log_level::info) {
+    if (env.log_level >= ccl_log_level::debug) {
         setenv("MPIR_CVAR_CH4_RUNTIME_CONF_DEBUG", "1", 0);
         setenv("MPIR_CVAR_CH4_OFI_CAPABILITY_SETS_DEBUG", "1", 0);
-        setenv("MPIR_CVAR_CH4_OFI_DUMP_NIC_SETTINGS", "1", 0);
+        setenv("MPIR_CVAR_DEBUG_SUMMARY", "1", 0);
     }
 
     setenv("FI_PSM2_DELAY", "0", 0);
@@ -676,8 +671,8 @@ void atl_mpi_global_data::print_log_info() {
 
 size_t atl_mpi_global_data::get_nic_count(const char* nic_count_key) {
     size_t count = 1;
-    atl_mpi_comm_info_t info = atl_mpi::get_comm_info(MPI_COMM_WORLD, nic_count_key);
-    CCL_THROW_IF_NOT(info.found, "MPI comm key ", nic_count_key, " was not set");
+    atl_mpi_env_info_t info = atl_mpi::get_env_info(nic_count_key);
+    CCL_THROW_IF_NOT(info.found, "MPI env key ", nic_count_key, " was not set");
 
     count = atoi(info.value);
     if (count <= 0) {
