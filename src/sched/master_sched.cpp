@@ -141,12 +141,6 @@ ccl_request* ccl_master_sched::start(ccl_executor* exec, bool reset_sched) {
 
     LOG_DEBUG("starting schedule ", this, ", type ", ccl_coll_type_to_str(coll_param.ctype));
 
-#ifdef CCL_ENABLE_SYCL
-    if (ccl::global_data::env().enable_kernel_profile) {
-        get_kernel_timer().set_operation_start_time(ccl::kernel_timer::get_current_time());
-    }
-#endif // CCL_ENABLE_SYCL
-
     prepare_partial_scheds();
 
     if (reset_sched) {
@@ -179,6 +173,14 @@ ccl_request* ccl_master_sched::start(ccl_executor* exec, bool reset_sched) {
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
     exec->start(this);
+
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+    if (ccl::global_data::env().enable_kernel_profile && coll_param.stream) {
+        get_kernel_timer().set_operation_start_time(
+            ccl::ze::calculate_global_time(coll_param.stream->get_ze_device()));
+    }
+#endif // defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+
     return this;
 }
 

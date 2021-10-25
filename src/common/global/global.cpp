@@ -14,6 +14,9 @@
 #ifdef CCL_ENABLE_ZE
 #include "sched/entry/ze/ze_cache.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
+#ifdef CCL_ENABLE_SYCL
+#include "sched/sched_timer.hpp"
+#endif // CCL_ENABLE_SYCL
 #endif // CCL_ENABLE_ZE
 
 namespace ccl {
@@ -122,11 +125,18 @@ void global_data::init_gpu() {
     }
     ze_cache = std::unique_ptr<ccl::ze::cache>(new ccl::ze::cache(env_object.worker_count));
     LOG_INFO("initialized level-zero");
+
+#if defined(CCL_ENABLE_SYCL)
+    timer_printer = std::unique_ptr<ccl::kernel_timer_printer>(new ccl::kernel_timer_printer);
+#endif // CCL_ENABLE_SYCL
 }
 
 void global_data::finalize_gpu() {
     LOG_INFO("finalizing level-zero");
     ze_cache.reset();
+#if defined(CCL_ENABLE_SYCL)
+    timer_printer.reset();
+#endif // CCL_ENABLE_SYCL
     LOG_INFO("finalized level-zero");
 }
 #endif // CCL_ENABLE_ZE

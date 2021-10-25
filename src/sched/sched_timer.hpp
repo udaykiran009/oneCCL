@@ -3,6 +3,10 @@
 #include <chrono>
 #include <string>
 
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+#include <ze_api.h>
+#endif
+
 namespace ccl {
 
 class sched_timer {
@@ -21,27 +25,31 @@ private:
     long double get_time() const noexcept;
 };
 
-#ifdef CCL_ENABLE_SYCL
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 class kernel_timer {
 public:
     kernel_timer();
     ~kernel_timer() = default;
+
+    kernel_timer(const kernel_timer&) = default;
 
     void set_name(const std::string name);
     const std::string& get_name() const;
 
     void set_kernel_time(std::pair<uint64_t, uint64_t> val);
     void set_operation_event_time(std::pair<uint64_t, uint64_t> val);
+    void set_operation_create_time(uint64_t val);
     void set_operation_start_time(uint64_t val);
     void set_operation_end_time(uint64_t val);
     void set_kernel_submit_time(uint64_t val);
     std::pair<uint64_t, uint64_t> get_kernel_time() const;
     std::pair<uint64_t, uint64_t> get_operation_event_time() const;
+    uint64_t get_operation_create_time() const;
     uint64_t get_operation_start_time() const;
     uint64_t get_operation_end_time() const;
     uint64_t get_kernel_submit_time() const;
 
-    bool print() const;
+    bool print(bool delay = true) const;
     void reset();
 
     static uint64_t get_current_time();
@@ -56,10 +64,28 @@ private:
     // List of timestamps we're collecting
     std::pair<uint64_t, uint64_t> kernel_time;
     std::pair<uint64_t, uint64_t> operation_event_time;
+    uint64_t operation_create_time;
     uint64_t operation_start_time;
     uint64_t operation_end_time;
     uint64_t kernel_submit_time;
 };
-#endif // CCL_ENABLE_SYCL
+
+class kernel_timer_printer {
+public:
+    void add_timer(const kernel_timer& timer) {
+        timers.push_back(timer);
+    }
+
+    ~kernel_timer_printer() {
+        for (auto& t : timers) {
+            t.print(false);
+        }
+    }
+
+private:
+    std::vector<kernel_timer> timers;
+};
+
+#endif // defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 
 } //namespace ccl

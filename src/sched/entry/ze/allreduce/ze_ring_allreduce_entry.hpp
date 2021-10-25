@@ -14,6 +14,13 @@ public:
         return class_name();
     }
 
+    virtual std::string name_ext() const override {
+        std::stringstream out;
+        out << name() << " ";
+        out << "size: " << cnt;
+        return out.str();
+    }
+
     ze_ring_allreduce_entry() = delete;
     explicit ze_ring_allreduce_entry(ccl_sched* sched,
                                      ccl_buffer send_buf,

@@ -37,7 +37,8 @@ long double sched_timer::get_time() const noexcept {
     return time_usec;
 }
 
-#ifdef CCL_ENABLE_SYCL
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+
 kernel_timer::kernel_timer()
         : kernel_time{ get_uninit_values() },
           operation_event_time{ get_uninit_values() },
@@ -46,7 +47,7 @@ kernel_timer::kernel_timer()
           kernel_submit_time{ std::numeric_limits<uint64_t>::max() } {}
 
 // Returns true if we have all the necessary data to print
-bool kernel_timer::print() const {
+bool kernel_timer::print(bool delay) const {
     auto is_value_set = [](std::pair<uint64_t, uint64_t> val) {
         return val != get_uninit_values();
     };
@@ -63,55 +64,62 @@ bool kernel_timer::print() const {
         return ss.str();
     };
 
-    bool something_printed = false;
-
-    std::stringstream ss;
-
-    // currently there are 4 levels:
+    // currently there are 3 levels:
     // 0 - profiling and output is disabled
-    // 1 - main measurements on device side(i.e. kernel time, completion time, etc.)
-    // 2 - level 1 + host side measurements measurements(i.e. collective time)
-    // 3 - level 1 + level 2 + raw timestamp that we collected
+    // 1 - print time dureation for intervals
+    // 2 - level 1 + raw timestamp that we collected
     int profile_level = ccl::global_data::env().enable_kernel_profile;
 
+    // Make sure we have all the measurements
     bool all_measurements_are_ready =
         is_value_set(kernel_time) && is_value_set(operation_event_time) &&
-        is_val_set(operation_start_time) && is_val_set(operation_end_time) &&
-        is_val_set(kernel_submit_time);
+        is_val_set(operation_create_time) && is_val_set(operation_start_time) &&
+        is_val_set(operation_end_time) && is_val_set(kernel_submit_time);
 
-    // Make sure we have all the measurements
-    if (all_measurements_are_ready) {
-        ss << "kernel: " << name << " time(usec)" << std::endl;
-        if (profile_level > 2) {
-            ss << "kernel timestamps: " << kernel_time.first << ", " << kernel_time.second
-               << std::endl;
-            ss << "kernel submited at: " << kernel_submit_time << std::endl;
-            ss << "operation event timestamps: " << operation_event_time.first << ", "
-               << operation_event_time.second << std::endl;
-            ss << "operation start/end timestamp: " << operation_start_time << ", "
-               << operation_end_time << std::endl;
-        }
-
-        if (profile_level > 1) {
-            ss << "operation: " << convert_output(operation_end_time - operation_start_time)
-               << std::endl;
-            ss << "preparation: " << convert_output(kernel_submit_time - operation_start_time)
-               << std::endl;
-        }
-
-        ss << "kernel: " << convert_output(kernel_time.second - kernel_time.first) << std::endl;
-        ss << "completion: " << convert_output(operation_event_time.second - kernel_time.second)
-           << std::endl;
-
-        something_printed = true;
+    if (!all_measurements_are_ready) {
+        // need more data
+        return false;
     }
 
-    if (something_printed) {
-        ss << std::endl;
-        std::cout << ss.str();
+    if (delay && all_measurements_are_ready) {
+        // the output will be printed later
+        ccl::global_data::get().timer_printer->add_timer(*this);
+        return true;
     }
 
-    return something_printed;
+    std::stringstream ss;
+    ss << "kernel: " << name << " time(usec)" << std::endl;
+    if (profile_level > 1) {
+        ss << "timestamps: " << std::endl;
+        ss << "  operation create: " << operation_create_time << std::endl;
+        ss << "  operation start: " << operation_start_time << std::endl;
+        ss << "  kernel submit: " << kernel_submit_time << std::endl;
+        ss << "  kernel start: " << kernel_time.first << std::endl;
+        ss << "  kernel end: " << kernel_time.first << std::endl;
+        ss << "  operation event start: " << operation_event_time.first << std::endl;
+        ss << "  operation event end: " << operation_event_time.second << std::endl;
+        ss << "  operation end: " << operation_end_time << std::endl;
+    }
+
+    ss << "operation: " << convert_output(operation_end_time - operation_create_time) << std::endl;
+    ss << "  api call: " << convert_output(operation_start_time - operation_create_time)
+       << std::endl;
+    ss << "  preparation: " << convert_output(kernel_submit_time - operation_start_time)
+       << std::endl;
+    ss << "  device scheduling: " << convert_output(kernel_time.first - kernel_submit_time)
+       << std::endl;
+    ss << "  device execution: " << convert_output(kernel_time.second - kernel_time.first)
+       << std::endl;
+    ss << "  event completion: " << convert_output(operation_event_time.second - kernel_time.second)
+       << std::endl;
+    ss << "  completion: " << convert_output(operation_end_time - operation_event_time.second)
+       << std::endl;
+
+    ss << std::endl;
+
+    std::cout << ss.str() << std::endl;
+
+    return true;
 }
 
 void kernel_timer::reset() {
@@ -144,6 +152,10 @@ void kernel_timer::set_operation_event_time(std::pair<uint64_t, uint64_t> val) {
     operation_event_time = val;
 }
 
+void kernel_timer::set_operation_create_time(uint64_t val) {
+    operation_create_time = val;
+}
+
 void kernel_timer::set_operation_start_time(uint64_t val) {
     operation_start_time = val;
 }
@@ -164,6 +176,10 @@ std::pair<uint64_t, uint64_t> kernel_timer::get_operation_event_time() const {
     return operation_event_time;
 }
 
+uint64_t kernel_timer::get_operation_create_time() const {
+    return operation_create_time;
+}
+
 uint64_t kernel_timer::get_operation_start_time() const {
     return operation_start_time;
 }
@@ -175,6 +191,6 @@ uint64_t kernel_timer::get_operation_end_time() const {
 uint64_t kernel_timer::get_kernel_submit_time() const {
     return kernel_submit_time;
 }
-#endif // CCL_ENABLE_SYCL
+#endif // defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 
 } // namespace ccl

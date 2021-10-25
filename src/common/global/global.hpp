@@ -38,6 +38,7 @@ class ccl_algorithm_selector_wrapper;
 namespace ccl {
 
 class buffer_cache;
+class kernel_timer_printer;
 
 namespace ze {
 class cache;
@@ -77,6 +78,9 @@ public:
 
 #ifdef CCL_ENABLE_ZE
     std::unique_ptr<ze::cache> ze_cache;
+#ifdef CCL_ENABLE_SYCL
+    std::unique_ptr<ccl::kernel_timer_printer> timer_printer;
+#endif // CCL_ENABLE_SYCL
 #endif // CCL_ENABLE_ZE
 
     static thread_local bool is_worker_thread;

@@ -18,7 +18,7 @@ ze_a2a_allgatherv_entry::ze_a2a_allgatherv_entry(ccl_sched* sched,
                                                  size_t peer_buf_offset)
         : ze_base_entry(sched, init_mode::copy, comm, comm->size() * event_group_count),
           send_buf(send_buf),
-          send_bytes(send_count * dtype.size()),
+          send_count(send_count),
           recv_buf(recv_buf),
           recv_counts(recv_counts, recv_counts + comm->size()),
           dtype(dtype),
@@ -76,7 +76,8 @@ void ze_a2a_allgatherv_entry::init_ze_hook() {
 
     size_t offset_count = std::accumulate(recv_counts.begin(), recv_counts.begin() + comm_rank, 0);
     size_t offset_bytes = offset_count * dtype.size();
-    size_t block_bytes = (!is_inplace) ? send_bytes : recv_counts[comm_rank] * dtype.size();
+    size_t block_bytes =
+        (!is_inplace) ? (send_count * dtype.size()) : recv_counts[comm_rank] * dtype.size();
     LOG_DEBUG("rank: ", comm_rank, ", block_bytes: ", block_bytes);
 
     copy_events.resize((!is_inplace) ? comm_size : peer_count);

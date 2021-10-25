@@ -137,6 +137,7 @@ void get_queue_index(const ze_queue_properties_t& props,
 device_family get_device_family(ze_device_handle_t device);
 std::pair<uint64_t, uint64_t> calculate_event_time(ze_event_handle_t event,
                                                    ze_device_handle_t device);
+uint64_t calculate_global_time(ze_device_handle_t device);
 
 std::string to_string(ze_result_t result);
 std::string to_string(const ze_group_size_t& group_size);

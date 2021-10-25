@@ -130,13 +130,15 @@ void ze_base_entry::finalize() {
 }
 
 void ze_base_entry::start() {
-    if (ccl::global_data::env().enable_kernel_profile) {
-        sched->master_sched->get_kernel_timer().set_kernel_submit_time(
-            ccl::kernel_timer::get_current_time());
-    }
-
     init();
     reset_events();
+
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+    if (ccl::global_data::env().enable_kernel_profile) {
+        sched->master_sched->get_kernel_timer().set_kernel_submit_time(
+            ccl::ze::calculate_global_time(sched->coll_param.stream->get_ze_device()));
+    }
+#endif // defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 
     if (comp_primitives.list && comp_primitives.queue) {
         LOG_DEBUG("execute compute command list");
@@ -203,7 +205,7 @@ void ze_base_entry::update() {
             // if we run this code, this sched must be a sub-sched of some master sched
             // so the field must be non null
             CCL_THROW_IF_NOT(sched->master_sched, "field must be set");
-            sched->master_sched->get_kernel_timer().set_name(name());
+            sched->master_sched->get_kernel_timer().set_name(name_ext());
             sched->master_sched->get_kernel_timer().set_kernel_time(kernel_time);
         }
 

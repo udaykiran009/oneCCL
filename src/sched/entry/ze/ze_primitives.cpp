@@ -237,14 +237,26 @@ device_family get_device_family(ze_device_handle_t device) {
     }
 }
 
+// adjust the timestamp to a common format
+static uint64_t adjust_device_timestamp(uint64_t timestamp, const ze_device_properties_t& props) {
+    // we have 2 fields that specify the amount of value bits: kernelTimestampValidBits for event
+    // timestamps and timestampValidBits for the global timestamps. In order to compare timestamps
+    // from the different sources we need to truncate the value the lowest number of bits.
+    const uint64_t min_mask = std::min(props.kernelTimestampValidBits, props.timestampValidBits);
+    const uint64_t mask = (1ull << min_mask) - 1ull;
+
+    return (timestamp & mask) * props.timerResolution;
+}
+
 // Returns start and end values for the provided event(measured in ns)
 std::pair<uint64_t, uint64_t> calculate_event_time(ze_event_handle_t event,
                                                    ze_device_handle_t device) {
     ze_kernel_timestamp_result_t timestamp = {};
     ZE_CALL(zeEventQueryKernelTimestamp, (event, &timestamp));
 
-    ze_device_properties_t device_prop;
-    ZE_CALL(zeDeviceGetProperties, (device, &device_prop));
+    ze_device_properties_t device_props = {};
+    device_props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    ZE_CALL(zeDeviceGetProperties, (device, &device_props));
 
     // use global counter as we calculate value across different contexts
     uint64_t start = timestamp.global.kernelStart;
@@ -252,14 +264,26 @@ std::pair<uint64_t, uint64_t> calculate_event_time(ze_event_handle_t event,
 
     // gpu counters might be limited to 32-bit, so we need to handle a potential overlap
     if (end <= start) {
-        const uint64_t timestamp_max_value = (1LL << device_prop.kernelTimestampValidBits) - 1;
+        const uint64_t timestamp_max_value = (1LL << device_props.kernelTimestampValidBits) - 1;
         end += timestamp_max_value - start;
     }
 
-    start *= device_prop.timerResolution;
-    end *= device_prop.timerResolution;
+    start = adjust_device_timestamp(start, device_props);
+    end = adjust_device_timestamp(end, device_props);
 
     return { start, end };
+}
+
+uint64_t calculate_global_time(ze_device_handle_t device) {
+    uint64_t host_timestamp = 0;
+    uint64_t device_timestamp = 0;
+    ZE_CALL(zeDeviceGetGlobalTimestamps, (device, &host_timestamp, &device_timestamp));
+
+    ze_device_properties_t device_props = {};
+    device_props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+    ZE_CALL(zeDeviceGetProperties, (device, &device_props));
+
+    return adjust_device_timestamp(device_timestamp, device_props);
 }
 
 std::string to_string(ze_result_t result) {

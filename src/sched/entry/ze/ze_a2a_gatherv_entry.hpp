@@ -13,6 +13,13 @@ public:
         return class_name();
     }
 
+    virtual std::string name_ext() const override {
+        std::stringstream out;
+        out << name() << " ";
+        out << "send size: " << send_bytes;
+        return out.str();
+    }
+
     explicit ze_a2a_gatherv_entry(ccl_sched* sched,
                                   ccl_buffer send_buf,
                                   size_t send_count,

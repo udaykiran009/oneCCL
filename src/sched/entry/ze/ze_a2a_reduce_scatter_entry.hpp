@@ -1,5 +1,6 @@
 #pragma once
 
+#include <numeric>
 #include "common/utils/buffer.hpp"
 #include "comp/comp.hpp"
 #include "sched/entry/ze/ze_base_entry.hpp"
@@ -12,6 +13,13 @@ public:
 
     const char* name() const noexcept override {
         return class_name();
+    }
+
+    virtual std::string name_ext() const override {
+        std::stringstream out;
+        out << name() << " ";
+        out << "size: " << std::accumulate(recv_counts.begin(), recv_counts.end(), 0);
+        return out.str();
     }
 
     ze_a2a_reduce_scatter_entry() = delete;

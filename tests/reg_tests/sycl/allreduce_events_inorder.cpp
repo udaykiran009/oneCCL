@@ -10,6 +10,11 @@ int main(int argc, char *argv[]) {
     int size = 0;
     int rank = 0;
 
+    int compute_kernel_loop_count = 1;
+    if (argc > 1) {
+        compute_kernel_loop_count = atoi(argv[1]);
+    }
+
     ccl::init();
 
     MPI_Init(NULL, NULL);
@@ -57,6 +62,12 @@ int main(int argc, char *argv[]) {
     // Store allocated mem ptrs to free them later
     std::vector<int *> ptrs;
 
+    // compute multiplier for result checking
+    size_t check_mult = 1;
+    for (int j = 0; j < compute_kernel_loop_count; ++j) {
+        check_mult *= 2;
+    }
+
     for (int i = 0; i < num_iters; ++i) {
         std::cout << "Running iteration " << i << std::endl;
         auto send_buf = allocator.allocate(count, usm::alloc::device);
@@ -74,6 +85,15 @@ int main(int argc, char *argv[]) {
             });
         });
 
+        // Simple compute kernel
+        q.submit([&](auto &h) {
+            h.parallel_for(count, [=](auto id) {
+                for (int j = 0; j < compute_kernel_loop_count; ++j) {
+                    send_buf[id] *= 2;
+                }
+            });
+        });
+
         // We have to store the output event so it won't be destroyed
         // too early, although we don't have to do anything with it
         // as the test uses in-order queue and ccl already syncs it with
@@ -85,7 +105,7 @@ int main(int argc, char *argv[]) {
         sycl_events.push_back(q.submit([&](auto &h) {
             auto check_buf_acc = check_buf.get_access<sycl::access_mode::write>(h);
             h.parallel_for(count, [=](auto id) {
-                if (recv_buf[id] != (i + 1) * (size * (size + 1) / 2)) {
+                if (recv_buf[id] != check_mult * (i + 1) * (size * (size + 1) / 2)) {
                     check_buf_acc[count * i + id] = -1;
                 }
             });

@@ -42,6 +42,10 @@ protected:
     virtual void start() override;
     virtual void update() override;
 
+    virtual std::string name_ext() const {
+        return "[empty]";
+    }
+
     ze_command_list_handle_t get_copy_list();
 
     void init_primitives(cmd_primitives &cmd_primitives);

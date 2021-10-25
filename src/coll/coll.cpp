@@ -93,6 +93,13 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
     /* 2. create or get schedule */
     ccl_master_sched* sched = ccl_master_sched::create(param, attr);
 
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+    if (ccl::global_data::env().enable_kernel_profile && param.stream) {
+        sched->get_kernel_timer().set_operation_create_time(
+            ccl::ze::calculate_global_time(param.stream->get_ze_device()));
+    }
+#endif // defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+
     /* 3. fuse schedule */
     if (!postpone_schedule && ccl::global_data::env().enable_fusion) {
         if (data.fusion_manager->add(sched)) {

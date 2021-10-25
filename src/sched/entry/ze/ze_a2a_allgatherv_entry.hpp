@@ -13,6 +13,13 @@ public:
         return class_name();
     }
 
+    virtual std::string name_ext() const override {
+        std::stringstream out;
+        out << name() << " ";
+        out << "send size: " << send_count;
+        return out.str();
+    }
+
     explicit ze_a2a_allgatherv_entry(ccl_sched* sched,
                                      ccl_buffer send_buf,
                                      size_t send_count,
@@ -42,7 +49,7 @@ private:
     static constexpr size_t event_group_count{ 1 }; // copy phase
 
     const ccl_buffer send_buf;
-    const size_t send_bytes;
+    const size_t send_count;
     const ccl_buffer recv_buf;
     const std::vector<size_t> recv_counts;
     const ccl_datatype dtype;
