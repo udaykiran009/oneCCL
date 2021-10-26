@@ -18,6 +18,13 @@ public:
         return class_name();
     }
 
+    virtual std::string name_ext() const override {
+        std::stringstream out;
+        out << name() << " ";
+        out << "size: " << count;
+        return out.str();
+    }
+
     explicit ze_copy_entry(ccl_sched* sched,
                            ccl_buffer in_buf,
                            ccl_buffer out_buf,
@@ -33,5 +40,5 @@ private:
     ccl_buffer out_buf{};
     const ccl_datatype& dtype;
     const copy_attr attr;
-    const size_t buf_size_bytes;
+    const size_t count;
 };

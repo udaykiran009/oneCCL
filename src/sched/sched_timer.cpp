@@ -72,9 +72,16 @@ bool kernel_timer::print(bool delay) const {
 
     // Make sure we have all the measurements
     bool all_measurements_are_ready =
-        is_value_set(kernel_time) && is_value_set(operation_event_time) &&
-        is_val_set(operation_create_time) && is_val_set(operation_start_time) &&
-        is_val_set(operation_end_time) && is_val_set(kernel_submit_time);
+        is_value_set(kernel_time) && is_val_set(operation_create_time) &&
+        is_val_set(operation_start_time) && is_val_set(operation_end_time) &&
+        is_val_set(kernel_submit_time) && is_val_set(deps_start_time) && is_val_set(deps_end_time);
+
+    // operation_event_time is only required if we use output event, otherwise just
+    // skip it
+    if (ccl::global_data::env().enable_sycl_output_event) {
+        all_measurements_are_ready =
+            all_measurements_are_ready && is_value_set(operation_event_time);
+    }
 
     if (!all_measurements_are_ready) {
         // need more data
@@ -93,11 +100,15 @@ bool kernel_timer::print(bool delay) const {
         ss << "timestamps: " << std::endl;
         ss << "  operation create: " << operation_create_time << std::endl;
         ss << "  operation start: " << operation_start_time << std::endl;
+        ss << "  deps wait start: " << deps_start_time << std::endl;
+        ss << "  deps wait end: " << deps_end_time << std::endl;
         ss << "  kernel submit: " << kernel_submit_time << std::endl;
         ss << "  kernel start: " << kernel_time.first << std::endl;
         ss << "  kernel end: " << kernel_time.first << std::endl;
-        ss << "  operation event start: " << operation_event_time.first << std::endl;
-        ss << "  operation event end: " << operation_event_time.second << std::endl;
+        if (ccl::global_data::env().enable_sycl_output_event) {
+            ss << "  operation event start: " << operation_event_time.first << std::endl;
+            ss << "  operation event end: " << operation_event_time.second << std::endl;
+        }
         ss << "  operation end: " << operation_end_time << std::endl;
     }
 
@@ -106,14 +117,21 @@ bool kernel_timer::print(bool delay) const {
        << std::endl;
     ss << "  preparation: " << convert_output(kernel_submit_time - operation_start_time)
        << std::endl;
+    ss << "    deps handling: " << convert_output(deps_end_time - deps_start_time) << std::endl;
     ss << "  device scheduling: " << convert_output(kernel_time.first - kernel_submit_time)
        << std::endl;
     ss << "  device execution: " << convert_output(kernel_time.second - kernel_time.first)
        << std::endl;
-    ss << "  event completion: " << convert_output(operation_event_time.second - kernel_time.second)
-       << std::endl;
-    ss << "  completion: " << convert_output(operation_end_time - operation_event_time.second)
-       << std::endl;
+    if (ccl::global_data::env().enable_sycl_output_event) {
+        ss << "  event completion: "
+           << convert_output(operation_event_time.second - kernel_time.second) << std::endl;
+        ss << "  completion: " << convert_output(operation_end_time - operation_event_time.second)
+           << std::endl;
+    }
+    else {
+        ss << "  completion: " << convert_output(operation_end_time - kernel_time.second)
+           << std::endl;
+    }
 
     ss << std::endl;
 
@@ -164,33 +182,17 @@ void kernel_timer::set_operation_end_time(uint64_t val) {
     operation_end_time = val;
 }
 
+void kernel_timer::set_deps_start_time(uint64_t val) {
+    deps_start_time = val;
+}
+
+void kernel_timer::set_deps_end_time(uint64_t val) {
+    deps_end_time = val;
+}
+
 void kernel_timer::set_kernel_submit_time(uint64_t val) {
     kernel_submit_time = val;
 }
-
-std::pair<uint64_t, uint64_t> kernel_timer::get_kernel_time() const {
-    return kernel_time;
-}
-
-std::pair<uint64_t, uint64_t> kernel_timer::get_operation_event_time() const {
-    return operation_event_time;
-}
-
-uint64_t kernel_timer::get_operation_create_time() const {
-    return operation_create_time;
-}
-
-uint64_t kernel_timer::get_operation_start_time() const {
-    return operation_start_time;
-}
-
-uint64_t kernel_timer::get_operation_end_time() const {
-    return operation_end_time;
-}
-
-uint64_t kernel_timer::get_kernel_submit_time() const {
-    return kernel_submit_time;
-}
-#endif // defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
 } // namespace ccl

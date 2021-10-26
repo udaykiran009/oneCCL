@@ -138,7 +138,7 @@ void ze_base_entry::start() {
         sched->master_sched->get_kernel_timer().set_kernel_submit_time(
             ccl::ze::calculate_global_time(sched->coll_param.stream->get_ze_device()));
     }
-#endif // defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
     if (comp_primitives.list && comp_primitives.queue) {
         LOG_DEBUG("execute compute command list");

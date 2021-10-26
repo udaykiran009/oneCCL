@@ -48,6 +48,13 @@
 static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& in_attr) {
     ccl_coll_attr& attr = const_cast<ccl_coll_attr&>(in_attr);
 
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+    uint64_t operation_create_time = 0;
+    if (ccl::global_data::env().enable_kernel_profile && param.stream) {
+        operation_create_time = ccl::ze::calculate_global_time(param.stream->get_ze_device());
+    }
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
+
 #ifdef CCL_ENABLE_SYCL
     if (ccl::global_data::env().enable_op_sync)
         attr.synchronous = 1;
@@ -95,10 +102,9 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     if (ccl::global_data::env().enable_kernel_profile && param.stream) {
-        sched->get_kernel_timer().set_operation_create_time(
-            ccl::ze::calculate_global_time(param.stream->get_ze_device()));
+        sched->get_kernel_timer().set_operation_create_time(operation_create_time);
     }
-#endif // defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
     /* 3. fuse schedule */
     if (!postpone_schedule && ccl::global_data::env().enable_fusion) {
@@ -130,6 +136,13 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
         ccl_wait_impl<ccl_master_sched>(data.executor.get(), request);
         request = nullptr;
     }
+
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+    if (ccl::global_data::env().enable_kernel_profile && sched->coll_param.stream) {
+        sched->get_kernel_timer().set_operation_start_time(
+            ccl::ze::calculate_global_time(sched->coll_param.stream->get_ze_device()));
+    }
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
     return request;
 }

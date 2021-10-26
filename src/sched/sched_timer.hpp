@@ -41,13 +41,9 @@ public:
     void set_operation_create_time(uint64_t val);
     void set_operation_start_time(uint64_t val);
     void set_operation_end_time(uint64_t val);
+    void set_deps_start_time(uint64_t val);
+    void set_deps_end_time(uint64_t val);
     void set_kernel_submit_time(uint64_t val);
-    std::pair<uint64_t, uint64_t> get_kernel_time() const;
-    std::pair<uint64_t, uint64_t> get_operation_event_time() const;
-    uint64_t get_operation_create_time() const;
-    uint64_t get_operation_start_time() const;
-    uint64_t get_operation_end_time() const;
-    uint64_t get_kernel_submit_time() const;
 
     bool print(bool delay = true) const;
     void reset();
@@ -67,6 +63,8 @@ private:
     uint64_t operation_create_time;
     uint64_t operation_start_time;
     uint64_t operation_end_time;
+    uint64_t deps_start_time;
+    uint64_t deps_end_time;
     uint64_t kernel_submit_time;
 };
 
@@ -86,6 +84,6 @@ private:
     std::vector<kernel_timer> timers;
 };
 
-#endif // defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
 } //namespace ccl

@@ -14,7 +14,7 @@ ze_copy_entry::ze_copy_entry(ccl_sched* sched,
           out_buf(out_buf),
           dtype(dtype),
           attr(attr),
-          buf_size_bytes(dtype.size() * count) {
+          count(count) {
     CCL_THROW_IF_NOT(sched, "no sched");
 }
 
@@ -36,5 +36,5 @@ void ze_copy_entry::init_ze_hook() {
     ze_command_list_handle_t list = ze_base_entry::get_copy_list();
 
     ZE_CALL(zeCommandListAppendMemoryCopy,
-            (list, dst, src, buf_size_bytes, ze_base_entry::entry_event, 0, nullptr));
+            (list, dst, src, dtype.size() * count, ze_base_entry::entry_event, 0, nullptr));
 }
