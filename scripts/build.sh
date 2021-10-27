@@ -211,8 +211,12 @@ CheckCommandExitCode() {
 
 check_dpcpp_path()
 {
-    SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/dpcpp_1005"
-    source ${SYCL_BUNDLE_ROOT}/env.sh
+    if [ -z "${SYCL_BUNDLE_ROOT}" ]
+    then
+        SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/last/compiler/latest/linux/"
+        echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: ${SYCL_BUNDLE_ROOT}"
+    fi
+    source ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
 }
 
 check_gcc_path()
@@ -238,10 +242,10 @@ check_icx_path()
 {
     if [ -z "${ICX_BUNDLE_ROOT}" ]
     then
-        ICX_BUNDLE_ROOT=/p/pdsd/scratch/Uploads/CCL_oneAPI/l_dpcpp-cpp-compiler/l_dpcpp-cpp-compiler_p_2021.4.0.3201/compiler/latest/
+        ICX_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/last/compiler/latest/linux/"
         echo "WARNING: ICX_BUNDLE_ROOT is not defined, will be used default: ${ICX_BUNDLE_ROOT}"
     fi
-    source ${ICX_BUNDLE_ROOT}/env/vars.sh intel64
+    source ${ICX_BUNDLE_ROOT}/../env/vars.sh intel64
 }
 
 define_compiler()
@@ -269,13 +273,13 @@ define_compiler()
     elif [ "${compiler}" == "icx" ]
     then
         check_icx_path
-        C_COMPILER=${ICX_BUNDLE_ROOT}/linux/bin/icx
-        CXX_COMPILER=${ICX_BUNDLE_ROOT}/linux/bin/icpx
+        C_COMPILER=${ICX_BUNDLE_ROOT}/bin/icx
+        CXX_COMPILER=${ICX_BUNDLE_ROOT}/bin/icpx
     elif [ "${compiler}" == "dpcpp" ]
     then
         check_dpcpp_path
-        C_COMPILER=/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/dpcpp_1005/bin/icx
-        CXX_COMPILER=/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/dpcpp_1005/bin/dpcpp
+        C_COMPILER=${SYCL_BUNDLE_ROOT}/bin/icx
+        CXX_COMPILER=${SYCL_BUNDLE_ROOT}/bin/dpcpp
     fi
 }
 
@@ -325,7 +329,7 @@ post_build()
     then
         COMPILER_DIR=${ICC_BUNDLE_ROOT}
     else
-        COMPILER_DIR=${ICX_BUNDLE_ROOT}/linux
+        COMPILER_DIR=${ICX_BUNDLE_ROOT}
     fi
 
     # libccl.so

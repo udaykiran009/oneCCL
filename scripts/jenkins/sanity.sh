@@ -189,8 +189,8 @@ function set_ats_environment()
     ATS_WORKSPACE_DIR="/home/sys_ctlab/workspace/workspace/"
     ATS_ARTEFACT_DIR="${ATS_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
     export BUILD_COMPILER_TYPE="dpcpp"
-    export SYCL_BUNDLE_ROOT="/home/sys_ctlab/oneapi/compiler/dpcpp_1005"
-    source ${SYCL_BUNDLE_ROOT}/env.sh
+    export SYCL_BUNDLE_ROOT="/home/sys_ctlab/oneapi/compiler/last/compiler/latest/linux/"
+    export ICX_BUNDLE_ROOT="/home/sys_ctlab/oneapi/compiler/last/compiler/latest/linux/"
     export IMPI_PATH="/home/sys_ctlab/oneapi/mpi_oneapi/last/mpi/latest/"
     #export CCL_STAGING_BUFFER=regular
 
@@ -253,18 +253,23 @@ function set_environment()
         CXX_COMPILER=${BUILD_COMPILER_PATH}/linux/bin/intel64/icpc
     elif [ "${BUILD_COMPILER_TYPE}" = "icx" ]
     then
-        BUILD_COMPILER_PATH=/p/pdsd/scratch/Uploads/CCL_oneAPI/l_dpcpp-cpp-compiler/l_dpcpp-cpp-compiler_p_2021.4.0.3201/compiler/latest/
-        source ${BUILD_COMPILER_PATH}/env/vars.sh intel64
-        C_COMPILER=${BUILD_COMPILER_PATH}/linux/bin/icx
-        CXX_COMPILER=${BUILD_COMPILER_PATH}/linux/bin/icpx
+        if [ -z "${ICX_BUNDLE_ROOT}" ]
+        then
+            ICX_BUNDLE_ROOT="${CCL_ONEAPI_DIR}/compiler/last/compiler/latest/linux/"
+            echo "WARNING: ICX_BUNDLE_ROOT is not defined, will be used default: $ICX_BUNDLE_ROOT"
+        fi
+        source ${ICX_BUNDLE_ROOT}/../../../setvars.sh
+        BUILD_COMPILER_PATH=${ICX_BUNDLE_ROOT}/bin
+        C_COMPILER=${BUILD_COMPILER_PATH}/icx
+        CXX_COMPILER=${BUILD_COMPILER_PATH}/icpx
     elif [ "${BUILD_COMPILER_TYPE}" = "dpcpp" ]
     then
         if [ -z "${SYCL_BUNDLE_ROOT}" ]
         then
-            SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/dpcpp_1005/"
+            SYCL_BUNDLE_ROOT="${CCL_ONEAPI_DIR}/compiler/last/compiler/latest/linux/"
             echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
         fi
-        source ${SYCL_BUNDLE_ROOT}/env.sh
+        source ${SYCL_BUNDLE_ROOT}/../../../setvars.sh
         BUILD_COMPILER_PATH=${SYCL_BUNDLE_ROOT}/bin
         C_COMPILER=${BUILD_COMPILER_PATH}/icx
         CXX_COMPILER=${BUILD_COMPILER_PATH}/dpcpp
