@@ -39,7 +39,7 @@ check_exit_code() {
 
 run_cmd() {
     echo_log "\n${1}\n"
-    eval ${1}
+    eval ${1} 2>&1 | tee -a ${LOG_FILE}
     check_exit_code $? "cmd failed"
 }
 
@@ -104,7 +104,7 @@ parse_arguments() {
             "-freq")
                 GPU_FREQUENCY="${2}"
                 set_frequency
-                shift
+                exit 0
                 ;;
             "-check_anr")
                 CHECK_ANR=${2}
@@ -325,7 +325,7 @@ build_ccl() {
 
 run_bench() {
 
-    bench_params="-w 4 -i 20 -c last -j off"
+    bench_params="-w 4 -c last -j off"
 
     if [[ ${RUN_BENCH} = "1" ]]
     then
@@ -338,7 +338,7 @@ run_bench() {
         runtimes="level_zero"
         colls="allreduce"
         cache_modes="1"
-        bench_params+=" -t 8388608"
+        bench_params+=" -i 20 -t 8388608"
     fi
 
     if [[ ${RUN_BENCH} = "2" ]]
@@ -352,7 +352,7 @@ run_bench() {
         runtimes="level_zero"
         colls="reduce allreduce"
         cache_modes="0 1"
-        bench_params+=" -y 8388608"
+        bench_params+=" -i 100 -y 2097152"
     fi
 
     if [[ ${RUN_BENCH} = "3" ]]
@@ -366,7 +366,7 @@ run_bench() {
         runtimes="level_zero"
         colls="reduce allreduce"
         cache_modes="0 1"
-        bench_params+=" -y 8388608"
+        bench_params+=" -i 100 -y 2097152"
     fi
 
     base_env="FI_PROVIDER=cxi CCL_ATL_TRANSPORT=mpi"
