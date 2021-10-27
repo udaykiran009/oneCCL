@@ -227,9 +227,11 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
     RETURN_FALSE_IF(ccl::global_data::env().worker_count != 1, "unsupported count of workers");
 
     // because of ze_ring_allreduce_entry and ze_a2a_allgatherv_entry
-    RETURN_FALSE_IF(!checkers::is_single_card(param) && checkers::is_family1_card(param) &&
-                        (param.ctype == ccl_coll_allreduce || param.ctype == ccl_coll_reduce ||
-                         param.ctype == ccl_coll_allgatherv),
+    RETURN_FALSE_IF(checkers::is_family1_card(param) &&
+                        (((!checkers::is_single_card(param) &&
+                           ((param.ctype == ccl_coll_allreduce || param.ctype == ccl_coll_reduce ||
+                             param.ctype == ccl_coll_allgatherv)))) ||
+                         (param.ctype == ccl_coll_reduce_scatter)),
                     "family1 multi-card for ",
                     ccl_coll_type_to_str(param.ctype),
                     " is not supported");
@@ -241,7 +243,8 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
                     "unsupported comm size for ",
                     ccl_coll_type_to_str(param.ctype));
 
-    RETURN_FALSE_IF((param.ctype == ccl_coll_bcast) && !checkers::is_single_node(param),
+    RETURN_FALSE_IF((param.ctype == ccl_coll_bcast || param.ctype == ccl_coll_reduce_scatter) &&
+                        !checkers::is_single_node(param),
                     "multi-node for ",
                     ccl_coll_type_to_str(param.ctype),
                     " is not supported");
