@@ -104,7 +104,7 @@ There are two ways to set up the environment:
 
     .. prompt:: bash
 
-        source <ccl_install_dir>/setvars.sh
+        source <ccl_install_dir>/env/setvars.sh
 
 
 - Using |product_short| from |base_tk| installed into ``<toolkit_install_dir>`` (``/opt/intel/inteloneapi`` by default):
