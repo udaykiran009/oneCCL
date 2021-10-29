@@ -808,7 +808,7 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
 #endif
 
     PRINT_BY_ROOT(comm,
-                  "options:"
+                  "\noptions:"
                   "\n  processes:      %d"
                   "\n  backend:        %s"
                   "\n  loop:           %s"
