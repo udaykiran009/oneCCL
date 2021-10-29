@@ -599,16 +599,28 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
     CCL_THROW_IF_NOT(comm_size % 2 == 0, "unexpected comm_size ", comm_size);
     CCL_THROW_IF_NOT(node_comm_size % 2 == 0, "unexpected node_comm_size ", node_comm_size);
 
+    bool use_single_list = sched->enable_ze_single_list();
+
     if (pair_comm->rank() == ccl::global_data::env().kernel_1s_lead) {
+        std::vector<ze_event_handle_t> wait_events;
         if (is_single_card) {
             LOG_DEBUG("topo/scale_up/intra: use ze_onesided_allreduce");
-            entry_factory::create<ze_onesided_allreduce_entry>(
-                sched, send_buf, recv_buf, count, dtype, op, pair_comm);
+            auto entry = entry_factory::create<ze_onesided_allreduce_entry>(
+                sched, send_buf, recv_buf, count, dtype, op, pair_comm, wait_events);
+            wait_events.push_back(entry->entry_event);
         }
         else {
             LOG_DEBUG("topo/scale_up/intra: use ze_onesided_reduce");
-            entry_factory::create<ze_onesided_reduce_entry>(
-                sched, send_buf, recv_buf, count, dtype, op, pair_comm->rank(), pair_comm);
+            auto entry = entry_factory::create<ze_onesided_reduce_entry>(sched,
+                                                                         send_buf,
+                                                                         recv_buf,
+                                                                         count,
+                                                                         dtype,
+                                                                         op,
+                                                                         pair_comm->rank(),
+                                                                         pair_comm,
+                                                                         wait_events);
+            wait_events.push_back(entry->entry_event);
         }
         sched->add_barrier();
 
@@ -619,30 +631,49 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
         }
 
         if (is_multi_card) {
-            ccl::add_comm_barrier(sched, even_comm, ipc_event_pool, ipc_event_count++);
+            auto barrier_event = ccl::add_comm_barrier(
+                sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
+            wait_events.push_back(barrier_event);
+
             if (is_single_node) {
                 LOG_DEBUG("topo/scale_up/inter: use ze_a2a_allreduce");
-                entry_factory::create<ze_a2a_allreduce_entry>(
-                    sched, recv_buf, recv_buf, count, dtype, op, even_comm, recv_buf_idx);
+                auto entry = entry_factory::create<ze_a2a_allreduce_entry>(sched,
+                                                                           recv_buf,
+                                                                           recv_buf,
+                                                                           count,
+                                                                           dtype,
+                                                                           op,
+                                                                           even_comm,
+                                                                           wait_events,
+                                                                           recv_buf_idx);
+                wait_events.push_back(entry->entry_event);
                 sched->add_barrier();
-                ccl::add_comm_barrier(sched, even_comm, ipc_event_pool, ipc_event_count++);
+
+                auto barrier_event = ccl::add_comm_barrier(
+                    sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
+                wait_events.push_back(barrier_event);
             }
             else {
                 size_t offset_bytes = main_block_count * even_comm->rank() * dtype.size();
                 ccl_buffer partial_recv_buf = recv_buf + offset_bytes;
                 LOG_DEBUG("topo/scale_up/inter: use ze_a2a_reduce_scatter_entry");
                 std::vector<size_t> block_counts(even_comm->size(), main_block_count);
-                block_counts[even_comm->size() - 1] = block_count;
-                entry_factory::create<ze_a2a_reduce_scatter_entry>(sched,
-                                                                   recv_buf,
-                                                                   partial_recv_buf,
-                                                                   block_counts.data(),
-                                                                   dtype,
-                                                                   op,
-                                                                   even_comm,
-                                                                   recv_buf_idx);
+                block_counts.back() = block_count;
+                auto entry = entry_factory::create<ze_a2a_reduce_scatter_entry>(sched,
+                                                                                recv_buf,
+                                                                                partial_recv_buf,
+                                                                                block_counts.data(),
+                                                                                dtype,
+                                                                                op,
+                                                                                even_comm,
+                                                                                wait_events,
+                                                                                recv_buf_idx);
+                wait_events.push_back(entry->entry_event);
                 sched->add_barrier();
-                ccl::add_comm_barrier(sched, even_comm, ipc_event_pool, ipc_event_count++);
+
+                auto barrier_event = ccl::add_comm_barrier(
+                    sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
+                wait_events.push_back(barrier_event);
             }
         }
 
@@ -653,23 +684,36 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
             ccl_buffer host_buf = sched->alloc_buffer(alloc_param);
             size_t offset_bytes = main_block_count * even_comm->rank() * dtype.size();
             ccl_buffer partial_recv_buf = recv_buf + offset_bytes;
-            entry_factory::create<copy_entry>(sched,
-                                              partial_recv_buf,
-                                              host_buf,
-                                              block_count,
-                                              dtype,
-                                              copy_attr(copy_direction::d2h));
+            auto entry = entry_factory::create<ze_copy_entry>(sched,
+                                                              partial_recv_buf,
+                                                              host_buf,
+                                                              block_count,
+                                                              dtype,
+                                                              copy_attr(copy_direction::d2h),
+                                                              wait_events);
+            wait_events.push_back(entry->entry_event);
             sched->add_barrier();
+
+            if (use_single_list) {
+                ccl::add_wait_events(sched, wait_events);
+            }
 
             ccl_coll_build_allreduce(sched, host_buf, host_buf, block_count, dtype, op, r2r_comm);
             sched->add_barrier();
 
-            entry_factory::create<copy_entry>(sched,
-                                              host_buf,
-                                              partial_recv_buf,
-                                              block_count,
-                                              dtype,
-                                              copy_attr(copy_direction::h2d));
+            if (use_single_list) {
+                auto signal_event = ccl::add_signal_event(sched);
+                wait_events.push_back(signal_event);
+            }
+
+            entry = entry_factory::create<ze_copy_entry>(sched,
+                                                         host_buf,
+                                                         partial_recv_buf,
+                                                         block_count,
+                                                         dtype,
+                                                         copy_attr(copy_direction::h2d),
+                                                         wait_events);
+            wait_events.push_back(entry->entry_event);
             sched->add_barrier();
         }
 
@@ -677,29 +721,35 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
             LOG_DEBUG("topo/scale_up/inter: use ze_a2a_allgatherv");
             std::vector<size_t> recv_counts(even_comm_size, main_block_count);
             recv_counts.at(even_comm->rank()) = block_count;
-            entry_factory::create<ze_a2a_allgatherv_entry>(sched,
-                                                           recv_buf,
-                                                           block_count,
-                                                           recv_buf,
-                                                           recv_counts.data(),
-                                                           dtype,
-                                                           even_comm,
-                                                           recv_buf_idx);
+            auto entry = entry_factory::create<ze_a2a_allgatherv_entry>(sched,
+                                                                        recv_buf,
+                                                                        block_count,
+                                                                        recv_buf,
+                                                                        recv_counts.data(),
+                                                                        dtype,
+                                                                        even_comm,
+                                                                        wait_events,
+                                                                        recv_buf_idx);
+            wait_events.push_back(entry->entry_event);
             sched->add_barrier();
 
-            ccl::add_comm_barrier(sched, even_comm, ipc_event_pool, ipc_event_count++);
+            auto barrier_event = ccl::add_comm_barrier(
+                sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
+            wait_events.push_back(barrier_event);
         }
 
         if (!is_single_card) {
             LOG_DEBUG("topo/scale_up/intra: use ze_onesided_bcast");
             int peer_rank = (pair_comm->rank() + 1) % pair_comm->size();
-            entry_factory::create<copy_entry>(
+            auto entry = entry_factory::create<ze_copy_entry>(
                 sched,
                 recv_buf,
                 ccl_buffer(),
                 count,
                 dtype,
-                copy_attr(peer_rank, recv_buf_idx, copy_direction::d2d, pair_comm));
+                copy_attr(peer_rank, recv_buf_idx, copy_direction::d2d, pair_comm),
+                wait_events);
+            wait_events.push_back(entry->entry_event);
             sched->add_barrier();
         }
     }

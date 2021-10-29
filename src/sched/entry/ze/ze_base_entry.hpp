@@ -26,14 +26,17 @@ public:
                                           ze_event_desc_t event_desc);
     static bool is_event_completed(ze_event_handle_t event);
 
+    ze_event_handle_t entry_event{};
+
 protected:
     explicit ze_base_entry(ccl_sched *sched,
                            init_mode mode = init_mode::compute,
                            ccl_comm *comm = nullptr,
-                           uint32_t add_event_count = 0);
+                           uint32_t add_event_count = 0,
+                           std::vector<ze_event_handle_t> wait_events = {});
 
-    void init();
-    void finalize();
+    void init() override;
+    void finalize() override;
 
     /* ze hooks which can be implemented in derived entry */
     virtual void init_ze_hook(){};
@@ -42,11 +45,13 @@ protected:
     virtual void start() override;
     virtual void update() override;
 
-    virtual std::string name_ext() const {
-        return "[empty]";
-    }
+    void init_entries();
+    void finalize_entries();
 
+    ze_command_list_handle_t get_comp_list();
     ze_command_list_handle_t get_copy_list();
+
+    virtual std::string name_ext() const;
 
     void init_primitives(cmd_primitives &cmd_primitives);
     void get_copy_primitives(const ze_queue_properties_t &queue_props,
@@ -79,7 +84,7 @@ protected:
     cmd_primitives comp_primitives{};
     cmd_primitives copy_primitives{};
 
-    ze_event_handle_t entry_event{};
+    const bool use_single_list;
 
 private:
     uint32_t event_counter{};
@@ -87,7 +92,10 @@ private:
     ze_event_pool_handle_t event_pool{};
     std::vector<ze_event_handle_t> events;
 
+    std::vector<ze_event_handle_t> wait_events;
+
     bool is_queue_completed(ze_command_queue_handle_t queue);
+    void append_wait_on_events();
 };
 
 class ze_kernel {

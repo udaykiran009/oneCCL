@@ -48,7 +48,7 @@ void ze_reduce_local_entry::init_ze_hook() {
     set_kernel_args(kernel, kernel_args);
 
     ZE_CALL(zeCommandListAppendLaunchKernel,
-            (ze_base_entry::comp_primitives.list,
+            (ze_base_entry::get_comp_list(),
              kernel,
              &group_count,
              ze_base_entry::entry_event,

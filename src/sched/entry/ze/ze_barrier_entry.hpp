@@ -24,7 +24,7 @@ public:
     void start() override;
     void update() override;
 
-    void finalize();
+    void finalize() override;
 
 protected:
     void dump_detail(std::stringstream& str) const override {

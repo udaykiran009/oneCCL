@@ -511,6 +511,7 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
             size_t offset_bytes = main_block_count * even_comm->rank() * dtype.size();
             ccl_buffer partial_tmp_buf = tmp_buf + offset_bytes;
             LOG_DEBUG("topo/scale_up/inter: use ze_a2a_reduce_scatter_entry");
+            std::vector<ze_event_handle_t> wait_events;
             std::vector<size_t> block_counts(even_comm->size(), main_block_count);
             block_counts[even_comm->size() - 1] = block_count;
             entry_factory::create<ze_a2a_reduce_scatter_entry>(sched,
@@ -520,6 +521,7 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
                                                                dtype,
                                                                op,
                                                                even_comm,
+                                                               wait_events,
                                                                tmp_buf_idx);
             sched->add_barrier();
             ccl::add_comm_barrier(sched, even_comm);

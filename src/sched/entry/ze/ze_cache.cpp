@@ -46,45 +46,6 @@ bool push_to_cache(map_t& cache, const typename map_t::mapped_type& object, keys
     return success;
 }
 
-// fence_cache
-fence_cache::~fence_cache() {
-    if (!cache.empty()) {
-        LOG_WARN("fence cache is not empty, size: ", cache.size());
-        clear();
-    }
-}
-
-void fence_cache::clear() {
-    LOG_DEBUG("clear fence cache: size: ", cache.size());
-    for (auto& key_value : cache) {
-        ZE_CALL(zeFenceDestroy, (key_value.second));
-    }
-    cache.clear();
-}
-
-void fence_cache::get(ze_command_queue_handle_t queue,
-                      const ze_fence_desc_t& fence_desc,
-                      ze_fence_handle_t* fence) {
-    CCL_THROW_IF_NOT(queue);
-    CCL_THROW_IF_NOT(fence);
-    if (get_from_cache(cache, *fence, queue)) {
-        ZE_CALL(zeFenceReset, (*fence));
-    }
-    else {
-        ZE_CALL(zeFenceCreate, (queue, &fence_desc, fence));
-    }
-}
-
-void fence_cache::push(ze_command_queue_handle_t queue,
-                       const ze_fence_desc_t& fence_desc,
-                       ze_fence_handle_t fence) {
-    CCL_THROW_IF_NOT(queue);
-    CCL_THROW_IF_NOT(fence);
-    if (!push_to_cache(cache, fence, queue)) {
-        zeFenceDestroy(fence);
-    }
-}
-
 // kernel_cache
 kernel_cache::~kernel_cache() {
     if (!cache.empty()) {
@@ -95,6 +56,7 @@ kernel_cache::~kernel_cache() {
 
 void kernel_cache::clear() {
     LOG_DEBUG("clear kernel cache: size: ", cache.size());
+    std::lock_guard<std::mutex> lock(mutex);
     for (auto& key_value : cache) {
         ZE_CALL(zeKernelDestroy, (key_value.second));
     }
@@ -107,6 +69,7 @@ void kernel_cache::get(ze_module_handle_t module,
     CCL_THROW_IF_NOT(module);
     CCL_THROW_IF_NOT(!kernel_name.empty());
     CCL_THROW_IF_NOT(kernel);
+    std::lock_guard<std::mutex> lock(mutex);
     if (!get_from_cache(cache, *kernel, module, kernel_name)) {
         create_kernel(module, kernel_name, kernel);
     }
@@ -118,6 +81,7 @@ void kernel_cache::push(ze_module_handle_t module,
     CCL_THROW_IF_NOT(module);
     CCL_THROW_IF_NOT(!kernel_name.empty());
     CCL_THROW_IF_NOT(kernel);
+    std::lock_guard<std::mutex> lock(mutex);
     if (!push_to_cache(cache, kernel, module, kernel_name)) {
         ZE_CALL(zeKernelDestroy, (kernel));
     }
@@ -133,6 +97,7 @@ list_cache::~list_cache() {
 
 void list_cache::clear() {
     LOG_DEBUG("clear list cache: size: ", cache.size());
+    std::lock_guard<std::mutex> lock(mutex);
     for (auto& key_value : cache) {
         ZE_CALL(zeCommandListDestroy, (key_value.second));
     }
@@ -146,6 +111,7 @@ void list_cache::get(ze_context_handle_t context,
     CCL_THROW_IF_NOT(context);
     CCL_THROW_IF_NOT(device);
     CCL_THROW_IF_NOT(list);
+    std::lock_guard<std::mutex> lock(mutex);
     if (get_from_cache(
             cache, *list, context, device, list_desc.commandQueueGroupOrdinal, list_desc.flags)) {
         ZE_CALL(zeCommandListReset, (*list));
@@ -162,6 +128,7 @@ void list_cache::push(ze_context_handle_t context,
     CCL_THROW_IF_NOT(context);
     CCL_THROW_IF_NOT(device);
     CCL_THROW_IF_NOT(list);
+    std::lock_guard<std::mutex> lock(mutex);
     if (!push_to_cache(
             cache, list, context, device, list_desc.commandQueueGroupOrdinal, list_desc.flags)) {
         ZE_CALL(zeCommandListDestroy, (list));
@@ -178,6 +145,7 @@ queue_cache::~queue_cache() {
 
 void queue_cache::clear() {
     LOG_DEBUG("clear queue cache: size: ", cache.size());
+    std::lock_guard<std::mutex> lock(mutex);
     for (auto& key_value : cache) {
         ZE_CALL(zeCommandQueueDestroy, (key_value.second));
     }
@@ -191,6 +159,7 @@ void queue_cache::get(ze_context_handle_t context,
     CCL_THROW_IF_NOT(context);
     CCL_THROW_IF_NOT(device);
     CCL_THROW_IF_NOT(queue);
+    std::lock_guard<std::mutex> lock(mutex);
     if (!get_from_cache(cache,
                         *queue,
                         context,
@@ -211,6 +180,7 @@ void queue_cache::push(ze_context_handle_t context,
     CCL_THROW_IF_NOT(context);
     CCL_THROW_IF_NOT(device);
     CCL_THROW_IF_NOT(queue);
+    std::lock_guard<std::mutex> lock(mutex);
     if (!push_to_cache(cache,
                        queue,
                        context,
@@ -274,6 +244,7 @@ device_mem_cache::~device_mem_cache() {
 
 void device_mem_cache::clear() {
     LOG_DEBUG("clear device memory cache: size: ", cache.size());
+    std::lock_guard<std::mutex> lock(mutex);
     //for (auto& key_value : cache) {
     // TODO: there is a segfault on this call, when ~cache is invoked w/ or w/0 api cache.
     // But it passes, when CCL_ZE_CACHE=0 (calls of zeMemAllocDevice and ZeMemFree happen on every iteration).
@@ -292,6 +263,7 @@ void device_mem_cache::get(ze_context_handle_t context,
     CCL_THROW_IF_NOT(context);
     CCL_THROW_IF_NOT(device);
     CCL_THROW_IF_NOT(pptr);
+    std::lock_guard<std::mutex> lock(mutex);
     if (!get_from_cache(cache,
                         *pptr,
                         context,
@@ -313,6 +285,7 @@ void device_mem_cache::push(ze_context_handle_t context,
     CCL_THROW_IF_NOT(context);
     CCL_THROW_IF_NOT(device);
     CCL_THROW_IF_NOT(ptr);
+    std::lock_guard<std::mutex> lock(mutex);
     if (!push_to_cache(cache,
                        ptr,
                        context,
@@ -379,7 +352,6 @@ void module_cache::load(ze_context_handle_t context,
 // cache
 cache::~cache() {
     for (size_t i = 0; i < instance_count; ++i) {
-        fences[i].clear();
         kernels[i].clear();
         lists[i].clear();
         queues[i].clear();

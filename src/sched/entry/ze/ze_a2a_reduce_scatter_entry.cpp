@@ -14,11 +14,13 @@ ze_a2a_reduce_scatter_entry::ze_a2a_reduce_scatter_entry(ccl_sched* sched,
                                                          const ccl_datatype& dtype,
                                                          reduction op,
                                                          ccl_comm* comm,
+                                                         std::vector<ze_event_handle_t> wait_events,
                                                          size_t peer_buf_idx)
         : ze_base_entry(sched,
                         (init_mode::compute | init_mode::copy),
                         comm,
-                        comm->size() * event_group_count),
+                        comm->size() * event_group_count,
+                        wait_events),
           send_buf(send_buf),
           recv_buf(recv_buf),
           dtype(dtype),
@@ -163,7 +165,7 @@ void ze_a2a_reduce_scatter_entry::init_ze_hook() {
     barrier_event = ze_base_entry::create_event();
 
     fill_list(ze_base_entry::get_copy_list(),
-              ze_base_entry::comp_primitives.list,
+              ze_base_entry::get_comp_list(),
               send_buf.get_ptr(),
               tmp_buf,
               peer_send_bufs,

@@ -9,26 +9,6 @@
 namespace ccl {
 namespace ze {
 
-class fence_cache {
-public:
-    fence_cache() = default;
-    ~fence_cache();
-
-    void clear();
-
-    void get(ze_command_queue_handle_t queue,
-             const ze_fence_desc_t& fence_desc,
-             ze_fence_handle_t* fence);
-    void push(ze_command_queue_handle_t queue,
-              const ze_fence_desc_t& fence_desc,
-              ze_fence_handle_t fence);
-
-private:
-    using key_t = typename std::tuple<ze_command_queue_handle_t>;
-    using value_t = ze_fence_handle_t;
-    std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
-};
-
 class kernel_cache {
 public:
     kernel_cache() = default;
@@ -43,6 +23,7 @@ private:
     using key_t = typename std::tuple<ze_module_handle_t, std::string>;
     using value_t = ze_kernel_handle_t;
     std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
+    std::mutex mutex;
 };
 
 // TODO: need to improve with ability to save list with commands for specific algo
@@ -67,6 +48,7 @@ private:
         tuple<ze_context_handle_t, ze_device_handle_t, uint32_t, ze_command_list_flags_t>;
     using value_t = ze_command_list_handle_t;
     std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
+    std::mutex mutex;
 };
 
 class queue_cache {
@@ -95,6 +77,7 @@ private:
                                       ze_command_queue_priority_t>;
     using value_t = ze_command_queue_handle_t;
     std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
+    std::mutex mutex;
 };
 
 class event_pool_cache {
@@ -148,6 +131,7 @@ private:
                                       uint32_t>;
     using value_t = void*;
     std::unordered_multimap<key_t, value_t, utils::tuple_hash> cache;
+    std::mutex mutex;
 };
 
 class module_cache {
@@ -178,7 +162,6 @@ class cache {
 public:
     cache(size_t instance_count)
             : instance_count(instance_count),
-              fences(instance_count),
               kernels(instance_count),
               lists(instance_count),
               queues(instance_count),
@@ -191,13 +174,6 @@ public:
     ~cache();
 
     /* get */
-    void get(size_t instance_idx,
-             ze_command_queue_handle_t queue,
-             const ze_fence_desc_t& fence_desc,
-             ze_fence_handle_t* fence) {
-        fences.at(instance_idx).get(queue, fence_desc, fence);
-    }
-
     void get(size_t instance_idx,
              ze_module_handle_t module,
              const std::string& kernel_name,
@@ -248,13 +224,6 @@ public:
 
     /* push */
     void push(size_t instance_idx,
-              ze_command_queue_handle_t queue,
-              const ze_fence_desc_t& fence_desc,
-              ze_fence_handle_t fence) {
-        fences.at(instance_idx).push(queue, fence_desc, fence);
-    }
-
-    void push(size_t instance_idx,
               ze_module_handle_t module,
               const std::string& kernel_name,
               ze_kernel_handle_t kernel) {
@@ -297,7 +266,6 @@ public:
 
 private:
     const size_t instance_count;
-    std::vector<fence_cache> fences;
     std::vector<kernel_cache> kernels;
     std::vector<list_cache> lists;
     std::vector<queue_cache> queues;

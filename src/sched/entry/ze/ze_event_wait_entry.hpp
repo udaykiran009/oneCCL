@@ -13,13 +13,13 @@ public:
         return class_name();
     }
 
-    explicit ze_event_wait_entry(ccl_sched* sched, ze_event_handle_t event);
+    explicit ze_event_wait_entry(ccl_sched* sched, std::vector<ze_event_handle_t> wait_events);
 
     void start() override;
     void update() override;
 
 private:
-    const ze_event_handle_t event;
+    std::list<ze_event_handle_t> wait_events;
 
-    void check_event_status();
+    bool check_event_status(ze_event_handle_t event) const;
 };

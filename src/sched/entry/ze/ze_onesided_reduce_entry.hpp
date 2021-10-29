@@ -32,7 +32,8 @@ public:
                                       const ccl_datatype& dtype,
                                       ccl::reduction op,
                                       int root,
-                                      ccl_comm* comm);
+                                      ccl_comm* comm,
+                                      std::vector<ze_event_handle_t> wait_events = {});
 
     void init_ze_hook() override;
     void finalize_ze_hook() override;

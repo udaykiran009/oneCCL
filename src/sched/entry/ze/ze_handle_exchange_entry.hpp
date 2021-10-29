@@ -4,7 +4,7 @@
 #include "sched/entry/entry.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
 #include "sched/sched.hpp"
-#include "sched/ze_handle_manager.hpp"
+#include "sched/ze/ze_handle_manager.hpp"
 
 #include <poll.h>
 #include <sys/un.h>

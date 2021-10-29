@@ -45,8 +45,10 @@ if (CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
         sched/entry/ze/ze_primitives.cpp
         sched/entry/ze/ze_reduce_local_entry.cpp
 
-        sched/ze_handle_manager.cpp
-        sched/ze_ipc_event_pool_manager.cpp
+        sched/ze/ze_event_manager.cpp
+        sched/ze/ze_handle_manager.cpp
+        sched/ze/ze_ipc_event_pool_manager.cpp
+        sched/ze/ze_list_manager.cpp
 
         coll/coll_util.cpp
         )

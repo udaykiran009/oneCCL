@@ -30,7 +30,8 @@ public:
                                          const ccl_datatype& dtype,
                                          ccl::reduction op,
                                          ccl_comm* comm,
-                                         size_t peer_buf_idx);
+                                         std::vector<ze_event_handle_t> wait_events = {},
+                                         size_t peer_buf_idx = 0);
 
     void init_ze_hook() override;
 
@@ -74,7 +75,7 @@ private:
     std::vector<ze_kernel> kernels;
     std::vector<ze_event_handle_t> kernel_events;
 
-    static void kernel_init(size_t main_block_count,
+    static void kernel_init(size_t offset_bytes,
                             size_t block_count,
                             void* send_buf,
                             void* base_ptr,

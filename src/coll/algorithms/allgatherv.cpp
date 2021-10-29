@@ -332,8 +332,16 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* sched,
     ccl::add_handle_exchange(sched, node_comm, in_buffers);
 
     if (is_single_node) {
-        entry_factory::create<ze_a2a_allgatherv_entry>(
-            sched, send_buf, send_count, recv_buf, recv_counts, dtype, comm, recv_buf_idx);
+        std::vector<ze_event_handle_t> wait_events;
+        entry_factory::create<ze_a2a_allgatherv_entry>(sched,
+                                                       send_buf,
+                                                       send_count,
+                                                       recv_buf,
+                                                       recv_counts,
+                                                       dtype,
+                                                       comm,
+                                                       wait_events,
+                                                       recv_buf_idx);
         sched->add_barrier();
         ccl::add_comm_barrier(sched, comm);
         return ccl::status::success;

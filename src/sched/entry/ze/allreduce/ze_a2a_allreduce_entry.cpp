@@ -6,6 +6,7 @@
 #include "sched/entry/ze/ze_primitives.hpp"
 #include "sched/queue/queue.hpp"
 
+#include <algorithm>
 #include <string>
 
 using namespace ccl;
@@ -18,12 +19,14 @@ ze_a2a_allreduce_entry::ze_a2a_allreduce_entry(ccl_sched* sched,
                                                const ccl_datatype& dtype,
                                                reduction op,
                                                ccl_comm* comm,
+                                               std::vector<ze_event_handle_t> wait_events,
                                                size_t send_buf_idx,
                                                size_t recv_buf_idx)
         : ze_base_entry(sched,
                         (init_mode::compute | init_mode::copy),
                         comm,
-                        comm->size() * event_group_count),
+                        comm->size() * event_group_count,
+                        wait_events),
           send_buf(send_buf),
           recv_buf(recv_buf),
           cnt(cnt),
@@ -31,7 +34,16 @@ ze_a2a_allreduce_entry::ze_a2a_allreduce_entry(ccl_sched* sched,
           op(op),
           send_buf_idx(send_buf_idx),
           recv_buf_idx(recv_buf_idx),
-          peer_count(comm->size() - 1) {}
+          peer_count(comm->size() - 1) {
+    size_t segment_count = cnt / comm->size();
+    bool count_check =
+        (segment_count > 0) || (segment_count == 0 && static_cast<size_t>(comm->rank()) < cnt);
+    skip_entry = !count_check || ((comm->size() == 1) && (send_buf == recv_buf));
+    if (skip_entry) {
+        // skip entry init and finalize
+        sched->get_memory().ze_entries.pop_back();
+    }
+}
 
 void ze_a2a_allreduce_entry::init_ze_hook() {
     /* get peer buffers */
@@ -91,7 +103,7 @@ void ze_a2a_allreduce_entry::init_ze_hook() {
     barrier_event = ze_base_entry::create_event();
 
     ze_a2a_reduce_scatter_entry::fill_list(ze_base_entry::get_copy_list(),
-                                           ze_base_entry::comp_primitives.list,
+                                           ze_base_entry::get_comp_list(),
                                            send_buf.get_ptr(),
                                            tmp_buf,
                                            peer_send_bufs,
@@ -128,13 +140,8 @@ void ze_a2a_allreduce_entry::init_ze_hook() {
 }
 
 void ze_a2a_allreduce_entry::start() {
-    if ((comm_size == 1) && (send_buf == recv_buf)) {
-        status = ccl_sched_entry_status_complete;
-        return;
-    }
-
-    size_t main_block_count = cnt / comm_size;
-    if ((main_block_count == 0 && static_cast<size_t>(comm_rank) >= cnt)) {
+    if (skip_entry) {
+        ZE_CALL(zeEventHostSignal, (ze_base_entry::entry_event));
         status = ccl_sched_entry_status_complete;
         return;
     }

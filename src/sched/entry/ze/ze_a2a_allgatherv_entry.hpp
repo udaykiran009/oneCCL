@@ -27,6 +27,7 @@ public:
                                      const size_t* recv_counts,
                                      const ccl_datatype& dtype,
                                      ccl_comm* comm,
+                                     std::vector<ze_event_handle_t> wait_events = {},
                                      size_t peer_buf_idx = 0,
                                      size_t peer_buf_offset = 0);
 

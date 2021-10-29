@@ -114,6 +114,8 @@ constexpr const char* CCL_ZE_SERIALIZE = "CCL_ZE_SERIALIZE";
 constexpr const char* CCL_ZE_COPY_ENGINE = "CCL_ZE_COPY_ENGINE";
 constexpr const char* CCL_ZE_QUEUE_INDEX = "CCL_ZE_QUEUE_INDEX";
 constexpr const char* CCL_ZE_CLOSE_IPC_WA = "CCL_ZE_CLOSE_IPC_WA";
+constexpr const char* CCL_ZE_SINGLE_LIST = "CCL_ZE_SINGLE_LIST";
+constexpr const char* CCL_ZE_DISABLE_FAMILY_CHECK = "CCL_ZE_DISABLE_FAMILY_CHECK";
 
 constexpr const char* CCL_BF16 = "CCL_BF16";
 constexpr const char* CCL_FP16 = "CCL_FP16";
@@ -249,6 +251,8 @@ public:
 
     int enable_ze_barrier;
     int enable_ze_cache;
+    int enable_ze_single_list;
+    int disable_ze_family_check;
     int ze_serialize_mode;
     ccl_ze_copy_engine_mode ze_copy_engine;
     int ze_queue_index;

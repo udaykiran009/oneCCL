@@ -64,6 +64,9 @@ public:
 
     ccl::sched_timer timer;
 
+    virtual void init(){};
+    virtual void finalize(){};
+
 protected:
     virtual void start() = 0;
     virtual void update();

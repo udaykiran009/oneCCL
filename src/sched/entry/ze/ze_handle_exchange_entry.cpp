@@ -1,6 +1,6 @@
 #include "sched/entry/ze/ze_handle_exchange_entry.hpp"
 #include "sched/queue/queue.hpp"
-#include "sched/ze_handle_manager.hpp"
+#include "sched/ze/ze_handle_manager.hpp"
 
 #include <arpa/inet.h>
 #include <errno.h>

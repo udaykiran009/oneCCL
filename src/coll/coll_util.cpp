@@ -2,15 +2,37 @@
 
 #include "sched/entry/coll/coll_entry_helper.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
+#include "sched/entry/ze/ze_event_signal_entry.hpp"
+#include "sched/entry/ze/ze_event_wait_entry.hpp"
 
 namespace ccl {
 
+void add_wait_events(ccl_sched* sched, const std::vector<ze_event_handle_t>& wait_events) {
+    if (wait_events.size() > 0) {
+        entry_factory::create<ze_event_wait_entry>(sched, wait_events);
+        sched->add_barrier();
+    }
+}
+
+void add_signal_event(ccl_sched* sched, ze_event_handle_t signal_event) {
+    if (signal_event) {
+        entry_factory::create<ze_event_signal_entry>(sched, signal_event);
+        sched->add_barrier();
+    }
+}
+
+ze_event_handle_t add_signal_event(ccl_sched* sched) {
+    auto signal_event = sched->get_memory().event_manager->create();
+    add_signal_event(sched, signal_event);
+    return signal_event;
+}
+
 void add_comm_barrier(ccl_sched* sched,
                       ccl_comm* comm,
-                      ze_event_pool_handle_t pool,
-                      size_t event_idx) {
-    if (pool && global_data::env().enable_ze_barrier) {
-        entry_factory::create<ze_barrier_entry>(sched, comm, pool, event_idx);
+                      ze_event_pool_handle_t ipc_pool,
+                      size_t ipc_event_idx) {
+    if (ipc_pool && global_data::env().enable_ze_barrier) {
+        entry_factory::create<ze_barrier_entry>(sched, comm, ipc_pool, ipc_event_idx);
     }
     else {
         ccl_coll_entry_param barrier_param{};
@@ -23,6 +45,24 @@ void add_comm_barrier(ccl_sched* sched,
         coll_entry_helper::add_coll_entry<ccl_coll_barrier>(sched, barrier_param);
     }
     sched->add_barrier();
+}
+
+ze_event_handle_t add_comm_barrier(ccl_sched* sched,
+                                   ccl_comm* comm,
+                                   const std::vector<ze_event_handle_t>& wait_events,
+                                   ze_event_pool_handle_t ipc_pool,
+                                   size_t ipc_event_idx) {
+    auto signal_event = sched->get_memory().event_manager->create();
+    if (sched->get_memory().use_single_list) {
+        add_wait_events(sched, wait_events);
+        add_comm_barrier(sched, comm, ipc_pool, ipc_event_idx);
+        add_signal_event(sched, signal_event);
+    }
+    else {
+        add_comm_barrier(sched, comm, ipc_pool, ipc_event_idx);
+        add_signal_event(sched, signal_event);
+    }
+    return signal_event;
 }
 
 void add_handle_exchange(ccl_sched* sched,

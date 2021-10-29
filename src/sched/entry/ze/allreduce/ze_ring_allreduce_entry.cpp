@@ -34,7 +34,14 @@ ze_ring_allreduce_entry::ze_ring_allreduce_entry(ccl_sched* sched,
           tmp_buf_idx(tmp_buf_idx),
           stage_iter_count(comm->size() - 1),
           total_iter_count(stage_iter_count * 2) {
-    atl_ops_init();
+    skip_entry = (comm->size() == 1) && (send_buf == recv_buf);
+    if (skip_entry) {
+        // skip entry init and finalize
+        sched->get_memory().ze_entries.pop_back();
+    }
+    else {
+        atl_ops_init();
+    }
 }
 
 void ze_ring_allreduce_entry::atl_ops_init() {
@@ -244,7 +251,7 @@ void ze_ring_allreduce_entry::init_ze_hook() {
         kernels[i].calculate_group_size(block_count);
 
         ZE_CALL(zeCommandListAppendLaunchKernel,
-                (ze_base_entry::comp_primitives.list,
+                (ze_base_entry::get_comp_list(),
                  kernels[i].get_kernel(),
                  kernels[i].get_group_count(),
                  rs_reduce_signal_events[i],
@@ -291,7 +298,8 @@ void ze_ring_allreduce_entry::finalize_ze_hook() {
 }
 
 void ze_ring_allreduce_entry::start() {
-    if ((comm_size == 1) && (send_buf == recv_buf)) {
+    if (skip_entry) {
+        ZE_CALL(zeEventHostSignal, (ze_base_entry::entry_event));
         status = ccl_sched_entry_status_complete;
         return;
     }

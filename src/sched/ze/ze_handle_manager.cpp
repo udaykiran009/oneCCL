@@ -1,7 +1,7 @@
 #include "common/comm/comm.hpp"
 #include "common/global/global.hpp"
 #include "sched/entry/ze/ze_call.hpp"
-#include "sched/ze_handle_manager.hpp"
+#include "sched/ze/ze_handle_manager.hpp"
 
 namespace ccl {
 

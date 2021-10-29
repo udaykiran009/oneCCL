@@ -13,8 +13,10 @@
 #include "sched/entry/entry.hpp"
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-#include "sched/ze_handle_manager.hpp"
-#include "sched/ze_ipc_event_pool_manager.hpp"
+#include "sched/ze/ze_event_manager.hpp"
+#include "sched/ze/ze_handle_manager.hpp"
+#include "sched/ze/ze_ipc_event_pool_manager.hpp"
+#include "sched/ze/ze_list_manager.hpp"
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
 class ccl_sched_queue;
@@ -37,14 +39,20 @@ std::string to_string(ccl_sched_add_mode mode);
 struct ccl_sched_memory {
     ccl::buffer_manager buffer_manager;
 #ifdef CCL_ENABLE_ZE
+    std::unique_ptr<ccl::ze::event_manager> event_manager;
     ccl::ze::ipc_handle_manager handle_manager;
     ccl::ze::ipc_event_pool_manager ipc_event_pool_manager;
+    std::unique_ptr<ccl::ze::list_manager> list_manager;
     // sync event which we use to signal to the user about collective completion
     // and the pool it's created from(need to keep it to know what to return to the cache)
     // TODO: this is not the best place for these objects, think about moving them
     // to ccl_master_sched where they actually used
     ze_event_handle_t sync_event;
     ze_event_pool_handle_t sync_pool;
+
+    std::vector<sched_entry*> ze_entries;
+    bool use_single_list{};
+
 #endif // CCL_ENABLE_ZE
     std::list<atl_mr_t*> mr_list;
 };
@@ -115,6 +123,10 @@ struct ccl_sched_base {
     ccl_sched_memory& get_memory() {
         return memory;
     }
+
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+    bool enable_ze_single_list();
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
     ccl_sched_type sched_type = ccl_sched_regular;
 

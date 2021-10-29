@@ -1,9 +1,6 @@
 #pragma once
 
 #include "sched/entry/copy/copy_helper.hpp"
-#include "sched/entry/entry.hpp"
-#include "sched/sched.hpp"
-
 #include "sched/entry/ze/ze_base_entry.hpp"
 
 struct copy_attr;
@@ -30,7 +27,8 @@ public:
                            ccl_buffer out_buf,
                            size_t count,
                            const ccl_datatype& dtype,
-                           copy_attr attr = {});
+                           const copy_attr& attr = {},
+                           std::vector<ze_event_handle_t> wait_events = {});
 
     void init_ze_hook() override;
 

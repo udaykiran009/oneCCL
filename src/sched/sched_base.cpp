@@ -17,9 +17,11 @@ ccl_sched_base::ccl_sched_base(const ccl_sched_create_param& param)
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     if (coll_param.stream &&
         coll_param.stream->get_backend() == ccl::utils::get_level_zero_backend()) {
+        memory.event_manager.reset(new ccl::ze::event_manager(coll_param.stream));
         auto node_comm = coll_param.comm->get_node_comm().get();
         memory.handle_manager.init(node_comm, coll_param.stream);
         memory.ipc_event_pool_manager.init(coll_param.stream);
+        memory.list_manager.reset(new ccl::ze::list_manager(coll_param.stream));
     }
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 }
@@ -153,13 +155,31 @@ void ccl_sched_base::dealloc_buffer(const ccl::dealloc_param& user_param) {
     memory.buffer_manager.dealloc(param);
 }
 
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+bool ccl_sched_base::enable_ze_single_list() {
+    memory.use_single_list =
+        ccl::global_data::env().enable_ze_single_list &&
+        ccl::global_data::env().kernel_debug == 0 &&
+        ((ccl::global_data::env().ze_serialize_mode & ze_call::serialize_mode::block) == 0) &&
+        !ccl::global_data::env().enable_fusion;
+    return memory.use_single_list;
+}
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
+
 void ccl_sched_base::clear_memory() {
     memory.buffer_manager.clear();
 #ifdef CCL_ENABLE_ZE
     if (coll_param.stream &&
         coll_param.stream->get_backend() == ccl::utils::get_level_zero_backend()) {
+        if (memory.event_manager) {
+            memory.event_manager->clear();
+        }
         memory.handle_manager.clear();
         memory.ipc_event_pool_manager.clear();
+        if (memory.list_manager) {
+            memory.list_manager->clear();
+        }
+        memory.ze_entries.clear();
     }
 #endif // CCL_ENABLE_ZE
     free_memory_regions();

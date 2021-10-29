@@ -7,8 +7,9 @@ ze_copy_entry::ze_copy_entry(ccl_sched* sched,
                              ccl_buffer out_buf,
                              size_t count,
                              const ccl_datatype& dtype,
-                             copy_attr attr)
-        : ze_base_entry(sched, init_mode::copy),
+                             const copy_attr& attr,
+                             std::vector<ze_event_handle_t> wait_events)
+        : ze_base_entry(sched, init_mode::copy, nullptr, 1, wait_events),
           sched(sched),
           in_buf(in_buf),
           out_buf(out_buf),

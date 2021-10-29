@@ -15,13 +15,15 @@ ze_onesided_allreduce_entry::ze_onesided_allreduce_entry(ccl_sched* sched,
                                                          size_t cnt,
                                                          const ccl_datatype& dtype,
                                                          reduction op,
-                                                         ccl_comm* comm)
+                                                         ccl_comm* comm,
+                                                         std::vector<ze_event_handle_t> wait_events)
         : ze_base_entry(sched,
                         global_data::env().enable_kernel_1s_copy_ops
                             ? (init_mode::compute | init_mode::copy)
                             : init_mode::compute,
                         comm,
-                        3 /* request additional events */),
+                        3 /* request additional events */,
+                        wait_events),
           send_buf(send_buf),
           recv_buf(recv_buf),
           cnt(cnt),
@@ -109,7 +111,7 @@ void ze_onesided_allreduce_entry::init_ze_hook() {
         LOG_DEBUG("append empty kernel");
         ze_group_count_t empty_group_count = { 1, 1, 1 };
         ZE_CALL(zeCommandListAppendLaunchKernel,
-                (ze_base_entry::comp_primitives.list,
+                (ze_base_entry::get_comp_list(),
                  empty_kernel,
                  &empty_group_count,
                  empty_kernel_event,
@@ -130,7 +132,7 @@ void ze_onesided_allreduce_entry::init_ze_hook() {
                  &empty_kernel_event));
 
         ZE_CALL(zeCommandListAppendLaunchKernel,
-                (ze_base_entry::comp_primitives.list,
+                (ze_base_entry::get_comp_list(),
                  main_kernel,
                  &group_count,
                  reduce_local_kernel_event,
@@ -149,7 +151,7 @@ void ze_onesided_allreduce_entry::init_ze_hook() {
     else {
         LOG_DEBUG("one-sided monolithic algorithm");
         ZE_CALL(zeCommandListAppendLaunchKernel,
-                (ze_base_entry::comp_primitives.list,
+                (ze_base_entry::get_comp_list(),
                  main_kernel,
                  &group_count,
                  ze_base_entry::entry_event,

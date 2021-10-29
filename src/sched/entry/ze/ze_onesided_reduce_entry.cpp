@@ -16,13 +16,15 @@ ze_onesided_reduce_entry::ze_onesided_reduce_entry(ccl_sched* sched,
                                                    const ccl_datatype& dtype,
                                                    reduction op,
                                                    int root,
-                                                   ccl_comm* comm)
+                                                   ccl_comm* comm,
+                                                   std::vector<ze_event_handle_t> wait_events)
         : ze_base_entry(sched,
                         global_data::env().enable_kernel_1s_copy_ops
                             ? (init_mode::compute | init_mode::copy)
                             : init_mode::compute,
                         comm,
-                        2 /* request additional events */),
+                        2 /* request additional events */,
+                        wait_events),
           send_buf(send_buf),
           recv_buf(recv_buf),
           cnt(cnt),
@@ -95,13 +97,9 @@ void ze_onesided_reduce_entry::init_ze_hook() {
     if (empty_kernel) {
         LOG_DEBUG("append empty kernel");
         ze_group_count_t empty_group_count = { 1, 1, 1 };
-        ZE_CALL(zeCommandListAppendLaunchKernel,
-                (comp_primitives.list,
-                 empty_kernel,
-                 &empty_group_count,
-                 empty_kernel_event,
-                 0,
-                 nullptr));
+        ZE_CALL(
+            zeCommandListAppendLaunchKernel,
+            (get_comp_list(), empty_kernel, &empty_group_count, empty_kernel_event, 0, nullptr));
     }
 
     LOG_DEBUG("one-sided multi-phase algorithm");
@@ -115,9 +113,8 @@ void ze_onesided_reduce_entry::init_ze_hook() {
              (empty_kernel_event) ? 1 : 0,
              &empty_kernel_event));
 
-    ZE_CALL(
-        zeCommandListAppendLaunchKernel,
-        (comp_primitives.list, main_kernel, &group_count, entry_event, 1, &copy_from_peer_event));
+    ZE_CALL(zeCommandListAppendLaunchKernel,
+            (get_comp_list(), main_kernel, &group_count, entry_event, 1, &copy_from_peer_event));
 }
 
 void ze_onesided_reduce_entry::finalize_ze_hook() {

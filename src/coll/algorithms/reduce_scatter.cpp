@@ -350,9 +350,17 @@ ccl::status ccl_coll_build_topo_reduce_scatter(ccl_sched* sched,
 
     ccl::add_handle_exchange(sched, comm, in_buffers);
 
+    std::vector<ze_event_handle_t> wait_events;
     std::vector<size_t> blocks_count(comm->size(), recv_count);
-    entry_factory::create<ze_a2a_reduce_scatter_entry>(
-        sched, send_buf, recv_buf, blocks_count.data(), dtype, reduction, comm, send_buf_idx);
+    entry_factory::create<ze_a2a_reduce_scatter_entry>(sched,
+                                                       send_buf,
+                                                       recv_buf,
+                                                       blocks_count.data(),
+                                                       dtype,
+                                                       reduction,
+                                                       comm,
+                                                       wait_events,
+                                                       send_buf_idx);
     sched->add_barrier();
 
     ccl::add_comm_barrier(sched, comm);

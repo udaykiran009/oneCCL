@@ -1,35 +1,37 @@
 #include "sched/entry/ze/ze_event_wait_entry.hpp"
+#include "sched/entry/ze/ze_primitives.hpp"
 
-#include <ze_api.h>
-
-ze_event_wait_entry::ze_event_wait_entry(ccl_sched* sched, ze_event_handle_t event)
+ze_event_wait_entry::ze_event_wait_entry(ccl_sched* sched,
+                                         std::vector<ze_event_handle_t> wait_events)
         : sched_entry(sched),
-          event(event) {
+          wait_events(wait_events.cbegin(), wait_events.cend()) {
     CCL_THROW_IF_NOT(sched, "no sched");
-    CCL_THROW_IF_NOT(event, "no event");
 }
 
-void ze_event_wait_entry::check_event_status() {
+bool ze_event_wait_entry::check_event_status(ze_event_handle_t event) const {
     auto query_status = zeEventQueryStatus(event);
     if (query_status == ZE_RESULT_SUCCESS) {
-        LOG_DEBUG("event complete");
-        status = ccl_sched_entry_status_complete;
+        return true;
     }
-    else if (query_status == ZE_RESULT_NOT_READY) {
-        // just return in case if the kernel is not ready yet, will check again on the next iteration
-        return;
+    else if (query_status != ZE_RESULT_NOT_READY) {
+        CCL_THROW("ze error at zeEventQueryStatus, code: ", ccl::ze::to_string(query_status));
     }
-    else {
-        CCL_THROW("error at zeEventQueryStatus");
-    }
+
+    return false;
 }
 
 void ze_event_wait_entry::start() {
     LOG_DEBUG("start event waiting");
     status = ccl_sched_entry_status_started;
-    check_event_status();
 }
 
 void ze_event_wait_entry::update() {
-    check_event_status();
+    for (auto it = wait_events.begin(); it != wait_events.end();) {
+        bool is_completed = check_event_status(*it);
+        if (!is_completed) {
+            return;
+        }
+        it = wait_events.erase(it);
+    }
+    status = ccl_sched_entry_status_complete;
 }

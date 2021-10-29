@@ -125,4 +125,6 @@ private:
     std::vector<bool> rs_copy_started;
     std::vector<bool> rs_reduce_started;
     std::vector<bool> ag_copy_started;
+
+    bool skip_entry{};
 };
