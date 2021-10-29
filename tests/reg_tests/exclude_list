@@ -1,2 +1,3 @@
 allreduce_events gen9
 allreduce_events_inorder gen9
+multi_level_algos ats
