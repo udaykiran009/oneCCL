@@ -40,10 +40,10 @@ check_test()
     local test_file=$2
 
     passed_pattern="passed|# all done"
-    failed_pattern="abort|^bad$|corrupt|fail|^fault$|invalid|kill|runtime_error|terminate|timed|unexpected"
+    failed_pattern="abort|^bad$|corrupt|fail|^fault$|[^-W]invalid|kill|runtime_error|terminate|timed|unexpected"
     if [[ "${test_file}" != *"communicator"* ]] && [[ "${test_file}" != *"datatype"* ]];
     then
-        failed_pattern="${failed_pattern}|error|exception"
+        failed_pattern="${failed_pattern}|[^-W]error|exception"
     fi
     skipped_pattern="skip test|unavailable"
 
@@ -106,6 +106,27 @@ check_environment()
     then
         echo "Error: CCL_ROOT wasn't found"
         exit 1
+    fi
+
+    if [[ ! -z ${FI_PROVIDER} ]]
+    then
+        provider="${FI_PROVIDER}"
+    else
+        provider="tcp"
+    fi
+
+    if [[ ! -z ${CCL_ATL_TRANSPORT_LIST} ]]
+    then
+        transport_list="${CCL_ATL_TRANSPORT_LIST}"
+    else
+        transport_list="ofi mpi"
+    fi
+
+    if [ ! -z "${CCL_WORKER_COUNT}" ]
+    then
+        worker_count="${CCL_WORKER_COUNT}"
+    else
+        worker_count="1"
     fi
 }
 
@@ -287,13 +308,6 @@ run()
     cd ${EXAMPLE_WORK_DIR}/
     pwd
 
-    if [ -z "${CCL_WORKER_COUNT}" ]
-    then
-        worker_count="1"
-    else
-        worker_count="${CCL_WORKER_COUNT}"
-    fi
-
     ppns="1 2"
     n=2
     base_dtype_list="int8,int32,float16,float32"
@@ -301,8 +315,8 @@ run()
     #TODO: when small msg size support will be applied
     # for all colls set 2 3 4  ranks to test all use cases
     ranks_per_proc="4"
-    ccl_base_env="FI_PROVIDER=tcp CCL_WORKER_COUNT=${worker_count}"
-    transport_list="ofi mpi"
+    
+    ccl_base_env="FI_PROVIDER=${provider} CCL_WORKER_COUNT=${worker_count}"
 
     sycl_example_selector_list="none"
     if [[ ${MODE} = "cpu" ]]

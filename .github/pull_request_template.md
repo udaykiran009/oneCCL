@@ -9,4 +9,5 @@ Comment structure **test:\<conf>**
 * horovod|pytorch
 * kw|abi|format
 * reg_tests
+* mpich_ofi
 * all

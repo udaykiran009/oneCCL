@@ -1,3 +1,6 @@
-allreduce_events gen9
-allreduce_events_inorder gen9
-multi_level_algos ats
+# <test name> platform=<exclude_pattern> transport=<exclude_pattern>
+# exclude pattern = comma-separated list or * (exclude all)
+allreduce_events platform=gen9 transport=*
+allreduce_events_inorder platform=gen9 transport=*
+multi_level_algos platform=ats transport=*
+mpich_checker platform=* transport=impi

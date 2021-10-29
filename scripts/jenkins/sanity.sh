@@ -37,6 +37,16 @@ function set_default_values()
 {
     ENABLE_DEBUG="no"
     ENABLE_VERBOSE="yes"
+
+    # Testing knobs
+    ENABLE_REGULAR_TESTS="no"
+    ENABLE_HOROVOD_TESTS="no"
+    ENABLE_PYTORCH_TESTS="no"
+    ENABLE_MODULEFILE_TESTS="no"
+    ENABLE_FUNCTIONAL_TESTS="no"
+    ENABLE_VALGRIND_TESTS="no"
+    ENABLE_REG_TESTS="no"
+    ENABLE_MPICH_OFI_TESTS="no"
 }
 #==============================================================================
 #                                Functions
@@ -52,17 +62,72 @@ function log()
     fi
 }
 
+function parse_arguments() {
+    while [ $# -ne 0 ]
+    do
+        case $1 in
+        "-regular_tests" )
+            ENABLE_REGULAR_TESTS="yes"
+            shift
+            ;;
+        "-horovod_tests" )
+            ENABLE_HOROVOD_TESTS="yes"
+            shift
+            ;;
+        "-pytorch_tests" )
+            ENABLE_PYTORCH_TESTS="yes"
+            shift
+            ;;
+        "-modulefile_tests" )
+            ENABLE_MODULEFILE_TESTS="yes"
+            shift
+            ;;
+        "-functional_tests" )
+            ENABLE_FUNCTIONAL_TESTS="yes"
+            shift
+            ;;
+        "-valgrind_check" )
+            ENABLE_VALGRIND_TESTS="yes"
+            shift
+            ;;
+        "-reg_tests" )
+            ENABLE_REG_TESTS="yes"
+            shift
+            ;;
+        "-mpich_ofi" )
+            export ENABLE_MPICH_OFI_TESTS="yes"
+            shift
+            ;;
+        *)
+            echo "$(basename ${0}): ERROR: unknown option (${1})"
+            print_help
+            exit 1
+            ;;
+        esac
+    done
+
+    echo "ENABLE_REGULAR_TESTS      = ${ENABLE_REGULAR_TESTS}"
+    echo "ENABLE_HOROVOD_TESTS      = ${ENABLE_HOROVOD_TESTS}"
+    echo "ENABLE_PYTORCH_TESTS      = ${ENABLE_PYTORCH_TESTS}"
+    echo "ENABLE_MODULEFILE_TESTS   = ${ENABLE_MODULEFILE_TESTS}"
+    echo "ENABLE_FUNCTIONAL_TESTS   = ${ENABLE_FUNCTIONAL_TESTS}"
+    echo "ENABLE_VALGRIND_TESTS     = ${ENABLE_VALGRIND_TESTS}"
+    echo "ENABLE_REG_TESTS          = ${ENABLE_REG_TESTS}"
+    echo "ENABLE_MPICH_OFI_TESTS    = ${ENABLE_MPICH_OFI_TESTS}"
+}
+
 # Print usage and help information
 function print_help()
 {
     echo -e "Usage:\n" \
     "    ./${BASENAME}.sh <options> \n" \
     "<options>:\n" \
-    "-compatibility_tests: enbale compatibility tests\n" \
-    "-modulefile_tests:    enable modulefile tests\n" \
-    "-functional_tests:    enable functional tests\n" \
-    "-valgrind_check:      enable valgrind check\n" \
-    "-reg_tests:           enable regression tests\n" \
+    "-regular_tests:       run examples\n" \
+    "-modulefile_tests:    run modulefile tests\n" \
+    "-functional_tests:    run functional tests\n" \
+    "-valgrind_check:      run valgrind check\n" \
+    "-reg_tests:           run regression tests\n" \
+    "-mpich_ofi:           run tests with mpich-ofi\n" \
     "-help:                print this help information"
     exit 0
 }
@@ -96,7 +161,7 @@ function check_command_exit_code() {
     fi
 }
 
-function set_external_env(){
+function set_external_env() {
     if [ ${TEST_CONFIGURATIONS} == "test:nightly" ]
     then
         echo "Nightly test scope will be started."
@@ -133,6 +198,48 @@ function set_external_env(){
     fi
 }
 
+function set_mpich_ofi_env() {
+    if [[ ${ENABLE_MPICH_OFI_TESTS} = "no" ]]
+    then
+        return
+    fi
+    ${CURRENT_WORK_DIR}/scripts/mpich_ofi/mpich_ofi.sh
+    MPICH_OFI_INSTALL_PATH=$( cd ${CURRENT_WORK_DIR}/scripts/mpich_ofi/install/usr/mpi/mpich-ofi*/ && pwd -P )
+    export LD_LIBRARY_PATH="${MPICH_OFI_INSTALL_PATH}/lib:${LD_LIBRARY_PATH}"
+    unset FI_PROVIDER_PATH
+    mkdir -p ${CURRENT_WORK_DIR}/scripts/mpich_ofi/prov
+    cp ${I_MPI_ROOT}/libfabric/lib/prov/libpsm3-fi.so ${CURRENT_WORK_DIR}/scripts/mpich_ofi/prov
+    export FI_PROVIDER_PATH="${CURRENT_WORK_DIR}/scripts/mpich_ofi/prov"
+}
+
+function set_transport_env() {
+    if [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]]
+    then
+        export CCL_ATL_TRANSPORT_LIST="mpi"
+    else
+        export CCL_ATL_TRANSPORT_LIST="ofi mpi"
+    fi
+    if [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]]
+    then
+        REG_TESTS_TRANSPORT=mpich
+    else
+        REG_TESTS_TRANSPORT=impi
+    fi
+}
+
+function set_provider_env() {
+    if [[ "${node_label}" = "ccl_test_ats" && 
+        ${ENABLE_FUNCTIONAL_TESTS} = "yes" || 
+        ${ENABLE_REGULAR_TESTS} = "yes" ]]
+    then
+        export FI_PROVIDER=tcp
+    fi
+    if [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]]
+    then
+        export FI_PROVIDER=psm3
+    fi
+}
+
 function enable_default_env()
 {
     echo "Use default env"
@@ -143,7 +250,7 @@ function enable_default_env()
     export CCL_MNIC=global
     export I_MPI_DEBUG=12
 
-    if [[ "${node_label}" = "ats2t" ]]
+    if [[ "${node_label}" = "ccl_test_ats" ]]
     then
         export CCL_MNIC_NAME=eno,eth,hfi,^mlx,unknown
     else
@@ -309,6 +416,7 @@ function set_environment()
     fi
 
     export CCL_PROCESS_CLEANUP="yes"
+    set_external_env
 }
 
 function set_reg_tests_environment()
@@ -361,15 +469,19 @@ function make_tests()
     cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
         -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DCOMPUTE_BACKEND="${COMPUTE_BACKEND}"
     make all
+    check_command_exit_code $? "Compilation of functional tests is FAILED"
 }
 
 function run_valgrind_check()
 {
+    if [[ ${ENABLE_VALGRIND_TESTS} = "no" ]]
+    then
+        return
+    fi
     export EXAMPLE_WORK_DIR="${CURRENT_WORK_DIR}/examples/build"
     unset I_MPI_HYDRA_HOST_FILE
     mkdir -p ${EXAMPLE_WORK_DIR}
     echo "EXAMPLE_WORK_DIR =" $EXAMPLE_WORK_DIR
-    set_external_env
     cd ${EXAMPLE_WORK_DIR}
     if [ ${node_label} == "ccl_vlgd" ]
     then
@@ -391,15 +503,18 @@ function run_valgrind_check()
 
 function run_reg_tests()
 {
-    set_external_env
     set_reg_tests_environment
+    if [[ ${ENABLE_REG_TESTS} = "no" ]]
+    then
+        return
+    fi
 
     if [[ ${node_label} == "ccl_test_gen9" ]]
     then
         ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode gpu --platform gen9
     elif [[ ${node_label} == "ccl_test_ats" ]]
     then
-        ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode gpu --platform ats
+        ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode gpu --platform ats --transport ${REG_TESTS_TRANSPORT}
     else
         ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode cpu
     fi
@@ -414,9 +529,12 @@ function run_reg_tests()
     fi
 }
 
-function run_compatibitily_tests()
+function run_regular_tests()
 {
-    set_external_env
+    if [[ ${ENABLE_REGULAR_TESTS} = "no" ]]
+    then
+        return
+    fi
     if [[ ${node_label} == "ccl_test_gen9" ]] || [[ ${node_label} == "ccl_test_ats" ]]
     then
         export FI_TCP_IFACE=eno1
@@ -428,10 +546,10 @@ function run_compatibitily_tests()
     log_status_fail=${PIPESTATUS[0]}
     if [ "$log_status_fail" -eq 0 ]
     then
-        echo "compatibitily testing ... OK"
+        echo "regular testing ... OK"
         exit 0
     else
-        echo "compatibitily testing ... NOK"
+        echo "regular testing ... NOK"
         exit 1
     fi
 }
@@ -439,7 +557,10 @@ function run_compatibitily_tests()
 
 function run_horovod_tests()
 {
-
+    if [[ ${ENABLE_HOROVOD_TESTS} = "no" ]]
+    then
+        return
+    fi
     # IPEX has a dependency for mkl and tbb
     source ${CCL_ONEAPI_DIR}/onemkl/last/mkl/latest/env/vars.sh
     source ${CCL_ONEAPI_DIR}/tbb_oneapi/last/tbb/latest/env/vars.sh
@@ -481,6 +602,10 @@ function run_horovod_tests()
 
 function run_pytorch_tests()
 {
+    if [[ ${ENABLE_PYTORCH_TESTS} = "no" ]]
+    then
+        return
+    fi
     pushd ${CURRENT_WORK_DIR}/scripts/framework/pytorch/
     ./pytorch.sh -full 1 -proxy ${US_PROXY} -remove_conda 1\
                  -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
@@ -534,9 +659,11 @@ function unset_modulefile_environment()
 
 function run_modulefile_tests()
 {
+    if [[ ${ENABLE_MODULEFILE_TESTS} = "no" ]]
+    then
+        return
+    fi
     set_modulefile_environment
-    set_external_env
-
     ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope $scope
 
     log_status_fail=${PIPESTATUS[0]}
@@ -548,19 +675,20 @@ function run_modulefile_tests()
         echo "module file testing ... NOK"
         exit 1
     fi
-
     unset_modulefile_environment
 }
 
-function run_tests()
+function run_functional_tests()
 {
+    if [[ ${ENABLE_FUNCTIONAL_TESTS} = "no" ]]
+    then
+        return
+    fi
+    make_tests
     enable_default_env
     enable_default_test_scope
 
-    set_external_env
-
     ppns="1 2"
-
     allgatherv_algos="naive flat ring"
     allreduce_algos="rabenseifner nreduce ring double_tree recursive_doubling"
     alltoall_algos="naive scatter scatter_barrier"
@@ -738,6 +866,9 @@ function run_tests()
                 done
                ;;
             priority_mode )
+                # TODO: At the moment priority_mode and unordered_coll_mode launches only
+                # with CCL_ATS_TRANSPORT=ofi, so these confs are missed in mpich_ofi testing.
+                # We would like to add them in the future.
                 CCL_ATL_TRANSPORT=ofi CCL_PRIORITY=lifo ctest -VV -C default
                 CCL_ATL_TRANSPORT=ofi CCL_PRIORITY=direct ctest -VV -C default
                ;;
@@ -745,16 +876,20 @@ function run_tests()
                 # TODO: disable dynamic_pointer_mode for L0 based ops
                 # CCL_ATL_TRANSPORT=mpi CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C default
                 # CCL_ATL_TRANSPORT=ofi CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C default
-                CCL_ATL_TRANSPORT=mpi ctest -VV -C default
-                CCL_ATL_TRANSPORT=ofi ctest -VV -C default
+                for transport in ${CCL_ATL_TRANSPORT_LIST}
+                do
+                    CCL_ATL_TRANSPORT=${transport} ctest -VV -C default
+                done
                ;;
             unordered_coll_mode )
                 enable_unordered_coll_test_scope
                 CCL_ATL_TRANSPORT=ofi CCL_UNORDERED_COLL=1 ctest -VV -C default
                ;;
             fusion_mode )
-                CCL_ATL_TRANSPORT=ofi CCL_FUSION=1 ctest -VV -C allreduce_fusion
-                CCL_ATL_TRANSPORT=mpi CCL_FUSION=1 ctest -VV -C allreduce_fusion
+                for transport in ${CCL_ATL_TRANSPORT_LIST}
+                do
+                    CCL_ATL_TRANSPORT=${transport} CCL_FUSION=1 ctest -VV -C allreduce_fusion
+                done
                ;;
            * )
                 echo "Please specify runtime mode: runtime=ofi|mpi|ofi_adjust|mpi_adjust|priority_mode|unordered_coll_mode|dynamic_pointer_mode|fusion_mode|"
@@ -802,57 +937,21 @@ EOF
 #                              MAIN
 #==============================================================================
 
-if [ "$1" == "-help" ]; then
-    print_help
-else
-    clean_nodes
-    set_default_values
-    set_environment
-    set_impi_environment
+clean_nodes
+set_default_values
+set_environment
+set_impi_environment
+parse_arguments "$@"
+set_provider_env
+set_transport_env
 
-    while [ $# -ne 0 ]
-    do
-        case $1 in
-        "-compatibility_tests" )
-            run_compatibitily_tests
-            shift
-            ;;
-        "-horovod_tests" )
-            run_horovod_tests
-            shift
-            ;;
-        "-pytorch_tests" )
-            run_pytorch_tests
-            shift
-            ;;
-        "-modulefile_tests" )
-            run_modulefile_tests
-            shift
-            ;;
-        "-functional_tests" )
-            make_tests
-            check_command_exit_code $? "Compilation of functional tests is FAILED"
-            if [[ "$(hostname)" =~ ("atsci") ]]
-            then
-                export FI_PROVIDER="tcp"
-            fi
-            run_tests
-            shift
-            ;;
-        "-valgrind_check" )
-            run_valgrind_check
-            shift
-            ;;
-        "-reg_tests" )
-            run_reg_tests
-            shift
-            ;;
-        *)
-            echo "WARNING: example testing not started"
-            exit 0
-            shift
-            ;;
-        esac
-    done
-    clean_nodes
-fi
+set_mpich_ofi_env
+run_horovod_tests
+run_pytorch_tests
+run_modulefile_tests
+run_functional_tests
+run_valgrind_check
+run_reg_tests
+run_regular_tests
+
+clean_nodes

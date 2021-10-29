@@ -33,6 +33,8 @@ print_help() {
     echo "      Enable only the build stage"
     echo "  --platform <ats|gen9>"
     echo "      Discrete GPU platform name"
+    echo "  --transport <impi|mpich>"
+    echo "      Transport name (default impi)"
     echo ""
     echo "Usage examples:"
     echo "  ${BASENAME}.sh --mode cpu"
@@ -50,19 +52,27 @@ print_header() {
 
 is_exclude_test() {
     local TEST_NAME=${1}
+    rc=0
     res=$(grep -w ${TEST_NAME} ${EXCLUDE_LIST})
-    if [[ -z ${res} ]]
+    if [[ ! -z ${res} ]]
     then
-        rc=0
-    else
-        EXCLUDE_PLATFORM=$(echo ${res} | awk '{print $2}')
-
-        if [[ "${EXCLUDE_PLATFORM}" = *"${PLATFORM_HW_DISCRETE_GPU}"* ]]; then
-            rc=1
-        else
-            rc=0
-        fi
-
+        EXCLUDE_RULES=$(echo $res | sed "s/^${TEST_NAME}\s//g")
+        for item in ${EXCLUDE_RULES}
+        do
+            prop="$(echo ${item} | awk -F "=" '{print $1}')"
+            value="$(echo ${item} | awk -F "=" '{print $2}')"
+            if [[ ${prop} = "platform" ]]; then
+                if [[ ${value} = *"${PLATFORM_HW_DISCRETE_GPU}"* || ${value} = "*" ]]; then is_exclude_platform=1; fi
+            elif [[ ${prop} = "transport" ]]; then
+                if [[ ${value} = *"${TRANSPORT}"* || ${value} = "*" ]]; then is_exclude_transport=1; fi
+            else
+                echo "WARNING: unknown excluded property (${prop})"
+            fi
+        done
+    fi
+    if [[ "${is_exclude_platform}" = 1 && "${is_exclude_transport}" = 1 ]]
+    then
+        rc=1
     fi
     echo ${rc}
 }
@@ -97,6 +107,10 @@ parse_arguments() {
                 PLATFORM_HW_DISCRETE_GPU=${2}
                 shift
                 ;;
+            "-transport"|"--transport")
+                TRANSPORT=${2}
+                shift
+                ;;
             *)
                 echo "$(basename ${0}): ERROR: unknown option (${1})"
                 print_help
@@ -112,6 +126,10 @@ parse_arguments() {
     then
         PLATFORM_HW_DISCRETE_GPU="ats"
     fi
+    if [[ -z ${TRANSPORT} ]]
+    then
+        TRANSPORT="impi"
+    fi
 
     echo "-----------------------------------------------------------"
     echo "PARAMETERS"
@@ -121,7 +139,7 @@ parse_arguments() {
     echo "ENABLE_TESTING           = ${ENABLE_TESTING}"
     echo "EXCLUDE_LIST             = ${EXCLUDE_LIST}"
     echo "PLATFORM_HW_DISCRETE_GPU = ${PLATFORM_HW_DISCRETE_GPU}"
-
+    echo "TRANSPORT                = ${TRANSPORT}"
 }
 
 check_mode() {
