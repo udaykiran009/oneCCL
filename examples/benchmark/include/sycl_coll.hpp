@@ -184,8 +184,8 @@ struct sycl_base_coll : base_coll, private strategy {
     }
 
     /* used on fill/check phases */
-    std::vector<Dtype> host_send_buf;
-    std::vector<Dtype> host_recv_buf;
+    aligned_vector<Dtype> host_send_buf;
+    aligned_vector<Dtype> host_recv_buf;
 
 private:
     std::vector<buf_allocator<Dtype>> allocators;

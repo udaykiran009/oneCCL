@@ -89,7 +89,7 @@ struct cpu_base_coll : base_coll, protected strategy {
         size_t send_bytes = send_count * base_coll::get_dtype_size();
         size_t recv_bytes = recv_count * base_coll::get_dtype_size();
 
-        std::vector<Dtype> fill_vector = get_initial_values<Dtype>(send_count, comm_rank);
+        auto fill_vector = get_initial_values<Dtype>(send_count, comm_rank);
 
         for (size_t b_idx = 0; b_idx < base_coll::get_buf_count(); b_idx++) {
             memcpy(send_bufs[b_idx][rank_idx], fill_vector.data(), send_bytes);

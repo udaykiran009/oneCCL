@@ -119,9 +119,13 @@ struct base_coll {
         return nullptr;
     };
 
-    template <class T>
-    std::vector<T> get_initial_values(size_t elem_count, int fill_value) {
-        std::vector<T> res(elem_count);
+#ifdef CCL_ENABLE_SYCL
+    template <class T, class vector_t = aligned_vector<T>>
+#else // CCL_ENABLE_SYCL
+    template <class T, class vector_t = std::vector<T>>
+#endif // CCL_ENABLE_SYCL
+    vector_t get_initial_values(size_t elem_count, int fill_value) {
+        vector_t res(elem_count);
         ccl::datatype dt = ccl::native_type_info<typename std::remove_pointer<T>::type>::dtype;
         if (dt == ccl::datatype::bfloat16) {
             for (size_t elem_idx = 0; elem_idx < elem_count; elem_idx++) {
