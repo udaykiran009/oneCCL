@@ -21,7 +21,7 @@ void print_timings(
                e.get_profiling_info<sycl::info::event_profiling::command_start>();
     };
 
-    for (int i = 0; i < num_iters; ++i) {
+    for (size_t i = 0; i < num_iters; ++i) {
         auto fill_event = std::get<0>(kernel_events[i]);
         auto compute_event = std::get<1>(kernel_events[i]);
         auto check_event = std::get<2>(kernel_events[i]);
@@ -42,7 +42,6 @@ void print_timings(
 int main(int argc, char *argv[]) {
     size_t count = 10485760;
 
-    int i = 0;
     int size = 0;
     int rank = 0;
 
@@ -101,7 +100,7 @@ int main(int argc, char *argv[]) {
     // Store allocated mem ptrs to free them later
     std::vector<std::pair<int *, int *>> ptrs(num_iters);
     // allocate all the buffers
-    for (int i = 0; i < num_iters; ++i) {
+    for (size_t i = 0; i < num_iters; ++i) {
         auto send_buf = allocator.allocate(count, usm::alloc::device);
         auto recv_buf = allocator.allocate(count, usm::alloc::device);
         ptrs[i] = { send_buf, recv_buf };
@@ -134,7 +133,7 @@ int main(int argc, char *argv[]) {
         // Simple compute kernel
         auto compute_event = q.submit([&](auto &h) {
             h.parallel_for(count, [=](auto id) {
-                for (int j = 0; j < compute_kernel_loop_count; ++j) {
+                for (size_t j = 0; j < compute_kernel_loop_count; ++j) {
                     send_buf[id] *= 2;
                 }
             });
@@ -155,7 +154,8 @@ int main(int argc, char *argv[]) {
         auto check_event = q.submit([&](auto &h) {
             auto check_buf_acc = check_buf.get_access<sycl::access_mode::write>(h);
             h.parallel_for(count, [=](auto id) {
-                if (recv_buf[id] != check_mult * (i + 1) * (size * (size + 1) / 2)) {
+                if (recv_buf[id] !=
+                    static_cast<int>(check_mult * (i + 1) * (size * (size + 1) / 2))) {
                     check_buf_acc[count * i + id] = -1;
                 }
             });
@@ -199,15 +199,13 @@ int main(int argc, char *argv[]) {
     /* Check if we have an error on some iteration */
     auto check_buf_acc = check_buf.get_access<sycl::access_mode::read>();
     {
-        for (i = 0; i < count * num_iters; i++) {
+        for (size_t i = 0; i < count * num_iters; i++) {
             if (check_buf_acc[i] == -1) {
                 cout << "FAILED\n";
                 return -1;
             }
         }
-        if (i == count * num_iters) {
-            cout << "PASSED\n";
-        }
+        cout << "PASSED\n";
     }
 
     return 0;

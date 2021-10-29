@@ -15,14 +15,8 @@
 int main(int argc, char* argv[]) {
     const size_t count = 1000;
 
-    int i = 0;
     int size;
     int rank;
-
-    if (size < 3) {
-        printf("test expects >= 3 ranks");
-        return -1;
-    }
 
     sycl::queue q;
     if (!q.get_device().is_gpu()) {
@@ -36,6 +30,11 @@ int main(int argc, char* argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     atexit(mpi_finalize);
+
+    if (size < 3) {
+        printf("test expects >= 3 ranks");
+        return -1;
+    }
 
     /* create kvs */
     ccl::shared_ptr_class<ccl::kvs> kvs;
@@ -82,7 +81,7 @@ int main(int argc, char* argv[]) {
 
     std::vector<sycl::event> events;
     size_t offset = 0;
-    for (int i = 0; i < send_counts.size(); ++i) {
+    for (size_t i = 0; i < send_counts.size(); ++i) {
         auto e = q.submit([&](auto& h) {
             h.parallel_for(send_counts[i], [=](auto id) {
                 send_buf[id + offset] = i + 1;
@@ -136,9 +135,9 @@ int main(int argc, char* argv[]) {
     /* print out the result of the test on the host side */
     {
         sycl::host_accessor check_buf_acc(check_buf, sycl::read_only);
-        for (i = 0; i < total_recv; i++) {
+        for (size_t i = 0; i < total_recv; i++) {
             if (check_buf_acc[i] == -1) {
-                printf("unexpected value at idx %d\n", i);
+                printf("unexpected value at idx %zu\n", i);
                 fflush(stdout);
                 return -1;
             }

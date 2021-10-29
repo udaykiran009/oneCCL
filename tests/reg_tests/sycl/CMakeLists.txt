@@ -7,6 +7,8 @@ set(sources
 
 set(CCL_INSTALL_TESTS "${CMAKE_CURRENT_SOURCE_DIR}")
 
+link_directories(${EXAMPLES_LIB_DIRS})
+
 foreach(src ${sources})
     get_filename_component(executable ${src} NAME_WE)
     add_executable(${executable} ${src})

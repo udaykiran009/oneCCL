@@ -1,5 +1,9 @@
 cmake_minimum_required (VERSION 2.8)
 
+if (POLICY CMP0048)
+    cmake_policy(SET CMP0048 OLD)
+endif (POLICY CMP0048)
+
 set(PROJECT_NAME "oneCCL regression tests")
 project(${PROJECT_NAME})
 
@@ -23,7 +27,11 @@ if (${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUA
     set(CMAKE_CXX_STANDARD 17)
 endif()
 
-add_subdirectory(common)
+# only enable common tests if we build in standalone mode
+# as they require ccl package
+if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+    add_subdirectory(common)
+endif()
 if ("${COMPUTE_BACKEND}" STREQUAL "dpcpp_level_zero")
     add_subdirectory(sycl)
 endif()

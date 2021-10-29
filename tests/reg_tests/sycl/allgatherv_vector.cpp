@@ -10,8 +10,6 @@ int main(int argc, char *argv[]) {
     int size;
     int rank;
 
-    int i = 0;
-
     sycl::queue q;
     if (!q.get_device().is_gpu()) {
         printf("test expects GPU device, please use SYCL_DEVICE_FILTER accordingly");
@@ -69,7 +67,7 @@ int main(int argc, char *argv[]) {
         });
     }));
 
-    for (i = 0; i < size; ++i) {
+    for (int i = 0; i < size; ++i) {
         events.push_back(q.submit([&](auto &h) {
             h.parallel_for(count, [=, rb = recv_bufs[i]](auto id) {
                 rb[id] = -1;
@@ -88,7 +86,7 @@ int main(int argc, char *argv[]) {
     ccl::allgatherv(send_buf, count, recv_bufs, recv_counts, comm, stream, attr, deps).wait();
 
     /* open recv_buf and check its correctness on the device side */
-    for (i = 0; i < size; ++i) {
+    for (int i = 0; i < size; ++i) {
         q.submit([&](auto &h) {
              sycl::accessor expected_buf_acc(expected_buf, h, sycl::read_only);
              sycl::accessor check_buf_acc(check_buf, h, sycl::write_only);
@@ -104,9 +102,9 @@ int main(int argc, char *argv[]) {
     /* print out the result of the test on the host side */
     {
         sycl::host_accessor check_buf_acc(check_buf, sycl::read_only);
-        for (i = 0; i < total_recv; i++) {
+        for (size_t i = 0; i < total_recv; i++) {
             if (check_buf_acc[i] == -1) {
-                printf("unexpected value at idx %d\n", i);
+                printf("unexpected value at idx %zu\n", i);
                 fflush(stdout);
                 return -1;
             }

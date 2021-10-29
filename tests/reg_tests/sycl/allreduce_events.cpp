@@ -6,7 +6,6 @@ using namespace sycl;
 int main(int argc, char *argv[]) {
     const size_t count = 10 * 1024 * 1024;
 
-    int i = 0;
     int size = 0;
     int rank = 0;
 
@@ -110,15 +109,13 @@ int main(int argc, char *argv[]) {
     /* Check if we have an error on some iteration */
     auto check_buf_acc = check_buf.get_access<sycl::access_mode::read>();
     {
-        for (i = 0; i < count * num_iters; i++) {
+        for (size_t i = 0; i < count * num_iters; i++) {
             if (check_buf_acc[i] == -1) {
                 cout << "FAILED\n";
                 return -1;
             }
         }
-        if (i == count * num_iters) {
-            cout << "PASSED\n";
-        }
+        cout << "PASSED\n";
     }
 
     return 0;
