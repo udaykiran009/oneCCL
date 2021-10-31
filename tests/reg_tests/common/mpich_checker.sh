@@ -16,7 +16,7 @@ cd ${SCRIPT_DIR}
 export CCL_ATL_TRANSPORT=mpi
 export CCL_LOG_LEVEL=info
 
-mpiexec.hydra -l -n 2 -ppn 1 ${SCRIPT_DIR}/benchmark > ${SCRIPT_DIR}/${TEST_LOG} 2>&1
+mpiexec -l -n 2 -ppn 1 ${SCRIPT_DIR}/benchmark > ${SCRIPT_DIR}/${TEST_LOG} 2>&1
 rc=$?
 if [ ${rc} -ne 0 ]
 then

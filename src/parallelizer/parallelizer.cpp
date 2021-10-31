@@ -122,10 +122,8 @@ ccl::status ccl_parallelizer::process_pre_post_copies(ccl_master_sched* sched) {
     sched->get_pre_post_copy_counts(d2h_counts, h2d_counts, reuse_buffers);
 
     if ((coll_type == ccl_coll_allgatherv) &&
-        coll_param.is_inplace(ccl_coll_param::buf_type::device)) {
-        CCL_THROW_IF_NOT(coll_param.device_recv_bufs.size() == 1,
-                         "unexpected device_recv_bufs.size ",
-                         coll_param.device_recv_bufs.size());
+        coll_param.is_inplace(ccl_coll_param::buf_type::device) &&
+        (coll_param.device_recv_bufs.size() == 1)) {
         device_in_buf_offset = std::accumulate(
             coll_param.recv_counts.begin(), coll_param.recv_counts.begin() + my_rank, 0);
         LOG_TRACE("device_in_buf_offset = ", device_in_buf_offset);

@@ -14,30 +14,41 @@ get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 cd ${SCRIPT_DIR}
 
 export CCL_LOG_LEVEL=info
+export CCL_ALLGATHERV=topo
+export CCL_ALLREDUCE=topo
+export CCL_REDUCE=topo
+
+# TODO: uncoment after fix MLSL-1155
+#transports="ofi mpi"
+transports="mpi"
 
 # TODO: uncoment after fix MLSL-1156
 # proc_counts="2 4 8"
 proc_counts="2 4"
-collectives="allreduce allgatherv reduce"
-transports="ofi mpi"
+
+colls="allgatherv allreduce reduce"
+single_list_modes="0 1"
+
 bench_options="-w 4 -i 8 -c all -b sycl -t 10000000"
 
 for transport in ${transports}
 do
     for proc_count in ${proc_counts}
     do
-        for coll in ${collectives}
+        for coll in ${colls}
         do
-            # TODO: uncoment after fix MLSL-1155
-            # export CCL_ATL_TRANSPORT=${transport}
-            export CCL_ATL_TRANSPORT=mpi
-            mpiexec.hydra -l -n ${proc_count} -ppn 4 ${SCRIPT_DIR}/benchmark ${bench_options} -l ${coll} >> ${TEST_LOG} 2>&1
-            rc=$?
-            if [ ${rc} -ne 0 ]
-            then
-                echo "Fail"
-                exit 1
-            fi
+            for single_list_mode in ${single_list_modes}
+            do
+                export CCL_ATL_TRANSPORT=${transport}
+                export CCL_ZE_SINGLE_LIST=${single_list_mode}
+                mpiexec -l -n ${proc_count} -ppn 4 ${SCRIPT_DIR}/benchmark ${bench_options} -l ${coll} >> ${TEST_LOG} 2>&1
+                rc=$?
+                if [ ${rc} -ne 0 ]
+                then
+                    echo "Fail"
+                    exit 1
+                fi
+            done
         done
     done
 done

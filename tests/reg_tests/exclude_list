@@ -1,6 +1,13 @@
 # <test name> platform=<exclude_pattern> transport=<exclude_pattern>
 # exclude pattern = comma-separated list or * (exclude all)
+
+# common
+mpich_checker platform=* transport=impi
+
+# cpu
+
+# sycl
+allgatherv_vector platform=gen9 transport=*
 allreduce_events platform=gen9 transport=*
 allreduce_events_inorder platform=gen9 transport=*
 multi_level_algos platform=ats transport=*
-mpich_checker platform=* transport=impi

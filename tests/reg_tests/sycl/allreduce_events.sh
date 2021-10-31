@@ -15,11 +15,11 @@ export CCL_SYCL_OUTPUT_EVENT=1
 export CCL_ZE_CLOSE_IPC_WA=1
 export EnableDirectSubmission=1
 
-mpiexec.hydra -n 2 -ppn 2 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
+mpiexec -n 2 -ppn 2 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
 rc=$?
 
 if [[ ${rc} -ne 0 ]] ; then
-    echo "fail"
+    echo "Fail"
     exit 1
 else
     rm -f ${BINFILE} ${TEST_LOG}

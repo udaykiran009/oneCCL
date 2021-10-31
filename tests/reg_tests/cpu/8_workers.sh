@@ -36,7 +36,7 @@ do
                 export CCL_ATL_TRANSPORT=${transport}
                 export CCL_WORKER_COUNT=${worker_count}
                 export CCL_LOG_LEVEL=info
-                mpiexec.hydra -l -n ${proc_count} -ppn 1 ${SCRIPT_DIR}/benchmark ${bench_options} > ${TEST_LOG} 2>&1
+                mpiexec -l -n ${proc_count} -ppn 1 ${SCRIPT_DIR}/benchmark ${bench_options} > ${TEST_LOG} 2>&1
                 rc=$?
                 if [ ${rc} -ne 0 ]
                 then

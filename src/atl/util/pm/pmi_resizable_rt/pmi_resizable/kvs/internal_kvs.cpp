@@ -684,7 +684,7 @@ kvs_status_t internal_kvs::kvs_init(const char* main_addr) {
     } while ((err < 0) && (connection_time < CONNECTION_TIMEOUT));
 
     if (connection_time >= CONNECTION_TIMEOUT) {
-        LOG_ERROR("connection error: timeout limit (", connection_time, " > ", CONNECTION_TIMEOUT);
+        LOG_ERROR("connection time (", connection_time, ") >= limit (", CONNECTION_TIMEOUT, ")");
         return KVS_STATUS_FAILURE;
     }
 

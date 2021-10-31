@@ -11,11 +11,11 @@ source ${ROOT_DIR}/utils.sh
 check_impi
 check_ccl
 
-mpiexec.hydra -l -n 3 -ppn 1 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
+mpiexec -l -n 3 -ppn 1 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
 rc=$?
 
 if [[ ${rc} -ne 0 ]]; then
-    echo "fail"
+    echo "Fail"
     exit 1
 else
     rm -f ${BINFILE} ${TEST_LOG}

@@ -17,7 +17,7 @@ ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
 rc=$?
 
 if [[ $rc -ne 0 ]]; then
-    echo "fail"
+    echo "Fail"
     exit 1
 else
     rm -rf ${BINFILE} ${TEST_LOG}

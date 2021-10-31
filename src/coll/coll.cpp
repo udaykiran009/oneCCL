@@ -161,9 +161,13 @@ ccl::status ccl_coll_build_allgatherv(ccl_sched* sched,
     param.recv_counts = recv_counts;
     param.dtype = dtype;
     param.comm = comm;
-    param.is_vector_buf = sched->coll_attr.is_vector_buf;
-    param.hint_algo = sched->hint_algo;
     param.stream = sched->coll_param.stream;
+    param.buf = send_buf.get_ptr();
+    param.is_vector_buf = sched->coll_attr.is_vector_buf;
+#ifdef CCL_ENABLE_SYCL
+    param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
+#endif // CCL_ENABLE_SYCL
+    param.hint_algo = sched->hint_algo;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_allgatherv>(param);
 
@@ -285,6 +289,10 @@ ccl::status ccl_coll_build_alltoall(ccl_sched* sched,
     param.count = count;
     param.dtype = dtype;
     param.comm = comm;
+    param.stream = sched->coll_param.stream;
+#ifdef CCL_ENABLE_SYCL
+    param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
+#endif // CCL_ENABLE_SYCL
     param.hint_algo = sched->hint_algo;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_alltoall>(param);
@@ -314,6 +322,10 @@ ccl::status ccl_coll_build_alltoallv(ccl_sched* sched,
     param.ctype = ccl_coll_alltoallv;
     param.dtype = dtype;
     param.comm = comm;
+    param.stream = sched->coll_param.stream;
+#ifdef CCL_ENABLE_SYCL
+    param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
+#endif // CCL_ENABLE_SYCL
     param.hint_algo = sched->hint_algo;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_alltoallv>(param);
@@ -370,6 +382,7 @@ ccl::status ccl_coll_build_bcast(ccl_sched* sched,
     param.dtype = dtype;
     param.comm = comm;
     param.stream = sched->coll_param.stream;
+    param.buf = buf.get_ptr();
 #ifdef CCL_ENABLE_SYCL
     param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
 #endif // CCL_ENABLE_SYCL
@@ -492,6 +505,10 @@ ccl::status ccl_coll_build_reduce_scatter(ccl_sched* sched,
     param.dtype = dtype;
     param.comm = comm;
     param.stream = sched->coll_param.stream;
+    param.buf = send_buf.get_ptr();
+#ifdef CCL_ENABLE_SYCL
+    param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
+#endif // CCL_ENABLE_SYCL
     param.hint_algo = sched->hint_algo;
 
     auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_reduce_scatter>(param);

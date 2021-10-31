@@ -70,6 +70,10 @@ function parse_arguments() {
             ENABLE_REGULAR_TESTS="yes"
             shift
             ;;
+        "-compatibility_tests" )
+            ENABLE_REGULAR_TESTS="yes"
+            shift
+            ;;
         "-horovod_tests" )
             ENABLE_HOROVOD_TESTS="yes"
             shift

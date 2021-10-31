@@ -6,13 +6,21 @@
 #include "mpi.h"
 
 int main(int argc, char *argv[]) {
-    const size_t count = 50;
+    std::list<int> elem_counts = { 1, 17, 1024, 1025, 32768, 1048576, 1048579 };
+
     int size;
     int rank;
+    int use_inplace = 0;
+
+    int fail_counter = 0;
+
+    if (argc > 1) {
+        use_inplace = atoi(argv[1]);
+    }
 
     sycl::queue q;
     if (!q.get_device().is_gpu()) {
-        printf("test expects GPU device, please use SYCL_DEVICE_FILTER accordingly");
+        cout << "test expects GPU device, please use SYCL_DEVICE_FILTER accordingly";
         return -1;
     }
 
@@ -44,71 +52,96 @@ int main(int argc, char *argv[]) {
     /* create stream */
     auto stream = ccl::create_stream(q);
 
-    auto send_buf = sycl::malloc_device<int>(count, q);
-    std::vector<int *> recv_bufs;
-    for (int i = 0; i < size; ++i) {
-        recv_bufs.push_back(sycl::malloc_device<int>(count, q));
-    }
+    for (auto elem_count : elem_counts) {
+        /* create buffers */
+        std::vector<int *> recv_bufs;
+        for (int i = 0; i < size; ++i) {
+            recv_bufs.push_back(sycl::malloc_device<int>(elem_count, q));
+        }
+        auto send_buf = (use_inplace) ? recv_bufs[rank] : sycl::malloc_device<int>(elem_count, q);
 
-    sycl::buffer<int> expected_buf(count * size);
-    sycl::buffer<int> check_buf(count * size);
-    std::vector<size_t> recv_counts(size, count);
+        sycl::buffer<int> expected_buf(elem_count * size);
+        sycl::buffer<int> check_buf(elem_count * size);
+        std::vector<size_t> recv_counts(size, elem_count);
 
-    std::vector<sycl::event> events;
+        std::vector<sycl::event> events;
 
-    /* fill send buffer and check buffer */
-    events.push_back(q.submit([&](auto &h) {
-        sycl::accessor expected_buf_acc(expected_buf, h, sycl::write_only);
-        h.parallel_for(count, [=, rnk = rank, sz = size](auto id) {
-            send_buf[id] = rnk + id;
-            for (int idx = 0; idx < sz; idx++) {
-                expected_buf_acc[idx * count + id] = idx + id;
-            }
-        });
-    }));
+        /* fill recv buffers */
+        for (int i = 0; i < size; ++i) {
+            events.push_back(q.submit([&](auto &h) {
+                h.parallel_for(elem_count, [=, rb = recv_bufs[i]](auto id) {
+                    rb[id] = -1;
+                });
+            }));
+        }
 
-    for (int i = 0; i < size; ++i) {
+        /* fill send buffer and check buffer */
         events.push_back(q.submit([&](auto &h) {
-            h.parallel_for(count, [=, rb = recv_bufs[i]](auto id) {
-                rb[id] = -1;
+            sycl::accessor expected_buf_acc(expected_buf, h, sycl::write_only);
+            h.parallel_for(elem_count, [=, rnk = rank, sz = size](auto id) {
+                send_buf[id] = rnk + id;
+                for (int idx = 0; idx < sz; idx++) {
+                    expected_buf_acc[idx * elem_count + id] = idx + id;
+                }
             });
         }));
-    }
 
-    /* do not wait completion of kernel and provide it as dependency for operation */
-    std::vector<ccl::event> deps;
-    for (auto e : events) {
-        deps.push_back(ccl::create_event(e));
-    }
+        /* do not wait completion of kernels and provide them as dependency for operation */
+        std::vector<ccl::event> deps;
+        for (auto e : events) {
+            deps.push_back(ccl::create_event(e));
+        }
 
-    /* invoke allgatherv */
-    auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
-    ccl::allgatherv(send_buf, count, recv_bufs, recv_counts, comm, stream, attr, deps).wait();
+        /* invoke allgatherv */
+        auto attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
+        ccl::allgatherv(send_buf, elem_count, recv_bufs, recv_counts, comm, stream, attr, deps)
+            .wait();
 
-    /* open recv_buf and check its correctness on the device side */
-    for (int i = 0; i < size; ++i) {
-        q.submit([&](auto &h) {
-             sycl::accessor expected_buf_acc(expected_buf, h, sycl::read_only);
-             sycl::accessor check_buf_acc(check_buf, h, sycl::write_only);
-             h.parallel_for(count, [=, rb = recv_bufs[i]](auto id) {
-                 if (rb[id] != expected_buf_acc[i * count + id]) {
-                     check_buf_acc[i * count + id] = -1;
-                 }
-             });
-         }).wait();
-    }
+        /* open recv_buf and check its correctness on the device side */
+        for (int i = 0; i < size; ++i) {
+            q.submit([&](auto &h) {
+                 sycl::accessor expected_buf_acc(expected_buf, h, sycl::read_only);
+                 sycl::accessor check_buf_acc(check_buf, h, sycl::write_only);
+                 h.parallel_for(elem_count, [=, rb = recv_bufs[i]](auto id) {
+                     if (rb[id] != expected_buf_acc[i * elem_count + id]) {
+                         check_buf_acc[i * elem_count + id] = -1;
+                     }
+                     else {
+                         check_buf_acc[i * elem_count + id] = 0;
+                     }
+                 });
+             }).wait();
+        }
 
-    size_t total_recv = size * count;
-    /* print out the result of the test on the host side */
-    {
-        sycl::host_accessor check_buf_acc(check_buf, sycl::read_only);
-        for (size_t i = 0; i < total_recv; i++) {
-            if (check_buf_acc[i] == -1) {
-                printf("unexpected value at idx %zu\n", i);
-                fflush(stdout);
-                return -1;
+        /* print out the result of the test on the host side */
+        {
+            size_t total_recv = size * elem_count;
+            sycl::host_accessor check_buf_acc(check_buf, sycl::read_only);
+            for (size_t i = 0; i < total_recv; i++) {
+                if (check_buf_acc[i] == -1) {
+                    fail_counter++;
+                    cout << "elem_count: " << elem_count << ", unexpected value at idx: " << i
+                         << "\n";
+                    break;
+                }
             }
         }
+
+        for (size_t i = 0; i < recv_bufs.size(); ++i) {
+            sycl::free(recv_bufs[i], q);
+        }
+
+        if (!use_inplace) {
+            sycl::free(send_buf, q);
+        }
+    } // for elem_counts
+
+    if (fail_counter) {
+        cout << "FAILED\n";
     }
+    else {
+        cout << "PASSED\n";
+    }
+
     return 0;
 }

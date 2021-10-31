@@ -200,7 +200,15 @@ bool ccl_coll_param::is_inplace(buf_type type) const {
     }
 
     void* send_buf = get_send_buf(0, type);
-    void* recv_buf = get_recv_buf(0, type);
+    void* recv_buf = nullptr;
+
+    if ((ctype == ccl_coll_allgatherv) && (recv_bufs.size() > 1)) {
+        recv_buf = get_recv_buf(comm->rank(), type);
+    }
+    else {
+        recv_buf = get_recv_buf(0, type);
+    }
+
     return (send_buf && (send_buf == recv_buf)) ? true : false;
 }
 

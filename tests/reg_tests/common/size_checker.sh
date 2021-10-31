@@ -49,7 +49,7 @@ for item in "${file_list[@]}" ; do
 done
 
 if [[ ${rc} -ne 0 ]] ; then
-    echo "fail"
+    echo "Fail"
     exit 1
 else
     echo "Pass"

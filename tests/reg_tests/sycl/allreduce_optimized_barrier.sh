@@ -28,15 +28,15 @@ export I_MPI_THREAD_LOCK_LEVEL=global
 
 bench_options="-b sycl -w 4 -i 8 -c all -l allreduce -y 1000"
 
-mpiexec.hydra -l -n 2 -ppn 2 ${SCRIPT_DIR}/benchmark ${bench_options} >> ${TEST_LOG} 2>&1
-retVal=$?
-if [ $retVal -ne 0 ]; then
-    echo "Failed"
+mpiexec -l -n 2 -ppn 2 ${SCRIPT_DIR}/benchmark ${bench_options} >> ${TEST_LOG} 2>&1
+ret_val=$?
+if [ $ret_val -ne 0 ]; then
+    echo "Fail"
     exit -1
 fi
 
-retVal=`grep -E -c -i "${failed_pattern}" ${TEST_LOG}`
-if [ ${retVal} -ne 0 ]; then
+ret_val=`grep -E -c -i "${failed_pattern}" ${TEST_LOG}`
+if [ ${ret_val} -ne 0 ]; then
     echo "Error: ${BASENAME} testing failed"
     exit -1
 fi

@@ -33,7 +33,7 @@ do
             do
                 export CCL_ALLREDUCE_NREDUCE_BUFFERING=${buffering_mode}
                 export CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE=${segment_size}
-                mpiexec.hydra -l -n ${proc_count} -ppn 1 ${SCRIPT_DIR}/benchmark ${bench_options} -q ${inplace_mode} >> ${TEST_LOG} 2>&1
+                mpiexec -l -n ${proc_count} -ppn 1 ${SCRIPT_DIR}/benchmark ${bench_options} -q ${inplace_mode} >> ${TEST_LOG} 2>&1
                 rc=$?
                 if [ ${rc} -ne 0 ]
                 then

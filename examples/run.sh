@@ -43,7 +43,7 @@ check_test()
     failed_pattern="abort|^bad$|corrupt|fail|^fault$|[^-W]invalid|kill|runtime_error|terminate|timed|unexpected"
     if [[ "${test_file}" != *"communicator"* ]] && [[ "${test_file}" != *"datatype"* ]];
     then
-        failed_pattern="${failed_pattern}|[^-W]error|exception"
+        failed_pattern+="|[^-W]error|exception"
     fi
     skipped_pattern="skip test|unavailable"
 
@@ -213,7 +213,7 @@ run_benchmark()
     fi
     options="${options} --buf_count ${buf_count} --iters ${iter_count} ${extra_options}"
 
-    # Run kernels with arbitraty sizes that should cover all the cases
+    # run benchmark with arbitraty sizes that should cover all the cases
     options="${options} -y 1,2,4,7,8,16,17,32,64,128,133,256,1077,16384,16387"
 
     for usm in $usm_list;
@@ -328,17 +328,20 @@ run()
         # in PV lab and https://jira.devtools.intel.com/browse/MLSL-808
         if [[ ${SCOPE} != "pv" ]]
         then
-            dir_list="${dir_list} external_launcher"
+            dir_list+=" external_launcher"
         fi
     else
         if [[ ${SCOPE} != "pv" ]]
         then
-            transport_list="${transport_list} mpi_gpu"
+            transport_list+=" mpi_gpu"
         fi
 
-        ccl_base_env="OverrideDefaultFP64Settings=1 IGC_EnableDPEmulation=1 ${ccl_base_env}"
-        ccl_base_env="ZE_ENABLE_VALIDATION_LAYER=1 ZE_ENABLE_PARAMETER_VALIDATION=1 ${ccl_base_env}"
+        # for DG1
+        ccl_base_env+=" OverrideDefaultFP64Settings=1 IGC_EnableDPEmulation=1"
+
+        ccl_base_env+=" ZE_ENABLE_VALIDATION_LAYER=1 ZE_ENABLE_PARAMETER_VALIDATION=1"
         common_dir_list="benchmark common"
+
         if [[ ${SCOPE} = "pr" ]]
         then
             dir_list="${common_dir_list} sycl"
@@ -374,14 +377,17 @@ run()
             transport_name=${transport}
             if [ "$transport" == "mpi_gpu" ];
             then
+                # TODO: https://jira.devtools.intel.com/browse/MLSL-1157
+                continue
+
                 if [ "$dir_name" != "sycl" ] && [ "$dir_name" != "benchmark" ]
                 then
                     continue
                 fi
                 transport_name="mpi"
-                ccl_transport_env="CCL_ATL_HMEM=1 CCL_ATL_SEND_PROXY=usm ${ccl_transport_env}"
+                ccl_transport_env+=" CCL_ATL_HMEM=1 CCL_ATL_SEND_PROXY=usm"
             fi
-            ccl_transport_env="CCL_ATL_TRANSPORT=${transport_name} ${ccl_transport_env}"
+            ccl_transport_env+=" CCL_ATL_TRANSPORT=${transport_name}"
 
             if [[ "${transport}" == *"mpi"* ]]
             then
