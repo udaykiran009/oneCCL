@@ -157,12 +157,21 @@ void ccl_sched_base::dealloc_buffer(const ccl::dealloc_param& user_param) {
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 bool ccl_sched_base::enable_ze_single_list() {
-    memory.use_single_list =
+    CCL_THROW_IF_NOT(ze_entries.empty(),
+                     "trying to modify the list mode after ze_entries has already been formed");
+    use_single_list =
         ccl::global_data::env().enable_ze_single_list &&
         ccl::global_data::env().kernel_debug == 0 &&
         ((ccl::global_data::env().ze_serialize_mode & ze_call::serialize_mode::block) == 0) &&
         !ccl::global_data::env().enable_fusion;
-    return memory.use_single_list;
+    return use_single_list;
+}
+
+void ccl_sched_base::append_to_ze_entries_list(sched_entry* entry) {
+    if (memory.list_manager && memory.list_manager->is_executed()) {
+        CCL_THROW("modifying ze_entries during list execution");
+    }
+    ze_entries.push_back(entry);
 }
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
@@ -179,7 +188,6 @@ void ccl_sched_base::clear_memory() {
         if (memory.list_manager) {
             memory.list_manager->clear();
         }
-        memory.ze_entries.clear();
     }
 #endif // CCL_ENABLE_ZE
     free_memory_regions();

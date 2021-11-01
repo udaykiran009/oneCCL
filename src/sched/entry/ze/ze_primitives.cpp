@@ -137,9 +137,8 @@ void get_queues_properties(ze_device_handle_t device, ze_queue_properties_t* pro
     ZE_CALL(zeDeviceGetCommandQueueGroupProperties, (device, &queue_group_count, props->data()));
 }
 
-void get_comp_queue_ordinal(ze_device_handle_t device,
-                            const ze_queue_properties_t& props,
-                            uint32_t* ordinal) {
+void get_comp_queue_ordinal(const ze_queue_properties_t& props, uint32_t* ordinal) {
+    CCL_THROW_IF_NOT(!props.empty(), "no queue props");
     uint32_t comp_ordinal = std::numeric_limits<uint32_t>::max();
 
     for (uint32_t idx = 0; idx < props.size(); ++idx) {
@@ -149,24 +148,23 @@ void get_comp_queue_ordinal(ze_device_handle_t device,
         }
     }
 
-    LOG_DEBUG("find queue: { ordinal: ",
-              comp_ordinal,
-              ", queue properties params: ",
-              to_string(props[comp_ordinal]),
-              " }");
-
     if (comp_ordinal != std::numeric_limits<uint32_t>::max()) {
+        LOG_DEBUG("find queue: { ordinal: ",
+                  comp_ordinal,
+                  ", queue properties params: ",
+                  to_string(props[comp_ordinal]),
+                  " }");
         *ordinal = comp_ordinal;
     }
     else {
-        LOG_WARN("could not find queue ordinal, ordinal 0 will be used");
+        LOG_WARN("could not find queue ordinal, ordinal 0 will be used. Total queue group count: ",
+                 props.size());
         *ordinal = 0;
     }
 }
 
-void get_copy_queue_ordinal(ze_device_handle_t device,
-                            const ze_queue_properties_t& props,
-                            uint32_t* ordinal) {
+void get_copy_queue_ordinal(const ze_queue_properties_t& props, uint32_t* ordinal) {
+    CCL_THROW_IF_NOT(!props.empty(), "no queue props");
     uint32_t copy_ordinal = std::numeric_limits<uint32_t>::max();
 
     for (uint32_t idx = 0; idx < props.size(); ++idx) {
@@ -195,19 +193,19 @@ void get_copy_queue_ordinal(ze_device_handle_t device,
         }
     }
 
-    LOG_DEBUG("find copy queue: { ordinal: ",
-              copy_ordinal,
-              ", queue properties params: ",
-              to_string(props[copy_ordinal]),
-              " }");
-
     if (copy_ordinal != std::numeric_limits<uint32_t>::max()) {
+        LOG_DEBUG("find copy queue: { ordinal: ",
+                  copy_ordinal,
+                  ", queue properties params: ",
+                  to_string(props[copy_ordinal]),
+                  " }");
         *ordinal = copy_ordinal;
     }
     else {
         LOG_WARN("could not find queue ordinal for copy engine mode: ",
                  global_data::env().ze_copy_engine,
-                 ", ordinal 0 will be used");
+                 ", ordinal 0 will be used. Total queue group count: ",
+                 props.size());
         *ordinal = 0;
     }
 }

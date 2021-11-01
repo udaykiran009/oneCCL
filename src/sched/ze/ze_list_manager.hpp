@@ -15,7 +15,7 @@ struct list_info {
     ze_command_list_handle_t list{};
     ze_command_list_desc_t desc{};
     bool is_closed{};
-    ssize_t worker_idx{ -1 };
+    bool is_copy{};
 };
 
 struct queue_info {
@@ -27,7 +27,7 @@ struct queue_info {
 
     ze_command_queue_handle_t queue{};
     ze_command_queue_desc_t desc{};
-    ssize_t worker_idx{ -1 };
+    bool is_copy{};
 };
 
 class list_manager {
@@ -41,16 +41,20 @@ public:
 
     void execute();
 
-    ze_command_list_handle_t get_comp_list(size_t worker_idx = 0);
-    ze_command_list_handle_t get_copy_list(size_t worker_idx = 0);
+    ze_command_list_handle_t get_comp_list();
+    ze_command_list_handle_t get_copy_list();
 
     void clear();
+    void reset_execution_state();
 
     bool can_use_copy_queue() const;
+    bool is_executed() const;
 
 private:
     const ze_device_handle_t device;
     const ze_context_handle_t context;
+
+    static constexpr ssize_t worker_idx = 0;
 
     list_info comp_list{};
     list_info copy_list{};
@@ -60,13 +64,17 @@ private:
     queue_info comp_queue{};
     queue_info copy_queue{};
 
+    // used to execute in order of use
+    std::list<std::pair<queue_info&, list_info&>> exec_list;
+
     bool use_copy_queue{};
+    bool executed{};
 
     // not thread safe. It is supposed to be called from a single threaded builder
-    queue_info create_queue(init_mode mode, size_t worker_idx);
+    queue_info create_queue(init_mode mode);
     void free_queue(queue_info& info);
 
-    list_info create_list(const queue_info& info, size_t worker_idx);
+    list_info create_list(const queue_info& info);
     void free_list(list_info& info);
 
     void execute_list(queue_info& queue, list_info& list);

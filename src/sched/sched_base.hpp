@@ -38,6 +38,7 @@ std::string to_string(ccl_sched_add_mode mode);
 
 struct ccl_sched_memory {
     ccl::buffer_manager buffer_manager;
+
 #ifdef CCL_ENABLE_ZE
     std::unique_ptr<ccl::ze::event_manager> event_manager;
     ccl::ze::ipc_handle_manager handle_manager;
@@ -49,11 +50,8 @@ struct ccl_sched_memory {
     // to ccl_master_sched where they actually used
     ze_event_handle_t sync_event;
     ze_event_pool_handle_t sync_pool;
-
-    std::vector<sched_entry*> ze_entries;
-    bool use_single_list{};
-
 #endif // CCL_ENABLE_ZE
+
     std::list<atl_mr_t*> mr_list;
 };
 
@@ -125,7 +123,11 @@ struct ccl_sched_base {
     }
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+    std::vector<sched_entry*> ze_entries;
+    bool use_single_list{};
+
     bool enable_ze_single_list();
+    void append_to_ze_entries_list(sched_entry* entry);
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
     ccl_sched_type sched_type = ccl_sched_regular;

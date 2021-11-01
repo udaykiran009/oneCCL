@@ -102,12 +102,14 @@ std::vector<ze_event_handle_t> event_manager::create(size_t count, ze_event_desc
         return events;
     }
 
-    if (pools.empty() || (pools.back().size() + count) > pools.back().capacity()) {
+    if (pools.empty()) {
         add_pool();
     }
 
     for (auto& event : events) {
-        // TODO: place add_pool
+        if (pools.back().size() >= pools.back().capacity()) {
+            add_pool();
+        }
         event = pools.back().create_event(desc);
     }
 

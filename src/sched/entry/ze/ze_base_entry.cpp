@@ -19,7 +19,7 @@ ze_base_entry::ze_base_entry(ccl_sched *sched,
         : sched_entry(sched),
           mode(mode),
           comm(comm),
-          use_single_list(sched->get_memory().use_single_list),
+          use_single_list(sched->use_single_list),
           wait_events(wait_events) {
     if (!comm) {
         comm = sched->coll_param.comm;
@@ -32,7 +32,7 @@ ze_base_entry::ze_base_entry(ccl_sched *sched,
     if (sched->coll_param.stream &&
         sched->coll_param.stream->get_backend() == ccl::utils::get_level_zero_backend()) {
         entry_event = sched->get_memory().event_manager->create();
-        sched->get_memory().ze_entries.push_back(this);
+        sched->append_to_ze_entries_list(this);
     }
     events.resize(add_event_count, nullptr);
 }
@@ -79,17 +79,17 @@ void ze_base_entry::init() {
             get_copy_primitives(queue_props, copy_primitives, mode);
             init_primitives(copy_primitives);
         }
-    }
 
-    /* create event pool */
-    if (events.size() > 0) {
-        event_pool_desc = default_event_pool_desc;
-        event_pool_desc.count = events.size();
-        if (ccl::global_data::env().enable_kernel_profile) {
-            event_pool_desc.flags |= ZE_EVENT_POOL_FLAG_KERNEL_TIMESTAMP;
+        /* create event pool */
+        if (events.size() > 0) {
+            event_pool_desc = default_event_pool_desc;
+            event_pool_desc.count = events.size();
+            if (ccl::global_data::env().enable_kernel_profile) {
+                event_pool_desc.flags |= ZE_EVENT_POOL_FLAG_KERNEL_TIMESTAMP;
+            }
+            global_data::get().ze_cache->get(worker_idx, context, event_pool_desc, &event_pool);
+            LOG_DEBUG("get event pool: { max event count: ", event_pool_desc.count, " }");
         }
-        global_data::get().ze_cache->get(worker_idx, context, event_pool_desc, &event_pool);
-        LOG_DEBUG("get event pool: { max event count: ", event_pool_desc.count, " }");
     }
 
     append_wait_on_events();
@@ -114,12 +114,12 @@ void ze_base_entry::finalize() {
     finalize_ze_hook();
     destroy_events();
 
-    /* event pool */
-    if (event_pool) {
-        global_data::get().ze_cache->push(worker_idx, context, event_pool_desc, event_pool);
-    }
-
     if (!use_single_list) {
+        /* event pool */
+        if (event_pool) {
+            global_data::get().ze_cache->push(worker_idx, context, event_pool_desc, event_pool);
+        }
+
         if (comp_primitives.list && comp_primitives.queue) {
             LOG_DEBUG("push to cache compute list and queue");
             /* list */
@@ -149,7 +149,7 @@ void ze_base_entry::finalize() {
 }
 
 void ze_base_entry::init_entries() {
-    auto &entries = sched->get_memory().ze_entries;
+    auto &entries = sched->ze_entries;
     if (entries.front() == this) {
         LOG_DEBUG("init ", entries.size(), " entries");
         for (auto &entry : entries) {
@@ -159,7 +159,7 @@ void ze_base_entry::init_entries() {
 }
 
 void ze_base_entry::finalize_entries() {
-    auto &entries = sched->get_memory().ze_entries;
+    auto &entries = sched->ze_entries;
     if (entries.back() == this) {
         LOG_DEBUG("finalize ", entries.size(), " entries");
         for (auto &entry : entries) {
@@ -177,7 +177,7 @@ void ze_base_entry::start() {
     if (use_single_list) {
         init_entries();
 
-        if (sched->get_memory().ze_entries.front() == this) {
+        if (sched->ze_entries.front() == this) {
             sched->get_memory().list_manager->execute();
         }
     }
@@ -259,9 +259,10 @@ void ze_base_entry::update() {
             reset_events();
         }
 
-        if (sched->get_memory().ze_entries.back() == this) {
+        if (sched->ze_entries.back() == this) {
             LOG_DEBUG("reset sched events\n");
             sched->get_memory().event_manager->reset();
+            sched->get_memory().list_manager->reset_execution_state();
         }
 
         // Finalize must go after all operation with the event because it's destroyed there.
@@ -325,7 +326,7 @@ std::string ze_base_entry::name_ext() const {
 void ze_base_entry::get_comp_primitives(const ze_queue_properties_t &queue_props,
                                         cmd_primitives &comp_primitives) {
     uint32_t ordinal{}, queue_index{};
-    get_comp_queue_ordinal(device, queue_props, &ordinal);
+    get_comp_queue_ordinal(queue_props, &ordinal);
     get_queue_index(queue_props, ordinal, 0, &queue_index);
 
     comp_primitives.queue_desc.ordinal = ordinal;
@@ -337,7 +338,7 @@ void ze_base_entry::get_copy_primitives(const ze_queue_properties_t &queue_props
                                         cmd_primitives &copy_primitives,
                                         init_mode mode) {
     uint32_t ordinal{}, queue_index{};
-    get_copy_queue_ordinal(device, queue_props, &ordinal);
+    get_copy_queue_ordinal(queue_props, &ordinal);
 
     // TODO: index depends on rank's changing, when > 1 queues are created,
     // the index is still the same for different queues, that's the issue.
@@ -378,6 +379,10 @@ ze_event_handle_t ze_base_entry::create_event(ze_event_pool_handle_t event_pool,
 }
 
 ze_event_handle_t ze_base_entry::create_event() {
+    if (use_single_list) {
+        return sched->get_memory().event_manager->create();
+    }
+
     ze_event_desc_t event_desc{ default_event_desc };
     event_desc.signal = ZE_EVENT_SCOPE_FLAG_DEVICE;
     event_desc.wait = ZE_EVENT_SCOPE_FLAG_DEVICE;
@@ -397,16 +402,29 @@ ze_event_handle_t ze_base_entry::create_event() {
 }
 
 void ze_base_entry::reset_events() {
-    for (size_t idx = 0; idx < events.size(); idx++) {
-        if (events[idx])
-            ZE_CALL(zeEventHostReset, (events[idx]));
+    if (use_single_list) {
+        // events will be reseted in the event manager
+        return;
+    }
+
+    for (auto &event : events) {
+        if (event != nullptr) {
+            ZE_CALL(zeEventHostReset, (event));
+        }
     }
 }
 
 void ze_base_entry::destroy_events() {
-    for (size_t idx = 0; idx < events.size(); idx++) {
-        if (events[idx])
-            ZE_CALL(zeEventDestroy, (events[idx]));
+    if (use_single_list) {
+        // events will be destroyed in the event manager
+        events.clear();
+        return;
+    }
+
+    for (auto &event : events) {
+        if (event != nullptr) {
+            ZE_CALL(zeEventDestroy, (event));
+        }
     }
     events.clear();
 }

@@ -37,7 +37,7 @@ ze_ring_allreduce_entry::ze_ring_allreduce_entry(ccl_sched* sched,
     skip_entry = (comm->size() == 1) && (send_buf == recv_buf);
     if (skip_entry) {
         // skip entry init and finalize
-        sched->get_memory().ze_entries.pop_back();
+        sched->ze_entries.pop_back();
     }
     else {
         atl_ops_init();

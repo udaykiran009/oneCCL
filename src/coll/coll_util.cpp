@@ -53,7 +53,7 @@ ze_event_handle_t add_comm_barrier(ccl_sched* sched,
                                    ze_event_pool_handle_t ipc_pool,
                                    size_t ipc_event_idx) {
     auto signal_event = sched->get_memory().event_manager->create();
-    if (sched->get_memory().use_single_list) {
+    if (sched->use_single_list) {
         add_wait_events(sched, wait_events);
         add_comm_barrier(sched, comm, ipc_pool, ipc_event_idx);
         add_signal_event(sched, signal_event);
