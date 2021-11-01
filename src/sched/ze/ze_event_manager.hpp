@@ -42,8 +42,7 @@ private:
     const ze_event_desc_t event_desc;
 
     ze_event_pool_handle_t pool{};
-    std::list<ze_event_handle_t>
-        events; // unordered_map? can help with event destroy and track double use of event
+    std::list<ze_event_handle_t> events;
 
     void create_pool();
 };

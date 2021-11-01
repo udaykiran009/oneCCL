@@ -517,7 +517,7 @@ void env_data::print(int rank) {
 
     LOG_INFO(CCL_ZE_BARRIER, ": ", enable_ze_barrier);
     LOG_INFO(CCL_ZE_CACHE, ": ", enable_ze_cache);
-    LOG_INFO(CCL_ZE_SINGLE_LIST, ": ", enable_ze_cache);
+    LOG_INFO(CCL_ZE_SINGLE_LIST, ": ", enable_ze_single_list);
     LOG_INFO(CCL_ZE_DISABLE_FAMILY_CHECK, ": ", disable_ze_family_check);
     LOG_INFO(CCL_ZE_SERIALIZE, ": ", ze_serialize_mode);
     LOG_INFO(CCL_ZE_COPY_ENGINE, ": ", str_by_enum(ze_copy_engine_names, ze_copy_engine));

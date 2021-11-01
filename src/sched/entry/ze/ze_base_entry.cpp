@@ -59,7 +59,7 @@ void ze_base_entry::init() {
         ze_queue_properties_t queue_props;
         get_queues_properties(device, &queue_props);
 
-        if ((queue_props.size() == 1) && (queue_props[0].numQueues == 1)) {
+        if ((queue_props.size() == 1) && (queue_props[0].numQueues == 1)) { // magic index?
             CCL_THROW_IF_NOT(sched->coll_param.stream->get_device_family() ==
                              ccl::device_family::unknown);
             LOG_DEBUG("numQueues = 1, switch to compute init mode");
@@ -114,12 +114,12 @@ void ze_base_entry::finalize() {
     finalize_ze_hook();
     destroy_events();
 
-    if (!use_single_list) {
-        /* event pool */
-        if (event_pool) {
-            global_data::get().ze_cache->push(worker_idx, context, event_pool_desc, event_pool);
-        }
+    /* event pool */
+    if (event_pool) {
+        global_data::get().ze_cache->push(worker_idx, context, event_pool_desc, event_pool);
+    }
 
+    if (!use_single_list) {
         if (comp_primitives.list && comp_primitives.queue) {
             LOG_DEBUG("push to cache compute list and queue");
             /* list */
