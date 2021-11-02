@@ -14,6 +14,19 @@ current_date=`date "+%Y%m%d%H%M%S"`
 LOG_FILE="${SCRIPT_DIR}/log_${current_date}.txt"
 touch ${LOG_FILE}
 
+set_extra_proxy() {
+    if [[ ${SET_EXTRA_PROXY} = "0" ]]
+    then
+        return
+    fi
+
+    export http_proxy=http://proxy-dmz.intel.com:911
+    export https_proxy=http://proxy-dmz.intel.com:912
+    export ftp_proxy=http://proxy-dmz.intel.com:911
+    export socks_proxy=http://proxy-dmz.intel.com:1080
+    export no_proxy=intel.com,.intel.com,localhost,127.0.0.1
+}
+
 set_run_env() {
     # model
     export PYTHONPATH=${RN50_MODEL_TF_DIR}:${PYTHONPATH}
@@ -133,12 +146,15 @@ DEFAULT_CREATE_CONDA="0"
 DEFAULT_REMOVE_CONDA="0"
 DEFAULT_CONDA_ENV_NAME="test_horovod"
 
+DEFAULT_FULL_TF="0"
 DEFAULT_DOWNLOAD_TF="0"
 DEFAULT_INSTALL_TF="0"
 DEFAULT_TF_PATH=""
 DEFAULT_DOWNLOAD_ITEX="0"
 DEFAULT_INSTALL_ITEX="0"
 DEFAULT_ITEX_PATH=""
+
+DEFAULT_FULL_PT="0"
 DEFAULT_DOWNLOAD_PT="0"
 DEFAULT_INSTALL_PT="0"
 DEFAULT_PT_PATH=""
@@ -160,6 +176,7 @@ DEFAULT_ITER_COUNT="200"
 DEFAULT_PATH_TO_TOKEN_FILE_1S=""
 DEFAULT_USERNAME_1S=""
 DEFAULT_PROXY="http://proxy-us.intel.com:912"
+DEFAULT_EXTRA_PROXY=0
 
 CheckCommandExitCode() {
     if [ $1 -ne 0 ]
@@ -196,6 +213,8 @@ print_help() {
     echo_log "      Install oneCCL"
     echo_log "  -download_tf <bool_flag>"
     echo_log "      Download TensorFlow"
+    echo_log "  -full_tf <bool_flag>"
+    echo_log "      Enable all TF processing"
     echo_log "  -install_tf <bool_flag>"
     echo_log "      Install TensorFlow"
     echo_log "  -tf_path <path>"
@@ -206,6 +225,8 @@ print_help() {
     echo_log "      Install ITEX"
     echo_log "  -itex_path <path>"
     echo_log "      Install ITEX from path (*.whl)"
+    echo_log "  -full_pt <bool_flag>"
+    echo_log "      Enable all PT processing"
     echo_log "  -download_pt <bool_flag>"
     echo_log "      Download PyTorch"
     echo_log "  -install_pt <bool_flag>"
@@ -242,6 +263,8 @@ print_help() {
     echo_log "      Github username with access to Horovod repo"
     echo_log "  -proxy <url>"
     echo_log "      https proxy"
+    echo_log "  -set_extra_proxy <bool_flag>"
+    echo_log "      set extra proxy"
     echo_log ""
     echo_log "Usage examples:"
     echo_log "  ${BASENAME}.sh "
@@ -279,8 +302,10 @@ parse_arguments() {
     INSTALL_HVD=${DEFAULT_INSTALL_HVD}
     HVD_BRANCH=${DEFAULT_HVD_BRANCH}
 
+    FULL_TF=${DEFAULT_FULL_TF}
     DOWNLOAD_MODEL=${DEFAULT_DOWNLOAD_MODEL}
     RUN_MODEL_TF=${DEFAULT_RUN_MODEL_TF}
+    FULL_PT=${DEFAULT_FULL_PT}
     DOWNLOAD_MODEL_PT=${DEFAULT_DOWNLOAD_MODEL_PT}
     RUN_MODEL_PT=${DEFAULT_RUN_MODEL_PT}
     BATCH_SIZE=${DEFAULT_BATCH_SIZE}
@@ -289,6 +314,7 @@ parse_arguments() {
     PATH_TO_TOKEN_FILE_1S=${DEFAULT_PATH_TO_TOKEN_FILE_1S}
     USERNAME_1S=${DEFAULT_USERNAME_1S}
     PROXY=${DEFAULT_PROXY}
+    SET_EXTRA_PROXY=${DEFAULT_EXTRA_PROXY}
 
     while [ $# -ne 0 ]
     do
@@ -329,6 +355,10 @@ parse_arguments() {
                 CONDA_ENV_NAME=${2}
                 shift
                 ;;
+            "-full_tf")
+                FULL_TF=${2}
+                shift
+                ;;
             "-download_tf")
                 DOWNLOAD_TF=${2}
                 shift
@@ -351,6 +381,10 @@ parse_arguments() {
                 ;;
             "-itex_path")
                 ITEX_PATH=${2}
+                shift
+                ;;
+            "-full_pt")
+                FULL_PT=${2}
                 shift
                 ;;
             "-download_pt")
@@ -425,6 +459,10 @@ parse_arguments() {
                 PROXY="${2}"
                 shift
                 ;;
+            "-set_extra_proxy")
+                SET_EXTRA_PROXY="${2}"
+                shift
+                ;;
             *)
                 echo "$(basename $0): ERROR: unknown option ($1)"
                 print_help
@@ -445,30 +483,45 @@ parse_arguments() {
 
     if [[ ${FULL_SCOPE} = "1" ]]
     then
+        FULL_PT="1"
+        FULL_TF="1"
+    fi
+
+    if [[ ${FULL_PT} = "1" ]]
+    then
+        DOWNLOAD_PT="1"
+        INSTALL_PT="1"
+        DOWNLOAD_IPEX="1"
+        INSTALL_IPEX="1"
+
+        DOWNLOAD_MODEL_PT="1"
+        RUN_MODEL_PT="1"
+    fi
+
+    if [[ ${FULL_TF} = "1" ]]
+    then
+        DOWNLOAD_TF="1"
+        INSTALL_TF="1"
+        DOWNLOAD_ITEX="1"
+        INSTALL_ITEX="1"
+
+        DOWNLOAD_MODEL_TF="1"
+        RUN_MODEL_TF="1"
+    fi
+
+    if [[ ${FULL_SCOPE} = "1" || ${FULL_PT} = "1" || ${FULL_TF} = "1" ]]
+    then
         DOWNLOAD_CCL="1"
         INSTALL_CCL="1"
 
         DOWNLOAD_CONDA="1"
         CREATE_CONDA="1"
 
-        DOWNLOAD_TF="1"
-        INSTALL_TF="1"
-        DOWNLOAD_ITEX="1"
-        INSTALL_ITEX="1"
-
-        DOWNLOAD_PT="1"
-        INSTALL_PT="1"
-        DOWNLOAD_IPEX="1"
-        INSTALL_IPEX="1"
-
         DOWNLOAD_HVD="1"
         INSTALL_HVD="1"
 
-        DOWNLOAD_MODEL_TF="1"
-        RUN_MODEL_TF="1"
-
-        DOWNLOAD_MODEL_PT="1"
-        RUN_MODEL_PT="1"
+        DOWNLOAD_MODEL_TF="${enabled_tf}"
+        RUN_MODEL_TF="${enabled_tf}"
 
         remove_conda
         if [[ -d ${SCRIPT_WORK_DIR} ]]
@@ -521,6 +574,7 @@ parse_arguments() {
     echo_log "REMOVE_CONDA       = ${REMOVE_CONDA}"
     echo_log "CONDA_ENV_NAME     = ${CONDA_ENV_NAME}"
 
+    echo_log "FULL_TF            = ${FULL_TF}"
     echo_log "DOWNLOAD_TF        = ${DOWNLOAD_TF}"
     echo_log "INSTALL_TF         = ${INSTALL_TF}"
     echo_log "TF_PATH            = ${TF_PATH}"
@@ -528,6 +582,7 @@ parse_arguments() {
     echo_log "INSTALL_ITEX       = ${INSTALL_ITEX}"
     echo_log "ITEX_PATH          = ${ITEX_PATH}"
 
+    echo_log "FULL_PT            = ${FULL_PT}"
     echo_log "DOWNLOAD_PT        = ${DOWNLOAD_PT}"
     echo_log "INSTALL_PT         = ${INSTALL_PT}"
     echo_log "PT_PATH            = ${PT_PATH}"
@@ -548,6 +603,7 @@ parse_arguments() {
 
     echo_log "USERNAME_1S        = ${USERNAME_1S}"
     echo_log "PROXY              = ${PROXY}"
+    echo_log "SET_EXTRA_PROXY    = ${SET_EXTRA_PROXY}"
 }
 
 echo_log() {
@@ -1068,6 +1124,8 @@ run_model_pt() {
 }
 
 parse_arguments $@
+
+set_extra_proxy
 
 check_base_env
 
