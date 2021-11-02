@@ -158,6 +158,9 @@ int main(int argc, char *argv[]) {
                     static_cast<int>(check_mult * (i + 1) * (size * (size + 1) / 2))) {
                     check_buf_acc[count * i + id] = -1;
                 }
+                else {
+                    check_buf_acc[count * i + id] = 0;
+                }
             });
         });
         sycl_events.push_back(check_event);

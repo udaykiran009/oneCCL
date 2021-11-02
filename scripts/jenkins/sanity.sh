@@ -207,6 +207,7 @@ function set_mpich_ofi_env() {
     then
         return
     fi
+
     ${CURRENT_WORK_DIR}/scripts/mpich_ofi/mpich_ofi.sh
     MPICH_OFI_INSTALL_PATH=$( cd ${CURRENT_WORK_DIR}/scripts/mpich_ofi/install/usr/mpi/mpich-ofi*/ && pwd -P )
     export LD_LIBRARY_PATH="${MPICH_OFI_INSTALL_PATH}/lib:${LD_LIBRARY_PATH}"
@@ -216,6 +217,27 @@ function set_mpich_ofi_env() {
     export FI_PROVIDER_PATH="${CURRENT_WORK_DIR}/scripts/mpich_ofi/prov"
 }
 
+function set_provider_env() {
+    if [[ "${node_label}" = "ccl_test_ats" ]] &&
+       [[ ${ENABLE_FUNCTIONAL_TESTS} = "yes" ||
+          ${ENABLE_REGULAR_TESTS} = "yes" ||
+          ${ENABLE_REG_TESTS} = "yes" ]]
+    then
+        export FI_PROVIDER=tcp
+    fi
+
+    if [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]]
+    then
+        if [[ "${node_label}" = "ccl_test_ats" ]] &&
+           [[ ${ENABLE_REG_TESTS} = "yes" ]]
+        then
+            export FI_PROVIDER=sockets
+        else
+            export FI_PROVIDER=psm3
+        fi
+    fi
+}
+
 function set_transport_env() {
     if [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]]
     then
@@ -223,6 +245,7 @@ function set_transport_env() {
     else
         export CCL_ATL_TRANSPORT_LIST="ofi mpi"
     fi
+
     if [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]]
     then
         REG_TESTS_TRANSPORT=mpich
@@ -231,20 +254,16 @@ function set_transport_env() {
     fi
 }
 
-function set_provider_env() {
-    if [[ "${node_label}" = "ccl_test_ats" && 
-        ${ENABLE_FUNCTIONAL_TESTS} = "yes" || 
-        ${ENABLE_REGULAR_TESTS} = "yes" ]]
-    then
-        export FI_PROVIDER=tcp
-    fi
+function set_runtime_env() {
     if [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]]
     then
-        export FI_PROVIDER=psm3
+        export CCL_RUNTIME_LIST="level_zero"
+    else
+        export CCL_RUNTIME_LIST="level_zero opencl"
     fi
 }
 
-function enable_default_env()
+function set_functional_tests_env()
 {
     echo "Use default env"
     export CCL_LOG_LEVEL=info
@@ -426,6 +445,13 @@ function set_environment()
 function set_reg_tests_environment()
 {
     export CCL_WORKER_COUNT=1
+    export CCL_LOG_LEVEL=info
+    export I_MPI_DEBUG=12
+    if [[ "${node_label}" = "ccl_test_gen9" ]]
+    then
+        export CCL_WORKER_OFFLOAD=0
+        export CCL_YIELD=sched_yield
+    fi
 }
 
 function set_impi_environment()
@@ -507,11 +533,12 @@ function run_valgrind_check()
 
 function run_reg_tests()
 {
-    set_reg_tests_environment
     if [[ ${ENABLE_REG_TESTS} = "no" ]]
     then
         return
     fi
+
+    set_reg_tests_environment
 
     if [[ ${node_label} == "ccl_test_gen9" ]]
     then
@@ -522,6 +549,7 @@ function run_reg_tests()
     else
         ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode cpu
     fi
+
     log_status_fail=${PIPESTATUS[0]}
     if [ "$log_status_fail" -eq 0 ]
     then
@@ -539,6 +567,7 @@ function run_regular_tests()
     then
         return
     fi
+
     if [[ ${node_label} == "ccl_test_gen9" ]] || [[ ${node_label} == "ccl_test_ats" ]]
     then
         export FI_TCP_IFACE=eno1
@@ -547,6 +576,7 @@ function run_regular_tests()
     else
         ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope ${scope} --cleanup
     fi
+
     log_status_fail=${PIPESTATUS[0]}
     if [ "$log_status_fail" -eq 0 ]
     then
@@ -565,6 +595,7 @@ function run_horovod_tests()
     then
         return
     fi
+
     # IPEX has a dependency for mkl and tbb
     source ${CCL_ONEAPI_DIR}/onemkl/last/mkl/latest/env/vars.sh
     source ${CCL_ONEAPI_DIR}/tbb_oneapi/last/tbb/latest/env/vars.sh
@@ -610,6 +641,7 @@ function run_pytorch_tests()
     then
         return
     fi
+
     pushd ${CURRENT_WORK_DIR}/scripts/framework/pytorch/
     ./pytorch.sh -full 1 -proxy ${US_PROXY} -remove_conda 1\
                  -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
@@ -667,7 +699,9 @@ function run_modulefile_tests()
     then
         return
     fi
+
     set_modulefile_environment
+
     ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope $scope
 
     log_status_fail=${PIPESTATUS[0]}
@@ -688,8 +722,9 @@ function run_functional_tests()
     then
         return
     fi
+
     make_tests
-    enable_default_env
+    set_functional_tests_env
     enable_default_test_scope
 
     ppns="1 2"
@@ -904,6 +939,7 @@ function run_functional_tests()
 
 function clean_nodes() {
     echo "Start cleaning nodes..."
+
     if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
     then
         echo "WARNING: I_MPI_HYDRA_HOST_FILE isn't set, only current node will be cleaned."
@@ -911,6 +947,7 @@ function clean_nodes() {
     else
         using_nodes=`cat ${I_MPI_HYDRA_HOST_FILE}`
     fi
+
     user='sys_ctl'
     exceptions='java\|awk\|bash\|grep\|intelremotemond\|sshd\|grep\|ps\|mc'
     for host_name in ${using_nodes}; do
@@ -948,6 +985,7 @@ set_impi_environment
 parse_arguments "$@"
 set_provider_env
 set_transport_env
+set_runtime_env
 
 set_mpich_ofi_env
 run_horovod_tests

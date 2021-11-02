@@ -90,6 +90,9 @@ int main(int argc, char *argv[]) {
                 if (recv_buf[id] != (i + 1) * (size * (size + 1) / 2)) {
                     check_buf_acc[count * i + id] = -1;
                 }
+                else {
+                    check_buf_acc[count * i + id] = 0;
+                }
             });
         }));
     }

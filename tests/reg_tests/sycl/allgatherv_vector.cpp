@@ -6,7 +6,7 @@
 #include "mpi.h"
 
 int main(int argc, char *argv[]) {
-    std::list<int> elem_counts = { 1, 17, 1024, 1025, 32768, 1048576, 1048579 };
+    std::list<int> elem_counts = { 1, 17, 1024, 1025, 32768, 262145 };
 
     int size;
     int rank;
@@ -17,6 +17,8 @@ int main(int argc, char *argv[]) {
     if (argc > 1) {
         use_inplace = atoi(argv[1]);
     }
+
+    cout << "use_inplace: " << use_inplace << "\n";
 
     sycl::queue q;
     if (!q.get_device().is_gpu()) {
@@ -53,6 +55,8 @@ int main(int argc, char *argv[]) {
     auto stream = ccl::create_stream(q);
 
     for (auto elem_count : elem_counts) {
+        cout << "check elem_count: " << elem_count << "\n";
+
         /* create buffers */
         std::vector<int *> recv_bufs;
         for (int i = 0; i < size; ++i) {
@@ -68,6 +72,10 @@ int main(int argc, char *argv[]) {
 
         /* fill recv buffers */
         for (int i = 0; i < size; ++i) {
+            if (use_inplace && (i == rank)) {
+                /* buffer will be filled with send values in separate kernel below */
+                continue;
+            }
             events.push_back(q.submit([&](auto &h) {
                 h.parallel_for(elem_count, [=, rb = recv_bufs[i]](auto id) {
                     rb[id] = -1;
@@ -75,7 +83,7 @@ int main(int argc, char *argv[]) {
             }));
         }
 
-        /* fill send buffer and check buffer */
+        /* fill send buffer and expected buffer */
         events.push_back(q.submit([&](auto &h) {
             sycl::accessor expected_buf_acc(expected_buf, h, sycl::write_only);
             h.parallel_for(elem_count, [=, rnk = rank, sz = size](auto id) {
@@ -133,6 +141,10 @@ int main(int argc, char *argv[]) {
 
         if (!use_inplace) {
             sycl::free(send_buf, q);
+        }
+
+        if (!handle_exception(q)) {
+            return -1;
         }
     } // for elem_counts
 

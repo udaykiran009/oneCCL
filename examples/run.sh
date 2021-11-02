@@ -128,6 +128,14 @@ check_environment()
     else
         worker_count="1"
     fi
+
+    if [[ ! -z ${CCL_RUNTIME_LIST} ]]
+    then
+        allowed_runtime_list="${CCL_RUNTIME_LIST}"
+    else
+        allowed_runtime_list="level_zero opencl"
+    fi
+    allowed_runtime_list+=" none"
 }
 
 run_benchmark()
@@ -440,6 +448,11 @@ run()
 
                             for runtime in $runtime_list
                             do
+                                if [[ "${allowed_runtime_list}" != *"${runtime}"* ]]
+                                then
+                                    continue
+                                fi
+
                                 ccl_runtime_env="${ccl_transport_env}"
                                 if [ "$runtime" != "none" ]
                                 then
@@ -529,6 +542,11 @@ run()
 
                             for runtime in $runtime_list
                             do
+                                if [[ "${allowed_runtime_list}" != *"${runtime}"* ]]
+                                then
+                                    continue
+                                fi
+
                                 if [ "$selector" == "cpu" ] && [ "$runtime" == "opencl" ] && [ "$usm_list" != "default" ];
                                 then
                                     # MLSL-856

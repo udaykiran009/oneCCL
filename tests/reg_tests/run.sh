@@ -61,10 +61,18 @@ is_exclude_test() {
         do
             prop="$(echo ${item} | awk -F "=" '{print $1}')"
             value="$(echo ${item} | awk -F "=" '{print $2}')"
-            if [[ ${prop} = "platform" ]]; then
-                if [[ ${value} = *"${PLATFORM_HW_DISCRETE_GPU}"* || ${value} = "*" ]]; then is_exclude_platform=1; fi
-            elif [[ ${prop} = "transport" ]]; then
-                if [[ ${value} = *"${TRANSPORT}"* || ${value} = "*" ]]; then is_exclude_transport=1; fi
+            if [[ ${prop} = "platform" ]]
+            then
+                if [[ ${value} = *"${PLATFORM_HW_DISCRETE_GPU}"* || ${value} = "*" ]]
+                then
+                    is_exclude_platform=1
+                fi
+            elif [[ ${prop} = "transport" ]]
+            then
+                if [[ ${value} = *"${TRANSPORT}"* || ${value} = "*" ]]
+                then
+                    is_exclude_transport=1
+                fi
             else
                 echo "WARNING: unknown excluded property (${prop})"
             fi
