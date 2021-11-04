@@ -18,14 +18,7 @@
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/ikvs_wrapper.h"
 
 ccl_comm_internal::ccl_comm_internal(int rank, int size, std::shared_ptr<atl_base_comm> atl)
-        : ccl_comm_internal(rank, size, atl->get_rank2rank_map(), atl) {}
-
-ccl_comm_internal::ccl_comm_internal(int rank,
-                                     int size,
-                                     ccl_rank2rank_map&& rank_map,
-                                     std::shared_ptr<atl_base_comm> atl)
         : atl(atl),
-          m_local2global_map(std::move(rank_map)),
           m_dtree(size, rank) {
     reset(rank, size);
 }
@@ -33,8 +26,7 @@ ccl_comm_internal::ccl_comm_internal(int rank,
 ccl_comm_internal::ccl_comm_internal(const std::vector<int>& local_ranks,
                                      int comm_size,
                                      std::shared_ptr<ccl::kvs_interface> kvs_instance)
-        : m_local2global_map(),
-          m_dtree(local_ranks.size(), comm_size) {
+        : m_dtree(local_ranks.size(), comm_size) {
     std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs_instance));
 
     atl = atl_comm_manager::create_comm(comm_size, local_ranks, kvs_wrapper);
@@ -44,8 +36,7 @@ ccl_comm_internal::ccl_comm_internal(const std::vector<int>& local_ranks,
 
 //TODO: will fix it after OFI refactoring
 int ccl_comm::get_global_rank(int rank, bool only_global) const {
-    // TODO: move map to ccl_comm?
-    const auto& local2global_map = comm_impl->get_local2global_map();
+    const auto& local2global_map = get_local2global_map();
 
     if (local2global_map.empty() || !only_global) {
         // global comm and its copies do not have entries in the map
@@ -65,7 +56,7 @@ int ccl_comm::get_global_rank(int rank, bool only_global) const {
 }
 
 int ccl_comm::get_rank_from_global(int global_rank) const {
-    const auto& local2global_map = comm_impl->get_local2global_map();
+    const auto& local2global_map = get_local2global_map();
 
     if (local2global_map.empty()) {
         // global comm and its copies do not have entries in the map
@@ -153,13 +144,14 @@ ccl_comm::ccl_comm(int rank,
                    std::shared_ptr<atl_base_comm> atl,
                    bool share_resources,
                    bool is_sub_communicator)
-        : comm_impl(std::make_shared<ccl_comm_internal>(rank, size, atl->get_rank2rank_map(), atl)),
+        : comm_impl(std::make_shared<ccl_comm_internal>(rank, size, atl)),
           device(ccl::device_index_type(ccl::unused_index_value,
                                         ccl::unused_index_value,
                                         ccl::unused_index_value)),
           comm_attr(create_comm_split_attr()),
           comm_rank(rank),
           comm_size(size),
+          m_local2global_map(atl->get_rank2rank_map()),
           comm_id(std::unique_ptr<ccl_comm_id_storage::comm_id>(
               new ccl_comm_id_storage::comm_id(std::move(id)))),
           next_sched_id_internal(ccl_comm_internal::max_sched_count / 2),
@@ -170,33 +162,6 @@ ccl_comm::ccl_comm(int rank,
 
     if (!is_sub_communicator) {
         create_sub_comms(comm_impl.get()->atl);
-    }
-}
-
-ccl_comm::ccl_comm(int rank,
-                   int size,
-                   ccl_comm_id_storage::comm_id&& id,
-                   ccl_rank2rank_map&& rank_map,
-                   std::shared_ptr<atl_base_comm> atl,
-                   bool share_resources,
-                   bool is_sub_communicator)
-        : comm_impl(std::make_shared<ccl_comm_internal>(rank, size, std::move(rank_map), atl)),
-          device(ccl::device_index_type(ccl::unused_index_value,
-                                        ccl::unused_index_value,
-                                        ccl::unused_index_value)),
-          comm_attr(create_comm_split_attr()),
-          comm_rank(rank),
-          comm_size(size),
-          comm_id(std::unique_ptr<ccl_comm_id_storage::comm_id>(
-              new ccl_comm_id_storage::comm_id(std::move(id)))),
-          next_sched_id_internal(ccl_comm_internal::max_sched_count / 2),
-          next_sched_id_external(0) {
-    if (!share_resources) {
-        allocate_resources();
-    }
-
-    if (!is_sub_communicator) {
-        create_sub_comms(get_atl_comm());
     }
 }
 
@@ -255,7 +220,6 @@ ccl_comm* ccl_comm::create_with_color(int color,
     ccl_comm* comm = new ccl_comm(atl_comm->get_rank(),
                                   atl_comm->get_size(),
                                   comm_ids->acquire(),
-                                  atl_comm->get_rank2rank_map(),
                                   atl_comm,
                                   share_resources,
                                   true);

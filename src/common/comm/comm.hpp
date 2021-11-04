@@ -59,11 +59,6 @@ public:
 
     ccl_comm_internal(int rank, int size, std::shared_ptr<atl_base_comm> atl);
 
-    ccl_comm_internal(int rank,
-                      int size,
-                      ccl_rank2rank_map&& ranks,
-                      std::shared_ptr<atl_base_comm> atl);
-
     //TODO non-implemented
     //1) cluster_devices_count (devices 1000) -> (processes 10)
     //2) blocking until all thread -> calls ccl_comm
@@ -102,10 +97,6 @@ public:
         m_pof2 = ccl_pof2(m_size);
     }
 
-    const ccl_rank2rank_map& get_local2global_map() {
-        return m_local2global_map;
-    }
-
     /**
      * Maximum available number of active communicators
      */
@@ -124,7 +115,6 @@ private:
     int m_size;
     int m_pof2;
 
-    ccl_rank2rank_map m_local2global_map{};
     ccl_double_tree m_dtree;
 };
 
@@ -207,14 +197,6 @@ public:
              bool share_resources = false,
              bool is_sub_communicator = false);
 
-    ccl_comm(int rank,
-             int size,
-             ccl_comm_id_storage::comm_id&& id,
-             ccl_rank2rank_map&& ranks,
-             std::shared_ptr<atl_base_comm> atl,
-             bool share_resources = false,
-             bool is_sub_communicator = false);
-
     //TODO non-implemented
     //1) cluster_devices_count (devices 1000) -> (processes 10)
     //2) blocking until all thread -> calls ccl_comm
@@ -270,6 +252,10 @@ public:
 
     int size() const override {
         return comm_size;
+    }
+
+    const ccl_rank2rank_map& get_local2global_map() const {
+        return m_local2global_map;
     }
 
     int pof2() const noexcept {
@@ -352,6 +338,8 @@ private:
     // allows to get them without going through the shared_ptr inderection.
     int comm_rank;
     int comm_size;
+
+    ccl_rank2rank_map m_local2global_map{};
 
     // comm_id is not default constructible but ccl_comm is, so use unique_ptr here
     std::unique_ptr<ccl_comm_id_storage::comm_id> comm_id;
