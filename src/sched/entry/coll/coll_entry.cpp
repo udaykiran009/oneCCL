@@ -20,6 +20,7 @@ void coll_entry::start() {
     }
 
     LOG_DEBUG("starting COLL entry: ", this, ", subsched: ", coll_sched.get());
+    // TODO: add eager execution for subsched
     auto req = sched->start_subsched(coll_sched.get());
     LOG_DEBUG("started COLL entry: ", this, ", subsched ", coll_sched.get(), ", req ", req);
 

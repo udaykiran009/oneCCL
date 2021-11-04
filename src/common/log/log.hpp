@@ -27,7 +27,7 @@ std::ostream& operator<<(std::ostream& os, const ccl::datatype& dt);
         ptr; \
     })
 
-constexpr size_t LOGGER_BUFFER_SIZE = 20480; //TODO
+constexpr size_t LOGGER_BUFFER_SIZE = 1024 * 1024;
 
 constexpr const char* get_str_end(const char* str) {
     return *str ? get_str_end(str + 1) : str;

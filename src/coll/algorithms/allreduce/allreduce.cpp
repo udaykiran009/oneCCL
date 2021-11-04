@@ -400,7 +400,7 @@ ccl::status ccl_coll_build_nreduce_allreduce(ccl_sched* sched,
     std::vector<size_t> segment_sizes;
     ccl_get_segment_sizes(dtype_size, count, segment_size, segment_sizes);
 
-    size_t tmp_buf_size = *segment_sizes.rbegin() * comm_size * dtype_size * 2;
+    size_t tmp_buf_size = *segment_sizes.rbegin() * comm_size * dtype_size;
     ccl_buffer tmp_buf = sched->alloc_buffer({ tmp_buf_size, send_buf });
 
     size_t seg_offset = 0;
@@ -410,7 +410,7 @@ ccl::status ccl_coll_build_nreduce_allreduce(ccl_sched* sched,
 
         ccl_buffer seg_send_buf = send_buf + seg_offset;
         ccl_buffer seg_recv_buf = recv_buf + seg_offset;
-        ccl_buffer seg_tmp_buf = tmp_buf + (seg_idx % 2) * (tmp_buf_size / 2);
+        ccl_buffer seg_tmp_buf = tmp_buf;
 
         seg_offset += seg_size * dtype_size;
 
@@ -443,17 +443,13 @@ ccl::status ccl_coll_build_nreduce_allreduce(ccl_sched* sched,
 
         // reduce-scatter
         for (int idx = 1; idx < comm_size; idx++) {
-            int dst = (comm_rank - idx + comm_size) % comm_size;
-
             // send part of buffer to other rank
+            int dst = (comm_rank - idx + comm_size) % comm_size;
             entry_factory::create<send_entry>(
                 sched, seg_send_buf + elem_offsets[dst], elem_counts[dst], dtype, dst, comm);
-        }
-
-        for (int idx = 1; idx < comm_size; idx++) {
-            int src = (comm_rank + idx) % comm_size;
 
             // recv part of buffer from other rank and perform reduce
+            int src = (comm_rank + idx) % comm_size;
             entry_factory::create<recv_reduce_entry>(sched,
                                                      reduce_buf,
                                                      elem_count,
@@ -504,6 +500,8 @@ ccl::status ccl_coll_build_nreduce_allreduce(ccl_sched* sched,
                                                      dtype,
                                                      comm));
         }
+
+        sched->add_barrier();
     }
 
     return status;
