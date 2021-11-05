@@ -118,6 +118,8 @@ bool kernel_timer::print(bool delay) const {
     ss << "  preparation: " << convert_output(kernel_submit_time - operation_start_time)
        << std::endl;
     ss << "    deps handling: " << convert_output(deps_end_time - deps_start_time) << std::endl;
+    ss << "    kernel preparation: " << convert_output(kernel_submit_time - deps_end_time)
+       << std::endl;
     ss << "  device scheduling: " << convert_output(kernel_time.first - kernel_submit_time)
        << std::endl;
     ss << "  device execution: " << convert_output(kernel_time.second - kernel_time.first)
