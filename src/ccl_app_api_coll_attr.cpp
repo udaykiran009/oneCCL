@@ -32,10 +32,6 @@ namespace v1 {
 #define COMMON_API_FORCE_INSTANTIATION(class_name) \
     API_FORCE_INSTANTIATION( \
         class_name, operation_attr_id, operation_attr_id::version, ccl::library_version) \
-    /*API_FORCE_INSTANTIATION(*/ \
-    /*class_name, operation_attr_id, operation_attr_id::prologue_fn, ccl::prologue_fn)*/ \
-    /*API_FORCE_INSTANTIATION(*/ \
-    /*class_name, operation_attr_id, operation_attr_id::epilogue_fn, ccl::epilogue_fn)*/ \
 \
     API_FORCE_INSTANTIATION_SET( \
         class_name, operation_attr_id, operation_attr_id::priority, size_t) \

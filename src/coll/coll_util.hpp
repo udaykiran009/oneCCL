@@ -1,9 +1,16 @@
 #pragma once
 
 #include "common/global/global.hpp"
+#include "sched/entry/coll/coll_entry_param.hpp"
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 #include "sched/entry/ze/ze_handle_exchange_entry.hpp"
+#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
 namespace ccl {
+
+void add_coll_entry(ccl_sched* sched, const ccl_coll_entry_param& param);
+
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 
 void add_wait_events(ccl_sched* sched, const std::vector<ze_event_handle_t>& wait_events);
 void add_signal_event(ccl_sched* sched, ze_event_handle_t signal_event);
@@ -26,5 +33,7 @@ void add_handle_exchange(ccl_sched* sched,
                          int skip_rank = ccl_comm::invalid_rank,
                          ze_event_pool_handle_t pool = nullptr,
                          size_t event_idx = 0);
+
+#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
 } // namespace ccl

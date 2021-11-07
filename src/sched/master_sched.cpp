@@ -282,7 +282,7 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
         sched->alloc_buffers_for_pre_post_copy();
         LOG_DEBUG("didn't find sched, create new one ",
                   sched,
-                  ", type ",
+                  ", coll_type ",
                   ccl_coll_type_to_str(sched->coll_param.ctype));
     }
     else {

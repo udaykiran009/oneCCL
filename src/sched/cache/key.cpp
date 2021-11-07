@@ -21,8 +21,6 @@ void ccl_sched_key::set(const ccl_coll_param& param, const ccl_coll_attr& attr) 
         memset((void*)&f, 0, sizeof(ccl_sched_key_inner_fields));
     }
 
-    f.prologue_fn = attr.prologue_fn;
-    f.epilogue_fn = attr.epilogue_fn;
     f.reduction_fn = attr.reduction_fn;
     match_id = attr.match_id;
 
@@ -73,8 +71,7 @@ void ccl_sched_key::set(const ccl_coll_param& param, const ccl_coll_attr& attr) 
 bool ccl_sched_key::check(const ccl_coll_param& param, const ccl_coll_attr& attr) const {
     bool result = true;
 
-    result &= (attr.prologue_fn == f.prologue_fn || attr.epilogue_fn == f.epilogue_fn ||
-               attr.reduction_fn == f.reduction_fn || param.ctype == f.ctype ||
+    result &= (attr.reduction_fn == f.reduction_fn || param.ctype == f.ctype ||
                param.dtype == f.dtype || param.comm == f.comm);
 
     switch (f.ctype) {
@@ -154,10 +151,6 @@ void ccl_sched_key::print() const {
               f.root,
               ", comm ",
               f.comm,
-              ", prologue_fn ",
-              (void*)f.prologue_fn,
-              ", epilogue_fn ",
-              (void*)f.epilogue_fn,
               ", reduction_fn ",
               (void*)f.reduction_fn,
               ", vec1.size ",
@@ -182,8 +175,8 @@ size_t ccl_sched_key_hasher::operator()(const ccl_sched_key& k) const {
                       utils::enum_to_underlying(k.f.itype) +
                       utils::enum_to_underlying(k.f.reduction) + k.f.count1 + k.f.count2 +
                       k.f.root + (size_t)k.f.buf1 + (size_t)k.f.buf2 + (size_t)k.f.count3 +
-                      (size_t)k.f.count4 + (size_t)k.f.comm + (size_t)k.f.prologue_fn +
-                      (size_t)k.f.epilogue_fn + (size_t)k.f.reduction_fn + vec1_sum + vec2_sum;
+                      (size_t)k.f.count4 + (size_t)k.f.comm + (size_t)k.f.reduction_fn + vec1_sum +
+                      vec2_sum;
     }
 
     const_cast<ccl_sched_key&>(k).set_hasher_result(hash_value);

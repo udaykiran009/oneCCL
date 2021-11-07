@@ -14,7 +14,6 @@ excluded=".git
 ./doc/cclEULA.txt
 ./doc/copyright
 ./examples/run.sh
-./internal/examples
 ./deps/hwloc/update_hwloc.sh
 ./deps/ofi/update_ofi.sh
 ./ccl_public

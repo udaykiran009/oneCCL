@@ -6,12 +6,9 @@
  */
 
 #include "coll/algorithms/algorithms.hpp"
-#include "common/comm/comm.hpp"
-#include "sched/entry/coll/coll_entry_helper.hpp"
-#include "sched/entry/factory/entry_factory.hpp"
-#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 #include "coll/coll_util.hpp"
-#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
+#include "common/comm/comm.hpp"
+#include "sched/entry/factory/entry_factory.hpp"
 
 /* An implementation of Rabenseifner's reduce algorithm (see
    http://www.hlrs.de/mpi/myreduce.html).

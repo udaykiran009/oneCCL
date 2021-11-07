@@ -13,64 +13,72 @@ public:
     subsched_entry() = delete;
     subsched_entry(ccl_sched* sched,
                    ccl_op_id_t op_id,
-                   std::function<void(ccl_sched*)> fill_fn,
-                   const char* subsched_name = nullptr)
+                   std::function<void(ccl_sched*)> build_fn,
+                   const char* subsched_name)
             : sched_entry(sched),
-              fill_fn(fill_fn),
+              build_fn(build_fn),
               op_id(op_id),
-              subsched_name(subsched_name) {
-        if (subsched_name) {
-            LOG_DEBUG("subsched name: ", subsched_name);
-        }
-
-        subsched.reset(new ccl_extra_sched({ sched->sched_id, sched->coll_param }));
-
-        inherit_params(subsched.get(), sched, sched->coll_param.ctype);
-
-        subsched->coll_param.ctype = ccl_coll_undefined;
-        subsched->set_op_id(this->op_id);
-
-        fill_fn(subsched.get());
+              subsched_name(subsched_name),
+              build_sched_id(sched->sched_id) {
+        LOG_DEBUG("subsched name: ", subsched_name ? subsched_name : "<empty>");
     }
 
-    static void inherit_params(ccl_sched* sched,
-                               const ccl_sched* parent_sched,
-                               ccl_coll_type ctype) {
-        if (sched == parent_sched) {
+    void set_params() {
+        subsched->set_op_id(op_id);
+
+        if (subsched.get() == sched) {
             return;
         }
 
-        if (ctype == ccl_coll_allreduce || ctype == ccl_coll_reduce ||
-            ctype == ccl_coll_reduce_scatter) {
-            sched->coll_attr.reduction_fn = parent_sched->coll_attr.reduction_fn;
-            /* required to create ccl_fn_context in reduce/recv_reduce entries */
-            sched->coll_attr.match_id = parent_sched->coll_attr.match_id;
-        }
-        sched->coll_attr.to_cache = parent_sched->coll_attr.to_cache;
-
+        subsched->coll_attr.reduction_fn = sched->coll_attr.reduction_fn;
+        subsched->coll_attr.priority = sched->coll_attr.priority;
+        subsched->coll_attr.to_cache = sched->coll_attr.to_cache;
+        subsched->coll_attr.match_id = sched->coll_attr.match_id;
 #ifdef CCL_ENABLE_SYCL
-        sched->coll_attr.is_sycl_buf = parent_sched->coll_attr.is_sycl_buf;
+        subsched->coll_attr.is_sycl_buf = sched->coll_attr.is_sycl_buf;
 #endif // CCL_ENABLE_SYCL
 
-        sched->flow_control.set_max_credits(parent_sched->flow_control.get_max_credits());
+        subsched->flow_control.set_max_credits(sched->flow_control.get_max_credits());
     }
 
-    ~subsched_entry() {
-        subsched.reset();
+    void build_subsched(const ccl_sched_create_param& create_param,
+                        ccl_master_sched* master_sched = nullptr) {
+        if (subsched) {
+            return;
+        }
+
+        subsched.reset(new ccl_extra_sched(create_param, master_sched));
+        set_params();
+        build_fn(subsched.get());
     }
 
     void start() override {
+        build_subsched({ build_sched_id, sched->coll_param });
+
         subsched->renew();
+        subsched->set_counter(1);
         subsched->bin = sched->bin;
         subsched->queue = sched->queue;
+
+        /* this makes effects on creation of tags in atl entries */
         subsched->sched_id = sched->sched_id;
+        subsched->coll_param.comm = sched->coll_param.comm;
+
+        if (ccl::global_data::env().sched_dump) {
+            std::stringstream ostream;
+            subsched->dump(ostream);
+            logger.info(ostream.str());
+        }
+
         status = ccl_sched_entry_status_started;
+        update();
     }
 
     void update() override {
         subsched->do_progress();
         if (subsched->start_idx == subsched->entries.size()) {
             status = ccl_sched_entry_status_complete;
+            ((ccl_sched*)subsched.get())->complete();
         }
     }
 
@@ -79,22 +87,28 @@ public:
     }
 
     ccl_sched* get_subsched() {
+        build_subsched({ build_sched_id, sched->coll_param });
         return subsched.get();
     }
 
 protected:
     void dump_detail(std::stringstream& str) const override {
-        ccl_logger::format(str, "content:\n");
+        if (!subsched) {
+            return;
+        }
 
+        ccl_logger::format(str, "content:\n");
         for (size_t idx = 0; idx < subsched->entries.size(); ++idx) {
             ccl_logger::format(str, "\t");
             subsched->entries[idx]->dump(str, idx);
         }
     }
 
-private:
     std::unique_ptr<ccl_extra_sched> subsched;
-    std::function<void(ccl_sched*)> fill_fn;
+
+private:
+    std::function<void(ccl_sched*)> build_fn;
     ccl_op_id_t op_id;
     std::string subsched_name;
+    ccl_sched_id_t build_sched_id;
 };

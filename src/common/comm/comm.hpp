@@ -59,16 +59,6 @@ public:
 
     ccl_comm_internal(int rank, int size, std::shared_ptr<atl_base_comm> atl);
 
-    //TODO non-implemented
-    //1) cluster_devices_count (devices 1000) -> (processes 10)
-    //2) blocking until all thread -> calls ccl_comm
-    //3) return 'thread_count'
-
-    // ccl_comm( {0,1,2,3...}, 1000, kvs )
-    // from 20 processes from ranks 0,1,2,3. Each rank contains 10 threads
-    // communicator: size in {20} and ranks in {0..19}
-    // communicator: return threads count in process {10}
-    // communicator: return devices counts per thread in process
     ccl_comm_internal(const std::vector<int>& local_ranks,
                       int comm_size,
                       std::shared_ptr<ccl::kvs_interface> kvs_instance);
@@ -151,16 +141,6 @@ public:
         return comm_attr;
     }
 
-    ccl::group_split_type get_topology_type() const override {
-        CCL_THROW(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
-        return ccl::group_split_type::undetermined;
-    }
-
-    ccl::device_topology_type get_topology_class() const override {
-        CCL_THROW(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
-        return ccl::device_topology_type::undetermined;
-    }
-
     ccl::communicator_interface_ptr split(const ccl::comm_split_attr& attr) override;
 
     // collectives operation declarations
@@ -197,16 +177,6 @@ public:
              bool share_resources = false,
              bool is_sub_communicator = false);
 
-    //TODO non-implemented
-    //1) cluster_devices_count (devices 1000) -> (processes 10)
-    //2) blocking until all thread -> calls ccl_comm
-    //3) return 'thread_count'
-
-    // ccl_comm( {0,1,2,3...}, 1000, kvs )
-    // from 20 processes from ranks 0,1,2,3. Each rank contains 10 threads
-    // communicator: size in {20} and ranks in {0..19}
-    // communicator: return threads count in process {10}
-    // communicator: return devices counts per thread in process
     ccl_comm(const std::vector<int>& local_ranks,
              int comm_size,
              std::shared_ptr<ccl::kvs_interface> kvs_instance,

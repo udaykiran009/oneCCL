@@ -1,9 +1,9 @@
 #pragma once
+
 #include <cstddef>
 #include <memory>
 
 #include "oneapi/ccl/types.hpp"
-#include "supported_topologies.hpp"
 #include "communicator_traits.hpp"
 #include "atl/atl_base_comm.hpp"
 
@@ -29,8 +29,6 @@ struct communicator_interface_dispatcher {
     virtual device_t get_device() const = 0;
     virtual context_t get_context() const = 0;
     virtual const comm_split_attr& get_comm_split_attr() const = 0;
-    virtual group_split_type get_topology_type() const = 0;
-    virtual device_topology_type get_topology_class() const = 0;
 
     // create communicator for device & cpu types (from device class)
     template <class DeviceType,
@@ -38,14 +36,12 @@ struct communicator_interface_dispatcher {
               typename std::enable_if<not std::is_same<typename std::remove_cv<DeviceType>::type,
                                                        device_index_type>::value,
                                       int>::type = 0>
-    static communicator_interface_ptr create_communicator_impl(
-        const DeviceType& device,
-        ContextType context,
-        size_t thread_idx,
-        size_t process_idx,
-        const comm_split_attr& attr,
-        std::shared_ptr<atl_base_comm> atl,
-        ccl::group_split_type preferred_topology_group = ccl::group_split_type::undetermined);
+    static communicator_interface_ptr create_communicator_impl(const DeviceType& device,
+                                                               ContextType context,
+                                                               size_t thread_idx,
+                                                               size_t process_idx,
+                                                               const comm_split_attr& attr,
+                                                               std::shared_ptr<atl_base_comm> atl);
 
     // create communicator for device & cpu types (from device index)
     template <class DeviceType,
@@ -53,14 +49,12 @@ struct communicator_interface_dispatcher {
               typename std::enable_if<
                   std::is_same<typename std::remove_cv<DeviceType>::type, device_index_type>::value,
                   int>::type = 0>
-    static communicator_interface_ptr create_communicator_impl(
-        DeviceType device_id,
-        ContextType ctx,
-        size_t thread_idx,
-        size_t process_idx,
-        const comm_split_attr& attr,
-        std::shared_ptr<atl_base_comm> atl,
-        ccl::group_split_type preferred_topology_group = ccl::group_split_type::undetermined);
+    static communicator_interface_ptr create_communicator_impl(DeviceType device_id,
+                                                               ContextType ctx,
+                                                               size_t thread_idx,
+                                                               size_t process_idx,
+                                                               const comm_split_attr& attr,
+                                                               std::shared_ptr<atl_base_comm> atl);
 
     // create communicator for host
     static communicator_interface_ptr create_communicator_impl();
@@ -81,7 +75,6 @@ private:
         size_t thread_idx,
         size_t process_idx,
         const comm_split_attr& attr,
-        std::shared_ptr<atl_base_comm> atl,
-        ccl::group_split_type preferred_topology_group = ccl::group_split_type::undetermined);
+        std::shared_ptr<atl_base_comm> atl);
 };
 } // namespace ccl

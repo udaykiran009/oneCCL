@@ -114,7 +114,6 @@ env_data::env_data()
           allreduce_nreduce_segment_size(CCL_ENV_SIZET_NOT_SPECIFIED),
 
           alltoall_scatter_max_ops(CCL_ENV_SIZET_NOT_SPECIFIED),
-          alltoall_scatter_plain(0),
 
 #ifdef CCL_ENABLE_SYCL
           kernel_path(),
@@ -278,7 +277,6 @@ void env_data::parse() {
     env_2_type(CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE, (size_t&)allreduce_nreduce_segment_size);
 
     env_2_type(CCL_ALLTOALL_SCATTER_MAX_OPS, (size_t&)alltoall_scatter_max_ops);
-    env_2_type(CCL_ALLTOALL_SCATTER_PLAIN, alltoall_scatter_plain);
 
 #ifdef CCL_ENABLE_SYCL
     env_2_type(CCL_KERNEL_PATH, kernel_path);
@@ -491,7 +489,6 @@ void env_data::print(int rank) {
              (alltoall_scatter_max_ops != CCL_ENV_SIZET_NOT_SPECIFIED)
                  ? std::to_string(alltoall_scatter_max_ops)
                  : CCL_ENV_STR_NOT_SPECIFIED);
-    LOG_INFO(CCL_ALLTOALL_SCATTER_PLAIN, ": ", alltoall_scatter_plain);
 
 #ifdef CCL_ENABLE_SYCL
     LOG_INFO(

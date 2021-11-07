@@ -186,12 +186,14 @@ function set_external_env() {
     else
         export scope="all"
     fi
+
     if [[ ${BUILDER_NAME} == "ccl-nightly" ]] || [[ ${BUILDER_NAME} == "ccl-weekly" ]]
     then
         export valgrind_scope="regular"
     else
         export valgrind_scope="short"
     fi
+
     if [ -n "${TESTING_ENVIRONMENT}" ]
     then
         echo "TESTING_ENVIRONMENT is " ${TESTING_ENVIRONMENT}
@@ -255,7 +257,9 @@ function set_transport_env() {
 }
 
 function set_runtime_env() {
-    if [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]]
+    if [[ ${scope} = "pr" ]] ||
+       [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]] ||
+       [[ "${node_label}" = "ccl_test_ats" ]]
     then
         export CCL_RUNTIME_LIST="level_zero"
     else
@@ -281,9 +285,9 @@ function set_functional_tests_env()
     fi
 }
 
-function enable_default_test_scope()
+function set_functional_tests_scope()
 {
-    echo "Use default test scope"
+    echo "Set default func tests scope"
     export CCL_TEST_DATA_TYPE=1
     export CCL_TEST_SIZE_TYPE=1
     export CCL_TEST_BUF_COUNT_TYPE=1
@@ -294,11 +298,18 @@ function enable_default_test_scope()
     export CCL_TEST_CACHE_TYPE=1
     export CCL_TEST_SYNC_TYPE=0
     export CCL_TEST_REDUCTION_TYPE=0
+
+    if [[ ${node_label} == "ccl_test_gen9" ]] || [[ ${node_label} == "ccl_test_ats" ]]
+    then
+        export CCL_TEST_DYNAMIC_POINTER=0
+    else
+        export CCL_TEST_DYNAMIC_POINTER=1
+    fi
 }
 
-function enable_unordered_coll_test_scope()
+function set_unordered_coll_test_scope()
 {
-    echo "Use unordered coll test scope"
+    echo "Set unordered coll tests scope"
     export CCL_TEST_DATA_TYPE=0
     export CCL_TEST_SIZE_TYPE=1
     export CCL_TEST_BUF_COUNT_TYPE=1
@@ -725,12 +736,12 @@ function run_functional_tests()
 
     make_tests
     set_functional_tests_env
-    enable_default_test_scope
+    set_functional_tests_scope
 
     ppns="1 2"
     allgatherv_algos="naive flat ring"
     allreduce_algos="rabenseifner nreduce ring double_tree recursive_doubling"
-    alltoall_algos="naive scatter scatter_barrier"
+    alltoall_algos="naive scatter"
     alltoallv_algos=${alltoall_algos}
     bcast_algos="ring double_tree naive"
     reduce_algos="rabenseifner tree"
@@ -810,7 +821,7 @@ function run_functional_tests()
 
                 for algo in ${alltoall_algos}
                 do
-                    if [ "$algo" == "scatter_barrier" ];
+                    if [ "$algo" == "scatter" ];
                     then
                         CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
                             CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"_chunked
@@ -820,7 +831,7 @@ function run_functional_tests()
 
                 for algo in ${alltoallv_algos}
                 do
-                    if [ "$algo" == "scatter_barrier" ];
+                    if [ "$algo" == "scatter" ];
                     then
                         CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
                             CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"_chunked
@@ -881,7 +892,7 @@ function run_functional_tests()
 
                 for algo in ${alltoall_algos}
                 do
-                    if [ "$algo" == "scatter_barrier" ];
+                    if [ "$algo" == "scatter" ];
                     then
                         CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
                             CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"_chunked
@@ -891,7 +902,7 @@ function run_functional_tests()
 
                 for algo in ${alltoallv_algos}
                 do
-                    if [ "$algo" == "scatter_barrier" ];
+                    if [ "$algo" == "scatter" ];
                     then
                         CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
                             CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"_chunked
@@ -912,16 +923,13 @@ function run_functional_tests()
                 CCL_ATL_TRANSPORT=ofi CCL_PRIORITY=direct ctest -VV -C default
                ;;
             dynamic_pointer_mode )
-                # TODO: disable dynamic_pointer_mode for L0 based ops
-                # CCL_ATL_TRANSPORT=mpi CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C default
-                # CCL_ATL_TRANSPORT=ofi CCL_TEST_DYNAMIC_POINTER=1 ctest -VV -C default
                 for transport in ${CCL_ATL_TRANSPORT_LIST}
                 do
                     CCL_ATL_TRANSPORT=${transport} ctest -VV -C default
                 done
                ;;
             unordered_coll_mode )
-                enable_unordered_coll_test_scope
+                set_unordered_coll_test_scope
                 CCL_ATL_TRANSPORT=ofi CCL_UNORDERED_COLL=1 ctest -VV -C default
                ;;
             fusion_mode )

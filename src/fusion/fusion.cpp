@@ -102,8 +102,7 @@ bool ccl_fusion_manager::can_fuse(ccl_master_sched* sched) {
         return false;
     }
 
-    if (sched->coll_attr.prologue_fn || sched->coll_attr.epilogue_fn ||
-        sched->coll_attr.reduction_fn || sched->coll_attr.synchronous) {
+    if (sched->coll_attr.reduction_fn || sched->coll_attr.synchronous) {
         LOG_DEBUG("can't fuse due to unexpected fields in coll_attr");
         return false;
     }

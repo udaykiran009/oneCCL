@@ -1,11 +1,8 @@
 #include "coll/algorithms/algorithms.hpp"
+#include "coll/coll_util.hpp"
 #include "common/comm/comm.hpp"
-#include "sched/entry/coll/coll_entry_helper.hpp"
 #include "sched/entry/factory/chunked_entry_factory.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
-#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
-#include "coll/coll_util.hpp"
-#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
 #include <numeric>
 
@@ -291,7 +288,7 @@ ccl::status ccl_coll_build_multi_bcast_allgatherv(ccl_master_sched* main_sched,
         param.root = idx;
         param.comm = comm;
         param.stream = coll_param.stream;
-        coll_entry_helper::add_coll_entry<ccl_coll_bcast>(scheds[idx % sched_count], param);
+        ccl::add_coll_entry(scheds[idx % sched_count], param);
     }
 
     return ccl::status::success;

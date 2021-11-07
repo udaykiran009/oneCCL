@@ -8,34 +8,6 @@
 #include "kvs_impl.hpp"
 #include "communicator_impl_details.hpp"
 
-//TODO
-/*
-namespace ccl
-{
-struct comm_split_attr_impl
-{
-    constexpr static int color_default()
-    {
-        return 0;
-    }
-    ccl::library_version version;
-};
-
-struct device_attr_impl
-{
-    constexpr static device_topology_type class_default()
-    {
-        return device_topology_type::ring;
-    }
-    constexpr static group_split_type group_default()
-    {
-        return group_split_type::process;
-    }
-    device_topology_type current_preferred_topology_class = class_default();
-    group_split_type current_preferred_topology_group = group_default();
-};
-}*/
-
 namespace ccl {
 
 namespace v1 {

@@ -160,29 +160,6 @@ void ccl_sched::add_barrier() {
     }
 }
 
-ccl_request* ccl_sched::start_subsched(ccl_extra_sched* subsched) {
-    CCL_THROW_IF_NOT(subsched);
-
-    subsched->sched_id = sched_id;
-    subsched->coll_attr.priority = coll_attr.priority;
-
-    subsched->renew();
-    subsched->set_counter(1);
-
-    ccl::global_data::get().executor->update_wait_condition(
-        queue->get_idx(), ccl_base_thread::wait_data::update_type::increment, 1);
-
-    queue->add(subsched);
-
-    if (ccl::global_data::env().sched_dump) {
-        std::stringstream ostream;
-        subsched->dump(ostream);
-        logger.info(ostream.str());
-    }
-
-    return subsched->req;
-}
-
 std::vector<ccl::event>& ccl_sched::get_deps() const {
     return static_cast<ccl_master_sched*>(req)->coll_param.deps;
 }

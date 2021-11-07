@@ -124,8 +124,6 @@ public:
      */
     void add_barrier();
 
-    ccl_request* start_subsched(ccl_extra_sched* subsched);
-
     std::vector<ccl::event>& get_deps() const;
 
     ccl_sched_bin* bin = nullptr; /* valid only during execution */

@@ -7,14 +7,11 @@
 
 #include "coll/algorithms/algorithms.hpp"
 #include "coll/algorithms/algorithm_utils.hpp"
+#include "coll/coll_util.hpp"
 #include "common/comm/comm.hpp"
-#include "sched/entry/coll/coll_entry_helper.hpp"
 #include "sched/entry/copy/copy_helper.hpp"
 #include "sched/entry/factory/chunked_entry_factory.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
-#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
-#include "coll/coll_util.hpp"
-#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
 ccl::status ccl_coll_build_direct_allreduce(ccl_sched* sched,
                                             ccl_buffer send_buf,

@@ -93,7 +93,6 @@ constexpr const char* CCL_ALLREDUCE_NREDUCE_BUFFERING = "CCL_ALLREDUCE_NREDUCE_B
 constexpr const char* CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE = "CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE";
 
 constexpr const char* CCL_ALLTOALL_SCATTER_MAX_OPS = "CCL_ALLTOALL_SCATTER_MAX_OPS";
-constexpr const char* CCL_ALLTOALL_SCATTER_PLAIN = "CCL_ALLTOALL_SCATTER_PLAIN";
 
 constexpr const char* CCL_KERNEL_PATH = "CCL_KERNEL_PATH";
 constexpr const char* CCL_KERNEL_DEBUG = "CCL_KERNEL_DEBUG";
@@ -233,7 +232,6 @@ public:
     ssize_t allreduce_nreduce_segment_size;
 
     ssize_t alltoall_scatter_max_ops;
-    int alltoall_scatter_plain;
 
 #ifdef CCL_ENABLE_SYCL
     std::string kernel_path;

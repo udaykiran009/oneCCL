@@ -174,7 +174,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
         auto& device = it->second;
 
         LOG_DEBUG(
-            "Create single device communicator from SYCL device (sycl and !mgpu), after find_if rank ",
+            "create single device communicator from SYCL device (sycl and !ze), after find_if rank ",
             rank);
 
         std::shared_ptr<atl_base_comm> atl =
@@ -186,8 +186,7 @@ struct comm_impl_dispatch_selector<cl_backend_type::dpcpp_sycl>
                                                                   rank,
                                                                   cluster_devices_size,
                                                                   preview::create_comm_split_attr(),
-                                                                  atl,
-                                                                  ccl::group_split_type::single);
+                                                                  atl);
 
         ccl::vector_class<ccl::communicator> ret;
         ret.push_back(ccl::communicator(std::move(impl)));

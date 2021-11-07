@@ -352,7 +352,7 @@ void ccl_unordered_coll_manager::run_sched(ccl_master_sched* sched, ccl_comm* co
 
     LOG_DEBUG("running sched ",
               sched,
-              ", type ",
+              ", coll_type ",
               ccl_coll_type_to_str(sched->coll_param.ctype),
               ",  for match_id ",
               sched->coll_attr.match_id);

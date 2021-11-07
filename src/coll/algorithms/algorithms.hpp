@@ -24,12 +24,12 @@ ccl::status ccl_coll_build_scatter_ring_allgather_bcast(ccl_sched* sched,
                                                         ccl_comm* comm);
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-ccl::status ccl_coll_build_gpu_bcast(ccl_sched* sched,
-                                     ccl_buffer buf,
-                                     size_t count,
-                                     const ccl_datatype& dtype,
-                                     int root,
-                                     ccl_comm* comm);
+ccl::status ccl_coll_build_topo_bcast(ccl_sched* sched,
+                                      ccl_buffer buf,
+                                      size_t count,
+                                      const ccl_datatype& dtype,
+                                      int root,
+                                      ccl_comm* comm);
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
 ccl::status ccl_coll_build_dissemination_barrier(ccl_sched* sched, ccl_comm* comm);
@@ -226,10 +226,6 @@ ccl::status ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
 ccl::status ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
                                              std::vector<ccl_sched*>& scheds,
                                              const ccl_coll_param& coll_param);
-
-ccl::status ccl_coll_build_scatter_barrier_alltoallv(ccl_master_sched* main_sched,
-                                                     std::vector<ccl_sched*>& scheds,
-                                                     const ccl_coll_param& coll_param);
 
 /* direct algorithms - i.e. direct mapping on collective API from transport level */
 

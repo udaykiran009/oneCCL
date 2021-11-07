@@ -51,8 +51,6 @@ struct ccl_coll_attr {
 
     std::string to_string() const;
 
-    ccl::prologue_fn prologue_fn = nullptr;
-    ccl::epilogue_fn epilogue_fn = nullptr;
     ccl::reduction_fn reduction_fn = nullptr;
 
     size_t priority = 0;

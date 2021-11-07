@@ -79,9 +79,8 @@ void ccl_coll_validate_user_input(const ccl_coll_param& param, const ccl_coll_at
                          attr.reduction_fn,
                      "custom datatype requires custom reduction");
 
-    CCL_THROW_IF_NOT(param.ctype == ccl_coll_allreduce ||
-                         !(attr.prologue_fn || attr.epilogue_fn || attr.reduction_fn),
-                     "prologue/epilogue/custom reduction is supported for allreduce only");
+    CCL_THROW_IF_NOT(param.ctype == ccl_coll_allreduce || !(attr.reduction_fn),
+                     "custom reduction is supported for allreduce only");
 
     CCL_THROW_IF_NOT(param.ctype == ccl_coll_allgatherv || !(attr.is_vector_buf),
                      "vector buffer is supported for allgatherv only");

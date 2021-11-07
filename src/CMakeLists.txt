@@ -49,8 +49,6 @@ if (CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
         sched/ze/ze_handle_manager.cpp
         sched/ze/ze_ipc_event_pool_manager.cpp
         sched/ze/ze_list_manager.cpp
-
-        coll/coll_util.cpp
         )
 endif(CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
 
@@ -90,6 +88,7 @@ set(CCL_SRC
     coll/ccl_sparse_allreduce_op_attr.cpp
     coll/ccl_barrier_op_attr.cpp
     coll/coll_param.cpp
+    coll/coll_util.cpp
     coll/algorithms/allgatherv.cpp
     coll/algorithms/allreduce/allreduce.cpp
     coll/algorithms/allreduce/allreduce_2d.cpp
@@ -161,7 +160,6 @@ set(CCL_SRC
     sched/cache/cache.cpp
     sched/cache/key.cpp
     sched/entry/coll/coll_entry.cpp
-    sched/entry/coll/coll_entry_helper.cpp
     sched/entry/copy/copy_entry.cpp
     sched/entry/copy/copy_helper.cpp
     sched/entry/entry.cpp
