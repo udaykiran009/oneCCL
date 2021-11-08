@@ -101,7 +101,7 @@ foreach(src ${sources})
     target_link_libraries(${executable} PUBLIC rt)
     target_link_libraries(${executable} PUBLIC m)
     target_link_libraries(${executable} PUBLIC dl)
-    # w/a for ats with 2 mpi lib, should be fixed
+    # w/a for case with 2 mpi libs, should be fixed
     if (DEFINED ENV{I_MPI_ROOT})
         set(I_MPI_ROOT "$ENV{I_MPI_ROOT}")
     endif()
