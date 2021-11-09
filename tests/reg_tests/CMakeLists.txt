@@ -17,6 +17,10 @@ if (DEFINED ENV{I_MPI_ROOT})
     set(I_MPI_ROOT "$ENV{I_MPI_ROOT}")
 endif()
 
+if (DEFINED ENV{CCL_ROOT})
+    set(CCL_ROOT "$ENV{CCL_ROOT}")
+endif()
+
 message(STATUS "CCL_ROOT: ${CCL_ROOT}")
 message(STATUS "EXAMPLES_INC_DIRS: ${EXAMPLES_INC_DIRS}")
 
