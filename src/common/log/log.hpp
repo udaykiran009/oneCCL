@@ -128,11 +128,8 @@ public:
     void error(T&& first, Tpackage&&... others) {
         std::lock_guard<ccl_logger_lock_t> lock{ guard };
 
-        write_stream_wrapper(out_stream,
-                             std::cerr,
-                             "ERROR: ",
-                             std::forward<T>(first),
-                             std::forward<Tpackage>(others)...);
+        write_stream_wrapper(
+            out_stream, std::cerr, std::forward<T>(first), std::forward<Tpackage>(others)...);
 
         std::cerr << streambuf;
         std::flush(std::cerr);
@@ -228,7 +225,7 @@ extern ccl_logger logger;
 #define LOG_ERROR(...) \
     { \
         if (logger.get_log_level() >= ccl_log_level::error) { \
-            logger.error("|ERROR| ", \
+            logger.error("|CCL_ERROR| ", \
                          basedir_static(__FILE__), \
                          ":", \
                          __LINE__, \
@@ -242,21 +239,21 @@ extern ccl_logger logger;
 #define LOG_WARN(...) \
     { \
         if (logger.get_log_level() >= ccl_log_level::warn) { \
-            logger.warn("|WARN| ", ##__VA_ARGS__); \
+            logger.warn("|CCL_WARN| ", ##__VA_ARGS__); \
         } \
     }
 
 #define LOG_INFO(...) \
     { \
         if (logger.get_log_level() >= ccl_log_level::info) { \
-            logger.info("|INFO| ", ##__VA_ARGS__); \
+            logger.info("|CCL_INFO| ", ##__VA_ARGS__); \
         } \
     }
 
 #define LOG_DEBUG(...) \
     { \
         if (logger.get_log_level() >= ccl_log_level::debug) { \
-            logger.debug("|DEBUG| ", \
+            logger.debug("|CCL_DEBUG| ", \
                          basedir_static(__FILE__), \
                          ":", \
                          __LINE__, \
@@ -270,7 +267,7 @@ extern ccl_logger logger;
 #define LOG_TRACE(...) \
     { \
         if (logger.get_log_level() >= ccl_log_level::trace) { \
-            logger.trace("|TRACE| ", \
+            logger.trace("|CCL_TRACE| ", \
                          basedir_static(__FILE__), \
                          ":", \
                          __LINE__, \
