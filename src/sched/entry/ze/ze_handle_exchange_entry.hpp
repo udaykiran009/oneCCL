@@ -35,10 +35,8 @@ public:
 protected:
     void dump_detail(std::stringstream& str) const override {
         ccl_logger::format(str,
-                           "rank ",
-                           rank,
-                           ", comm_size ",
-                           comm_size,
+                           "comm ",
+                           comm->to_string(),
                            ", right_peer ",
                            right_peer_socket_name,
                            ", left_peer ",

@@ -240,7 +240,6 @@ ccl::status ccl_coll_build_topo_bcast(ccl_sched* sched,
     if (comm->rank() != root) {
         entry_factory::create<copy_entry>(
             sched, ccl_buffer(), buf, count, dtype, copy_attr(root, 0, copy_direction::d2d));
-        sched->add_barrier();
     }
 
     ccl::add_comm_barrier(sched, node_comm);

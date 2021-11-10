@@ -46,6 +46,11 @@ public:
                           std::vector<ze_event_handle_t>& copy_events,
                           ze_event_handle_t wait_event = nullptr);
 
+protected:
+    void dump_detail(std::stringstream& str) const override {
+        ccl_logger::format(str, "comm ", comm->to_string(), "\n");
+    }
+
 private:
     static constexpr size_t event_group_count{ 1 }; // copy phase
 

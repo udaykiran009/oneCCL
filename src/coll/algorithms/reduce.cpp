@@ -486,7 +486,6 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
         if (comm->rank() == root) {
             entry_factory::create<ze_onesided_reduce_entry>(
                 sched, send_buf, recv_buf, count, dtype, op, root, pair_comm);
-            sched->add_barrier();
         }
 
         ccl::add_comm_barrier(sched, pair_comm);
@@ -496,7 +495,6 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
             LOG_DEBUG("topo/scale_up/intra: use ze_onesided_reduce");
             entry_factory::create<ze_onesided_reduce_entry>(
                 sched, send_buf, tmp_buf, count, dtype, op, pair_comm->rank(), pair_comm);
-            sched->add_barrier();
 
             size_t main_block_count = count / even_comm_size;
             size_t block_count = main_block_count;
@@ -505,6 +503,7 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
             }
 
             ccl::add_comm_barrier(sched, even_comm);
+
             size_t offset_bytes = main_block_count * even_comm->rank() * dtype.size();
             ccl_buffer partial_tmp_buf = tmp_buf + offset_bytes;
             LOG_DEBUG("topo/scale_up/inter: use ze_a2a_reduce_scatter_entry");
@@ -520,7 +519,6 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
                                                                even_comm,
                                                                wait_events,
                                                                tmp_buf_idx);
-            sched->add_barrier();
             ccl::add_comm_barrier(sched, even_comm);
 
             CCL_THROW_IF_NOT(comm->size() % node_comm_size == 0);
@@ -576,7 +574,6 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
                           ", count: ",
                           block_count);
                 entry_factory::create<copy_entry>(sched, src, dst, block_count, dtype, attr);
-                sched->add_barrier();
             }
         }
         ccl::add_comm_barrier(sched, node_comm);

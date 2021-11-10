@@ -358,7 +358,6 @@ ccl::status ccl_coll_build_topo_reduce_scatter(ccl_sched* sched,
                                                        comm,
                                                        wait_events,
                                                        send_buf_idx);
-    sched->add_barrier();
 
     ccl::add_comm_barrier(sched, comm);
 

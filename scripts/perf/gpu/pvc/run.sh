@@ -331,14 +331,14 @@ run_bench() {
     then
         node_counts="1 2"
         ppns="2 6 12"
-        algos="ring topo"
+        algos="topo ring"
         copy_engines="none main link"
         hosts="-hosts c001n0001,c001n0002"
         ulls_modes="1"
         runtimes="level_zero"
         colls="allreduce"
         cache_modes="1"
-        bench_params+=" -i 20 -t 8388608"
+        bench_params+=" -i 20 -t 8388608 -d int32"
     fi
 
     if [[ ${RUN_BENCH} = "2" ]]
@@ -402,7 +402,9 @@ run_bench() {
 
                                     proc_count=$((node_count*ppn))
 
-                                    exec_env="${base_env} CCL_ALLREDUCE=${algo}"
+                                    exec_env="${base_env} CCL_ALLGATHERV=${algo}"
+                                    exec_env+=" CCL_ALLREDUCE=${algo}"
+                                    exec_env+=" CCL_REDUCE=${algo}"
                                     exec_env+=" CCL_ZE_COPY_ENGINE=${copy_engine}"
                                     exec_env+=" EnableDirectSubmission=${ulls_mode}"
                                     exec_env+=" SYCL_DEVICE_FILTER=${runtime}"

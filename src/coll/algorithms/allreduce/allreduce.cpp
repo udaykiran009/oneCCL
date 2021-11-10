@@ -642,7 +642,6 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
                                                                            wait_events,
                                                                            recv_buf_idx);
                 wait_events.push_back(entry->entry_event);
-                sched->add_barrier();
 
                 auto barrier_event = ccl::add_comm_barrier(
                     sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
@@ -664,7 +663,6 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
                                                                                 wait_events,
                                                                                 recv_buf_idx);
                 wait_events.push_back(entry->entry_event);
-                sched->add_barrier();
 
                 auto barrier_event = ccl::add_comm_barrier(
                     sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
@@ -726,7 +724,6 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
                                                                         wait_events,
                                                                         recv_buf_idx);
             wait_events.push_back(entry->entry_event);
-            sched->add_barrier();
 
             auto barrier_event = ccl::add_comm_barrier(
                 sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);

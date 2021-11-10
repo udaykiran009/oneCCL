@@ -313,10 +313,13 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* sched,
     int comm_size = comm->size();
     int pair_comm_size = pair_comm->size();
     int node_comm_size = node_comm->size();
+    int even_comm_size = even_comm->size();
     int r2r_comm_size = r2r_comm->size();
 
     bool is_inplace = send_buf == recv_buf;
     bool is_single_node = comm_size == node_comm_size;
+    bool is_single_card = (comm_size == 2) && is_single_node;
+    bool is_multi_card = (even_comm_size > 1);
 
     const std::vector<ze_handle_exchange_entry::mem_desc_t> in_buffers{
         { send_buf.get_ptr(), ccl::ze::ipc_mem_type::memory }, // 0
@@ -328,22 +331,6 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* sched,
 
     ccl::add_handle_exchange(sched, node_comm, in_buffers);
 
-    if (is_single_node) {
-        std::vector<ze_event_handle_t> wait_events;
-        entry_factory::create<ze_a2a_allgatherv_entry>(sched,
-                                                       send_buf,
-                                                       send_count,
-                                                       recv_buf,
-                                                       recv_counts,
-                                                       dtype,
-                                                       comm,
-                                                       wait_events,
-                                                       recv_buf_idx);
-        sched->add_barrier();
-        ccl::add_comm_barrier(sched, comm);
-        return ccl::status::success;
-    }
-
     // helper function
     auto get_distance = [&](int from, int to) {
         CCL_THROW_IF_NOT(from >= 0, "from: ", from, " to: ", to);
@@ -351,6 +338,71 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* sched,
         CCL_THROW_IF_NOT(to <= comm_size, "from: ", from, " to: ", to);
         return std::accumulate(recv_counts + from, recv_counts + to, 0);
     };
+
+    if (is_single_node) {
+        copy_attr attr;
+
+        bool do_self_copy =
+            (send_buf != recv_buf) &&
+            (is_single_card || (pair_comm->rank() == ccl::global_data::env().kernel_1s_lead));
+
+        if (do_self_copy) {
+            attr.out_buf_offset = get_distance(0, comm->rank());
+            entry_factory::create<copy_entry>(sched, send_buf, recv_buf, send_count, dtype, attr);
+        }
+
+        if (pair_comm->rank() == ccl::global_data::env().kernel_1s_lead) {
+            int peer_rank = (pair_comm->rank() + 1) % pair_comm->size();
+            int global_peer_rank = pair_comm->get_global_rank(peer_rank, true);
+
+            /* pull data from peer tile on the same card */
+            attr.peer_rank = peer_rank;
+            attr.peer_buf_idx = send_buf_idx;
+            attr.direction = copy_direction::d2d;
+            attr.map_comm = pair_comm;
+            attr.out_buf_offset = get_distance(0, global_peer_rank);
+
+            entry_factory::create<copy_entry>(
+                sched, ccl_buffer(), recv_buf, recv_counts[global_peer_rank], dtype, attr);
+
+            sched->add_barrier();
+
+            attr.peer_buf_idx = recv_buf_idx;
+            attr.out_buf_offset = get_distance(0, comm->rank());
+            size_t final_copy_count = send_count;
+
+            if (is_multi_card) {
+                std::vector<size_t> even_recv_counts(even_comm_size);
+                for (int idx = 0; idx < even_comm_size; idx++) {
+                    even_recv_counts[idx] = recv_counts[2 * idx] + recv_counts[2 * idx + 1];
+                }
+
+                std::vector<ze_event_handle_t> wait_events;
+                entry_factory::create<ze_a2a_allgatherv_entry>(sched,
+                                                               recv_buf,
+                                                               even_recv_counts[even_comm->rank()],
+                                                               recv_buf,
+                                                               even_recv_counts.data(),
+                                                               dtype,
+                                                               even_comm,
+                                                               wait_events,
+                                                               recv_buf_idx);
+
+                ccl::add_comm_barrier(sched, even_comm);
+
+                attr.out_buf_offset = 0;
+                final_copy_count = get_distance(0, comm->size());
+            }
+
+            /* push data to peer tile on the same card */
+            entry_factory::create<copy_entry>(
+                sched, recv_buf, ccl_buffer(), final_copy_count, dtype, attr);
+        }
+
+        ccl::add_comm_barrier(sched, pair_comm);
+
+        return ccl::status::success;
+    }
 
     if (pair_comm->rank() == ccl::global_data::env().kernel_1s_lead) {
         /* 1. allocate send && recv tmp host buffers for host bcast stage */
@@ -418,7 +470,6 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* sched,
                                               copy_count,
                                               dtype,
                                               copy_attr(copy_direction::h2d, 0, dst_offset));
-            sched->add_barrier();
         }
         ccl::add_comm_barrier(sched, even_comm);
 
@@ -438,7 +489,6 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* sched,
                     sched, recv_buf, ccl_buffer(), count, dtype, attr);
             }
         }
-        sched->add_barrier();
         ccl::add_comm_barrier(sched, even_comm);
 
         /* 5. copy to peer pair rank */
@@ -446,7 +496,6 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* sched,
         int peer_rank = (pair_comm->rank() + 1) % pair_comm_size;
         copy_attr attr(peer_rank, recv_buf_idx, copy_direction::d2d, pair_comm);
         entry_factory::create<copy_entry>(sched, recv_buf, ccl_buffer(), copy_count, dtype, attr);
-        sched->add_barrier();
     }
     ccl::add_comm_barrier(sched, pair_comm);
 

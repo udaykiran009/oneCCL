@@ -67,6 +67,7 @@ void add_comm_barrier(ccl_sched* sched,
                       ccl_comm* comm,
                       ze_event_pool_handle_t ipc_pool,
                       size_t ipc_event_idx) {
+    sched->add_barrier();
     if (ipc_pool && global_data::env().enable_ze_barrier) {
         entry_factory::create<ze_barrier_entry>(sched, comm, ipc_pool, ipc_event_idx);
     }
