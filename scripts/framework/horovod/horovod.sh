@@ -265,6 +265,8 @@ print_help() {
     echo_log "      https proxy"
     echo_log "  -set_extra_proxy <bool_flag>"
     echo_log "      set extra proxy"
+    echo_log "  -ccl_pr <number>"
+    echo_log "      Checkout specific PR from oneCCL repository"
     echo_log ""
     echo_log "Usage examples:"
     echo_log "  ${BASENAME}.sh "
@@ -461,6 +463,10 @@ parse_arguments() {
                 ;;
             "-set_extra_proxy")
                 SET_EXTRA_PROXY="${2}"
+                shift
+                ;;
+            "-ccl_pr")
+                CCL_PR_NUMBER="${2}"
                 shift
                 ;;
             *)
@@ -705,6 +711,12 @@ download_ccl() {
     cd ${SCRIPT_WORK_DIR}
     clone_repo "CCL" "https://${USERNAME_1S}${CCL_BASE_LINK}" "master" \
         ${CCL_SRC_DIR} "GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S}"
+
+    if [[ ! -z "${CCL_PR_NUMBER}" ]]; then
+        cd ${CCL_SRC_DIR}
+        git fetch origin pull/${CCL_PR_NUMBER}/head:pull_${CCL_PR_NUMBER}
+        git checkout pull_${CCL_PR_NUMBER}
+    fi
 }
 
 install_ccl() {
@@ -1114,10 +1126,10 @@ run_model_pt() {
     current_date=`date "+%Y%m%d%H%M%S"`
     rn50_log_file="rn50_"$current_date".txt"
     rn50_log_file_pt="pt_rn50_"$current_date".txt"
-    
+
     cmd="mpiexec -n 2 -l python ${MODEL_PT_FILE} --iter=${ITER_COUNT} --warm=2 --bs ${BATCH_SIZE} \
          --arch resnet50 --sycl 2>&1 | tee ${rn50_log_file_pt}"
-    
+
     echo_log "\nIPEX rn50 cmd:\n${cmd}\n"
     eval ${cmd}
     CheckCommandExitCode $? "IPEX Model test failed"
