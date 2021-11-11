@@ -18,6 +18,7 @@ public:
     ~ccl_master_sched() override;
 
     void add_partial_sched(const ccl_coll_param& param);
+    std::vector<std::shared_ptr<ccl_sched>>& get_partial_scheds();
     void commit(ccl_parallelizer* parallelizer = nullptr);
     ccl_request* start(ccl_executor* exec, bool reset_sched = true);
 
@@ -31,9 +32,6 @@ public:
      */
     void sync_partial_scheds();
     void dump(std::ostream& out) const;
-
-    // TODO encapsulate it in private.
-    std::vector<std::shared_ptr<ccl_sched>> partial_scheds;
 
     // TODO: wrap into smart-pointer
     using ccl_master_sched_ptr = ccl_master_sched*;
@@ -51,6 +49,7 @@ public:
 private:
     void reset_state();
     void prepare_partial_scheds();
+    std::vector<std::shared_ptr<ccl_sched>> partial_scheds;
 
 #ifdef CCL_ENABLE_SYCL
     ccl::kernel_timer kernel_timer;

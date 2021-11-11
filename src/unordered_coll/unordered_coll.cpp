@@ -329,6 +329,7 @@ void ccl_unordered_coll_manager::run_postponed_scheds(const std::string& match_i
 }
 
 void ccl_unordered_coll_manager::run_sched(ccl_master_sched* sched, ccl_comm* comm) const {
+    auto& partial_scheds = sched->get_partial_scheds();
     ccl_sched_key old_key, new_key;
     old_key.set(sched->coll_param, sched->coll_attr);
     sched->coll_param.comm = comm;
@@ -338,16 +339,16 @@ void ccl_unordered_coll_manager::run_sched(ccl_master_sched* sched, ccl_comm* co
         ccl::global_data::get().sched_cache->recache(old_key, std::move(new_key));
     }
 
-    for (size_t part_idx = 0; part_idx < sched->partial_scheds.size(); ++part_idx) {
-        sched->partial_scheds[part_idx]->coll_param.comm = comm;
+    for (size_t part_idx = 0; part_idx < partial_scheds.size(); ++part_idx) {
+        partial_scheds[part_idx]->coll_param.comm = comm;
         if (ccl::global_data::env().priority_mode == ccl_priority_lifo) {
             /*
                 can't use real lifo priority here because it can be unsynchronized between nodes
                 so use comm id as synchronized increasing value for priority
             */
-            sched->partial_scheds[part_idx]->coll_attr.priority = comm->id();
+            partial_scheds[part_idx]->coll_attr.priority = comm->id();
         }
-        sched->partial_scheds[part_idx]->coll_attr.match_id = sched->coll_attr.match_id;
+        partial_scheds[part_idx]->coll_attr.match_id = sched->coll_attr.match_id;
     }
 
     LOG_DEBUG("running sched ",

@@ -245,8 +245,8 @@ ccl_master_sched* ccl_fusion_manager::build_sched() {
     sched->commit(ccl::global_data::get().parallelizer.get());
 
     size_t exec_queue_size = exec_queue.size();
-    size_t part_count = sched->partial_scheds.size();
-    std::vector<std::shared_ptr<ccl_sched>>& part_scheds = sched->partial_scheds;
+    size_t part_count = sched->get_partial_scheds().size();
+    std::vector<std::shared_ptr<ccl_sched>>& part_scheds = sched->get_partial_scheds();
     size_t copies_per_part = exec_queue_size / part_count;
     size_t copies_per_last_part = copies_per_part + exec_queue_size % part_count;
 

@@ -7,6 +7,11 @@ set(sources
 
 set(CCL_INSTALL_TESTS "${CMAKE_CURRENT_SOURCE_DIR}")
 
+set(REG_TESTS_DIR ${CCL_INSTALL_TESTS}/..)
+set(REG_TESTS_INC_DIR ${REG_TESTS_DIR}/include)
+
+message(STATUS "REG_TESTS_INC_DIR: ${REG_TESTS_INC_DIR}")
+
 link_directories(${EXAMPLES_LIB_DIRS})
 
 foreach(src ${sources})
@@ -16,5 +21,6 @@ foreach(src ${sources})
     target_link_libraries(${executable} PRIVATE -L${I_MPI_ROOT}/lib/release/)
     target_link_libraries(${executable} PRIVATE mpi)
     target_include_directories(${executable} PRIVATE ${EXAMPLES_INC_DIRS})
+    target_include_directories(${executable} PRIVATE ${REG_TESTS_INC_DIR})
     install(TARGETS ${executable} RUNTIME DESTINATION ${CCL_INSTALL_TESTS} OPTIONAL)
 endforeach(src ${sources})

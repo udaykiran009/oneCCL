@@ -190,6 +190,10 @@ void ccl_master_sched::add_partial_sched(const ccl_coll_param& coll_param) {
         this));
 }
 
+std::vector<std::shared_ptr<ccl_sched>>& ccl_master_sched::get_partial_scheds() {
+    return partial_scheds;
+}
+
 void ccl_master_sched::prepare_partial_scheds() {
     for (auto& sched : partial_scheds) {
         sched->renew(true);

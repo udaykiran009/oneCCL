@@ -51,7 +51,7 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
 }
 
 ccl::status ccl_parallelizer::process_deps(ccl_master_sched* sched) {
-    auto& part_scheds = sched->partial_scheds;
+    auto& part_scheds = sched->get_partial_scheds();
     ccl_sched* deps_sched = part_scheds[0].get();
     size_t sched_count = part_scheds.size();
 
@@ -68,7 +68,7 @@ ccl::status ccl_parallelizer::process_deps(ccl_master_sched* sched) {
 
 #ifdef CCL_ENABLE_SYCL
 ccl::status ccl_parallelizer::process_pre_post_copies(ccl_master_sched* sched) {
-    auto& part_scheds = sched->partial_scheds;
+    auto& part_scheds = sched->get_partial_scheds();
     size_t sched_count = part_scheds.size();
     ccl_coll_param& coll_param = sched->coll_param;
     ccl_comm* comm = coll_param.comm;
@@ -150,7 +150,7 @@ ccl::status ccl_parallelizer::process_output_event(ccl_master_sched* sched) {
         return ccl::status::success;
     }
 
-    auto& part_scheds = sched->partial_scheds;
+    auto& part_scheds = sched->get_partial_scheds();
     size_t sched_count = part_scheds.size();
 
     for (size_t idx = 0; idx < sched_count; idx++) {
@@ -187,7 +187,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
 
     std::vector<size_t> counts;
     std::vector<size_t> offsets;
-    auto& part_scheds = sched->partial_scheds;
+    auto& part_scheds = sched->get_partial_scheds();
     std::vector<ccl_sched*> part_scheds_vector;
 
     std::vector<ccl_buffer> ag_recv_bufs;
