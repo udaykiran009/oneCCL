@@ -264,7 +264,7 @@ print_help() {
     echo_log "  -proxy <url>"
     echo_log "      https proxy"
     echo_log "  -set_extra_proxy <bool_flag>"
-    echo_log "      set extra proxy"
+    echo_log "      Set extra proxy"
     echo_log "  -ccl_pr <number>"
     echo_log "      Checkout specific PR from oneCCL repository"
     echo_log ""
@@ -525,9 +525,6 @@ parse_arguments() {
 
         DOWNLOAD_HVD="1"
         INSTALL_HVD="1"
-
-        DOWNLOAD_MODEL_TF="${enabled_tf}"
-        RUN_MODEL_TF="${enabled_tf}"
 
         remove_conda
         if [[ -d ${SCRIPT_WORK_DIR} ]]
