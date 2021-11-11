@@ -106,8 +106,8 @@ private:
     int total_rank_count;
     int assigned_proc_idx;
 
-    size_t assigned_thread_idx;
-    size_t local_thread_idx;
+    size_t assigned_thread_idx = 0;
+    size_t local_thread_idx = 0;
     std::string my_proccess_name;
     std::vector<int> ranks;
     std::vector<size_t> ranks_per_thread_map;
@@ -120,6 +120,6 @@ private:
     size_t barrier_num = 0;
     size_t barrier_num_full = 0;
     std::vector<int> requested2global;
-    size_t local_id;
+    size_t local_id = 0;
     size_t kvs_get_timeout = 60; /* in seconds */
 };
