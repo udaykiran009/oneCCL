@@ -197,16 +197,15 @@ set_run_env() {
     else
         check_exit_code 1 "Can not find CCL vars file: ${ccl_vars_file_1} or ${ccl_vars_file_2}"
     fi
-
+    
     # MPICH
     module unload mpich/icc-cxi
-    module use -a /home/tdoodi/drop43-release/mpich-ofi/modulefiles
-    module load mpich/43.x
+    module load mpich/icc-cxi/43.2
     export LD_LIBRARY_PATH=/usr/lib64/:${LD_LIBRARY_PATH}
 
-    # UMD with ULLS fixes (hang and CCS > 0)
+    # compute-runtime
     module use -a /home/ftartagl/graphics-compute-runtime/modulefiles
-    module load graphics-compute-runtime/ci-neo-021202
+    module load graphics-compute-runtime/agama-ci-prerelease-251
 }
 
 check_anr() {
