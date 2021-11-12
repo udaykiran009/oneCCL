@@ -8,7 +8,7 @@
 const ccl::datatype last_predefined_dt = ccl::datatype::bfloat16;
 
 namespace ccl {
-using datatype_str_enum = utils::enum_to_str<utils::enum_to_underlying(last_predefined_dt) + 1>;
+using datatype_str_enum = ::utils::enum_to_str<::utils::enum_to_underlying(last_predefined_dt) + 1>;
 string_class to_string(const datatype& dt) {
     return datatype_str_enum({ "INT8",
                                "UINT8",

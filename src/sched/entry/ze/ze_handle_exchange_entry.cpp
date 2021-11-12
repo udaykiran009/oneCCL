@@ -1,5 +1,6 @@
+#include "common/global/global.hpp"
 #include "sched/entry/ze/ze_handle_exchange_entry.hpp"
-#include "sched/queue/queue.hpp"
+#include "sched/entry/ze/ze_primitives.hpp"
 #include "sched/ze/ze_handle_manager.hpp"
 
 #include <arpa/inet.h>
@@ -168,10 +169,33 @@ void ze_handle_exchange_entry::update() {
             int peer = (comm_size + rank - 1 - peer_idx) % comm_size;
 
             if ((peer_idx == 0) && !skip_first_send && (rank != skip_rank)) {
-                int send_fd = 0;
                 // send own handle to right peer
-                get_fd_from_handle(&(handles[rank][buf_idx].handle), &send_fd);
-                sendmsg_call(right_peer_socket, send_fd, handles[rank][buf_idx].offset);
+                int send_fd = ccl::ze::get_fd_from_handle(handles[rank][buf_idx].handle);
+                payload_t payload{};
+                payload.mem_offset = handles[rank][buf_idx].mem_offset;
+                payload.remote_pid = getpid();
+                void* ptr = in_buffers[buf_idx].first;
+
+                ze_context_handle_t remote_context{};
+                ze_device_handle_t remote_device{};
+                ze_memory_allocation_properties_t mem_alloc_props;
+                if (!ccl::ze::get_buffer_context_and_device(
+                        ptr, &remote_context, &remote_device, &mem_alloc_props)) {
+                    CCL_THROW("unable to get context from ptr\n");
+                }
+                ssize_t remote_context_id{ -1 };
+                if (!ccl::ze::get_context_global_id(remote_context, &remote_context_id)) {
+                    CCL_THROW("unable to get global id for context\n");
+                }
+                ssize_t remote_device_id{ -1 };
+                if (!ccl::ze::get_device_global_id(remote_device, &remote_device_id)) {
+                    CCL_THROW("unable to get global id for device\n");
+                }
+
+                payload.remote_mem_alloc_id = mem_alloc_props.id;
+                payload.remote_context_id = remote_context_id;
+                payload.remote_device_id = remote_device_id;
+                sendmsg_call(right_peer_socket, send_fd, payload);
                 skip_first_send = true;
             }
 
@@ -191,21 +215,23 @@ void ze_handle_exchange_entry::update() {
             CCL_THROW_IF_NOT(poll_ret > 0, "unexpected poll ret: ", poll_ret);
 
             if (poll_fds[0].revents & POLLIN) {
-                int recv_fd = 0;
-                ze_ipc_mem_handle_t tmp_handle{};
+                int recv_fd = -1;
 
-                size_t mem_offset = 0;
                 // recv data from left peer
-                recvmsg_call(left_peer_socket, recv_fd, mem_offset);
+                payload_t payload{};
+                recvmsg_call(left_peer_socket, recv_fd, payload);
 
-                // invoke get_handle_from_fd to store the handle
-                get_handle_from_fd(&recv_fd, &tmp_handle);
+                ze_ipc_mem_handle_t tmp_handle = ccl::ze::get_handle_from_fd(recv_fd);
 
                 // we don't know anything about the memory type on the other side,
                 // so we take it from our list. This assumes that the lists of types (exactly types)
                 // on the sending and receiving side are the same in both value and quantity
                 auto mem_type = in_buffers[buf_idx].second;
-                handles[peer][buf_idx] = { tmp_handle, mem_offset, mem_type };
+                handles[peer][buf_idx] = { tmp_handle, payload.mem_offset, mem_type };
+                handles[peer][buf_idx].remote_mem_alloc_id = payload.remote_mem_alloc_id;
+                handles[peer][buf_idx].remote_context_id = payload.remote_context_id;
+                handles[peer][buf_idx].remote_pid = payload.remote_pid;
+                handles[peer][buf_idx].remote_device_id = payload.remote_device_id;
                 LOG_DEBUG("get IPC handle: { peer: ",
                           peer,
                           ", buf_idx: ",
@@ -216,7 +242,7 @@ void ze_handle_exchange_entry::update() {
 
                 if (peer_idx < (comm_size - 2)) {
                     // proxy data to right peer
-                    sendmsg_call(right_peer_socket, recv_fd, mem_offset);
+                    sendmsg_call(right_peer_socket, recv_fd, payload);
                 }
                 start_peer_idx++;
             }
@@ -389,12 +415,12 @@ int ze_handle_exchange_entry::check_msg_retval(std::string operation_name,
     return ret;
 }
 
-void ze_handle_exchange_entry::sendmsg_fd(int sock, int fd, size_t mem_offset) {
-    CCL_THROW_IF_NOT(fd > 0, "unexpected fd value");
+void ze_handle_exchange_entry::sendmsg_fd(int sock, int fd, const payload_t& payload) {
+    CCL_THROW_IF_NOT(fd >= 0, "unexpected fd value");
 
     struct iovec iov {};
-    iov.iov_base = &mem_offset;
-    iov.iov_len = sizeof(size_t);
+    iov.iov_base = const_cast<payload_t*>(&payload);
+    iov.iov_len = sizeof(payload);
 
     union {
         struct cmsghdr align;
@@ -422,11 +448,11 @@ void ze_handle_exchange_entry::sendmsg_fd(int sock, int fd, size_t mem_offset) {
         strerror(errno));
 }
 
-void ze_handle_exchange_entry::recvmsg_fd(int sock, int& fd, size_t& mem_offset) {
-    size_t buf{};
+void ze_handle_exchange_entry::recvmsg_fd(int sock, int& fd, payload_t& payload) {
+    payload_t buf{};
     struct iovec iov {};
     iov.iov_base = &buf;
-    iov.iov_len = sizeof(size_t);
+    iov.iov_len = sizeof(buf);
 
     union {
         struct cmsghdr align;
@@ -456,7 +482,15 @@ void ze_handle_exchange_entry::recvmsg_fd(int sock, int& fd, size_t& mem_offset)
             flag_str += " MSG_TRUNC";
         }
 
-        CCL_THROW("control or usual message is truncated:", flag_str);
+        /** MSG_CTRUNC message can be in case of:
+         * - remote peer send invalid fd, so msg_controllen == 0
+         * - limit of fds reached in the current procces, so msg_controllen == 0
+         * - the remote peer control message > msg_control buffer size
+         */
+        CCL_THROW("control or usual message is truncated:",
+                  flag_str,
+                  " control message size: ",
+                  msg.msg_controllen);
     }
 
     for (auto cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
@@ -469,15 +503,15 @@ void ze_handle_exchange_entry::recvmsg_fd(int sock, int& fd, size_t& mem_offset)
 
     // we assume that the message has a strict format and size, if not this means that something
     // is wrong.
-    if (msg.msg_iovlen != 1 || msg.msg_iov[0].iov_len != sizeof(size_t)) {
+    if (msg.msg_iovlen != 1 || msg.msg_iov[0].iov_len != sizeof(payload_t)) {
         CCL_THROW("received data in unexpected format");
     }
 
-    memcpy(&mem_offset, msg.msg_iov[0].iov_base, sizeof(size_t));
+    memcpy(&payload, msg.msg_iov[0].iov_base, sizeof(payload_t));
 }
 
-void ze_handle_exchange_entry::sendmsg_call(int sock, int fd, size_t mem_offset) {
-    sendmsg_fd(sock, fd, mem_offset);
+void ze_handle_exchange_entry::sendmsg_call(int sock, int fd, const payload_t& payload) {
+    sendmsg_fd(sock, fd, payload);
     LOG_DEBUG("send: rank[",
               comm->rank(),
               "], send fd: ",
@@ -485,23 +519,19 @@ void ze_handle_exchange_entry::sendmsg_call(int sock, int fd, size_t mem_offset)
               ", sock: ",
               sock,
               ", mem_offset: ",
-              mem_offset);
+              payload.mem_offset);
 }
 
-void ze_handle_exchange_entry::recvmsg_call(int sock, int& fd, size_t& mem_offset) {
-    recvmsg_fd(sock, fd, mem_offset);
-    LOG_DEBUG(
-        "recv: rank[", rank, "], got fd: ", fd, ", sock: ", sock, ", mem_offset: ", mem_offset);
-}
-
-void ze_handle_exchange_entry::get_fd_from_handle(const ze_ipc_mem_handle_t* handle,
-                                                  int* fd) noexcept {
-    memcpy(fd, static_cast<const void*>(handle), sizeof(*fd));
-}
-
-void ze_handle_exchange_entry::get_handle_from_fd(const int* fd,
-                                                  ze_ipc_mem_handle_t* handle) noexcept {
-    memcpy(handle, static_cast<const void*>(fd), sizeof(*fd));
+void ze_handle_exchange_entry::recvmsg_call(int sock, int& fd, payload_t& payload) {
+    recvmsg_fd(sock, fd, payload);
+    LOG_DEBUG("recv: rank[",
+              rank,
+              "], got fd: ",
+              fd,
+              ", sock: ",
+              sock,
+              ", mem_offset: ",
+              payload.mem_offset);
 }
 
 ze_handle_exchange_entry::mem_info_t ze_handle_exchange_entry::get_mem_info(const void* ptr) {

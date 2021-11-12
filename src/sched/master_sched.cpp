@@ -45,7 +45,8 @@ ccl_master_sched::ccl_master_sched(const ccl_sched_create_param& param)
     if (ccl::utils::should_use_sycl_output_event(coll_param.stream)) {
         auto ze_context = coll_param.stream->get_ze_context();
         auto pool_desc = get_event_pool_desc();
-        ccl::global_data::get().ze_cache->get(0, ze_context, pool_desc, &get_memory().sync_pool);
+        ccl::global_data::get().ze_data->cache->get(
+            0, ze_context, pool_desc, &get_memory().sync_pool);
 
         ze_event_desc_t event_desc = ccl::ze::default_event_desc;
         event_desc.signal = ZE_EVENT_SCOPE_FLAG_HOST;
@@ -82,7 +83,8 @@ ccl_master_sched::~ccl_master_sched() {
 
         auto ze_context = coll_param.stream->get_ze_context();
         auto pool_desc = get_event_pool_desc();
-        ccl::global_data::get().ze_cache->push(0, ze_context, pool_desc, get_memory().sync_pool);
+        ccl::global_data::get().ze_data->cache->push(
+            0, ze_context, pool_desc, get_memory().sync_pool);
     }
     else {
         LOG_DEBUG("skip sync event destruction");

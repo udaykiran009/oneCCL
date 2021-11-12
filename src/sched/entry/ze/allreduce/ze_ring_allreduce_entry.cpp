@@ -154,7 +154,7 @@ void ze_ring_allreduce_entry::init_ze_hook() {
     ag_copy_signal_events.resize(stage_iter_count);
     ag_copy_wait_events.resize(stage_iter_count);
 
-    global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
+    global_data::get().ze_data->cache->get(context, device, "kernels.spv", &module);
     std::string kernel_name =
         "reduce_local_inplace_kernel_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
     kernels.reserve(stage_iter_count);

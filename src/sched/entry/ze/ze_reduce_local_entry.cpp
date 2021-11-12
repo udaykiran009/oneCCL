@@ -22,11 +22,11 @@ ze_reduce_local_entry::ze_reduce_local_entry(ccl_sched* sched,
           op(op) {}
 
 void ze_reduce_local_entry::init_ze_hook() {
-    global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
+    global_data::get().ze_data->cache->get(context, device, "kernels.spv", &module);
 
     kernel_name =
         "reduce_local_inplace_kernel_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
-    global_data::get().ze_cache->get(worker_idx, module, kernel_name, &kernel);
+    global_data::get().ze_data->cache->get(worker_idx, module, kernel_name, &kernel);
     LOG_DEBUG("get kernel: name: ", kernel_name);
 
     ze_group_size_t group_size{};
@@ -57,5 +57,5 @@ void ze_reduce_local_entry::init_ze_hook() {
 }
 
 void ze_reduce_local_entry::finalize_ze_hook() {
-    global_data::get().ze_cache->push(worker_idx, module, kernel_name, kernel);
+    global_data::get().ze_data->cache->push(worker_idx, module, kernel_name, kernel);
 }

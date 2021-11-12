@@ -42,7 +42,7 @@ void ze_a2a_reduce_scatter_entry::kernel_init(size_t offset_bytes,
                                               ze_context_handle_t context,
                                               ccl::reduction op,
                                               size_t worker_idx) {
-    global_data::get().ze_cache->get(context, device, "kernels.spv", &module);
+    global_data::get().ze_data->cache->get(context, device, "kernels.spv", &module);
     std::string kernel_name =
         "reduce_local_inplace_kernel_" + to_string(dtype.idx()) + "_" + ccl_reduction_to_str(op);
 

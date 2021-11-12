@@ -90,7 +90,7 @@ bool kernel_timer::print(bool delay) const {
 
     if (delay && all_measurements_are_ready) {
         // the output will be printed later
-        ccl::global_data::get().timer_printer->add_timer(*this);
+        ccl::global_data::get().ze_data->timer_printer->add_timer(*this);
         return true;
     }
 

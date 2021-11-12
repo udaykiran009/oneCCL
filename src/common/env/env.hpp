@@ -109,6 +109,8 @@ constexpr const char* CCL_SYCL_OUTPUT_EVENT = "CCL_SYCL_OUTPUT_EVENT";
 
 constexpr const char* CCL_ZE_BARRIER = "CCL_ZE_BARRIER";
 constexpr const char* CCL_ZE_CACHE = "CCL_ZE_CACHE";
+constexpr const char* CCL_ZE_CACHE_IPC_HANDLES = "CCL_ZE_CACHE_IPC_HANDLES";
+constexpr const char* CCL_ZE_CACHE_IPC_HANDLES_THRESHOLD = "CCL_ZE_CACHE_IPC_HANDLES_THRESHOLD";
 constexpr const char* CCL_ZE_SERIALIZE = "CCL_ZE_SERIALIZE";
 constexpr const char* CCL_ZE_COPY_ENGINE = "CCL_ZE_COPY_ENGINE";
 constexpr const char* CCL_ZE_QUEUE_INDEX = "CCL_ZE_QUEUE_INDEX";
@@ -249,6 +251,8 @@ public:
 
     int enable_ze_barrier;
     int enable_ze_cache;
+    int enable_ze_cache_ipc_handles;
+    int ze_cache_ipc_handles_threshold;
     int enable_ze_single_list;
     int disable_ze_family_check;
     int ze_serialize_mode;

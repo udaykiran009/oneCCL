@@ -78,14 +78,14 @@ queue_info list_manager::create_queue(init_mode mode) {
     info.desc.index = queue_index;
     info.desc.ordinal = ordinal;
 
-    global_data::get().ze_cache->get(worker_idx, context, device, info.desc, &info.queue);
+    global_data::get().ze_data->cache->get(worker_idx, context, device, info.desc, &info.queue);
     return info;
 }
 
 void list_manager::free_queue(queue_info& info) {
     if (!info)
         return;
-    global_data::get().ze_cache->push(worker_idx, context, device, info.desc, info.queue);
+    global_data::get().ze_data->cache->push(worker_idx, context, device, info.desc, info.queue);
     info.queue = nullptr;
     info.is_copy = false;
 }
@@ -96,14 +96,14 @@ list_info list_manager::create_list(const queue_info& queue) {
     info.desc = default_cmd_list_desc;
     info.desc.commandQueueGroupOrdinal = queue.desc.ordinal;
     LOG_DEBUG("create ", info.is_copy ? "copy" : "comp", " list");
-    global_data::get().ze_cache->get(worker_idx, context, device, info.desc, &info.list);
+    global_data::get().ze_data->cache->get(worker_idx, context, device, info.desc, &info.list);
     return info;
 }
 
 void list_manager::free_list(list_info& info) {
     if (!info)
         return;
-    global_data::get().ze_cache->push(worker_idx, context, device, info.desc, info.list);
+    global_data::get().ze_data->cache->push(worker_idx, context, device, info.desc, info.list);
     info.list = nullptr;
     info.is_closed = false;
     info.is_copy = false;

@@ -2,6 +2,11 @@
 
 #include "coll/algorithms/algorithm_utils.hpp"
 #include "common/env/env.hpp"
+
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
+#include "common/global/ze_data.hpp"
+#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
+
 #include "common/utils/utils.hpp"
 #include "hwloc/hwloc_wrapper.hpp"
 #include "internal_types.hpp"
@@ -9,22 +14,7 @@
 #include <memory>
 #include <thread>
 
-#define COMMON_CATCH_BLOCK() \
-    catch (ccl::exception & ccl_e) { \
-        LOG_ERROR("ccl internal error: ", ccl_e.what()); \
-        return ccl::status::invalid_arguments; \
-    } \
-    catch (std::exception & e) { \
-        LOG_ERROR("error: ", e.what()); \
-        return ccl::status::runtime_error; \
-    } \
-    catch (...) { \
-        LOG_ERROR("general error"); \
-        return ccl::status::runtime_error; \
-    }
-
 class ccl_comm;
-class ccl_stream;
 class ccl_comm_id_storage;
 class ccl_datatype_storage;
 class ccl_executor;
@@ -38,11 +28,6 @@ class ccl_algorithm_selector_wrapper;
 namespace ccl {
 
 class buffer_cache;
-class kernel_timer_printer;
-
-namespace ze {
-class cache;
-} // namespace ze
 
 class global_data {
 public:
@@ -74,14 +59,10 @@ public:
     std::unique_ptr<ccl_fusion_manager> fusion_manager;
     std::unique_ptr<ccl_algorithm_selector_wrapper<CCL_COLL_LIST>> algorithm_selector;
     std::unique_ptr<ccl_hwloc_wrapper> hwloc_wrapper;
-    std::atomic<size_t> kernel_counter;
 
-#ifdef CCL_ENABLE_ZE
-    std::unique_ptr<ze::cache> ze_cache;
-#ifdef CCL_ENABLE_SYCL
-    std::unique_ptr<ccl::kernel_timer_printer> timer_printer;
-#endif // CCL_ENABLE_SYCL
-#endif // CCL_ENABLE_ZE
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
+    std::unique_ptr<ze::global_data_desc> ze_data;
+#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
     static thread_local bool is_worker_thread;
     bool is_ft_enabled;
@@ -92,21 +73,7 @@ private:
     void init_resize_independent_objects();
     void reset_resize_independent_objects();
 
-#ifdef CCL_ENABLE_ZE
-    void init_gpu();
-    void finalize_gpu();
-#endif // CCL_ENABLE_ZE
-
     env_data env_object;
 };
-
-#define CCL_CHECK_IS_BLOCKED() \
-    { \
-        do { \
-            if (unlikely(ccl::global_data::get().executor->is_locked)) { \
-                return ccl::status::blocked_due_to_resize; \
-            } \
-        } while (0); \
-    }
 
 } // namespace ccl

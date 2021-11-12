@@ -216,10 +216,77 @@ void get_queue_index(const ze_queue_properties_t& props,
                      uint32_t* index) {
     CCL_ASSERT(props.size() > ordinal, "props.size() <= ordinal");
 
-    idx += ccl::global_data::env().ze_queue_index;
+    idx += global_data::env().ze_queue_index;
 
     *index = idx % props[ordinal].numQueues;
     LOG_DEBUG("set queue index: ", *index);
+}
+
+bool get_buffer_context_and_device(const void* buf,
+                                   ze_context_handle_t* context,
+                                   ze_device_handle_t* device,
+                                   ze_memory_allocation_properties_t* props) {
+    CCL_THROW_IF_NOT(context, "no context");
+    bool success{};
+    const auto& contexts = global_data::get().ze_data->context_list;
+    auto mem_alloc_props = default_alloc_props;
+    for (auto ctx : contexts) {
+        ze_device_handle_t dev{};
+        ze_result_t res = zeMemGetAllocProperties(ctx, buf, &mem_alloc_props, &dev);
+        if (res == ZE_RESULT_SUCCESS) {
+            *context = ctx;
+            if (device) {
+                *device = dev;
+            }
+            if (props) {
+                *props = mem_alloc_props;
+            }
+            success = true;
+            break;
+        }
+    }
+    return success;
+}
+
+bool get_context_global_id(ze_context_handle_t context, ssize_t* id) {
+    CCL_THROW_IF_NOT(context, "no context");
+    CCL_THROW_IF_NOT(id, "no id");
+    bool success{};
+    const auto& contexts = global_data::get().ze_data->context_list;
+    auto found = std::find(contexts.begin(), contexts.end(), context);
+    if (found != contexts.end()) {
+        *id = std::distance(contexts.begin(), found);
+        success = true;
+    }
+    return success;
+}
+
+int get_fd_from_handle(const ze_ipc_mem_handle_t& handle) {
+    return *(reinterpret_cast<const int*>(handle.data));
+}
+
+void close_handle_fd(const ze_ipc_mem_handle_t& handle) {
+    int fd = get_fd_from_handle(handle);
+    close(fd);
+}
+
+ze_ipc_mem_handle_t get_handle_from_fd(int fd) {
+    ze_ipc_mem_handle_t handle{};
+    *(reinterpret_cast<int*>(handle.data)) = fd;
+    return handle;
+}
+
+bool get_device_global_id(ze_device_handle_t device, ssize_t* id) {
+    CCL_THROW_IF_NOT(device, "no device");
+    CCL_THROW_IF_NOT(id, "no id");
+    bool success{};
+    const auto& devices = global_data::get().ze_data->device_list;
+    auto found = std::find(devices.begin(), devices.end(), device);
+    if (found != devices.end()) {
+        *id = std::distance(devices.begin(), found);
+        success = true;
+    }
+    return success;
 }
 
 device_family get_device_family(ze_device_handle_t device) {

@@ -130,6 +130,17 @@ void get_queue_index(const ze_queue_properties_t& props,
                      int idx,
                      uint32_t* index);
 
+bool get_buffer_context_and_device(const void* buf,
+                                   ze_context_handle_t* context,
+                                   ze_device_handle_t* device,
+                                   ze_memory_allocation_properties_t* props = nullptr);
+bool get_context_global_id(ze_context_handle_t context, ssize_t* id);
+bool get_device_global_id(ze_device_handle_t device, ssize_t* id);
+
+int get_fd_from_handle(const ze_ipc_mem_handle_t& handle);
+void close_handle_fd(const ze_ipc_mem_handle_t& handle);
+ze_ipc_mem_handle_t get_handle_from_fd(int fd);
+
 device_family get_device_family(ze_device_handle_t device);
 std::pair<uint64_t, uint64_t> calculate_event_time(ze_event_handle_t event,
                                                    ze_device_handle_t device);

@@ -67,14 +67,14 @@ void event_pool::clear() {
             ZE_CALL(zeEventDestroy, (event));
         }
         events.clear();
-        ccl::global_data::get().ze_cache->push(worker_idx, context, pool_desc, pool);
+        ccl::global_data::get().ze_data->cache->push(worker_idx, context, pool_desc, pool);
         pool = {};
     }
 }
 
 void event_pool::create_pool() {
     if (!pool) {
-        ccl::global_data::get().ze_cache->get(worker_idx, context, pool_desc, &pool);
+        ccl::global_data::get().ze_data->cache->get(worker_idx, context, pool_desc, &pool);
     }
 }
 

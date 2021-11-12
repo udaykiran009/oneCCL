@@ -131,6 +131,8 @@ env_data::env_data()
 
           enable_ze_barrier(0),
           enable_ze_cache(1),
+          enable_ze_cache_ipc_handles(1),
+          ze_cache_ipc_handles_threshold(100),
           enable_ze_single_list(1),
           disable_ze_family_check(0),
           ze_serialize_mode(0),
@@ -304,6 +306,18 @@ void env_data::parse() {
 
     env_2_type(CCL_ZE_BARRIER, enable_ze_barrier);
     env_2_type(CCL_ZE_CACHE, enable_ze_cache);
+    env_2_type(CCL_ZE_CACHE_IPC_HANDLES, enable_ze_cache_ipc_handles);
+    env_2_type(CCL_ZE_CACHE_IPC_HANDLES_THRESHOLD, ze_cache_ipc_handles_threshold);
+    if (enable_ze_cache == 0) {
+        enable_ze_cache_ipc_handles = 0;
+    }
+    else if (enable_ze_cache && enable_ze_cache_ipc_handles) {
+        CCL_THROW_IF_NOT(ze_cache_ipc_handles_threshold > 0,
+                         "incorrect ",
+                         CCL_ZE_CACHE_IPC_HANDLES_THRESHOLD,
+                         " ",
+                         ze_cache_ipc_handles_threshold);
+    }
     env_2_type(CCL_ZE_SINGLE_LIST, enable_ze_single_list);
     env_2_type(CCL_ZE_DISABLE_FAMILY_CHECK, disable_ze_family_check);
     env_2_type(CCL_ZE_SERIALIZE, ze_serialize_mode);
@@ -348,7 +362,7 @@ void env_data::print(int rank) {
     auto& global_data = ccl::global_data::get();
 
     if (rank == 0) {
-        auto version = utils::get_library_version();
+        auto version = ::utils::get_library_version();
         LOG_INFO("library version: ", version.full);
         LOG_INFO("specification version: ", ONECCL_SPEC_VERSION);
 #ifdef CCL_ENABLE_SYCL
@@ -514,6 +528,8 @@ void env_data::print(int rank) {
 
     LOG_INFO(CCL_ZE_BARRIER, ": ", enable_ze_barrier);
     LOG_INFO(CCL_ZE_CACHE, ": ", enable_ze_cache);
+    LOG_INFO(CCL_ZE_CACHE_IPC_HANDLES, ": ", enable_ze_cache_ipc_handles);
+    LOG_INFO(CCL_ZE_CACHE_IPC_HANDLES_THRESHOLD, ": ", ze_cache_ipc_handles_threshold);
     LOG_INFO(CCL_ZE_SINGLE_LIST, ": ", enable_ze_single_list);
     LOG_INFO(CCL_ZE_DISABLE_FAMILY_CHECK, ": ", disable_ze_family_check);
     LOG_INFO(CCL_ZE_SERIALIZE, ": ", ze_serialize_mode);

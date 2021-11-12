@@ -59,7 +59,7 @@ void ze_base_entry::init() {
         ze_queue_properties_t queue_props;
         get_queues_properties(device, &queue_props);
 
-        if ((queue_props.size() == 1) && (queue_props[0].numQueues == 1)) { // magic index?
+        if ((queue_props.size() == 1) && (queue_props.front().numQueues == 1)) {
             if (!global_data::env().disable_ze_family_check) {
                 CCL_THROW_IF_NOT(sched->coll_param.stream->get_device_family() ==
                                  ccl::device_family::unknown);
@@ -89,7 +89,8 @@ void ze_base_entry::init() {
             if (ccl::global_data::env().enable_kernel_profile) {
                 event_pool_desc.flags |= ZE_EVENT_POOL_FLAG_KERNEL_TIMESTAMP;
             }
-            global_data::get().ze_cache->get(worker_idx, context, event_pool_desc, &event_pool);
+            global_data::get().ze_data->cache->get(
+                worker_idx, context, event_pool_desc, &event_pool);
             LOG_DEBUG("get event pool: { max event count: ", event_pool_desc.count, " }");
         }
     }
@@ -119,28 +120,29 @@ void ze_base_entry::finalize() {
     if (!use_single_list) {
         /* event pool */
         if (event_pool) {
-            global_data::get().ze_cache->push(worker_idx, context, event_pool_desc, event_pool);
+            global_data::get().ze_data->cache->push(
+                worker_idx, context, event_pool_desc, event_pool);
         }
 
         if (comp_primitives.list && comp_primitives.queue) {
             LOG_DEBUG("push to cache compute list and queue");
             /* list */
-            global_data::get().ze_cache->push(
+            global_data::get().ze_data->cache->push(
                 worker_idx, context, device, comp_primitives.list_desc, comp_primitives.list);
 
             /* queue */
-            global_data::get().ze_cache->push(
+            global_data::get().ze_data->cache->push(
                 worker_idx, context, device, comp_primitives.queue_desc, comp_primitives.queue);
         }
 
         if (copy_primitives.list && copy_primitives.queue) {
             LOG_DEBUG("push to cache copy list and queue");
             /* copy list */
-            global_data::get().ze_cache->push(
+            global_data::get().ze_data->cache->push(
                 worker_idx, context, device, copy_primitives.list_desc, copy_primitives.list);
 
             /* copy queue */
-            global_data::get().ze_cache->push(
+            global_data::get().ze_data->cache->push(
                 worker_idx, context, device, copy_primitives.queue_desc, copy_primitives.queue);
         }
     }
@@ -360,7 +362,7 @@ void ze_base_entry::get_copy_primitives(const ze_queue_properties_t &queue_props
 }
 
 void ze_base_entry::init_primitives(cmd_primitives &cmd_primitives) {
-    global_data::get().ze_cache->get(
+    global_data::get().ze_data->cache->get(
         worker_idx, context, device, cmd_primitives.queue_desc, &cmd_primitives.queue);
     LOG_DEBUG("get queue: { ordinal: ",
               cmd_primitives.queue_desc.ordinal,
@@ -368,7 +370,7 @@ void ze_base_entry::init_primitives(cmd_primitives &cmd_primitives) {
               cmd_primitives.queue_desc.index,
               " }");
 
-    global_data::get().ze_cache->get(
+    global_data::get().ze_data->cache->get(
         worker_idx, context, device, cmd_primitives.list_desc, &cmd_primitives.list);
     LOG_DEBUG("get list: { ordinal: ", cmd_primitives.list_desc.commandQueueGroupOrdinal, " }");
 }
@@ -442,7 +444,7 @@ ze_kernel::ze_kernel(ze_module_handle_t module, const std::string &kernel_name, 
         : module(module),
           kernel_name(kernel_name),
           worker_idx(worker_idx) {
-    global_data::get().ze_cache->get(worker_idx, module, kernel_name, &kernel);
+    global_data::get().ze_data->cache->get(worker_idx, module, kernel_name, &kernel);
     CCL_THROW_IF_NOT(kernel);
     LOG_DEBUG("get kernel: name: ", kernel_name);
 }
@@ -464,7 +466,7 @@ ze_kernel::ze_kernel(ze_kernel &&other) noexcept
 
 ze_kernel::~ze_kernel() {
     if (kernel) {
-        global_data::get().ze_cache->push(worker_idx, module, kernel_name, kernel);
+        global_data::get().ze_data->cache->push(worker_idx, module, kernel_name, kernel);
     }
 }
 
