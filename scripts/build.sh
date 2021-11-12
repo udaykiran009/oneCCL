@@ -62,7 +62,7 @@ rm -f ${LOG_FILE}
 
 HOSTNAME=`hostname -s`
 
-CCL_VERSION_FORMAT="2021.5.0"
+CCL_VERSION_FORMAT="2021.6.0"
 
 if [ -z "${CCL_PACKAGE_PREFIX}" ]
 then
