@@ -18,7 +18,7 @@ pmi_resizable_simple::pmi_resizable_simple(int size,
                                            const std::vector<int>& ranks,
                                            std::shared_ptr<ikvs_wrapper> k,
                                            const char* main_addr)
-        : total_rank_count(size),
+        : comm_size(size),
           ranks(ranks),
           k(k),
           main_addr(main_addr) {
@@ -307,7 +307,7 @@ atl_status_t pmi_resizable_simple::register_first_rank_idx_and_rank_count() {
 atl_status_t pmi_resizable_simple::assign_thread_idx_and_fill_ranks_per_thread_map() {
     int rank_count = 0;
     int ranks_per_thread;
-    while (rank_count < total_rank_count) {
+    while (rank_count < comm_size) {
         if (rank_count == ranks[0]) {
             assigned_thread_idx = ranks_per_thread_map.size();
         }

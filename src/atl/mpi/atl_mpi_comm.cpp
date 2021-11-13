@@ -25,13 +25,21 @@ atl_mpi_comm::atl_mpi_comm(std::shared_ptr<ikvs_wrapper> k) : atl_mpi_comm() {
     (void)k;
 }
 
-atl_mpi_comm::atl_mpi_comm(int total_rank_count,
-                           const std::vector<int>& ranks,
+atl_mpi_comm::atl_mpi_comm(int comm_size,
+                           const std::vector<int>& local_ranks,
                            std::shared_ptr<ikvs_wrapper> k)
         : atl_mpi_comm() {
-    (void)total_rank_count;
-    (void)ranks;
+    (void)comm_size;
+    (void)local_ranks;
     (void)k;
+
+    int global_mpi_size = 0;
+    MPI_Comm_size(MPI_COMM_WORLD, &global_mpi_size);
+    CCL_THROW_IF_NOT(comm_size == global_mpi_size,
+                     "unexpected comm_size: ",
+                     comm_size,
+                     ", expected: ",
+                     global_mpi_size);
 }
 
 atl_mpi_comm::atl_mpi_comm(std::vector<atl_mpi_ep_t>& parent_eps,

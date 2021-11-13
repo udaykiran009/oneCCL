@@ -215,6 +215,8 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
     size_t local_proc_count = ccl::global_data::get().executor->get_local_proc_count();
     int comm_size = param.comm->size();
 
+    LOG_DEBUG("local_proc_count ", local_proc_count, ", comm ", param.comm->to_string());
+
     RETURN_FALSE_IF(!checkers::is_gpu_stream(param), "non-gpu stream is not supported");
     RETURN_FALSE_IF(checkers::is_sycl_buf(param), "sycl buffer is not supported");
     RETURN_FALSE_IF(!checkers::is_device_buf(param), "non-device buffers is not supported");
@@ -243,7 +245,7 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
     RETURN_FALSE_IF((((param.ctype == ccl_coll_bcast) || (param.ctype == ccl_coll_reduce)) &&
                      ((comm_size < 2) || (local_proc_count == 1))) ||
                         ((param.ctype == ccl_coll_allreduce || param.ctype == ccl_coll_reduce) &&
-                         (comm_size <= 2) && (local_proc_count == 1)),
+                         ((comm_size < 2) || (local_proc_count == 1))),
                     "unsupported comm size for ",
                     ccl_coll_type_to_str(param.ctype));
 

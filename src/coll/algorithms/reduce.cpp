@@ -481,6 +481,9 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
 
     ccl::add_handle_exchange(sched, node_comm, in_buffers);
 
+    CCL_THROW_IF_NOT(comm_size % 2 == 0, "unexpected comm_size ", comm_size);
+    CCL_THROW_IF_NOT(node_comm_size % 2 == 0, "unexpected node_comm_size ", node_comm_size);
+
     if (is_single_card) {
         LOG_DEBUG("topo/scale_up/intra: use ze_onesided_reduce");
         if (comm->rank() == root) {

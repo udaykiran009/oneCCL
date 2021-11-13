@@ -9,6 +9,12 @@ int main(int argc, char* argv[]) {
     int size = 0;
     int rank = 0;
 
+    sycl::queue q;
+    if (!q.get_device().is_gpu()) {
+        cout << "test expects GPU device, please use SYCL_DEVICE_FILTER accordingly";
+        return -1;
+    }
+
     ccl::init();
 
     MPI_Init(NULL, NULL);
@@ -16,22 +22,6 @@ int main(int argc, char* argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     atexit(mpi_finalize);
-
-    queue q;
-    if (!create_sycl_queue(argc, argv, rank, q)) {
-        return -1;
-    }
-
-    buf_allocator<int> allocator(q);
-
-    auto usm_alloc_type = usm::alloc::device;
-    if (argc > 2) {
-        usm_alloc_type = usm_alloc_type_from_string(argv[2]);
-    }
-
-    if (!check_sycl_usm(q, usm_alloc_type)) {
-        return -1;
-    }
 
     /* create kvs */
     ccl::shared_ptr_class<ccl::kvs> kvs;
@@ -55,8 +45,8 @@ int main(int argc, char* argv[]) {
     auto stream = ccl::create_stream(q);
 
     /* create buffers */
-    auto send_buf = allocator.allocate(count, usm_alloc_type);
-    auto recv_buf = allocator.allocate(count, usm_alloc_type);
+    auto send_buf = sycl::malloc_device<int>(count, q);
+    auto recv_buf = sycl::malloc_device<int>(count, q);
 
     /* open buffers and modify them on the device side */
     auto e = q.submit([&](auto& h) {
@@ -115,8 +105,8 @@ int main(int argc, char* argv[]) {
      * Thus, we check the correctness of such a scenario.
      */
     if (rank == 0) {
-        allocator.deallocate(recv_buf);
-        allocator.deallocate(send_buf);
+        sycl::free(send_buf, q);
+        sycl::free(recv_buf, q);
     }
 
     MPI_Barrier(MPI_COMM_WORLD);

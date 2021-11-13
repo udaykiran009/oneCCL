@@ -27,7 +27,7 @@
 class pmi_resizable_simple final : public ipmi {
 public:
     pmi_resizable_simple() = delete;
-    pmi_resizable_simple(int total_rank_count,
+    pmi_resizable_simple(int comm_size,
                          const std::vector<int>& ranks,
                          std::shared_ptr<ikvs_wrapper> k,
                          const char* main_addr = "");
@@ -103,7 +103,7 @@ private:
     atl_status_t make_map_requested2global();
     atl_status_t pmrt_barrier_full();
 
-    int total_rank_count;
+    int comm_size;
     int assigned_proc_idx;
 
     size_t assigned_thread_idx = 0;

@@ -84,7 +84,7 @@ std::shared_ptr<atl_base_comm> atl_comm_manager::create_comm() {
 #ifdef CCL_ENABLE_MPI
         case ccl_atl_mpi: atl_comm = std::shared_ptr<atl_base_comm>(new atl_mpi_comm()); break;
 #endif // CCL_ENABLE_MPI
-        default: LOG_ERROR("Unsupported yet"); break;
+        default: LOG_ERROR("unsupported yet"); break;
     }
     return atl_comm;
 }
@@ -99,12 +99,12 @@ std::shared_ptr<atl_base_comm> atl_comm_manager::create_comm(std::shared_ptr<ikv
 #ifdef CCL_ENABLE_MPI
         case ccl_atl_mpi: atl_comm = std::shared_ptr<atl_base_comm>(new atl_mpi_comm(k)); break;
 #endif // CCL_ENABLE_MPI
-        default: LOG_ERROR("Unsupported yet"); break;
+        default: LOG_ERROR("unsupported yet"); break;
     }
     return atl_comm;
 }
 
-std::shared_ptr<atl_base_comm> atl_comm_manager::create_comm(int total_rank_count,
+std::shared_ptr<atl_base_comm> atl_comm_manager::create_comm(int comm_size,
                                                              const std::vector<int>& ranks,
                                                              std::shared_ptr<ikvs_wrapper> k) {
     std::shared_ptr<atl_base_comm> atl_comm;
@@ -113,14 +113,14 @@ std::shared_ptr<atl_base_comm> atl_comm_manager::create_comm(int total_rank_coun
 
     switch (transport_type) {
         case ccl_atl_ofi:
-            atl_comm = std::shared_ptr<atl_base_comm>(new atl_ofi_comm(total_rank_count, ranks, k));
+            atl_comm = std::shared_ptr<atl_base_comm>(new atl_ofi_comm(comm_size, ranks, k));
             break;
 #ifdef CCL_ENABLE_MPI
         case ccl_atl_mpi:
-            atl_comm = std::shared_ptr<atl_base_comm>(new atl_mpi_comm(total_rank_count, ranks, k));
+            atl_comm = std::shared_ptr<atl_base_comm>(new atl_mpi_comm(comm_size, ranks, k));
             break;
 #endif // CCL_ENABLE_MPI
-        default: LOG_ERROR("Unsupported yet"); break;
+        default: LOG_ERROR("unsupported yet"); break;
     }
     return atl_comm;
 }

@@ -8,9 +8,7 @@ public:
     ~atl_ofi_comm() override;
     atl_ofi_comm();
     atl_ofi_comm(std::shared_ptr<ikvs_wrapper> k);
-    atl_ofi_comm(int total_rank_count,
-                 const std::vector<int>& ranks,
-                 std::shared_ptr<ikvs_wrapper> k);
+    atl_ofi_comm(int comm_size, const std::vector<int>& ranks, std::shared_ptr<ikvs_wrapper> k);
 
     atl_status_t main_addr_reserve(char* main_addr) override {
         return pmi->pmrt_main_addr_reserve(main_addr);

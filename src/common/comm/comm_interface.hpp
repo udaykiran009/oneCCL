@@ -129,8 +129,6 @@ struct communicator_interface : public communicator_interface_dispatcher {
     virtual bool is_gpu() const noexcept = 0;
     virtual bool is_accelerator() const noexcept = 0;
 
-    virtual bool is_ready() const = 0;
-
     virtual ccl::communicator_interface_ptr split(const ccl::comm_split_attr& attr) = 0;
 
     // collectives operation declarations

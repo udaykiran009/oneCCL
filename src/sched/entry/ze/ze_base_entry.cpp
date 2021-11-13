@@ -241,7 +241,7 @@ void ze_base_entry::update() {
         if (copy_primitives.queue)
             copy_q_complete = is_queue_completed(copy_primitives.queue);
         if (comp_primitives.queue)
-            comp_q_complete = complete && is_queue_completed(comp_primitives.queue);
+            comp_q_complete = is_queue_completed(comp_primitives.queue);
         complete = copy_q_complete && comp_q_complete;
     }
 

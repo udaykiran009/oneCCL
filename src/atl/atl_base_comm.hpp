@@ -186,7 +186,7 @@ public:
 
     static std::shared_ptr<atl_base_comm> create_comm(std::shared_ptr<ikvs_wrapper> k);
 
-    static std::shared_ptr<atl_base_comm> create_comm(int total_rank_count,
+    static std::shared_ptr<atl_base_comm> create_comm(int comm_size,
                                                       const std::vector<int>& ranks,
                                                       std::shared_ptr<ikvs_wrapper> k);
     static void set_internal_env(const atl_attr_t& attr);

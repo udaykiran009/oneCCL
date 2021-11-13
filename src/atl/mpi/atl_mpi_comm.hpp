@@ -13,8 +13,8 @@ public:
 
     atl_mpi_comm();
     atl_mpi_comm(std::shared_ptr<ikvs_wrapper> k);
-    atl_mpi_comm(int total_rank_count,
-                 const std::vector<int>& ranks,
+    atl_mpi_comm(int comm_size,
+                 const std::vector<int>& local_ranks,
                  std::shared_ptr<ikvs_wrapper> k);
 
     atl_status_t main_addr_reserve(char* main_addr) override {

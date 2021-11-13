@@ -15,15 +15,17 @@ export CCL_ZE_CLOSE_IPC_WA=0
 cache_modes="0 1"
 allocator_modes="0 1"
 
-for cache_mode in ${cache_modes}; do
-    for allocator_mode in ${allocator_modes}; do
+for cache_mode in ${cache_modes}
+do
+    for allocator_mode in ${allocator_modes}
+    do
         export CCL_ZE_CACHE=${cache_mode}
         export CCL_ZE_CACHE_IPC_HANDLES=${cache_mode}
         export SYCL_PI_LEVEL_ZERO_DISABLE_USM_ALLOCATOR=${allocator_mode}
-        mpiexec -n 2 ${SCRIPT_DIR}/${BINFILE} gpu device > ${TEST_LOG} 2>&1
+        mpiexec -n 2 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
         rc=$?
         if [[ ${rc} -ne 0 ]] ; then
-            echo "fail"
+            echo "Fail"
             exit 1
         fi
     done

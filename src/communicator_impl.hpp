@@ -6,7 +6,6 @@
 #include "oneapi/ccl/communicator.hpp"
 
 #include "kvs_impl.hpp"
-#include "communicator_impl_details.hpp"
 
 namespace ccl {
 
@@ -23,14 +22,14 @@ CCL_API vector_class<communicator> communicator::create_communicators(
     return ret;
 }
 
-using rank_t = int;
-
 template <class DeviceType, class ContextType>
 CCL_API vector_class<communicator> communicator::create_communicators(
     const int size,
     const vector_class<pair_class<int, DeviceType>>& devices,
     const ContextType& context,
     shared_ptr_class<kvs_interface> kvs) {
+    LOG_DEBUG("size: ", size, ", local ranks: ", devices.size());
+
     shared_ptr_class<ikvs_wrapper> kvs_tmp;
     if (std::dynamic_pointer_cast<ccl::v1::kvs>(kvs) != nullptr) {
         kvs_tmp = std::dynamic_pointer_cast<v1::kvs>(kvs)->get_impl().get();
@@ -41,12 +40,12 @@ CCL_API vector_class<communicator> communicator::create_communicators(
 
     CCL_THROW_IF_NOT(devices.size() == 1, "multiple devices per process are not supported");
 
-    LOG_TRACE("create communicator");
-
     ccl::communicator_interface_ptr impl = ccl::communicator_interface::create_communicator_impl(
         size, devices.begin()->first, kvs_tmp);
+
     ccl::vector_class<ccl::communicator> ret;
     ret.push_back(ccl::communicator(std::move(impl)));
+
     return ret;
 }
 
@@ -71,7 +70,7 @@ CCL_API vector_class<communicator> communicator::create_communicators(
 communicator communicator::create_communicator(const comm_attr& attr) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
-    LOG_DEBUG("create host communicator");
+    LOG_DEBUG("create communicator");
 
     communicator_interface_ptr impl = communicator_interface::create_communicator_impl();
 
@@ -90,7 +89,7 @@ communicator communicator::create_communicator(const int size,
                                                const comm_attr& attr) {
     throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
 
-    LOG_DEBUG("create host communicator");
+    LOG_DEBUG("size: ", size);
 
     shared_ptr_class<ikvs_wrapper> kvs_tmp;
     if (std::dynamic_pointer_cast<ccl::v1::kvs>(kvs) != nullptr) {

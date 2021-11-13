@@ -64,16 +64,15 @@ atl_ofi_comm::atl_ofi_comm(std::shared_ptr<ikvs_wrapper> k) {
     CCL_THROW_IF_NOT(init_transport(true) == ATL_STATUS_SUCCESS, "init transport failed");
 }
 
-atl_ofi_comm::atl_ofi_comm(int total_rank_count,
+atl_ofi_comm::atl_ofi_comm(int comm_size,
                            const std::vector<int>& ranks,
                            std::shared_ptr<ikvs_wrapper> k) {
     std::shared_ptr<internal_kvs> kvs;
     if ((kvs = std::dynamic_pointer_cast<internal_kvs>(k)) != nullptr) {
-        pmi =
-            std::shared_ptr<ipmi>(new pmi_resizable_simple_internal(total_rank_count, ranks, kvs));
+        pmi = std::shared_ptr<ipmi>(new pmi_resizable_simple_internal(comm_size, ranks, kvs));
     }
     else {
-        pmi = std::shared_ptr<ipmi>(new pmi_resizable_simple(total_rank_count, ranks, k));
+        pmi = std::shared_ptr<ipmi>(new pmi_resizable_simple(comm_size, ranks, k));
     }
 
     CCL_THROW_IF_NOT(init_transport(true) == ATL_STATUS_SUCCESS, "init transport failed");

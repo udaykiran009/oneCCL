@@ -21,7 +21,7 @@ pmi_resizable_simple_internal::pmi_resizable_simple_internal(int size,
                                                              const std::vector<int>& ranks,
                                                              std::shared_ptr<internal_kvs> k,
                                                              const char* main_addr)
-        : total_rank_count(size),
+        : comm_size(size),
           ranks(ranks),
           k(k),
           main_addr(main_addr) {
@@ -66,7 +66,7 @@ atl_status_t pmi_resizable_simple_internal::pmrt_init() {
 }
 
 atl_status_t pmi_resizable_simple_internal::registration() {
-    std::string total_local_rank_count_str = std::to_string(total_rank_count);
+    std::string total_local_rank_count_str = std::to_string(comm_size);
     std::string result_kvs_name = std::string(INTERNAL_REGISTRATION) + std::to_string(local_id);
     memset(val_storage, 0, max_vallen);
     snprintf(val_storage,
@@ -110,7 +110,7 @@ atl_status_t pmi_resizable_simple_internal::registration() {
 atl_status_t pmi_resizable_simple_internal::barrier_full_reg() {
     std::string empty_line("");
     std::string total_local_rank_count_str =
-        std::to_string(total_rank_count) + "_" + std::to_string(ranks.size());
+        std::to_string(comm_size) + "_" + std::to_string(ranks.size());
     std::string result_kvs_name = std::string(KVS_BARRIER_FULL) + std::to_string(local_id);
 
     KVS_2_ATL_CHECK_STATUS(
