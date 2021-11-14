@@ -127,7 +127,7 @@ bool is_gpu_stream(const ccl_selector_param& param) {
 
 bool is_single_node(const ccl_selector_param& param) {
     size_t local_proc_count = ccl::global_data::get().executor->get_local_proc_count();
-    return static_cast<size_t>(param.comm->size()) == local_proc_count;
+    return static_cast<size_t>(param.comm->size()) <= local_proc_count;
 }
 
 bool is_single_card(const ccl_selector_param& param) {
@@ -215,7 +215,12 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
     size_t local_proc_count = ccl::global_data::get().executor->get_local_proc_count();
     int comm_size = param.comm->size();
 
-    LOG_DEBUG("local_proc_count ", local_proc_count, ", comm ", param.comm->to_string());
+    LOG_DEBUG("coll ",
+              ccl_coll_type_to_str(param.ctype),
+              ", local_proc_count ",
+              local_proc_count,
+              ", comm ",
+              param.comm->to_string());
 
     RETURN_FALSE_IF(!checkers::is_gpu_stream(param), "non-gpu stream is not supported");
     RETURN_FALSE_IF(checkers::is_sycl_buf(param), "sycl buffer is not supported");
@@ -242,10 +247,9 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
     }
 #endif // CCL_ENABLE_SYCL
 
-    RETURN_FALSE_IF((((param.ctype == ccl_coll_bcast) || (param.ctype == ccl_coll_reduce)) &&
-                     ((comm_size < 2) || (local_proc_count == 1))) ||
-                        ((param.ctype == ccl_coll_allreduce || param.ctype == ccl_coll_reduce) &&
-                         ((comm_size < 2) || (local_proc_count == 1))),
+    RETURN_FALSE_IF((((param.ctype == ccl_coll_allreduce) || (param.ctype == ccl_coll_bcast) ||
+                      (param.ctype == ccl_coll_reduce)) &&
+                     ((comm_size < 2) || (local_proc_count == 1))),
                     "unsupported comm size for ",
                     ccl_coll_type_to_str(param.ctype));
 
@@ -262,9 +266,12 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
                         comm_size % local_proc_count != 0,
                     "ppn must be equal");
 
+    RETURN_FALSE_IF((comm_size % 2 != 0), "odd comm_size is not supported");
+
     RETURN_FALSE_IF(!checkers::is_single_card(param) && !checkers::is_single_node(param) &&
                         (local_proc_count % 2 != 0),
                     "odd proc count per node is not supported");
+
     return true;
 }
 

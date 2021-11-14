@@ -13,11 +13,13 @@ check_ccl
 
 mpiexec -l -n 3 -ppn 1 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
 rc=$?
-
-if [[ ${rc} -ne 0 ]]; then
+if [[ ${rc} -ne 0 ]]
+then
     echo "Fail"
     exit 1
-else
-    rm -f ${BINFILE} ${TEST_LOG}
-    echo "Pass"
 fi
+
+check_log ${TEST_LOG}
+
+rm -f ${BINFILE} ${TEST_LOG}
+echo "Pass"

@@ -10,4 +10,5 @@ mpich_checker platform=* transport=impi
 allgatherv_vector platform=gen9 transport=*
 allreduce_events platform=gen9 transport=*
 allreduce_events_inorder platform=gen9 transport=*
+multi_comms platform=gen9 transport=*
 multi_level_algos platform=ats transport=*

@@ -331,10 +331,10 @@ atl_status_t pmi_resizable_simple::register_my_proc_name() {
         LOG_ERROR("gethostname error: %s\n", strerror(errno));
         return ATL_STATUS_FAILURE;
     }
-    my_proccess_name = std::string(hostname) + std::to_string(my_pid);
+    my_process_name = std::string(hostname) + std::to_string(my_pid);
 
     return kvs_set_value(
-        PROCESS_THREAD_NAME, std::to_string(assigned_thread_idx).c_str(), my_proccess_name.c_str());
+        PROCESS_THREAD_NAME, std::to_string(assigned_thread_idx).c_str(), my_process_name.c_str());
 }
 
 atl_status_t pmi_resizable_simple::get_my_proc_idx_and_proc_count() {
@@ -348,12 +348,12 @@ atl_status_t pmi_resizable_simple::get_my_proc_idx_and_proc_count() {
         it = proc_name_to_rank.find(val_storage);
         if (it == proc_name_to_rank.end()) {
             rank = threads_per_proc.size();
-            if (!my_proccess_name.compare(val_storage)) {
+            if (!my_process_name.compare(val_storage)) {
                 assigned_proc_idx = rank;
                 if (assigned_thread_idx == i) {
                     ATL_CHECK_STATUS(kvs_set_value(REQUESTED_RANK_TO_NAME,
                                                    std::to_string(assigned_proc_idx).c_str(),
-                                                   my_proccess_name.c_str()),
+                                                   my_process_name.c_str()),
                                      "failed to set proc name");
                 }
             }
@@ -391,7 +391,7 @@ atl_status_t pmi_resizable_simple::make_map_requested2global() {
         ATL_CHECK_STATUS(kvs_iget_value(GLOBAL_NAME_TO_RANK, process_name, global_rank_str),
                          "make_map_requested2global: failed to get glob rank");
         if (strlen(global_rank_str) == 0) {
-            if (!my_proccess_name.compare(process_name)) {
+            if (!my_process_name.compare(process_name)) {
                 int free_glob_rank = 0;
                 ATL_CHECK_STATUS(
                     kvs_iget_value(
@@ -406,10 +406,10 @@ atl_status_t pmi_resizable_simple::make_map_requested2global() {
                 }
                 ATL_CHECK_STATUS(kvs_set_value(GLOBAL_RANK_TO_NAME,
                                                std::to_string(free_glob_rank).c_str(),
-                                               my_proccess_name.c_str()),
+                                               my_process_name.c_str()),
                                  "make_map_requested2global: failed to set proc name");
                 ATL_CHECK_STATUS(kvs_set_value(GLOBAL_NAME_TO_RANK,
-                                               my_proccess_name.c_str(),
+                                               my_process_name.c_str(),
                                                std::to_string(free_glob_rank).c_str()),
                                  "make_map_requested2global: failed to set free rank info");
             }

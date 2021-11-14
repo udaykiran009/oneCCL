@@ -4,7 +4,8 @@ set(sources
     allreduce_events_inorder.cpp
     alltoallv_empty_count.cpp
     allreduce_bf16_gpu.cpp
-    close_ipc_handle_after_mem_free.cpp)
+    close_ipc_handle_after_mem_free.cpp
+    multi_comms.cpp)
 
 set(CCL_INSTALL_TESTS "${CMAKE_CURRENT_SOURCE_DIR}")
 

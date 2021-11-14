@@ -59,7 +59,7 @@ ccl_comm::ccl_comm(ccl_comm_id_storage::comm_id&& id,
               new ccl_comm_id_storage::comm_id(std::move(id)))),
           next_sched_id_internal(ccl_comm::max_sched_count / 2),
           next_sched_id_external(0) {
-    LOG_DEBUG("ctor");
+    LOG_DEBUG("ctor: ", to_string());
 
     if (comm_rank >= comm_size || comm_size <= 0) {
         throw ccl::exception("incorrect rank or size when creating \

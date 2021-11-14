@@ -28,6 +28,7 @@ do
             echo "Fail"
             exit 1
         fi
+        check_log ${TEST_LOG}
     done
 done
 

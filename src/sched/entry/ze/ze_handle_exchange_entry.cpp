@@ -484,7 +484,7 @@ void ze_handle_exchange_entry::recvmsg_fd(int sock, int& fd, payload_t& payload)
 
         /** MSG_CTRUNC message can be in case of:
          * - remote peer send invalid fd, so msg_controllen == 0
-         * - limit of fds reached in the current procces, so msg_controllen == 0
+         * - limit of fds reached in the current process, so msg_controllen == 0
          * - the remote peer control message > msg_control buffer size
          */
         CCL_THROW("control or usual message is truncated:",

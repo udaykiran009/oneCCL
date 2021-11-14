@@ -150,10 +150,10 @@ int main(int argc, char *argv[]) {
 
     if (fail_counter) {
         cout << "FAILED\n";
+        return -1;
     }
     else {
         cout << "PASSED\n";
+        return 0;
     }
-
-    return 0;
 }

@@ -106,8 +106,9 @@ int main(int argc, char *argv[]) {
     }
 
     // Make sure there is no exceptions in the queue
-    if (!handle_exception(q))
+    if (!handle_exception(q)) {
         return -1;
+    }
 
     /* Check if we have an error on some iteration */
     auto check_buf_acc = check_buf.get_access<sycl::access_mode::read>();

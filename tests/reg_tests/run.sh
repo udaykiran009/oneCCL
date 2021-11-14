@@ -14,7 +14,7 @@ popd () {
     command popd "$@" > /dev/null
 }
 
-CheckCommandExitCode()
+check_command_exit_code()
 {
     if [ $1 -ne 0 ]; then
         echo "ERROR: ${2}" 1>&2
@@ -207,7 +207,7 @@ build() {
         pushd ${SCRIPT_DIR}/build
         cmake .. -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DCOMPUTE_BACKEND="${COMPUTE_BACKEND}"
         make VERBOSE=1 -j${MAKE_JOB_COUNT} install
-        CheckCommandExitCode $? "build failed"
+        check_command_exit_code $? "build failed"
         popd
     fi
 }
@@ -250,7 +250,7 @@ run_tests() {
             for test in "${failed_test[@]}"; do
                 echo "    ${test}"
             done
-            CheckCommandExitCode ${#failed_test[@]} "testing failed"
+            check_command_exit_code ${#failed_test[@]} "testing failed"
         else
             echo "All tests passed"
         fi

@@ -63,8 +63,8 @@ int main(int argc, char *argv[]) {
 
     atexit(mpi_finalize);
 
-    cl::sycl::property_list props{ sycl::property::queue::in_order{},
-                                   sycl::property::queue::enable_profiling{} };
+    sycl::property_list props{ sycl::property::queue::in_order{},
+                               sycl::property::queue::enable_profiling{} };
     queue q{ props };
 
     buf_allocator<int> allocator(q);
@@ -175,8 +175,9 @@ int main(int argc, char *argv[]) {
         e.wait();
 
     // Make sure there is no exceptions in the queue
-    if (!handle_exception(q))
+    if (!handle_exception(q)) {
         return -1;
+    }
 
     for (auto p : ptrs) {
         allocator.deallocate(p.first);

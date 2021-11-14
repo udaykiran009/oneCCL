@@ -57,6 +57,8 @@ do
             exit 1
         fi
 
+        check_log ${LOG}
+
         grep -o 'mnic_count: [[:digit:]]*'
 
         in_mnic_type=$(cat ${LOG} | grep "in:" | grep -o "mnic_type: [[:alpha:]]*" | awk '{print $2}')

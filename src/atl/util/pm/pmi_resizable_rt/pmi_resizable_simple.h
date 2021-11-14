@@ -108,7 +108,7 @@ private:
 
     size_t assigned_thread_idx = 0;
     size_t local_thread_idx = 0;
-    std::string my_proccess_name;
+    std::string my_process_name;
     std::vector<int> ranks;
     std::vector<size_t> ranks_per_thread_map;
     std::map<size_t, std::list<size_t>> threads_per_proc;
