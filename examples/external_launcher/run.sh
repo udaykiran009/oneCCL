@@ -217,6 +217,12 @@ run_binary()
     for file in "${log_files[@]}"
     do
         echo "check: $file"
+        proc_count=`lsof $file | wc -l`
+        while [ $proc_cont -ne 0 ]
+        do
+            sleep 1
+            proc_count=`lsof $file | wc -l`
+        done
         pass_count=`cat $file | grep "PASSED" | wc -l`
         if [ "${pass_count}" != "1" ]
         then
