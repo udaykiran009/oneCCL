@@ -18,7 +18,7 @@ ccl_worker::ccl_worker(size_t idx, std::unique_ptr<ccl_sched_queue> queue)
           sched_queue(std::move(queue)) {}
 
 void ccl_worker::add(ccl_sched* sched) {
-    LOG_DEBUG("add sched ", sched, ", type ", ccl_coll_type_to_str(sched->coll_param.ctype));
+    LOG_DEBUG("add sched ", sched, ", coll ", ccl_coll_type_to_str(sched->coll_param.ctype));
 
     CCL_ASSERT(sched);
     CCL_ASSERT(!sched->bin);

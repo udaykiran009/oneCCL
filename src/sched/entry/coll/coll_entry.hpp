@@ -72,7 +72,7 @@ protected:
         ccl_logger::format(str,
                            "dt ",
                            ccl::global_data::get().dtypes->name(param.dtype),
-                           ", coll_type ",
+                           ", coll ",
                            ccl_coll_type_to_str(param.ctype),
                            ", send_buf ",
                            param.send_buf,

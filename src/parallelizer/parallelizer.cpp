@@ -293,12 +293,8 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
         default: CCL_FATAL("unexpected coll_type ", coll_type); break;
     }
 
-    LOG_DEBUG("sched ",
-              sched,
-              ", coll_type ",
-              ccl_coll_type_to_str(coll_type),
-              ", part_count ",
-              part_count);
+    LOG_DEBUG(
+        "sched ", sched, ", coll ", ccl_coll_type_to_str(coll_type), ", part_count ", part_count);
 
     if (coll_type == ccl_coll_allgatherv && algo.allgatherv == ccl_coll_allgatherv_multi_bcast &&
         internal_algo.bcast == ccl_coll_bcast_direct) {

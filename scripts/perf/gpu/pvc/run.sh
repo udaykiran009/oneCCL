@@ -283,9 +283,9 @@ check_run_env() {
     echo_log "\nDevice list:"
     echo_log "${device_list}"
 
-    sycl_ls=`sycl-ls`
-    echo_log "\nsycl-ls:"
-    echo_log "${sycl_ls}"
+    # sycl_ls=`sycl-ls`
+    # echo_log "\nsycl-ls:"
+    # echo_log "${sycl_ls}"
 }
 
 build_ccl() {
@@ -371,6 +371,7 @@ run_bench() {
     base_env="FI_PROVIDER=cxi CCL_ATL_TRANSPORT=mpi"
     base_env+=" CCL_LOG_LEVEL=info I_MPI_DEBUG=12"
     base_env+=" CCL_MNIC=local CCL_MNIC_COUNT=4"
+    base_env+=" EngineInstancedSubDevices=0"
 
     # https://jira.devtools.intel.com/browse/XDEPS-2195
     base_env+=" CCL_STAGING_BUFFER=regular"

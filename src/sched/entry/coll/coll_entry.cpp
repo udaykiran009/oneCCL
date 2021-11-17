@@ -94,7 +94,7 @@ void coll_entry::start() {
                   this,
                   ", subsched: ",
                   subsched.get(),
-                  ", ctype: ",
+                  ", coll: ",
                   ccl_coll_type_to_str(param.ctype),
                   ", count: ",
                   param.count);
@@ -103,7 +103,7 @@ void coll_entry::start() {
                   this,
                   ", subsched: ",
                   subsched.get(),
-                  ", ctype: ",
+                  ", coll: ",
                   ccl_coll_type_to_str(param.ctype),
                   ", count: ",
                   param.count);

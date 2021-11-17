@@ -86,7 +86,7 @@ bool ccl_fusion_manager::can_fuse(ccl_master_sched* sched) {
     }
 
     if (sched->coll_param.ctype != ccl_coll_allreduce) {
-        LOG_DEBUG("can't fuse due to coll_type ", ccl_coll_type_to_str(sched->coll_param.ctype));
+        LOG_DEBUG("can't fuse due to coll ", ccl_coll_type_to_str(sched->coll_param.ctype));
         return false;
     }
 

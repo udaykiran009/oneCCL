@@ -760,12 +760,12 @@ atl_status_t atl_mpi::comm_split(const std::vector<atl_mpi_ep_t>& base_eps,
             snprintf(nic_idx_str, MPI_MAX_INFO_VAL, "%zu", nic_idx);
             MPI_Info_set(info, global_data.NIC_IDX_KEY, nic_idx_str);
 
-            LOG_INFO("select nic: ep_idx ",
-                     idx,
-                     ", local_proc_idx ",
-                     global_coord.local_idx,
-                     ", nic_idx ",
-                     nic_idx);
+            LOG_DEBUG("select nic: ep_idx ",
+                      idx,
+                      ", local_proc_idx ",
+                      global_coord.local_idx,
+                      ", nic_idx ",
+                      nic_idx);
         }
 
         MPI_Comm_set_info(ep.mpi_comm, info);

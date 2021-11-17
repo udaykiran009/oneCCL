@@ -345,7 +345,7 @@ void ccl_sched_base::alloc_buffers_for_pre_post_copy() {
         }
     }
 
-    LOG_DEBUG("coll_type ", param.ctype, ", should_alloc_buffers ", should_alloc_buffers);
+    LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), ", alloc_buffers ", should_alloc_buffers);
 
     if (!should_alloc_buffers) {
         return;
@@ -363,7 +363,7 @@ void ccl_sched_base::alloc_buffers_for_pre_post_copy() {
     bool reuse_buffers;
     get_pre_post_copy_counts(d2h_counts, h2d_counts, reuse_buffers);
 
-    LOG_DEBUG("alloc tmp buffers for D2H and H2D copies, coll_type ",
+    LOG_DEBUG("alloc tmp buffers for D2H and H2D copies, coll ",
               ccl_coll_type_to_str(param.ctype),
               ", dtype_size ",
               param.dtype.size(),

@@ -80,6 +80,7 @@ static inline sycl::event submit_barrier(cl::sycl::queue queue, sycl::event even
 #endif // DPCPP_VERSION
 }
 
+#ifdef CCL_ENABLE_SYCL_INTEROP_EVENT
 static inline sycl::event make_event(sycl::context& context, ze_event_handle_t& sync_event) {
 #if DPCPP_VERSION >= 140000
     return sycl::make_event<sycl::backend::ext_oneapi_level_zero>(
@@ -89,6 +90,7 @@ static inline sycl::event make_event(sycl::context& context, ze_event_handle_t& 
         context, sync_event, sycl::level_zero::ownership::keep);
 #endif // DPCPP_VERSION
 }
+#endif // CCL_ENABLE_SYCL_INTEROP_EVENT
 
 } // namespace utils
 } // namespace ccl

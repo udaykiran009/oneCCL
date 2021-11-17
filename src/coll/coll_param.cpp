@@ -275,7 +275,7 @@ void ccl_coll_param::validate() const {
         return;
     }
 
-    LOG_TRACE("validate coll_param, ctype: ", ccl_coll_type_to_str(ctype));
+    LOG_TRACE("validate coll_param, coll: ", ccl_coll_type_to_str(ctype));
     CCL_THROW_IF_NOT(!send_counts.empty(), "empty send_counts");
     CCL_THROW_IF_NOT(!recv_counts.empty(), "empty recv_counts");
     CCL_THROW_IF_NOT(comm, "null comm");

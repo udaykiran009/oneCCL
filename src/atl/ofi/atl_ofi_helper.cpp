@@ -1054,7 +1054,7 @@ int atl_ofi_nic_already_used(const struct fi_info* prov,
             others[i]->nic->bus_attr->bus_type == FI_BUS_PCI) {
             struct fi_pci_attr pci = prov->nic->bus_attr->attr.pci;
             struct fi_pci_attr other_pci = others[i]->nic->bus_attr->attr.pci;
-            LOG_DEBUG("compare nic ",
+            LOG_TRACE("compare nic ",
                       prov->fabric_attr->prov_name,
                       " pci ",
                       (int)pci.domain_id,
@@ -1079,7 +1079,7 @@ int atl_ofi_nic_already_used(const struct fi_info* prov,
                 return 1;
         }
         else {
-            LOG_DEBUG("compare nic ",
+            LOG_TRACE("compare nic ",
                       atl_ofi_get_nic_name(prov),
                       " with nic ",
                       atl_ofi_get_nic_name(others[i]));
