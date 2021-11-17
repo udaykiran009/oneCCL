@@ -843,14 +843,15 @@ run_tests() {
     master_ip_value=`ssh ${first_host} ifconfig | grep "inet " | head -n 1 | awk '{print $2}'`
     echo_log "master_ip: ${master_ip_value}"
 
-    MASTER_IP="--master-ip ${master_ip_value}"
+    MASTER_IP_ENV="MASTER_ADDR=${master_ip_value}"
+    PARAM_ENV="${MASTER_IP_ENV}"
 
     # param_coll_list="all_reduce all_to_all all_to_allv"
     param_coll_list="all_reduce"
 
     for coll in ${param_coll_list}
     do
-        cmd="mpiexec ${N} ${PPN} ${EXTRA_ARGS} python ./comms.py ${MASTER_IP} \
+        cmd="${PARAM_ENV} mpiexec ${N} ${PPN} ${EXTRA_ARGS} python ./comms.py \
             --b 8 --e 8M --n 64 --f 2 --z 1 \
             --collective ${coll} --backend ucc --log INFO 2>&1 | tee -a ${TESTS_LOG_FILE}"
         echo_log "exec cmd: $cmd"
@@ -862,7 +863,7 @@ run_tests() {
     echo "================ 5. PARAM trace ================" | tee -a ${TESTS_LOG_FILE}
     TRACE_OUTPUT_PATH="${SCRIPT_WORK_DIR}/trace_output"
     rm "${TRACE_OUTPUT_PATH}/*"
-    cmd="mpiexec ${N} ${PPN} ${EXTRA_ARGS} python ./commsTraceReplay.py ${MASTER_IP} \
+    cmd="${PARAM_ENV} mpiexec ${N} ${PPN} ${EXTRA_ARGS} python ./commsTraceReplay.py \
         --trace-path ${TRACE_PATH} --output-path ${TRACE_OUTPUT_PATH} \
         --no-warm-up --max-msg-cnt 1024 --auto-shrink \
         --backend ucc --log INFO 2>&1 | tee -a ${TESTS_LOG_FILE}"
