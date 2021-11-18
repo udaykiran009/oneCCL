@@ -15,7 +15,7 @@
 #define LOCAL_KVS_ID           "LOCAL_KVS_ID"
 
 #define INTERNAL_REGISTRATION                 "INTERNAL_REGISTRATION"
-#define RANKCOUNT_RANK_PROCID_THREADID_FORMAT "%ld_%d_%d_%ld"
+#define RANKCOUNT_RANK_PROCID_THREADID_FORMAT "%zu_%d_%d_%ld"
 
 pmi_resizable_simple_internal::pmi_resizable_simple_internal(int size,
                                                              const std::vector<int>& ranks,
@@ -24,10 +24,10 @@ pmi_resizable_simple_internal::pmi_resizable_simple_internal(int size,
         : comm_size(size),
           ranks(ranks),
           k(k),
-          main_addr(main_addr) {
-    max_keylen = MAX_KVS_KEY_LENGTH;
-    max_vallen = MAX_KVS_VAL_LENGTH;
-}
+          main_addr(main_addr),
+          max_keylen(MAX_KVS_KEY_LENGTH),
+          max_vallen(MAX_KVS_VAL_LENGTH),
+          local_id(0) {}
 
 int pmi_resizable_simple_internal::is_pm_resize_enabled() {
     return 0;

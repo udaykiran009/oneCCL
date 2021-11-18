@@ -87,7 +87,7 @@ ccl_datatype_storage::ccl_datatype_storage() {
                    : (idx == ccl::datatype::float32)  ? "float32"
                    : (idx == ccl::datatype::float64)  ? "float64"
                    : (idx == ccl::datatype::bfloat16) ? "bfloat16"
-                                                      : 0;
+                                                      : "";
 
         create_internal(predefined_table, idx, size, name_str);
 

@@ -33,7 +33,7 @@ public:
 
     kernel_timer(const kernel_timer&) = default;
 
-    void set_name(const std::string name);
+    void set_name(const std::string& name);
     const std::string& get_name() const;
 
     void set_kernel_time(std::pair<uint64_t, uint64_t> val);

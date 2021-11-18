@@ -78,9 +78,8 @@ void CCL_API kvs::set(const string_class& key, const vector_class<char>& data) {
     pimpl->set(key, data);
 }
 
-CCL_API kvs::kvs(const kvs::address_type& addr, const kvs_attr& attr) {
-    pimpl = std::unique_ptr<kvs_impl>(new kvs_impl(addr, attr));
-}
+CCL_API kvs::kvs(const kvs::address_type& addr, const kvs_attr& attr)
+        : pimpl(new kvs_impl(addr, attr)) {}
 
 CCL_API const kvs_impl& kvs::get_impl() {
     return *pimpl;

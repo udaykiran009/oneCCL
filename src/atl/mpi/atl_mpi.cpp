@@ -728,7 +728,7 @@ void atl_mpi::set_env(const atl_attr_t& attr) {
 atl_status_t atl_mpi::comm_split(const std::vector<atl_mpi_ep_t>& base_eps,
                                  std::vector<atl_mpi_ep_t>& eps,
                                  size_t color) {
-    int ret;
+    int ret = 0;
     atl_mpi_ep_t ep;
     for (size_t idx = 0; idx < ep_count; idx++) {
         ssize_t mpi_ep_idx = get_ep_idx(idx);
@@ -747,7 +747,7 @@ atl_status_t atl_mpi::comm_split(const std::vector<atl_mpi_ep_t>& base_eps,
         MPI_Info_create(&info);
 
         /* set EP index */
-        snprintf(mpi_ep_idx_str, MPI_MAX_INFO_VAL, "%zu", mpi_ep_idx);
+        snprintf(mpi_ep_idx_str, MPI_MAX_INFO_VAL, "%zd", mpi_ep_idx);
         MPI_Info_set(info, global_data.EP_IDX_KEY, mpi_ep_idx_str);
 
         if (global_data.mnic_type != ATL_MNIC_NONE) {

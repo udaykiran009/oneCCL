@@ -19,12 +19,12 @@ pmi_resizable_simple::pmi_resizable_simple(int size,
                                            std::shared_ptr<ikvs_wrapper> k,
                                            const char* main_addr)
         : comm_size(size),
+          assigned_proc_idx(0),
           ranks(ranks),
           k(k),
-          main_addr(main_addr) {
-    max_keylen = MAX_KVS_KEY_LENGTH;
-    max_vallen = MAX_KVS_VAL_LENGTH;
-}
+          main_addr(main_addr),
+          max_keylen(MAX_KVS_KEY_LENGTH),
+          max_vallen(MAX_KVS_VAL_LENGTH) {}
 
 int pmi_resizable_simple::is_pm_resize_enabled() {
     return 0;

@@ -42,8 +42,11 @@ long double sched_timer::get_time() const noexcept {
 kernel_timer::kernel_timer()
         : kernel_time{ get_uninit_values() },
           operation_event_time{ get_uninit_values() },
+          operation_create_time{ std::numeric_limits<uint64_t>::max() },
           operation_start_time{ std::numeric_limits<uint64_t>::max() },
           operation_end_time{ std::numeric_limits<uint64_t>::max() },
+          deps_start_time{ std::numeric_limits<uint64_t>::max() },
+          deps_end_time{ std::numeric_limits<uint64_t>::max() },
           kernel_submit_time{ std::numeric_limits<uint64_t>::max() } {}
 
 // Returns true if we have all the necessary data to print
@@ -157,7 +160,7 @@ uint64_t kernel_timer::get_current_time() {
         .count();
 }
 
-void kernel_timer::set_name(const std::string new_name) {
+void kernel_timer::set_name(const std::string& new_name) {
     name = new_name;
 }
 const std::string& kernel_timer::get_name() const {
