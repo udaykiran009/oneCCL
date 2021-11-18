@@ -1,9 +1,8 @@
 #include <numeric>
 #include <vector>
 #include <iostream>
+
 #include "sycl_base.hpp"
-#include "oneapi/ccl.hpp"
-#include "mpi.h"
 
 // there are 3 ranks, rank 0 is able to send and receive data to/from others(its send and receive total count > 0)
 // rank 1 only sends data but not receives it(its recv_count == 0 for all ranks), and rank 2 only receives data but
@@ -20,7 +19,7 @@ int main(int argc, char* argv[]) {
 
     sycl::queue q;
     if (!q.get_device().is_gpu()) {
-        printf("test expects GPU device, please use SYCL_DEVICE_FILTER accordingly");
+        cout << "test expects GPU device, please use SYCL_DEVICE_FILTER accordingly\n";
         return -1;
     }
 
@@ -32,7 +31,7 @@ int main(int argc, char* argv[]) {
     atexit(mpi_finalize);
 
     if (size < 3) {
-        printf("test expects >= 3 ranks");
+        cout << "test expects >= 3 ranks\n";
         return -1;
     }
 
@@ -137,11 +136,12 @@ int main(int argc, char* argv[]) {
         sycl::host_accessor check_buf_acc(check_buf, sycl::read_only);
         for (size_t i = 0; i < total_recv; i++) {
             if (check_buf_acc[i] == -1) {
-                printf("unexpected value at idx %zu\n", i);
-                fflush(stdout);
+                cout << "FAILED: unexpected value at idx " << i << "\n";
                 return -1;
             }
         }
     }
+
+    cout << "PASSED\n";
     return 0;
 }

@@ -28,7 +28,7 @@ export I_MPI_THREAD_LOCK_LEVEL=global
 
 bench_options="-b sycl -w 4 -i 8 -c all -l allreduce -y 1000"
 
-mpiexec -l -n 2 -ppn 2 ${SCRIPT_DIR}/benchmark ${bench_options} >> ${TEST_LOG} 2>&1
+mpiexec -l -n 2 -ppn 2 ${SCRIPT_DIR}/benchmark ${bench_options} > ${TEST_LOG} 2>&1
 ret_val=$?
 if [ $ret_val -ne 0 ]
 then

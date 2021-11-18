@@ -26,5 +26,4 @@ then
 fi
 
 check_log ${TEST_LOG}
-
 echo "Pass"

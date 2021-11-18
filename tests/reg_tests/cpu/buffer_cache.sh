@@ -25,7 +25,7 @@ do
     for buffer_cache_mode in ${buffer_cache_modes}
     do
         export CCL_BUFFER_CACHE=${buffer_cache_mode}
-        mpiexec -l -n ${proc_count} -ppn 1 ${SCRIPT_DIR}/benchmark ${bench_options} >> ${TEST_LOG} 2>&1
+        mpiexec -l -n ${proc_count} -ppn 1 ${SCRIPT_DIR}/benchmark ${bench_options} > ${TEST_LOG} 2>&1
         rc=$?
         if [ ${rc} -ne 0 ]
         then

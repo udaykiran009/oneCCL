@@ -12,6 +12,14 @@ message(STATUS "PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 
 set(EXAMPLES_DIR ${PROJECT_SOURCE_DIR}/../../examples)
 set(EXAMPLES_INC_DIRS ${EXAMPLES_DIR}/include)
+message(STATUS "EXAMPLES_INC_DIRS: ${EXAMPLES_INC_DIRS}")
+include_directories(${EXAMPLES_INC_DIRS})
+link_directories(${EXAMPLES_LIB_DIRS})
+
+set(REG_TESTS_DIR ${PROJECT_SOURCE_DIR})
+set(REG_TESTS_INC_DIR ${REG_TESTS_DIR}/include)
+message(STATUS "REG_TESTS_INC_DIR: ${REG_TESTS_INC_DIR}")
+include_directories(${REG_TESTS_INC_DIR})
 
 if (DEFINED ENV{I_MPI_ROOT})
     set(I_MPI_ROOT "$ENV{I_MPI_ROOT}")
@@ -20,9 +28,7 @@ endif()
 if (DEFINED ENV{CCL_ROOT})
     set(CCL_ROOT "$ENV{CCL_ROOT}")
 endif()
-
 message(STATUS "CCL_ROOT: ${CCL_ROOT}")
-message(STATUS "EXAMPLES_INC_DIRS: ${EXAMPLES_INC_DIRS}")
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -36,7 +42,9 @@ endif()
 if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     add_subdirectory(common)
 endif()
+
+add_subdirectory(cpu)
+
 if ("${COMPUTE_BACKEND}" STREQUAL "dpcpp_level_zero")
     add_subdirectory(sycl)
 endif()
-

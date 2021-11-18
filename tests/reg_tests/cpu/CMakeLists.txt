@@ -1,11 +1,16 @@
 set(sources
-    allgatherv_vector.cpp
-    allreduce_bf16_gpu.cpp
-    allreduce_events.cpp
-    allreduce_events_inorder.cpp
-    alltoallv_empty_count.cpp
-    close_ipc_handle_after_mem_free.cpp
-    multi_comms.cpp)
+    allgatherv.cpp
+    allreduce.cpp
+    alltoallv.cpp
+    broadcast.cpp
+    communicator.cpp
+    custom_allreduce.cpp
+    datatype.cpp
+    external_kvs.cpp
+    priority_allreduce.cpp
+    reduce.cpp
+    reduce_scatter.cpp
+    unordered_allreduce.cpp)
 
 set(CCL_INSTALL_TESTS "${CMAKE_CURRENT_SOURCE_DIR}")
 

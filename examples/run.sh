@@ -40,11 +40,9 @@ check_test()
     local test_file=$2
 
     passed_pattern="passed|# all done"
-    failed_pattern="abort|^bad$|corrupt|fail|^fault$|[^-W]invalid|kill|runtime_error|terminate|timed|unexpected"
-    if [[ "${test_file}" != *"communicator"* ]] && [[ "${test_file}" != *"datatype"* ]];
-    then
-        failed_pattern+="|[^-W]error|exception"
-    fi
+    failed_pattern="abort|^bad$|corrupt|fail|^fault$|[^-W]invalid"
+    failed_pattern+="|kill|runtime_error|terminate|timed|unexpected"
+    failed_pattern+="|[^-W]error|exception"
     skipped_pattern="skip test|unavailable"
 
     test_passed=`grep -E -c -i "${passed_pattern}" ${test_log}`
@@ -320,13 +318,9 @@ run()
     n=2
     base_dtype_list="int8,int32,float16,float32"
     reduction_list="sum"
-    #TODO: when small msg size support will be applied
-    # for all colls set 2 3 4  ranks to test all use cases
-    ranks_per_proc="4"
-    
     ccl_base_env="FI_PROVIDER=${provider} CCL_WORKER_COUNT=${worker_count}"
-
     sycl_example_selector_list="none"
+
     if [[ ${MODE} = "cpu" ]]
     then
         dir_list="benchmark common cpu"
@@ -400,16 +394,11 @@ run()
             if [[ "${transport}" == *"mpi"* ]]
             then
                 examples_to_run=`find . -type f -executable -printf '%P\n' |
-                    grep -v 'unordered_allreduce' |
-                    grep -v 'custom_allreduce' |
-                    grep -v 'datatype' |
-                    grep -v 'sparse_allreduce' |
                     grep -v 'run_binary.sh' |
                     grep -v 'run.sh' |
                     grep -v 'external_launcher'`
             else
                 examples_to_run=`find . -type f -executable -printf '%P\n' |
-                    grep -v 'sparse_allreduce' |
                     grep -v 'run_binary.sh' |
                     grep -v 'run.sh'`
             fi
@@ -589,46 +578,8 @@ run()
                         check_test ${test_log} "external_launcher"
 
                     else
-                        if [[ "${example}" == *"communicator"* ]]
-                        then
-                            n=8
-                            ccl_extra_env="${ccl_transport_env}"
-                            run_example "${ccl_extra_env}" ${dir_name} ${transport} ${ppn} ${example}
-                        elif [[ "${example}" == *"sparse_allreduce"* ]]
-                        then
-                            continue
-                            # Not launched branch for testing
-                            # if [ "$transport" == "mpi" ];
-                            # then
-                            #     sparse_algo_set="ring"
-                            #     sparse_coalesce_set="regular"
-                            #     sparse_callback_set="completion"
-                            # else
-                            #     sparse_algo_set="ring mask allgatherv"
-                            #     sparse_coalesce_set="regular disable keep_precision"
-                            #     sparse_callback_set="completion alloc"
-                            # fi
-                            # for algo in ${sparse_algo_set};
-                            # do
-                            #     ccl_extra_env="CCL_SPARSE_ALLREDUCE=${algo} ${ccl_transport_env}"
-                            #     for coalesce in ${sparse_coalesce_set};
-                            #     do
-                            #         for callback in ${sparse_callback_set};
-                            #         do
-                            #             if [ "$callback" == "alloc" ] && [ "$algo" != "allgatherv" ];
-                            #             then
-                            #                 # TODO: implement alloc_fn for ring and mask
-                            #                 continue
-                            #             fi
-                            #             sparse_options="-coalesce ${coalesce} -callback ${callback}"
-                            #             run_example "${ccl_extra_env}" ${dir_name} ${transport} ${ppn} ${example} "${sparse_options}"
-                            #         done
-                            #     done
-                            # done
-                        else
-                            ccl_extra_env="${ccl_transport_env}"
-                            run_example "${ccl_extra_env}" ${dir_name} ${transport} ${ppn} ${example}
-                        fi
+                        ccl_extra_env="${ccl_transport_env}"
+                        run_example "${ccl_extra_env}" ${dir_name} ${transport} ${ppn} ${example}
                     fi
                 done
             done

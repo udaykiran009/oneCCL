@@ -45,5 +45,4 @@ do
 done
 
 rm ${BINFILE} ${TEST_LOG}
-
 echo "Pass"

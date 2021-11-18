@@ -41,7 +41,7 @@ do
             do
                 export CCL_ATL_TRANSPORT=${transport}
                 export CCL_ZE_SINGLE_LIST=${single_list_mode}
-                mpiexec -l -n ${proc_count} -ppn 4 ${SCRIPT_DIR}/benchmark ${bench_options} -l ${coll} >> ${TEST_LOG} 2>&1
+                mpiexec -l -n ${proc_count} -ppn 4 ${SCRIPT_DIR}/benchmark ${bench_options} -l ${coll} > ${TEST_LOG} 2>&1
                 rc=$?
                 if [ ${rc} -ne 0 ]
                 then
@@ -55,5 +55,4 @@ do
 done
 
 rm ${TEST_LOG}
-
 echo "Pass"

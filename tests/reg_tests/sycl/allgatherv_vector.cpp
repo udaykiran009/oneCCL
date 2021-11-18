@@ -1,9 +1,8 @@
 #include <numeric>
 #include <vector>
 #include <iostream>
-#include "oneapi/ccl.hpp"
+
 #include "sycl_base.hpp"
-#include "mpi.h"
 
 int main(int argc, char *argv[]) {
     std::list<int> elem_counts = { 1, 17, 1024, 1025, 32768, 262145 };

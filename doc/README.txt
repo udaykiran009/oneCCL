@@ -105,28 +105,11 @@ default structure and identifies the file types stored in each sub-directory:
 				|   |   |-- version.cpp                                                                                
 				|   |   `-- CMakeLists.txt                                                                             
 				|   |-- cpu                                                                                            
-				|   |   |-- allgatherv.cpp                                                                             
-				|   |   |-- allgatherv_cpp.cpp                                                                         
-				|   |   |-- allgatherv_iov.cpp                                                                         
-				|   |   |-- allreduce.c                                                                                
-				|   |   |-- allreduce_cpp.cpp                                                                          
-				|   |   |-- alltoall.c                                                                                 
-				|   |   |-- alltoallv.cpp                                                                              
-				|   |   |-- bcast.cpp                                                                                  
-				|   |   |-- bcast_cpp.cpp                                                                              
 				|   |   |-- CMakeLists.txt                                                                             
-				|   |   |-- communicator.cpp                                                                           
 				|   |   |-- cpu_allgatherv_test.c                                                                      
 				|   |   |-- cpu_allreduce_bf16.c                                                                      
 				|   |   |-- cpu_allreduce_test.cpp                                                                 
 				|   |   |-- cpu_allreduce_test.c                                                                       
-				|   |   |-- custom_allreduce.cpp                                                                       
-				|   |   |-- datatype.cpp                                                                               
-				|   |   |-- external_kvs.cpp                                                                               
-				|   |   |-- priority_allreduce.cpp                                                                     
-				|   |   |-- reduce.cpp                                                                                 
-				|   |   |-- reduce_cpp.cpp                                                                                  
-				|   |   `-- unordered_allreduce.cpp                                                                    
 				|   |-- external_launcher                                                                                            
 				|   |   |-- CMakeLists.txt                                                                             
 				|   |   |-- external_launcher.cpp                                                                           
@@ -177,42 +160,10 @@ default structure and identifies the file types stored in each sub-directory:
 				|-- lib                                                                                                
 				|   |-- cpu_gpu_dpcpp                                                                                  
 				|   |   |-- libccl.a                                                                                   
-				|   |   |-- libccl_atl_mpi.a                                                                           
-				|   |   |-- libccl_atl_mpi.so -> libccl_atl_mpi.so.1.0                                                 
-				|   |   |-- libccl_atl_mpi.so.1                                                                        
-				|   |   |-- libccl_atl_mpi.so.1.0 -> libccl_atl_mpi.so.1                                               
-				|   |   |-- libccl_atl_ofi.a                                                                           
-				|   |   |-- libccl_atl_ofi.so -> libccl_atl_ofi.so.1.0                                                 
-				|   |   |-- libccl_atl_ofi.so.1                                                                        
-				|   |   |-- libccl_atl_ofi.so.1.0 -> libccl_atl_ofi.so.1                                               
-				|   |   |-- libccl.so                                                                                  
-				|   |   |-- libpmi.a                                                                                   
-				|   |   |-- libpmi.so -> libpmi.so.1.0                                                                 
-				|   |   |-- libpmi.so.1                                                                                
-				|   |   |-- libpmi.so.1.0 -> libpmi.so.1                                                               
-				|   |   |-- libresizable_pmi.a                                                                         
-				|   |   |-- libresizable_pmi.so -> libresizable_pmi.so.1.0                                             
-				|   |   |-- libresizable_pmi.so.1                                                                      
-				|   |   `-- libresizable_pmi.so.1.0 -> libresizable_pmi.so.1                                           
+				|   |   `-- libccl.so                                                                                  
 				|   `-- cpu                                                                                        
 				|       |-- libccl.a                                                                                   
-				|       |-- libccl_atl_mpi.a                                                                           
-				|       |-- libccl_atl_mpi.so -> libccl_atl_mpi.so.1.0                                                 
-				|       |-- libccl_atl_mpi.so.1
-				|       |-- libccl_atl_mpi.so.1.0 -> libccl_atl_mpi.so.1
-				|       |-- libccl_atl_ofi.a
-				|       |-- libccl_atl_ofi.so -> libccl_atl_ofi.so.1.0
-				|       |-- libccl_atl_ofi.so.1
-				|       |-- libccl_atl_ofi.so.1.0 -> libccl_atl_ofi.so.1
-				|       |-- libccl.so
-				|       |-- libpmi.a
-				|       |-- libpmi.so -> libpmi.so.1.0
-				|       |-- libpmi.so.1
-				|       |-- libpmi.so.1.0 -> libpmi.so.1
-				|       |-- libresizable_pmi.a
-				|       |-- libresizable_pmi.so -> libresizable_pmi.so.1.0
-				|       |-- libresizable_pmi.so.1
-				|       `-- libresizable_pmi.so.1.0 -> libresizable_pmi.so.1
+				|       `-- libccl.so
 				|-- licensing
 				|   |-- license.txt
 				|   `-- third-party-programs.txt

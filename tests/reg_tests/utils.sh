@@ -1,12 +1,26 @@
+#!/bin/bash
+
+function run_cmd() {
+    eval ${1}
+    rc=$?
+    if [ ${rc} -ne 0 ]
+    then
+        echo "Fail"
+        exit 1
+    fi
+}
+
 function check_impi() {
-    if [[ -z "${I_MPI_ROOT}" ]] ; then
+    if [[ -z "${I_MPI_ROOT}" ]]
+    then
         echo "Error: \$I_MPI_ROOT is not set. Please source vars.sh"
         exit 1
     fi
 }
 
 function check_ccl() {
-    if [[ -z "${CCL_ROOT}" ]]; then
+    if [[ -z "${CCL_ROOT}" ]]
+    then
         echo "Error: \$CCL_ROOT is not set. Please source vars.sh"
         exit 1
     fi
@@ -14,12 +28,27 @@ function check_ccl() {
 
 function check_log() {
     log_path=$1
-    failed_pattern="abort|^bad$|corrupt|fail|^fault$|invalid|kill"
-    failed_pattern+="|runtime_error|terminate|timed|unexpected|error|exception"
+
+    passed_pattern="passed|# all done"
+    passed_count=`grep -E -c -i "${passed_pattern}" ${log_path}`
+    if [ ${passed_count} -eq 0 ]
+    then
+        echo "Error: did not find pass in log ${log_path}"
+        exit 1
+    fi
+
+
+    failed_pattern="abort|^bad$|corrupt|fail|^fault$|[^-W]invalid"
+    failed_pattern+="|kill|runtime_error|terminate|timed|unexpected"
+    failed_pattern+="|[^-W]error|exception"
     failed_count=`grep -E -c -i "${failed_pattern}" ${log_path}`
     if [ ${failed_count} -ne 0 ]
     then
+        failed_strings=`grep -E -i "${failed_pattern}" ${log_path}`
         echo "Error: found error in log ${log_path}"
+        echo ""
+        echo "${failed_strings}"
+        echo ""
         exit 1
     fi
 }

@@ -257,14 +257,7 @@ function set_transport_env() {
 }
 
 function set_runtime_env() {
-    if [[ ${scope} = "pr" ]] ||
-       [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]] ||
-       [[ "${node_label}" = "ccl_test_ats" ]]
-    then
-        export CCL_RUNTIME_LIST="level_zero"
-    else
-        export CCL_RUNTIME_LIST="level_zero opencl"
-    fi
+    export CCL_RUNTIME_LIST="level_zero"
 }
 
 function set_functional_tests_env()
