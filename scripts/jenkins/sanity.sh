@@ -274,7 +274,7 @@ function set_functional_tests_env()
     then
         export CCL_MNIC_NAME=eno,eth,hfi,^mlx,unknown
     else
-        export CCL_MNIC_NAME=eno,eth,hfi,mlx,^unknown
+        export CCL_MNIC_NAME=br,eno,eth,hfi,mlx,^unknown
     fi
 }
 
