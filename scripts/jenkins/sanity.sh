@@ -519,7 +519,12 @@ function run_valgrind_check()
     cd ${EXAMPLE_WORK_DIR}
     if [ ${node_label} == "ccl_vlgd" ]
     then
-        export FI_TCP_IFACE=eno1
+        if [[ $(hostname) = *"nnlmpinuc09"* ]]
+        then
+            export FI_TCP_IFACE=br
+        else
+            export FI_TCP_IFACE=eno1
+        fi
         ${CURRENT_WORK_DIR}/scripts/valgrind/valgrind.sh gpu ${valgrind_scope}
     else
         ${CURRENT_WORK_DIR}/scripts/valgrind/valgrind.sh cpu ${valgrind_scope}
@@ -574,7 +579,12 @@ function run_regular_tests()
 
     if [[ ${node_label} == "ccl_test_gen9" ]] || [[ ${node_label} == "ccl_test_ats" ]]
     then
-        export FI_TCP_IFACE=eno1
+        if [[ $(hostname) = *"nnlmpinuc09"* ]]
+        then
+            export FI_TCP_IFACE=br
+        else
+            export FI_TCP_IFACE=eno1
+        fi
         export DASHBOARD_GPU_DEVICE_PRESENT=1
         ${CURRENT_WORK_DIR}/examples/run.sh --mode gpu --scope ${scope} --cleanup
     else
