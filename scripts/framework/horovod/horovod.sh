@@ -57,7 +57,7 @@ set_run_env() {
     export CCL_LOG_LEVEL=INFO
     export CCL_WORKER_COUNT=1
     export CCL_WORKER_AFFINITY=4-19
-    export CCL_ATL_TRANSPORT=mpi
+    export CCL_ATL_TRANSPORT="${TRANSPORT}"
     export CCL_SYCL_OUTPUT_EVENT=1
     vars_file="${CCL_SRC_DIR}/build/_install/env/setvars.sh"
     if [[ -f ${vars_file} ]]
@@ -72,7 +72,7 @@ set_run_env() {
     export I_MPI_PIN_PROCESSOR_LIST=2,3
 
     # OFI
-    export FI_PROVIDER=tcp
+    export FI_PROVIDER="${PROVIDER}"
     export FI_LOG_LEVEL=debug
 
     # SYCL
@@ -140,6 +140,9 @@ DEFAULT_FULL_SCOPE="0"
 
 DEFAULT_DOWNLOAD_CCL="0"
 DEFAULT_INSTALL_CCL="0"
+
+DEFAULT_TRANSPORT="mpi"
+DEFAULT_PROVIDER="tcp"
 
 DEFAULT_DOWNLOAD_CONDA="0"
 DEFAULT_CREATE_CONDA="0"
@@ -267,6 +270,10 @@ print_help() {
     echo_log "      Set extra proxy"
     echo_log "  -ccl_pr <number>"
     echo_log "      Checkout specific PR from oneCCL repository"
+    echo_log "  -transport <string>"
+    echo_log "      Set CCL ATL transport (mpi/ofi)"
+    echo_log "  -provider <string>"
+    echo_log "      Set OFI provider"
     echo_log ""
     echo_log "Usage examples:"
     echo_log "  ${BASENAME}.sh "
@@ -281,6 +288,9 @@ parse_arguments() {
 
     DOWNLOAD_CCL=${DEFAULT_DOWNLOAD_CCL}
     INSTALL_CCL=${DEFAULT_INSTALL_CCL}
+
+    TRANSPORT=${DEFAULT_TRANSPORT}
+    PROVIDER=${DEFAULT_PROVIDER}
 
     DOWNLOAD_CONDA=${DEFAULT_DOWNLOAD_CONDA}
     CREATE_CONDA=${DEFAULT_CREATE_CONDA}
@@ -469,6 +479,14 @@ parse_arguments() {
                 CCL_PR_NUMBER="${2}"
                 shift
                 ;;
+            "-transport")
+                TRANSPORT="${2}"
+                shift
+                ;;
+            "-provider")
+                PROVIDER="${2}"
+                shift
+                ;;
             *)
                 echo "$(basename $0): ERROR: unknown option ($1)"
                 print_help
@@ -571,6 +589,9 @@ parse_arguments() {
 
     echo_log "DOWNLOAD_CCL       = ${DOWNLOAD_CCL}"
     echo_log "INSTALL_CCL        = ${INSTALL_CCL}"
+
+    echo_log "TRANSPORT          = ${TRANSPORT}"
+    echo_log "PROVIDER           = ${PROVIDER}"
 
     echo_log "DOWNLOAD_CONDA     = ${DOWNLOAD_CONDA}"
     echo_log "CREATE_CONDA       = ${CREATE_CONDA}"

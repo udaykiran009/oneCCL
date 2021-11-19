@@ -609,6 +609,7 @@ function run_horovod_tests()
                  -download_ipex 1 -install_ipex 1 \
                  -download_hvd 1 -install_hvd 1 \
                  -download_conda 1 -create_conda 1 -remove_conda 1 \
+                 -transport mpi -provider ${FI_PROVIDER} \
                  -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
     log_status_fail=${PIPESTATUS[0]}
     popd
@@ -625,6 +626,7 @@ function run_horovod_tests()
                  -install_itex 1 -itex_path "${SOFTWARE_DIR}/ITEX/latest" \
                  -download_hvd 1 -install_hvd 1 \
                  -download_conda 1 -create_conda 1 -remove_conda 1 \
+                 -transport mpi -provider ${FI_PROVIDER} \
                  -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
     log_status_fail=${PIPESTATUS[0]}
     popd
