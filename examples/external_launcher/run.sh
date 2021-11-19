@@ -218,7 +218,7 @@ run_binary()
     do
         echo "check: $file"
         proc_count=`lsof $file | wc -l`
-        while [ $proc_cont -ne 0 ]
+        while [ "${proc_count}" != "0" ]
         do
             sleep 1
             proc_count=`lsof $file | wc -l`

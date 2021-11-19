@@ -27,6 +27,11 @@ run_tests() {
     ${ARTEFACT_DIR}/scripts/jenkins/sanity.sh -compatibility_tests
     CheckCommandExitCode $? "compatibility testing failed"
 
+    # Exclude size_checker - extra size of lib due to codecov extra symbols
+    echo "size_checker  platform=* transport=*" >> ${ARTEFACT_DIR}/tests/reg_tests/exclude_list
+    ${ARTEFACT_DIR}/scripts/jenkins/sanity.sh -reg_tests
+    CheckCommandExitCode $? "regression testing failed"
+
     for mode in mpi ofi mpi_adjust ofi_adjust priority_mode dynamic_pointer_mode fusion_mode unordered_coll_mode
     do
         BUILD_COMPILER_TYPE=intel runtime=${mode} ${ARTEFACT_DIR}/scripts/jenkins/sanity.sh -functional_tests
@@ -35,21 +40,34 @@ run_tests() {
 }
 
 collect_results() {
+    #Collect all folders from scr
+    pushd ${ARTEFACT_DIR}/src
+    CODE_FOLDERS=""
+    for dir_name in *
+    do
+        if [ -d "$dir_name" ]; then
+            CODE_FOLDERS=${CODE_FOLDERS}" "${dir_name}
+        fi
+    done
     pushd ${ARTEFACT_DIR}/build/src
     profmerge -prof_dpi pgopti_func.dpi
 
-    for folder_name in overall atl coll common comp fusion parallelizer sched exec unordered_coll
-    do
-        mkdir -p ${ARTEFACT_DIR}/Coverage_results/coverage-${folder_name}/
-    done
-
+    mkdir -p ${ARTEFACT_DIR}/Coverage_results/coverage-overall/
     codecov -comp ${COMPFILE_DIR}/compfile-overall -prj ccl -spi pgopti.spi -dpi pgopti_func.dpi -xmlbcvrgfull codecov.xml
 
     mv CodeCoverage/ ${ARTEFACT_DIR}/Coverage_results/coverage-overall/
     mv CODE_COVERAGE.HTML ${ARTEFACT_DIR}/Coverage_results/coverage-overall/
 
-    for folder_name in atl coll common comp fusion parallelizer sched exec unordered_coll
+    for folder_name in ${CODE_FOLDERS}
     do
+        mkdir -p ${ARTEFACT_DIR}/Coverage_results/coverage-${folder_name}/
+
+        #Add folder for code coverage
+        echo "src/"${folder_name}"/" > $COMPFILE_DIR/compfile-${folder_name}
+        #Exclude folders
+        echo "~usr" >> $COMPFILE_DIR/compfile-${folder_name}
+        echo "~log.hpp" >> $COMPFILE_DIR/compfile-${folder_name}
+
         echo "Collecting ${folder_name} coverage..."
         
         codecov -prj ccl -comp $COMPFILE_DIR/compfile-${folder_name} -spi pgopti.spi -dpi pgopti_func.dpi
