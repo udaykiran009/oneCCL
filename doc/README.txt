@@ -19,17 +19,10 @@ and type "accept" when prompted.
 Introduction
 ------------
 
-oneAPI Collective Communications Library (oneCCL) is a library providing
+oneAPI Collective Communications Library (oneCCL) provides
 an efficient implementation of communication patterns used in deep learning.
 
-    - Built on top of MPI, allows for use of other communication libraries
-    - Optimized to drive scalability of communication patterns
-    - Works across various interconnects: Intel(R) Omni-Path Architecture,
-      InfiniBand*, and Ethernet
-    - Common API to support Deep Learning frameworks (Caffe*, Theano*,
-      Torch*, etc.)
-
-oneCCL package comprises the oneCL Software Development Kit (SDK)
+oneCCL package comprises the oneCCL Software Development Kit (SDK)
 and the Intel(R) MPI Library Runtime components.
 
 ----------------------------------------------------
@@ -53,123 +46,24 @@ default structure and identifies the file types stored in each sub-directory:
 
 `-- opt
     `-- intel        Common directory for Intel(R) Software Development Products.
-            `-- iccl_<version>.<update>.<package#>
+            `-- ccl_<version>.<update>.<package#>
                 |               Subdirectory for the version, specific update
                 |               and package number of oneCCL.
-				|-- env                                                                                                
-				|   `-- vars.sh                                                                                        
-				|-- examples                                                                                           
-				|   |-- benchmark                                                                                      
-				|   |   |-- CMakeLists.txt                                                                             
-				|   |   |-- include                                                                                    
-				|   |   |   |-- benchmark.hpp                                                                          
-				|   |   |   |-- coll.hpp                                                                               
-				|   |   |   |-- config.hpp                                                                             
-				|   |   |   |-- cpu_coll.hpp                                                                           
-				|   |   |   `-- sycl_coll.hpp                                                                          
-				|   |   `-- src                                                                                        
-				|   |       |-- allgatherv                                                                             
-				|   |       |   |-- allgatherv_strategy.hpp                                                            
-				|   |       |   |-- cpu_allgatherv_coll.hpp                                                            
-				|   |       |   `-- sycl_allgatherv_coll.hpp                                                           
-				|   |       |-- allreduce                                                                              
-				|   |       |   |-- allreduce_strategy.hpp                                                             
-				|   |       |   |-- cpu_allreduce_coll.hpp                                                             
-				|   |       |   `-- sycl_allreduce_coll.hpp                                                            
-				|   |       |-- alltoall                                                                               
-				|   |       |   |-- alltoall_strategy.hpp                                                              
-				|   |       |   |-- cpu_alltoall_coll.hpp                                                              
-				|   |       |   `-- sycl_alltoall_coll.hpp                                                             
-				|   |       |-- alltoallv                                                                              
-				|   |       |   |-- alltoallv_strategy.hpp                                                             
-				|   |       |   |-- cpu_alltoallv_coll.hpp                                                             
-				|   |       |   `-- sycl_alltoallv_coll.hpp                                                            
-				|   |       |-- bcast                                                                                  
-				|   |       |   |-- bcast_strategy.hpp                                                                 
-				|   |       |   |-- cpu_bcast_coll.hpp                                                                 
-				|   |       |   `-- sycl_bcast_coll.hpp                                                                
-				|   |       |-- benchmark.cpp                                                                          
-				|   |       |-- declarations.hpp                                                                       
-				|   |       |-- reduce                                                                                 
-				|   |       |   |-- cpu_reduce_coll.hpp                                                                
-				|   |       |   |-- reduce_strategy.hpp                                                                
-				|   |       |   `-- sycl_reduce_coll.hpp                                                               
-				|   |       `-- sparse_allreduce                                                                       
-				|   |           |-- cpu_sparse_allreduce_coll.hpp                                                      
-				|   |           |-- sparse_allreduce_base.hpp                                                          
-				|   |           |-- sparse_allreduce_strategy.hpp                                                      
-				|   |           |-- sparse_detail.hpp                                                                  
-				|   |           `-- sycl_sparse_allreduce_coll.hpp                                                     
-				|   |-- CMakeLists.txt                                                                                 
-				|   |-- common                                                                                         
-				|   |   |-- version.cpp                                                                                
-				|   |   `-- CMakeLists.txt                                                                             
-				|   |-- cpu                                                                                            
-				|   |   |-- CMakeLists.txt                                                                             
-				|   |   |-- cpu_allgatherv_test.c                                                                      
-				|   |   |-- cpu_allreduce_bf16.c                                                                      
-				|   |   |-- cpu_allreduce_test.cpp                                                                 
-				|   |   |-- cpu_allreduce_test.c                                                                       
-				|   |-- external_launcher                                                                                            
-				|   |   |-- CMakeLists.txt                                                                             
-				|   |   |-- external_launcher.cpp                                                                           
-				|   |   |-- run.sh                                                                      
-				|   |   `-- run_binary.sh                                                                      
-				|   |-- include                                                                                        
-				|   |   |-- base.h                                                                                     
-				|   |   |-- base.hpp                                                                                   
-				|   |   |-- base_utils.hpp                                                                             
-				|   |   |-- bf16.h                                                                                    
-				|   |   `-- sycl_base.hpp                                                                              
-				|   `-- sycl                                                                                           
-				|       |-- CMakeLists.txt                                                                             
-				|       |-- sycl_allgatherv_test.cpp                                                               
-				|       |-- sycl_allgatherv_usm_test.cpp                                                                   
-				|       |-- sycl_allgatherv_inplace_usm_test.cpp                                                   
-				|       |-- sycl_allreduce_test.cpp                                                                
-				|       |-- sycl_allreduce_usm_test.cpp                                                                
-				|       |-- sycl_allreduce_inplace_usm_test.cpp                                                                
-				|       |-- sycl_alltoall_test.cpp                                                                 
-				|       |-- sycl_alltoall_usm_test.cpp                                                                     
-				|       |-- sycl_alltoallv_test.cpp                                                                
-				|       |-- sycl_alltoallv_usm_test.cpp                                                                    
-				|       |-- sycl_broadcast_test.cpp                                                                    
-				|       |-- sycl_broadcast_usm_test.cpp                                                                        
-				|       |-- sycl_reduce_test.cpp                                                                   
-				|       |-- sycl_reduce_usm_test.cpp                                                                   
-				|       |-- sycl_reduce_inplace_usm_test.cpp                                                                   
-				|-- include                                                                                            
-				|   |-- cpu_gpu_dpcpp                                                                                  
-				|   |   |-- ccl_config.h                                                                               
-				|   |   |-- ccl_device_type_traits.hpp                                                                 
-				|   |   |-- ccl.h                                                                                      
-				|   |   |-- ccl.hpp                                                                                    
-				|   |   |-- ccl_lp_types.hpp                                                                              
-				|   |   |-- ccl_types.h                                                                                
-				|   |   |-- ccl_types.hpp                                                                              
-				|   |   `-- ccl_type_traits.hpp                                                                        
-				|   `-- cpu                                                                                        
-				|       |-- ccl_config.h                                                                               
-				|       |-- ccl_device_type_traits.hpp                                                                 
-				|       |-- ccl.h                                                                                      
-				|       |-- ccl.hpp                                                                                    
-				|       |-- ccl_lp_types.h                                                                                
-				|       |-- ccl_types.h                                                                                
-				|       |-- ccl_types.hpp                                                                              
-				|       `-- ccl_type_traits.hpp                                                                        
-				|-- lib                                                                                                
-				|   |-- cpu_gpu_dpcpp                                                                                  
-				|   |   |-- libccl.a                                                                                   
-				|   |   `-- libccl.so                                                                                  
-				|   `-- cpu                                                                                        
-				|       |-- libccl.a                                                                                   
-				|       `-- libccl.so
-				|-- licensing
-				|   |-- license.txt
-				|   `-- third-party-programs.txt
-				`-- modulefiles
-					`-- ccl
-
+                |-- env
+                |-- examples
+                |   |-- benchmark
+                |   |-- common
+                |   |-- cpu
+                |   |-- include
+                |   `-- sycl
+                |-- include
+                |   |-- cpu_gpu_dpcpp
+                |   `-- cpu
+                |-- lib
+                |   |-- cpu_gpu_dpcpp
+                |   `-- cpu
+                |-- licensing
+                `-- modulefiles
 
 --------------------------------
 Disclaimer and Legal Information
