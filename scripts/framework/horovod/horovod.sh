@@ -932,8 +932,8 @@ install_fw() {
         echo_log "\n=== install pybind11 ===\n"
         pip install pybind11
 
-        echo_log "\n=== install torchvision ===\n"
-        pip install torchvision --no-deps
+        echo_log "\n=== install torchvision==0.8.1 ===\n"
+        pip install torchvision==0.8.1 --no-deps
 
         echo_log "\n=== install pillow ===\n"
         pip install --no-cache-dir -I pillow
