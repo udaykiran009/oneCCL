@@ -42,7 +42,8 @@ set_run_env() {
 
     # PyTorch
     export IPEX_TILE_AS_DEVICE=1
-    export IPEX_LAZY_REORDER=1
+    # export IPEX_LAZY_REORDER=1 # this env var was deprecated, following one should be used
+    export IPEX_ONEDNN_LAYOUT=1
 
     # HVD
     export HOROVOD_LOG_LEVEL=INFO
