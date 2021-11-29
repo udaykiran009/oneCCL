@@ -197,7 +197,7 @@ set_run_env() {
     else
         check_exit_code 1 "Can not find CCL vars file: ${ccl_vars_file_1} or ${ccl_vars_file_2}"
     fi
-    
+
     # MPICH
     module unload mpich/icc-cxi
     module load mpich/icc-cxi/43.2
@@ -205,7 +205,7 @@ set_run_env() {
 
     # compute-runtime
     module use -a /home/ftartagl/graphics-compute-runtime/modulefiles
-    module load graphics-compute-runtime/agama-ci-prerelease-251
+    module load graphics-compute-runtime/agama-ci-prerelease-260
 }
 
 check_anr() {
@@ -380,7 +380,7 @@ run_bench() {
     base_env+=" I_MPI_FABRICS=shm:ofi CCL_BARRIER=direct CCL_ATL_SYNC_COLL=1"
 
     for runtime in ${runtimes}
-    do    
+    do
         for coll in ${colls}
         do
             for cache_mode in ${cache_modes}
