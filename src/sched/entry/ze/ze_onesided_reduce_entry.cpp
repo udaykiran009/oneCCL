@@ -53,11 +53,15 @@ void ze_onesided_reduce_entry::init_ze_hook() {
 
     right_send_buf_ptr = right_send_buf.get_ptr();
 
-    ccl::alloc_param alloc_param(buf_size_bytes, buffer_type::ze, buffer_place::device);
-    void* tmp_buf_ptr = sched->alloc_buffer(alloc_param).get_ptr();
+    void* kernel_input_buf2 = right_send_buf_ptr;
+    if (global_data::env().enable_kernel_1s_copy_ops) {
+        ccl::alloc_param alloc_param(buf_size_bytes, buffer_type::ze, buffer_place::device);
+        void* tmp_buf_ptr = sched->alloc_buffer(alloc_param).get_ptr();
+        kernel_input_buf2 = tmp_buf_ptr;
+    }
 
-    ze_kernel_args_t reduce_local_kernel_args{ &comm_rank,    &comm_size,   &cnt,
-                                               &send_buf_ptr, &tmp_buf_ptr, &recv_buf_ptr };
+    ze_kernel_args_t reduce_local_kernel_args{ &comm_rank,    &comm_size,         &cnt,
+                                               &send_buf_ptr, &kernel_input_buf2, &recv_buf_ptr };
 
     ccl::global_data::get().ze_data->cache->get(context, device, "kernels.spv", &module);
 
@@ -92,8 +96,7 @@ void ze_onesided_reduce_entry::init_ze_hook() {
         empty_kernel_event = ze_base_entry::create_event();
     }
 
-    copy_from_peer_event = ze_base_entry::create_event();
-
+    ze_event_handle_t kernel_wait_event = nullptr;
     /* do appends */
     if (empty_kernel) {
         LOG_DEBUG("append empty kernel");
@@ -101,21 +104,35 @@ void ze_onesided_reduce_entry::init_ze_hook() {
         ZE_CALL(
             zeCommandListAppendLaunchKernel,
             (get_comp_list(), empty_kernel, &empty_group_count, empty_kernel_event, 0, nullptr));
+        kernel_wait_event = empty_kernel_event;
     }
 
-    LOG_DEBUG("one-sided multi-phase algorithm");
+    if (global_data::env().enable_kernel_1s_copy_ops) {
+        LOG_DEBUG("one-sided multi-phase algorithm");
 
-    ZE_CALL(zeCommandListAppendMemoryCopy,
-            (ze_base_entry::get_copy_list(),
-             tmp_buf_ptr,
-             right_send_buf_ptr,
-             buf_size_bytes,
-             copy_from_peer_event,
-             (empty_kernel_event) ? 1 : 0,
-             &empty_kernel_event));
+        copy_from_peer_event = ze_base_entry::create_event();
+        // copy to tmp buf
+        ZE_CALL(zeCommandListAppendMemoryCopy,
+                (ze_base_entry::get_copy_list(),
+                 kernel_input_buf2,
+                 right_send_buf_ptr,
+                 buf_size_bytes,
+                 copy_from_peer_event,
+                 (empty_kernel_event) ? 1 : 0,
+                 &empty_kernel_event));
+        kernel_wait_event = copy_from_peer_event;
+    }
+    else {
+        LOG_DEBUG("one-sided monolithic algorithm");
+    }
 
     ZE_CALL(zeCommandListAppendLaunchKernel,
-            (get_comp_list(), main_kernel, &group_count, entry_event, 1, &copy_from_peer_event));
+            (get_comp_list(),
+             main_kernel,
+             &group_count,
+             entry_event,
+             (kernel_wait_event) ? 1 : 0,
+             &kernel_wait_event));
 }
 
 void ze_onesided_reduce_entry::finalize_ze_hook() {
