@@ -581,7 +581,9 @@ kvs_status_t internal_kvs::init_main_server_address(const char* main_addr) {
                 if (bind(server_listen_sock,
                          main_server_address->get_sock_addr_ptr(),
                          main_server_address->size()) < 0) {
-                    LOG_INFO("port [", main_server_address->get_sin_port(), "] is busy");
+                    LOG_WARN("port [",
+                             main_server_address->get_sin_port(),
+                             "] is busy, connecting as client");
                     local_port = local_server_address->get_sin_port();
                     while (bind(server_listen_sock,
                                 local_server_address->get_sock_addr_ptr(),
