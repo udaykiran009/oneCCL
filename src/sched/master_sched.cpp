@@ -49,10 +49,6 @@ ccl_master_sched::ccl_master_sched(const ccl_sched_create_param& param)
             0, ze_context, pool_desc, &get_memory().sync_pool);
 
         ze_event_desc_t event_desc = ccl::ze::default_event_desc;
-        event_desc.signal = ZE_EVENT_SCOPE_FLAG_HOST;
-        event_desc.wait = ZE_EVENT_SCOPE_FLAG_HOST;
-        event_desc.index = 0;
-
         ZE_CALL(zeEventCreate, (get_memory().sync_pool, &event_desc, &get_memory().sync_event));
         LOG_DEBUG("created sync event: ", get_memory().sync_event);
     }
