@@ -78,10 +78,21 @@ void get_device_queue_group_info(const ze_device_handle_t& device) {
         device_queue_group_nums.resize(queue_group_count);
         device_queue_group_types.resize(queue_group_count);
     }
+    if (device_queue_group_types.size() < queue_group_count) {
+        device_queue_group_types.resize(queue_group_count);
+    }
+
+    for (auto& queue_group_nums : device_queue_group_nums) {
+        queue_group_nums.push_back(0);
+    }
+    for (auto& queue_group_types : device_queue_group_types) {
+        queue_group_types.push_back("unknown");
+    }
 
     for (uint32_t queue_group_idx = 0; queue_group_idx < queue_group_count; ++queue_group_idx) {
-        device_queue_group_nums[queue_group_idx].push_back(
-            queue_group_props[queue_group_idx].numQueues);
+        device_queue_group_nums.at(queue_group_idx).back() =
+            queue_group_props[queue_group_idx].numQueues;
+
         std::string queue_type = "other";
         if (queue_group_props[queue_group_idx].flags &
             ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
@@ -91,7 +102,7 @@ void get_device_queue_group_info(const ze_device_handle_t& device) {
                  ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COPY) {
             queue_type = "copy";
         }
-        device_queue_group_types[queue_group_idx].push_back(queue_type);
+        device_queue_group_types.at(queue_group_idx).back() = queue_type;
     }
 }
 
@@ -282,9 +293,9 @@ void print() {
         std::cout << "Queue group properties:" << std::endl;
         print_line(device_ids, "");
         for (size_t vec_idx = 0; vec_idx < device_queue_group_nums.size(); ++vec_idx) {
-            print_line(device_queue_group_nums[vec_idx],
+            print_line(device_queue_group_nums.at(vec_idx),
                        "queue #" + std::to_string(vec_idx) + " group size");
-            print_line(device_queue_group_types[vec_idx],
+            print_line(device_queue_group_types.at(vec_idx),
                        "queue #" + std::to_string(vec_idx) + " group type");
         }
     }
