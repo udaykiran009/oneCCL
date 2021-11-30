@@ -88,11 +88,12 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
 
     std::string unique_tag = std::to_string(sched->get_comm_id()) + "-" +
                              std::to_string(sched->sched_id) + "-" +
-                             std::to_string(sched->get_op_id());
+                             std::to_string(sched->get_op_id()) + "-" + std::to_string(getuid());
     right_peer_socket_name =
         "/tmp/ccl-handle-" + std::to_string((rank + 1) % comm_size) + "-" + unique_tag;
     left_peer_socket_name = "/tmp/ccl-handle-" + std::to_string(rank) + "-" + unique_tag;
 
+    // TODO:
     // This is a temporary workaround around to provide uniqueness of socket files created
     // in /tmp folder, otherwise this could result in issues in case of parallel runs
     // by a single/multiple users.
