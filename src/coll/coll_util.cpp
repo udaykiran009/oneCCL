@@ -89,6 +89,7 @@ ze_event_handle_t add_comm_barrier(ccl_sched* sched,
                                    const std::vector<ze_event_handle_t>& wait_events,
                                    ze_event_pool_handle_t ipc_pool,
                                    size_t ipc_event_idx) {
+    sched->add_barrier();
     auto signal_event = sched->get_memory().event_manager->create();
     if (sched->use_single_list) {
         add_wait_events(sched, wait_events);
@@ -99,6 +100,7 @@ ze_event_handle_t add_comm_barrier(ccl_sched* sched,
         add_comm_barrier(sched, comm, ipc_pool, ipc_event_idx);
         add_signal_event(sched, signal_event);
     }
+    sched->add_barrier();
     return signal_event;
 }
 
