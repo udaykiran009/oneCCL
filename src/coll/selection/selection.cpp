@@ -234,6 +234,10 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
     RETURN_FALSE_IF(ccl::global_data::env().worker_count != 1, "unsupported count of workers");
 
 #ifdef CCL_ENABLE_SYCL
+    RETURN_FALSE_IF(ccl::global_data::env().enable_ze_bidir_algo &&
+                        (!checkers::is_single_card(param) || param.ctype != ccl_coll_allreduce),
+                    "bidir is supported only for single-card and allreduce");
+
     if (!ccl::global_data::env().disable_ze_family_check) {
         RETURN_FALSE_IF(
             checkers::is_family1_card(param) &&

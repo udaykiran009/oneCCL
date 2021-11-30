@@ -32,7 +32,8 @@ public:
                                          const ccl_datatype& dtype,
                                          ccl::reduction op,
                                          ccl_comm* comm,
-                                         std::vector<ze_event_handle_t> wait_events = {});
+                                         std::vector<ze_event_handle_t> wait_events = {},
+                                         const size_t buf_offset_cnt = 0);
 
     void init_ze_hook() override;
     void finalize_ze_hook() override;
@@ -71,6 +72,7 @@ private:
     const ccl_datatype dtype;
     const ccl::reduction op;
     const size_t buf_size_bytes;
+    const size_t buf_offset_bytes;
 
     ze_event_handle_t empty_kernel_event{};
     ze_event_handle_t copy_from_peer_event{};

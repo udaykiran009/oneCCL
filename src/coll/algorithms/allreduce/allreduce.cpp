@@ -595,9 +595,23 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
     CCL_THROW_IF_NOT(node_comm_size % 2 == 0, "unexpected node_comm_size ", node_comm_size);
 
     bool use_single_list = sched->enable_ze_single_list();
+    std::vector<ze_event_handle_t> wait_events;
 
-    if (pair_comm->rank() == ccl::global_data::env().kernel_1s_lead) {
-        std::vector<ze_event_handle_t> wait_events;
+    if (is_single_card && ccl::global_data::env().enable_ze_bidir_algo) {
+        LOG_DEBUG("topo/bidir: each rank uses ze_onesided_allreduce");
+
+        size_t base_count = count / pair_comm->size();
+        size_t offset = base_count * pair_comm->rank();
+
+        if (pair_comm->rank() == pair_comm->size() - 1)
+            base_count += count % pair_comm->size();
+
+        LOG_DEBUG("rank: ", pair_comm->rank(), ", count: ", base_count, ", offset: ", offset);
+
+        entry_factory::create<ze_onesided_allreduce_entry>(
+            sched, send_buf, recv_buf, base_count, dtype, op, pair_comm, wait_events, offset);
+    }
+    else if (pair_comm->rank() == ccl::global_data::env().kernel_1s_lead) {
         if (is_single_card) {
             LOG_DEBUG("topo/scale_up/intra: use ze_onesided_allreduce");
             auto entry = entry_factory::create<ze_onesided_allreduce_entry>(

@@ -130,6 +130,7 @@ env_data::env_data()
           enable_sycl_output_event(0),
 
           enable_ze_barrier(0),
+          enable_ze_bidir_algo(0),
           enable_ze_cache(1),
           enable_ze_cache_ipc_handles(1),
           ze_cache_ipc_handles_threshold(100),
@@ -305,6 +306,7 @@ void env_data::parse() {
     env_2_type(CCL_SYCL_OUTPUT_EVENT, enable_sycl_output_event);
 
     env_2_type(CCL_ZE_BARRIER, enable_ze_barrier);
+    env_2_type(CCL_ZE_BIDIR_ALGO, enable_ze_bidir_algo);
     env_2_type(CCL_ZE_CACHE, enable_ze_cache);
     env_2_type(CCL_ZE_CACHE_IPC_HANDLES, enable_ze_cache_ipc_handles);
     env_2_type(CCL_ZE_CACHE_IPC_HANDLES_THRESHOLD, ze_cache_ipc_handles_threshold);
@@ -527,6 +529,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_SYCL_OUTPUT_EVENT, ": ", enable_sycl_output_event);
 
     LOG_INFO(CCL_ZE_BARRIER, ": ", enable_ze_barrier);
+    LOG_INFO(CCL_ZE_BIDIR_ALGO, ": ", enable_ze_bidir_algo);
     LOG_INFO(CCL_ZE_CACHE, ": ", enable_ze_cache);
     LOG_INFO(CCL_ZE_CACHE_IPC_HANDLES, ": ", enable_ze_cache_ipc_handles);
     LOG_INFO(CCL_ZE_CACHE_IPC_HANDLES_THRESHOLD, ": ", ze_cache_ipc_handles_threshold);

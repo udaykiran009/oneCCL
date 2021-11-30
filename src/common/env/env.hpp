@@ -108,6 +108,7 @@ constexpr const char* CCL_KERNEL_CLOSE_FD_WA = "CCL_KERNEL_CLOSE_FD_WA";
 constexpr const char* CCL_SYCL_OUTPUT_EVENT = "CCL_SYCL_OUTPUT_EVENT";
 
 constexpr const char* CCL_ZE_BARRIER = "CCL_ZE_BARRIER";
+constexpr const char* CCL_ZE_BIDIR_ALGO = "CCL_ZE_BIDIR_ALGO";
 constexpr const char* CCL_ZE_CACHE = "CCL_ZE_CACHE";
 constexpr const char* CCL_ZE_CACHE_IPC_HANDLES = "CCL_ZE_CACHE_IPC_HANDLES";
 constexpr const char* CCL_ZE_CACHE_IPC_HANDLES_THRESHOLD = "CCL_ZE_CACHE_IPC_HANDLES_THRESHOLD";
@@ -250,6 +251,7 @@ public:
     int enable_sycl_output_event;
 
     int enable_ze_barrier;
+    int enable_ze_bidir_algo;
     int enable_ze_cache;
     int enable_ze_cache_ipc_handles;
     int ze_cache_ipc_handles_threshold;
