@@ -322,10 +322,9 @@ function set_ats_environment()
 
     ATS_WORKSPACE_DIR="/home/sys_ctlab/workspace/workspace/"
     ATS_ARTEFACT_DIR="${ATS_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
+    CCL_ONEAPI_DIR="/home/sys_ctlab/oneapi"
     export BUILD_COMPILER_TYPE="dpcpp"
-    export SYCL_BUNDLE_ROOT="/home/sys_ctlab/oneapi/compiler/last/compiler/latest/linux/"
-    export ICX_BUNDLE_ROOT="/home/sys_ctlab/oneapi/compiler/last/compiler/latest/linux/"
-    export IMPI_PATH="/home/sys_ctlab/oneapi/mpi_oneapi/last/mpi/latest/"
+    export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
     #export CCL_STAGING_BUFFER=regular
 
     if [ -z ${CCL_ROOT} ]
@@ -632,8 +631,8 @@ function run_horovod_tests()
     fi
 
     pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
-    ./horovod.sh -install_tf 1 -tf_path "${SOFTWARE_DIR}/Tensorflow/latest" \
-                 -install_itex 1 -itex_path "${SOFTWARE_DIR}/ITEX/latest" \
+    ./horovod.sh -download_tf 1 -install_tf 1 \
+                 -download_itex 1 -install_itex 1 \
                  -download_hvd 1 -install_hvd 1 \
                  -download_conda 1 -create_conda 1 -remove_conda 1 \
                  -transport mpi -provider ${FI_PROVIDER} \

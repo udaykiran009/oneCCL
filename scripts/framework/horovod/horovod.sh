@@ -168,6 +168,7 @@ DEFAULT_IPEX_PATH=""
 
 DEFAULT_DOWNLOAD_HVD="0"
 DEFAULT_INSTALL_HVD="0"
+DEFAULT_CHECK_HVD="0"
 DEFAULT_HVD_BRANCH="xpu"
 
 DEFAULT_DOWNLOAD_MODEL_TF="0"
@@ -247,6 +248,8 @@ print_help() {
     echo_log "      Download Horovod"
     echo_log "  -install_hvd <bool_flag>"
     echo_log "      Install Horovod"
+    echo_log "  -check_hvd <bool_flag>"
+    echo_log "      Run basic Horovod test and benchmark with Tensorflow/PyTorch"
     echo_log "  -hvd_branch <branch_name>"
     echo_log "      Set Horovod branch name to download"
     echo_log "  -download_model_tf <bool_flag>"
@@ -313,6 +316,7 @@ parse_arguments() {
 
     DOWNLOAD_HVD=${DEFAULT_DOWNLOAD_HVD}
     INSTALL_HVD=${DEFAULT_INSTALL_HVD}
+    CHECK_HVD=${DEFAULT_CHECK_HVD}
     HVD_BRANCH=${DEFAULT_HVD_BRANCH}
 
     FULL_TF=${DEFAULT_FULL_TF}
@@ -432,6 +436,10 @@ parse_arguments() {
                 INSTALL_HVD=${2}
                 shift
                 ;;
+            "-check_hvd")
+                CHECK_HVD="${2}"
+                shift
+                ;;
             "-hvd_branch")
                 HVD_BRANCH=${2}
                 shift
@@ -544,6 +552,7 @@ parse_arguments() {
 
         DOWNLOAD_HVD="1"
         INSTALL_HVD="1"
+        CHECK_HVD="1"
 
         remove_conda
         if [[ -d ${SCRIPT_WORK_DIR} ]]
@@ -617,6 +626,7 @@ parse_arguments() {
 
     echo_log "DOWNLOAD_HVD       = ${DOWNLOAD_HVD}"
     echo_log "INSTALL_HVD        = ${INSTALL_HVD}"
+    echo_log "CHECK_HVD          = ${CHECK_HVD}"
     echo_log "HVD_BRANCH         = ${HVD_BRANCH}"
 
     echo_log "DOWNLOAD_MODEL_TF  = ${DOWNLOAD_MODEL_TF}"
@@ -1050,7 +1060,7 @@ install_hvd() {
 }
 
 check_hvd() {
-    if [[ ${INSTALL_HVD} != "1" ]]
+    if [[ ${CHECK_HVD} != "1" ]]
     then
         return
     fi
