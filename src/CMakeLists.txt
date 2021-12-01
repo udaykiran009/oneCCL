@@ -227,13 +227,18 @@ endif()
 set(SRC_SHARED_LINKER_FLAGS "${SRC_SHARED_LINKER_FLAGS} -Wl,--version-script=${PROJECT_SOURCE_DIR}/ccl.map")
 
 if (${CMAKE_C_COMPILER_ID} STREQUAL "Intel" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-    if (USE_CODECOV_FLAGS)
-        set(SRC_C_FLAGS "${SRC_C_FLAGS} -prof-gen=srcpos -prof-src-root-cwd")
-        set(SRC_CXX_FLAGS "${SRC_CXX_FLAGS} -prof-gen=srcpos -prof-src-root-cwd")
-    endif()
     #To suppress for 'offsetof applied to non-POD (Plain Old Data) types is nonstandar'
     set(SRC_CXX_FLAGS "${SRC_CXX_FLAGS} -diag-disable=1875")
 endif()
+
+
+if (${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    if (USE_CODECOV_FLAGS)
+        set(SRC_C_FLAGS "${SRC_C_FLAGS} -fprofile-instr-generate -fcoverage-mapping -Wno-error=unused-command-line-argument -fno-sycl-use-footer")
+        set(SRC_CXX_FLAGS "${SRC_CXX_FLAGS} -fprofile-instr-generate -fcoverage-mapping -Wno-error=unused-command-line-argument -fno-sycl-use-footer")
+    endif()
+endif()
+
 
 list(APPEND SRC_INCLUDE_DIRS
      ${PROJECT_SOURCE_DIR}/include
