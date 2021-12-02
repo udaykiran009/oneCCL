@@ -128,6 +128,7 @@ env_data::env_data()
           enable_close_fd_wa(0),
 
           enable_sycl_output_event(0),
+          use_hmem(0),
 
           enable_ze_barrier(0),
           enable_ze_bidir_algo(0),
@@ -304,6 +305,7 @@ void env_data::parse() {
     env_2_type(CCL_KERNEL_CLOSE_FD_WA, enable_close_fd_wa);
 
     env_2_type(CCL_SYCL_OUTPUT_EVENT, enable_sycl_output_event);
+    env_2_type(CCL_USE_HMEM, use_hmem);
 
     env_2_type(CCL_ZE_BARRIER, enable_ze_barrier);
     env_2_type(CCL_ZE_BIDIR_ALGO, enable_ze_bidir_algo);
@@ -527,6 +529,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_KERNEL_CLOSE_FD_WA, ": ", enable_close_fd_wa);
 
     LOG_INFO(CCL_SYCL_OUTPUT_EVENT, ": ", enable_sycl_output_event);
+    LOG_INFO(CCL_USE_HMEM, ": ", use_hmem);
 
     LOG_INFO(CCL_ZE_BARRIER, ": ", enable_ze_barrier);
     LOG_INFO(CCL_ZE_BIDIR_ALGO, ": ", enable_ze_bidir_algo);

@@ -106,6 +106,7 @@ constexpr const char* CCL_KERNEL_PROFILE = "CCL_KERNEL_PROFILE";
 constexpr const char* CCL_KERNEL_CLOSE_FD_WA = "CCL_KERNEL_CLOSE_FD_WA";
 
 constexpr const char* CCL_SYCL_OUTPUT_EVENT = "CCL_SYCL_OUTPUT_EVENT";
+constexpr const char* CCL_USE_HMEM = "CCL_USE_HMEM";
 
 constexpr const char* CCL_ZE_BARRIER = "CCL_ZE_BARRIER";
 constexpr const char* CCL_ZE_BIDIR_ALGO = "CCL_ZE_BIDIR_ALGO";
@@ -249,6 +250,7 @@ public:
     int enable_close_fd_wa;
 
     int enable_sycl_output_event;
+    int use_hmem;
 
     int enable_ze_barrier;
     int enable_ze_bidir_algo;

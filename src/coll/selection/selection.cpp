@@ -232,6 +232,9 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
                     "unordered coll is not supported");
     RETURN_FALSE_IF(ccl::global_data::env().priority_mode != ccl_priority_none, "wrong priority");
     RETURN_FALSE_IF(ccl::global_data::env().worker_count != 1, "unsupported count of workers");
+    // this check is for multi-level scale-out for device buffers case:
+    // we can't use topo algorithm without sub-communicators
+    RETURN_FALSE_IF(!param.comm->get_even_comm().get(), "sub-communicators are not available");
 
 #ifdef CCL_ENABLE_SYCL
     RETURN_FALSE_IF(ccl::global_data::env().enable_ze_bidir_algo &&

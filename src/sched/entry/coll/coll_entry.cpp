@@ -1,8 +1,6 @@
 #include "sched/entry/coll/coll_entry.hpp"
 
-ccl::status coll_entry::build_sched(ccl_sched* sched,
-                                    const ccl_sched* parent_sched,
-                                    const ccl_coll_entry_param& param) {
+ccl::status coll_entry::build_sched(ccl_sched* sched, const ccl_coll_entry_param& param) {
     ccl::status res = ccl::status::success;
 
     sched->hint_algo = param.hint_algo;

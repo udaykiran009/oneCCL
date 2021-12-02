@@ -14,3 +14,4 @@ multi_comms platform=gen9 transport=*
 multi_level_algos platform=ats transport=*
 # MLSL-1212
 opencl platform=* transport=*
+use_hmem platform=ats transport=*

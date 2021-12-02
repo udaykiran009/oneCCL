@@ -23,7 +23,7 @@ public:
                   sched,
                   op_id,
                   [this](ccl_sched* s) {
-                      coll_entry::build_sched(s, this->sched, this->param);
+                      coll_entry::build_sched(s, this->param);
                   },
                   "coll_entry"),
               param(param) {}
@@ -63,9 +63,7 @@ public:
         return param.send_count;
     }
 
-    static ccl::status build_sched(ccl_sched* sched,
-                                   const ccl_sched* parent_sched,
-                                   const ccl_coll_entry_param& param);
+    static ccl::status build_sched(ccl_sched* sched, const ccl_coll_entry_param& param);
 
 protected:
     void dump_detail(std::stringstream& str) const override {

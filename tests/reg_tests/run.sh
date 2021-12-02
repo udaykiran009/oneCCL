@@ -112,7 +112,7 @@ parse_arguments() {
                 ENABLE_TESTING="no"
                 ;;
             "-platform"|"--platform")
-                PLATFORM_HW_DISCRETE_GPU=${2}
+                export PLATFORM_HW_DISCRETE_GPU=${2}
                 shift
                 ;;
             "-transport"|"--transport")
@@ -132,7 +132,7 @@ parse_arguments() {
 
     if [[ ${MODE} = "gpu" ]] && [[ -z ${PLATFORM_HW_DISCRETE_GPU} ]]
     then
-        PLATFORM_HW_DISCRETE_GPU="ats"
+        export PLATFORM_HW_DISCRETE_GPU="ats"
     fi
     if [[ -z ${TRANSPORT} ]]
     then

@@ -526,58 +526,39 @@ ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
 
             CCL_THROW_IF_NOT(comm->size() % node_comm_size == 0);
             int root_node_idx = root / node_comm_size;
-            ccl_buffer host_buf{};
-            if (!is_single_node && block_count) {
-                LOG_DEBUG("topo/scale_out: use host_reduce");
-                ccl::alloc_param alloc_param(
-                    block_count * dtype.size(), ccl::buffer_type::regular, ccl::buffer_place::host);
-                host_buf = sched->alloc_buffer(alloc_param);
-                entry_factory::create<copy_entry>(sched,
-                                                  partial_tmp_buf,
-                                                  host_buf,
-                                                  block_count,
-                                                  dtype,
-                                                  copy_attr(copy_direction::d2h));
-                sched->add_barrier();
 
-                LOG_DEBUG("rank: ",
-                          comm->rank(),
-                          ", reduce to rank on r2r_comm: ",
-                          root_node_idx,
-                          ", count: ",
-                          block_count);
-                ccl_coll_build_reduce(
-                    sched, host_buf, host_buf, block_count, dtype, op, root_node_idx, r2r_comm);
-                sched->add_barrier();
-            }
+            ccl_coll_entry_param coll_param{ .ctype = ccl_coll_reduce,
+                                             .send_buf = partial_tmp_buf,
+                                             .recv_buf = partial_tmp_buf,
+                                             .count = block_count,
+                                             .dtype = dtype,
+                                             .root = root_node_idx,
+                                             .comm = r2r_comm };
 
+            copy_attr h2d_copy_attr{};
             if (root_node_idx == r2r_comm->rank()) {
                 LOG_DEBUG("topo/scale_up/intra: use ze_onesided_bcast");
                 int root_in_node_comm = node_comm->get_rank_from_global(root);
                 size_t offset_count = offset_bytes / dtype.size();
-                ccl_buffer src = (!is_single_node && block_count) ? host_buf : partial_tmp_buf;
-                ccl_buffer dst{};
-                copy_attr attr(root_in_node_comm,
-                               recv_buf_idx,
-                               copy_direction::h2d,
-                               node_comm,
-                               0,
-                               offset_count);
+                copy_attr local_attr(root_in_node_comm,
+                                     recv_buf_idx,
+                                     copy_direction::h2d,
+                                     node_comm,
+                                     0,
+                                     offset_count);
                 if (comm->rank() == root) {
-                    dst = recv_buf;
-                    attr = copy_attr(copy_direction::h2d, 0, offset_count);
+                    local_attr = copy_attr(copy_direction::h2d, 0, offset_count);
                 }
-
-                LOG_DEBUG("rank: ",
-                          comm->rank(),
-                          ", copy to rank on node_comm: ",
-                          root_in_node_comm,
-                          ", offset count: ",
-                          offset_count,
-                          ", count: ",
-                          block_count);
-                entry_factory::create<copy_entry>(sched, src, dst, block_count, dtype, attr);
+                h2d_copy_attr = local_attr;
             }
+            ccl::add_scaleout(sched,
+                              coll_param,
+                              is_single_node,
+                              wait_events,
+                              h2d_copy_attr,
+                              comm,
+                              recv_buf,
+                              root);
         }
         ccl::add_comm_barrier(sched, node_comm);
     }
