@@ -130,10 +130,10 @@ public:
         addr.sin_port = default_start_port;
     }
     in_port_t get_sin_port() override {
-        return addr.sin_port;
+        return ntohs(addr.sin_port);
     }
     void set_sin_port(in_port_t sin_port) override {
-        addr.sin_port = sin_port;
+        addr.sin_port = htons(sin_port);
     }
     struct sockaddr* get_sock_addr_ptr() override {
         return (struct sockaddr*)&addr;
@@ -162,10 +162,10 @@ public:
         addr.sin6_port = default_start_port;
     }
     in_port_t get_sin_port() override {
-        return addr.sin6_port;
+        return ntohs(addr.sin6_port);
     }
     void set_sin_port(in_port_t sin_port) override {
-        addr.sin6_port = sin_port;
+        addr.sin6_port = htons(sin_port);
     }
     const void* get_sin_addr_ptr() override {
         return &(addr.sin6_addr);
