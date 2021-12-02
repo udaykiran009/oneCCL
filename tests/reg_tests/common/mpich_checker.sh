@@ -59,8 +59,6 @@ do
 
         check_log ${LOG}
 
-        grep -o 'mnic_count: [[:digit:]]*'
-
         in_mnic_type=$(cat ${LOG} | grep "in:" | grep -o "mnic_type: [[:alpha:]]*" | awk '{print $2}')
         in_mnic_count=$(cat ${LOG} | grep "in:" | grep -o "mnic_count: [[:digit:]]*" | awk '{print $2}')
         out_mnic_type=$(cat ${LOG} | grep "out:" | grep -o "mnic_type: [[:alpha:]]*" | awk '{print $2}')

@@ -31,7 +31,7 @@ print_help() {
     echo "      Specific path to the file with excluded tests"
     echo "  --build-only"
     echo "      Enable only the build stage"
-    echo "  --platform <ats|gen9>"
+    echo "  --platform <ats|gen9|pvc>"
     echo "      Discrete GPU platform name"
     echo "  --transport <impi|mpich>"
     echo "      Transport name (default impi)"
@@ -89,6 +89,8 @@ set_default_values() {
     ENABLE_BUILD="yes"
     ENABLE_TESTING="yes"
     EXCLUDE_LIST="${SCRIPT_DIR}/exclude_list"
+
+    export I_MPI_JOB_TIMEOUT=180
 }
 
 parse_arguments() {

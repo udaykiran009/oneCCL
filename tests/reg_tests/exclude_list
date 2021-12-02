@@ -3,6 +3,7 @@
 
 # common
 mpich_checker platform=* transport=impi
+pkgconfig_support_checker platform=* transport=mpich
 
 # cpu
 

@@ -5,7 +5,7 @@
 #IMPI# Implemented in: Intel(R) Collective Communication Library 2021.4 (Gold) Update  4 #
 ##########################################################################################
 
-if [[ $(hostname) == *"ats"* ]]
+if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]] || [[ ${PLATFORM_HW_DISCRETE_GPU} = "pvc" ]]
 then
     SUPPORTED_SHELLS="bash dash ksh mksh zsh"
 else

@@ -14,9 +14,11 @@ then
     exit 1
 fi
 
-CURRENT_CCL_BUILD_DIR="${CCL_REPO_DIR}/${CCL_BUILD_ID}"
 BASENAME=`basename $0 .sh`
-CURRENT_WORK_DIR=`cd ${SCRIPT_DIR}/../../ && pwd -P`
+if [[ -z ${CURRENT_WORK_DIR} ]]
+then
+    CURRENT_WORK_DIR=`cd ${SCRIPT_DIR}/../../ && pwd -P`
+fi
 ARTEFACT_ROOT_DIR="/p/pdsd/scratch/jenkins/artefacts"
 ARTEFACT_DIR="${ARTEFACT_ROOT_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}/"
 CCL_ONEAPI_DIR="/p/pdsd/scratch/Uploads/CCL_oneAPI/"
@@ -29,6 +31,10 @@ echo "SCRIPT_DIR = $SCRIPT_DIR"
 echo "CURRENT_WORK_DIR = $CURRENT_WORK_DIR"
 
 export CCL_WORKER_AFFINITY=auto
+
+source ${CURRENT_WORK_DIR}/scripts/utils/common.sh
+source ${CURRENT_WORK_DIR}/scripts/utils/ats_helper.sh
+source ${CURRENT_WORK_DIR}/scripts/utils/pvc_helper.sh
 
 #==============================================================================
 #                                Defaults
@@ -47,30 +53,23 @@ function set_default_values()
     ENABLE_VALGRIND_TESTS="no"
     ENABLE_REG_TESTS="no"
     ENABLE_MPICH_OFI_TESTS="no"
+
+    is_gpu_node
 }
 #==============================================================================
 #                                Functions
 #==============================================================================
 
-# Logging. Always log. Echo if ENABLE_VERBOSE is "yes".
-function log()
-{
-    if [ "${ENABLE_VERBOSE}" = "yes" ]; then
-        eval $* 2>&1 | tee -a ${LOG_FILE}
-    else
-        eval $* >> ${LOG_FILE} 2>&1
-    fi
-}
-
 function parse_arguments() {
+    if [ $# -eq 0 ]; then
+        print_help
+        exit 1
+    fi
+
     while [ $# -ne 0 ]
     do
         case $1 in
         "-regular_tests" )
-            ENABLE_REGULAR_TESTS="yes"
-            shift
-            ;;
-        "-compatibility_tests" )
             ENABLE_REGULAR_TESTS="yes"
             shift
             ;;
@@ -136,35 +135,6 @@ function print_help()
     exit 0
 }
 
-# Echo with logging. Always echo and always log
-function echo_log()
-{
-    echo -e "$*" 2>&1 | tee -a ${LOG_FILE}
-}
-
-# echo the debug information
-function echo_debug()
-{
-    if [ ${ENABLE_DEBUG} = "yes" ]; then
-        echo_log "DEBUG: $*"
-    fi
-}
-
-function echo_log_separator()
-{
-    echo_log "#=============================================================================="
-}
-
-function check_command_exit_code() {
-    local arg=$1
-    local err_msg=$2
-
-    if [ $arg -ne 0 ]; then
-        echo_log "ERROR: ${err_msg}" 1>&2
-        exit $1
-    fi
-}
-
 function set_external_env() {
     if [ ${TEST_CONFIGURATIONS} == "test:nightly" ]
     then
@@ -210,13 +180,13 @@ function set_mpich_ofi_env() {
         return
     fi
 
-    ${CURRENT_WORK_DIR}/scripts/mpich_ofi/mpich_ofi.sh
-    MPICH_OFI_INSTALL_PATH=$( cd ${CURRENT_WORK_DIR}/scripts/mpich_ofi/install/usr/mpi/mpich-ofi*/ && pwd -P )
-    export LD_LIBRARY_PATH="${MPICH_OFI_INSTALL_PATH}/lib:${LD_LIBRARY_PATH}"
-    unset FI_PROVIDER_PATH
-    mkdir -p ${CURRENT_WORK_DIR}/scripts/mpich_ofi/prov
-    cp ${I_MPI_ROOT}/libfabric/lib/prov/libpsm3-fi.so ${CURRENT_WORK_DIR}/scripts/mpich_ofi/prov
-    export FI_PROVIDER_PATH="${CURRENT_WORK_DIR}/scripts/mpich_ofi/prov"
+    if [[ ${node_label} = "ccl_test_ats" ]]
+    then
+        set_ats_mpich_ofi_env
+    elif [[ ${node_label} = "ccl_test_pvc" ]]
+    then
+        set_pvc_mpich_ofi_env
+    fi
 }
 
 function set_provider_env() {
@@ -237,6 +207,11 @@ function set_provider_env() {
         else
             export FI_PROVIDER=psm3
         fi
+    fi
+
+    if [[ "${node_label}" = "ccl_test_pvc" ]]
+    then
+        export FI_PROVIDER=cxi
     fi
 }
 
@@ -270,7 +245,7 @@ function set_functional_tests_env()
     export CCL_MNIC=global
     export I_MPI_DEBUG=12
 
-    if [[ "${node_label}" = "ccl_test_ats" ]]
+    if [[ "${node_label}" = "ccl_test_ats" || "${node_label}" = "ccl_test_pvc" ]]
     then
         export CCL_MNIC_NAME=eno,eth,hfi,^mlx,unknown
     else
@@ -292,7 +267,7 @@ function set_functional_tests_scope()
     export CCL_TEST_SYNC_TYPE=0
     export CCL_TEST_REDUCTION_TYPE=0
 
-    if [[ ${node_label} == "ccl_test_gen9" ]] || [[ ${node_label} == "ccl_test_ats" ]]
+    if [[ ${IS_GPU_NODE} = "yes" ]]
     then
         export CCL_TEST_DYNAMIC_POINTER=0
     else
@@ -317,7 +292,6 @@ function set_unordered_coll_test_scope()
 
 function set_ats_environment()
 {
-    source ${SCRIPT_DIR}/ats_helper.sh
     source ~/.jenkins_helper
 
     ATS_WORKSPACE_DIR="/home/sys_ctlab/workspace/workspace/"
@@ -336,6 +310,36 @@ function set_ats_environment()
     export DASHBOARD_PLATFORM_HW_DISCRETE_GPU="ats"
 }
 
+function set_pvc_environment()
+{
+    source ~/.jenkins_helper
+
+    # Unload default system's oneapi package
+    module unload oneapi
+
+    module load cmake
+    PVC_WORKSPACE_DIR="/home/sys_ctlab/workspace/workspace/"
+    PVC_ARTEFACT_DIR="${PVC_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
+
+    # Compiler
+    export BUILD_COMPILER_TYPE="dpcpp"
+    export SYCL_BUNDLE_ROOT="/home/sys_ctlab/oneapi/compiler/last/compiler/latest/linux/"
+
+    if [ -z ${CCL_ROOT} ]
+    then
+        source ${PVC_ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+        export DASHBOARD_GPU_DEVICE_PRESENT="yes"
+    fi
+
+    # Get slurm job nodelist
+    scontrol show hostnames > "${PVC_ARTEFACT_DIR}/nodelist"
+    export I_MPI_HYDRA_HOST_FILE="${PVC_ARTEFACT_DIR}/nodelist"
+    export HYDRA_LAUNCHER="ssh"
+
+    # Compute runtime
+    set_agama_env
+}
+
 function set_environment()
 {
     if [ -z "${build_type}" ]
@@ -346,6 +350,10 @@ function set_environment()
     if [[ "${node_label}" = "ccl_test_ats" ]]
     then
         set_ats_environment
+    fi
+    if [[ "${node_label}" = "ccl_test_pvc" ]]
+    then
+        set_pvc_environment
     fi
 
     # $BUILD_COMPILER_TYPE may be set up by user: dpcpp/gnu/intel/icx
@@ -402,7 +410,18 @@ function set_environment()
             SYCL_BUNDLE_ROOT="${CCL_ONEAPI_DIR}/compiler/last/compiler/latest/linux/"
             echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
         fi
-        source ${SYCL_BUNDLE_ROOT}/../../../setvars.sh
+        if [[ ${node_label} = "ccl_test_pvc" ]]
+        then
+            if [[ ! -d ${SYCL_BUNDLE_ROOT}/../../../modulefiles ]]
+            then
+                ${SYCL_BUNDLE_ROOT}/../../../modulefiles-setup.sh
+            fi
+            module use ${SYCL_BUNDLE_ROOT}/../../../modulefiles
+            module load compiler/latest
+        else
+            source ${SYCL_BUNDLE_ROOT}/../../../setvars.sh
+        fi
+
         BUILD_COMPILER_PATH=${SYCL_BUNDLE_ROOT}/bin
         C_COMPILER=${BUILD_COMPILER_PATH}/icx
         CXX_COMPILER=${BUILD_COMPILER_PATH}/dpcpp
@@ -443,6 +462,12 @@ function set_environment()
 
     export CCL_PROCESS_CLEANUP="yes"
     set_external_env
+
+    if [[ ${node_label} = "ccl_test_pvc" ]]
+    then
+        check_cxi
+        check_anr
+    fi
 }
 
 function set_reg_tests_environment()
@@ -454,11 +479,23 @@ function set_reg_tests_environment()
     then
         export CCL_WORKER_OFFLOAD=0
         export CCL_YIELD=sched_yield
+        export PLATFORM="gen9"
+    elif [[ "${node_label}" = "ccl_test_ats" ]]
+    then
+        export PLATFORM="ats"
+    elif [[ "${node_label}" = "ccl_test_pvc" ]]
+    then
+        export PLATFORM="pvc"
     fi
 }
 
 function set_impi_environment()
 {
+    if [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]]
+    then
+        return
+    fi
+
     if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
     then
         if [ -f ${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts ]
@@ -548,12 +585,9 @@ function run_reg_tests()
 
     set_reg_tests_environment
 
-    if [[ ${node_label} == "ccl_test_gen9" ]]
+    if [[ ${IS_GPU_NODE} = "yes" ]]
     then
-        ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode gpu --platform gen9
-    elif [[ ${node_label} == "ccl_test_ats" ]]
-    then
-        ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode gpu --platform ats --transport ${REG_TESTS_TRANSPORT}
+        ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode gpu --platform ${PLATFORM} --transport ${REG_TESTS_TRANSPORT}
     else
         ${CURRENT_WORK_DIR}/tests/reg_tests/run.sh --mode cpu
     fi
@@ -576,7 +610,7 @@ function run_regular_tests()
         return
     fi
 
-    if [[ ${node_label} == "ccl_test_gen9" ]] || [[ ${node_label} == "ccl_test_ats" ]]
+    if [[ ${IS_GPU_NODE} = "yes" ]]
     then
         if [[ $(hostname) = *"nnlmpinuc09"* ]]
         then
@@ -768,7 +802,7 @@ function run_functional_tests()
         allreduce_algos="${allreduce_algos} 2d" # ring_rma
     fi
 
-    if [ ${node_label} == "ccl_test_gen9" ] || [ "${node_label}" == "ccl_test_ats" ]
+    if [[ ${IS_GPU_NODE} = "yes" ]]
     then
         allreduce_algos="${allreduce_algos} topo"
         bcast_algos="${bcast_algos} topo"

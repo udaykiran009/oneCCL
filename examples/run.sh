@@ -84,23 +84,17 @@ check_dpcpp()
 
 check_environment()
 {
-    which mpiexec
-    MPI_INSTALL_CHECK=$?
-    if [ "$MPI_INSTALL_CHECK" != "0" ]
+    if [[ -z "${I_MPI_ROOT}" ]]
     then
-        echo "Error: IMPI wasn't found"
-        exit 1
+        which mpiexec.hydra >/dev/null 2>&1
+        if [[ $? != 0 ]]
+        then
+            echo "Error: MPI not found."
+            exit 1
+        fi
     fi
 
-    MPI_INSTALL_CHECK_2=`echo $I_MPI_ROOT`
-    if [ "$MPI_INSTALL_CHECK_2" == "" ]
-    then
-        echo "Error: I_MPI_ROOT wasn't found"
-        exit 1
-    fi
-
-    CCL_INSTALL_CHECK=`echo $CCL_ROOT`
-    if [ "$CCL_INSTALL_CHECK" == "" ]
+    if [[ -z "${CCL_ROOT}" ]]
     then
         echo "Error: CCL_ROOT wasn't found"
         exit 1

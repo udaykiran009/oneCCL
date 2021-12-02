@@ -13,9 +13,13 @@ function run_cmd() {
 function check_impi() {
     if [[ -z "${I_MPI_ROOT}" ]]
     then
-        echo "Error: \$I_MPI_ROOT is not set. Please source vars.sh"
-        exit 1
-    fi
+        which mpiexec.hydra >/dev/null 2>&1
+        if [[ $? != 0 ]]
+        then
+            echo "Error: MPI not found."
+            exit 1
+        fi
+     fi
 }
 
 function check_ccl() {
@@ -36,7 +40,6 @@ function check_log() {
         echo "Error: did not find pass in log ${log_path}"
         exit 1
     fi
-
 
     failed_pattern="abort|^bad$|corrupt|fail|^fault$|[^-W]invalid"
     failed_pattern+="|kill|runtime_error|terminate|timed|unexpected"

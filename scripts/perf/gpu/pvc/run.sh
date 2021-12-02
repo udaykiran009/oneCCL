@@ -25,23 +25,9 @@ DEFAULT_CHECK_ANR="0"
 DEFAULT_CHECK_CXI="0"
 DEFAULT_PROXY="http://proxy-us.intel.com:912"
 
-echo_log() {
-    echo -e "$*" 2>&1 | tee -a ${LOG_FILE}
-}
-
-check_exit_code() {
-    if [ $1 -ne 0 ]
-    then
-        echo_log "ERROR: ${2}"
-        exit $1
-    fi
-}
-
-run_cmd() {
-    echo_log "\n${1}\n"
-    eval ${1} 2>&1 | tee -a ${LOG_FILE}
-    check_exit_code $? "cmd failed"
-}
+CURRENT_WORK_DIR=$(realpath ${SCRIPT_DIR}/../../../../)
+source ${CURRENT_WORK_DIR}/scripts/utils/common.sh
+source ${CURRENT_WORK_DIR}/scripts/utils/pvc_helper.sh
 
 print_help() {
     echo_log "Usage: ${BASENAME}.sh <options>"
@@ -170,12 +156,6 @@ set_frequency() {
     done
 }
 
-set_build_env() {
-    module unload oneapi
-    module use /home/ftartagl/modulefiles
-    module load oneapi-testing/2021.4.0.001.rc1.20211005
-}
-
 check_build_env() {
     echo_log "\nDPCPP path:"
     echo_log `which dpcpp`
@@ -195,79 +175,14 @@ set_run_env() {
     then
         source ${ccl_vars_file_2}
     else
-        check_exit_code 1 "Can not find CCL vars file: ${ccl_vars_file_1} or ${ccl_vars_file_2}"
+        check_command_exit_code 1 "Can not find CCL vars file: ${ccl_vars_file_1} or ${ccl_vars_file_2}"
     fi
 
     # MPICH
-    module unload mpich/icc-cxi
-    module load mpich/icc-cxi/43.2
-    export LD_LIBRARY_PATH=/usr/lib64/:${LD_LIBRARY_PATH}
+    set_pvc_mpich_ofi_env
 
     # compute-runtime
-    module use -a /home/ftartagl/graphics-compute-runtime/modulefiles
-    module load graphics-compute-runtime/agama-ci-prerelease-260
-}
-
-check_anr() {
-    check_log="anr_check.log"
-    test_path="/home/mshiryae/shared/zello_ipc_copy_dma_buf_p2p.out"
-    total_fails=0
-
-    for tile_idx in `seq 0 1`
-    do
-        for first_card_idx in `seq 0 5`
-        do
-            for second_card_idx in `seq $((first_card_idx+1)) 5`
-            do
-                cmd="ZE_AFFINITY_MASK=${first_card_idx}.${tile_idx},${second_card_idx}.${tile_idx} EnableCrossDeviceAccess=1"
-                cmd="${cmd} ${test_path} > ${check_log} 2>&1"
-                echo "${cmd}"
-                timeout 4s bash -c "eval ${cmd}"
-
-                test_exit_code=$?
-                failed=$(cat ${check_log} | grep "FAILED" | wc -l)
-                passed=$(cat ${check_log} | grep "PASSED" | wc -l)
-
-                if [ "${failed}" == "1" ] || [ "${test_exit_code}" != "0" ]
-                then
-                    echo "config: ${first_card_idx}.${tile_idx}:${second_card_idx}.${tile_idx} failed"
-                    total_fails=$((total_fails + 1))
-                fi
-            done
-        done
-    done
-
-    if [ "${total_fails}" != "0" ]
-    then
-        check_exit_code 1 "\nANR check failed\n"
-    else
-        echo_log "\nANR check passed\n"
-    fi
-
-    # hdr=y
-    # for f in $(ls /sys/kernel/debug/iaf/iaf.*/sd.*/port.*/port_show)
-    # do
-    #     if [ $hdr == "y" ]
-    #     then
-    #         echo -n "PortName "
-    #         cat ${f} | tr -d ' ' | cut -d: -f 1 | tr '\n' ' '
-    #         hdr=n
-    #         echo
-    #     fi
-    #     echo "${f}" | cut -d/ -f 6-8 | tr '\n' ' '
-    #     cat ${f} | tr -d ' ' | cut -d: -f 2 | tr '\n' ' '
-    #     echo
-    # done | grep -e VARIABLE | grep -v -e HEALTHY
-}
-
-check_cxi() {
-    cxi_state=`fi_info -p cxi -v | grep -i state | grep -i up | wc -l`
-    if [ "${cxi_state}" != 8 ]
-    then
-        check_exit_code 1 "\nCXI check failed\n"
-    else
-        echo_log "\nCXI check passed\n"
-    fi
+    set_agama_env
 }
 
 check_run_env() {
@@ -298,12 +213,12 @@ build_ccl() {
 
     https_proxy=${PROXY} git clone --branch ${CCL_BRANCH} \
         --single-branch ${CCL_LINK} ${CCL_SRC_DIR}
-    check_exit_code $? "Download CCL failed"
+    check_command_exit_code $? "Download CCL failed"
 
     if [[ ! -d ${CCL_SRC_DIR} ]]
     then
         echo_log "ERROR: CCL_SRC_DIR (${CCL_SRC_DIR}) is not directory, try to run script with \"-build 1\""
-        check_exit_code 1 "Install CCL failed"
+        check_command_exit_code 1 "Install CCL failed"
     fi
 
     cd ${CCL_SRC_DIR}
@@ -316,10 +231,10 @@ build_ccl() {
         -DCOMPUTE_BACKEND=dpcpp_level_zero \
         -DBUILD_CONFIG=0 -DBUILD_FT=0 -DBUILD_EXAMPLES=1 \
         -DCMAKE_INSTALL_PREFIX=${CCL_INSTALL_DIR}
-    check_exit_code $? "Configure CCL failed"
+    check_command_exit_code $? "Configure CCL failed"
 
     make -j16 install
-    check_exit_code $? "Install CCL failed"
+    check_command_exit_code $? "Install CCL failed"
 }
 
 run_bench() {

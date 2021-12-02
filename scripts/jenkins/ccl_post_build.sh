@@ -8,6 +8,8 @@ CheckCommandExitCode() {
 }
 
 ARTEFACT_DIR="${ARTEFACT_ROOT_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
+PVC_WORKSPACE_DIR="/home/sys_ctlab/workspace/workspace/"
+PVC_ARTEFACT_DIR="${PVC_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
 
 echo "DEBUG: ARTEFACT_DIR = ${ARTEFACT_DIR}"
 
@@ -53,4 +55,13 @@ then
         rm -d ${ARTEFACT_ROOT_DIR}/${BUILDER_NAME}/last
     fi
     ln -s ${ARTEFACT_DIR} ${ARTEFACT_ROOT_DIR}/${BUILDER_NAME}/last
+fi
+
+if [[ ${TEST_CONFIGURATIONS} == *"mpich_pvc"* ]]
+then
+    source ~/.aurora_pvc
+    scp ${ARTEFACT_DIR}/l_ccl_release*.tgz ${AURORA_PVC}:${PVC_ARTEFACT_DIR}
+    CheckCommandExitCode $? "copying release packages failed"
+    scp ${ARTEFACT_DIR}/l_ccl_debug*.tgz ${AURORA_PVC}:${PVC_ARTEFACT_DIR}
+    CheckCommandExitCode $? "copying debug packages failed"
 fi
