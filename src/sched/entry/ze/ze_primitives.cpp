@@ -202,24 +202,22 @@ void get_copy_queue_ordinal(const ze_queue_properties_t& props, uint32_t* ordina
         *ordinal = copy_ordinal;
     }
     else {
-        LOG_WARN("could not find queue ordinal for copy engine mode: ",
-                 global_data::env().ze_copy_engine,
-                 ", ordinal 0 will be used. Total queue group count: ",
-                 props.size());
-        *ordinal = 0;
+        if (global_data::env().enable_ze_copy_engine_fallback) {
+            get_comp_queue_ordinal(props, ordinal);
+            LOG_WARN("could not find queue ordinal for copy engine mode: ",
+                     global_data::env().ze_copy_engine,
+                     ", ordinal ",
+                     *ordinal,
+                     " will be used. Total queue group count: ",
+                     props.size());
+        }
+        else {
+            CCL_THROW("could not find queue ordinal for copy engine mode: ",
+                      global_data::env().ze_copy_engine,
+                      " and fallback is disabled. Total queue group count: ",
+                      props.size());
+        }
     }
-}
-
-void get_queue_index(const ze_queue_properties_t& props,
-                     uint32_t ordinal,
-                     int idx,
-                     uint32_t* index) {
-    CCL_ASSERT(props.size() > ordinal, "props.size() <= ordinal");
-
-    idx += global_data::env().ze_queue_index;
-
-    *index = idx % props[ordinal].numQueues;
-    LOG_DEBUG("set queue index: ", *index);
 }
 
 bool get_buffer_context_and_device(const void* buf,

@@ -14,7 +14,7 @@ ze_reduce_local_entry::ze_reduce_local_entry(ccl_sched* sched,
                                              size_t* out_cnt,
                                              const ccl_datatype& dtype,
                                              ccl::reduction op)
-        : ze_base_entry(sched, init_mode::compute),
+        : ze_base_entry(sched),
           in_buf(in_buf),
           in_cnt(in_cnt),
           inout_buf(inout_buf),

@@ -35,7 +35,8 @@ public:
 
     void update() override;
 
-    static void fill_list(ze_command_list_handle_t list,
+    static void fill_list(const ze_base_entry* entry,
+                          int comm_rank,
                           void* send_buf,
                           void* recv_buf,
                           const std::vector<ccl_buffer>& peer_recv_bufs,

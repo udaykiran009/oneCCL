@@ -139,7 +139,11 @@ env_data::env_data()
           disable_ze_family_check(0),
           ze_serialize_mode(0),
           ze_copy_engine(ccl_ze_copy_engine_none),
-          ze_queue_index(1),
+          enable_ze_copy_engine_fallback(1),
+          ze_max_compute_queues(1),
+          ze_max_copy_queues(1),
+          enable_ze_list_dump(0),
+          ze_queue_index_offset(1),
           ze_close_ipc_wa(0),
 #endif // CCL_ENABLE_SYCL
 
@@ -326,7 +330,26 @@ void env_data::parse() {
     env_2_type(CCL_ZE_DISABLE_FAMILY_CHECK, disable_ze_family_check);
     env_2_type(CCL_ZE_SERIALIZE, ze_serialize_mode);
     env_2_enum(CCL_ZE_COPY_ENGINE, ze_copy_engine_names, ze_copy_engine);
-    env_2_type(CCL_ZE_QUEUE_INDEX, ze_queue_index);
+    env_2_type(CCL_ZE_COPY_ENGINE_FALLBACK, enable_ze_copy_engine_fallback);
+    env_2_type(CCL_ZE_MAX_COMPUTE_QUEUES, ze_max_compute_queues);
+    CCL_THROW_IF_NOT(ze_max_compute_queues > 0,
+                     "incorrect ",
+                     CCL_ZE_MAX_COMPUTE_QUEUES,
+                     " ",
+                     ze_max_compute_queues);
+    env_2_type(CCL_ZE_MAX_COPY_QUEUES, ze_max_copy_queues);
+    CCL_THROW_IF_NOT(ze_copy_engine == ccl_ze_copy_engine_none || ze_max_copy_queues > 0,
+                     "incorrect ",
+                     CCL_ZE_MAX_COPY_QUEUES,
+                     " ",
+                     ze_max_copy_queues);
+    env_2_type(CCL_ZE_LIST_DUMP, enable_ze_list_dump);
+    env_2_type(CCL_ZE_QUEUE_INDEX_OFFSET, ze_queue_index_offset);
+    CCL_THROW_IF_NOT(ze_queue_index_offset >= 0,
+                     "incorrect ",
+                     CCL_ZE_QUEUE_INDEX_OFFSET,
+                     " ",
+                     ze_queue_index_offset);
     env_2_type(CCL_ZE_CLOSE_IPC_WA, ze_close_ipc_wa);
 #endif // CCL_ENABLE_SYCL
 
@@ -540,7 +563,11 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_ZE_DISABLE_FAMILY_CHECK, ": ", disable_ze_family_check);
     LOG_INFO(CCL_ZE_SERIALIZE, ": ", ze_serialize_mode);
     LOG_INFO(CCL_ZE_COPY_ENGINE, ": ", str_by_enum(ze_copy_engine_names, ze_copy_engine));
-    LOG_INFO(CCL_ZE_QUEUE_INDEX, ": ", ze_queue_index);
+    LOG_INFO(CCL_ZE_COPY_ENGINE_FALLBACK, ": ", enable_ze_copy_engine_fallback);
+    LOG_INFO(CCL_ZE_MAX_COMPUTE_QUEUES, ": ", ze_max_compute_queues);
+    LOG_INFO(CCL_ZE_MAX_COPY_QUEUES, ": ", ze_max_copy_queues);
+    LOG_INFO(CCL_ZE_LIST_DUMP, ": ", enable_ze_list_dump);
+    LOG_INFO(CCL_ZE_QUEUE_INDEX_OFFSET, ": ", ze_queue_index_offset);
     LOG_INFO(CCL_ZE_CLOSE_IPC_WA, ": ", ze_close_ipc_wa);
 #endif // CCL_ENABLE_SYCL
 

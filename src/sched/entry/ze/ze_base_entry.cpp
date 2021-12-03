@@ -12,12 +12,10 @@ using namespace ccl;
 using namespace ccl::ze;
 
 ze_base_entry::ze_base_entry(ccl_sched *sched,
-                             init_mode mode,
                              ccl_comm *comm,
                              uint32_t add_event_count,
                              std::vector<ze_event_handle_t> wait_events)
         : sched_entry(sched),
-          mode(mode),
           comm(comm),
           use_single_list(sched->use_single_list),
           wait_events(wait_events) {
@@ -32,8 +30,10 @@ ze_base_entry::ze_base_entry(ccl_sched *sched,
     if (sched->coll_param.stream &&
         sched->coll_param.stream->get_backend() == ccl::utils::get_level_zero_backend()) {
         entry_event = sched->get_memory().event_manager->create();
-        sched->append_to_ze_entries_list(this);
     }
+    // remember all ze entries for schedule
+    // it is needed to execution modes processing
+    sched->append_to_ze_entries_list(this);
     events.resize(add_event_count, nullptr);
 }
 
@@ -55,33 +55,6 @@ void ze_base_entry::init() {
     context = sched->coll_param.stream->get_ze_context();
 
     if (!use_single_list) {
-        /* get queue properties */
-        ze_queue_properties_t queue_props;
-        get_queues_properties(device, &queue_props);
-
-        if ((queue_props.size() == 1) && (queue_props.front().numQueues == 1)) {
-            if (!global_data::env().disable_ze_family_check) {
-                CCL_THROW_IF_NOT(sched->coll_param.stream->get_device_family() ==
-                                 ccl::device_family::unknown);
-            }
-            LOG_DEBUG("numQueues = 1, switch to compute init mode");
-            mode = init_mode::compute;
-        }
-
-        /* init compute queue and list */
-        if (init_mode::compute & mode) {
-            LOG_DEBUG("compute init mode is enabled");
-            get_comp_primitives(queue_props, comp_primitives);
-            init_primitives(comp_primitives);
-        }
-
-        /* init copy queue and list */
-        if (init_mode::copy & mode) {
-            LOG_DEBUG("copy init mode is enabled");
-            get_copy_primitives(queue_props, copy_primitives, mode);
-            init_primitives(copy_primitives);
-        }
-
         /* create event pool */
         if (events.size() > 0) {
             event_pool_desc = default_event_pool_desc;
@@ -95,12 +68,7 @@ void ze_base_entry::init() {
         }
     }
 
-    append_wait_on_events();
-
     init_ze_hook();
-    if (!use_single_list) {
-        close_lists();
-    }
 
     is_initialized = true;
 
@@ -122,28 +90,6 @@ void ze_base_entry::finalize() {
         if (event_pool) {
             global_data::get().ze_data->cache->push(
                 worker_idx, context, event_pool_desc, event_pool);
-        }
-
-        if (comp_primitives.list && comp_primitives.queue) {
-            LOG_DEBUG("push to cache compute list and queue");
-            /* list */
-            global_data::get().ze_data->cache->push(
-                worker_idx, context, device, comp_primitives.list_desc, comp_primitives.list);
-
-            /* queue */
-            global_data::get().ze_data->cache->push(
-                worker_idx, context, device, comp_primitives.queue_desc, comp_primitives.queue);
-        }
-
-        if (copy_primitives.list && copy_primitives.queue) {
-            LOG_DEBUG("push to cache copy list and queue");
-            /* copy list */
-            global_data::get().ze_data->cache->push(
-                worker_idx, context, device, copy_primitives.list_desc, copy_primitives.list);
-
-            /* copy queue */
-            global_data::get().ze_data->cache->push(
-                worker_idx, context, device, copy_primitives.queue_desc, copy_primitives.queue);
         }
     }
 
@@ -180,34 +126,18 @@ void ze_base_entry::start() {
 
     if (use_single_list) {
         init_entries();
-
-        if (sched->ze_entries.front() == this) {
-            sched->get_memory().list_manager->execute();
-        }
     }
     else {
         init();
         reset_events();
+    }
 
-        if (comp_primitives.list && comp_primitives.queue) {
-            LOG_DEBUG("execute compute command list");
-            ZE_CALL(zeCommandQueueExecuteCommandLists,
-                    (comp_primitives.queue, 1, &comp_primitives.list, nullptr));
-        }
-
-        if (copy_primitives.list && copy_primitives.queue) {
-            LOG_DEBUG("execute copy command list");
-            ZE_CALL(zeCommandQueueExecuteCommandLists,
-                    (copy_primitives.queue, 1, &copy_primitives.list, nullptr));
-        }
-
-        if (((global_data::env().ze_serialize_mode & ze_call::serialize_mode::block)) != 0) {
-            LOG_DEBUG("wait until command lists are executed");
-            if (copy_primitives.queue)
-                ZE_CALL(zeHostSynchronize, (copy_primitives.queue));
-            if (comp_primitives.queue)
-                ZE_CALL(zeHostSynchronize, (comp_primitives.queue));
-        }
+    // there are two execution modes: single_list and non-single list
+    // in single_list mode globally we have only one list per queue, so execute it
+    // only from the first entry of schedule or
+    // in non single_list mode each entry execute only own lists
+    if ((use_single_list && sched->ze_entries.front() == this) || !use_single_list) {
+        sched->get_memory().list_manager->execute(this);
     }
 
     status = ccl_sched_entry_status_started;
@@ -221,29 +151,8 @@ bool ze_base_entry::is_event_completed(ze_event_handle_t event) {
     return (res == ZE_RESULT_SUCCESS);
 }
 
-bool ze_base_entry::is_queue_completed(ze_command_queue_handle_t queue) {
-    ze_result_t res = zeHostSynchronize(queue);
-    CCL_THROW_IF_NOT(res == ZE_RESULT_SUCCESS || res == ZE_RESULT_NOT_READY,
-                     "unexpected result from zeHostSynchronize: ",
-                     to_string(res));
-    return (res == ZE_RESULT_SUCCESS);
-}
-
 void ze_base_entry::update() {
-    bool complete{};
-
-    if (global_data::env().kernel_debug == 0) {
-        complete = is_event_completed(entry_event);
-    }
-    else {
-        bool copy_q_complete{ true };
-        bool comp_q_complete{ true };
-        if (copy_primitives.queue)
-            copy_q_complete = is_queue_completed(copy_primitives.queue);
-        if (comp_primitives.queue)
-            comp_q_complete = is_queue_completed(comp_primitives.queue);
-        complete = copy_q_complete && comp_q_complete;
-    }
+    bool complete = is_event_completed(entry_event);
 
     if (complete) {
         LOG_DEBUG(name(), " entry complete");
@@ -264,7 +173,7 @@ void ze_base_entry::update() {
         }
 
         if (sched->ze_entries.back() == this) {
-            LOG_DEBUG("reset sched events\n");
+            LOG_DEBUG("reset sched events and lists\n");
             sched->get_memory().event_manager->reset();
             sched->get_memory().list_manager->reset_execution_state();
         }
@@ -286,93 +195,16 @@ void ze_base_entry::update() {
     }
 }
 
-ze_command_list_handle_t ze_base_entry::get_comp_list() {
-    if (use_single_list) {
-        return sched->get_memory().list_manager->get_comp_list();
-    }
-    return comp_primitives.list;
+ze_command_list_handle_t ze_base_entry::get_comp_list(uint32_t index) const {
+    return sched->get_memory().list_manager->get_comp_list(this, wait_events, index);
 }
 
-ze_command_list_handle_t ze_base_entry::get_copy_list() {
-    if (use_single_list) {
-        return sched->get_memory().list_manager->get_copy_list();
-    }
-
-    ze_command_list_handle_t list{};
-    if (copy_primitives.list) {
-        list = copy_primitives.list;
-        LOG_DEBUG("copy list is returned");
-    }
-    else if (comp_primitives.list) {
-        list = comp_primitives.list;
-        LOG_DEBUG("compute list is returned");
-    }
-    CCL_THROW_IF_NOT(list, "command list is invalid");
-    return list;
-}
-
-void ze_base_entry::append_wait_on_events() {
-    if (use_single_list && !wait_events.empty()) {
-        if (sched->get_memory().list_manager->can_use_copy_queue() &&
-            (init_mode::copy & mode)) { // to prevent double append
-            ZE_CALL(zeCommandListAppendWaitOnEvents,
-                    (get_copy_list(), wait_events.size(), wait_events.data()));
-        }
-        ZE_CALL(zeCommandListAppendWaitOnEvents,
-                (get_comp_list(), wait_events.size(), wait_events.data()));
-    }
+ze_command_list_handle_t ze_base_entry::get_copy_list(uint32_t index) const {
+    return sched->get_memory().list_manager->get_copy_list(this, wait_events, index);
 }
 
 std::string ze_base_entry::name_ext() const {
     return "[empty]";
-}
-
-void ze_base_entry::get_comp_primitives(const ze_queue_properties_t &queue_props,
-                                        cmd_primitives &comp_primitives) {
-    uint32_t ordinal{}, queue_index{};
-    get_comp_queue_ordinal(queue_props, &ordinal);
-    get_queue_index(queue_props, ordinal, 0, &queue_index);
-
-    comp_primitives.queue_desc.ordinal = ordinal;
-    comp_primitives.queue_desc.index = queue_index;
-    comp_primitives.list_desc.commandQueueGroupOrdinal = ordinal;
-}
-
-void ze_base_entry::get_copy_primitives(const ze_queue_properties_t &queue_props,
-                                        cmd_primitives &copy_primitives,
-                                        init_mode mode) {
-    uint32_t ordinal{}, queue_index{};
-    get_copy_queue_ordinal(queue_props, &ordinal);
-
-    // TODO: index depends on rank's changing, when > 1 queues are created,
-    // the index is still the same for different queues, that's the issue.
-    // WA is adding optional counter, which says the order number of a queue.
-    // Need to think, how we'd calculate the index for every queue.
-    // Hang in case of CCL_KERNEL_1S_USE_COPY_OPS=1 CCL_ZE_COPY_ENGINE=none
-    if (mode == (init_mode::compute | init_mode::copy)) {
-        get_queue_index(queue_props, ordinal, 1, &queue_index);
-    }
-    else {
-        get_queue_index(queue_props, ordinal, 0, &queue_index);
-    }
-
-    copy_primitives.queue_desc.ordinal = ordinal;
-    copy_primitives.queue_desc.index = queue_index;
-    copy_primitives.list_desc.commandQueueGroupOrdinal = ordinal;
-}
-
-void ze_base_entry::init_primitives(cmd_primitives &cmd_primitives) {
-    global_data::get().ze_data->cache->get(
-        worker_idx, context, device, cmd_primitives.queue_desc, &cmd_primitives.queue);
-    LOG_DEBUG("get queue: { ordinal: ",
-              cmd_primitives.queue_desc.ordinal,
-              ", index: ",
-              cmd_primitives.queue_desc.index,
-              " }");
-
-    global_data::get().ze_data->cache->get(
-        worker_idx, context, device, cmd_primitives.list_desc, &cmd_primitives.list);
-    LOG_DEBUG("get list: { ordinal: ", cmd_primitives.list_desc.commandQueueGroupOrdinal, " }");
 }
 
 ze_event_handle_t ze_base_entry::create_event(ze_event_pool_handle_t event_pool,
@@ -431,13 +263,6 @@ void ze_base_entry::destroy_events() {
         }
     }
     events.clear();
-}
-
-void ze_base_entry::close_lists() {
-    if (comp_primitives.list)
-        ZE_CALL(zeCommandListClose, (comp_primitives.list));
-    if (copy_primitives.list)
-        ZE_CALL(zeCommandListClose, (copy_primitives.list));
 }
 
 ze_kernel::ze_kernel(ze_module_handle_t module, const std::string &kernel_name, size_t worker_idx)
