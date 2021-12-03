@@ -18,7 +18,13 @@ ze_onesided_allreduce_entry::ze_onesided_allreduce_entry(ccl_sched* sched,
                                                          ccl_comm* comm,
                                                          std::vector<ze_event_handle_t> wait_events,
                                                          const size_t buf_offset_cnt)
-        : ze_base_entry(sched, comm, 3 /* request additional events */, wait_events),
+        : ze_base_entry(sched,
+                        global_data::env().enable_kernel_1s_copy_ops
+                            ? (init_mode::compute | init_mode::copy)
+                            : init_mode::compute,
+                        comm,
+                        3 /* request additional events */,
+                        wait_events),
           send_buf(send_buf),
           recv_buf(recv_buf),
           cnt(cnt),

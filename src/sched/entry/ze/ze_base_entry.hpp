@@ -28,11 +28,9 @@ public:
 
     ze_event_handle_t entry_event{};
 
-    ze_command_list_handle_t get_comp_list(uint32_t index = 0) const;
-    ze_command_list_handle_t get_copy_list(uint32_t index = 0) const;
-
 protected:
     explicit ze_base_entry(ccl_sched *sched,
+                           init_mode mode = init_mode::compute,
                            ccl_comm *comm = nullptr,
                            uint32_t add_event_count = 0,
                            std::vector<ze_event_handle_t> wait_events = {});
@@ -50,11 +48,25 @@ protected:
     void init_entries();
     void finalize_entries();
 
+    ze_command_list_handle_t get_comp_list();
+    ze_command_list_handle_t get_copy_list();
+
     virtual std::string name_ext() const;
+
+    void init_primitives(cmd_primitives &cmd_primitives);
+    void get_copy_primitives(const ze_queue_properties_t &queue_props,
+                             cmd_primitives &copy_primitives,
+                             init_mode mode);
+    void get_comp_primitives(const ze_queue_properties_t &queue_props,
+                             cmd_primitives &comp_primitives);
 
     ze_event_handle_t create_event();
     void reset_events();
     void destroy_events();
+
+    void close_lists();
+
+    init_mode mode;
 
     ccl_comm *comm{};
     int comm_rank{};
@@ -69,6 +81,9 @@ protected:
     ze_device_handle_t device{};
     ze_context_handle_t context{};
 
+    cmd_primitives comp_primitives{};
+    cmd_primitives copy_primitives{};
+
     const bool use_single_list;
 
 private:
@@ -78,6 +93,9 @@ private:
     std::vector<ze_event_handle_t> events;
 
     std::vector<ze_event_handle_t> wait_events;
+
+    bool is_queue_completed(ze_command_queue_handle_t queue);
+    void append_wait_on_events();
 };
 
 class ze_kernel {

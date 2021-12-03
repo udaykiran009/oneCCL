@@ -20,10 +20,6 @@ struct copy_attr {
     size_t out_buf_offset = 0;
     bool use_nontemporal = false;
 
-#ifdef CCL_ENABLE_ZE
-    int hint_queue_index = 0;
-#endif // CCL_ENABLE_ZE
-
     copy_attr() {}
 
     copy_attr(int peer_rank,

@@ -21,7 +21,7 @@ ccl_sched_base::ccl_sched_base(const ccl_sched_create_param& param)
         auto node_comm = coll_param.comm->get_node_comm().get();
         memory.handle_manager.init(node_comm, coll_param.stream);
         memory.ipc_event_pool_manager.init(coll_param.stream);
-        memory.list_manager.reset(new ccl::ze::list_manager(this, coll_param.stream));
+        memory.list_manager.reset(new ccl::ze::list_manager(coll_param.stream));
     }
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 }
@@ -159,9 +159,11 @@ void ccl_sched_base::dealloc_buffer(const ccl::dealloc_param& user_param) {
 bool ccl_sched_base::enable_ze_single_list() {
     CCL_THROW_IF_NOT(ze_entries.empty(),
                      "trying to modify the list mode after ze_entries has already been formed");
-    use_single_list = ccl::global_data::env().enable_ze_single_list &&
-                      ccl::global_data::env().kernel_debug == 0 &&
-                      !ccl::global_data::env().enable_fusion;
+    use_single_list =
+        ccl::global_data::env().enable_ze_single_list &&
+        ccl::global_data::env().kernel_debug == 0 &&
+        ((ccl::global_data::env().ze_serialize_mode & ze_call::serialize_mode::block) == 0) &&
+        !ccl::global_data::env().enable_fusion;
     return use_single_list;
 }
 

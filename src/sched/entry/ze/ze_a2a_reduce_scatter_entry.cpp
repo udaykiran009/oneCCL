@@ -16,7 +16,11 @@ ze_a2a_reduce_scatter_entry::ze_a2a_reduce_scatter_entry(ccl_sched* sched,
                                                          ccl_comm* comm,
                                                          std::vector<ze_event_handle_t> wait_events,
                                                          size_t peer_buf_idx)
-        : ze_base_entry(sched, comm, comm->size() * event_group_count, wait_events),
+        : ze_base_entry(sched,
+                        (init_mode::compute | init_mode::copy),
+                        comm,
+                        comm->size() * event_group_count,
+                        wait_events),
           send_buf(send_buf),
           recv_buf(recv_buf),
           dtype(dtype),
@@ -61,7 +65,8 @@ void ze_a2a_reduce_scatter_entry::kernel_init(size_t offset_bytes,
     kernels.back().calculate_group_size(count);
 }
 
-void ze_a2a_reduce_scatter_entry::fill_list(const ze_base_entry* entry,
+void ze_a2a_reduce_scatter_entry::fill_list(ze_command_list_handle_t copy_list,
+                                            ze_command_list_handle_t comp_list,
                                             void* send_buf,
                                             void* tmp_buf,
                                             const std::vector<ccl_buffer>& peer_send_bufs,
@@ -92,24 +97,22 @@ void ze_a2a_reduce_scatter_entry::fill_list(const ze_base_entry* entry,
                 context,
                 op,
                 worker_idx);
-
     size_t copy_bytes = block_count * dtype.size();
     /* copy peer segments to temp buffer */
     for (int i = 0; i < peer_count; i++) {
         void* src = static_cast<char*>(peer_send_bufs[i].get_ptr()) + offset_bytes;
         void* dst = static_cast<char*>(tmp_buf) + i * copy_bytes;
-        auto list = entry->get_copy_list(i);
         ZE_CALL(zeCommandListAppendMemoryCopy,
-                (list, dst, src, copy_bytes, copy_events.at(i), 0, nullptr));
+                (copy_list, dst, src, copy_bytes, copy_events.at(i), 0, nullptr));
     }
 
     ZE_CALL(zeCommandListAppendBarrier,
-            (entry->get_comp_list(), barrier_event, copy_events.size(), copy_events.data()));
+            (copy_list, barrier_event, copy_events.size(), copy_events.data()));
 
     /* reduce stage */
     for (size_t i = 0; i < kernels.size(); ++i) {
         ZE_CALL(zeCommandListAppendLaunchKernel,
-                (entry->get_comp_list(),
+                (comp_list,
                  kernels[i].get_kernel(),
                  kernels[i].get_group_count(),
                  kernel_events.at(i),
@@ -161,7 +164,8 @@ void ze_a2a_reduce_scatter_entry::init_ze_hook() {
 
     barrier_event = ze_base_entry::create_event();
 
-    fill_list(this,
+    fill_list(ze_base_entry::get_copy_list(),
+              ze_base_entry::get_comp_list(),
               send_buf.get_ptr(),
               tmp_buf,
               peer_send_bufs,
