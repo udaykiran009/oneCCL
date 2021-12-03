@@ -48,10 +48,7 @@ ccl_comm::ccl_comm(ccl_comm_id_storage::comm_id&& id,
                    std::shared_ptr<atl_base_comm> atl_comm,
                    bool share_resources,
                    bool is_sub_communicator)
-        : device(ccl::device_index_type(ccl::unused_index_value,
-                                        ccl::unused_index_value,
-                                        ccl::unused_index_value)),
-          split_attr(ccl::preview::create_comm_split_attr()),
+        : split_attr(ccl::preview::create_comm_split_attr()),
           comm_rank(atl_comm->get_rank()),
           comm_size(atl_comm->get_size()),
           local2global_map(atl_comm->get_rank2rank_map()),
@@ -75,6 +72,7 @@ ccl_comm::ccl_comm(ccl_comm_id_storage::comm_id&& id,
     }
 
     if (!is_sub_communicator) {
+        topo_manager.init();
         create_sub_comms(atl_comm);
     }
 }
@@ -86,6 +84,16 @@ ccl_comm::ccl_comm(std::shared_ptr<atl_base_comm> atl_comm,
                    atl_comm,
                    share_resources,
                    is_sub_communicator) {}
+
+ccl_comm::ccl_comm(int size,
+                   int rank,
+                   device_t device,
+                   context_t context,
+                   ccl::shared_ptr_class<ikvs_wrapper> kvs)
+        : ccl_comm(atl_comm_manager::create_comm(size, { rank }, kvs)) {
+    device_ptr = std::make_shared<ccl::device>(device);
+    context_ptr = std::make_shared<ccl::context>(context);
+}
 
 ccl_comm::ccl_comm(int size, int rank, ccl::shared_ptr_class<ikvs_wrapper> kvs)
         : ccl_comm(atl_comm_manager::create_comm(size, { rank }, kvs)) {}
@@ -253,18 +261,6 @@ ccl_sched_id_t ccl_comm::get_sched_id(bool use_internal_space) {
     LOG_DEBUG("sched_id ", id, ", comm_id ", this->id(), ", next sched_id ", next_sched_id);
 
     return id;
-}
-
-ccl::communicator_interface::device_t ccl_comm::get_device() const {
-    CCL_THROW(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
-    static ccl::communicator_interface::device_t empty;
-    return empty;
-}
-
-ccl::communicator_interface::context_t ccl_comm::get_context() const {
-    CCL_THROW(std::string(__FUNCTION__) + " is not applicable for " + traits::name());
-    static ccl::communicator_interface::context_t empty;
-    return empty;
 }
 
 /* barrier */

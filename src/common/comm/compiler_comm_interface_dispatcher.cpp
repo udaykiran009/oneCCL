@@ -34,4 +34,13 @@ communicator_interface_ptr communicator_interface_dispatcher::create_communicato
     return communicator_interface_ptr(new ccl_comm(size, rank, kvs));
 }
 
+communicator_interface_ptr communicator_interface_dispatcher::create_communicator_impl(
+    const size_t size,
+    const int rank,
+    device_t device,
+    context_t context,
+    shared_ptr_class<ikvs_wrapper> kvs) {
+    return communicator_interface_ptr(new ccl_comm(size, rank, device, context, kvs));
+}
+
 } // namespace ccl

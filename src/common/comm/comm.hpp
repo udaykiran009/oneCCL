@@ -11,6 +11,7 @@
 #include "common/comm/atl_tag.hpp"
 #include "common/log/log.hpp"
 #include "common/stream/stream.hpp"
+#include "common/topology/topo_manager.hpp"
 #include "common/utils/tree.hpp"
 #include "common/utils/utils.hpp"
 #include "oneapi/ccl/types.hpp"
@@ -131,6 +132,11 @@ public:
     ccl_comm(std::shared_ptr<atl_base_comm> atl_comm,
              bool share_resources = false,
              bool is_sub_communicator = false);
+    ccl_comm(int size,
+             int rank,
+             device_t device,
+             context_t context,
+             ccl::shared_ptr_class<ikvs_wrapper> kvs);
     ccl_comm(int size, int rank, ccl::shared_ptr_class<ikvs_wrapper> kvs);
     ccl_comm(int size, ccl::shared_ptr_class<ikvs_wrapper> kvs);
     ccl_comm();
@@ -174,8 +180,14 @@ public:
 
     int get_rank_from_global(int global_rank) const;
     ccl_sched_id_t get_sched_id(bool use_internal_space);
-    ccl::communicator_interface::device_t get_device() const override;
-    ccl::communicator_interface::context_t get_context() const override;
+
+    device_ptr_t get_device() const override {
+        return device_ptr;
+    }
+
+    context_ptr_t get_context() const override {
+        return context_ptr;
+    }
 
     std::shared_ptr<atl_base_comm> get_atl_comm() const {
         return comm_impl->atl_comm;
@@ -253,8 +265,10 @@ private:
     // everything else must go to ccl_comm
     std::shared_ptr<ccl_internal_comm> comm_impl;
 
-    ccl::unified_device_type device;
-    ccl::unified_context_type context;
+    // ccl::device/context hasn't got a default c-tor
+    // that's why we use shared_ptr<ccl::device/context>
+    device_ptr_t device_ptr;
+    context_ptr_t context_ptr;
 
     // TODO: double check if these can be moved to comm_impl as shared fields
     std::shared_ptr<ccl_comm> r2r_comm;
@@ -270,6 +284,7 @@ private:
     int comm_size;
 
     ccl_rank2rank_map local2global_map{};
+    ccl::topo_manager topo_manager;
 
     // comm_id is not default constructible but ccl_comm is, so use unique_ptr here
     std::unique_ptr<ccl_comm_id_storage::comm_id> comm_id;

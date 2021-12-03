@@ -41,7 +41,7 @@ CCL_API vector_class<communicator> communicator::create_communicators(
     CCL_THROW_IF_NOT(devices.size() == 1, "multiple devices per process are not supported");
 
     ccl::communicator_interface_ptr impl = ccl::communicator_interface::create_communicator_impl(
-        size, devices.begin()->first, kvs_tmp);
+        size, devices.begin()->first, devices.begin()->second, context, kvs_tmp);
 
     ccl::vector_class<ccl::communicator> ret;
     ret.push_back(ccl::communicator(std::move(impl)));

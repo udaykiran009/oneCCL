@@ -110,9 +110,6 @@ communicator environment::create_communicator(const size_t size,
 /******************** TypeGenerations ********************/
 
 CREATE_COMM_INSTANTIATION(ccl::device, ccl::context)
-CREATE_COMM_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t,
-                          typename ccl::unified_context_type::ccl_native_t)
-CREATE_COMM_INSTANTIATION(ccl::device_index_type, typename ccl::unified_context_type::ccl_native_t)
 
 CREATE_STREAM_INSTANTIATION(typename ccl::unified_stream_type::ccl_native_t)
 CREATE_CONTEXT_INSTANTIATION(typename ccl::unified_context_type::ccl_native_t)

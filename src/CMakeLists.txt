@@ -131,6 +131,7 @@ set(CCL_SRC
     common/log/log.cpp
     common/request/request.cpp
     common/stream/stream.cpp
+    common/topology/topo_manager.cpp
     common/utils/memcpy.cpp
     common/utils/spinlock.cpp
     common/utils/version.cpp

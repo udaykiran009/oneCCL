@@ -74,14 +74,6 @@ CCL_API communicator communicator::split(const comm_split_attr& attr) {
     return communicator(get_impl()->split(attr));
 }
 
-CCL_API device communicator::get_device() const {
-    return device::create_device(get_impl()->get_device());
-}
-
-CCL_API context communicator::get_context() const {
-    return context::create_context(get_impl()->get_context());
-}
-
 } // namespace v1
 
 } // namespace ccl
@@ -90,21 +82,3 @@ CCL_API context communicator::get_context() const {
 API_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(ccl::device, ccl::context)
 API_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(ccl::device, ccl::context)
 API_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(ccl::device, ccl::context)
-
-API_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(typename ccl::unified_device_type::ccl_native_t,
-                                               typename ccl::unified_context_type::ccl_native_t)
-API_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(
-    typename ccl::unified_device_type::ccl_native_t,
-    typename ccl::unified_context_type::ccl_native_t)
-API_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(
-    typename ccl::unified_device_type::ccl_native_t,
-    typename ccl::unified_context_type::ccl_native_t)
-
-API_COMM_CREATE_WO_RANK_EXPLICIT_INSTANTIATION(ccl::device_index_type,
-                                               typename ccl::unified_context_type::ccl_native_t)
-API_COMM_CREATE_WITH_RANK_IN_VECTOR_EXPLICIT_INSTANTIATION(
-    ccl::device_index_type,
-    typename ccl::unified_context_type::ccl_native_t)
-API_COMM_CREATE_WITH_RANK_IN_MAP_EXPLICIT_INSTANTIATION(
-    ccl::device_index_type,
-    typename ccl::unified_context_type::ccl_native_t)
