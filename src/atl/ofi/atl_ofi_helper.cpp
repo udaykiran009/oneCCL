@@ -846,6 +846,7 @@ atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
 
     atl_ofi_adjust_env(attr);
 
+#ifdef CCL_ENABLE_OFI_OOT_PROV
     /*
        load libfabric symbols into global namespace
        to workaround issue with undefined symbols
@@ -855,6 +856,7 @@ atl_status_t atl_ofi_set_env(const atl_attr_t& attr) {
     if (global_data.dlhandle == nullptr) {
         LOG_WARN("dlopen (libfabric.so): ", dlerror());
     }
+#endif // CCL_ENABLE_OFI_OOT_PROV
 
     global_data.is_env_inited = 1;
 

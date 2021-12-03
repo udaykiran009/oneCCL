@@ -535,7 +535,8 @@ install_ccl() {
     # intentionally build with MPI support
     # to get MPI launcher in CCL install dir to be used for test launches below
     cmake .. -DBUILD_FT=0 -DBUILD_EXAMPLES=1 -DBUILD_CONFIG=0 -DCMAKE_INSTALL_PREFIX=${CCL_INSTALL_DIR} \
-        -DENABLE_MPI=1 -DENABLE_MPI_TESTS=1 -DLIBFABRIC_DIR=${OFI_INSTALL_DIR}
+        -DENABLE_MPI=1 -DENABLE_MPI_TESTS=1 -DLIBFABRIC_DIR=${OFI_INSTALL_DIR} \
+        -DENABLE_OFI_OOT_PROV=1
     check_exit_code $? "Configure CCL failed"
 
     make -j install
