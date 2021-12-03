@@ -79,7 +79,7 @@ private:
           2021,
           "library kind:",
           "release" },
-        { ATL_MPI_LIB_MPICH, "mpich", "MPICH Custom Information:", "drop", 34, -1, NULL, NULL },
+        { ATL_MPI_LIB_MPICH, "mpich", "MPICH Custom Information:", "drop", 34, 40, NULL, NULL },
         { ATL_MPI_LIB_NONE, "none", "", NULL, 0, -1, NULL, NULL },
     };
 

@@ -187,6 +187,7 @@ void env_data::parse() {
     env_2_type(CCL_ATL_RMA, enable_rma);
     env_2_type(CCL_ATL_HMEM, enable_hmem);
     if (atl_transport == ccl_atl_mpi && enable_hmem) {
+        LOG_INFO("ATL HMEM requested, switch to single worker");
         worker_count = 1;
     }
     env_2_enum(CCL_ATL_SEND_PROXY, atl_send_proxy_names, atl_send_proxy);

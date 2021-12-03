@@ -151,23 +151,119 @@ atl_status_t atl_ofi::atl_set_env(const atl_attr_t& attr) {
     return atl_ofi_set_env(attr);
 }
 
+atl_status_t atl_ofi::open_providers(char* prov_env,
+                                     atl_proc_coord_t* coord,
+                                     atl_attr_t* attr,
+                                     struct fi_info* base_hints,
+                                     atl_ofi_ctx_t* ofi_ctx,
+                                     int& open_nw_provs,
+                                     int fi_version,
+                                     std::shared_ptr<ipmi> pmi,
+                                     bool log_on_error) {
+    size_t prov_idx = 0;
+    int enable_shm = 0;
+    ssize_t ret = 0;
+    char* prov_name = nullptr;
+    struct fi_info *prov_list = nullptr, *prov_hints = nullptr;
+    atl_ofi_prov_t* prov = nullptr;
+
+    if (prov_env && !strcmp(prov_env, ATL_OFI_SHM_PROV_NAME)) {
+        if (coord->global_count != coord->local_count) {
+            LOG_ERROR("shm provider is requested as primary provider but global_count (",
+                      coord->global_count,
+                      ") != local_count (",
+                      coord->local_count,
+                      ")");
+            goto err;
+        }
+
+        if (!attr->in.enable_shm) {
+            LOG_ERROR(
+                "shm provider is requested through FI_PROVIDER but not requested from CCL level");
+            goto err;
+        }
+    }
+
+    enable_shm = attr->in.enable_shm;
+    if (enable_shm) {
+        prov_hints = fi_dupinfo(base_hints);
+        prov_hints->fabric_attr->prov_name = strdup(ATL_OFI_SHM_PROV_NAME);
+        ret = fi_getinfo(fi_version, nullptr, nullptr, 0ULL, prov_hints, &prov_list);
+        if (ret || !prov_list) {
+            enable_shm = 0;
+            LOG_INFO("shm provider is requested but not available");
+        }
+        else {
+            LOG_INFO("shm provider is requested and available");
+        }
+
+        fi_freeinfo(prov_list);
+        prov_list = nullptr;
+
+        fi_freeinfo(prov_hints);
+        prov_hints = nullptr;
+    }
+
+    ofi_ctx->nw_prov_first_idx = (enable_shm) ? 1 : 0;
+
+    /* open SHM provider */
+    if (enable_shm) {
+        prov_idx = ofi_ctx->shm_prov_idx;
+        prov_name = strdup(ATL_OFI_SHM_PROV_NAME);
+        prov = &ofi_ctx->provs[prov_idx];
+        prov->idx = prov_idx;
+        prov->is_shm = 1;
+        ATL_CALL(atl_ofi_get_prov_list(ctx, prov_name, base_hints, &prov_list), goto err);
+        ATL_CALL(atl_ofi_prov_init(ctx, prov_list, prov, attr, pmi), goto err);
+        free(prov_name);
+        fi_freeinfo(prov_list);
+        ofi_ctx->prov_count++;
+    }
+
+    /* open NW provider(s) */
+    if (prov_env && !strcmp(prov_env, ATL_OFI_SHM_PROV_NAME) && enable_shm) {
+        open_nw_provs = 0;
+    }
+
+    if (open_nw_provs) {
+        ret = atl_ofi_open_nw_provs(ctx, base_hints, attr, pmi, log_on_error);
+        if (ret != ATL_STATUS_SUCCESS) {
+            if (log_on_error) {
+                LOG_ERROR("atl_ofi_open_nw_provs(ctx, base_hints, attr, pmi)\n fails with status: ",
+                          ret);
+            }
+            goto err;
+        }
+        ofi_ctx->mnic_count = ofi_ctx->nw_prov_count;
+    }
+    return ATL_STATUS_SUCCESS;
+err:
+    if (prov_list) {
+        fi_freeinfo(prov_list);
+    }
+
+    if (prov_hints) {
+        fi_freeinfo(prov_hints);
+    }
+    return ATL_STATUS_FAILURE;
+}
+
 atl_status_t atl_ofi::init(int* argc,
                            char*** argv,
                            atl_attr_t* attr,
                            const char* main_addr,
                            std::shared_ptr<ipmi> pmi) {
     inited = true;
-    struct fi_info *prov_list = nullptr, *base_hints = nullptr, *prov_hints = nullptr;
+    struct fi_info* base_hints = nullptr;
     int fi_version;
     ssize_t ret = 0;
-    size_t idx = 0, ep_idx = 0, prov_idx = 0;
-    char* prov_name = nullptr;
+    size_t idx = 0, ep_idx = 0;
     char* prov_env = nullptr;
     char* fi_version_env = nullptr;
-    atl_ofi_prov_t* prov = nullptr;
     char *max_retry_count_env = nullptr, *progress_mode_env = nullptr;
     int open_nw_provs = 1;
     int enable_shm = 0;
+    bool should_open_provs = true;
 
     CCL_THROW_IF_NOT((sizeof(atl_ofi_req_t) <= sizeof(atl_req_t) - offsetof(atl_req_t, internal)),
                      "unexpected offset: atl_ofi_request size ",
@@ -238,73 +334,16 @@ atl_status_t atl_ofi::init(int* argc,
 
     ofi_ctx->enable_hmem = 0;
 
-#ifdef CCL_ENABLE_OFI_HMEM
-    if (prov_env && strstr(prov_env, "verbs") && attr->in.enable_hmem) {
-        ofi_ctx->enable_hmem = 1;
-    }
-
-    if (ofi_ctx->enable_hmem) {
-        base_hints->caps |= FI_HMEM;
-        base_hints->domain_attr->mr_mode =
-            (FI_MR_ALLOCATED | FI_MR_PROV_KEY | FI_MR_VIRT_ADDR | FI_MR_LOCAL | FI_MR_HMEM);
-
-        /* TODO: enable shm with HMEM */
-        attr->in.enable_shm = 0;
-
-        /* TODO: implement fallback logic if HMEM can't be enabled */
-    }
-#endif // CCL_ENABLE_OFI_HMEM
-
-    cache.init(attr->in.ep_count, ofi_ctx->enable_hmem);
-
     fi_version = FI_VERSION(global_data.fi_major_version, global_data.fi_minor_version);
 
     if (coord->global_idx == 0)
         LOG_INFO("libfabric version: ", fi_tostr("1" /* ignored */, FI_TYPE_VERSION));
 
-    if (prov_env && !strcmp(prov_env, ATL_OFI_SHM_PROV_NAME)) {
-        if (coord->global_count != coord->local_count) {
-            LOG_ERROR("shm provider is requested as primary provider but global_count (",
-                      coord->global_count,
-                      ") != local_count (",
-                      coord->local_count,
-                      ")");
-            goto err;
-        }
-
-        if (!attr->in.enable_shm) {
-            LOG_ERROR(
-                "shm provider is requested through FI_PROVIDER but not requested from CCL level");
-            goto err;
-        }
-    }
-
     atl_ofi_print_coord(coord);
-
-    enable_shm = attr->in.enable_shm;
-    if (enable_shm) {
-        prov_hints = fi_dupinfo(base_hints);
-        prov_hints->fabric_attr->prov_name = strdup(ATL_OFI_SHM_PROV_NAME);
-        ret = fi_getinfo(fi_version, nullptr, nullptr, 0ULL, prov_hints, &prov_list);
-        if (ret || !prov_list) {
-            enable_shm = 0;
-            LOG_INFO("shm provider is requested but not available");
-        }
-        else {
-            LOG_INFO("shm provider is requested and available");
-        }
-
-        fi_freeinfo(prov_list);
-        prov_list = nullptr;
-
-        fi_freeinfo(prov_hints);
-        prov_hints = nullptr;
-    }
 
     ofi_ctx->prov_count = 0;
     ofi_ctx->nw_prov_count = 0;
     ofi_ctx->shm_prov_idx = 0;
-    ofi_ctx->nw_prov_first_idx = (enable_shm) ? 1 : 0;
     ofi_ctx->mnic_type = attr->in.mnic_type;
     ATL_CALL(atl_ofi_parse_mnic_name(ctx, attr->in.mnic_name), goto err);
     ofi_ctx->mnic_count = std::min(attr->in.mnic_count, (size_t)(ATL_OFI_MAX_NW_PROV_COUNT));
@@ -324,29 +363,49 @@ atl_status_t atl_ofi::init(int* argc,
     attr->out.tag_bits = 64;
     attr->out.max_tag = 0xFFFFFFFFFFFFFFFF;
 
-    /* open SHM provider */
-    if (enable_shm) {
-        prov_idx = ofi_ctx->shm_prov_idx;
-        prov_name = strdup(ATL_OFI_SHM_PROV_NAME);
-        prov = &ofi_ctx->provs[prov_idx];
-        prov->idx = prov_idx;
-        prov->is_shm = 1;
-        ATL_CALL(atl_ofi_get_prov_list(ctx, prov_name, base_hints, &prov_list), goto err);
-        ATL_CALL(atl_ofi_prov_init(ctx, prov_list, prov, attr, pmi), goto err);
-        free(prov_name);
-        fi_freeinfo(prov_list);
-        ofi_ctx->prov_count++;
+#ifdef CCL_ENABLE_OFI_HMEM
+    if (prov_env && strstr(prov_env, "verbs") && attr->in.enable_hmem) {
+        struct fi_info* hmem_hints = fi_dupinfo(base_hints);
+        atl_attr_t hmem_attr = *attr;
+
+        hmem_hints->caps |= FI_HMEM;
+        hmem_hints->domain_attr->mr_mode =
+            (FI_MR_ALLOCATED | FI_MR_PROV_KEY | FI_MR_VIRT_ADDR | FI_MR_LOCAL | FI_MR_HMEM);
+
+        /* TODO: enable shm with HMEM */
+        hmem_attr.in.enable_shm = 0;
+        if (open_providers(prov_env,
+                           coord,
+                           &hmem_attr,
+                           hmem_hints,
+                           ofi_ctx,
+                           open_nw_provs,
+                           fi_version,
+                           pmi,
+                           false /* log_on_error */) == ATL_STATUS_SUCCESS) {
+            ofi_ctx->enable_hmem = 1;
+            should_open_provs = false;
+        }
+        else {
+            LOG_WARN("can not open network providers with hmem support");
+        }
+        fi_freeinfo(hmem_hints);
+    }
+#endif // CCL_ENABLE_OFI_HMEM
+    if (should_open_provs) {
+        ATL_CALL(open_providers(prov_env,
+                                coord,
+                                attr,
+                                base_hints,
+                                ofi_ctx,
+                                open_nw_provs,
+                                fi_version,
+                                pmi,
+                                true /* log_on_error */),
+                 goto err);
     }
 
-    /* open NW provider(s) */
-    if (prov_env && !strcmp(prov_env, ATL_OFI_SHM_PROV_NAME) && enable_shm) {
-        open_nw_provs = 0;
-    }
-
-    if (open_nw_provs) {
-        ATL_CALL(atl_ofi_open_nw_provs(ctx, base_hints, attr, pmi), goto err);
-        ofi_ctx->mnic_count = ofi_ctx->nw_prov_count;
-    }
+    cache.init(attr->in.ep_count, ofi_ctx->enable_hmem);
 
     for (ep_idx = 0; ep_idx < ctx->ep_count; ep_idx++) {
         atl_ofi_ep_t* ofi_ep;
@@ -440,16 +499,8 @@ atl_status_t atl_ofi::init(int* argc,
 err:
     LOG_ERROR("can't find suitable provider");
 
-    if (prov_list) {
-        fi_freeinfo(prov_list);
-    }
-
     if (base_hints) {
         fi_freeinfo(base_hints);
-    }
-
-    if (prov_hints) {
-        fi_freeinfo(prov_hints);
     }
 
     if (ctx != nullptr)

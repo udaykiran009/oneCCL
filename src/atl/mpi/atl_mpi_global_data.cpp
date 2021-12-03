@@ -548,6 +548,12 @@ atl_status_t atl_mpi_global_data::set_mpich_env(const atl_attr_t& attr) {
     setenv("MPIR_CVAR_CH4_OFI_MAX_VCIS", ep_count_str, 0);
     setenv("MPIR_COMM_HINT_VCI", EP_IDX_KEY, 0);
 
+    setenv("MPIR_CVAR_ENABLE_GPU", "0", 0);
+#ifdef CCL_ENABLE_SYCL
+    if (attr.in.enable_hmem) {
+        setenv("MPIR_CVAR_ENABLE_GPU", "1", 0);
+    }
+#endif // CCL_ENABLE_SYCL
     auto& env = ccl::global_data::env();
     if (env.log_level >= ccl_log_level::debug) {
         setenv("MPIR_CVAR_CH4_RUNTIME_CONF_DEBUG", "1", 0);

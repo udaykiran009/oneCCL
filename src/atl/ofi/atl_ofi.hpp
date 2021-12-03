@@ -85,6 +85,15 @@ private:
     atl_status_t atl_ep_progress(atl_ep_t* ep);
     void atl_process_comps(atl_ep_t* ep, struct fi_cq_tagged_entry* entries, ssize_t ret);
     atl_status_t atl_prov_ep_handle_cq_err(atl_ofi_prov_ep_t* ep);
+    atl_status_t open_providers(char* prov_env,
+                                atl_proc_coord_t* coord,
+                                atl_attr_t* attr,
+                                struct fi_info* base_hints,
+                                atl_ofi_ctx_t* ofi_ctx,
+                                int& open_nw_provs,
+                                int fi_version,
+                                std::shared_ptr<ipmi> pmi,
+                                bool log_on_error);
 
     atl_ctx_t* ctx = nullptr;
     std::vector<atl_ep_t*> eps;

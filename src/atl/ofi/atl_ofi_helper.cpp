@@ -886,6 +886,14 @@ atl_status_t atl_ofi_get_prov_list(atl_ctx_t* ctx,
     hints->fabric_attr->prov_name = (prov_name) ? strdup(prov_name) : nullptr;
 
     ret = fi_getinfo(fi_version, nullptr, nullptr, 0ULL, hints, &prov_list);
+
+    if ((ret || !prov_list || !strcmp(prov_list->fabric_attr->prov_name, ATL_OFI_SHM_PROV_NAME)) &&
+        prov_list->caps & FI_HMEM) {
+        // skip OFI/SHM with HMEM capability
+        fi_freeinfo(hints);
+        fi_freeinfo(prov_list);
+        return ATL_STATUS_FAILURE;
+    }
     if (ret || !prov_list) {
         LOG_ERROR("fi_getinfo error: ret ", ret, ", providers ", (void*)prov_list);
         goto err;
@@ -916,6 +924,12 @@ atl_status_t atl_ofi_get_prov_list(atl_ctx_t* ctx,
     return ATL_STATUS_SUCCESS;
 
 err:
+    if (hints) {
+        fi_freeinfo(hints);
+    }
+    if (prov_list) {
+        fi_freeinfo(prov_list);
+    }
     LOG_ERROR("can't create providers for name ", prov_name_str);
     return ATL_STATUS_FAILURE;
 }
@@ -996,6 +1010,10 @@ atl_status_t atl_ofi_prov_init(atl_ctx_t* ctx,
     return ATL_STATUS_SUCCESS;
 
 err:
+    if (prov->info) {
+        fi_freeinfo(prov->info);
+        prov->info = nullptr;
+    }
     LOG_ERROR("can't init provider ", atl_ofi_get_nic_name(info));
     return ATL_STATUS_FAILURE;
 }
@@ -1221,7 +1239,8 @@ bool atl_ofi_compare_nics(const struct fi_info* nic1, const struct fi_info* nic2
 atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
                                    struct fi_info* base_hints,
                                    atl_attr_t* attr,
-                                   std::shared_ptr<ipmi> pmi) {
+                                   std::shared_ptr<ipmi> pmi,
+                                   bool log_on_error) {
     atl_status_t ret = ATL_STATUS_SUCCESS;
     struct fi_info* prov_list = nullptr;
     struct fi_info* prov_iter = nullptr;
@@ -1243,7 +1262,15 @@ atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
         prov_name = global_data.prov_env_copy;
     else
         prov_name = nullptr;
-    ATL_CALL(atl_ofi_get_prov_list(ctx, prov_name, base_hints, &prov_list), goto err);
+    ret = atl_ofi_get_prov_list(ctx, prov_name, base_hints, &prov_list);
+    if (ret != ATL_STATUS_SUCCESS) {
+        if (log_on_error) {
+            LOG_ERROR(
+                "atl_ofi_get_prov_list(ctx, prov_name, base_hints, &prov_list)\n fails with status: ",
+                ret);
+        }
+        goto err;
+    }
 
     /* 2. filter out by names */
     prov_iter = prov_list;
@@ -1375,7 +1402,12 @@ exit:
     return ret;
 
 err:
-    LOG_ERROR("can not open network providers");
+    if (log_on_error) {
+        LOG_ERROR("can not open network providers");
+    }
+    else {
+        LOG_DEBUG("can not open network providers");
+    }
     ret = ATL_STATUS_FAILURE;
     goto exit;
 }

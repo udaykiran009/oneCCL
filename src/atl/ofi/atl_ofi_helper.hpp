@@ -293,5 +293,6 @@ int atl_ofi_is_allowed_nic_name(atl_ofi_ctx_t* ofi_ctx, struct fi_info* info);
 atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
                                    struct fi_info* base_hints,
                                    atl_attr_t* attr,
-                                   std::shared_ptr<ipmi> pmi);
+                                   std::shared_ptr<ipmi> pmi,
+                                   bool log_on_error);
 void atl_ofi_init_req(atl_req_t* req, atl_ofi_prov_ep_t* prov_ep, struct fid_ep* fi_ep);
