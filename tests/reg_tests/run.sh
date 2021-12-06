@@ -53,9 +53,8 @@ print_header() {
 is_exclude_test() {
     local TEST_NAME=${1}
     rc=0
-    res=$(grep -w ${TEST_NAME} ${EXCLUDE_LIST})
-    if [[ ! -z ${res} ]]
-    then
+    while read -r res
+    do
         EXCLUDE_RULES=$(echo $res | sed "s/^${TEST_NAME}\s//g")
         for item in ${EXCLUDE_RULES}
         do
@@ -77,11 +76,12 @@ is_exclude_test() {
                 echo "WARNING: unknown excluded property (${prop})"
             fi
         done
-    fi
-    if [[ "${is_exclude_platform}" = 1 && "${is_exclude_transport}" = 1 ]]
-    then
-        rc=1
-    fi
+        if [[ "${is_exclude_platform}" = 1 && "${is_exclude_transport}" = 1 ]]
+        then
+            rc=1
+            break
+        fi
+    done < <(grep -w ${TEST_NAME} ${EXCLUDE_LIST})
     echo ${rc}
 }
 

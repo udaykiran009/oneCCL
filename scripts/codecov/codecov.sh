@@ -161,7 +161,7 @@ create_report() {
             # Counting covered files
             uncoverage_files=$(grep -E -i -w '^.*\.(cpp|hpp|c|h)(.*\s0\.00%){3,3}' ${PROFILE_DIR}/report_${compfile}.log | wc -l)
             total_files=$(grep -c -e '^.*.\(cpp\|c\|hpp\|h\)' ${PROFILE_DIR}/report_${compfile}.log)
-            echo "total    cvrg    cvrg%" > ${PROFILE_DIR}/report_files_${compfile}.log
+            echo "total    uncvrg    cvrg%" > ${PROFILE_DIR}/report_files_${compfile}.log
             echo "${total_files}    ${uncoverage_files}    $(bc <<< "scale=2; (1-${uncoverage_files}/${total_files})*100")%" >> ${PROFILE_DIR}/report_files_${compfile}.log
 
             # Print metrics
