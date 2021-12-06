@@ -21,7 +21,7 @@ export CCL_ATL_HMEM=1
 #transports="ofi mpi"
 transports="mpi"
 
-proc_counts="4"
+proc_counts="4 8"
 
 # MLSL-1225
 # colls="allreduce reduce"

@@ -22,9 +22,7 @@ export CCL_REDUCE=topo
 #transports="ofi mpi"
 transports="mpi"
 
-# TODO: uncoment after fix MLSL-1156
-# proc_counts="2 4 8"
-proc_counts="2 4"
+proc_counts="2 4 8"
 
 colls="allgatherv allreduce reduce"
 single_list_modes="0 1"
