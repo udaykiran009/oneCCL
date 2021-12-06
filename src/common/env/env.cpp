@@ -128,7 +128,7 @@ env_data::env_data()
           enable_close_fd_wa(0),
 
           enable_sycl_output_event(0),
-          use_hmem(0),
+          use_hmem(1),
 
           enable_ze_barrier(0),
           enable_ze_bidir_algo(0),
@@ -187,7 +187,7 @@ void env_data::parse() {
     env_2_type(CCL_ATL_RMA, enable_rma);
     env_2_type(CCL_ATL_HMEM, enable_hmem);
     if (atl_transport == ccl_atl_mpi && enable_hmem) {
-        LOG_INFO("ATL HMEM requested, switch to single worker");
+        LOG_INFO("atl hmem requested, switch to single worker");
         worker_count = 1;
     }
     env_2_enum(CCL_ATL_SEND_PROXY, atl_send_proxy_names, atl_send_proxy);

@@ -286,17 +286,22 @@ atl_mpi_global_data::atl_mpi_lib_attr_t atl_mpi_global_data::get_lib_attr() {
             }
 
             final_info = info;
-            LOG_DEBUG("set lib_type = ",
-                      info->name,
-                      " because "
-                      "version (",
-                      version_value,
-                      ") is higher or equal to minimal expected version (",
-                      info->min_version_value,
-                      ")");
 
-            lib_attr.type = final_info->type;
-            lib_attr.hmem = (final_info->min_hmem_version_value >= version_value) ? 1 : 0;
+            lib_attr.type = info->type;
+            LOG_DEBUG("set lib_attr.type = ",
+                      info->name,
+                      ", version ",
+                      version_value,
+                      ", minimal expected version ",
+                      info->min_version_value);
+
+            lib_attr.hmem = (version_value >= info->min_hmem_version_value) ? 1 : 0;
+            LOG_DEBUG("set lib_attr.hmem = ",
+                      lib_attr.hmem,
+                      ", version ",
+                      version_value,
+                      ", minimal expected hmem version ",
+                      info->min_hmem_version_value);
 
             break;
         }
@@ -548,12 +553,14 @@ atl_status_t atl_mpi_global_data::set_mpich_env(const atl_attr_t& attr) {
     setenv("MPIR_CVAR_CH4_OFI_MAX_VCIS", ep_count_str, 0);
     setenv("MPIR_COMM_HINT_VCI", EP_IDX_KEY, 0);
 
-    setenv("MPIR_CVAR_ENABLE_GPU", "0", 0);
+    int enable_gpu = 0;
 #ifdef CCL_ENABLE_SYCL
     if (attr.in.enable_hmem) {
-        setenv("MPIR_CVAR_ENABLE_GPU", "1", 0);
+        enable_gpu = 1;
     }
 #endif // CCL_ENABLE_SYCL
+    setenv("MPIR_CVAR_ENABLE_GPU", (enable_gpu ? "1" : "0"), 0);
+
     auto& env = ccl::global_data::env();
     if (env.log_level >= ccl_log_level::debug) {
         setenv("MPIR_CVAR_CH4_RUNTIME_CONF_DEBUG", "1", 0);

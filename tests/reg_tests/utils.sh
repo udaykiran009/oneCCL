@@ -1,7 +1,9 @@
 #!/bin/bash
 
 function run_cmd() {
-    eval ${1}
+    cmd="${1}"
+    # echo "run_cmd: ${cmd}"
+    eval ${cmd}
     rc=$?
     if [ ${rc} -ne 0 ]
     then

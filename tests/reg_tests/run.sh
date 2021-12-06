@@ -91,6 +91,7 @@ set_default_values() {
     EXCLUDE_LIST="${SCRIPT_DIR}/exclude_list"
 
     export I_MPI_JOB_TIMEOUT=180
+    export CCL_YIELD=sched_yield
 }
 
 parse_arguments() {

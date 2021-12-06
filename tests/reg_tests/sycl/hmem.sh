@@ -32,37 +32,62 @@ check_hmem_log() {
     fi
 }
 
-export CCL_ATL_TRANSPORT=mpi
 export CCL_LOG_LEVEL=info
+export CCL_USE_HMEM=1
 export FI_PROVIDER=tcp
 
-allreduce_algorithms="ring direct"
 worker_counts="1"
-# TODO: enable proc_count=4
-# https://jira.devtools.intel.com/browse/IMPI-3210
-proc_count="2"
-hmem_modes="0 1"
 
-bench_options="-b sycl -l allreduce -c all -w 1 -i 4 -j off -t 2097152"
+# TODO: enable ofi transport, MLSL-1155 + find dmabuf-enabled nodes
+# transports="ofi mpi"
+transports="mpi"
+
+single_list_modes="0 1"
+hmem_modes="0 1"
+algos="topo rabenseifner direct"
+
+# TODO: enable reduce coll, MLSL-1225
+# colls="allreduce reduce"
+colls="allreduce"
+
+proc_counts="2 4"
+if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]]
+then
+    # TODO: enable proc_counts="2 4" for ATS, IMPI-3210
+    proc_counts="2"
+fi
+
+bench_options="-w 4 -i 8 -j off -c all -b sycl -t 2097152"
 
 for worker_count in ${worker_counts}
 do
-    for allreduce_algorithm in ${allreduce_algorithms}
+    for transport in ${transports}
     do
-        for hmem_mode in ${hmem_modes}
+        for single_list_mode in ${single_list_modes}
         do
-            export CCL_ALLREDUCE=${allreduce_algorithm}
-            export CCL_WORKER_COUNT=${worker_count}
-            export CCL_ATL_HMEM=${hmem_mode}
-            mpiexec -l -n ${proc_count} -ppn 2 ${SCRIPT_DIR}/benchmark ${bench_options} > ${TEST_LOG} 2>&1
-            rc=$?
-            if [ ${rc} -ne 0 ]
-            then
-                echo "Fail"
-                exit 1
-            fi
-            check_log ${TEST_LOG}
-            check_hmem_log ${TEST_LOG} ${hmem_mode}
+            for hmem_mode in ${hmem_modes}
+            do
+                for algo in ${algos}
+                do
+                    for coll in ${colls}
+                    do
+                        for proc_count in ${proc_counts}
+                        do
+                            cmd="CCL_WORKER_COUNT=${worker_count}"
+                            cmd+=" CCL_ATL_TRANSPORT=${transport}"
+                            cmd+=" CCL_ZE_SINGLE_LIST=${single_list_mode}"
+                            cmd+=" CCL_ATL_HMEM=${hmem_mode}"
+                            cmd+=" CCL_ALLREDUCE=${algo}"
+                            cmd+=" CCL_REDUCE=${algo}"
+                            cmd+=" mpiexec -l -n ${proc_count} -ppn 2 ${SCRIPT_DIR}/benchmark"
+                            cmd+=" ${bench_options} -l ${coll} > ${TEST_LOG} 2>&1"
+                            run_cmd "${cmd}"
+                            check_log ${TEST_LOG}
+                            check_hmem_log ${TEST_LOG} ${hmem_mode}
+                        done
+                    done
+                done
+            done
         done
     done
 done
