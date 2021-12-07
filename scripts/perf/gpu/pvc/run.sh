@@ -201,6 +201,10 @@ check_run_env() {
     # sycl_ls=`sycl-ls`
     # echo_log "\nsycl-ls:"
     # echo_log "${sycl_ls}"
+
+    mpich_version=`mpichversion | grep "MPICH Custom Information"`
+    echo_log "\nmpich version:"
+    echo_log "${mpich_version}"
 }
 
 build_ccl() {

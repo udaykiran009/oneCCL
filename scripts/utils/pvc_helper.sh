@@ -50,7 +50,8 @@ function check_anr() {
 function set_pvc_mpich_ofi_env()
 {
     module unload mpich/icc-cxi
-    module load mpich/icc-cxi/43.2
+    module use /home/tdoodi/drop44-release/install_12_6/modulefiles
+    module load mpich/icc-cxi/44.2
     export LD_LIBRARY_PATH=/usr/lib64/:${LD_LIBRARY_PATH}
 }
 
