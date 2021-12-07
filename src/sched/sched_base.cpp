@@ -175,8 +175,54 @@ void ccl_sched_base::append_to_ze_entries_list(sched_entry* entry) {
 }
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
+void ccl_sched_base::sched_complete_hook() {
+    if (!coll_attr.to_cache) {
+        /* don't wait sched dtor to clear memory */
+        clear_memory();
+    }
+    else {
+        /* just reset without destroy */
+        reset_memory_state();
+    }
+
+#ifdef CCL_ENABLE_ZE
+    for (auto& ze_entry : ze_entries) {
+        /** During the start of the schedule, all entries contained in
+         *  ze_entries list were initialized. If this exception is throw,
+         *  it means that the entry was initialized but never started.
+         *  This is unexpected behavior and can lead to issues and overhead.
+         *  Need to make sure that the entry in ze_entries list is really needed
+         *  and skip the entry initialization if not.
+         */
+        ze_base_entry* ptr = reinterpret_cast<ze_base_entry*>(ze_entry);
+        CCL_THROW_IF_NOT(ptr->get_status() >= ccl_sched_entry_status_started,
+                         "entry ",
+                         ptr->name(),
+                         " ",
+                         ptr,
+                         " was initialized but never started");
+        CCL_THROW_IF_NOT(ptr->is_finalized || coll_attr.to_cache,
+                         "entry ",
+                         ptr->name(),
+                         " ",
+                         ptr,
+                         " was not finalized");
+    }
+#endif // CCL_ENABLE_ZE
+}
+
+/* in this function we just reset state without destroy if to_cache=1,
+   function is called on sched complete and never be called*/
+void ccl_sched_base::reset_memory_state() {
+#ifdef CCL_ENABLE_ZE
+    if (!ze_entries.empty()) {
+        get_memory().event_manager->reset();
+        get_memory().list_manager->reset_execution_state();
+    }
+#endif // CCL_ENABLE_ZE
+}
+
 void ccl_sched_base::clear_memory() {
-    memory.buffer_manager.clear();
 #ifdef CCL_ENABLE_ZE
     if (coll_param.stream &&
         coll_param.stream->get_backend() == ccl::utils::get_level_zero_backend()) {
@@ -190,6 +236,7 @@ void ccl_sched_base::clear_memory() {
         }
     }
 #endif // CCL_ENABLE_ZE
+    memory.buffer_manager.clear();
     free_memory_regions();
 }
 

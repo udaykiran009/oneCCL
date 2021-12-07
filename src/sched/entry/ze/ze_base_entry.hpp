@@ -26,7 +26,12 @@ public:
                                           ze_event_desc_t event_desc);
     static bool is_event_completed(ze_event_handle_t event);
 
+    virtual void start() override;
+    virtual void update() override;
+
     ze_event_handle_t entry_event{};
+
+    bool is_finalized{}; // used to detect entries that was not finalized
 
 protected:
     explicit ze_base_entry(ccl_sched *sched,
@@ -41,9 +46,6 @@ protected:
     /* ze hooks which can be implemented in derived entry */
     virtual void init_ze_hook(){};
     virtual void finalize_ze_hook(){};
-
-    virtual void start() override;
-    virtual void update() override;
 
     void init_entries();
     void finalize_entries();

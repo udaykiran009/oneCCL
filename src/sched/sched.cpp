@@ -109,10 +109,7 @@ void ccl_sched::complete() {
         }
     }
 
-    if (!coll_attr.to_cache) {
-        /* don't wait sched dtor to clear memory */
-        clear_memory();
-    }
+    sched_complete_hook();
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
     // we keep time measurements in our master sched, if this sched belongs to it

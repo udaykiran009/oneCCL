@@ -46,6 +46,9 @@ public:
 
     void do_progress();
 
+    /**
+     * Called after all the entries have been completed
+     */
     virtual void complete();
 
     size_t get_start_idx() const {

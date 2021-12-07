@@ -94,6 +94,8 @@ struct ccl_sched_base {
     void add_memory_region(atl_mr_t* mr);
     void free_memory_regions();
 
+    void sched_complete_hook();
+    void reset_memory_state();
     void clear_memory();
 
     /* unsupported */

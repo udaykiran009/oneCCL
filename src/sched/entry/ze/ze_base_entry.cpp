@@ -114,6 +114,8 @@ void ze_base_entry::finalize() {
 
     LOG_DEBUG("finalize");
 
+    is_finalized = true;
+
     finalize_ze_hook();
     destroy_events();
 
@@ -246,7 +248,7 @@ void ze_base_entry::update() {
     }
 
     if (complete) {
-        LOG_DEBUG(name(), " entry complete");
+        LOG_DEBUG(name(), " ", this, " entry complete");
         status = ccl_sched_entry_status_complete;
 
         if (ccl::global_data::env().enable_kernel_profile) {
@@ -261,12 +263,6 @@ void ze_base_entry::update() {
 
         if (use_single_list) {
             reset_events();
-        }
-
-        if (sched->ze_entries.back() == this) {
-            LOG_DEBUG("reset sched events\n");
-            sched->get_memory().event_manager->reset();
-            sched->get_memory().list_manager->reset_execution_state();
         }
 
         // Finalize must go after all operation with the event because it's destroyed there.
