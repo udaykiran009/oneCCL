@@ -17,11 +17,7 @@ ze_a2a_allgatherv_entry::ze_a2a_allgatherv_entry(ccl_sched* sched,
                                                  std::vector<ze_event_handle_t> wait_events,
                                                  size_t peer_buf_idx,
                                                  size_t peer_buf_offset)
-        : ze_base_entry(sched,
-                        init_mode::copy,
-                        comm,
-                        comm->size() * event_group_count,
-                        wait_events),
+        : ze_base_entry(sched, comm, comm->size() * event_group_count, wait_events),
           send_buf(send_buf),
           send_count(send_count),
           recv_buf(recv_buf),
@@ -31,7 +27,8 @@ ze_a2a_allgatherv_entry::ze_a2a_allgatherv_entry(ccl_sched* sched,
           peer_buf_offset(peer_buf_offset),
           peer_count(comm->size() - 1) {}
 
-void ze_a2a_allgatherv_entry::fill_list(ze_command_list_handle_t list,
+void ze_a2a_allgatherv_entry::fill_list(const ze_base_entry* entry,
+                                        int comm_rank,
                                         void* send_buf,
                                         void* recv_buf,
                                         const std::vector<ccl_buffer>& peer_recv_bufs,
@@ -48,6 +45,7 @@ void ze_a2a_allgatherv_entry::fill_list(ze_command_list_handle_t list,
             src = static_cast<char*>(recv_buf) + offset_bytes;
         }
         void* dst = static_cast<char*>(peer_recv_bufs[i].get_ptr()) + offset_bytes;
+        auto list = entry->get_copy_list(i + 1 /* 1 because we do copy to itself in 0 */);
         ZE_CALL(zeCommandListAppendMemoryCopy,
                 (list, dst, src, copy_bytes, copy_events.at(i), (wait_event) ? 1 : 0, &wait_event));
     }
@@ -56,6 +54,7 @@ void ze_a2a_allgatherv_entry::fill_list(ze_command_list_handle_t list,
         /* copy send_buf to my buffer */
         void* src = send_buf;
         void* dst = static_cast<char*>(recv_buf) + offset_bytes;
+        auto list = entry->get_copy_list(0);
         ZE_CALL(
             zeCommandListAppendMemoryCopy,
             (list, dst, src, copy_bytes, copy_events.back(), (wait_event) ? 1 : 0, &wait_event));
@@ -90,7 +89,8 @@ void ze_a2a_allgatherv_entry::init_ze_hook() {
         event = ze_base_entry::create_event();
     }
 
-    fill_list(ze_base_entry::get_copy_list(),
+    fill_list(this,
+              comm_rank,
               send_buf.get_ptr(),
               recv_buf.get_ptr(),
               peer_recv_bufs,

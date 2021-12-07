@@ -13,11 +13,6 @@ namespace ze {
 
 #define ZE_CALL(ze_name, ze_args) ccl::ze::ze_call().do_call(ze_name ze_args, #ze_name)
 
-enum class init_mode : int {
-    compute = 1,
-    copy = 2,
-};
-
 enum class device_id : uint32_t { unknown = 0x0, id1 = 0x200, id2 = 0xbd0 };
 
 constexpr ze_context_desc_t default_context_desc = { .stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC,
@@ -79,14 +74,6 @@ constexpr ze_event_desc_t default_event_desc = { .stype = ZE_STRUCTURE_TYPE_EVEN
                                                  .signal = 0,
                                                  .wait = 0 };
 
-inline init_mode operator|(init_mode mode1, init_mode mode2) {
-    return static_cast<init_mode>(static_cast<int>(mode1) | static_cast<int>(mode2));
-}
-
-inline bool operator&(init_mode mode1, init_mode mode2) {
-    return static_cast<int>(mode1) & static_cast<int>(mode2);
-}
-
 void load_module(const std::string& file_path,
                  ze_device_handle_t device,
                  ze_context_handle_t context,
@@ -125,10 +112,6 @@ using ze_queue_properties_t = typename std::vector<ze_command_queue_group_proper
 void get_queues_properties(ze_device_handle_t device, ze_queue_properties_t* props);
 void get_comp_queue_ordinal(const ze_queue_properties_t& props, uint32_t* ordinal);
 void get_copy_queue_ordinal(const ze_queue_properties_t& props, uint32_t* ordinal);
-void get_queue_index(const ze_queue_properties_t& props,
-                     uint32_t ordinal,
-                     int idx,
-                     uint32_t* index);
 
 bool get_buffer_context_and_device(const void* buf,
                                    ze_context_handle_t* context,

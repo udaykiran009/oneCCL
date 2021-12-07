@@ -19,11 +19,7 @@ ze_ring_allreduce_entry::ze_ring_allreduce_entry(ccl_sched* sched,
                                                  ccl_comm* comm,
                                                  size_t recv_buf_idx,
                                                  size_t tmp_buf_idx)
-        : ze_base_entry(
-              sched,
-              (comm->size() == 1) ? init_mode::copy : (init_mode::compute | init_mode::copy),
-              comm,
-              (comm->size() - 1) * event_group_count),
+        : ze_base_entry(sched, comm, (comm->size() - 1) * event_group_count),
           send_buf(send_buf),
           recv_buf(recv_buf),
           tmp_buf(tmp_buf),
