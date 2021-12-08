@@ -16,7 +16,7 @@ cd ${SCRIPT_DIR}
 export CCL_LOG_LEVEL=info
 export CCL_ZE_BIDIR_ALGO=1
 
-bench_options="-b sycl -w 4 -i 8 -c all -l allreduce -t 2097152"
+bench_options="-d all -b sycl -w 4 -i 8 -c all -l allreduce -t 2097152"
 
 mpiexec -l -n 2 -ppn 2 ${SCRIPT_DIR}/benchmark ${bench_options} > ${TEST_LOG} 2>&1
 ret_val=$?
