@@ -42,9 +42,7 @@ worker_counts="1"
 # transports="ofi mpi"
 transports="mpi"
 
-# TODO: MLSL-1234
-# send_proxy_modes="none regular"
-send_proxy_modes="none"
+send_proxy_modes="none regular"
 
 hmem_modes="0 1"
 single_list_modes="0 1"
