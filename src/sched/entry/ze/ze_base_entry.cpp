@@ -187,8 +187,9 @@ ze_command_list_handle_t ze_base_entry::get_comp_list(uint32_t index) const {
     return sched->get_memory().list_manager->get_comp_list(this, wait_events, index);
 }
 
-ze_command_list_handle_t ze_base_entry::get_copy_list(uint32_t index) const {
-    return sched->get_memory().list_manager->get_copy_list(this, wait_events, index);
+ze_command_list_handle_t ze_base_entry::get_copy_list(uint32_t index, bool peer_card_copy) const {
+    return sched->get_memory().list_manager->get_copy_list(
+        this, wait_events, index, peer_card_copy);
 }
 
 std::string ze_base_entry::name_ext() const {

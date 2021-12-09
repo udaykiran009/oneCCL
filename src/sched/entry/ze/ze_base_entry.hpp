@@ -30,7 +30,7 @@ public:
     virtual void update() override;
 
     ze_command_list_handle_t get_comp_list(uint32_t index = 0) const;
-    ze_command_list_handle_t get_copy_list(uint32_t index = 0) const;
+    ze_command_list_handle_t get_copy_list(uint32_t index = 0, bool peer_card_copy = false) const;
 
     ze_event_handle_t entry_event{};
 

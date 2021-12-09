@@ -45,7 +45,7 @@ void ze_a2a_allgatherv_entry::fill_list(const ze_base_entry* entry,
             src = static_cast<char*>(recv_buf) + offset_bytes;
         }
         void* dst = static_cast<char*>(peer_recv_bufs[i].get_ptr()) + offset_bytes;
-        auto list = entry->get_copy_list(i + 1 /* 1 because we do copy to itself in 0 */);
+        auto list = entry->get_copy_list(i, true);
         ZE_CALL(zeCommandListAppendMemoryCopy,
                 (list, dst, src, copy_bytes, copy_events.at(i), (wait_event) ? 1 : 0, &wait_event));
     }
@@ -54,7 +54,7 @@ void ze_a2a_allgatherv_entry::fill_list(const ze_base_entry* entry,
         /* copy send_buf to my buffer */
         void* src = send_buf;
         void* dst = static_cast<char*>(recv_buf) + offset_bytes;
-        auto list = entry->get_copy_list(0);
+        auto list = entry->get_copy_list();
         ZE_CALL(
             zeCommandListAppendMemoryCopy,
             (list, dst, src, copy_bytes, copy_events.back(), (wait_event) ? 1 : 0, &wait_event));

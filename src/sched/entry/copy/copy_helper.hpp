@@ -22,6 +22,7 @@ struct copy_attr {
 
 #ifdef CCL_ENABLE_ZE
     int hint_queue_index = 0;
+    bool is_peer_card_copy = false;
 #endif // CCL_ENABLE_ZE
 
     copy_attr() {}

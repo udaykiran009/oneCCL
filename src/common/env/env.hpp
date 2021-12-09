@@ -117,7 +117,6 @@ constexpr const char* CCL_ZE_CACHE_IPC_HANDLES = "CCL_ZE_CACHE_IPC_HANDLES";
 constexpr const char* CCL_ZE_CACHE_IPC_HANDLES_THRESHOLD = "CCL_ZE_CACHE_IPC_HANDLES_THRESHOLD";
 constexpr const char* CCL_ZE_SERIALIZE = "CCL_ZE_SERIALIZE";
 constexpr const char* CCL_ZE_COPY_ENGINE = "CCL_ZE_COPY_ENGINE";
-constexpr const char* CCL_ZE_COPY_ENGINE_FALLBACK = "CCL_ZE_COPY_ENGINE_FALLBACK";
 constexpr const char* CCL_ZE_MAX_COMPUTE_QUEUES = "CCL_ZE_MAX_COMPUTE_QUEUES";
 constexpr const char* CCL_ZE_MAX_COPY_QUEUES = "CCL_ZE_MAX_COPY_QUEUES";
 constexpr const char* CCL_ZE_LIST_DUMP = "CCL_ZE_LIST_DUMP";
@@ -148,7 +147,8 @@ enum ccl_staging_buffer { ccl_staging_regular, ccl_staging_usm };
 enum ccl_ze_copy_engine_mode {
     ccl_ze_copy_engine_none,
     ccl_ze_copy_engine_main,
-    ccl_ze_copy_engine_link
+    ccl_ze_copy_engine_link,
+    ccl_ze_copy_engine_auto
 };
 
 namespace ccl {
@@ -272,7 +272,6 @@ public:
     int disable_ze_family_check;
     int ze_serialize_mode;
     ccl_ze_copy_engine_mode ze_copy_engine;
-    int enable_ze_copy_engine_fallback;
     int ze_max_compute_queues;
     int ze_max_copy_queues;
     int enable_ze_list_dump;

@@ -42,6 +42,7 @@ public:
 
     ze_command_queue_handle_t get_native() const;
     const ze_command_queue_desc_t& get_desc() const;
+    queue_group_type get_type() const;
     bool is_valid() const;
     bool is_copy() const;
 
@@ -50,13 +51,14 @@ private:
     ze_command_queue_handle_t queue{};
     ze_command_queue_desc_t desc{};
     bool is_copy_queue{};
+    queue_group_type type;
 };
 
 using queue_info_t = typename std::shared_ptr<queue_info>;
 
 class queue_factory {
 public:
-    queue_factory(ze_device_handle_t device, ze_context_handle_t context, bool is_copy);
+    queue_factory(ze_device_handle_t device, ze_context_handle_t context, queue_group_type type);
     queue_factory& operator=(const queue_factory&) = delete;
     queue_factory& operator=(queue_factory&&) = delete;
     ~queue_factory();
@@ -64,13 +66,15 @@ public:
     void clear();
 
     bool is_copy() const;
+    uint32_t get_ordinal() const;
 
-    static bool can_use_copy_queue(ze_device_handle_t device);
+    static bool can_use_queue_group(ze_device_handle_t device, queue_group_type type);
 
 private:
     const ze_device_handle_t device;
     const ze_context_handle_t context;
     const bool is_copy_queue;
+    const queue_group_type type;
 
     static constexpr ssize_t worker_idx = 0;
 
@@ -78,7 +82,7 @@ private:
     std::vector<queue_info_t> queues;
 
     void destroy(queue_info_t& queue);
-    const char* queue_type() const;
+    const char* get_type_str() const;
     uint32_t get_max_available_queue_count() const;
     uint32_t get_queue_index(uint32_t requested_index) const;
 };
@@ -101,7 +105,7 @@ private:
 
     static constexpr ssize_t worker_idx = 0;
 
-    const char* list_type() const;
+    const char* get_type_str() const;
 };
 
 class list_manager {
@@ -119,7 +123,8 @@ public:
                                            uint32_t index = 0);
     ze_command_list_handle_t get_copy_list(const sched_entry* entry = nullptr,
                                            const std::vector<ze_event_handle_t>& wait_events = {},
-                                           uint32_t index = 0);
+                                           uint32_t index = 0,
+                                           bool peer_card_copy = false);
 
     void clear();
     void reset_execution_state();
@@ -132,7 +137,8 @@ private:
     const ze_device_handle_t device;
     const ze_context_handle_t context;
     std::unique_ptr<queue_factory> comp_queue_factory;
-    std::unique_ptr<queue_factory> copy_queue_factory;
+    std::unique_ptr<queue_factory> link_queue_factory;
+    std::unique_ptr<queue_factory> main_queue_factory;
     std::unique_ptr<list_factory> comp_list_factory;
     std::unique_ptr<list_factory> copy_list_factory;
 
@@ -148,7 +154,8 @@ private:
         uint32_t,
         std::pair<list_info_t, std::unordered_map<const sched_entry*, bool>>>;
     queue_map_t comp_queue_map;
-    queue_map_t copy_queue_map;
+    queue_map_t link_queue_map;
+    queue_map_t main_queue_map;
 
     // support of non single_list mode
     // in non single_list mode we execute lists
@@ -160,11 +167,16 @@ private:
     std::list<std::pair<queue_info_t, list_info_t>> access_list;
     bool executed = false;
     bool use_copy_queue = false;
+    bool can_use_main_queue = false;
+    bool can_use_link_queue = false;
 
+    std::pair<queue_factory*, queue_map_t*> get_factory_and_map(bool is_copy,
+                                                                bool peer_card_copy) const;
     list_info_t get_list(const sched_entry* entry,
                          uint32_t index,
                          bool is_copy,
-                         const std::vector<ze_event_handle_t>& wait_events);
+                         const std::vector<ze_event_handle_t>& wait_events,
+                         bool peer_card_copy);
 
     void execute_list(queue_info_t& queue, list_info_t& list);
 

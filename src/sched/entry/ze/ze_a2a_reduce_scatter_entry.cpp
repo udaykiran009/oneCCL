@@ -98,7 +98,7 @@ void ze_a2a_reduce_scatter_entry::fill_list(const ze_base_entry* entry,
     for (int i = 0; i < peer_count; i++) {
         void* src = static_cast<char*>(peer_send_bufs[i].get_ptr()) + offset_bytes;
         void* dst = static_cast<char*>(tmp_buf) + i * copy_bytes;
-        auto list = entry->get_copy_list(i);
+        auto list = entry->get_copy_list(i, true);
         ZE_CALL(zeCommandListAppendMemoryCopy,
                 (list, dst, src, copy_bytes, copy_events.at(i), 0, nullptr));
     }

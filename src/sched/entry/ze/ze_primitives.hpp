@@ -107,11 +107,14 @@ struct ze_kernel_arg_t {
 using ze_kernel_args_t = typename std::initializer_list<ze_kernel_arg_t>;
 void set_kernel_args(ze_kernel_handle_t kernel, const ze_kernel_args_t& kernel_args);
 
+enum class queue_group_type : uint8_t { unknown, compute, main, link };
+
 using ze_queue_properties_t = typename std::vector<ze_command_queue_group_properties_t>;
 
+queue_group_type get_queue_group_type(const ze_queue_properties_t& props, uint32_t ordinal);
+uint32_t get_queue_group_ordinal(const ze_queue_properties_t& props, queue_group_type type);
+
 void get_queues_properties(ze_device_handle_t device, ze_queue_properties_t* props);
-void get_comp_queue_ordinal(const ze_queue_properties_t& props, uint32_t* ordinal);
-void get_copy_queue_ordinal(const ze_queue_properties_t& props, uint32_t* ordinal);
 
 bool get_buffer_context_and_device(const void* buf,
                                    ze_context_handle_t* context,
@@ -133,6 +136,7 @@ std::string to_string(const ze_kernel_args_t& kernel_args);
 std::string to_string(const ze_command_queue_group_property_flag_t& flag);
 std::string to_string(const ze_command_queue_group_properties_t& queue_property);
 std::string to_string(const ze_device_uuid_t& uuid);
+std::string to_string(queue_group_type type);
 
 std::string join_strings(const std::vector<std::string>& tokens, const std::string& delimeter);
 
