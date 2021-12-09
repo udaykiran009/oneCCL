@@ -79,6 +79,11 @@ do
                         do
                             for proc_count in ${proc_counts}
                             do
+                                # TODO: MLSL-1157
+                                if [[ ${single_list_mode} == "1" ]] && [[ ${hmem_mode} == "1" ]];
+                                then
+                                    continue
+                                fi
                                 cmd="CCL_WORKER_COUNT=${worker_count}"
                                 cmd+=" CCL_ATL_TRANSPORT=${transport}"
                                 cmd+=" CCL_ATL_SEND_PROXY=${send_proxy_mode}"

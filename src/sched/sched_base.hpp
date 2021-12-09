@@ -128,7 +128,7 @@ struct ccl_sched_base {
     std::vector<sched_entry*> ze_entries;
     bool use_single_list{};
 
-    bool enable_ze_single_list();
+    bool try_enable_ze_single_list();
     void append_to_ze_entries_list(sched_entry* entry);
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 

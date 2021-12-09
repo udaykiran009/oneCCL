@@ -156,7 +156,7 @@ void ccl_sched_base::dealloc_buffer(const ccl::dealloc_param& user_param) {
 }
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-bool ccl_sched_base::enable_ze_single_list() {
+bool ccl_sched_base::try_enable_ze_single_list() {
     CCL_THROW_IF_NOT(ze_entries.empty(),
                      "trying to modify the list mode after ze_entries has already been formed");
     use_single_list = ccl::global_data::env().enable_ze_single_list &&

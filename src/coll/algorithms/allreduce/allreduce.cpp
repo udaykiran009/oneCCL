@@ -594,6 +594,7 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
     CCL_THROW_IF_NOT(comm_size % 2 == 0, "unexpected comm_size ", comm_size);
     CCL_THROW_IF_NOT(node_comm_size % 2 == 0, "unexpected node_comm_size ", node_comm_size);
 
+    sched->try_enable_ze_single_list();
     std::vector<ze_event_handle_t> wait_events;
 
     if (is_single_card && ccl::global_data::env().enable_ze_bidir_algo) {
