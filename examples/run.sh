@@ -381,7 +381,7 @@ run()
                     continue
                 fi
                 transport_name="mpi"
-                ccl_transport_env+=" CCL_ATL_HMEM=1 CCL_ATL_SEND_PROXY=usm"
+                ccl_transport_env+=" CCL_ATL_HMEM=1"
             fi
             ccl_transport_env+=" CCL_ATL_TRANSPORT=${transport_name}"
 
