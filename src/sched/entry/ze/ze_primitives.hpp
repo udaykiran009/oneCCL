@@ -135,6 +135,7 @@ std::string to_string(const ze_group_count_t& group_count);
 std::string to_string(const ze_kernel_args_t& kernel_args);
 std::string to_string(const ze_command_queue_group_property_flag_t& flag);
 std::string to_string(const ze_command_queue_group_properties_t& queue_property);
+std::string to_string(const ze_device_uuid_t& uuid);
 
 std::string join_strings(const std::vector<std::string>& tokens, const std::string& delimeter);
 

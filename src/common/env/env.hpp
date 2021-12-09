@@ -10,6 +10,7 @@
 #include "coll/coll.hpp"
 #include "common/framework/framework.hpp"
 #include "common/log/log.hpp"
+#include "common/topology/topo_manager.hpp"
 #include "common/utils/utils.hpp"
 #include "common/utils/yield.hpp"
 #include "comp/bf16/bf16_utils.hpp"
@@ -93,6 +94,8 @@ constexpr const char* CCL_ALLREDUCE_NREDUCE_BUFFERING = "CCL_ALLREDUCE_NREDUCE_B
 constexpr const char* CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE = "CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE";
 
 constexpr const char* CCL_ALLTOALL_SCATTER_MAX_OPS = "CCL_ALLTOALL_SCATTER_MAX_OPS";
+
+constexpr const char* CCL_TOPO_COLOR = "CCL_TOPO_COLOR";
 
 constexpr const char* CCL_KERNEL_PATH = "CCL_KERNEL_PATH";
 constexpr const char* CCL_KERNEL_DEBUG = "CCL_KERNEL_DEBUG";
@@ -240,6 +243,8 @@ public:
     ssize_t allreduce_nreduce_segment_size;
 
     ssize_t alltoall_scatter_max_ops;
+
+    topo_color_mode topo_color;
 
 #ifdef CCL_ENABLE_SYCL
     std::string kernel_path;

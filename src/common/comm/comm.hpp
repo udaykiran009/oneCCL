@@ -125,6 +125,10 @@ public:
         return traits::is_accelerator();
     }
 
+    void init(ccl_comm_id_storage::comm_id&& id,
+              std::shared_ptr<atl_base_comm> atl_comm,
+              bool share_resources = false,
+              bool is_sub_communicator = false);
     ccl_comm(ccl_comm_id_storage::comm_id&& id,
              std::shared_ptr<atl_base_comm> atl_comm,
              bool share_resources,
@@ -132,11 +136,7 @@ public:
     ccl_comm(std::shared_ptr<atl_base_comm> atl_comm,
              bool share_resources = false,
              bool is_sub_communicator = false);
-    ccl_comm(int size,
-             int rank,
-             device_t device,
-             context_t context,
-             ccl::shared_ptr_class<ikvs_wrapper> kvs);
+    ccl_comm(device_t device, context_t context, std::shared_ptr<atl_base_comm> atl_comm);
     ccl_comm(int size, int rank, ccl::shared_ptr_class<ikvs_wrapper> kvs);
     ccl_comm(int size, ccl::shared_ptr_class<ikvs_wrapper> kvs);
     ccl_comm();
@@ -275,7 +275,6 @@ private:
     std::shared_ptr<ccl_comm> node_comm;
     std::shared_ptr<ccl_comm> even_comm;
     std::shared_ptr<ccl_comm> pair_comm;
-    ccl::comm_split_attr split_attr;
 
     // these fields are duplicate with the ones in ccl_internal_comm
     // but having them here allows to get them without going

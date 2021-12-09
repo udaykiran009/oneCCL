@@ -4,6 +4,10 @@ namespace ccl {
 namespace ze {
 
 global_data_desc::global_data_desc() {
+    // tell L0 to create sysman devices.
+    // *GetProperties() will fail if the sysman is not activated
+    setenv("ZES_ENABLE_SYSMAN", "1", 0);
+
     LOG_INFO("initializing level-zero");
     ZE_CALL(zeInit, (ZE_INIT_FLAG_GPU_ONLY));
 

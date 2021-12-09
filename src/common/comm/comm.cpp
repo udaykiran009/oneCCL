@@ -44,19 +44,17 @@ void ccl_internal_comm::reset(int rank, int size) {
 
 // ccl_comm
 
-ccl_comm::ccl_comm(ccl_comm_id_storage::comm_id&& id,
-                   std::shared_ptr<atl_base_comm> atl_comm,
-                   bool share_resources,
-                   bool is_sub_communicator)
-        : split_attr(ccl::preview::create_comm_split_attr()),
-          comm_rank(atl_comm->get_rank()),
-          comm_size(atl_comm->get_size()),
-          local2global_map(atl_comm->get_rank2rank_map()),
-          comm_id(std::unique_ptr<ccl_comm_id_storage::comm_id>(
-              new ccl_comm_id_storage::comm_id(std::move(id)))),
-          next_sched_id_internal(ccl_comm::max_sched_count / 2),
-          next_sched_id_external(0) {
-    LOG_DEBUG("ctor: ", to_string());
+void ccl_comm::init(ccl_comm_id_storage::comm_id&& id,
+                    std::shared_ptr<atl_base_comm> atl_comm,
+                    bool share_resources,
+                    bool is_sub_communicator) {
+    comm_rank = atl_comm->get_rank();
+    comm_size = atl_comm->get_size();
+    local2global_map = atl_comm->get_rank2rank_map();
+    comm_id = std::unique_ptr<ccl_comm_id_storage::comm_id>(
+        new ccl_comm_id_storage::comm_id(std::move(id)));
+    next_sched_id_internal = ccl_comm::max_sched_count / 2;
+    next_sched_id_external = 0;
 
     if (comm_rank >= comm_size || comm_size <= 0) {
         throw ccl::exception("incorrect rank or size when creating \
@@ -72,9 +70,17 @@ ccl_comm::ccl_comm(ccl_comm_id_storage::comm_id&& id,
     }
 
     if (!is_sub_communicator) {
-        topo_manager.init();
+        topo_manager.init(atl_comm, device_ptr, context_ptr);
+        LOG_DEBUG("topo_manager:", topo_manager.to_string());
         create_sub_comms(atl_comm);
     }
+}
+
+ccl_comm::ccl_comm(ccl_comm_id_storage::comm_id&& id,
+                   std::shared_ptr<atl_base_comm> atl_comm,
+                   bool share_resources,
+                   bool is_sub_communicator) {
+    init(std::move(id), atl_comm, share_resources, is_sub_communicator);
 }
 
 ccl_comm::ccl_comm(std::shared_ptr<atl_base_comm> atl_comm,
@@ -85,14 +91,10 @@ ccl_comm::ccl_comm(std::shared_ptr<atl_base_comm> atl_comm,
                    share_resources,
                    is_sub_communicator) {}
 
-ccl_comm::ccl_comm(int size,
-                   int rank,
-                   device_t device,
-                   context_t context,
-                   ccl::shared_ptr_class<ikvs_wrapper> kvs)
-        : ccl_comm(atl_comm_manager::create_comm(size, { rank }, kvs)) {
-    device_ptr = std::make_shared<ccl::device>(device);
-    context_ptr = std::make_shared<ccl::context>(context);
+ccl_comm::ccl_comm(device_t device, context_t context, std::shared_ptr<atl_base_comm> atl_comm)
+        : device_ptr(std::make_shared<ccl::device>(device)),
+          context_ptr(std::make_shared<ccl::context>(context)) {
+    init(ccl::global_data::get().comm_ids->acquire(), atl_comm);
 }
 
 ccl_comm::ccl_comm(int size, int rank, ccl::shared_ptr_class<ikvs_wrapper> kvs)
@@ -119,9 +121,9 @@ void ccl_comm::create_sub_comms(std::shared_ptr<atl_base_comm> atl_comm) {
     node_comm = std::shared_ptr<ccl_comm>(
         create_with_color(atl_comm->get_host_color(), data.comm_ids.get(), true));
     even_comm = std::shared_ptr<ccl_comm>(create_with_color(
-        atl_comm->get_host_color() + atl_comm->get_rank() % 2, data.comm_ids.get(), true));
+        topo_manager.get_inter_card_color(atl_comm->get_rank()), data.comm_ids.get(), true));
     pair_comm = std::shared_ptr<ccl_comm>(create_with_color(
-        atl_comm->get_host_color() + atl_comm->get_rank() / 2, data.comm_ids.get(), true));
+        topo_manager.get_intra_card_color(atl_comm->get_rank()), data.comm_ids.get(), true));
 }
 
 ccl_comm* ccl_comm::create_with_color(int color,
@@ -175,8 +177,6 @@ ccl::communicator_interface_ptr ccl_comm::split(const ccl::comm_split_attr& attr
     ccl::global_data& data = ccl::global_data::get();
     auto new_comm =
         create_with_color(attr.get<ccl::comm_split_attr_id::color>(), data.comm_ids.get(), true);
-
-    split_attr = attr;
 
     return std::shared_ptr<ccl_comm>(new_comm);
 }

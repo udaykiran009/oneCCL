@@ -475,6 +475,17 @@ std::string to_string(const ze_command_queue_group_properties_t& queue_property)
     return ss.str();
 }
 
+std::string to_string(const ze_device_uuid_t& uuid) {
+    std::string str{};
+    std::string tmp{};
+    for (auto& entry : uuid.id) {
+        tmp += std::to_string(entry);
+        tmp += ", ";
+    }
+    str += "[ " + tmp.substr(0, tmp.size() - 2) + " ]";
+    return str;
+}
+
 std::string join_strings(const std::vector<std::string>& tokens, const std::string& delimeter) {
     std::stringstream ss;
     for (size_t i = 0; i < tokens.size(); ++i) {
