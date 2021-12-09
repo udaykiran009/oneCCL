@@ -105,7 +105,6 @@ constexpr const char* CCL_KERNEL_SYNC = "CCL_KERNEL_SYNC";
 constexpr const char* CCL_KERNEL_1S_LEAD = "CCL_KERNEL_1S_LEAD";
 constexpr const char* CCL_KERNEL_1S_USE_COPY_OPS = "CCL_KERNEL_1S_USE_COPY_OPS";
 constexpr const char* CCL_KERNEL_1S_IPC_WA = "CCL_KERNEL_1S_IPC_WA";
-constexpr const char* CCL_KERNEL_PROFILE = "CCL_KERNEL_PROFILE";
 constexpr const char* CCL_KERNEL_CLOSE_FD_WA = "CCL_KERNEL_CLOSE_FD_WA";
 
 constexpr const char* CCL_SYCL_OUTPUT_EVENT = "CCL_SYCL_OUTPUT_EVENT";
@@ -126,6 +125,10 @@ constexpr const char* CCL_ZE_QUEUE_INDEX_OFFSET = "CCL_ZE_QUEUE_INDEX_OFFSET";
 constexpr const char* CCL_ZE_CLOSE_IPC_WA = "CCL_ZE_CLOSE_IPC_WA";
 constexpr const char* CCL_ZE_SINGLE_LIST = "CCL_ZE_SINGLE_LIST";
 constexpr const char* CCL_ZE_DISABLE_FAMILY_CHECK = "CCL_ZE_DISABLE_FAMILY_CHECK";
+
+#ifdef CCL_ENABLE_ITT
+constexpr const char* CCL_ITT_LEVEL = "CCL_ITT_LEVEL";
+#endif // CCL_ENABLE_ITT
 
 constexpr const char* CCL_BF16 = "CCL_BF16";
 constexpr const char* CCL_FP16 = "CCL_FP16";
@@ -255,7 +258,6 @@ public:
     int kernel_1s_lead;
     int enable_kernel_1s_copy_ops;
     int enable_kernel_1s_ipc_wa;
-    int enable_kernel_profile;
     int enable_close_fd_wa;
 
     int enable_sycl_output_event;
@@ -277,6 +279,10 @@ public:
     int ze_queue_index_offset;
     int ze_close_ipc_wa;
 #endif // CCL_ENABLE_SYCL
+
+#ifdef CCL_ENABLE_ITT
+    int itt_level;
+#endif // CCL_ENABLE_ITT
 
     ccl_bf16_impl_type bf16_impl_type;
     ccl_fp16_impl_type fp16_impl_type;

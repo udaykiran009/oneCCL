@@ -738,5 +738,34 @@ CCL_SYCL_OUTPUT_EVENT
 **Description**
 
 Set this environment variable to control support for SYCL output event.
-Once the support is enabled, you can retrieve SYCL output event from oneCCL event using ``get_native()`` method.
-oneCCL event must be associated with oneCCL communication operation.
+Once the support is enabled, you can retrieve SYCL output event from |product_short| event using ``get_native()`` method.
+|product_short| event must be associated with |product_short| communication operation.
+
+
+CCL_ITT_LEVEL
+#############
+**Syntax**
+
+::
+
+  CCL_ITT_LEVEL=<value>
+
+**Arguments**
+
+.. list-table::
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``1``
+     - Enable support for ITT profiling.
+   * - ``0``
+     - Disable support for ITT profiling (**default**).
+
+**Description**
+
+Set this environment variable to specify ``Intel(R) Instrumentation and Tracing Technology`` (ITT) profiling level.
+Once the environment variable is enabled (value > 0), it is possible to collect and display profiling
+data for |product_short| using tools such as ``Intel(R) VTune(TM) Amplifier``.

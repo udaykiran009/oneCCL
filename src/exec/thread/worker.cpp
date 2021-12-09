@@ -2,6 +2,8 @@
 #include "exec/exec.hpp"
 #include "exec/thread/worker.hpp"
 
+#include "sched/sched_timer.hpp"
+
 #define CCL_WORKER_CHECK_STOP_ITERS     (16384)
 #define CCL_WORKER_CHECK_UPDATE_ITERS   (16384)
 #define CCL_WORKER_CHECK_AFFINITY_ITERS (16384)
@@ -288,6 +290,10 @@ static void* ccl_worker_func(void* args) {
 
     int cpu_core = worker->get_start_cpu_affinity();
     int numa_node = worker->get_start_mem_affinity();
+
+#ifdef CCL_ENABLE_ITT
+    ccl::profile::itt::set_thread_name("ccl_" + worker->name() + " " + std::to_string(worker_idx));
+#endif // CCL_ENABLE_ITT
 
     LOG_DEBUG("worker: ",
               "idx: ",

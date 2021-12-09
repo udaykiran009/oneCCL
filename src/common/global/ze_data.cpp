@@ -39,8 +39,6 @@ global_data_desc::global_data_desc() {
 
     cache = std::make_unique<ze::cache>(global_data::env().worker_count);
 
-    timer_printer = std::make_unique<kernel_timer_printer>();
-
     LOG_INFO("initialized level-zero");
 }
 
@@ -54,10 +52,6 @@ global_data_desc::~global_data_desc() {
     context_list.clear();
     device_list.clear();
     driver_list.clear();
-
-#if defined(CCL_ENABLE_SYCL)
-    timer_printer.reset();
-#endif // CCL_ENABLE_SYCL
 
     LOG_INFO("finalized level-zero");
 }

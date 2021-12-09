@@ -37,21 +37,8 @@ public:
     using ccl_master_sched_ptr = ccl_master_sched*;
     static ccl_master_sched_ptr create(const ccl_coll_param& param, const ccl_coll_attr& attr);
 
-#ifdef CCL_ENABLE_SYCL
-    bool print_kernel_timer() const;
-    void reset_kernel_timer();
-
-    ccl::kernel_timer& get_kernel_timer() {
-        return kernel_timer;
-    }
-#endif // CCL_ENABLE_SYCL
-
 private:
     void reset_state();
     void prepare_partial_scheds();
     std::vector<std::shared_ptr<ccl_sched>> partial_scheds;
-
-#ifdef CCL_ENABLE_SYCL
-    ccl::kernel_timer kernel_timer;
-#endif // CCL_ENABLE_SYCL
 };

@@ -59,9 +59,6 @@ void ze_base_entry::init() {
         if (events.size() > 0) {
             event_pool_desc = default_event_pool_desc;
             event_pool_desc.count = events.size();
-            if (ccl::global_data::env().enable_kernel_profile) {
-                event_pool_desc.flags |= ZE_EVENT_POOL_FLAG_KERNEL_TIMESTAMP;
-            }
             global_data::get().ze_data->cache->get(
                 worker_idx, context, event_pool_desc, &event_pool);
             LOG_DEBUG("get event pool: { max event count: ", event_pool_desc.count, " }");
@@ -121,10 +118,10 @@ void ze_base_entry::finalize_entries() {
 }
 
 void ze_base_entry::start() {
-    if (global_data::env().enable_kernel_profile) {
-        sched->master_sched->get_kernel_timer().set_kernel_submit_time(
-            calculate_global_time(sched->coll_param.stream->get_ze_device()));
-    }
+#ifdef CCL_ENABLE_ITT
+    ccl::profile::itt::task_end(ccl::profile::itt::task_type::preparation);
+    ccl::profile::itt::task_start(ccl::profile::itt::task_type::device_work);
+#endif // CCL_ENABLE_ITT
 
     if (use_single_list) {
         init_entries();
@@ -160,15 +157,10 @@ void ze_base_entry::update() {
         LOG_DEBUG(name(), " ", this, " entry complete");
         status = ccl_sched_entry_status_complete;
 
-        if (ccl::global_data::env().enable_kernel_profile) {
-            auto kernel_time = calculate_event_time(entry_event, device);
-
-            // if we run this code, this sched must be a sub-sched of some master sched
-            // so the field must be non null
-            CCL_THROW_IF_NOT(sched->master_sched, "field must be set");
-            sched->master_sched->get_kernel_timer().set_name(name_ext());
-            sched->master_sched->get_kernel_timer().set_kernel_time(kernel_time);
-        }
+#ifdef CCL_ENABLE_ITT
+        ccl::profile::itt::task_end(ccl::profile::itt::task_type::device_work);
+        ccl::profile::itt::task_start(ccl::profile::itt::task_type::completion);
+#endif // CCL_ENABLE_ITT
 
         if (use_single_list) {
             reset_events();

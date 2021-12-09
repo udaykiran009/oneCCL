@@ -45,6 +45,7 @@ fi
 BOM_DIR="${WORKSPACE}/boms"
 IMPI_DIR="${WORKSPACE}/deps/mpi"
 HWLOC_DIR="${WORKSPACE}/deps/hwloc"
+ITT_DIR="${WORKSPACE}/deps/itt"
 BOM_LIST_NAME="bom_lists.txt"
 TMP_DIR="${WORKSPACE}/_tmp"
 TMP_MAKE_DIR=$(mktemp -d -t dpcpp-XXXXXXXXXX)
@@ -357,6 +358,12 @@ post_build()
     fi
     LDFLAGS="${LDFLAGS} ${HWLOC_DIR}/lib/libhwloc.a"
 
+    # check whether we have a dependency on itt framework and
+    # link with the library if we have
+    if $(nm libccl.a | grep -q __itt.*); then
+        LDFLAGS="${LDFLAGS} ${ITT_DIR}/lib64/libittnotify.a"
+    fi
+
     g++ -fPIE -fPIC -Wl,-z,now -Wl,-z,relro -Wl,-z,noexecstack \
         -Wl,--version-script=${WORKSPACE}/ccl.map -Wl,--no-undefined -std=gnu99 -Wall -Werror \
         -D_GNU_SOURCE -fvisibility=hidden -O3 -DNDEBUG \
@@ -433,7 +440,7 @@ prepare_staging()
     RES=0
 
     cp ${BOM_DIR}/${BOM_LIST_NAME} ${TMP_DIR}/
-    
+
     while read LINE
     do
         echo_debug "LINE = $LINE"
@@ -539,8 +546,8 @@ prepare_staging()
                             echo_debug "BL_INSTALL = $BL_INSTALL"
                             echo_debug "BL_CHECKSUM = $BL_CHECKSUM"
                             echo_debug "BL_ORIGIN = $BL_ORIGIN"
-                            echo_debug "BL_OWNER = $BL_OWNER"           
-                            echo_debug "BL_FEATURE = $BL_FEATURE"           
+                            echo_debug "BL_OWNER = $BL_OWNER"
+                            echo_debug "BL_FEATURE = $BL_FEATURE"
                             echo_debug "BL_ICOND = $BL_ICOND"
                             echo_debug "BL_MODE = $BL_MODE"
                             echo_debug "BL_IOWNER = $BL_IOWNER"

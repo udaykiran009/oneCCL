@@ -5,8 +5,6 @@
 
 namespace ccl {
 
-class kernel_timer_printer;
-
 namespace ze {
 
 struct global_data_desc {
@@ -16,9 +14,6 @@ struct global_data_desc {
     std::unique_ptr<ze::cache> cache;
 
     std::atomic<size_t> kernel_counter{};
-#ifdef CCL_ENABLE_SYCL
-    std::unique_ptr<kernel_timer_printer> timer_printer;
-#endif // CCL_ENABLE_SYCL
 
     global_data_desc();
     global_data_desc(const global_data_desc&) = delete;

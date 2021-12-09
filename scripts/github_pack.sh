@@ -16,6 +16,9 @@ excluded=".git
 ./examples/run.sh
 ./deps/hwloc/update_hwloc.sh
 ./deps/ofi/update_ofi.sh
+./deps/itt/update_ittnotify.sh
+./deps/itt/update_itt_calls.sh
+./deps/itt/gen
 ./ccl_public
 ./ccl_oneapi
 ./tests/cfgs

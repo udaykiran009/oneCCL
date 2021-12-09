@@ -35,23 +35,11 @@ ccl_stream::ccl_stream(stream_type type,
 
 #ifdef CCL_ENABLE_SYCL
     cl::sycl::property_list props{};
-    // TODO: can we somehow simplify this?
     if (stream.is_in_order()) {
-        if (ccl::global_data::env().enable_kernel_profile) {
-            props = { sycl::property::queue::in_order{},
-                      sycl::property::queue::enable_profiling{} };
-        }
-        else {
-            props = { sycl::property::queue::in_order{} };
-        }
+        props = { sycl::property::queue::in_order{} };
     }
     else {
-        if (ccl::global_data::env().enable_kernel_profile) {
-            props = { sycl::property::queue::enable_profiling{} };
-        }
-        else {
-            props = {};
-        }
+        props = {};
     }
 
     native_streams.resize(ccl::global_data::env().worker_count);

@@ -17,6 +17,7 @@
 #ifdef CCL_ENABLE_ZE
 #include "sched/entry/ze/ze_cache.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
+
 #endif // CCL_ENABLE_ZE
 #endif // CCL_ENABLE_SYCL
 
@@ -297,19 +298,3 @@ ccl_master_sched::ccl_master_sched_ptr ccl_master_sched::create(const ccl_coll_p
 
     return sched;
 }
-
-#ifdef CCL_ENABLE_SYCL
-bool ccl_master_sched::print_kernel_timer() const {
-    if (ccl::global_data::env().enable_kernel_profile) {
-        return kernel_timer.print();
-    }
-
-    // if we don't have env variable set, just return false to say that we haven't printed
-    // anything so no more work would be done
-    return false;
-}
-
-void ccl_master_sched::reset_kernel_timer() {
-    kernel_timer.reset();
-}
-#endif // CCL_ENABLE_SYCL

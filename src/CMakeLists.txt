@@ -246,7 +246,8 @@ list(APPEND SRC_INCLUDE_DIRS
      ${PROJECT_SOURCE_DIR}/src
      ${PROJECT_SOURCE_DIR}/src/atl
      ${LIBFABRIC_INCLUDE_DIR}
-     ${HWLOC_INCLUDE_DIR})
+     ${HWLOC_INCLUDE_DIR}
+     ${ITT_INCLUDE_DIR})
 
 list(APPEND SRC_LINK_DIRS ${LIBFABRIC_LIB_DIR})
 
@@ -256,7 +257,8 @@ list(APPEND SRC_LINK_LIBS
      ${EXTERNAL_LIBS}
      ${COMPUTE_BACKEND_TARGET_NAME}
      fabric
-     ${HWLOC_LIB_DIR}/libhwloc.a)
+     ${HWLOC_LIB_DIR}/libhwloc.a
+     ${ITT_LIB_DIR}/libittnotify.a)
 
 if (ENABLE_MPI)
     set(SRC_C_FLAGS "${SRC_C_FLAGS} -DCCL_ENABLE_MPI")

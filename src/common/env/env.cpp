@@ -126,7 +126,6 @@ env_data::env_data()
           kernel_1s_lead(0),
           enable_kernel_1s_copy_ops(0),
           enable_kernel_1s_ipc_wa(0),
-          enable_kernel_profile(0),
           enable_close_fd_wa(0),
 
           enable_sycl_output_event(0),
@@ -149,6 +148,9 @@ env_data::env_data()
           ze_close_ipc_wa(0),
 #endif // CCL_ENABLE_SYCL
 
+#ifdef CCL_ENABLE_ITT
+          itt_level(0),
+#endif // CCL_ENABLE_ITT
           bf16_impl_type(ccl_bf16_no_compiler_support),
           fp16_impl_type(ccl_fp16_no_compiler_support) {
 }
@@ -310,7 +312,6 @@ void env_data::parse() {
     env_2_type(CCL_KERNEL_1S_LEAD, kernel_1s_lead);
     env_2_type(CCL_KERNEL_1S_USE_COPY_OPS, enable_kernel_1s_copy_ops);
     env_2_type(CCL_KERNEL_1S_IPC_WA, enable_kernel_1s_ipc_wa);
-    env_2_type(CCL_KERNEL_PROFILE, enable_kernel_profile);
     env_2_type(CCL_KERNEL_CLOSE_FD_WA, enable_close_fd_wa);
 
     env_2_type(CCL_SYCL_OUTPUT_EVENT, enable_sycl_output_event);
@@ -357,6 +358,10 @@ void env_data::parse() {
                      ze_queue_index_offset);
     env_2_type(CCL_ZE_CLOSE_IPC_WA, ze_close_ipc_wa);
 #endif // CCL_ENABLE_SYCL
+
+#ifdef CCL_ENABLE_ITT
+    env_2_type(CCL_ITT_LEVEL, itt_level);
+#endif // CCL_ENABLE_ITT
 
     auto bf16_impl_types = ccl_bf16_get_impl_types();
     ccl_bf16_impl_type bf16_env_impl_type;
@@ -555,7 +560,6 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_KERNEL_1S_LEAD, ": ", kernel_1s_lead);
     LOG_INFO(CCL_KERNEL_1S_USE_COPY_OPS, ": ", enable_kernel_1s_copy_ops);
     LOG_INFO(CCL_KERNEL_1S_IPC_WA, ": ", enable_kernel_1s_ipc_wa);
-    LOG_INFO(CCL_KERNEL_PROFILE, ": ", enable_kernel_profile);
     LOG_INFO(CCL_KERNEL_CLOSE_FD_WA, ": ", enable_close_fd_wa);
 
     LOG_INFO(CCL_SYCL_OUTPUT_EVENT, ": ", enable_sycl_output_event);
@@ -577,6 +581,10 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_ZE_QUEUE_INDEX_OFFSET, ": ", ze_queue_index_offset);
     LOG_INFO(CCL_ZE_CLOSE_IPC_WA, ": ", ze_close_ipc_wa);
 #endif // CCL_ENABLE_SYCL
+
+#ifdef CCL_ENABLE_ITT
+    LOG_INFO(CCL_ITT_LEVEL, ": ", itt_level);
+#endif // CCL_ENABLE_ITT
 
     LOG_INFO(CCL_BF16, ": ", str_by_enum(bf16_impl_names, bf16_impl_type));
     LOG_INFO(CCL_FP16, ": ", str_by_enum(fp16_impl_names, fp16_impl_type));

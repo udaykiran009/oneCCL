@@ -139,9 +139,6 @@ ze_event_desc_t event_manager::get_default_event_desc() {
 ze_event_pool_desc_t event_manager::get_default_event_pool_desc() {
     ze_event_pool_desc_t desc{ default_event_pool_desc };
     desc.count = default_pool_size;
-    if (global_data::env().enable_kernel_profile) {
-        desc.flags |= ZE_EVENT_POOL_FLAG_KERNEL_TIMESTAMP;
-    }
     return desc;
 }
 

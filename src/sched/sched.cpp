@@ -111,23 +111,19 @@ void ccl_sched::complete() {
 
     sched_complete_hook();
 
+    // finish profile measurement only once per collective, so this is only
+    // done for master sched that completes the last
+    if (req->complete() && req == master_sched) {
+#ifdef CCL_ENABLE_ITT
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-    // we keep time measurements in our master sched, if this sched belongs to it
-    // and all the timestamps are ready, print the data.
-    // also check for stream parameter in order to skip non-kernel runs
-    if (ccl::global_data::env().enable_kernel_profile && master_sched && coll_param.stream) {
-        // here we reset the timer every time a corresponding sched is completed
-        // the last one will indicate the actual timestamp(previous ones won't be
-        // printed as not all the measurements are set by that time)
-        master_sched->get_kernel_timer().set_operation_end_time(
-            ccl::ze::calculate_global_time(coll_param.stream->get_ze_device()));
-
-        if (master_sched->print_kernel_timer())
-            master_sched->reset_kernel_timer();
-    }
+        // only applicable for device execution
+        if (coll_param.stream) {
+            ccl::profile::itt::task_end(ccl::profile::itt::task_type::completion);
+        }
 #endif // CCL_ENABLE_SYCL
-
-    req->complete();
+        ccl::profile::itt::task_end(ccl::profile::itt::task_type::operation);
+#endif // CCL_ENABLE_ITT
+    }
 }
 
 void ccl_sched::renew(bool need_update_id) {
