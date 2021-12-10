@@ -26,7 +26,6 @@ ze_onesided_reduce_entry::ze_onesided_reduce_entry(ccl_sched* sched,
           op(op),
           root(root),
           buf_size_bytes(dtype.size() * cnt),
-          is_initialized(false),
           empty_kernel_event(nullptr),
           empty_kernel(nullptr),
           empty_kernel_name("empty_kernel") {}

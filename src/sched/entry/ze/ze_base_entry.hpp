@@ -9,13 +9,6 @@
 
 using namespace ccl::ze;
 
-struct cmd_primitives {
-    ze_command_queue_handle_t queue{};
-    ze_command_queue_desc_t queue_desc{ default_cmd_queue_desc };
-    ze_command_list_handle_t list{};
-    ze_command_list_desc_t list_desc{ default_cmd_list_desc };
-};
-
 class ze_base_entry : public sched_entry {
 public:
     ze_base_entry() = delete;
