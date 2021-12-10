@@ -46,10 +46,6 @@ bool ccl_algorithm_selector_helper<ccl_coll_allgatherv_algo>::can_use(
              ccl::global_data::env().atl_transport == ccl_atl_mpi) {
         can_use = false;
     }
-    else if (algo == ccl_coll_allgatherv_direct &&
-             ccl::global_data::env().atl_transport == ccl_atl_ofi) {
-        can_use = false;
-    }
 
     return can_use;
 }

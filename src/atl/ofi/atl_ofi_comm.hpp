@@ -72,9 +72,7 @@ public:
                             void* recv_buf,
                             const int* recv_lens,
                             const int* offsets,
-                            atl_req_t* req) override {
-        return ATL_STATUS_UNSUPPORTED;
-    }
+                            atl_req_t* req) override;
 
     atl_status_t allreduce(size_t ep_idx,
                            const void* send_buf,
@@ -224,5 +222,4 @@ private:
     atl_ofi_comm(atl_ofi_comm* parent, int color);
     atl_status_t init_transport(bool is_new);
     using rank_info_t = std::tuple<int, int, size_t>;
-    void rank_info_exchange(std::vector<rank_info_t>& ranks_info, rank_info_t rank_info);
 };

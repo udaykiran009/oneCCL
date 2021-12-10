@@ -139,7 +139,21 @@ atl_ofi_comm::atl_ofi_comm(atl_ofi_comm* parent, int color) {
 
     std::vector<rank_info_t> ranks_info(parent_size);
     rank_info_t rank_info{ color, parent_rank, coord.hostname_hash };
-    parent->rank_info_exchange(ranks_info, rank_info);
+    std::vector<int> recv_lens(parent_size, sizeof(rank_info));
+    std::vector<int> offsets(parent_size);
+    offsets[0] = 0;
+    for (size_t i = 1; i < offsets.size(); i++) {
+        offsets[i] = offsets[i - 1] + recv_lens[i];
+    }
+    atl_req req;
+
+    parent->allgatherv(0 /* ep_idx */,
+                       &rank_info,
+                       sizeof(rank_info),
+                       ranks_info.data(),
+                       recv_lens.data(),
+                       offsets.data(),
+                       &req);
 
     size = 0;
     for (auto& it : ranks_info) {
@@ -164,32 +178,42 @@ atl_ofi_comm::atl_ofi_comm(atl_ofi_comm* parent, int color) {
     CCL_THROW_IF_NOT(init_transport(false) == ATL_STATUS_SUCCESS, "init transport failed");
 }
 
-void atl_ofi_comm::rank_info_exchange(std::vector<rank_info_t>& ranks_info, rank_info_t rank_info) {
+atl_status_t atl_ofi_comm::allgatherv(size_t ep_idx,
+                                      const void* send_buf,
+                                      size_t send_len,
+                                      void* recv_buf,
+                                      const int* recv_lens,
+                                      const int* offsets,
+                                      atl_req_t* req) {
     std::vector<atl_req> send_reqs(size - 1);
     std::vector<atl_req> recv_reqs(size - 1);
-    const size_t ep_idx = 0;
 
+    const int tag_coef = 1000;
     for (int i = 0, j = 0; i < size; i++) {
         if (i == rank)
             continue;
         atl_status_t ret;
         do {
-            ret =
-                send(ep_idx, &rank_info, sizeof(rank_info_t), i, rank * 1000 + i, &(send_reqs[j]));
+            /* TODO: rework tag initialization */
+            ret = send(ep_idx, send_buf, send_len, i, rank * tag_coef + i, &(send_reqs[j]));
             CCL_THROW_IF_NOT(ret != ATL_STATUS_FAILURE, "send failed");
             ccl_yield(ccl::global_data::env().yield_type);
         } while (ret == ATL_STATUS_AGAIN);
 
         do {
-            ret = recv(
-                ep_idx, &ranks_info[i], sizeof(rank_info_t), i, i * 1000 + rank, &(recv_reqs[j]));
+            ret = recv(ep_idx,
+                       (char*)recv_buf + offsets[i],
+                       recv_lens[i],
+                       i,
+                       i * tag_coef + rank,
+                       &(recv_reqs[j]));
             CCL_THROW_IF_NOT(ret != ATL_STATUS_FAILURE, "recv failed");
             ccl_yield(ccl::global_data::env().yield_type);
         } while (ret == ATL_STATUS_AGAIN);
         j++;
     }
 
-    ranks_info[rank] = rank_info;
+    memcpy((char*)recv_buf + offsets[rank], send_buf, recv_lens[rank]);
     bool is_completed = false;
     while (!is_completed) {
         is_completed = true;
@@ -207,4 +231,10 @@ void atl_ofi_comm::rank_info_exchange(std::vector<rank_info_t>& ranks_info, rank
             }
         }
     }
+    atl_ofi_req_t* ofi_req;
+
+    req->is_completed = false;
+    ofi_req = ((atl_ofi_req_t*)req->internal);
+    ofi_req->comp_state = ATL_OFI_COMP_COMPLETED;
+    return ATL_STATUS_SUCCESS;
 }
