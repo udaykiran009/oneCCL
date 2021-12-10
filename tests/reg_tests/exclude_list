@@ -17,3 +17,5 @@ multi_level_algos platform=ats transport=*
 allreduce_bidir_algo platform=ats transport=*
 # MLSL-1212
 opencl platform=* transport=*
+# TODO: enable since agama-ci-prerelease-281
+zebin platform=ats transport=*

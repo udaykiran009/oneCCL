@@ -1,6 +1,5 @@
-#include "topo_manager.hpp"
-
 #include "common/global/global.hpp"
+#include "common/topology/topo_manager.hpp"
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 #include "common/utils/sycl_utils.hpp"
@@ -9,20 +8,33 @@
 
 namespace ccl {
 
+rank_topo_info::rank_topo_info() : rank(ccl_comm::invalid_rank) {}
+
+constexpr int topo_manager::invalid_color;
+
 void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
                         std::shared_ptr<ccl::device> device_ptr,
                         std::shared_ptr<ccl::context> context_ptr) {
     int rank = atl_comm->get_rank();
     int size = atl_comm->get_size();
 
-    intra_colors.resize(size, invalid_color);
-    inter_colors.resize(size, invalid_color);
+    intra_colors.resize(size, topo_manager::invalid_color);
+    inter_colors.resize(size, topo_manager::invalid_color);
 
     std::vector<char> all_hostnames(max_hostname_len * size);
     char my_hostname[max_hostname_len] = { 0 };
     gethostname(my_hostname, max_hostname_len - 1);
 
     LOG_DEBUG("rank: ", rank, ", size: ", size, "hostname: ", my_hostname);
+
+    /* TODO: tmp wa before addition of atl_allgather */
+    int is_mpi_inited = 0;
+    MPI_Initialized(&is_mpi_inited);
+    if (!is_mpi_inited) {
+        host_idx = 0;
+        ccl::global_data::env().topo_color = topo_color_mode::fixed;
+        return;
+    }
 
     MPI_Allgather(my_hostname,
                   max_hostname_len,
@@ -90,7 +102,7 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
     // create groups with its unique color
     for (int i = 0; i < topo_info_size; i++) {
         // skip the marked rank
-        if (intra_colors[i] != invalid_color)
+        if (intra_colors[i] != topo_manager::invalid_color)
             continue;
         intra_colors[i] = i; // create new group with color
         for (int j = i + 1; j <= topo_info_size; j++) {
@@ -142,22 +154,22 @@ int topo_manager::get_inter_card_color(int rank) {
 }
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
-bool topo_manager::is_same_pci_addr(zes_pci_address_t addr, zes_pci_address_t other_addr) {
+bool topo_manager::is_same_pci_addr(zes_pci_address_t addr1, zes_pci_address_t addr2) {
     bool result = true;
-    if (!(addr.domain == other_addr.domain && addr.bus == other_addr.bus &&
-          addr.device == other_addr.device && addr.function == other_addr.function)) {
+    if (!(addr1.domain == addr2.domain && addr1.bus == addr2.bus && addr1.device == addr2.device &&
+          addr1.function == addr2.function)) {
         result = false;
         LOG_DEBUG("pci addresses are not the same:"
-                  "pci_addr: ",
-                  addr.domain,
-                  addr.bus,
-                  addr.device,
-                  addr.function,
-                  "\nother_pci_addr: ",
-                  other_addr.domain,
-                  other_addr.bus,
-                  other_addr.device,
-                  other_addr.function);
+                  "pci_addr_1: ",
+                  addr1.domain,
+                  addr1.bus,
+                  addr1.device,
+                  addr1.function,
+                  "\npci_addr_2: ",
+                  addr2.domain,
+                  addr2.bus,
+                  addr2.device,
+                  addr2.function);
     }
 
     return result;

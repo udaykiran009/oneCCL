@@ -13,7 +13,6 @@ get_bench ${SCRIPT_DIR} ${TEST_LOG}
 
 cd ${SCRIPT_DIR}
 
-export CCL_LOG_LEVEL=info
 export CCL_ATL_TRANSPORT=ofi
 
 proc_counts="2 4"

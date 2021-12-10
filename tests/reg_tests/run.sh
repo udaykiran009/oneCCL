@@ -92,6 +92,7 @@ set_default_values() {
 
     export I_MPI_JOB_TIMEOUT=180
     export CCL_YIELD=sched_yield
+    export CCL_LOG_LEVEL=info
 }
 
 parse_arguments() {

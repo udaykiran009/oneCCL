@@ -17,15 +17,13 @@ void sched_timer::start() noexcept {
 }
 
 void sched_timer::stop() {
-    auto stop_time = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::micro> time_span = stop_time - start_time;
-    time_usec = time_span.count();
+    time_usec = get_elapsed_usec();
 }
 
 std::string sched_timer::str() const {
     std::stringstream ss;
     ss.precision(2);
-    ss << std::fixed << get_time();
+    ss << std::fixed << time_usec;
     return ss.str();
 }
 
@@ -37,8 +35,10 @@ void sched_timer::reset() noexcept {
     time_usec = 0;
 }
 
-long double sched_timer::get_time() const noexcept {
-    return time_usec;
+long double sched_timer::get_elapsed_usec() const noexcept {
+    auto current_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::micro> time_span = current_time - start_time;
+    return time_span.count();
 }
 
 #if defined(CCL_ENABLE_ITT)

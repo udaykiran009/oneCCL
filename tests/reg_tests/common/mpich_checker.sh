@@ -18,7 +18,6 @@ cd ${SCRIPT_DIR}
 export CCL_ATL_TRANSPORT=mpi
 
 # 1. check mpi lib type
-export CCL_LOG_LEVEL=info
 mpiexec -l -n 2 -ppn 1 ${SCRIPT_DIR}/benchmark > ${LOG} 2>&1
 rc=$?
 if [ ${rc} -ne 0 ]

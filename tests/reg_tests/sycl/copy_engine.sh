@@ -14,8 +14,6 @@ check_ccl
 copy_engines="auto main link"
 single_list_modes="1 0"
 
-export CCL_LOG_LEVEL=info
-
 for copy_engine in ${copy_engines}
 do
     for single_list_mode in ${single_list_modes}

@@ -18,11 +18,11 @@ public:
     void print(std::string title = {}) const;
     void reset() noexcept;
 
+    long double get_elapsed_usec() const noexcept;
+
 private:
     long double time_usec;
     std::chrono::high_resolution_clock::time_point start_time{};
-
-    long double get_time() const noexcept;
 };
 
 #ifdef CCL_ENABLE_ITT

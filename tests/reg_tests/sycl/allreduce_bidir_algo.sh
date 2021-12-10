@@ -13,7 +13,6 @@ get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 cd ${SCRIPT_DIR}
 
-export CCL_LOG_LEVEL=info
 export CCL_ZE_BIDIR_ALGO=1
 
 bench_options="-d all -b sycl -w 4 -i 8 -c all -l allreduce -t 2097152"

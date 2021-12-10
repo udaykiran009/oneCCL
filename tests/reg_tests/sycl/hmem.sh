@@ -32,7 +32,6 @@ check_hmem_log() {
     fi
 }
 
-export CCL_LOG_LEVEL=info
 export CCL_USE_HMEM=1
 export FI_PROVIDER=tcp
 

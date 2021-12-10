@@ -17,8 +17,6 @@ transports="ofi mpi"
 # TODO: add topo algo
 algos="multi_bcast flat"
 
-export CCL_LOG_LEVEL=info
-
 for proc_count in ${proc_counts}
 do
     for inplace_mode in ${inplace_modes}

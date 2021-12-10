@@ -13,8 +13,6 @@ get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 cd ${SCRIPT_DIR}
 
-export CCL_LOG_LEVEL=info
-
 export CCL_ATL_SYNC_COLL=1
 export CCL_ATL_TRANSPORT=mpi
 

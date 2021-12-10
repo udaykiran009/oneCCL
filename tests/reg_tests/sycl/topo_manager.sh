@@ -13,8 +13,6 @@ get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 cd ${SCRIPT_DIR}
 
-export CCL_LOG_LEVEL=info
-
 algos="ring topo"
 topo_color_modes="ze fixed"
 proc_counts="2 4"

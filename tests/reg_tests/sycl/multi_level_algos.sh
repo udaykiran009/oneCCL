@@ -13,7 +13,6 @@ get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 cd ${SCRIPT_DIR}
 
-export CCL_LOG_LEVEL=info
 export CCL_ALLGATHERV=topo
 export CCL_ALLREDUCE=topo
 export CCL_REDUCE=topo
