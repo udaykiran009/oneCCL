@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# checked build on nnlmpibdw05
+# last built on nnlmpisnb13
+# it has old binutils 2.25 which prevents
+# any incompatibility issues
 
 REPO=https://github.com/intel/ittapi.git
 
