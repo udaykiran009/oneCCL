@@ -206,7 +206,6 @@ void ze_handle_exchange_entry::update() {
             int poll_ret = poll(&poll_fds[0], poll_fds.size(), timeout_ms);
 
             if (poll_ret == poll_expire_err_code) {
-                LOG_DEBUG("poll: timeout is expired");
                 return;
             }
             else if (poll_ret == POLL_ERR) {
