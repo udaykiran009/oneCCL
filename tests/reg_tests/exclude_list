@@ -11,6 +11,7 @@ pkgconfig_support_checker platform=* transport=mpich
 allgatherv_vector platform=gen9 transport=*
 allreduce_events platform=gen9 transport=*
 allreduce_events_inorder platform=gen9 transport=*
+sub_sub_device platform=gen9 transport=*
 # MLSL-1203
 multi_comms platform=* transport=*
 multi_level_algos platform=ats transport=*
