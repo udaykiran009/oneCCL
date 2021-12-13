@@ -16,7 +16,7 @@ tests="allgatherv allreduce alltoallv"
 tests+=" broadcast custom_allreduce external_kvs"
 tests+=" priority_allreduce reduce reduce_scatter unordered_allreduce"
 
-proc_counts="2 4"
+proc_counts="4"
 worker_counts="1 2"
 transports="ofi mpi"
 ofi_provs="tcp"
@@ -38,6 +38,12 @@ do
                         then
                             continue
                         fi
+                    fi
+
+                    if [[ ${test} = "external_kvs" ]] &&
+                        [[ ${worker_count} = "2" ]]
+                    then
+                        continue
                     fi
 
                     cmd="CCL_WORKER_COUNT=${worker_count}"

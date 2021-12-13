@@ -13,12 +13,12 @@ get_bench ${SCRIPT_DIR} ${TEST_LOG}
 
 cd ${SCRIPT_DIR}
 
-worker_counts="1 2 4 8"
+worker_counts="1 4 8"
 proc_counts="2"
 transports="ofi mpi"
 ofi_provs="tcp verbs"
 
-bench_options="-c all -b host -t 10000000"
+bench_options="-c all -b host -t 2097152"
 
 export FI_VERBS_DEVICE_NAME=hfi
 export I_MPI_PIN_PROCESSOR_LIST=1

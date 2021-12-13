@@ -26,7 +26,7 @@ proc_counts="2 4 8"
 colls="allgatherv allreduce reduce"
 single_list_modes="0 1"
 
-bench_options="-w 4 -i 8 -c all -b sycl -t 10000000"
+bench_options="-w 4 -i 8 -c all -b sycl -t 2097152"
 
 for transport in ${transports}
 do

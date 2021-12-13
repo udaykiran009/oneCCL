@@ -34,6 +34,7 @@ check_hmem_log() {
 
 export CCL_USE_HMEM=1
 export FI_PROVIDER=tcp
+export I_MPI_JOB_TIMEOUT=120
 
 worker_counts="1"
 

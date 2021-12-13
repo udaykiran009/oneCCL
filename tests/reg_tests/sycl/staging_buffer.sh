@@ -20,13 +20,7 @@ export FI_PROVIDER=tcp
 transports="mpi ofi"
 proc_counts="2"
 worker_counts="2"
-
 staging_buffers="regular usm"
-if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]]
-then
-    # TODO: debug on ATS and fill ticket
-    staging_buffers="usm"
-fi
 
 base_pattern="1,2,4,7,8,16,17,32,64,128,133,256,1077,16384,16387"
 full_pattern="${base_pattern},${base_pattern},${base_pattern}"

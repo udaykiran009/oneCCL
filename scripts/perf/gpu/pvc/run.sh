@@ -291,10 +291,6 @@ run_bench() {
     base_env+=" CCL_LOG_LEVEL=info I_MPI_DEBUG=12"
     base_env+=" CCL_MNIC=local CCL_MNIC_COUNT=4"
     base_env+=" EngineInstancedSubDevices=0"
-
-    # https://jira.devtools.intel.com/browse/XDEPS-2195
-    base_env+=" CCL_STAGING_BUFFER=regular"
-
     base_env+=" I_MPI_PIN_PROCESSOR_LIST=1-6,56-61 CCL_WORKER_AFFINITY=7-12,62-67"
     base_env+=" I_MPI_FABRICS=shm:ofi CCL_BARRIER=direct CCL_ATL_SYNC_COLL=1"
 

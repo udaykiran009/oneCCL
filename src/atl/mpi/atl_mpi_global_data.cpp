@@ -561,6 +561,10 @@ atl_status_t atl_mpi_global_data::set_mpich_env(const atl_attr_t& attr) {
 #endif // CCL_ENABLE_SYCL
     setenv("MPIR_CVAR_ENABLE_GPU", (enable_gpu ? "1" : "0"), 0);
 
+    if (enable_gpu) {
+        setenv("MPIR_CVAR_CH4_IPC_ZE_SHAREABLE_HANDLE", "pidfd", 0);
+    }
+
     auto& env = ccl::global_data::env();
     if (env.log_level >= ccl_log_level::debug) {
         setenv("MPIR_CVAR_CH4_RUNTIME_CONF_DEBUG", "1", 0);

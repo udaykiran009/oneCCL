@@ -16,11 +16,11 @@ cd ${SCRIPT_DIR}
 export CCL_ATL_TRANSPORT=ofi
 export CCL_ALLREDUCE=nreduce
 
-proc_counts="2 7 8"
+proc_counts="2 8"
 inplace_modes="0 1"
 buffering_modes="0 1"
-segment_sizes="16384 262144 2097152"
-bench_options="-w 4 -i 8 -c all -b host -t 10000000"
+segment_sizes="16384 262144"
+bench_options="-w 1 -i 4 -c all -b host -t 2000000"
 
 for proc_count in ${proc_counts}
 do

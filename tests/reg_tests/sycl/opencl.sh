@@ -19,7 +19,7 @@ transports="mpi ofi"
 proc_counts="2 4"
 worker_counts="1 2"
 cache_modes="1"
-bench_options="-n 2 -w 2 -i 8 -c all -l all -d int32,float32 -b sycl -t 1000000"
+bench_options="-n 2 -w 2 -i 8 -c all -l all -d int32,float32 -b sycl -t 2097152"
 
 for transport in ${transports}
 do

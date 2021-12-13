@@ -99,7 +99,7 @@ env_data::env_data()
 #endif // CCL_ENABLE_SYCL
           enable_buffer_cache(1),
           enable_strict_order(0),
-          staging_buffer(ccl_staging_usm),
+          staging_buffer(ccl_staging_regular),
           enable_op_sync(0),
 
           chunk_count(1),

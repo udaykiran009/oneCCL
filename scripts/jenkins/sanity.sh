@@ -299,7 +299,6 @@ function set_ats_environment()
     CCL_ONEAPI_DIR="/home/sys_ctlab/oneapi"
     export BUILD_COMPILER_TYPE="dpcpp"
     export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
-    #export CCL_STAGING_BUFFER=regular
 
     if [ -z ${CCL_ROOT} ]
     then

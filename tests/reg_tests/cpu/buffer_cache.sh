@@ -17,7 +17,7 @@ export CCL_ATL_TRANSPORT=ofi
 
 proc_counts="2 4"
 buffer_cache_modes="0 1"
-bench_options="-w 4 -i 8 -l all -c all -b host -t 1000000"
+bench_options="-w 4 -i 8 -l all -c all -b host -t 1048576"
 
 for proc_count in ${proc_counts}
 do

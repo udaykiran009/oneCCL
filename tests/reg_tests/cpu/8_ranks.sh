@@ -17,7 +17,7 @@ proc_counts="4 8"
 transports="ofi mpi"
 ofi_provs="tcp psm3"
 
-bench_options="-c all -b host -t 10000000"
+bench_options="-c all -b host -t 2097152"
 
 for proc_count in ${proc_counts}
 do
