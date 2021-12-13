@@ -1,6 +1,8 @@
 #ifdef CCL_ENABLE_MPI
 
 #include "atl/mpi/atl_mpi_comm.hpp"
+#include "atl/util/pm/pmi_resizable_rt/pmi_resizable_simple.h"
+#include "atl/util/pm/pmi_resizable_rt/pmi_resizable_simple_internal.h"
 #include "exec/exec.hpp"
 
 std::atomic<size_t> atl_mpi_comm::comm_count{ 0 };
@@ -12,13 +14,14 @@ atl_mpi_comm::~atl_mpi_comm() {
     tag.reset();
     comm_count--;
     if (comm_count.load() == 0) {
+        transport->finalize(rank);
         delete transport;
         transport = nullptr;
     }
 }
 
 atl_mpi_comm::atl_mpi_comm() {
-    init_transport(true);
+    init_transport(true /* new communicator */);
 }
 
 atl_mpi_comm::atl_mpi_comm(std::shared_ptr<ikvs_wrapper> k) : atl_mpi_comm() {
@@ -26,20 +29,17 @@ atl_mpi_comm::atl_mpi_comm(std::shared_ptr<ikvs_wrapper> k) : atl_mpi_comm() {
 }
 
 atl_mpi_comm::atl_mpi_comm(int comm_size,
-                           const std::vector<int>& local_ranks,
-                           std::shared_ptr<ikvs_wrapper> k)
-        : atl_mpi_comm() {
-    (void)comm_size;
-    (void)local_ranks;
-    (void)k;
+                           const std::vector<int>& comm_ranks,
+                           std::shared_ptr<ikvs_wrapper> k) {
+    std::shared_ptr<internal_kvs> kvs;
+    if ((kvs = std::dynamic_pointer_cast<internal_kvs>(k)) != nullptr) {
+        pmi = std::shared_ptr<ipmi>(new pmi_resizable_simple_internal(comm_size, comm_ranks, kvs));
+    }
+    else {
+        pmi = std::shared_ptr<ipmi>(new pmi_resizable_simple(comm_size, comm_ranks, k));
+    }
 
-    int global_mpi_size = 0;
-    MPI_Comm_size(MPI_COMM_WORLD, &global_mpi_size);
-    CCL_THROW_IF_NOT(comm_size == global_mpi_size,
-                     "unexpected comm_size: ",
-                     comm_size,
-                     ", expected: ",
-                     global_mpi_size);
+    init_transport(true /* new communicator */, comm_size, &comm_ranks);
 }
 
 atl_mpi_comm::atl_mpi_comm(std::vector<atl_mpi_ep_t>& parent_eps,
@@ -49,11 +49,11 @@ atl_mpi_comm::atl_mpi_comm(std::vector<atl_mpi_ep_t>& parent_eps,
     this->parent_rank = parent_rank;
     this->parent_size = parent_size;
 
-    transport->comm_split(parent_eps, eps, color);
+    transport->comm_split(parent_eps, eps, color, parent_eps[0].coord->local_idx);
     transport->coord_update(eps[0].mpi_comm, coord);
     rank = coord.global_idx;
     size = coord.global_count;
-    init_transport(false);
+    init_transport(false /* copy of communicator */);
     rank2rank_map.resize(size);
     MPI_Allgather(&parent_rank, 1, MPI_INT, rank2rank_map.data(), 1, MPI_INT, eps[0].mpi_comm);
 }
@@ -71,11 +71,18 @@ std::shared_ptr<atl_base_comm> atl_mpi_comm::comm_split(int color) {
     return static_cast<std::shared_ptr<atl_mpi_comm>>(comm);
 }
 
-void atl_mpi_comm::init_transport(bool is_new) {
+atl_status_t atl_mpi_comm::init_transport(bool is_new,
+                                          int comm_size,
+                                          const std::vector<int>* comm_ranks) {
     LOG_DEBUG("init ATL, requested ep_count ", attr.in.ep_count);
     if (is_new) {
+        MPI_Comm global_comm = MPI_COMM_WORLD;
         static std::mutex memory_mutex;
         {
+            if (pmi) {
+                ATL_CHECK_STATUS(pmi->pmrt_init(), "pmi init failed");
+                global_comm = MPI_COMM_NULL;
+            }
             std::lock_guard<std::mutex> lock(memory_mutex);
             if (!transport) {
                 transport = new atl_mpi();
@@ -84,17 +91,21 @@ void atl_mpi_comm::init_transport(bool is_new) {
                 CCL_THROW_IF_NOT(
                     transport->init(nullptr, nullptr, &attr, nullptr, pmi) == ATL_STATUS_SUCCESS,
                     "failed to initialize ATL");
-
-                int mpi_rank;
-                MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-                if (mpi_rank == 0) {
-                    print_atl_attrs();
-                }
+            }
+            if (global_comm == MPI_COMM_NULL) {
+                ATL_CHECK_STATUS(transport->comm_create(comm_size, *comm_ranks, pmi, &global_comm),
+                                 "comm_create error");
+            }
+            int mpi_rank;
+            MPI_Comm_rank(global_comm, &mpi_rank);
+            if (mpi_rank == 0) {
+                transport->printf_info();
+                print_atl_attrs();
             }
         }
 
-        transport->ep_init(eps);
-        transport->coord_update(MPI_COMM_WORLD, coord);
+        transport->coord_update(global_comm, coord);
+        transport->ep_init(eps, global_comm, coord.local_idx);
         parent_rank = rank = coord.global_idx;
         parent_size = size = coord.global_count;
         rank2rank_map.resize(size);
@@ -113,6 +124,7 @@ void atl_mpi_comm::init_transport(bool is_new) {
     comm_count++;
 
     executor_update();
+    return ATL_STATUS_SUCCESS;
 }
 std::vector<int> atl_mpi_comm::get_rank2rank_map() {
     return rank2rank_map;

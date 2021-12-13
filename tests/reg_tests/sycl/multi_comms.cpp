@@ -9,6 +9,8 @@ int main(int argc, char* argv[]) {
     int size = 0;
     int rank = 0;
     int root = 0;
+    std::string direct = "direct";
+    std::string reverse = "reverse";
 
     int fail_counter = 0;
 
@@ -30,8 +32,30 @@ int main(int argc, char* argv[]) {
 
     std::vector<ccl::shared_ptr_class<ccl::kvs>> kvses;
     std::vector<ccl::communicator> comms;
+    std::vector<int> comm_sizes(size);
+    if (argc < 2) {
+        cout << "Choose mode: direct or reverse" << std::endl;
+        cout << "Exampe: mpirun -n 2 ./multi_comms reverse" << std::endl;
+        return 1;
+    }
+    if (!direct.compare(argv[1])) {
+        for (int i = 0; i < size; i++) {
+            comm_sizes[i] = i + 1;
+        }
+    }
+    else if (!reverse.compare(argv[1])) {
+        for (int i = 0; i < size; i++) {
+            comm_sizes[i] = size - i;
+        }
+    }
+    else {
+        cout << "Wrong mode:" << argv[1] << std::endl;
+        cout << "Choose mode: direct or reverse" << std::endl;
+        cout << "Exampe: mpirun -n 2 ./multi_comms reverse" << std::endl;
+        return 1;
+    }
 
-    for (int comm_size = size; comm_size >= 1; comm_size--) {
+    for (int comm_size : comm_sizes) {
         cout << "check comm_size: " << comm_size << "\n";
 
         /* create kvs */

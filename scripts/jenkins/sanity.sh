@@ -777,7 +777,7 @@ function run_functional_tests()
     set_functional_tests_scope
 
     ppns="1 2"
-    allgatherv_algos="naive flat ring direct"
+    allgatherv_algos="naive flat ring"
     allreduce_algos="rabenseifner nreduce ring double_tree recursive_doubling"
     alltoall_algos="naive scatter"
     alltoallv_algos=${alltoall_algos}
@@ -787,6 +787,7 @@ function run_functional_tests()
 
     if [ ${runtime} == "mpi_adjust" ]
     then
+        allgatherv_algos="${allgatherv_algos} direct"
         allreduce_algos="${allreduce_algos} direct"
         alltoall_algos="${alltoall_algos} direct"
         alltoallv_algos=${alltoall_algos}

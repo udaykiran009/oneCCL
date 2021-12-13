@@ -286,16 +286,16 @@ void ccl_executor::set_local_coord(int proc_idx, int proc_count) {
         if (local_idx_env && local_count_env) {
             int local_idx = std::atoi(local_idx_env);
             int local_count = std::atoi(local_count_env);
-            CCL_THROW_IF_NOT(local_idx == local_proc_idx,
-                             "unexpected local_proc_idx ",
-                             local_proc_idx,
-                             ", expected ",
-                             local_idx);
-            CCL_THROW_IF_NOT(local_count == local_proc_count,
-                             "unexpected local_proc_count ",
-                             local_proc_count,
-                             ", expected ",
-                             local_count);
+
+            if (local_idx != local_proc_idx) {
+                LOG_DEBUG("unexpected local_proc_idx ", local_proc_idx, ", expected ", local_idx);
+            }
+            if (local_count != local_proc_count) {
+                LOG_DEBUG(
+                    "unexpected local_proc_count ", local_proc_count, ", expected ", local_count);
+            }
+            local_proc_idx = local_idx;
+            local_proc_count = local_count;
         }
         else {
             LOG_WARN(local_idx_env_name, " or ", local_count_env_name, " not found");

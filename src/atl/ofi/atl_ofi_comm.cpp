@@ -213,7 +213,9 @@ atl_status_t atl_ofi_comm::allgatherv(size_t ep_idx,
         j++;
     }
 
-    memcpy((char*)recv_buf + offsets[rank], send_buf, recv_lens[rank]);
+    if ((char*)recv_buf + offsets[rank] != send_buf) {
+        memcpy((char*)recv_buf + offsets[rank], send_buf, recv_lens[rank]);
+    }
     bool is_completed = false;
     while (!is_completed) {
         is_completed = true;

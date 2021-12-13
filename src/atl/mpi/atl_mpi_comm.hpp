@@ -230,7 +230,9 @@ private:
     static atl_mpi* transport;
     static std::atomic<size_t> comm_count;
 
-    void init_transport(bool is_new);
+    atl_status_t init_transport(bool is_new,
+                                int comm_size = 0,
+                                const std::vector<int>* comm_ranks = nullptr);
 };
 
 #endif //CCL_ENABLE_MPI

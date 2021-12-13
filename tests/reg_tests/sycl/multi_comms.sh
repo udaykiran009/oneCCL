@@ -11,21 +11,31 @@ source ${ROOT_DIR}/utils.sh
 check_impi
 check_ccl
 
-export CCL_ATL_TRANSPORT=ofi
+#TODO: uncoment after fix MLSL-1193 (OFI) and MLSL-1241 (MPI)
+#comm_size_modes="direct reverse"
+comm_size_modes="reverse"
+transports="ofi mpi"
 
 algos="topo ring"
 
-for algo in ${algos}
+for comm_size_mode in ${comm_size_modes}
 do
-    export CCL_ALLREDUCE=${algo}
-    mpiexec -l -n 6 -ppn 6 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
-    rc=$?
-    if [ ${rc} -ne 0 ]
-    then
-        echo "Fail"
-        exit 1
-    fi
-    check_log ${TEST_LOG}
+    for transport in ${transports}
+    do
+        for algo in ${algos}
+        do
+            export CCL_ALLREDUCE=${algo}
+            export CCL_ATL_TRANSPORT=${transport}
+            mpiexec -l -n 6 -ppn 6 ${SCRIPT_DIR}/${BINFILE} ${comm_size_mode} > ${TEST_LOG} 2>&1
+            rc=$?
+            if [ ${rc} -ne 0 ]
+            then
+                echo "Fail"
+                exit 1
+            fi
+            check_log ${TEST_LOG}
+        done
+    done
 done
 
 rm ${BINFILE} ${TEST_LOG}

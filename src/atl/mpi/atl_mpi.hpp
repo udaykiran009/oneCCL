@@ -160,24 +160,25 @@ public:
 
     void comms_free(std::vector<atl_mpi_ep_t>& eps);
 
-    atl_status_t finalize();
+    atl_status_t finalize(int global_idx);
 
-    int get_rank() {
-        return global_coord.global_idx;
-    }
-    int get_size() {
-        return global_coord.global_count;
-    }
     bool is_inited() {
         return inited;
     }
 
+    atl_status_t comm_create(int comm_size,
+                             const std::vector<int>& comm_ranks,
+                             std::shared_ptr<ipmi> pmi,
+                             MPI_Comm* new_comm);
+    void printf_info();
+
     static void set_env(const atl_attr_t& attr);
     void coord_update(MPI_Comm base_comm, atl_proc_coord_t& coord);
-    atl_status_t ep_init(std::vector<atl_mpi_ep_t>& eps);
+    atl_status_t ep_init(std::vector<atl_mpi_ep_t>& eps, MPI_Comm global_comm, int local_idx);
     atl_status_t comm_split(const std::vector<atl_mpi_ep_t>& base_eps,
                             std::vector<atl_mpi_ep_t>& eps,
-                            size_t color);
+                            size_t color,
+                            int local_idx);
 
     static atl_mpi_env_info_t get_env_info(const char* key);
     static atl_mpi_comm_info_t get_comm_info(MPI_Comm comm, const char* key);
@@ -204,6 +205,5 @@ private:
     atl_progress_mode_t progress_mode;
     bool sync_coll;
     size_t ep_count;
-    atl_proc_coord_t global_coord;
 };
 #endif // CCL_ENABLE_MPI

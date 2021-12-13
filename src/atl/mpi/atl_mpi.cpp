@@ -1,7 +1,8 @@
 #ifdef CCL_ENABLE_MPI
 
-#include "atl_def.h"
-#include "atl_mpi.hpp"
+#include "atl/atl_def.h"
+#include "atl/mpi/atl_mpi.hpp"
+#include "atl/util/pm/pm_rt.h"
 
 #define MPI_BFLOAT16 \
     ({ \
@@ -19,7 +20,56 @@
 
 #define RET2ATL(ret) (ret != MPI_SUCCESS) ? ATL_STATUS_FAILURE : ATL_STATUS_SUCCESS
 
+#define ATL_MPI_BASE_PM_KEY      "atl-mpi"
+#define ATL_MPI_RANK_INFO_PM_KEY ATL_MPI_BASE_PM_KEY "-rank_info"
+
+#define ATL_MPI_RANK_STR_SIZE 8
+
 atl_mpi_global_data atl_mpi::global_data{};
+
+atl_status_t atl_mpi::comm_create(int comm_size,
+                                  const std::vector<int>& comm_ranks,
+                                  std::shared_ptr<ipmi> pmi,
+                                  MPI_Comm* new_comm) {
+    MPI_Group world_group, new_group;
+
+    MPI_Comm_group(MPI_COMM_WORLD, &world_group);
+
+    int my_mpi_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_mpi_rank);
+    std::string my_mpi_rank_str = std::to_string(my_mpi_rank);
+
+    int my_pmi_rank = pmi->get_rank();
+
+    std::vector<int> mpi_ranks(comm_size);
+    ATL_CHECK_STATUS(pmi->pmrt_kvs_put((char*)ATL_MPI_RANK_INFO_PM_KEY,
+                                       my_pmi_rank,
+                                       my_mpi_rank_str.c_str(),
+                                       ATL_MPI_RANK_STR_SIZE),
+                     "pmrt_kvs_put: error");
+
+    char returned_mpi_rank[ATL_MPI_RANK_STR_SIZE];
+    for (int i = 0; i < comm_size; ++i) {
+        ATL_CHECK_STATUS(
+            pmi->pmrt_kvs_get(
+                (char*)ATL_MPI_RANK_INFO_PM_KEY, i, returned_mpi_rank, ATL_MPI_RANK_STR_SIZE),
+            "pmrt_kvs_get: error");
+        mpi_ranks[i] = std::atoi(returned_mpi_rank);
+    }
+
+    MPI_Group_incl(world_group, comm_size, mpi_ranks.data(), &new_group);
+    int ret = MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, new_comm);
+    if (ret) {
+        LOG_ERROR("MPI_Comm_create_group error");
+        return ATL_STATUS_FAILURE;
+    }
+    if (*new_comm == MPI_COMM_NULL) {
+        LOG_ERROR("MPI_Comm_create_group error, new_comm == MPI_COMM_NULL");
+        return ATL_STATUS_FAILURE;
+    }
+
+    return ATL_STATUS_SUCCESS;
+}
 
 atl_status_t atl_mpi::init(int* argc,
                            char*** argv,
@@ -78,8 +128,6 @@ atl_status_t atl_mpi::init(int* argc,
     }
     global_data.ctx_count++;
 
-    coord_update(MPI_COMM_WORLD, global_coord);
-
     ep_count = attr->in.ep_count;
 
     char* progress_mode_env;
@@ -91,13 +139,6 @@ atl_status_t atl_mpi::init(int* argc,
         progress_mode = ATL_PROGRESS_CHECK;
     }
     sync_coll = attr->in.enable_sync_coll;
-
-    if (global_coord.global_idx == 0) {
-        global_data.print_log_info();
-        LOG_INFO("atl-mpi-ctx: ", (global_data.ctx_count - 1));
-        LOG_INFO("  progress_mode: ", progress_mode);
-        LOG_INFO("  sync_coll: ", sync_coll);
-    }
 
     MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_TAG_UB, &tag_ub_ptr, &is_tag_ub_set);
 
@@ -115,6 +156,13 @@ atl_status_t atl_mpi::init(int* argc,
 
 err_init:
     return ATL_STATUS_FAILURE;
+}
+
+void atl_mpi::printf_info() {
+    global_data.print_log_info();
+    LOG_INFO("atl-mpi-ctx: ", (global_data.ctx_count - 1));
+    LOG_INFO("  progress_mode: ", progress_mode);
+    LOG_INFO("  sync_coll: ", sync_coll);
 }
 
 void atl_mpi::coord_update(MPI_Comm base_comm, atl_proc_coord_t& coord) {
@@ -145,13 +193,13 @@ void atl_mpi::comms_free(std::vector<atl_mpi_ep_t>& eps) {
     }
 }
 
-atl_status_t atl_mpi::finalize() {
+atl_status_t atl_mpi::finalize(int global_idx) {
     is_finalized = true;
 
     int ret = MPI_SUCCESS;
 
     global_data.ctx_count--;
-    if (global_coord.global_idx == 0) {
+    if (global_idx == 0) {
         LOG_INFO("finalize atl-mpi ctx, remaining ctx_count ", global_data.ctx_count);
     }
 
@@ -169,13 +217,13 @@ atl_status_t atl_mpi::finalize() {
                 LOG_DEBUG("MPI_Init has been called externally, skip MPI_Finalize");
             }
 
-            if (global_coord.global_idx == 0) {
+            if (global_idx == 0) {
                 LOG_INFO("finalized last atl-mpi ctx");
             }
         }
     }
     else {
-        if ((global_data.ctx_count == 0) && (global_coord.global_idx == 0)) {
+        if ((global_data.ctx_count == 0) && (global_idx == 0)) {
             LOG_WARN("MPI_Finalize has been called before CCL finalization");
         }
     }
@@ -609,8 +657,10 @@ atl_status_t atl_mpi::check(atl_mpi_ep_t& ep, atl_req_t* req) {
 }
 
 atl_mpi::~atl_mpi() {
-    if (!is_finalized)
-        finalize();
+    if (!is_finalized) {
+        LOG_WARN("unexpected atl_mpi object delete without finalize")
+        finalize(0);
+    }
 }
 
 MPI_Datatype atl_mpi::atl2mpi_dtype(atl_datatype_t dtype) {
@@ -677,14 +727,14 @@ size_t atl_mpi::get_ep_idx(size_t ep_idx) {
     return mpi_ep_idx;
 }
 
-atl_status_t atl_mpi::ep_init(std::vector<atl_mpi_ep_t>& eps) {
+atl_status_t atl_mpi::ep_init(std::vector<atl_mpi_ep_t>& eps, MPI_Comm global_comm, int local_idx) {
     atl_mpi_ep_t base_ep;
-    base_ep.mpi_comm = MPI_COMM_WORLD;
-    base_ep.dummy_comm = MPI_COMM_WORLD;
+    base_ep.mpi_comm = global_comm;
+    base_ep.dummy_comm = global_comm;
     base_ep.idx = 0;
     base_ep.coord = nullptr;
     std::vector<atl_mpi_ep_t> base_eps(ep_count, base_ep);
-    return comm_split(base_eps, eps, 0);
+    return comm_split(base_eps, eps, 0, local_idx);
 }
 
 #ifdef ENABLE_DEBUG
@@ -727,7 +777,8 @@ void atl_mpi::set_env(const atl_attr_t& attr) {
 
 atl_status_t atl_mpi::comm_split(const std::vector<atl_mpi_ep_t>& base_eps,
                                  std::vector<atl_mpi_ep_t>& eps,
-                                 size_t color) {
+                                 size_t color,
+                                 int local_idx) {
     int ret = 0;
     atl_mpi_ep_t ep;
     for (size_t idx = 0; idx < ep_count; idx++) {
@@ -754,18 +805,14 @@ atl_status_t atl_mpi::comm_split(const std::vector<atl_mpi_ep_t>& base_eps,
             /* set NIC index */
             nic_idx = idx;
             if (global_data.mnic_offset == ATL_MNIC_OFFSET_LOCAL_PROC_IDX) {
-                nic_idx += global_coord.local_idx;
+                nic_idx += local_idx;
             }
             nic_idx %= global_data.mnic_count;
             snprintf(nic_idx_str, MPI_MAX_INFO_VAL, "%zu", nic_idx);
             MPI_Info_set(info, global_data.NIC_IDX_KEY, nic_idx_str);
 
-            LOG_DEBUG("select nic: ep_idx ",
-                      idx,
-                      ", local_proc_idx ",
-                      global_coord.local_idx,
-                      ", nic_idx ",
-                      nic_idx);
+            LOG_DEBUG(
+                "select nic: ep_idx ", idx, ", local_proc_idx ", local_idx, ", nic_idx ", nic_idx);
         }
 
         MPI_Comm_set_info(ep.mpi_comm, info);
