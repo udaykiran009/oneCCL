@@ -43,7 +43,6 @@ worker_counts="1"
 transports="mpi"
 
 send_proxy_modes="none regular"
-
 hmem_modes="0 1"
 single_list_modes="0 1"
 algos="topo rabenseifner direct"
@@ -55,8 +54,9 @@ colls="allreduce"
 proc_counts="2 4"
 if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]]
 then
-    # TODO: enable proc_counts="2 4" for ATS, IMPI-3210
-    proc_counts="2"
+    export FI_PROVIDER=psm3
+    # TODO: enable other algos after IMPI-3210
+    algos="topo"
 fi
 
 bench_options="-w 4 -i 8 -j off -c all -b sycl -t 2097152"
