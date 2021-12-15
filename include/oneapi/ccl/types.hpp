@@ -58,8 +58,6 @@ enum class datatype : int {
  */
 enum class cl_backend_type : int {
     empty_backend = 0x0,
-    dpcpp_sycl = 0x1,
-    l0 = 0x2,
     dpcpp_sycl_l0 = 0x3,
 };
 

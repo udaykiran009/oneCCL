@@ -6,7 +6,6 @@
 #include "common/utils/enums.hpp"
 #include "common/utils/tuple.hpp"
 #include "common/utils/sycl_utils.hpp"
-#include "oneapi/ccl/native_device_api/interop_utils.hpp"
 
 enum class copy_direction { undefined, h2h, d2h, h2d, d2d };
 std::string to_string(copy_direction val);

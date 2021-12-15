@@ -47,6 +47,11 @@ std::map<ccl_ze_copy_engine_mode, std::string> env_data::ze_copy_engine_names = 
     std::make_pair(ccl_ze_copy_engine_auto, "auto")
 };
 
+std::map<backend_mode, std::string> env_data::backend_names = {
+    std::make_pair(backend_mode::native, "native"),
+    std::make_pair(backend_mode::stub, "stub")
+};
+
 env_data::env_data()
         : was_printed(false),
 
@@ -117,6 +122,7 @@ env_data::env_data()
           alltoall_scatter_max_ops(CCL_ENV_SIZET_NOT_SPECIFIED),
 
           topo_color(topo_color_mode::fixed),
+          backend(backend_mode::native),
 
 #ifdef CCL_ENABLE_SYCL
           kernel_path(),
@@ -146,6 +152,8 @@ env_data::env_data()
           enable_ze_list_dump(0),
           ze_queue_index_offset(1),
           ze_close_ipc_wa(0),
+          ze_lib_path(),
+          ze_enable(1),
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ITT
@@ -292,6 +300,7 @@ void env_data::parse() {
     env_2_type(CCL_ALLTOALL_SCATTER_MAX_OPS, (size_t&)alltoall_scatter_max_ops);
 
     env_2_enum(CCL_TOPO_COLOR, topo_color_names, topo_color);
+    env_2_enum(CCL_BACKEND, backend_names, backend);
 
 #ifdef CCL_ENABLE_SYCL
     env_2_type(CCL_KERNEL_PATH, kernel_path);
@@ -356,6 +365,8 @@ void env_data::parse() {
                      " ",
                      ze_queue_index_offset);
     env_2_type(CCL_ZE_CLOSE_IPC_WA, ze_close_ipc_wa);
+    env_2_type(CCL_ZE_LIBRARY_PATH, ze_lib_path);
+    env_2_type(CCL_ZE_ENABLE, ze_enable);
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ITT
@@ -541,6 +552,7 @@ void env_data::print(int rank) {
                  : CCL_ENV_STR_NOT_SPECIFIED);
 
     LOG_INFO(CCL_TOPO_COLOR, ": ", str_by_enum(topo_color_names, topo_color));
+    LOG_INFO(CCL_BACKEND, ": ", str_by_enum(backend_names, backend));
 
 #ifdef CCL_ENABLE_SYCL
     LOG_INFO(
@@ -578,6 +590,10 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_ZE_LIST_DUMP, ": ", enable_ze_list_dump);
     LOG_INFO(CCL_ZE_QUEUE_INDEX_OFFSET, ": ", ze_queue_index_offset);
     LOG_INFO(CCL_ZE_CLOSE_IPC_WA, ": ", ze_close_ipc_wa);
+    LOG_INFO(CCL_ZE_LIBRARY_PATH,
+             ": ",
+             (!ze_lib_path.empty()) ? ze_lib_path : CCL_ENV_STR_NOT_SPECIFIED);
+    LOG_INFO(CCL_ZE_ENABLE, ": ", ze_enable);
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ITT

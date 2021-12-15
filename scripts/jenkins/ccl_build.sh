@@ -60,9 +60,9 @@ then
 )
 elif [ $compiler == "ccl_build_dpcpp_l0" ]
 then
-    export compute_backend="dpcpp_level_zero"
+    export compute_backend="dpcpp"
     run_in_fake_container /build/ccl/scripts/build.sh --conf --build-gpu $BUILD_OPTIONS
-    CheckCommandExitCode $? "build with dpcpp_level_zero compiler failed"
+    CheckCommandExitCode $? "build with dpcpp compiler failed"
     (cd ${WORKSPACE} && tar cfz ${ARTEFACT_DIR}/build_gpu_$build_type.tgz build_gpu)
 elif [ $compiler == "ccl_build_dpcpp" ]
 then

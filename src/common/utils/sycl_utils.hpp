@@ -2,7 +2,7 @@
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 
-#include <ze_api.h>
+#include "common/ze/ze_api_wrapper.hpp"
 #include <CL/sycl.hpp>
 #include <CL/sycl/backend/level_zero.hpp>
 

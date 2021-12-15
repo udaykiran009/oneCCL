@@ -4,7 +4,7 @@
 #include <string>
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-#include <ze_api.h>
+#include "common/ze/ze_api_wrapper.hpp"
 #endif
 
 namespace ccl {

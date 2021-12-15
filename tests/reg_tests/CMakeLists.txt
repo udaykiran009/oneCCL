@@ -45,6 +45,6 @@ endif()
 
 add_subdirectory(cpu)
 
-if ("${COMPUTE_BACKEND}" STREQUAL "dpcpp_level_zero")
+if ("${COMPUTE_BACKEND}" STREQUAL "dpcpp")
     add_subdirectory(sycl)
 endif()

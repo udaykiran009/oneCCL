@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ze_api.h>
+#include "common/ze/ze_api_wrapper.hpp"
 
 namespace ccl {
 namespace ze {

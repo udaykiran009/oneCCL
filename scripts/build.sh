@@ -155,7 +155,7 @@ print_help()
     echo_log "If you want to build separate CPU and GPU, "
     echo_log "recommended nodes for building CPU part is nnlmpibldl10, for GPU part - nnlmpibdw05-06"
     echo_log ""
-    echo_log "Please set compiler=gnu|intel|icx|dpcpp. Default compilers - icx (host build), dpcpp (dpcpp_level_zero build)"
+    echo_log "Please set compiler=gnu|intel|icx|dpcpp. Default compilers - icx (host build), dpcpp (dpcpp build)"
     echo_log ""
     echo_log "<options>:"
     echo_log "   ------------------------------------------------------------"
@@ -294,7 +294,7 @@ build()
 
     # TODO: check by dpcpp* mask
     # if [[ "${compute_backend}" == "dpcpp"* ]]
-    if [ "${compute_backend}" == "dpcpp_level_zero" ]
+    if [ "${compute_backend}" == "dpcpp" ]
     then
         BUILD_FOLDER="build_gpu"
         OFI_HMEM="1"
@@ -892,15 +892,15 @@ run_build_gpu()
     if [[ "${ENABLE_BUILD_GPU}" = "yes" ]]
     then
         echo_log_separator
-        echo_log "#\t\t\tBuilding dpcpp_level_zero..."
+        echo_log "#\t\t\tBuilding dpcpp..."
         echo_log_separator
         if [ -z "${compute_backend}" ]
         then
-            compute_backend="dpcpp_level_zero"
+            compute_backend="dpcpp"
         fi
         build
         echo_log_separator
-        echo_log "#\t\t\tBuilding dpcpp_level_zero... DONE"
+        echo_log "#\t\t\tBuilding dpcpp... DONE"
         echo_log_separator
     fi
 }

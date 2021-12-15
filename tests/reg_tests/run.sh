@@ -197,7 +197,7 @@ define_compiler() {
         fi
         if [ -z "${CXX_COMPILER}" ]; then
             CXX_COMPILER=dpcpp
-            COMPUTE_BACKEND="dpcpp_level_zero"
+            COMPUTE_BACKEND="dpcpp"
         fi
         ;;
     esac

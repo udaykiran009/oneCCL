@@ -7,7 +7,7 @@
 #include "sched/entry/ze/ze_primitives.hpp"
 
 #include <unordered_map>
-#include <ze_api.h>
+#include "common/ze/ze_api_wrapper.hpp"
 
 class ccl_comm;
 

@@ -8,7 +8,7 @@ set(CCL_INSTALL_TESTS "${CMAKE_CURRENT_SOURCE_DIR}")
 find_package(PkgConfig)
 
 set(PKG_CCL_LIB "ccl-cpu")
-if ("${COMPUTE_BACKEND}" STREQUAL "dpcpp_level_zero")
+if ("${COMPUTE_BACKEND}" STREQUAL "dpcpp")
     set(PKG_CCL_LIB "ccl-cpu_gpu_dpcpp")
 endif()
 

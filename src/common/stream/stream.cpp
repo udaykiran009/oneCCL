@@ -51,7 +51,7 @@ ccl_stream::ccl_stream(stream_type type,
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ZE
-    if (backend == ccl::utils::get_level_zero_backend()) {
+    if (backend == ccl::utils::get_level_zero_backend() && ccl::global_data::get().ze_data) {
         device = sycl::get_native<ccl::utils::get_level_zero_backend()>(stream.get_device());
         context = sycl::get_native<ccl::utils::get_level_zero_backend()>(stream.get_context());
         device_family = ccl::ze::get_device_family(device);

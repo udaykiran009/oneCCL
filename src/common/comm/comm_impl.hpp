@@ -2,7 +2,6 @@
 
 #include "common/comm/comm.hpp"
 
-#include "oneapi/ccl/native_device_api/interop_utils.hpp"
 #include "common/request/request.hpp"
 #include "common/event/impls/host_event.hpp"
 #include "common/event/impls/scoped_event.hpp"

@@ -79,7 +79,6 @@ set_run_env() {
     # SYCL
     export SYCL_PI_LEVEL_ZERO_BATCH_SIZE=1
     export SYCL_DEVICE_FILTER=level_zero
-    export ZE_ROOT=/usr/local
     export SYCL_PI_LEVEL_ZERO_TRACK_INDIRECT_ACCESS_MEMORY=1
 
     # conda
@@ -766,7 +765,7 @@ install_ccl() {
     mkdir build
     cd build
     cmake .. -DBUILD_FT=0 -DBUILD_EXAMPLES=0 \
-        -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_BACKEND=dpcpp_level_zero
+        -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_BACKEND=dpcpp
     CheckCommandExitCode $? "Configure CCL failed"
 
     make -j install

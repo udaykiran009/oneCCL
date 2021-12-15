@@ -2,30 +2,10 @@
 
 set (EXTENSIONS_SRC)
 
-if (CCL_ENABLE_SYCL)
-    list (APPEND EXTENSIONS_SRC
-        native_device_api/l0/utils.cpp
-        native_device_api/sycl/export.cpp
-        native_device_api/interop_utils.cpp
-        )
-endif(CCL_ENABLE_SYCL)
-
 if (CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
     list (APPEND EXTENSIONS_SRC
 
         ccl_cpp_utils.cpp
-
-        native_device_api/l0/base.cpp
-        native_device_api/l0/device.cpp
-        native_device_api/l0/context.cpp
-        native_device_api/l0/event_pool.cpp
-        native_device_api/l0/subdevice.cpp
-        native_device_api/l0/driver.cpp
-        native_device_api/l0/export.cpp
-        native_device_api/l0/platform.cpp
-        native_device_api/l0/utils.cpp
-        native_device_api/l0/primitives.cpp
-        native_device_api/interop_utils.cpp
 
         sched/entry/ze/allreduce/ze_a2a_allreduce_entry.cpp
         sched/entry/ze/allreduce/ze_onesided_allreduce_entry.cpp
@@ -46,6 +26,7 @@ if (CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
         sched/entry/ze/ze_reduce_local_entry.cpp
 
         common/global/ze_data.cpp
+        common/ze/ze_api_wrapper.cpp
 
         sched/ze/ze_event_manager.cpp
         sched/ze/ze_handle_manager.cpp
@@ -153,8 +134,7 @@ set(CCL_SRC
 
     hwloc/hwloc_wrapper.cpp
 
-    native_device_api/sycl_l0/export.cpp
-    native_device_api/empty/export.cpp
+    native_device_api/sycl/export.cpp
 
     parallelizer/parallelizer.cpp
 
@@ -240,11 +220,11 @@ if (${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUA
     endif()
 endif()
 
-
 list(APPEND SRC_INCLUDE_DIRS
      ${PROJECT_SOURCE_DIR}/include
      ${PROJECT_SOURCE_DIR}/src
      ${PROJECT_SOURCE_DIR}/src/atl
+     ${LEVEL_ZERO_INCLUDE_DIR}
      ${LIBFABRIC_INCLUDE_DIR}
      ${HWLOC_INCLUDE_DIR}
      ${ITT_INCLUDE_DIR})
@@ -255,7 +235,6 @@ list(APPEND SRC_LINK_LIBS
      dl
      pthread
      ${EXTERNAL_LIBS}
-     ${COMPUTE_BACKEND_TARGET_NAME}
      fabric
      ${HWLOC_LIB_DIR}/libhwloc.a
      ${ITT_LIB_DIR}/libittnotify.a)
@@ -280,7 +259,7 @@ set_target_properties(ccl-objects PROPERTIES POSITION_INDEPENDENT_CODE 1)
 target_include_directories(ccl-objects PRIVATE ${SRC_INCLUDE_DIRS})
 
 if (COMPUTE_BACKEND_TARGET_NAME)
-    target_include_directories(ccl-objects PRIVATE $<TARGET_PROPERTY:${COMPUTE_BACKEND_TARGET_NAME},INTERFACE_INCLUDE_DIRECTORIES>)
+    target_include_directories(ccl-objects PUBLIC ${INTERFACE_INCLUDE_DIRECTORIES})
 endif()
 
 # shared library
@@ -306,7 +285,6 @@ install(TARGETS ccl LIBRARY DESTINATION ${CCL_INSTALL_LIB})
 install(FILES
     "${PROJECT_SOURCE_DIR}/cmake/FindIntelSYCL.cmake"
     "${PROJECT_SOURCE_DIR}/cmake/FindIntelSYCL_level_zero.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Findlevel_zero.cmake"
     "${PROJECT_SOURCE_DIR}/cmake/FindNUMA.cmake"
     "${PROJECT_SOURCE_DIR}/cmake/FindOpenCL.cmake"
     "${PROJECT_SOURCE_DIR}/cmake/FindSYCL.cmake"

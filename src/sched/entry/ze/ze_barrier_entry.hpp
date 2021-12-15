@@ -2,7 +2,7 @@
 
 #include "sched/entry/factory/entry_factory.hpp"
 
-#include <ze_api.h>
+#include "common/ze/ze_api_wrapper.hpp"
 
 class ze_barrier_entry : public sched_entry {
 public:

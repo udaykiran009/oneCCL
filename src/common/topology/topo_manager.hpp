@@ -11,8 +11,7 @@
 #include <string>
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
-#include <ze_api.h>
-#include <zes_api.h> // for pci addr
+#include "common/ze/ze_api_wrapper.hpp"
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
 namespace ccl {

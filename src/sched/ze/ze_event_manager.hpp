@@ -1,7 +1,7 @@
 #pragma once
 
 #include <list>
-#include <ze_api.h>
+#include "common/ze/ze_api_wrapper.hpp"
 
 class ccl_stream;
 

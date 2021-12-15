@@ -1,4 +1,5 @@
 #include "common/global/global.hpp"
+#include "common/ze/ze_api_wrapper.hpp"
 
 namespace ccl {
 namespace ze {

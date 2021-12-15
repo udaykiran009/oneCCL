@@ -52,7 +52,17 @@ ccl::status global_data::init() {
     env_object.set_internal_env();
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
-    ze_data.reset(new ze::global_data_desc);
+    if (ccl::global_data::env().backend == backend_mode::native &&
+        ccl::global_data::env().ze_enable) {
+        try {
+            LOG_INFO("initializing level-zero api");
+            ze_api_init();
+            ze_data.reset(new ze::global_data_desc);
+        }
+        catch (...) {
+            LOG_INFO("could not initialize level-zero");
+        }
+    }
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
     init_resize_dependent_objects();

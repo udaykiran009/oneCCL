@@ -80,7 +80,7 @@ function get_bench() {
         if [ "${backend}" == "sycl" ]
         then
             build_dir="build_sycl"
-            cmake_str="-DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_BACKEND=dpcpp_level_zero"
+            cmake_str="-DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_BACKEND=dpcpp"
         fi
         mkdir -p ${build_dir}
         cd ${build_dir}

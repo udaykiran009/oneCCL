@@ -5,7 +5,8 @@
 #include <initializer_list>
 #include <string>
 #include <vector>
-#include <ze_api.h>
+
+#include "common/ze/ze_api_wrapper.hpp"
 
 namespace ccl {
 

@@ -96,6 +96,7 @@ constexpr const char* CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE = "CCL_ALLREDUCE_NREDUC
 constexpr const char* CCL_ALLTOALL_SCATTER_MAX_OPS = "CCL_ALLTOALL_SCATTER_MAX_OPS";
 
 constexpr const char* CCL_TOPO_COLOR = "CCL_TOPO_COLOR";
+constexpr const char* CCL_BACKEND = "CCL_BACKEND";
 
 constexpr const char* CCL_KERNEL_PATH = "CCL_KERNEL_PATH";
 constexpr const char* CCL_KERNEL_DEBUG = "CCL_KERNEL_DEBUG";
@@ -124,6 +125,8 @@ constexpr const char* CCL_ZE_QUEUE_INDEX_OFFSET = "CCL_ZE_QUEUE_INDEX_OFFSET";
 constexpr const char* CCL_ZE_CLOSE_IPC_WA = "CCL_ZE_CLOSE_IPC_WA";
 constexpr const char* CCL_ZE_SINGLE_LIST = "CCL_ZE_SINGLE_LIST";
 constexpr const char* CCL_ZE_DISABLE_FAMILY_CHECK = "CCL_ZE_DISABLE_FAMILY_CHECK";
+constexpr const char* CCL_ZE_LIBRARY_PATH = "CCL_ZE_LIBRARY_PATH";
+constexpr const char* CCL_ZE_ENABLE = "CCL_ZE_ENABLE";
 
 #ifdef CCL_ENABLE_ITT
 constexpr const char* CCL_ITT_LEVEL = "CCL_ITT_LEVEL";
@@ -150,6 +153,8 @@ enum ccl_ze_copy_engine_mode {
     ccl_ze_copy_engine_link,
     ccl_ze_copy_engine_auto
 };
+
+enum class backend_mode { native, stub };
 
 namespace ccl {
 
@@ -248,6 +253,7 @@ public:
     ssize_t alltoall_scatter_max_ops;
 
     topo_color_mode topo_color;
+    backend_mode backend;
 
 #ifdef CCL_ENABLE_SYCL
     std::string kernel_path;
@@ -277,6 +283,8 @@ public:
     int enable_ze_list_dump;
     int ze_queue_index_offset;
     int ze_close_ipc_wa;
+    std::string ze_lib_path;
+    int ze_enable;
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ITT
@@ -358,6 +366,7 @@ public:
     static std::map<ccl_atl_send_proxy, std::string> atl_send_proxy_names;
     static std::map<ccl_staging_buffer, std::string> staging_buffer_names;
     static std::map<ccl_ze_copy_engine_mode, std::string> ze_copy_engine_names;
+    static std::map<backend_mode, std::string> backend_names;
 
     int env_2_worker_affinity(int local_proc_idx, int local_proc_count);
     int env_2_worker_mem_affinity(int local_proc_count);

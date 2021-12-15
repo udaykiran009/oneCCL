@@ -424,7 +424,7 @@ function set_environment()
         BUILD_COMPILER_PATH=${SYCL_BUNDLE_ROOT}/bin
         C_COMPILER=${BUILD_COMPILER_PATH}/icx
         CXX_COMPILER=${BUILD_COMPILER_PATH}/dpcpp
-        COMPUTE_BACKEND=dpcpp_level_zero
+        COMPUTE_BACKEND=dpcpp
     else
         echo "ERROR: unsupported BUILD_COMPILER_TYPE"
         exit 1

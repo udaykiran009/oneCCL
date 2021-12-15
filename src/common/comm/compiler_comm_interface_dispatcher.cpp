@@ -40,6 +40,11 @@ communicator_interface_ptr communicator_interface_dispatcher::create_communicato
     device_t device,
     context_t context,
     shared_ptr_class<ikvs_wrapper> kvs) {
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
+    if (std::make_shared<ccl::device>(device)) {
+        CCL_THROW_IF_NOT(ccl::global_data::get().ze_data, "ze_data was not initialized");
+    }
+#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
     return communicator_interface_ptr(
         new ccl_comm(device, context, atl_comm_manager::create_comm(size, { rank }, kvs)));
 }

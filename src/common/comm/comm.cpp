@@ -43,7 +43,6 @@ void ccl_internal_comm::reset(int rank, int size) {
 }
 
 // ccl_comm
-
 void ccl_comm::init(ccl_comm_id_storage::comm_id&& id,
                     std::shared_ptr<atl_base_comm> atl_comm,
                     bool share_resources,
