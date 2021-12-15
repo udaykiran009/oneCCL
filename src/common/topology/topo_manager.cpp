@@ -26,23 +26,22 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
     gethostname(my_hostname, max_hostname_len - 1);
 
     LOG_DEBUG("rank: ", rank, ", size: ", size, "hostname: ", my_hostname);
-
-    /* TODO: tmp wa before addition of atl_allgather */
-    int is_mpi_inited = 0;
-    MPI_Initialized(&is_mpi_inited);
-    if (!is_mpi_inited) {
-        host_idx = 0;
-        ccl::global_data::env().topo_color = topo_color_mode::fixed;
-        return;
+    int recv_byte = max_hostname_len;
+    std::vector<int> recv_bytes(size, recv_byte);
+    std::vector<int> offsets(size, 0);
+    for (int i = 1; i < size; i++) {
+        offsets[i] = offsets[i - 1] + recv_bytes[i - 1];
     }
 
-    MPI_Allgather(my_hostname,
-                  max_hostname_len,
-                  MPI_CHAR,
-                  all_hostnames.data(),
-                  max_hostname_len,
-                  MPI_CHAR,
-                  MPI_COMM_WORLD);
+    atl_req_t req{};
+    atl_comm->allgatherv(0 /* ep_idx */,
+                         my_hostname,
+                         max_hostname_len,
+                         all_hostnames.data(),
+                         recv_bytes.data(),
+                         offsets.data(),
+                         &req);
+    atl_comm->wait(0 /* ep_idx */, &req);
 
     std::set<std::string> unique_hostnames;
     std::string str{};
@@ -90,13 +89,21 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
     ZE_CALL(zesDevicePciGetProperties, (device, &pci_props));
     rank_info.pci_addr = pci_props.address;
 
-    MPI_Allgather(&rank_info,
-                  sizeof(rank_info),
-                  MPI_CHAR,
-                  topo_info_vec.data(),
-                  sizeof(rank_info),
-                  MPI_CHAR,
-                  MPI_COMM_WORLD); // take correct comm
+    recv_bytes.clear();
+    offsets.clear();
+    recv_bytes.resize(size, sizeof(rank_info));
+    offsets.resize(size, 0);
+    for (int i = 1; i < size; i++) {
+        offsets[i] = offsets[i - 1] + recv_bytes[i - 1];
+    }
+    atl_comm->allgatherv(0 /* ep_idx */,
+                         &rank_info,
+                         sizeof(rank_info),
+                         reinterpret_cast<char*>(topo_info_vec.data()),
+                         recv_bytes.data(),
+                         offsets.data(),
+                         &req);
+    atl_comm->wait(0 /* ep_idx */, &req);
 
     int topo_info_size = static_cast<int>(topo_info_vec.size());
     // create groups with its unique color

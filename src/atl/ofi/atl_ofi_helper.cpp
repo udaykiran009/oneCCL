@@ -256,7 +256,8 @@ fn_err:
 
 atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
                                             size_t prov_idx,
-                                            std::shared_ptr<ipmi> pmi) {
+                                            std::shared_ptr<ipmi> pmi,
+                                            std::list<std::vector<char>>& ep_names) {
     CCL_THROW_IF_NOT(ofi_ctx, "ofi_ctx is null");
 
     atl_ctx_t* ctx = &(ofi_ctx->ctx);
@@ -319,6 +320,7 @@ atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
 
     ATL_CHECK_STATUS(pmi->pmrt_barrier(), "barrier failed");
 
+    std::vector<char> ret_ep_name(prov->addr_len, '\0');
     /* retrieve all OFI EP names in order */
     for (i = 0; i < ctx->coord.global_count; i++) {
         if (prov->is_shm) {
@@ -331,9 +333,14 @@ atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t* ofi_ctx,
             ret = pmi->pmrt_kvs_get(
                 (char*)ATL_OFI_FI_ADDR_PM_KEY,
                 i * ATL_OFI_PMI_PROC_MULTIPLIER + prov_idx * ATL_OFI_PMI_PROV_MULTIPLIER + j,
-                ep_names_table + addr_idx * prov->addr_len,
+                (void*)ret_ep_name.data(),
                 prov->addr_len);
 
+            auto it = std::find(ep_names.begin(), ep_names.end(), ret_ep_name);
+            if (it == ep_names.end()) {
+                ep_names.push_back(ret_ep_name);
+            }
+            memcpy(ep_names_table + addr_idx * prov->addr_len, ret_ep_name.data(), prov->addr_len);
             if (ret) {
                 LOG_ERROR("kvs_get error: ret ",
                           ret,
@@ -476,7 +483,8 @@ err_addr:
 
 atl_status_t atl_ofi_prov_eps_connect(atl_ofi_ctx_t* ofi_ctx,
                                       size_t prov_idx,
-                                      std::shared_ptr<ipmi> pmi) {
+                                      std::shared_ptr<ipmi> pmi,
+                                      std::list<std::vector<char>>& ep_names) {
     int ret;
     size_t ep_idx;
 
@@ -510,7 +518,7 @@ atl_status_t atl_ofi_prov_eps_connect(atl_ofi_ctx_t* ofi_ctx,
         }
     }
 
-    ret = atl_ofi_prov_update_addr_table(ofi_ctx, prov_idx, pmi);
+    ret = atl_ofi_prov_update_addr_table(ofi_ctx, prov_idx, pmi, ep_names);
 
     return RET2ATL(ret);
 }
@@ -938,7 +946,8 @@ atl_status_t atl_ofi_prov_init(atl_ctx_t* ctx,
                                struct fi_info* info,
                                atl_ofi_prov_t* prov,
                                atl_attr_t* attr,
-                               std::shared_ptr<ipmi> pmi) {
+                               std::shared_ptr<ipmi> pmi,
+                               std::list<std::vector<char>>& ep_names) {
     struct fi_av_attr av_attr;
     size_t ep_idx = 0;
     ssize_t ret = 0;
@@ -999,7 +1008,7 @@ atl_status_t atl_ofi_prov_init(atl_ctx_t* ctx,
     }
 
     /* TODO: make separate function to be called on CCL comm creation */
-    ret = atl_ofi_prov_eps_connect(ofi_ctx, prov->idx, pmi);
+    ret = atl_ofi_prov_eps_connect(ofi_ctx, prov->idx, pmi, ep_names);
     if (ret) {
         LOG_ERROR("atl_ofi_prov_eps_connect error, prov_idx ", prov->idx);
         goto err;
@@ -1240,6 +1249,7 @@ atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
                                    struct fi_info* base_hints,
                                    atl_attr_t* attr,
                                    std::shared_ptr<ipmi> pmi,
+                                   std::list<std::vector<char>>& ep_names,
                                    bool log_on_error) {
     atl_status_t ret = ATL_STATUS_SUCCESS;
     struct fi_info* prov_list = nullptr;
@@ -1376,7 +1386,7 @@ atl_status_t atl_ofi_open_nw_provs(atl_ctx_t* ctx,
         prov = &ofi_ctx->provs[prov_idx];
         prov->idx = prov_idx;
         prov->is_shm = 0;
-        ATL_CALL(atl_ofi_prov_init(ctx, final_provs[idx], prov, attr, pmi), goto err);
+        ATL_CALL(atl_ofi_prov_init(ctx, final_provs[idx], prov, attr, pmi, ep_names), goto err);
     }
 
 exit:

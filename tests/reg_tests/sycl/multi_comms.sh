@@ -13,10 +13,11 @@ check_ccl
 
 #TODO: uncoment after fix MLSL-1193 (OFI) and MLSL-1241 (MPI)
 #comm_size_modes="direct reverse"
+#algos="topo ring"
 comm_size_modes="reverse"
 transports="ofi mpi"
 
-algos="topo ring"
+algos="ring"
 
 for comm_size_mode in ${comm_size_modes}
 do
@@ -25,6 +26,7 @@ do
         for algo in ${algos}
         do
             export CCL_ALLREDUCE=${algo}
+            export CCL_BCAST=${algo}
             export CCL_ATL_TRANSPORT=${transport}
             mpiexec -l -n 6 -ppn 6 ${SCRIPT_DIR}/${BINFILE} ${comm_size_mode} > ${TEST_LOG} 2>&1
             rc=$?

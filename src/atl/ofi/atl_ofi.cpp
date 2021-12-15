@@ -214,7 +214,7 @@ atl_status_t atl_ofi::open_providers(char* prov_env,
         prov->idx = prov_idx;
         prov->is_shm = 1;
         ATL_CALL(atl_ofi_get_prov_list(ctx, prov_name, base_hints, &prov_list), goto err);
-        ATL_CALL(atl_ofi_prov_init(ctx, prov_list, prov, attr, pmi), goto err);
+        ATL_CALL(atl_ofi_prov_init(ctx, prov_list, prov, attr, pmi, ep_names), goto err);
         free(prov_name);
         fi_freeinfo(prov_list);
         ofi_ctx->prov_count++;
@@ -226,7 +226,7 @@ atl_status_t atl_ofi::open_providers(char* prov_env,
     }
 
     if (open_nw_provs) {
-        ret = atl_ofi_open_nw_provs(ctx, base_hints, attr, pmi, log_on_error);
+        ret = atl_ofi_open_nw_provs(ctx, base_hints, attr, pmi, ep_names, log_on_error);
         if (ret != ATL_STATUS_SUCCESS) {
             if (log_on_error) {
                 LOG_ERROR("atl_ofi_open_nw_provs(ctx, base_hints, attr, pmi)\n fails with status: ",
@@ -586,7 +586,7 @@ atl_status_t atl_ofi::update(std::shared_ptr<ipmi> pmi) {
     atl_ofi_print_coord(coord);
 
     for (prov_idx = 0; prov_idx < ofi_ctx->prov_count; prov_idx++) {
-        ret = atl_ofi_prov_eps_connect(ofi_ctx, prov_idx, pmi);
+        ret = atl_ofi_prov_eps_connect(ofi_ctx, prov_idx, pmi, ep_names);
         if (ret)
             return RET2ATL(ret);
     }
@@ -1069,4 +1069,54 @@ void atl_ofi::atl_process_comps(atl_ep_t* ep, struct fi_cq_tagged_entry* entries
             comp_ofi_req->recv_len = entries[idx].len;
         }
     }
+}
+
+atl_status_t atl_ofi::get_rank2rank_map(std::shared_ptr<ipmi> pmi,
+                                        std::vector<int>& rank2rank_map) {
+    int ret;
+    //TODO: add support for multi-provs
+    atl_ofi_prov_t* prov = atl_ofi_get_prov(eps[0], 0 /* peer_proc_idx */, 0 /* msg_size */);
+
+    std::vector<char> addr_name(prov->addr_len, '\0');
+
+    size_t local_rank = pmi->get_rank();
+    size_t local_size = pmi->get_size();
+    // TODO: uncomment after AV insert update
+    //    for (size_t ep_idx = 0; ep_idx < eps.size(); ep_idx++) {
+    ret = pmi->pmrt_kvs_put(
+        (char*)ATL_OFI_FI_ADDR_UPDATE_PM_KEY,
+        local_rank * ATL_OFI_PMI_PROC_MULTIPLIER, // +
+        //                                    prov_idx * ATL_OFI_PMI_PROV_MULTIPLIER + ep_idx,
+        prov->eps[0].name.addr,
+        //                            addr_name.data(),
+        prov->addr_len);
+    if (ret) {
+        LOG_ERROR("pmrt_kvs_put: ret: ", ret);
+        return ATL_STATUS_FAILURE;
+    }
+    //    }
+
+    for (size_t i = 0; i < local_size; ++i) {
+        ret = pmi->pmrt_kvs_get(
+            (char*)ATL_OFI_FI_ADDR_UPDATE_PM_KEY,
+            i * ATL_OFI_PMI_PROC_MULTIPLIER, // +
+            //                                    prov_idx * ATL_OFI_PMI_PROV_MULTIPLIER + ep_idx,
+            (void*)addr_name.data(),
+            prov->addr_len);
+        if (ret) {
+            LOG_ERROR("pmrt_kvs_get: ret: ", ret);
+            return ATL_STATUS_FAILURE;
+        }
+
+        auto it = std::find(ep_names.begin(), ep_names.end(), addr_name);
+        if (it == ep_names.end()) {
+            LOG_ERROR("not found addr_name: ", i);
+            return ATL_STATUS_FAILURE;
+        }
+
+        size_t named_ep_count = (prov->sep ? 1 : ctx->ep_count);
+        rank2rank_map[i] = std::distance(ep_names.begin(), it) / named_ep_count;
+    }
+
+    return ATL_STATUS_SUCCESS;
 }

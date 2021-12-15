@@ -105,9 +105,7 @@ atl_status_t atl_ofi_comm::init_transport(bool is_new) {
         parent_size = size = pmi->get_size();
 
         rank2rank_map.resize(size);
-        for (int i = 0; i < size; i++) {
-            rank2rank_map[i] = i;
-        }
+        transport->get_rank2rank_map(pmi, rank2rank_map);
     }
 
     threads_per_process = pmi->get_threads_per_process();

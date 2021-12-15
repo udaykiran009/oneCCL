@@ -7,10 +7,14 @@ int main(int argc, char* argv[]) {
     std::list<size_t> elem_counts = { 17, 1024, 262145 };
 
     int size = 0;
-    int rank = 0;
+    int mpi_rank = 0;
+    ;
+    int ccl_rank = 0;
     int root = 0;
+    int iter_idx = -1;
     std::string direct = "direct";
     std::string reverse = "reverse";
+    bool reorder_ranks = true;
 
     int fail_counter = 0;
 
@@ -26,7 +30,7 @@ int main(int argc, char* argv[]) {
 
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     atexit(mpi_finalize);
 
@@ -55,13 +59,15 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    ccl_rank = mpi_rank;
     for (int comm_size : comm_sizes) {
+        iter_idx++;
         cout << "check comm_size: " << comm_size << "\n";
 
         /* create kvs */
         ccl::shared_ptr_class<ccl::kvs> kvs;
         ccl::kvs::address_type main_addr;
-        if (rank == 0) {
+        if (mpi_rank == 0) {
             kvs = ccl::create_main_kvs();
             main_addr = kvs->get_address();
             MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
@@ -69,12 +75,15 @@ int main(int argc, char* argv[]) {
         else {
             MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
 
-            if (rank >= comm_size) {
+            if (mpi_rank >= comm_size) {
                 continue;
             }
 
             kvs = ccl::create_kvs(main_addr);
             main_addr = kvs->get_address();
+        }
+        if (reorder_ranks) {
+            ccl_rank = (mpi_rank + iter_idx) % comm_size;
         }
 
         kvses.push_back(kvs);
@@ -84,7 +93,7 @@ int main(int argc, char* argv[]) {
         auto ctx = ccl::create_context(q.get_context());
 
         cout << "before create_communicator for comm_size " << comm_size << "\n";
-        comms.push_back(ccl::create_communicator(comm_size, rank, dev, ctx, kvs));
+        comms.push_back(ccl::create_communicator(comm_size, ccl_rank, dev, ctx, kvs));
         cout << "after create_communicator for comm_size " << comm_size << "\n";
 
         if (comm_size != comms.back().size()) {
@@ -106,9 +115,9 @@ int main(int argc, char* argv[]) {
             /* open buffers and modify them on the device side */
             auto e = q.submit([&](auto& h) {
                 h.parallel_for(elem_count, [=](auto id) {
-                    send_buf[id] = rank + id + 1;
+                    send_buf[id] = ccl_rank + id + 1;
                     recv_buf[id] = -1;
-                    if (rank == root) {
+                    if (ccl_rank == root) {
                         buf[id] = id + 1;
                     }
                     else {

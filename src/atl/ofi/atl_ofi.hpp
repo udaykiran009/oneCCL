@@ -77,6 +77,8 @@ public:
 
     atl_status_t finalize();
 
+    atl_status_t get_rank2rank_map(std::shared_ptr<ipmi> pmi, std::vector<int>& rank2rank_map);
+
     bool is_inited() {
         return inited;
     }
@@ -134,6 +136,8 @@ private:
     };
 
     fi_cache cache{};
+    /* this container accumulates ep names from all comms */
+    std::list<std::vector<char>> ep_names{};
 
     bool is_finalized{ false };
     bool inited{ false };
