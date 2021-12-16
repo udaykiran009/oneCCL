@@ -646,38 +646,65 @@ function run_horovod_tests()
     source ${CCL_ONEAPI_DIR}/onemkl/last/mkl/latest/env/vars.sh
     source ${CCL_ONEAPI_DIR}/tbb_oneapi/last/tbb/latest/env/vars.sh
 
-    pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
-    ./horovod.sh -download_pt 1 -install_pt 1 \
-                 -download_ipex 1 -install_ipex 1 \
-                 -download_hvd 1 -install_hvd 1 \
-                 -download_conda 1 -create_conda 1 -remove_conda 1 \
-                 -transport mpi -provider ${FI_PROVIDER} \
-                 -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
-    log_status_fail=${PIPESTATUS[0]}
-    popd
-    if [ "$log_status_fail" -eq 0 ]
+    if [ "${node_label}" == "ccl_test_ats" ]
     then
-        echo "Horovod testing ... OK"
+        pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
+        ./horovod.sh -full_pt 1 -transport mpi -provider ${FI_PROVIDER} \
+                     -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
+        log_status_fail=${PIPESTATUS[0]}
+        popd
+        if [ "$log_status_fail" -eq 0 ]
+        then
+            echo "Horovod PT rn50 run ... OK"
+        else
+            echo "Horovod PT rn50 run ... NOK"
+            exit 1
+        fi
+        pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
+        ./horovod.sh -full_tf 1 -transport mpi -provider ${FI_PROVIDER} \
+                     -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
+        log_status_fail=${PIPESTATUS[0]}
+        popd
+        if [ "$log_status_fail" -eq 0 ]
+        then
+            echo "Horovod TF rn50 run ... OK"
+        else
+            echo "Horovod TF rn50 run ... NOK"
+            exit 1
+        fi
     else
-        echo "Horovod testing ... NOK"
-        exit 1
-    fi
-
-    pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
-    ./horovod.sh -download_tf 1 -install_tf 1 \
-                 -download_itex 1 -install_itex 1 \
-                 -download_hvd 1 -install_hvd 1 \
-                 -download_conda 1 -create_conda 1 -remove_conda 1 \
-                 -transport mpi -provider ${FI_PROVIDER} \
-                 -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
-    log_status_fail=${PIPESTATUS[0]}
-    popd
-    if [ "$log_status_fail" -eq 0 ]
-    then
-        echo "Horovod testing ... OK"
-    else
-        echo "Horovod testing ... NOK"
-        exit 1
+        pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
+        ./horovod.sh -download_pt 1 -install_pt 1 \
+                    -download_ipex 1 -install_ipex 1 \
+                    -download_hvd 1 -install_hvd 1 \
+                    -download_conda 1 -create_conda 1 -remove_conda 1 \
+                    -transport mpi -provider ${FI_PROVIDER} \
+                    -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
+        log_status_fail=${PIPESTATUS[0]}
+        popd
+        if [ "$log_status_fail" -eq 0 ]
+        then
+            echo "Horovod PT build ... OK"
+        else
+            echo "Horovod PT build ... NOK"
+            exit 1
+        fi
+        pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
+        ./horovod.sh -download_tf 1 -install_tf 1 \
+                    -download_itex 1 -install_itex 1 \
+                    -download_hvd 1 -install_hvd 1 \
+                    -download_conda 1 -create_conda 1 -remove_conda 1 \
+                    -transport mpi -provider ${FI_PROVIDER} \
+                    -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
+        log_status_fail=${PIPESTATUS[0]}
+        popd
+        if [ "$log_status_fail" -eq 0 ]
+        then
+            echo "Horovod TF build ... OK"
+        else
+            echo "Horovod TF build ... NOK"
+            exit 1
+        fi
     fi
 
     exit 0

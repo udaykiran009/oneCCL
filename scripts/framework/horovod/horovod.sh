@@ -78,7 +78,7 @@ set_run_env() {
 
     # SYCL
     export SYCL_PI_LEVEL_ZERO_BATCH_SIZE=1
-    export SYCL_DEVICE_FILTER=level_zero
+    # export SYCL_DEVICE_FILTER=level_zero # see https://jira.devtools.intel.com/browse/CMPLRLLVM-33408
     export SYCL_PI_LEVEL_ZERO_TRACK_INDIRECT_ACCESS_MEMORY=1
 
     # conda
