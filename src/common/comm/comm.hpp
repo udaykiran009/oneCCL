@@ -147,15 +147,22 @@ public:
     ccl_comm& operator=(ccl_comm&& src) = default;
     ~ccl_comm() = default;
 
+    void set_parent_comm(ccl_comm* comm) {
+        parent_comm = comm;
+    }
+
+    ccl_comm* get_parent_comm() {
+        return parent_comm;
+    }
+
 private:
     // copy-constructor with explicit comm_id
     ccl_comm(const ccl_comm& src, ccl_comm_id_storage::comm_id&& id);
+    void create_sub_comms(std::shared_ptr<atl_base_comm> atl_comm);
 
     ccl_comm* get_impl() {
         return this;
     }
-
-    void create_sub_comms(std::shared_ptr<atl_base_comm> atl_comm);
 
 public:
     ccl_comm* create_with_color(int color,
@@ -213,6 +220,15 @@ public:
         return local2global_map;
     }
 
+    const ccl::topo_manager& get_topo_manager() const {
+        if (parent_comm) {
+            return parent_comm->get_topo_manager();
+        }
+        else {
+            return topo_manager;
+        }
+    }
+
     std::unique_ptr<ccl_unordered_coll_manager>& get_unordered_coll_manager() const {
         return comm_impl->unordered_coll_manager;
     }
@@ -265,6 +281,7 @@ private:
     // everything else must go to ccl_comm
     std::shared_ptr<ccl_internal_comm> comm_impl;
 
+    ccl_comm* parent_comm = nullptr;
     // ccl::device/context hasn't got a default c-tor
     // that's why we use shared_ptr<ccl::device/context>
     device_ptr_t device_ptr;

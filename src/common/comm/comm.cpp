@@ -130,6 +130,7 @@ ccl_comm* ccl_comm::create_with_color(int color,
                                       bool share_resources) const {
     std::shared_ptr<atl_base_comm> new_atl_comm = get_atl_comm()->comm_split(color);
     ccl_comm* comm = new ccl_comm(new_atl_comm, share_resources, true);
+    comm->set_parent_comm(const_cast<ccl_comm*>(this));
 
     LOG_DEBUG("new comm: color ",
               color,

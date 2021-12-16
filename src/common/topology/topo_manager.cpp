@@ -20,6 +20,10 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
 
     intra_colors.resize(size, topo_manager::invalid_color);
     inter_colors.resize(size, topo_manager::invalid_color);
+    p2p_matrix.resize(size);
+    for (size_t i = 0; i < p2p_matrix.size(); i++) {
+        p2p_matrix[i].resize(size, true);
+    }
 
     std::vector<char> all_hostnames(max_hostname_len * size);
     char my_hostname[max_hostname_len] = { 0 };
@@ -133,6 +137,10 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
             }
         }
     }
+
+    auto devices = global_data::get().ze_data->device_list;
+    p2p_matrix = build_p2p_matrix(devices);
+    LOG_DEBUG("p2p matrix: \n", to_string(p2p_matrix), "\nnumber of devices: ", devices.size());
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 }
 
@@ -160,6 +168,20 @@ int topo_manager::get_inter_card_color(int rank) {
     return color;
 }
 
+bool topo_manager::has_p2p_access() const {
+    bool has_access = true;
+    for (size_t i = 0; i < p2p_matrix.size(); i++) {
+        for (size_t j = 0; j < p2p_matrix[i].size(); j++) {
+            if (!p2p_matrix[i][j]) {
+                has_access = false;
+                break;
+            }
+        }
+    }
+    LOG_DEBUG("p2p access status: ", has_access);
+    return has_access;
+}
+
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 bool topo_manager::is_same_pci_addr(zes_pci_address_t addr1, zes_pci_address_t addr2) {
     bool result = true;
@@ -180,6 +202,56 @@ bool topo_manager::is_same_pci_addr(zes_pci_address_t addr1, zes_pci_address_t a
     }
 
     return result;
+}
+
+std::vector<std::vector<bool>> topo_manager::build_p2p_matrix(
+    const std::vector<ze_device_handle_t>& devices) {
+    size_t device_count = devices.size();
+    std::vector<std::vector<bool>> matrix(device_count);
+
+    for (uint32_t i = 0; i < device_count; i++) {
+        matrix[i].resize(device_count);
+
+        for (uint32_t j = 0; j < device_count; j++) {
+            if (i == j) {
+                matrix[i][j] = true;
+            }
+            else {
+                ze_bool_t val;
+                ZE_CALL(zeDeviceCanAccessPeer, (devices[i], devices[j], &val));
+                matrix[i][j] = static_cast<bool>(val);
+            }
+        }
+    }
+    return matrix;
+}
+
+std::string topo_manager::to_string(const std::vector<std::vector<bool>>& matrix) {
+    uint32_t device_count = matrix.size();
+    std::stringstream ss;
+    for (uint32_t j = 0; j < device_count; j++) {
+        if (j > 9) {
+            ss << "  " << j;
+        }
+        else {
+            ss << "   " << j;
+        }
+    }
+    ss << "\n";
+
+    for (uint32_t i = 0; i < device_count; i++) {
+        if (i > 9) {
+            ss << i;
+        }
+        else {
+            ss << " " << i;
+        }
+        for (uint32_t j = 0; j < device_count; j++) {
+            ss << " " << matrix[i][j] << "  ";
+        }
+        ss << "\n";
+    }
+    return ss.str();
 }
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 

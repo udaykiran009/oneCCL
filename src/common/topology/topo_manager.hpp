@@ -51,9 +51,12 @@ public:
 
     int get_intra_card_color(int rank);
     int get_inter_card_color(int rank);
+    bool has_p2p_access() const;
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
     static bool is_same_pci_addr(zes_pci_address_t addr1, zes_pci_address_t addr2);
+    static std::vector<std::vector<bool>> build_p2p_matrix(
+        const std::vector<ze_device_handle_t>& devices);
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
     std::string to_string();
@@ -62,9 +65,11 @@ private:
     int host_idx = invalid_host_idx;
     std::vector<int> intra_colors{};
     std::vector<int> inter_colors{};
+    std::vector<std::vector<bool>> p2p_matrix;
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
     ze_device_handle_t device{};
+    static std::string to_string(const std::vector<std::vector<bool>>& p2p_matrix);
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 };
 
