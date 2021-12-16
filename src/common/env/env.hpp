@@ -154,7 +154,12 @@ enum ccl_ze_copy_engine_mode {
     ccl_ze_copy_engine_auto
 };
 
-enum class backend_mode { native, stub };
+enum class backend_mode {
+    native,
+#ifdef CCL_ENABLE_STUB_BACKEND
+    stub
+#endif // CCL_ENABLE_STUB_BACKEND
+};
 
 namespace ccl {
 

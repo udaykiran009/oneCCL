@@ -5,7 +5,6 @@
 
 #include "atl/atl_base_comm.hpp"
 #include "coll/algorithms/allreduce/allreduce_2d.hpp"
-#include "common/comm/communicator_traits.hpp"
 #include "common/comm/comm_interface.hpp"
 #include "common/comm/comm_id_storage.hpp"
 #include "common/comm/atl_tag.hpp"
@@ -106,25 +105,6 @@ public:
     // maximum value of schedule id in scope of the current communicator
     static constexpr ccl_sched_id_t max_sched_count = std::numeric_limits<ccl_sched_id_t>::max();
 
-    using traits = ccl::host_communicator_traits;
-
-    // traits
-    bool is_host() const noexcept override {
-        return traits::is_host();
-    }
-
-    bool is_cpu() const noexcept override {
-        return traits::is_cpu();
-    }
-
-    bool is_gpu() const noexcept override {
-        return traits::is_gpu();
-    }
-
-    bool is_accelerator() const noexcept override {
-        return traits::is_accelerator();
-    }
-
     void init(ccl_comm_id_storage::comm_id&& id,
               std::shared_ptr<atl_base_comm> atl_comm,
               bool share_resources = false,
@@ -136,9 +116,6 @@ public:
     ccl_comm(std::shared_ptr<atl_base_comm> atl_comm,
              bool share_resources = false,
              bool is_sub_communicator = false);
-    ccl_comm(device_t device, context_t context, std::shared_ptr<atl_base_comm> atl_comm);
-    ccl_comm(int size, int rank, ccl::shared_ptr_class<ikvs_wrapper> kvs);
-    ccl_comm(int size, ccl::shared_ptr_class<ikvs_wrapper> kvs);
     ccl_comm();
 
     ccl_comm(ccl_comm& src) = delete;
@@ -155,7 +132,19 @@ public:
         return parent_comm;
     }
 
+    static ccl_comm* create(device_t device,
+                            context_t context,
+                            size_t size,
+                            int rank,
+                            ccl::shared_ptr_class<ccl::kvs_interface> kvs);
+    static ccl_comm* create(int size, int rank, ccl::shared_ptr_class<ccl::kvs_interface> kvs);
+    static ccl_comm* create(int size, ccl::shared_ptr_class<ccl::kvs_interface> kvs);
+
 private:
+    ccl_comm(device_t device, context_t context, std::shared_ptr<atl_base_comm> atl_comm);
+    ccl_comm(int size, int rank, ccl::shared_ptr_class<ikvs_wrapper> kvs);
+    ccl_comm(int size, ccl::shared_ptr_class<ikvs_wrapper> kvs);
+
     // copy-constructor with explicit comm_id
     ccl_comm(const ccl_comm& src, ccl_comm_id_storage::comm_id&& id);
     void create_sub_comms(std::shared_ptr<atl_base_comm> atl_comm);
@@ -163,6 +152,8 @@ private:
     ccl_comm* get_impl() {
         return this;
     }
+
+    static std::shared_ptr<ikvs_wrapper> get_kvs_wrapper(std::shared_ptr<ccl::kvs_interface> kvs);
 
 public:
     ccl_comm* create_with_color(int color,

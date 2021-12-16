@@ -31,15 +31,6 @@ fi
 check_run ${TEST_LOG}
 rm -f ${TEST_LOG}
 
-CCL_BACKEND=stub mpiexec -n 2 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
-rc=$?
-if [[ ${rc} -ne 0 ]] ; then
-    echo "Fail"
-    exit 1
-fi
-check_run ${TEST_LOG}
-rm -f ${TEST_LOG}
-
 CCL_ZE_ENABLE=0 mpiexec -n 2 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
 rc=$?
 if [[ ${rc} -ne 0 ]] ; then

@@ -4,7 +4,6 @@
 
 #include "common/request/request.hpp"
 #include "common/event/impls/host_event.hpp"
-#include "common/event/impls/scoped_event.hpp"
 
 #include "coll/coll.hpp"
 #include "coll/coll_common_attributes.hpp"

@@ -16,6 +16,7 @@
 #include "oneapi/ccl/comm_split_attr_ids_traits.hpp"
 #include "oneapi/ccl/comm_split_attr.hpp"
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/ikvs_wrapper.h"
+#include "kvs_impl.hpp"
 
 // ccl_internal_comm
 
@@ -110,6 +111,37 @@ ccl_comm::ccl_comm(const ccl_comm& src, ccl_comm_id_storage::comm_id&& id)
     node_comm = src.node_comm;
     even_comm = src.even_comm;
     pair_comm = src.pair_comm;
+}
+
+std::shared_ptr<ikvs_wrapper> ccl_comm::get_kvs_wrapper(std::shared_ptr<ccl::kvs_interface> kvs) {
+    ccl::shared_ptr_class<ikvs_wrapper> kvs_tmp;
+    if (std::dynamic_pointer_cast<ccl::v1::kvs>(kvs) != nullptr) {
+        kvs_tmp = ccl::get_kvs_impl_typed<ccl::native_kvs_impl>(
+                      std::dynamic_pointer_cast<ccl::v1::kvs>(kvs))
+                      ->get();
+    }
+    else {
+        kvs_tmp = std::shared_ptr<ikvs_wrapper>(new users_kvs(kvs));
+    }
+
+    return kvs_tmp;
+}
+
+ccl_comm* ccl_comm::create(device_t device,
+                           context_t context,
+                           size_t size,
+                           int rank,
+                           ccl::shared_ptr_class<ccl::kvs_interface> kvs) {
+    return new ccl_comm(
+        device, context, atl_comm_manager::create_comm(size, { rank }, get_kvs_wrapper(kvs)));
+}
+
+ccl_comm* ccl_comm::create(int size, int rank, ccl::shared_ptr_class<ccl::kvs_interface> kvs) {
+    return new ccl_comm(size, rank, get_kvs_wrapper(kvs));
+}
+
+ccl_comm* ccl_comm::create(int size, ccl::shared_ptr_class<ccl::kvs_interface> kvs) {
+    return new ccl_comm(size, get_kvs_wrapper(kvs));
 }
 
 void ccl_comm::create_sub_comms(std::shared_ptr<atl_base_comm> atl_comm) {

@@ -1,14 +1,15 @@
 #pragma once
+
 #include "oneapi/ccl/types.hpp"
 #include "oneapi/ccl/types_policy.hpp"
 #include "common/event/impls/event_impl.hpp"
 
 namespace ccl {
 
-// empty default event, used by default constructed ccl event
-class empty_event_impl final : public event_impl {
+// event returned by stub backend
+class stub_event_impl final : public event_impl {
 public:
-    empty_event_impl() = default;
+    stub_event_impl() = default;
 
     void wait() override {}
 
@@ -21,10 +22,10 @@ public:
     }
 
     event::native_t& get_native() override {
-        throw ccl::exception(std::string(__FUNCTION__) + " - no native event for empty event");
+        throw ccl::exception(std::string(__FUNCTION__) + " - no native event for stub event");
     }
 
-    ~empty_event_impl() override = default;
+    ~stub_event_impl() override = default;
 };
 
 } // namespace ccl

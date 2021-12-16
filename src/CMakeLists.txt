@@ -185,6 +185,13 @@ set(CCL_SRC
 
     ${EXTENSIONS_SRC})
 
+if (ENABLE_STUB_BACKEND)
+    set (CCL_SRC
+            common/comm/stub_comm.cpp
+            stub_kvs_impl.cpp
+            ${CCL_SRC})
+endif()
+
 set(SRC_C_FLAGS)
 set(SRC_CXX_FLAGS)
 set(SRC_SHARED_LINKER_FLAGS)

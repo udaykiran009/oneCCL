@@ -4,7 +4,6 @@
 #include <memory>
 
 #include "oneapi/ccl/types.hpp"
-#include "communicator_traits.hpp"
 #include "atl/atl_base_comm.hpp"
 
 namespace native {
@@ -33,15 +32,15 @@ struct communicator_interface_dispatcher {
 
     static communicator_interface_ptr create_communicator_impl();
     static communicator_interface_ptr create_communicator_impl(const size_t size,
-                                                               shared_ptr_class<ikvs_wrapper> kvs);
+                                                               shared_ptr_class<kvs_interface> kvs);
     static communicator_interface_ptr create_communicator_impl(const size_t size,
                                                                const int rank,
-                                                               shared_ptr_class<ikvs_wrapper> kvs);
+                                                               shared_ptr_class<kvs_interface> kvs);
     static communicator_interface_ptr create_communicator_impl(const size_t size,
                                                                const int rank,
                                                                device_t ccl_device,
                                                                context_t ccl_context,
-                                                               shared_ptr_class<ikvs_wrapper> kvs);
+                                                               shared_ptr_class<kvs_interface> kvs);
 };
 
 } // namespace ccl

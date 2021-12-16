@@ -49,7 +49,9 @@ std::map<ccl_ze_copy_engine_mode, std::string> env_data::ze_copy_engine_names = 
 
 std::map<backend_mode, std::string> env_data::backend_names = {
     std::make_pair(backend_mode::native, "native"),
+#ifdef CCL_ENABLE_STUB_BACKEND
     std::make_pair(backend_mode::stub, "stub")
+#endif // CCL_ENABLE_STUB_BACKEND
 };
 
 env_data::env_data()
@@ -159,6 +161,7 @@ env_data::env_data()
 #ifdef CCL_ENABLE_ITT
           itt_level(0),
 #endif // CCL_ENABLE_ITT
+
           bf16_impl_type(ccl_bf16_no_compiler_support),
           fp16_impl_type(ccl_fp16_no_compiler_support) {
 }

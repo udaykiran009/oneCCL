@@ -124,11 +124,6 @@ struct communicator_interface : public communicator_interface_dispatcher {
     virtual int rank() const = 0;
     virtual int size() const = 0;
 
-    virtual bool is_host() const noexcept = 0;
-    virtual bool is_cpu() const noexcept = 0;
-    virtual bool is_gpu() const noexcept = 0;
-    virtual bool is_accelerator() const noexcept = 0;
-
     virtual ccl::communicator_interface_ptr split(const ccl::comm_split_attr& attr) = 0;
 
     // collectives operation declarations

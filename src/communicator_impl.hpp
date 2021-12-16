@@ -30,18 +30,10 @@ CCL_API vector_class<communicator> communicator::create_communicators(
     shared_ptr_class<kvs_interface> kvs) {
     LOG_DEBUG("size: ", size, ", local ranks: ", devices.size());
 
-    shared_ptr_class<ikvs_wrapper> kvs_tmp;
-    if (std::dynamic_pointer_cast<ccl::v1::kvs>(kvs) != nullptr) {
-        kvs_tmp = std::dynamic_pointer_cast<v1::kvs>(kvs)->get_impl().get();
-    }
-    else {
-        kvs_tmp = std::shared_ptr<ikvs_wrapper>(new users_kvs(kvs));
-    }
-
     CCL_THROW_IF_NOT(devices.size() == 1, "multiple devices per process are not supported");
 
     ccl::communicator_interface_ptr impl = ccl::communicator_interface::create_communicator_impl(
-        size, devices.begin()->first, devices.begin()->second, context, kvs_tmp);
+        size, devices.begin()->first, devices.begin()->second, context, kvs);
 
     ccl::vector_class<ccl::communicator> ret;
     ret.push_back(ccl::communicator(std::move(impl)));
@@ -91,16 +83,7 @@ communicator communicator::create_communicator(const int size,
 
     LOG_DEBUG("size: ", size);
 
-    shared_ptr_class<ikvs_wrapper> kvs_tmp;
-    if (std::dynamic_pointer_cast<ccl::v1::kvs>(kvs) != nullptr) {
-        kvs_tmp = std::dynamic_pointer_cast<ccl::v1::kvs>(kvs)->get_impl().get();
-    }
-    else {
-        kvs_tmp = std::shared_ptr<ikvs_wrapper>(new users_kvs(kvs));
-    }
-
-    communicator_interface_ptr impl =
-        communicator_interface::create_communicator_impl(size, kvs_tmp);
+    communicator_interface_ptr impl = communicator_interface::create_communicator_impl(size, kvs);
 
     return communicator(std::move(impl));
 }
@@ -118,16 +101,8 @@ communicator communicator::create_communicator(const int size,
                                                const comm_attr& attr) {
     LOG_DEBUG("size ", size, ", rank ", rank);
 
-    shared_ptr_class<ikvs_wrapper> kvs_tmp;
-    if (std::dynamic_pointer_cast<ccl::v1::kvs>(kvs) != nullptr) {
-        kvs_tmp = std::dynamic_pointer_cast<ccl::v1::kvs>(kvs)->get_impl().get();
-    }
-    else {
-        kvs_tmp = std::shared_ptr<ikvs_wrapper>(new users_kvs(kvs));
-    }
-
     communicator_interface_ptr impl =
-        communicator_interface::create_communicator_impl(size, rank, kvs_tmp);
+        communicator_interface::create_communicator_impl(size, rank, kvs);
 
     return communicator(std::move(impl));
 }

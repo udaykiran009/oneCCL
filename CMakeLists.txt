@@ -39,6 +39,7 @@ option(ENABLE_SYCL_INTEROP_EVENT "Enable SYCL interop event support" TRUE)
 option(ENABLE_OFI_HMEM "Enable support OFI HMEM support" FALSE)
 option(ENABLE_OFI_OOT_PROV "Enable OFI out-of-tree providers support" FALSE)
 option(ENABLE_ITT "Enable ITT profiling support" TRUE)
+option(ENABLE_STUB_BACKEND "Enable stub backend" TRUE)
 
 option(USE_CODECOV_FLAGS "Calculate code coverage" FALSE)
 option(WITH_ASAN "Use address sanitizer, can only be used in Debug build" FALSE)
@@ -64,6 +65,7 @@ message(STATUS "Enable SYCL interop event support: ${ENABLE_SYCL_INTEROP_EVENT}"
 message(STATUS "Enable OFI HMEM support: ${ENABLE_OFI_HMEM}")
 message(STATUS "Enable OFI out-of-tree providers support: ${ENABLE_OFI_OOT_PROV}")
 message(STATUS "Enable ITT profiling support: ${ENABLE_ITT}")
+message(STATUS "Enable stub backend" ${ENABLE_STUB_BACKEND})
 
 add_definitions(-DCCL_C_COMPILER="${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 add_definitions(-DCCL_CXX_COMPILER="${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
@@ -164,6 +166,11 @@ endif()
 if (ENABLE_ITT)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCCL_ENABLE_ITT=1")
     message(STATUS "Enable ITT profiling support")
+endif()
+
+if (ENABLE_STUB_BACKEND)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCCL_ENABLE_STUB_BACKEND=1")
+    message(STATUS "Enable stub backend")
 endif()
 
 if (${CMAKE_C_COMPILER_ID} STREQUAL "GNU" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
