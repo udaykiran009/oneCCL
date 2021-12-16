@@ -147,6 +147,7 @@ endif()
 
 set(COMMON_CMAKE_DIR ${PROJECT_SOURCE_DIR}/cmake)
 if (COMPUTE_BACKEND)
+    precheck_compute_backend()
     message(STATUS "COMPUTE_BACKEND: ${COMPUTE_BACKEND}")
     set_compute_backend(${COMMON_CMAKE_DIR})
     if (${COMPUTE_BACKEND} STREQUAL "dpcpp" AND ENABLE_OFI_HMEM)

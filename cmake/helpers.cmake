@@ -295,3 +295,19 @@ function(set_compute_backend COMMON_CMAKE_DIR)
     set (COMPUTE_BACKEND_LIBRARIES ${COMPUTE_BACKEND_LIBRARIES} PARENT_SCOPE)
     set (COMPUTE_BACKEND_FLAGS ${COMPUTE_BACKEND_FLAGS} PARENT_SCOPE)
 endfunction(set_compute_backend)
+
+function(precheck_compute_backend)
+    if (${COMPUTE_BACKEND} STREQUAL "dpcpp_level_zero")
+        message(WARNING "Deprecated value \"dpcpp_level_zero\" is used for COMPUTE_BACKEND, switching to \"dpcpp\", please use it instead")
+        set(COMPUTE_BACKEND "dpcpp")
+        set(COMPUTE_BACKEND "dpcpp" PARENT_SCOPE)
+    endif()
+
+    if (COMPUTE_BACKEND)
+        if (NOT ${COMPUTE_BACKEND} STREQUAL "dpcpp")
+            message(FATAL_ERROR "Invalid value is used for COMPUTE_BACKEND: ${COMPUTE_BACKEND}\n"
+                    "Possible values: <empty>(default), dpcpp")
+        endif()
+    endif()
+
+endfunction(precheck_compute_backend)
