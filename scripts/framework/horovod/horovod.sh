@@ -123,14 +123,28 @@ MODEL_TF_SRC_COMMIT="20a8b0075cd75a5534007df5ba8cfc112a5a41c3"
 MODEL_PT_FILE="bench_pt.py"
 MODEL_PT_BASE_LINK="https://gitlab.devtools.intel.com/aemani/dlutils/-/raw/master"
 
-TF_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww41/tensorflow/ubuntu/tensorflow-2.5.0-cp37-cp37m-linux_x86_64.whl"
-ITEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww41/tensorflow/ubuntu/intel_extension_for_tensorflow-0.2.1-cp37-cp37m-linux_x86_64.whl"
+if [ -z "$TF_LINK" ]
+then
+    TF_LINK="http://mlpc.intel.com/downloads/nightly-itex/suse/ww50.2/tensorflow-2.7.0-cp37-cp37m-linux_x86_64.whl"
+fi
+
+if [ -z "$ITEX_LINK" ]
+then
+    ITEX_LINK="http://mlpc.intel.com/downloads/nightly-itex/suse/ww50.2/intel_extension_for_tensorflow-0.3.0-cp37-cp37m-linux_x86_64.whl"
+fi
 
 TF_NAME=`basename $TF_LINK`
 ITEX_NAME=`basename $ITEX_LINK`
 
-PT_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww36/pytorch/ubuntu/dpcpp0824/torch-2021.07.15.14820cec71-cp37-cp37m-linux_x86_64.whl"
-IPEX_LINK="http://mlpc.intel.com/downloads/gpu/acceptance/ww36/pytorch/ubuntu/dpcpp0824/ipex-2021.08.28.082f03e7-cp37-cp37m-linux_x86_64.whl"
+if [ -z "$PT_LINK" ]
+then
+    PT_LINK="http://mlpc.intel.com/downloads/gpu/weekly_IPEX/ATSP/ww49_nomkl/torch-1.7.0a0+0ecf0b5-cp37-cp37m-linux_x86_64.whl"
+fi
+
+if [ -z "$IPEX_LINK" ]
+then
+    IPEX_LINK="http://mlpc.intel.com/downloads/gpu/weekly_IPEX/ATSP/ww49_nomkl/ipex-0.2.2+6820e92-cp37-cp37m-linux_x86_64.whl"
+fi
 
 PT_NAME=`basename $PT_LINK`
 IPEX_NAME=`basename $IPEX_LINK`
