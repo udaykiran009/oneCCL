@@ -15,7 +15,11 @@ cd ${SCRIPT_DIR}
 
 export SYCL_DEVICE_FILTER=level_zero
 export CCL_ALLTOALL=scatter
-export FI_PROVIDER=tcp
+
+if [[ ${TRANSPORT} != "mpich" ]]
+then
+    export FI_PROVIDER=tcp
+fi
 
 transports="mpi ofi"
 proc_counts="2"

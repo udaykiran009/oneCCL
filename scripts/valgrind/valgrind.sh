@@ -8,30 +8,19 @@ BASENAME=`basename $0 .sh`
 ARTEFACT_DIR="/p/pdsd/scratch/jenkins/artefacts"
 CCL_ONEAPI_DIR="/p/pdsd/scratch/Uploads/CCL_oneAPI/"
 VALGRIND_DIR="/nfs/inn/proj/mpi/pdsd/opt/tools/valgrind/last"
+SCRIPT_DIR=$(cd $(dirname "$BASH_SOURCE") && pwd -P)
+EXAMPLE_WORK_DIR=${SCRIPT_DIR}/../../examples/build
 
-set_example_work_dir()
-{
-    SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
-    export EXAMPLE_WORK_DIR=${SCRIPT_DIR}/../../examples/build
-}
+source ${SCRIPT_DIR}/../utils/common.sh
 
 create_work_dir()
 {
     if [[ -z "${EXAMPLE_WORK_DIR}" ]]
     then
-        set_example_work_dir
         rm -r ${EXAMPLE_WORK_DIR}
         mkdir -p ${EXAMPLE_WORK_DIR}
     fi
     echo "EXAMPLE_WORK_DIR =" ${EXAMPLE_WORK_DIR}
-}
-
-CheckCommandExitCode()
-{
-    if [ $1 -ne 0 ]; then
-        echo "ERROR: ${2}" 1>&2
-        exit $1
-    fi
 }
 
 declare -i total_fails=0
@@ -53,23 +42,13 @@ check_test()
     fi
 }
 
-check_and_set_dpcpp_path()
-{
-    if [ -z "${SYCL_BUNDLE_ROOT}" ]
-    then
-        SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/last/compiler/latest/linux/"
-        echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
-    fi
-    source ${SYCL_BUNDLE_ROOT}/../env/vars.sh intel64
-}
-
 check_dpcpp()
 {
     which dpcpp
     COMPILER_INSTALL_CHECK=$?
     if [ "$COMPILER_INSTALL_CHECK" != "0" ]
     then
-        check_and_set_dpcpp_path
+        set_dpcpp_compiler
     fi
 }
 
@@ -77,40 +56,16 @@ check_and_set_impi_path()
 {
     if [ -z "${I_MPI_ROOT}" ]
     then
-        if [[ -d "${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi/" ]]
-        then
-            weekly_mpiexec_version=$(${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi/bin/mpiexec --version)
-            weekly_build_date=$(echo ${weekly_mpiexec_version#*Build} | awk '{print $1;}')
-
-            lkg_mpiexec_version=$(${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/bin/mpiexec --version)
-            lkg_build_date=$(echo ${lkg_mpiexec_version#*Build} | awk '{print $1;}')
-
-            if [ "$weekly_build_date" = "$lkg_build_date" ]; then
-                I_MPI_ROOT="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
-            elif expr "$weekly_build_date" "<" "$lkg_build_date" >/dev/null; then
-                I_MPI_ROOT="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
-            else
-                I_MPI_ROOT="${ARTEFACT_DIR}/impi-ch4-weekly/last/oneapi_impi"
-            fi
-        else
-            I_MPI_ROOT="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
-        fi
+        echo "$(hostname)" > "${SCRIPT_DIR}/hostfile"
+        export I_MPI_HYDRA_HOST_FILE="${SCRIPT_DIR}/hostfile"
+        set_impi_environment
     fi
-    source ${I_MPI_ROOT}/env/vars.sh
 }
-
 
 check_environment()
 {
-    which mpiexec
-    MPI_INSTALL_CHECK=$?
-    if [ "$MPI_INSTALL_CHECK" != "0" ]
-    then
-        check_and_set_impi_path
-    fi
-
-    CCL_INSTALL_CHECK=`echo $CCL_ROOT`
-    if [ "$CCL_INSTALL_CHECK" == "" ]
+    check_and_set_impi_path
+    if [[ -z ${CCL_ROOT} ]]
     then
         echo "Error: CCL_ROOT wasn't found"
         exit 1
@@ -489,9 +444,9 @@ check_mode()
 }
 
 parse_arguments $@
+check_mode
 check_environment
 set_debug_impi_env_and_timeout
-check_mode
 check_scope
 create_work_dir
 build

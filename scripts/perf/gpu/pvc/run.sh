@@ -182,7 +182,7 @@ set_run_env() {
     set_pvc_mpich_ofi_env
 
     # compute-runtime
-    set_agama_env
+    set_pvc_agama_env
 }
 
 check_run_env() {

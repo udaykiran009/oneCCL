@@ -3,8 +3,12 @@
 BASENAME=$(basename $0 .sh)
 SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
 
+SRC_ROOT_DIR=$(dirname $(dirname ${SCRIPT_DIR}))
+
 CORE_COUNT=$(( $(lscpu | grep "^Socket(s):" | awk '{print $2}' ) * $(lscpu | grep "^Core(s) per socket:" | awk '{print $4}') ))
 MAKE_JOB_COUNT=$(( CORE_COUNT / 3 > 4 ? CORE_COUNT / 3 : 4 ))
+
+source ${SRC_ROOT_DIR}/scripts/utils/common.sh
 
 pushd () {
     command pushd "$@" > /dev/null
@@ -12,14 +16,6 @@ pushd () {
 
 popd () {
     command popd "$@" > /dev/null
-}
-
-check_command_exit_code()
-{
-    if [ $1 -ne 0 ]; then
-        echo "ERROR: ${2}" 1>&2
-        exit $1
-    fi
 }
 
 print_help() {
@@ -91,8 +87,16 @@ set_default_values() {
     EXCLUDE_LIST="${SCRIPT_DIR}/exclude_list"
 
     export I_MPI_JOB_TIMEOUT=180
-    export CCL_YIELD=sched_yield
     export CCL_LOG_LEVEL=info
+    export CCL_WORKER_COUNT=1
+    export I_MPI_DEBUG=12
+}
+
+set_gen9_env() {
+    if [[ ${PLATFORM_HW_DISCRETE_GPU} = "gen9" ]]
+    then
+        export CCL_YIELD=sched_yield
+    fi
 }
 
 parse_arguments() {
@@ -140,7 +144,7 @@ parse_arguments() {
     fi
     if [[ -z ${TRANSPORT} ]]
     then
-        TRANSPORT="impi"
+        export TRANSPORT="impi"
     fi
 
     echo "-----------------------------------------------------------"
@@ -263,6 +267,7 @@ run_tests() {
 
 set_default_values
 parse_arguments $@
+set_gen9_env
 define_compiler
 build
 run_tests

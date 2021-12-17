@@ -43,6 +43,7 @@ check_test()
     failed_pattern="abort|^bad$|corrupt|fail|^fault$|[^-W]invalid"
     failed_pattern+="|kill|runtime_error|terminate|timed|unexpected"
     failed_pattern+="|[^-W]error|exception"
+    failed_pattern+="|job ending due to application timeout"
     skipped_pattern="skip test|unavailable"
 
     test_passed=`grep -E -c -i "${passed_pattern}" ${test_log}`

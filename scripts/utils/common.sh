@@ -70,6 +70,12 @@ function run_cmd()
     check_command_exit_code $? "cmd failed"
 }
 
+function run_test_cmd()
+{
+    echo_log "\nTest command: ${1}\n"
+    eval ${1}
+}
+
 function echo_log_separator()
 {
     echo_log "#=============================================================================="
@@ -81,4 +87,116 @@ function is_gpu_node()
     then
         export IS_GPU_NODE="yes"
     fi
+}
+
+function set_tests_option()
+{
+    local option="${1}"
+    local current_scope="${2}"
+    local option_name=${option%=*}
+    local pattern=$(echo ${current_scope} | grep -oE "${option_name}[^ ]*")
+    if [[ -z ${pattern} ]]
+    then
+        current_scope="${current_scope} ${option}"
+    else
+        current_scope=${current_scope/${pattern}/${option}}
+    fi
+    echo ${current_scope}
+}
+
+function set_gnu_compiler()
+{
+    if [[ -z "${GNU_BUNDLE_ROOT}" ]]
+    then
+        GNU_BUNDLE_ROOT="/usr/bin"
+    fi
+    C_COMPILER=${GNU_BUNDLE_ROOT}/gcc
+    CXX_COMPILER=${GNU_BUNDLE_ROOT}/g++
+}
+
+function set_intel_compiler()
+{
+    if [[ -z "${INTEL_BUNDLE_ROOT}" ]]
+    then
+        INTEL_BUNDLE_ROOT="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/"
+    fi
+    source ${INTEL_BUNDLE_ROOT}/linux/bin/compilervars.sh intel64
+    C_COMPILER="${INTEL_BUNDLE_ROOT}/linux/bin/intel64/icc"
+    CXX_COMPILER="${INTEL_BUNDLE_ROOT}/linux/bin/intel64/icpc"
+}
+
+function set_icx_compiler()
+{
+    if [[ -z "${ICX_BUNDLE_ROOT}" ]]
+    then
+        ICX_BUNDLE_ROOT="${CCL_ONEAPI_DIR}/compiler/last/"
+    fi
+    source ${ICX_BUNDLE_ROOT}/setvars.sh
+    C_COMPILER="${ICX_BUNDLE_ROOT}/compiler/latest/linux/bin/icx"
+    CXX_COMPILER="${ICX_BUNDLE_ROOT}/compiler/latest/linux/bin/icpx"
+}
+
+function set_dpcpp_compiler()
+{
+    if [[ -z "${SYCL_BUNDLE_ROOT}" ]]
+    then
+        SYCL_BUNDLE_ROOT="${CCL_ONEAPI_DIR}/compiler/last/"
+    fi
+    if [[ ${node_label} = "ccl_test_pvc" ]]
+    then
+        if [[ ! -d ${SYCL_BUNDLE_ROOT}/modulefiles ]]
+        then
+            ${SYCL_BUNDLE_ROOT}/modulefiles-setup.sh
+        fi
+        module use ${SYCL_BUNDLE_ROOT}/modulefiles
+        module load compiler/latest
+    else
+        source ${SYCL_BUNDLE_ROOT}/setvars.sh
+    fi
+    C_COMPILER="${SYCL_BUNDLE_ROOT}/compiler/latest/linux/bin/icx"
+    CXX_COMPILER="${SYCL_BUNDLE_ROOT}/compiler/latest/linux/bin/dpcpp"
+    COMPUTE_BACKEND="dpcpp"
+}
+
+function set_impi_environment()
+{
+    if [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]]
+    then
+        return
+    fi
+
+    if [[ -z "${I_MPI_HYDRA_HOST_FILE}" ]]
+    then
+        if [ -f ${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts ]
+        then
+            export I_MPI_HYDRA_HOST_FILE=${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts
+        else
+            echo "WARNING: hostfile (${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts) isn't available"
+            echo "WARNING: I_MPI_HYDRA_HOST_FILE isn't set"
+        fi
+    fi
+
+    if [[ -z "${IMPI_PATH}" ]]
+    then
+        echo "WARNING: IMPI_PATH isn't set"
+        if [[ -d "${ARTEFACT_ROOT_DIR}/impi-ch4-weekly/last/oneapi_impi/" ]]
+        then
+            weekly_mpiexec_version=$(${ARTEFACT_ROOT_DIR}/impi-ch4-weekly/last/oneapi_impi/bin/mpiexec --version)
+            weekly_build_date=$(echo ${weekly_mpiexec_version#*Build} | awk '{print $1;}')
+
+            lkg_mpiexec_version=$(${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/bin/mpiexec --version)
+            lkg_build_date=$(echo ${lkg_mpiexec_version#*Build} | awk '{print $1;}')
+
+            if [ "$weekly_build_date" = "$lkg_build_date" ]; then
+                export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
+            elif expr "$weekly_build_date" "<" "$lkg_build_date" >/dev/null; then
+                export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
+            else
+                export IMPI_PATH="${ARTEFACT_ROOT_DIR}/impi-ch4-weekly/last/oneapi_impi"
+            fi
+        else
+            export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
+        fi
+    fi
+    source ${IMPI_PATH}/env/vars.sh
 }

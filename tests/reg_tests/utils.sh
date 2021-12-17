@@ -46,6 +46,7 @@ function check_log() {
     failed_pattern="abort|^bad$|corrupt|fail|^fault$|[^-W]invalid"
     failed_pattern+="|kill|runtime_error|terminate|timed|unexpected"
     failed_pattern+="|[^-W]error|exception"
+    failed_pattern+="|job ending due to application timeout"
     failed_count=`grep -E -c -i "${failed_pattern}" ${log_path}`
     if [ ${failed_count} -ne 0 ]
     then

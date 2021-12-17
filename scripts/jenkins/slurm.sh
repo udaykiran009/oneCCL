@@ -102,7 +102,7 @@ function set_reservation_env()
     then
         RESERVATION_NAME="OneCCL"
     fi
-    NAME=$(sinfo -T | grep -e "${RESERVATION_NAME}.* ACTIVE" | awk '{print $1}')
+    NAME=$(sinfo -T | grep -i -e "${RESERVATION_NAME}.* ACTIVE" | awk '{print $1}')
     echo "DEBUG: RESERVATION NAME = ${NAME}"
     if [[ -z ${NAME} ]]
     then

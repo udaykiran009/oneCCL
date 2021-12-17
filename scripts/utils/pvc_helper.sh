@@ -55,7 +55,7 @@ function set_pvc_mpich_ofi_env()
     export LD_LIBRARY_PATH=/usr/lib64/:${LD_LIBRARY_PATH}
 }
 
-function set_agama_env()
+function set_pvc_agama_env()
 {
     module use -a /home/ftartagl/graphics-compute-runtime/modulefiles
     module load graphics-compute-runtime/agama-ci-prerelease-260

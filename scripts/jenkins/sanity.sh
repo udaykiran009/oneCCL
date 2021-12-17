@@ -136,25 +136,11 @@ function print_help()
 }
 
 function set_external_env() {
-    if [ ${TEST_CONFIGURATIONS} == "test:nightly" ]
+    if [[ ${TEST_CONFIGURATIONS} == "test:pr" ]]
     then
-        echo "Nightly test scope will be started."
-        export TESTING_ENVIRONMENT="\
-        CCL_TEST_DATA_TYPE=1 \
-        CCL_TEST_SIZE_TYPE=1 \
-        CCL_TEST_BUF_COUNT_TYPE=1 \
-        CCL_TEST_PLACE_TYPE=1 \
-        CCL_TEST_START_ORDER_TYPE=1 \
-        CCL_TEST_COMPLETE_ORDER_TYPE=0 \
-        CCL_TEST_COMPLETE_TYPE=0 \
-        CCL_TEST_CACHE_TYPE=1 \
-        CCL_TEST_SYNC_TYPE=1 \
-        CCL_TEST_REDUCTION_TYPE=1"
-    elif [[ ${TEST_CONFIGURATIONS} == "test:pr" ]]
-    then
-        export scope="pr"
+        export regular_scope="pr"
     else
-        export scope="all"
+        export regular_scope="all"
     fi
 
     if [[ ${BUILDER_NAME} == "ccl-nightly" ]] || [[ ${BUILDER_NAME} == "ccl-weekly" ]]
@@ -162,15 +148,6 @@ function set_external_env() {
         export valgrind_scope="regular"
     else
         export valgrind_scope="short"
-    fi
-
-    if [ -n "${TESTING_ENVIRONMENT}" ]
-    then
-        echo "TESTING_ENVIRONMENT is " ${TESTING_ENVIRONMENT}
-        for line in ${TESTING_ENVIRONMENT}
-        do
-            export "$line"
-        done
     fi
 }
 
@@ -235,59 +212,60 @@ function set_runtime_env() {
     export CCL_RUNTIME_LIST="level_zero"
 }
 
+function set_regular_tests_environment()
+{
+    export I_MPI_JOB_TIMEOUT=360
+}
+
 function set_functional_tests_env()
 {
     echo "Use default env"
-    export CCL_LOG_LEVEL=info
+    func_exec_env+=" CCL_LOG_LEVEL=info"
     # flush cache inside ccl::barrier to avoid OOM
     # in case of caching and large number of different match_ids
-    export CCL_CACHE_FLUSH=1
-    export CCL_MNIC=global
-    export I_MPI_DEBUG=12
+    func_exec_env+=" CCL_CACHE_FLUSH=1"
+    func_exec_env+=" CCL_MNIC=global"
+    func_exec_env+=" I_MPI_DEBUG=12"
+    func_exec_env+=" I_MPI_JOB_TIMEOUT=360"
 
     if [[ "${node_label}" = "ccl_test_ats" || "${node_label}" = "ccl_test_pvc" ]]
     then
-        export CCL_MNIC_NAME=eno,eth,hfi,^mlx,unknown
+        func_exec_env+=" CCL_MNIC_NAME=eno,eth,hfi,^mlx,unknown"
     else
-        export CCL_MNIC_NAME=br,eno,eth,hfi,mlx,^unknown
+        func_exec_env+=" CCL_MNIC_NAME=br,eno,eth,hfi,mlx,^unknown"
     fi
 }
 
 function set_functional_tests_scope()
 {
     echo "Set default func tests scope"
-    export CCL_TEST_DATA_TYPE=1
-    export CCL_TEST_SIZE_TYPE=1
-    export CCL_TEST_BUF_COUNT_TYPE=1
-    export CCL_TEST_PLACE_TYPE=1
-    export CCL_TEST_START_ORDER_TYPE=0
-    export CCL_TEST_COMPLETE_ORDER_TYPE=0
-    export CCL_TEST_COMPLETE_TYPE=0
-    export CCL_TEST_CACHE_TYPE=1
-    export CCL_TEST_SYNC_TYPE=0
-    export CCL_TEST_REDUCTION_TYPE=0
+    func_exec_env+=" CCL_TEST_DATA_TYPE=1"
+    func_exec_env+=" CCL_TEST_SIZE_TYPE=1"
+    func_exec_env+=" CCL_TEST_BUF_COUNT_TYPE=1"
+    func_exec_env+=" CCL_TEST_PLACE_TYPE=1"
+    func_exec_env+=" CCL_TEST_START_ORDER_TYPE=0"
+    func_exec_env+=" CCL_TEST_COMPLETE_ORDER_TYPE=0"
+    func_exec_env+=" CCL_TEST_COMPLETE_TYPE=0"
+    func_exec_env+=" CCL_TEST_CACHE_TYPE=1"
+    func_exec_env+=" CCL_TEST_SYNC_TYPE=0"
+    func_exec_env+=" CCL_TEST_REDUCTION_TYPE=0"
 
     if [[ ${IS_GPU_NODE} = "yes" ]]
     then
-        export CCL_TEST_DYNAMIC_POINTER=0
+        func_exec_env+=" CCL_TEST_DYNAMIC_POINTER=0"
     else
-        export CCL_TEST_DYNAMIC_POINTER=1
+        func_exec_env+=" CCL_TEST_DYNAMIC_POINTER=1"
     fi
 }
 
 function set_unordered_coll_test_scope()
 {
     echo "Set unordered coll tests scope"
-    export CCL_TEST_DATA_TYPE=0
-    export CCL_TEST_SIZE_TYPE=1
-    export CCL_TEST_BUF_COUNT_TYPE=1
-    export CCL_TEST_PLACE_TYPE=0
-    export CCL_TEST_START_ORDER_TYPE=1
-    export CCL_TEST_COMPLETE_ORDER_TYPE=1
-    export CCL_TEST_COMPLETE_TYPE=1
-    export CCL_TEST_CACHE_TYPE=1
-    export CCL_TEST_SYNC_TYPE=0
-    export CCL_TEST_REDUCTION_TYPE=0
+    func_exec_env=$(set_tests_option "CCL_TEST_DATA_TYPE=0" "${func_exec_env}")
+    func_exec_env=$(set_tests_option "CCL_TEST_PLACE_TYPE=0" "${func_exec_env}")
+    func_exec_env=$(set_tests_option "CCL_TEST_START_ORDER_TYPE=1" "${func_exec_env}")
+    func_exec_env=$(set_tests_option "CCL_TEST_COMPLETE_ORDER_TYPE=1" "${func_exec_env}")
+    func_exec_env=$(set_tests_option "CCL_TEST_COMPLETE_TYPE=1" "${func_exec_env}")
 }
 
 function set_ats_environment()
@@ -322,7 +300,7 @@ function set_pvc_environment()
 
     # Compiler
     export BUILD_COMPILER_TYPE="dpcpp"
-    export SYCL_BUNDLE_ROOT="/home/sys_ctlab/oneapi/compiler/last/compiler/latest/linux/"
+    export SYCL_BUNDLE_ROOT="/home/sys_ctlab/oneapi/compiler/last/"
 
     if [ -z ${CCL_ROOT} ]
     then
@@ -336,7 +314,7 @@ function set_pvc_environment()
     export HYDRA_LAUNCHER="ssh"
 
     # Compute runtime
-    set_agama_env
+    set_pvc_agama_env
 }
 
 function set_environment()
@@ -355,108 +333,58 @@ function set_environment()
         set_pvc_environment
     fi
 
-    # $BUILD_COMPILER_TYPE may be set up by user: dpcpp/gnu/intel/icx
-    if [ -z "${BUILD_COMPILER_TYPE}" ]
+    if [[ ${IS_GPU_NODE} = "yes" ]]
     then
-        if [ ${node_label} == "ccl_test_gen9" ] || [ ${node_label} == "ccl_vlgd" ] || [ ${build_compiler} == "sycl" ]
-        then
-            BUILD_COMPILER_TYPE="dpcpp"
-            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
-        elif [ ${node_label} == "ccl_test_cpu" ] || [ ${build_compiler} == "gnu" ]
-        then
-            BUILD_COMPILER_TYPE="gnu"
-            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu
-        elif [ ${build_compiler} == "intel" ]
-        then
-            BUILD_COMPILER_TYPE="intel"
-            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu
-        elif [ ${build_compiler} == "icx" ]
-        then
-            BUILD_COMPILER_TYPE="icx"
-            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu
-        else
-            echo "WARNING: the 'node_label' variable is not set. 'dpcpp' will be used by default."
-            BUILD_COMPILER_TYPE="dpcpp"
-        fi
+        BUILD_COMPILER_TYPE="dpcpp"
+    elif [[ ${IS_GPU_NODE} = "no" ]] || [[ ${build_compiler} = "gnu" ]]
+    then
+        BUILD_COMPILER_TYPE="gnu"
+    elif [[ ${build_compiler} = "intel" ]]
+    then
+        BUILD_COMPILER_TYPE="intel"
+    elif [[ ${build_compiler} = "icx" ]]
+    then
+        BUILD_COMPILER_TYPE="icx"
+    else
+        BUILD_COMPILER_TYPE="dpcpp"
     fi
 
-    if [ "${BUILD_COMPILER_TYPE}" == "gnu" ]
+    if [[ "${BUILD_COMPILER_TYPE}" = "gnu" ]]
     then
-        BUILD_COMPILER_PATH=/usr/bin
-        C_COMPILER=${BUILD_COMPILER_PATH}/gcc
-        CXX_COMPILER=${BUILD_COMPILER_PATH}/g++
-    elif [ "${BUILD_COMPILER_TYPE}" = "intel" ]
+        set_gnu_compiler
+    elif [[ "${BUILD_COMPILER_TYPE}" = "intel" ]]
     then
-        BUILD_COMPILER_PATH=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/
-        source ${BUILD_COMPILER_PATH}/linux/bin/compilervars.sh intel64
-        C_COMPILER=${BUILD_COMPILER_PATH}/linux/bin/intel64/icc
-        CXX_COMPILER=${BUILD_COMPILER_PATH}/linux/bin/intel64/icpc
-    elif [ "${BUILD_COMPILER_TYPE}" = "icx" ]
+        set_intel_compiler
+    elif [[ "${BUILD_COMPILER_TYPE}" = "icx" ]]
     then
-        if [ -z "${ICX_BUNDLE_ROOT}" ]
-        then
-            ICX_BUNDLE_ROOT="${CCL_ONEAPI_DIR}/compiler/last/compiler/latest/linux/"
-            echo "WARNING: ICX_BUNDLE_ROOT is not defined, will be used default: $ICX_BUNDLE_ROOT"
-        fi
-        source ${ICX_BUNDLE_ROOT}/../../../setvars.sh
-        BUILD_COMPILER_PATH=${ICX_BUNDLE_ROOT}/bin
-        C_COMPILER=${BUILD_COMPILER_PATH}/icx
-        CXX_COMPILER=${BUILD_COMPILER_PATH}/icpx
-    elif [ "${BUILD_COMPILER_TYPE}" = "dpcpp" ]
+        set_icx_compiler
+    elif [[ "${BUILD_COMPILER_TYPE}" = "dpcpp" ]]
     then
-        if [ -z "${SYCL_BUNDLE_ROOT}" ]
-        then
-            SYCL_BUNDLE_ROOT="${CCL_ONEAPI_DIR}/compiler/last/compiler/latest/linux/"
-            echo "WARNING: SYCL_BUNDLE_ROOT is not defined, will be used default: $SYCL_BUNDLE_ROOT"
-        fi
-        if [[ ${node_label} = "ccl_test_pvc" ]]
-        then
-            if [[ ! -d ${SYCL_BUNDLE_ROOT}/../../../modulefiles ]]
-            then
-                ${SYCL_BUNDLE_ROOT}/../../../modulefiles-setup.sh
-            fi
-            module use ${SYCL_BUNDLE_ROOT}/../../../modulefiles
-            module load compiler/latest
-        else
-            source ${SYCL_BUNDLE_ROOT}/../../../setvars.sh
-        fi
-
-        BUILD_COMPILER_PATH=${SYCL_BUNDLE_ROOT}/bin
-        C_COMPILER=${BUILD_COMPILER_PATH}/icx
-        CXX_COMPILER=${BUILD_COMPILER_PATH}/dpcpp
-        COMPUTE_BACKEND=dpcpp
+        set_dpcpp_compiler
     else
         echo "ERROR: unsupported BUILD_COMPILER_TYPE"
         exit 1
     fi
 
-    if [ -z "$worker_count" ]
+    clinfo -a | grep -i "driver version"
+
+    set_impi_environment
+    set_ccl_environment
+
+    if [[ -z "${worker_count}" ]]
     then
         worker_count="2"
     fi
-    export CCL_WORKER_COUNT=$worker_count
+    export CCL_WORKER_COUNT=${worker_count}
 
-    if [ -z "$runtime" ]
+    if [[ -z "${runtime}" ]]
     then
         runtime="ofi"
     fi
 
-    if [ -z "$build_type" ]
+    if [[ -z "${build_type}" ]]
     then
         export build_type="release"
-    fi
-    if [ -z ${CCL_ROOT} ]
-    then
-        if [ -z  "${node_label}" ]
-        then
-            source ${ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu
-        elif [ $node_label == "ccl_test_gen9" ] || [ $node_label == "ccl_vlgd" ]
-        then
-            source ${ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
-            export DASHBOARD_GPU_DEVICE_PRESENT="yes"
-        else
-            source ${ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu
-        fi
     fi
 
     export CCL_PROCESS_CLEANUP="yes"
@@ -471,13 +399,8 @@ function set_environment()
 
 function set_reg_tests_environment()
 {
-    export CCL_WORKER_COUNT=1
-    export CCL_LOG_LEVEL=info
-    export I_MPI_DEBUG=12
     if [[ "${node_label}" = "ccl_test_gen9" ]]
     then
-        export CCL_WORKER_OFFLOAD=0
-        export CCL_YIELD=sched_yield
         export PLATFORM="gen9"
     elif [[ "${node_label}" = "ccl_test_ats" ]]
     then
@@ -530,6 +453,20 @@ function set_impi_environment()
     source ${IMPI_PATH}/env/vars.sh
 }
 
+function set_ccl_environment()
+{
+    if [[ -z ${CCL_ROOT} ]]
+    then
+        if [[ ${IS_GPU_NODE} = "yes" ]]
+        then
+            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+            export DASHBOARD_GPU_DEVICE_PRESENT="yes"
+        else
+            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu
+        fi
+    fi
+}
+
 function make_tests()
 {
     cd ${CURRENT_WORK_DIR}/tests/functional
@@ -552,7 +489,7 @@ function run_valgrind_check()
     mkdir -p ${EXAMPLE_WORK_DIR}
     echo "EXAMPLE_WORK_DIR =" $EXAMPLE_WORK_DIR
     cd ${EXAMPLE_WORK_DIR}
-    if [ ${node_label} == "ccl_vlgd" ]
+    if [[ ${IS_GPU_NODE} = "yes" ]]
     then
         if [[ $(hostname) = *"nnlmpinuc09"* ]]
         then
@@ -609,6 +546,8 @@ function run_regular_tests()
         return
     fi
 
+    set_regular_tests_environment
+
     if [[ ${IS_GPU_NODE} = "yes" ]]
     then
         if [[ $(hostname) = *"nnlmpinuc09"* ]]
@@ -617,10 +556,9 @@ function run_regular_tests()
         else
             export FI_TCP_IFACE=eno1
         fi
-        export DASHBOARD_GPU_DEVICE_PRESENT=1
-        ${CURRENT_WORK_DIR}/examples/run.sh --mode gpu --scope ${scope} --cleanup
+        ${CURRENT_WORK_DIR}/examples/run.sh --mode gpu --scope ${regular_scope} --cleanup
     else
-        ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope ${scope} --cleanup
+        ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope ${regular_scope} --cleanup
     fi
 
     log_status_fail=${PIPESTATUS[0]}
@@ -777,7 +715,7 @@ function run_modulefile_tests()
 
     set_modulefile_environment
 
-    ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope $scope
+    ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope ${regular_scope}
 
     log_status_fail=${PIPESTATUS[0]}
     if [ "$log_status_fail" -eq 0 ]
@@ -798,6 +736,7 @@ function run_functional_tests()
         return
     fi
 
+    func_exec_env=""
     make_tests
     set_functional_tests_env
     set_functional_tests_scope
@@ -837,31 +776,34 @@ function run_functional_tests()
 
     case "$runtime" in
            ofi )
-               export CCL_ATL_TRANSPORT=ofi
-               ctest -VV -C default
-               ctest -VV -C regression
-               ;;
+                func_exec_env+=" CCL_ATL_TRANSPORT=ofi"
+                run_test_cmd "${func_exec_env} ctest -VV -C default"
+                run_test_cmd "${func_exec_env} ctest -VV -C regression"
+                ;;
            mpi )
-                export CCL_ATL_TRANSPORT=mpi
-                ctest -VV -C default
-                ctest -VV -C regression
+                func_exec_env+=" CCL_ATL_TRANSPORT=mpi"
+                run_test_cmd "${func_exec_env} ctest -VV -C default"
+                run_test_cmd "${func_exec_env} ctest -VV -C regression"
                 ;;
            mpi_adjust )
-                export CCL_ATL_TRANSPORT=mpi
+                func_exec_env+=" CCL_ATL_TRANSPORT=mpi"
 
                 for algo in ${allgatherv_algos}
                 do
-                    CCL_ALLGATHERV=$algo ctest -VV -C allgatherv_"$algo"
+                    allgatherv_exec_env=$(set_tests_option "CCL_ALLGATHERV=${algo}" "${func_exec_env}")
+                    run_test_cmd "${allgatherv_exec_env} ctest -VV -C allgatherv_${algo}"
                 done
 
                 for algo in ${allreduce_algos}
                 do
                     if [ "$algo" == "ring" ];
                     then
-                        CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
-                    elif [ "$algo" == "nreduce" ];
+                        allreduce_ring_exec_env="${func_exec_env} CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=${algo}"
+                        run_test_cmd "${allreduce_ring_exec_env} ctest -VV -C allreduce_${algo}_chunked"
+                    elif [[ "$algo" == "nreduce" ]];
                     then
-                        CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
+                        allreduce_nreduce_exec_env="${func_exec_env} CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=${algo}"
+                        run_test_cmd "${allreduce_nreduce_exec_env} ctest -VV -C allreduce_${algo}_chunked"
                     fi
                 done
 
@@ -869,17 +811,20 @@ function run_functional_tests()
                 do
                     for algo in ${allreduce_algos}
                     do
-                        CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_"$ppn"
+                        allreduce_exec_env=$(set_tests_option "CCL_ALLREDUCE=${algo}" "${func_exec_env}")
+                        run_test_cmd "${allreduce_exec_env} ctest -VV -C allreduce_${algo}_${ppn}"
                     done
 
                     for algo in ${bcast_algos}
                     do
-                        CCL_BCAST=$algo ctest -VV -C bcast_"$algo"_"$ppn"
+                        bcast_exec_env=$(set_tests_option "CCL_BCAST=${algo}" "${func_exec_env}")
+                        run_test_cmd "${bcast_exec_env} ctest -VV -C bcast_${algo}_${ppn}"
                     done
 
                     for algo in ${reduce_algos}
                     do
-                        CCL_REDUCE=$algo ctest -VV -C reduce_"$algo"_"$ppn"
+                        reduce_exec_env=$(set_tests_option "CCL_REDUCE=${algo}" "${func_exec_env}")
+                        run_test_cmd "${reduce_exec_env} ctest -VV -C reduce_${algo}_${ppn}"
                     done
                 done
 
@@ -887,52 +832,63 @@ function run_functional_tests()
                 do
                     if [ "$algo" == "scatter" ];
                     then
-                        CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
-                            CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"_chunked
+                        alltoall_scatter_exec_env="${func_exec_env}"
+                        alltoall_scatter_exec_env+=" CCL_ALLTOALL_SCATTER_MAX_OPS=2"
+                        alltoall_scatter_exec_env+=" CCL_CHUNK_COUNT=${worker_count}"
+                        alltoall_scatter_exec_env+=" CCL_ALLTOALL=${algo}"
+                        run_test_cmd "${alltoall_scatter_exec_env} ctest -VV -C alltoall_${algo}_chunked"
                     fi
-                    CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"
+                    alltoall_exec_env=$(set_tests_option "CCL_ALLTOALL=${algo}" "${func_exec_env}")
+                    run_test_cmd "${alltoall_exec_env} ctest -VV -C alltoall_${algo}"
                 done
 
                 for algo in ${alltoallv_algos}
                 do
                     if [ "$algo" == "scatter" ];
                     then
-                        CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
-                            CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"_chunked
+                        alltoallv_scatter_exec_env="${func_exec_env}"
+                        alltoallv_scatter_exec_env+=" CCL_ALLTOALL_SCATTER_MAX_OPS=2"
+                        alltoallv_scatter_exec_env+=" CCL_CHUNK_COUNT=${worker_count}"
+                        alltoallv_scatter_exec_env+=" CCL_ALLTOALLV=${algo}"
+                        run_test_cmd "${alltoallv_scatter_exec_env} ctest -VV -C alltoallv_${algo}_chunked"
                     fi
-                    CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"
+                    alltoallv_exec_env=$(set_tests_option "CCL_ALLTOALLV=${algo}" "${func_exec_env}")
+                    run_test_cmd "${alltoallv_exec_env} ctest -VV -C alltoallv_${algo}"
                 done
 
                 for algo in ${reduce_scatter_algos}
                 do
-                    CCL_REDUCE_SCATTER=$algo ctest -VV -C reduce_scatter_"$algo"
+                    reduce_scatter_exec_env=$(set_tests_option "CCL_REDUCE_SCATTER=${algo}" "${func_exec_env}")
+                    run_test_cmd "${reduce_scatter_exec_env} ctest -VV -C reduce_scatter_${algo}"
                 done
                ;;
            ofi_adjust )
-
-                export CCL_ATL_TRANSPORT=ofi
+                func_exec_env+=" CCL_ATL_TRANSPORT=ofi"
 
                 for algo in ${allgatherv_algos}
                 do
-                    CCL_ALLGATHERV=$algo ctest -VV -C allgatherv_"$algo"
+                    allgatherv_exec_env=$(set_tests_option "CCL_ALLGATHERV=${algo}" "${func_exec_env}")
+                    run_test_cmd "${allgatherv_exec_env} ctest -VV -C allgatherv_${algo}"
                 done
 
                 for algo in ${allreduce_algos}
                 do
-                    if [ "$algo" == "ring_rma" ];
+                    if [[ "$algo" == "ring_rma" ]]
                     then
-                        CCL_ATL_RMA=1 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"
-                    else
-                        if [ "$algo" == "nreduce" ];
-                        then
-                            CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
-                        elif [ "$algo" == "ring" ];
-                        then
-                            CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
-                        elif [ "$algo" == "2d" ];
-                        then
-                            CCL_AR2D_CHUNK_COUNT=2 CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_chunked
-                        fi
+                        allreduce_ring_rma_exec_env="${func_exec_env} CCL_ATL_RMA=1 CCL_ALLREDUCE=${algo}"
+                        run_test_cmd "${allreduce_ring_rma_exec_env} ctest -VV -C allreduce_${algo}"
+                    elif [[ "$algo" == "nreduce" ]]
+                    then
+                        allreduce_nreduce_exec_env="${func_exec_env} CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=${algo}"
+                        run_test_cmd "${allreduce_nreduce_exec_env} ctest -VV -C allreduce_${algo}_chunked"
+                    elif [[ "$algo" == "ring" ]]
+                    then
+                        allreduce_ring_exec_env="${func_exec_env} CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=${algo}"
+                        run_test_cmd "${allreduce_ring_exec_env} ctest -VV -C allreduce_${algo}_chunked"
+                    elif [[ "$algo" == "2d" ]]
+                    then
+                        allreduce_2d_exec_env="${func_exec_env} CCL_AR2D_CHUNK_COUNT=2 CCL_ALLREDUCE=${algo}"
+                        run_test_cmd "${allreduce_2d_exec_env} ctest -VV -C allreduce_${algo}_chunked"
                     fi
                 done
 
@@ -940,17 +896,20 @@ function run_functional_tests()
                 do
                     for algo in ${allreduce_algos}
                     do
-                        CCL_ALLREDUCE=$algo ctest -VV -C allreduce_"$algo"_"$ppn"
+                        allreduce_exec_env=$(set_tests_option "CCL_ALLREDUCE=${algo}" "${func_exec_env}")
+                        run_test_cmd "${allreduce_exec_env} ctest -VV -C allreduce_${algo}_${ppn}"
                     done
 
                     for algo in ${bcast_algos}
                     do
-                        CCL_BCAST=$algo ctest -VV -C bcast_"$algo"_"$ppn"
+                        bcast_exec_env=$(set_tests_option "CCL_BCAST=${algo}" "${func_exec_env}")
+                        run_test_cmd "${bcast_exec_env} ctest -VV -C bcast_${algo}_${ppn}"
                     done
 
                     for algo in ${reduce_algos}
                     do
-                        CCL_REDUCE=$algo ctest -VV -C reduce_"$algo"_"$ppn"
+                        reduce_exec_env=$(set_tests_option "CCL_REDUCE=${algo}" "${func_exec_env}")
+                        run_test_cmd "${reduce_exec_env} ctest -VV -C reduce_${algo}_${ppn}"
                     done
                 done
 
@@ -958,50 +917,67 @@ function run_functional_tests()
                 do
                     if [ "$algo" == "scatter" ];
                     then
-                        CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
-                            CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"_chunked
+                        alltoall_scatter_exec_env="${func_exec_env}"
+                        alltoall_scatter_exec_env+=" CCL_ALLTOALL_SCATTER_MAX_OPS=2"
+                        alltoall_scatter_exec_env+=" CCL_CHUNK_COUNT=${worker_count}"
+                        alltoall_scatter_exec_env+=" CCL_ALLTOALL=${algo}"
+                        run_test_cmd "${alltoall_scatter_exec_env} ctest -VV -C alltoall_${algo}_chunked"
                     fi
-                    CCL_ALLTOALL=$algo ctest -VV -C alltoall_"$algo"
+                    alltoall_exec_env=$(set_tests_option "CCL_ALLTOALL=${algo}" "${func_exec_env}")
+                    run_test_cmd "${alltoall_exec_env} ctest -VV -C alltoall_${algo}"
                 done
 
                 for algo in ${alltoallv_algos}
                 do
                     if [ "$algo" == "scatter" ];
                     then
-                        CCL_ALLTOALL_SCATTER_MAX_OPS=2 CCL_CHUNK_COUNT=${worker_count} \
-                            CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"_chunked
+                        alltoallv_scatter_exec_env="${func_exec_env}"
+                        alltoallv_scatter_exec_env+=" CCL_ALLTOALL_SCATTER_MAX_OPS=2"
+                        alltoallv_scatter_exec_env+=" CCL_CHUNK_COUNT=${worker_count}"
+                        alltoallv_scatter_exec_env+=" CCL_ALLTOALLV=${algo}"
+                        run_test_cmd "${alltoallv_scatter_exec_env} ctest -VV -C alltoallv_${algo}_chunked"
                     fi
-                    CCL_ALLTOALLV=$algo ctest -VV -C alltoallv_"$algo"
+                    alltoallv_exec_env=$(set_tests_option "CCL_ALLTOALLV=${algo}" "${func_exec_env}")
+                    run_test_cmd "${alltoallv_exec_env} ctest -VV -C alltoallv_${algo}"
                 done
 
                 for algo in ${reduce_scatter_algos}
                 do
-                    CCL_REDUCE_SCATTER=$algo ctest -VV -C reduce_scatter_"$algo"
+                    reduce_scatter_exec_env=$(set_tests_option "CCL_REDUCE_SCATTER=${algo}" "${func_exec_env}")
+                    run_test_cmd "${reduce_scatter_exec_env} ctest -VV -C reduce_scatter_${algo}"
                 done
                ;;
             priority_mode )
                 # TODO: At the moment priority_mode and unordered_coll_mode launches only
                 # with CCL_ATS_TRANSPORT=ofi, so these confs are missed in mpich_ofi testing.
                 # We would like to add them in the future.
-                CCL_ATL_TRANSPORT=ofi CCL_PRIORITY=lifo ctest -VV -C default
-                CCL_ATL_TRANSPORT=ofi CCL_PRIORITY=direct ctest -VV -C default
-               ;;
+                func_exec_env+=" CCL_ATL_TRANSPORT=ofi"
+                func_exec_env+=" CCL_PRIORITY=lifo"
+                run_test_cmd "${func_exec_env} ctest -VV -C default"
+                func_exec_env=$(set_tests_option "CCL_PRIORITY=direct" "${func_exec_env}")
+                run_test_cmd "${func_exec_env} ctest -VV -C default"
+                ;;
             dynamic_pointer_mode )
                 for transport in ${CCL_ATL_TRANSPORT_LIST}
                 do
-                    CCL_ATL_TRANSPORT=${transport} ctest -VV -C default
+                    func_exec_env=$(set_tests_option "CCL_ATL_TRANSPORT=${transport}" "${func_exec_env}")
+                    run_test_cmd "${func_exec_env} ctest -VV -C default"
                 done
-               ;;
+                ;;
             unordered_coll_mode )
                 set_unordered_coll_test_scope
-                CCL_ATL_TRANSPORT=ofi CCL_UNORDERED_COLL=1 ctest -VV -C default
-               ;;
+                func_exec_env+=" CCL_ATL_TRANSPORT=ofi"
+                func_exec_env+=" CCL_UNORDERED_COLL=1"
+                run_test_cmd "${func_exec_env} ctest -VV -C default"
+                ;;
             fusion_mode )
+                func_exec_env+=" CCL_FUSION=1"
                 for transport in ${CCL_ATL_TRANSPORT_LIST}
                 do
-                    CCL_ATL_TRANSPORT=${transport} CCL_FUSION=1 ctest -VV -C allreduce_fusion
+                    func_exec_env=$(set_tests_option "CCL_ATL_TRANSPORT=${transport}" "${func_exec_env}")
+                    run_test_cmd "${func_exec_env} ctest -VV -C allreduce_fusion"
                 done
-               ;;
+                ;;
            * )
                 echo "Please specify runtime mode: runtime=ofi|mpi|ofi_adjust|mpi_adjust|priority_mode|unordered_coll_mode|dynamic_pointer_mode|fusion_mode|"
                 exit 1
@@ -1053,7 +1029,6 @@ EOF
 clean_nodes
 set_default_values
 set_environment
-set_impi_environment
 parse_arguments "$@"
 set_provider_env
 set_transport_env
