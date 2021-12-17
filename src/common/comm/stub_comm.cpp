@@ -137,7 +137,9 @@ ccl::event stub_comm::reduce_scatter_impl(const void* send_buf,
 }
 
 ccl::event stub_comm::process_stub_backend() {
-    std::cout << "running stub communicator id: " << kvs_impl->get_id() << std::endl;
+    std::stringstream s;
+    s << "running stub communicator id: " << kvs_impl->get_id();
+    std::cout << s.str() << std::endl;
     return std::unique_ptr<ccl::event_impl>(new ccl::stub_event_impl());
 }
 
