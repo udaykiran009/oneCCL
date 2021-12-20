@@ -34,29 +34,46 @@ void run_collective(const char* cmd_name,
               << ", us" << std::endl;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     ccl::init();
 
     int size, rank;
+    bool simple_pmi = false;
+    const char* simple_pmi_str = "simple_pmi";
+    const char* internal_pmi_str = "internal_pmi";
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     atexit(mpi_finalize);
 
+    if (argc > 1) {
+        if (strstr(argv[1], simple_pmi_str)) {
+            simple_pmi = true;
+        }
+        else if (strstr(argv[1], internal_pmi_str)) {
+            simple_pmi = false;
+        }
+        else {
+            printf("wrong pmi type, use: %s or %s(default)\n", simple_pmi_str, internal_pmi_str);
+            exit(1);
+        }
+    }
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
-    if (rank == 0) {
-        kvs = ccl::create_main_kvs();
-        main_addr = kvs->get_address();
-        MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+    if (!simple_pmi) {
+        if (rank == 0) {
+            kvs = ccl::create_main_kvs();
+            main_addr = kvs->get_address();
+            MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+        }
+        else {
+            MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+            kvs = ccl::create_kvs(main_addr);
+        }
     }
-    else {
-        MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-        kvs = ccl::create_kvs(main_addr);
-    }
-
-    auto comm = ccl::create_communicator(size, rank, kvs);
+    auto comm = simple_pmi ? ccl::preview::create_communicator()
+                           : ccl::create_communicator(size, rank, kvs);
     auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
 
     bool default_to_cache = attr.get<ccl::operation_attr_id::to_cache>();

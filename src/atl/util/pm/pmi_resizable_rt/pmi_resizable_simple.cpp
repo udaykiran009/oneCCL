@@ -269,14 +269,6 @@ atl_status_t pmi_resizable_simple::kvs_get_value(const char* kvs_name,
     return ATL_STATUS_SUCCESS;
 }
 
-atl_status_t pmi_resizable_simple::kvs_iget_value(const char* kvs_name,
-                                                  const char* key,
-                                                  char* value) {
-    std::string result_kvs_name = std::string(kvs_name) + std::to_string(local_id);
-    return k->kvs_get_value_by_name_key(result_kvs_name.c_str(), key, value) == KVS_STATUS_SUCCESS
-               ? ATL_STATUS_SUCCESS
-               : ATL_STATUS_FAILURE;
-}
 atl_status_t pmi_resizable_simple::get_barrier_idx(size_t& barrier_num_out) {
     size_t proc_count = threads_per_proc.size();
     barrier_num_out = 0;
@@ -377,7 +369,16 @@ void pmi_resizable_simple::calculate_local_thread_idx() {
         local_thread_idx++;
     }
 }
-
+// TODO: uncomment and fix it for collect real request ranks
+#if 0
+atl_status_t pmi_resizable_simple::kvs_iget_value(const char* kvs_name,
+                                                  const char* key,
+                                                  char* value) {
+    std::string result_kvs_name = std::string(kvs_name) + std::to_string(local_id);
+    return k->kvs_get_value_by_name_key(result_kvs_name.c_str(), key, value) == KVS_STATUS_SUCCESS
+               ? ATL_STATUS_SUCCESS
+               : ATL_STATUS_FAILURE;
+}
 atl_status_t pmi_resizable_simple::make_map_requested2global() {
     char global_rank_str[MAX_KVS_VAL_LENGTH];
     char process_name[MAX_KVS_VAL_LENGTH];
@@ -404,6 +405,7 @@ atl_status_t pmi_resizable_simple::make_map_requested2global() {
                                                     process_name),
                                      "make_map_requested2global: failed to get proc name");
                 }
+// Fixme: need additional sinchronization
                 ATL_CHECK_STATUS(kvs_set_value(GLOBAL_RANK_TO_NAME,
                                                std::to_string(free_glob_rank).c_str(),
                                                my_process_name.c_str()),
@@ -421,6 +423,7 @@ atl_status_t pmi_resizable_simple::make_map_requested2global() {
     ATL_CHECK_STATUS(pmrt_barrier_full(), "make_map_requested2global: full barrier failed");
     return ATL_STATUS_SUCCESS;
 }
+#endif
 
 atl_status_t pmi_resizable_simple::get_local_kvs_id(size_t& res) {
     char local_kvs_id[MAX_KVS_VAL_LENGTH];

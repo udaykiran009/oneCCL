@@ -12,16 +12,12 @@ check_ccl
 
 cd ${SCRIPT_DIR}
 
-tests="allgatherv alltoallv"
-tests+=" broadcast custom_allreduce external_kvs"
-tests+=" priority_allreduce reduce reduce_scatter unordered_allreduce"
-
 proc_counts="4"
 worker_counts="1 2"
 transports="ofi mpi"
 ofi_provs="tcp"
-
-for test in ${tests}
+pmi_types="simple_pmi internal_pmi"
+for pmi_type in ${pmi_types}
 do
     for proc_count in ${proc_counts}
     do
@@ -31,26 +27,11 @@ do
             do
                 for ofi_prov in ${ofi_provs}
                 do
-                    if [[ ${transport} = "mpi" ]]
-                    then
-                        if [[ ${test} = "unordered_allreduce" ]] ||
-                            [[ ${test} = "custom_allreduce" ]]
-                        then
-                            continue
-                        fi
-                    fi
-
-                    if [[ ${test} = "external_kvs" ]] &&
-                        [[ ${worker_count} = "2" ]]
-                    then
-                        continue
-                    fi
-
                     cmd="CCL_WORKER_COUNT=${worker_count}"
                     cmd+=" CCL_ATL_TRANSPORT=${transport}"
                     cmd+=" FI_PROVIDER=${ofi_prov}"
                     cmd+=" mpiexec -l -n ${proc_count} -ppn 2"
-                    cmd+=" ${SCRIPT_DIR}/${test} > ${TEST_LOG} 2>&1"
+                    cmd+=" ${SCRIPT_DIR}/allreduce ${pmi_type} > ${TEST_LOG} 2>&1"
                     run_cmd "${cmd}"
                     check_log ${TEST_LOG}
                 done
@@ -59,10 +40,6 @@ do
     done
 done
 
-for test in ${tests}
-do
-    rm ${test}
-done
-rm ${TEST_LOG}
+rm allreduce ${TEST_LOG}
 
 echo "Pass"

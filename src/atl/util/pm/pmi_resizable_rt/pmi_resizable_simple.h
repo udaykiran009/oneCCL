@@ -88,7 +88,6 @@ private:
 
     atl_status_t kvs_set_value(const char* kvs_name, const char* key, const char* value);
     atl_status_t kvs_get_value(const char* kvs_name, const char* key, char* value);
-    atl_status_t kvs_iget_value(const char* kvs_name, const char* key, char* value);
 
     atl_status_t get_barrier_idx(size_t& barrier_num_out);
     atl_status_t get_barrier_full_idx(size_t& res);
@@ -100,7 +99,6 @@ private:
     atl_status_t get_my_proc_idx_and_proc_count();
     atl_status_t make_requested_info();
     atl_status_t remove_initial_data();
-    atl_status_t make_map_requested2global();
     atl_status_t pmrt_barrier_full();
 
     int comm_size;

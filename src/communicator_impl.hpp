@@ -60,8 +60,6 @@ CCL_API vector_class<communicator> communicator::create_communicators(
  * @return host communicator
  */
 communicator communicator::create_communicator(const comm_attr& attr) {
-    throw ccl::exception(std::string(__PRETTY_FUNCTION__) + " - is not implemented");
-
     LOG_DEBUG("create communicator");
 
     communicator_interface_ptr impl = communicator_interface::create_communicator_impl();

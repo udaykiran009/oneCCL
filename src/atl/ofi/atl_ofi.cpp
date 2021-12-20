@@ -1095,7 +1095,7 @@ atl_status_t atl_ofi::get_rank2rank_map(std::shared_ptr<ipmi> pmi,
         return ATL_STATUS_FAILURE;
     }
     //    }
-
+    pmi->pmrt_barrier();
     for (size_t i = 0; i < local_size; ++i) {
         ret = pmi->pmrt_kvs_get(
             (char*)ATL_OFI_FI_ADDR_UPDATE_PM_KEY,
