@@ -137,6 +137,7 @@ env_data::env_data()
           enable_kernel_1s_ipc_wa(0),
           enable_close_fd_wa(0),
 
+          enable_topo_algo(1),
           enable_sycl_output_event(0),
           use_hmem(1),
 
@@ -326,6 +327,7 @@ void env_data::parse() {
     env_2_type(CCL_KERNEL_1S_IPC_WA, enable_kernel_1s_ipc_wa);
     env_2_type(CCL_KERNEL_CLOSE_FD_WA, enable_close_fd_wa);
 
+    env_2_type(CCL_TOPO_ALGO, enable_topo_algo);
     env_2_type(CCL_SYCL_OUTPUT_EVENT, enable_sycl_output_event);
     env_2_type(CCL_USE_HMEM, use_hmem);
 
@@ -576,6 +578,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_KERNEL_1S_IPC_WA, ": ", enable_kernel_1s_ipc_wa);
     LOG_INFO(CCL_KERNEL_CLOSE_FD_WA, ": ", enable_close_fd_wa);
 
+    LOG_INFO(CCL_TOPO_ALGO, ": ", enable_topo_algo);
     LOG_INFO(CCL_SYCL_OUTPUT_EVENT, ": ", enable_sycl_output_event);
     LOG_INFO(CCL_USE_HMEM, ": ", use_hmem);
 

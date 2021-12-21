@@ -108,6 +108,7 @@ constexpr const char* CCL_KERNEL_1S_USE_COPY_OPS = "CCL_KERNEL_1S_USE_COPY_OPS";
 constexpr const char* CCL_KERNEL_1S_IPC_WA = "CCL_KERNEL_1S_IPC_WA";
 constexpr const char* CCL_KERNEL_CLOSE_FD_WA = "CCL_KERNEL_CLOSE_FD_WA";
 
+constexpr const char* CCL_TOPO_ALGO = "CCL_TOPO_ALGO";
 constexpr const char* CCL_SYCL_OUTPUT_EVENT = "CCL_SYCL_OUTPUT_EVENT";
 constexpr const char* CCL_USE_HMEM = "CCL_USE_HMEM";
 
@@ -271,6 +272,7 @@ public:
     int enable_kernel_1s_ipc_wa;
     int enable_close_fd_wa;
 
+    int enable_topo_algo;
     int enable_sycl_output_event;
     int use_hmem;
 
