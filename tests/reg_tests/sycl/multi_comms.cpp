@@ -3,6 +3,74 @@
 using namespace std;
 using namespace sycl;
 
+bool reorder_ranks = false;
+bool multi_comm = false;
+std::vector<int> comm_sizes{};
+
+inline void parcer(int argc, char* argv[]) {
+    int arg_num = 1;
+    const std::string comm_create_mode = "-c";
+    const std::string direct = "direct";
+    const std::string reverse = "reverse";
+    const std::string ranks_ordering_mode = "-o";
+    const std::string reorder = "reorder";
+    const std::string multi_comms_mode = "-m";
+    while (arg_num + 1 < argc) {
+        if (!comm_create_mode.compare(argv[arg_num])) {
+            arg_num++;
+            if (!direct.compare(argv[arg_num])) {
+                for (size_t i = 0; i < comm_sizes.size(); i++) {
+                    comm_sizes[i] = i + 1;
+                }
+            }
+            else if (!reverse.compare(argv[arg_num])) {
+                for (size_t i = 0; i < comm_sizes.size(); i++) {
+                    comm_sizes[i] = comm_sizes.size() - i;
+                }
+            }
+            else {
+                cout << "Wrong comm create mode:" << argv[arg_num] << std::endl;
+                cout << "Choose mode: direct or reverse" << std::endl;
+                cout << "Exampe: mpirun -n 2 ./multi_comms -c reverse" << std::endl;
+                exit(1);
+            }
+            arg_num++;
+        }
+        else if (!ranks_ordering_mode.compare(argv[arg_num])) {
+            arg_num++;
+            if (!direct.compare(argv[arg_num])) {
+                reorder_ranks = false;
+            }
+            else if (!reorder.compare(argv[arg_num])) {
+                reorder_ranks = true;
+            }
+            else {
+                cout << "Wrong ranks ordering mode:" << argv[arg_num] << std::endl;
+                cout << "Choose mode: direct or reorder" << std::endl;
+                cout << "Exampe: mpirun -n 2 ./multi_comms -o direct" << std::endl;
+                exit(1);
+            }
+            arg_num++;
+        }
+        else if (!multi_comms_mode.compare(argv[arg_num])) {
+            arg_num++;
+            if (strstr(argv[arg_num], "0")) {
+                multi_comm = false;
+            }
+            else if (strstr(argv[arg_num], "1")) {
+                multi_comm = true;
+            }
+            else {
+                cout << "Wrong multi comms mode:" << argv[arg_num] << std::endl;
+                cout << "Choose mode: 0 or 1" << std::endl;
+                cout << "Exampe: mpirun -n 2 ./multi_comms -m 1" << std::endl;
+                exit(1);
+            }
+            arg_num++;
+        }
+    }
+}
+
 int main(int argc, char* argv[]) {
     std::list<size_t> elem_counts = { 17, 1024, 262145 };
 
@@ -12,9 +80,6 @@ int main(int argc, char* argv[]) {
     int ccl_rank = 0;
     int root = 0;
     int iter_idx = -1;
-    std::string direct = "direct";
-    std::string reverse = "reverse";
-    bool reorder_ranks = true;
 
     int fail_counter = 0;
 
@@ -36,28 +101,11 @@ int main(int argc, char* argv[]) {
 
     std::vector<ccl::shared_ptr_class<ccl::kvs>> kvses;
     std::vector<ccl::communicator> comms;
-    std::vector<int> comm_sizes(size);
-    if (argc < 2) {
-        cout << "Choose mode: direct or reverse" << std::endl;
-        cout << "Exampe: mpirun -n 2 ./multi_comms reverse" << std::endl;
-        return 1;
+    comm_sizes.resize(size);
+    for (size_t i = 0; i < comm_sizes.size(); i++) {
+        comm_sizes[i] = i + 1;
     }
-    if (!direct.compare(argv[1])) {
-        for (int i = 0; i < size; i++) {
-            comm_sizes[i] = i + 1;
-        }
-    }
-    else if (!reverse.compare(argv[1])) {
-        for (int i = 0; i < size; i++) {
-            comm_sizes[i] = size - i;
-        }
-    }
-    else {
-        cout << "Wrong mode:" << argv[1] << std::endl;
-        cout << "Choose mode: direct or reverse" << std::endl;
-        cout << "Exampe: mpirun -n 2 ./multi_comms reverse" << std::endl;
-        return 1;
-    }
+    parcer(argc, argv);
 
     ccl_rank = mpi_rank;
     for (int comm_size : comm_sizes) {
@@ -67,23 +115,32 @@ int main(int argc, char* argv[]) {
         /* create kvs */
         ccl::shared_ptr_class<ccl::kvs> kvs;
         ccl::kvs::address_type main_addr;
-        if (mpi_rank == 0) {
+        MPI_Comm new_comm;
+        MPI_Comm_split(MPI_COMM_WORLD, mpi_rank / comm_size, mpi_rank, &new_comm);
+        int local_mpi_rank;
+        MPI_Comm_rank(new_comm, &local_mpi_rank);
+        int bcast_root = iter_idx % comm_size;
+
+        int threshold = multi_comm ? ((int)(size / comm_size)) * comm_size : comm_size;
+        if (mpi_rank >= threshold) {
+            continue;
+        }
+        if (local_mpi_rank == bcast_root) {
             kvs = ccl::create_main_kvs();
             main_addr = kvs->get_address();
-            MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
+            MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, bcast_root, new_comm);
         }
         else {
-            MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, 0, MPI_COMM_WORLD);
-
-            if (mpi_rank >= comm_size) {
-                continue;
-            }
+            MPI_Bcast((void*)main_addr.data(), main_addr.size(), MPI_BYTE, bcast_root, new_comm);
 
             kvs = ccl::create_kvs(main_addr);
             main_addr = kvs->get_address();
         }
         if (reorder_ranks) {
             ccl_rank = (mpi_rank + iter_idx) % comm_size;
+        }
+        else {
+            ccl_rank = mpi_rank % comm_size;
         }
 
         kvses.push_back(kvs);
