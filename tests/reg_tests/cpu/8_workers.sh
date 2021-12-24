@@ -20,7 +20,12 @@ ofi_provs="tcp verbs"
 
 bench_options="-c all -b host -t 2097152"
 
-export FI_VERBS_DEVICE_NAME=hfi
+if [[ $(hostname) == *"nnlmpiclx03"* ]]
+then
+    export FI_VERBS_DEVICE_NAME=hfi
+else
+    export FI_VERBS_DEVICE_NAME=mlx
+fi
 export I_MPI_PIN_PROCESSOR_LIST=1
 export CCL_WORKER_AFFINITY=2-9
 
