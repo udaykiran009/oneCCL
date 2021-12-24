@@ -691,7 +691,8 @@ function run_pytorch_tests()
 
 function set_modulefile_environment()
 {
-    source /etc/profile.d/modules.sh
+    MODULES_DIR="/p/pdsd/scratch/Software/modules/latest"
+    source ${MODULES_DIR}/init/profile.sh
     export CCL_CONFIGURATION=cpu
     if [ -z "$build_type" ]
     then
@@ -734,8 +735,9 @@ function run_modulefile_tests()
     set_modulefile_environment
 
     ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope ${regular_scope}
-
     log_status_fail=${PIPESTATUS[0]}
+
+    unset_modulefile_environment
     if [ "$log_status_fail" -eq 0 ]
     then
         echo "module file testing ... OK"
@@ -744,7 +746,6 @@ function run_modulefile_tests()
         echo "module file testing ... NOK"
         exit 1
     fi
-    unset_modulefile_environment
 }
 
 function run_functional_tests()
