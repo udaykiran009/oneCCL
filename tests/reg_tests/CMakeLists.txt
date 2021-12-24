@@ -37,7 +37,6 @@ if (${CMAKE_VERSION} VERSION_LESS 3.1)
 #cmake version below 3.1 does not support CMAKE_C[XX}_STANDARD flags
 #set manually
     set(CXX_COMPILER_FLAGS "-std=gnu++11")
-    set(C_COMPILER_FLAGS "-std=gnu99")
 endif()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_COMPILER_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_COMPILER_FLAGS}")
