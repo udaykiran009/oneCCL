@@ -26,8 +26,8 @@ then
     exit 1
 fi
 
-lib_type=$(cat ${LOG} | grep "mpi_lib_attr.type" | awk '{print $NF}')
-if [[ ${lib_type} != "mpich" ]]
+lib_type=$(cat ${LOG} | grep -m 1 "mpi_lib_attr.type" | awk '{print $NF}')
+if [[ "${lib_type}" != "mpich" ]]
 then
     echo "Fail: lib_type ${lib_type} != mpich"
     exit 1
@@ -58,11 +58,11 @@ do
 
         check_log ${LOG}
 
-        in_mnic_type=$(cat ${LOG} | grep "in:" | grep -o "mnic_type: [[:alpha:]]*" | awk '{print $2}')
-        in_mnic_count=$(cat ${LOG} | grep "in:" | grep -o "mnic_count: [[:digit:]]*" | awk '{print $2}')
-        out_mnic_type=$(cat ${LOG} | grep "out:" | grep -o "mnic_type: [[:alpha:]]*" | awk '{print $2}')
-        out_mnic_count=$(cat ${LOG} | grep "out:" | grep -o "mnic_count: [[:digit:]]*" | awk '{print $2}')
-        mpich_nic_count=$(cat ${LOG} | grep -o "num_nics: [[:digit:]]*" | awk '{print $2}')
+        in_mnic_type=$(cat ${LOG} | grep "in:" | grep -m 1 -o "mnic_type: [[:alpha:]]*" | awk '{print $2}')
+        in_mnic_count=$(cat ${LOG} | grep "in:" | grep -m 1 -o "mnic_count: [[:digit:]]*" | awk '{print $2}')
+        out_mnic_type=$(cat ${LOG} | grep "out:" | grep -m 1 -o "mnic_type: [[:alpha:]]*" | awk '{print $2}')
+        out_mnic_count=$(cat ${LOG} | grep "out:" | grep -m 1 -o "mnic_count: [[:digit:]]*" | awk '{print $2}')
+        mpich_nic_count=$(cat ${LOG} | grep -m 1 -o "num_nics: [[:digit:]]*" | awk '{print $2}')
 
         if [[ ${in_mnic_type} != ${mnic_type} ]]
         then

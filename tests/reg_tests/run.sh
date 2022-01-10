@@ -124,7 +124,7 @@ parse_arguments() {
                 shift
                 ;;
             "-transport"|"--transport")
-                TRANSPORT=${2}
+                export TRANSPORT=${2}
                 shift
                 ;;
             *)
