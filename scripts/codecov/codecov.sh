@@ -5,10 +5,11 @@ set_default_values() {
     SCRIPT_DIR=$(cd $(dirname "$BASH_SOURCE") && pwd -P)
     SRC_ROOT_DIR=$(realpath ${SCRIPT_DIR}/../../)
     IMPI_PATH="/p/pdsd/scratch/Uploads/CCL_oneAPI/mpi_oneapi/last/mpi/latest"
-    DPCPP_PATH="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/l_compiler_p_2022.0.0.071/"
     PROFILE_DIR="${SCRIPT_DIR}/_profile_dir"
 
-    export SYCL_BUNDLE_ROOT=${DPCPP_PATH}/compiler/latest/linux/
+    # INFRA-2239
+    # TODO: migrate to latest compiler version
+    export SYCL_BUNDLE_ROOT="/p/pdsd/scratch/Uploads/CCL_oneAPI/compiler/l_compiler_p_2022.0.0.071/"
 
     ENABLE_BUILD="no"
     ENABLE_TESTING="no"
@@ -85,8 +86,8 @@ check_dpcpp()
     COMPILER_INSTALL_CHECK=$?
     if [ "${COMPILER_INSTALL_CHECK}" != "0" ]
     then
-        echo "Warning: DPCPP compiler wasn't found, Will be used default: ${DPCPP_PATH}"
-        source ${DPCPP_PATH}/setvars.sh
+        echo "Warning: DPCPP compiler wasn't found, Will be used default: ${SYCL_BUNDLE_ROOT}"
+        source ${SYCL_BUNDLE_ROOT}/setvars.sh
     fi
 }
 
@@ -194,7 +195,7 @@ build_oneccl() {
     then
         print_header "Building..."
 
-        ENABLE_DEBUG_BUILD="yes" ENABLE_CODECOV="yes" ${SRC_ROOT_DIR}/scripts/build.sh --conf --build-gpu
+        SYCL_BUNDLE_ROOT="${SYCL_BUNDLE_ROOT}/compiler/latest/linux/" ENABLE_DEBUG_BUILD="yes" ENABLE_CODECOV="yes" ${SRC_ROOT_DIR}/scripts/build.sh --conf --build-gpu
         CheckCommandExitCode $? "Building failed"
 
         # After use build.sh the env directory will contain the oneapi version vars.sh. 
