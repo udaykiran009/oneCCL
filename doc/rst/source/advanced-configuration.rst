@@ -9,4 +9,3 @@ Advanced Configuration
    advanced-configuration/operation-prioritization.rst
    advanced-configuration/operation-fusion.rst
    advanced-configuration/unordered-collectives.rst
-   advanced-configuration/sparse-collectives.rst

@@ -73,8 +73,7 @@ void ccl_coll_validate_user_input(const ccl_coll_param& param, const ccl_coll_at
                          ccl::global_data::env().atl_transport == ccl_atl_ofi,
                      "custom datatype is supported for OFI transport only");
 
-    CCL_THROW_IF_NOT((param.ctype != ccl_coll_allreduce && param.ctype != ccl_coll_reduce &&
-                      param.ctype != ccl_coll_sparse_allreduce) ||
+    CCL_THROW_IF_NOT((param.ctype != ccl_coll_allreduce && param.ctype != ccl_coll_reduce) ||
                          ccl_datatype_storage::is_predefined_datatype(param.dtype.idx()) ||
                          attr.reduction_fn,
                      "custom datatype requires custom reduction");
@@ -84,18 +83,6 @@ void ccl_coll_validate_user_input(const ccl_coll_param& param, const ccl_coll_at
 
     CCL_THROW_IF_NOT(param.ctype == ccl_coll_allgatherv || !(attr.is_vector_buf),
                      "vector buffer is supported for allgatherv only");
-
-    if (param.ctype == ccl_coll_sparse_allreduce) {
-        CCL_THROW_IF_NOT(
-            ccl::global_data::env().sparse_allreduce_algo_raw != "mask" || !(attr.reduction_fn),
-            "mask algorithm for sparse_allreduce does not support custom reduction");
-
-        CCL_THROW_IF_NOT(
-            (attr.sparse_allreduce_completion_fn || attr.sparse_allreduce_alloc_fn) &&
-                !(reinterpret_cast<uintptr_t>(attr.sparse_allreduce_completion_fn) &
-                  reinterpret_cast<uintptr_t>(attr.sparse_allreduce_alloc_fn)),
-            "sparse_allreduce requires completion callback only or allocation callback only");
-    }
 
     if (param.ctype == ccl_coll_bcast || param.ctype == ccl_coll_reduce) {
         CCL_THROW_IF_NOT(param.root < param.comm->size(),

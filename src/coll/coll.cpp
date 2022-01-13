@@ -29,7 +29,6 @@
 #include "coll/ccl_bcast_op_attr.hpp"
 #include "coll/ccl_reduce_op_attr.hpp"
 #include "coll/ccl_reduce_scatter_op_attr.hpp"
-#include "coll/ccl_sparse_allreduce_op_attr.hpp"
 #include "coll/coll_check.hpp"
 #include "coll/coll_param.hpp"
 
@@ -38,7 +37,6 @@
 #include "coll/algorithms/algorithms.hpp"
 #include "coll/algorithms/algorithm_utils.hpp"
 #include "coll/algorithms/allreduce/allreduce_2d.hpp"
-#include "coll/algorithms/sparse_allreduce/sparse_allreduce.hpp"
 #include "coll/selection/selection.hpp"
 #include "exec/exec.hpp"
 #include "fusion/fusion.hpp"
@@ -532,120 +530,6 @@ ccl::status ccl_coll_build_reduce_scatter(ccl_sched* sched,
     return status;
 }
 
-ccl::status ccl_coll_build_sparse_allreduce(ccl_sched* sched,
-                                            ccl_buffer send_ind_buf,
-                                            size_t send_ind_count,
-                                            ccl_buffer send_val_buf,
-                                            size_t send_val_count,
-                                            void** recv_ind_buf,
-                                            size_t* recv_ind_count,
-                                            void** recv_val_buf,
-                                            size_t* recv_val_count,
-                                            const ccl_datatype& index_dtype,
-                                            const ccl_datatype& value_dtype,
-                                            ccl::reduction reduction,
-                                            ccl_comm* comm) {
-    ccl::status status = ccl::status::success;
-
-    ccl_selector_param param;
-    param.ctype = ccl_coll_sparse_allreduce;
-    param.count = 0;
-    param.dtype = ccl_datatype_int8;
-    param.comm = comm;
-    param.sparse_coalesce_mode = sched->coll_attr.sparse_coalesce_mode;
-    param.sparse_allreduce_alloc_fn = sched->coll_attr.sparse_allreduce_alloc_fn;
-
-    if (!send_ind_buf.get_ptr() || !send_val_buf.get_ptr()) {
-        LOG_ERROR(
-            "sparse_allreduce send buffers for indices and values should not be NULL, but got "
-            "indices buffer = ",
-            send_ind_buf.get_ptr(),
-            ", values buffer = ",
-            send_val_buf.get_ptr());
-        assert(send_ind_buf.get_ptr() && send_val_buf.get_ptr());
-
-        throw ccl::exception(
-            std::string(__FUNCTION__) + "sparse_allreduce send buffers for indices and values \
-            should not be NULL, but got indices buffer = " +
-            std::to_string((uintptr_t)send_ind_buf.get_ptr()) +
-            ", values buffer = " + std::to_string((uintptr_t)send_val_buf.get_ptr()));
-    }
-
-    if (!send_ind_count || !send_val_count) {
-        LOG_ERROR("sparse_allreduce send buffer count should be greater than zero, but got "
-                  "indices count = ",
-                  send_ind_count,
-                  ", values count = ",
-                  send_val_count);
-        assert(send_ind_count && send_val_count);
-
-        throw ccl::exception(
-            std::string(__FUNCTION__) + "sparse_allreduce send buffer count should be \
-            greater than zero, but got indices count = " +
-            std::to_string(send_ind_count) + ", values count = " + std::to_string(send_val_count));
-    }
-
-    if (send_ind_count > send_val_count) {
-        CCL_FATAL("sparse collective algorithms now support only 1-D indices and \
-                  multi-dimensional values format\n got indices count = ",
-                  send_ind_count,
-                  ", values count = ",
-                  send_val_count);
-        return ccl::status::invalid_arguments;
-    }
-
-    if (ccl::global_data::env().atl_transport == ccl_atl_mpi) {
-        /*
-            for now all sparse_allreduce algorithms
-            may contains direct collective entries (allreduce/allgatherv)
-            which should be executed in strict_order mode
-        */
-        sched->strict_order = true;
-    }
-
-    auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_sparse_allreduce>(param);
-
-    LOG_DEBUG("build sparse allreduce, param:",
-              "\nsend_ind_buf ",
-              send_ind_buf,
-              "\nsend_ind_count ",
-              send_ind_count,
-              "\nsend_val_buf ",
-              send_val_buf,
-              "\nsend_val_count ",
-              send_val_count,
-              "\nrecv_ind_buf ",
-              recv_ind_buf,
-              "\nrecv_ind_count ",
-              recv_ind_count,
-              "\nrecv_val_buf ",
-              recv_val_buf,
-              "\nrecv_val_count ",
-              recv_val_count,
-              "\nindex_dtype ",
-              ccl::global_data::get().dtypes->name(index_dtype),
-              "\nvalue_dtype ",
-              ccl::global_data::get().dtypes->name(value_dtype),
-              "\nop ",
-              ccl_reduction_to_str(reduction));
-
-    switch (index_dtype.idx()) {
-        case ccl::datatype::int32:
-            CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(int32_t, value_dtype, algo);
-            break;
-        case ccl::datatype::int64:
-            CCL_SPARSE_ALLREDUCE_SELECT_V_DTYPE(int64_t, value_dtype, algo);
-            break;
-        default:
-            CCL_FATAL("index datatype ",
-                      ccl::global_data::get().dtypes->name(index_dtype),
-                      " is not supported yet");
-            return ccl::status::invalid_arguments;
-    }
-
-    return status;
-}
-
 ccl_request* ccl_allgatherv_impl(const void* send_buf,
                                  size_t send_count,
                                  void* recv_buf,
@@ -778,49 +662,6 @@ ccl_request* ccl_reduce_scatter_impl(const void* send_buf,
         send_buf, recv_buf, recv_count, dtype, reduction, attr, comm, stream, deps);
 
     auto req = ccl_coll_create(param, attr);
-    LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
-    return req;
-}
-
-ccl_request* ccl_sparse_allreduce_impl(const void* send_ind_buf,
-                                       size_t send_ind_count,
-                                       const void* send_val_buf,
-                                       size_t send_val_count,
-                                       void* recv_ind_buf,
-                                       size_t recv_ind_count,
-                                       void* recv_val_buf,
-                                       size_t recv_val_count,
-                                       ccl::datatype index_dtype,
-                                       ccl::datatype value_dtype,
-                                       ccl::reduction reduction,
-                                       const ccl_coll_attr& attr,
-                                       ccl_comm* comm,
-                                       const ccl_stream* stream,
-                                       const std::vector<ccl::event>& deps) {
-    CCL_THROW("unsupported path");
-
-    ccl_coll_param param{};
-
-    param.ctype = ccl_coll_sparse_allreduce;
-    param.sparse_param.send_ind_buf = send_ind_buf;
-    param.sparse_param.send_ind_count = send_ind_count;
-    param.sparse_param.send_val_buf = send_val_buf;
-    param.sparse_param.send_val_count = send_val_count;
-    param.sparse_param.recv_ind_buf = recv_ind_buf;
-    param.sparse_param.recv_ind_count = recv_ind_count;
-    param.sparse_param.recv_val_buf = recv_val_buf;
-    param.sparse_param.recv_val_count = recv_val_count;
-    param.dtype = ccl::global_data::get().dtypes->get(value_dtype);
-    param.sparse_param.itype = ccl::global_data::get().dtypes->get(index_dtype);
-    param.reduction = reduction;
-    param.stream = (ccl_stream*)stream;
-    param.comm = comm;
-    param.copy_deps(deps);
-
-    ccl_coll_attr internal_attr(attr);
-    internal_attr.to_cache = 0; /* skip to_cache flag, unsupported yet */
-
-    auto req = ccl_coll_create(param, internal_attr);
     LOG_DEBUG("coll ", ccl_coll_type_to_str(param.ctype), " created, req ", req);
     return req;
 }

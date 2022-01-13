@@ -23,7 +23,6 @@
 #include "sched/entry/reduce_local_entry.hpp"
 #include "sched/entry/register_entry.hpp"
 #include "sched/entry/send_entry.hpp"
-#include "sched/entry/sparse_allreduce_completion_entry.hpp"
 #include "sched/entry/subsched_entry.hpp"
 #include "sched/entry/sync_entry.hpp"
 #include "sched/entry/wait_value_entry.hpp"

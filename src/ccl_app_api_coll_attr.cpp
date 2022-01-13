@@ -239,48 +239,6 @@ CCL_API reduce_scatter_attr& reduce_scatter_attr::operator=(const reduce_scatter
 CCL_API reduce_scatter_attr::~reduce_scatter_attr() {}
 
 /**
- * sparse_allreduce coll attributes
- */
-CCL_API sparse_allreduce_attr::sparse_allreduce_attr(sparse_allreduce_attr&& src)
-        : base_t(std::move(src)) {}
-
-CCL_API sparse_allreduce_attr::sparse_allreduce_attr(const sparse_allreduce_attr& src)
-        : base_t(src) {}
-
-CCL_API sparse_allreduce_attr& sparse_allreduce_attr::operator=(
-    sparse_allreduce_attr&& src) noexcept {
-    this->acc_policy_t::create(this, std::move(src));
-    return *this;
-}
-
-CCL_API sparse_allreduce_attr& sparse_allreduce_attr::operator=(const sparse_allreduce_attr& src) {
-    this->acc_policy_t::create(this, src);
-    return *this;
-}
-
-CCL_API sparse_allreduce_attr::sparse_allreduce_attr(
-    const typename detail::ccl_api_type_attr_traits<operation_attr_id,
-                                                    operation_attr_id::version>::type& version)
-        : base_t(impl_value_t(new impl_t(version))) {}
-
-CCL_API sparse_allreduce_attr::~sparse_allreduce_attr() {}
-
-template <>
-CCL_API const void* sparse_allreduce_attr::set<sparse_allreduce_attr_id::fn_ctx, const void*>(
-    const void* const& v) {
-    return get_impl()->set_attribute_value(
-        v,
-        detail::ccl_api_type_attr_traits<sparse_allreduce_attr_id,
-                                         sparse_allreduce_attr_id::fn_ctx>{});
-}
-template <>
-CCL_API const void* const& sparse_allreduce_attr::get<sparse_allreduce_attr_id::fn_ctx>() const {
-    return get_impl()->get_attribute_value(
-        detail::ccl_api_type_attr_traits<sparse_allreduce_attr_id,
-                                         sparse_allreduce_attr_id::fn_ctx>{});
-}
-
-/**
  * Force instantiations
  */
 COMMON_API_FORCE_INSTANTIATION(allgatherv_attr)
@@ -291,7 +249,6 @@ COMMON_API_FORCE_INSTANTIATION(barrier_attr)
 COMMON_API_FORCE_INSTANTIATION(broadcast_attr)
 COMMON_API_FORCE_INSTANTIATION(reduce_attr)
 COMMON_API_FORCE_INSTANTIATION(reduce_scatter_attr)
-COMMON_API_FORCE_INSTANTIATION(sparse_allreduce_attr)
 
 API_FORCE_INSTANTIATION(allreduce_attr,
                         allreduce_attr_id,
@@ -305,20 +262,6 @@ API_FORCE_INSTANTIATION(reduce_scatter_attr,
                         reduce_scatter_attr_id,
                         reduce_scatter_attr_id::reduction_fn,
                         ccl::reduction_fn)
-API_FORCE_INSTANTIATION(sparse_allreduce_attr,
-                        sparse_allreduce_attr_id,
-                        sparse_allreduce_attr_id::completion_fn,
-                        ccl::sparse_allreduce_completion_fn)
-API_FORCE_INSTANTIATION(sparse_allreduce_attr,
-                        sparse_allreduce_attr_id,
-                        sparse_allreduce_attr_id::alloc_fn,
-                        ccl::sparse_allreduce_alloc_fn)
-//API_FORCE_INSTANTIATION(sparse_allreduce_attr, sparse_allreduce_attr_id, sparse_allreduce_attr_id::fn_ctx, void*)
-//template CCL_API const void * sparse_allreduce_attr::set<sparse_allreduce_attr_id::fn_ctx, void*>(void *const & v);
-API_FORCE_INSTANTIATION(sparse_allreduce_attr,
-                        sparse_allreduce_attr_id,
-                        sparse_allreduce_attr_id::coalesce_mode,
-                        ccl::sparse_coalesce_mode)
 
 #undef API_FORCE_INSTANTIATION
 #undef COMMON_API_FORCE_INSTANTIATION

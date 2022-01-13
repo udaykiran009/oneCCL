@@ -50,14 +50,6 @@ ccl_coll_attr::ccl_coll_attr(const ccl::reduce_scatter_attr& attr) {
     reduction_fn = attr.get<ccl::reduce_scatter_attr_id::reduction_fn>().get();
 }
 
-ccl_coll_attr::ccl_coll_attr(const ccl::sparse_allreduce_attr& attr) {
-    COPY_COMMON_OP_ATTRS(attr, this);
-    sparse_allreduce_completion_fn = attr.get<ccl::sparse_allreduce_attr_id::completion_fn>().get();
-    sparse_allreduce_alloc_fn = attr.get<ccl::sparse_allreduce_attr_id::alloc_fn>().get();
-    sparse_allreduce_fn_ctx = attr.get<ccl::sparse_allreduce_attr_id::fn_ctx>();
-    sparse_coalesce_mode = attr.get<ccl::sparse_allreduce_attr_id::coalesce_mode>();
-}
-
 std::string ccl_coll_attr::to_string() const {
     std::stringstream ss;
 
@@ -104,7 +96,6 @@ ccl_coll_param::ccl_coll_param(const ccl_coll_param& other) {
     comm = other.comm;
     stream = other.stream;
     copy_deps(other.deps);
-    sparse_param = other.sparse_param;
     validate();
 }
 
@@ -258,12 +249,6 @@ std::vector<void*> ccl_coll_param::get_all_non_zero_bufs() const {
             if (get_recv_count()) {
                 bufs.push_back(get_recv_buf());
             }
-            break;
-        case ccl_coll_sparse_allreduce:
-            bufs = { (void*)sparse_param.send_ind_buf,
-                     (void*)sparse_param.send_val_buf,
-                     (void*)sparse_param.recv_ind_buf,
-                     (void*)sparse_param.recv_val_buf };
             break;
         default: break;
     }

@@ -59,7 +59,6 @@ constexpr const char* CCL_BARRIER = "CCL_BARRIER";
 constexpr const char* CCL_BCAST = "CCL_BCAST";
 constexpr const char* CCL_REDUCE = "CCL_REDUCE";
 constexpr const char* CCL_REDUCE_SCATTER = "CCL_REDUCE_SCATTER";
-constexpr const char* CCL_SPARSE_ALLREDUCE = "CCL_SPARSE_ALLREDUCE";
 constexpr const char* CCL_UNORDERED_COLL = "CCL_UNORDERED_COLL";
 
 constexpr const char* CCL_FUSION = "CCL_FUSION";
@@ -223,7 +222,6 @@ public:
     std::string bcast_algo_raw;
     std::string reduce_algo_raw;
     std::string reduce_scatter_algo_raw;
-    std::string sparse_allreduce_algo_raw;
     int enable_unordered_coll;
 
     int enable_fusion;

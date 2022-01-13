@@ -484,40 +484,6 @@ ccl::event ccl_comm::reduce_scatter_impl(const void* send_buf,
     return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
 }
 
-/* sparse_allreduce */
-ccl::event ccl_comm::sparse_allreduce_impl(const void* send_ind_buf,
-                                           size_t send_ind_count,
-                                           const void* send_val_buf,
-                                           size_t send_val_count,
-                                           void* recv_ind_buf,
-                                           size_t recv_ind_count,
-                                           void* recv_val_buf,
-                                           size_t recv_val_count,
-                                           ccl::datatype index_dtype,
-                                           ccl::datatype value_dtype,
-                                           ccl::reduction reduction,
-                                           const ccl::stream::impl_value_t& stream,
-                                           const ccl::sparse_allreduce_attr& attr,
-                                           const ccl::vector_class<ccl::event>& deps) {
-    ccl_request* req = ccl_sparse_allreduce_impl(send_ind_buf,
-                                                 send_ind_count,
-                                                 send_val_buf,
-                                                 send_val_count,
-                                                 recv_ind_buf,
-                                                 recv_ind_count,
-                                                 recv_val_buf,
-                                                 recv_val_count,
-                                                 index_dtype,
-                                                 value_dtype,
-                                                 reduction,
-                                                 attr,
-                                                 this,
-                                                 get_stream_ptr(stream),
-                                                 deps);
-
-    return std::unique_ptr<ccl::event_impl>(new ccl::host_event_impl(req));
-}
-
 COMM_INTERFACE_COLL_INSTANTIATION(ccl_comm);
 #ifdef CCL_ENABLE_SYCL
 SYCL_COMM_INTERFACE_COLL_INSTANTIATION(ccl_comm);

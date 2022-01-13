@@ -100,25 +100,6 @@
                                       const ccl::reduce_scatter_attr& attr, \
                                       const ccl::vector_class<ccl::event>& deps = {}) = 0;
 
-#define COMM_INTERFACE_SPARSE_DECLARATION__VOID \
-\
-    virtual ccl::event sparse_allreduce(const void* send_ind_buf, \
-                                        size_t send_ind_count, \
-                                        const void* send_val_buf, \
-                                        size_t send_val_count, \
-                                        void* recv_ind_buf, \
-                                        size_t recv_ind_count, \
-                                        void* recv_val_buf, \
-                                        size_t recv_val_count, \
-                                        ccl::datatype index_dtype, \
-                                        ccl::datatype value_dtype, \
-                                        ccl::reduction reduction, \
-                                        const ccl::stream::impl_value_t& stream, \
-                                        const ccl::sparse_allreduce_attr& attr, \
-                                        const ccl::vector_class<ccl::event>& deps = {}) { \
-        CCL_THROW(std::string(__FUNCTION__) + " - not implemented"); \
-    };
-
 #define COMM_INTERFACE_COLL_DECLARATION(type) \
 \
     virtual ccl::event allgatherv(const type* send_buf, \
@@ -216,23 +197,6 @@
                                       const ccl::stream::impl_value_t& stream, \
                                       const ccl::reduce_scatter_attr& attr, \
                                       const ccl::vector_class<ccl::event>& deps) { \
-        CCL_THROW(std::string(__FUNCTION__) + " - not implemented"); \
-    };
-
-#define COMM_INTERFACE_SPARSE_DECLARATION(index_type, value_type) \
-\
-    virtual ccl::event sparse_allreduce(const index_type* send_ind_buf, \
-                                        size_t send_ind_count, \
-                                        const value_type* send_val_buf, \
-                                        size_t send_val_count, \
-                                        index_type* recv_ind_buf, \
-                                        size_t recv_ind_count, \
-                                        value_type* recv_val_buf, \
-                                        size_t recv_val_count, \
-                                        ccl::reduction reduction, \
-                                        const ccl::stream::impl_value_t& stream, \
-                                        const ccl::sparse_allreduce_attr& attr, \
-                                        const ccl::vector_class<ccl::event>& deps = {}) { \
         CCL_THROW(std::string(__FUNCTION__) + " - not implemented"); \
     };
 
@@ -336,23 +300,6 @@
                                       const ccl::stream::impl_value_t& stream, \
                                       const ccl::reduce_scatter_attr& attr, \
                                       const ccl::vector_class<ccl::event>& deps = {}) { \
-        CCL_THROW(std::string(__FUNCTION__) + " - not implemented"); \
-    };
-
-#define COMM_INTERFACE_SPARSE_CLASS_DECLARATION(index_type, value_type) \
-\
-    virtual ccl::event sparse_allreduce(const index_type& send_ind_buf, \
-                                        size_t send_ind_count, \
-                                        const value_type& send_val_buf, \
-                                        size_t send_val_count, \
-                                        index_type& recv_ind_buf, \
-                                        size_t recv_ind_count, \
-                                        value_type& recv_val_buf, \
-                                        size_t recv_val_count, \
-                                        ccl::reduction reduction, \
-                                        const ccl::stream::impl_value_t& stream, \
-                                        const ccl::sparse_allreduce_attr& attr, \
-                                        const ccl::vector_class<ccl::event>& deps = {}) { \
         CCL_THROW(std::string(__FUNCTION__) + " - not implemented"); \
     };
 
@@ -481,38 +428,6 @@
     COMM_INTERFACE_COLL_DEFINITION__VOID_REQUIRED \
     COMM_INTERFACE_COLL_DEFINITION__VOID_OPTIONAL
 
-#define COMM_INTERFACE_SPARSE_DEFINITION__VOID \
-\
-    ccl::event sparse_allreduce(const void* send_ind_buf, \
-                                size_t send_ind_count, \
-                                const void* send_val_buf, \
-                                size_t send_val_count, \
-                                void* recv_ind_buf, \
-                                size_t recv_ind_count, \
-                                void* recv_val_buf, \
-                                size_t recv_val_count, \
-                                ccl::datatype index_dtype, \
-                                ccl::datatype value_dtype, \
-                                ccl::reduction reduction, \
-                                const ccl::stream::impl_value_t& stream, \
-                                const ccl::sparse_allreduce_attr& attr, \
-                                const ccl::vector_class<ccl::event>& deps = {}) override { \
-        return get_impl()->sparse_allreduce_impl(send_ind_buf, \
-                                                 send_ind_count, \
-                                                 send_val_buf, \
-                                                 send_val_count, \
-                                                 recv_ind_buf, \
-                                                 recv_ind_count, \
-                                                 recv_val_buf, \
-                                                 recv_val_count, \
-                                                 index_dtype, \
-                                                 value_dtype, \
-                                                 reduction, \
-                                                 stream, \
-                                                 attr, \
-                                                 deps); \
-    }
-
 #define COMM_INTERFACE_COLL_DEFINITION(type) \
 \
     ccl::event allgatherv(const type* send_buf, \
@@ -619,34 +534,6 @@
             send_buf, recv_buf, recv_count, reduction, stream, attr, deps); \
     }
 
-#define COMM_INTERFACE_SPARSE_DEFINITION(index_type, value_type) \
-\
-    ccl::event sparse_allreduce(const index_type* send_ind_buf, \
-                                size_t send_ind_count, \
-                                const value_type* send_val_buf, \
-                                size_t send_val_count, \
-                                index_type* recv_ind_buf, \
-                                size_t recv_ind_count, \
-                                value_type* recv_val_buf, \
-                                size_t recv_val_count, \
-                                ccl::reduction reduction, \
-                                const ccl::stream::impl_value_t& stream, \
-                                const ccl::sparse_allreduce_attr& attr, \
-                                const ccl::vector_class<ccl::event>& deps = {}) override { \
-        return get_impl()->sparse_allreduce_impl(send_ind_buf, \
-                                                 send_ind_count, \
-                                                 send_val_buf, \
-                                                 send_val_count, \
-                                                 recv_ind_buf, \
-                                                 recv_ind_count, \
-                                                 recv_val_buf, \
-                                                 recv_val_count, \
-                                                 reduction, \
-                                                 stream, \
-                                                 attr, \
-                                                 deps); \
-    }
-
 #define COMM_INTERFACE_COLL_CLASS_DEFINITION(type) \
 \
     ccl::event allgatherv(const type& send_buf, \
@@ -751,34 +638,6 @@
                               const ccl::vector_class<ccl::event>& deps) override { \
         return get_impl()->reduce_scatter_impl( \
             send_buf, recv_buf, recv_count, reduction, stream, attr, deps); \
-    }
-
-#define COMM_INTERFACE_SPARSE_CLASS_DEFINITION(index_type, value_type) \
-\
-    ccl::event sparse_allreduce(const index_type& send_ind_buf, \
-                                size_t send_ind_count, \
-                                const value_type& send_val_buf, \
-                                size_t send_val_count, \
-                                index_type& recv_ind_buf, \
-                                size_t recv_ind_count, \
-                                value_type& recv_val_buf, \
-                                size_t recv_val_count, \
-                                ccl::reduction reduction, \
-                                const ccl::stream::impl_value_t& stream, \
-                                const ccl::sparse_allreduce_attr& attr, \
-                                const ccl::vector_class<ccl::event>& deps = {}) override { \
-        return get_impl()->sparse_allreduce_impl(send_ind_buf, \
-                                                 send_ind_count, \
-                                                 send_val_buf, \
-                                                 send_val_count, \
-                                                 recv_ind_buf, \
-                                                 recv_ind_count, \
-                                                 recv_val_buf, \
-                                                 recv_val_count, \
-                                                 reduction, \
-                                                 stream, \
-                                                 attr, \
-                                                 deps); \
     }
 
 /**
@@ -986,35 +845,6 @@
     COMM_IMPL_DECLARATION_VOID \
     COMM_IMPL_DECLARATION_TYPED
 
-#define COMM_IMPL_SPARSE_DECLARATION \
-    ccl::event sparse_allreduce_impl(const void* send_ind_buf, \
-                                     size_t send_ind_count, \
-                                     const void* send_val_buf, \
-                                     size_t send_val_count, \
-                                     void* recv_ind_buf, \
-                                     size_t recv_ind_count, \
-                                     void* recv_val_buf, \
-                                     size_t recv_val_count, \
-                                     ccl::datatype index_dtype, \
-                                     ccl::datatype value_dtype, \
-                                     ccl::reduction reduction, \
-                                     const ccl::stream::impl_value_t& stream, \
-                                     const ccl::sparse_allreduce_attr& attr, \
-                                     const ccl::vector_class<ccl::event>& deps); \
-    template <class index_type, class value_type> \
-    ccl::event sparse_allreduce_impl(const index_type* send_ind_buf, \
-                                     size_t send_ind_count, \
-                                     const value_type* send_val_buf, \
-                                     size_t send_val_count, \
-                                     index_type* recv_ind_buf, \
-                                     size_t recv_ind_count, \
-                                     value_type* recv_val_buf, \
-                                     size_t recv_val_count, \
-                                     ccl::reduction reduction, \
-                                     const ccl::stream::impl_value_t& stream, \
-                                     const ccl::sparse_allreduce_attr& attr, \
-                                     const ccl::vector_class<ccl::event>& deps);
-
 #define COMM_IMPL_CLASS_DECLARATION \
     template <class buffer_type> \
     ccl::event allgatherv_impl(const buffer_type& send_buf, \
@@ -1101,21 +931,6 @@
                                    const ccl::stream::impl_value_t& stream, \
                                    const ccl::reduce_scatter_attr& attr, \
                                    const ccl::vector_class<ccl::event>& deps);
-
-#define COMM_IMPL_SPARSE_CLASS_DECLARATION \
-    template <class index_type, class value_type> \
-    ccl::event sparse_allreduce_impl(const index_type& send_ind_buf, \
-                                     size_t send_ind_count, \
-                                     const value_type& send_val_buf, \
-                                     size_t send_val_count, \
-                                     index_type& recv_ind_buf, \
-                                     size_t recv_ind_count, \
-                                     value_type& recv_val_buf, \
-                                     size_t recv_val_count, \
-                                     ccl::reduction reduction, \
-                                     const ccl::stream::impl_value_t& stream, \
-                                     const ccl::sparse_allreduce_attr& attr, \
-                                     const ccl::vector_class<ccl::event>& deps);
 
 /**
  * Force intantiations
@@ -1262,35 +1077,4 @@
         ccl::reduction reduction, \
         const ccl::stream::impl_value_t& stream, \
         const ccl::reduce_scatter_attr& attr, \
-        const ccl::vector_class<ccl::event>& deps);
-
-#define COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_INSTANTIATION(comm_class, index_type, value_type) \
-    template ccl::event comm_class::sparse_allreduce_impl( \
-        const index_type* send_ind_buf, \
-        size_t send_ind_count, \
-        const value_type* send_val_buf, \
-        size_t send_val_count, \
-        index_type* recv_ind_buf, \
-        size_t recv_ind_count, \
-        value_type* recv_val_buf, \
-        size_t recv_val_count, \
-        ccl::reduction reduction, \
-        const ccl::stream::impl_value_t& stream, \
-        const ccl::sparse_allreduce_attr& attr, \
-        const ccl::vector_class<ccl::event>& deps);
-
-#define COMM_INTERFACE_SPARSE_ALLREDUCE_EXPLICIT_CLASS_INSTANTIATION( \
-    comm_class, index_type, value_type) \
-    template ccl::event comm_class::sparse_allreduce_impl( \
-        const index_type& send_ind_buf, \
-        size_t send_ind_count, \
-        const value_type& send_val_buf, \
-        size_t send_val_count, \
-        index_type& recv_ind_buf, \
-        size_t recv_ind_count, \
-        value_type& recv_val_buf, \
-        size_t recv_val_count, \
-        ccl::reduction reduction, \
-        const ccl::stream::impl_value_t& stream, \
-        const ccl::sparse_allreduce_attr& attr, \
         const ccl::vector_class<ccl::event>& deps);

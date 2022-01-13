@@ -50,7 +50,6 @@ Available collective operations (``<coll_name>``):
 -   ``BCAST``
 -   ``REDUCE``
 -   ``REDUCE_SCATTER``
--   ``SPARSE_ALLREDUCE``
 
 
 Available algorithms
@@ -185,24 +184,6 @@ Available algorithms for each collective operation (``<algo_name>``):
    * - ``ring`` 
      - Use ``CCL_RS_CHUNK_COUNT`` and ``CCL_RS_MIN_CHUNK_SIZE``
        to control pipelining.
-
-
-``SPARSE_ALLREDUCE`` algorithms
-+++++++++++++++++++++++++++++++
-
-.. list-table:: 
-   :widths: 25 50
-   :align: left
-
-   * - ``ring``
-     - Ring-allreduce based algorithm
-   * - ``mask``
-     - Mask matrix based algorithm
-   * - ``allgatherv``
-     - 3-allgatherv based algorithm
-
-.. note::
-    WARNING: ``ccl::sparse_allreduce`` is experimental and subject to change.
 
 
 CCL_RS_CHUNK_COUNT

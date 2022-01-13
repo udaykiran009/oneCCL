@@ -88,13 +88,6 @@ void ccl_sched_base::update_coll_param_and_attr(const ccl_coll_param& param,
         CCL_THROW_IF_NOT(static_cast<int>(coll_param.recv_counts.size()) == comm_size);
     }
 
-    if (coll_param.ctype == ccl_coll_sparse_allreduce) {
-        coll_param.sparse_param.send_ind_buf = param.sparse_param.send_ind_buf;
-        coll_param.sparse_param.send_val_buf = param.sparse_param.send_val_buf;
-        coll_param.sparse_param.recv_ind_buf = param.sparse_param.recv_ind_buf;
-        coll_param.sparse_param.recv_val_buf = param.sparse_param.recv_val_buf;
-    }
-
     if (ccl::global_data::env().priority_mode == ccl_priority_direct) {
         coll_attr.priority = attr.priority;
     }
@@ -345,10 +338,6 @@ void ccl_sched_base::get_pre_post_copy_counts(std::vector<size_t>& d2h_counts,
         case ccl_coll_reduce_scatter:
             d2h_counts.push_back(param.get_send_count());
             h2d_counts.push_back(param.get_recv_count());
-            break;
-        case ccl_coll_sparse_allreduce:
-            CCL_FATAL("SYCL stream is not supported for sparse_allreduce yet");
-            CCL_ASSERT(0);
             break;
         default: break;
     }

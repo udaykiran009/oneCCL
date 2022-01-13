@@ -68,7 +68,6 @@ set(CCL_SRC
     coll/ccl_bcast_op_attr.cpp
     coll/ccl_reduce_op_attr.cpp
     coll/ccl_reduce_scatter_op_attr.cpp
-    coll/ccl_sparse_allreduce_op_attr.cpp
     coll/ccl_barrier_op_attr.cpp
     coll/coll_param.cpp
     coll/coll_util.cpp
@@ -95,7 +94,6 @@ set(CCL_SRC
     coll/selection/selector_bcast.cpp
     coll/selection/selector_reduce.cpp
     coll/selection/selector_reduce_scatter.cpp
-    coll/selection/selector_sparse_allreduce.cpp
 
     common/comm/atl_tag.cpp
     common/comm/comm.cpp

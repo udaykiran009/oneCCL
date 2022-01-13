@@ -28,7 +28,6 @@ using namespace cl::sycl::access;
 #include "base_utils.hpp"
 #include "bf16.hpp"
 #include "coll.hpp"
-#include "sparse_allreduce/sparse_detail.hpp"
 
 /* free letters: f g v z */
 void print_help_usage(const char* app) {

@@ -232,7 +232,6 @@ void env_data::parse() {
     env_2_type(CCL_BCAST, bcast_algo_raw);
     env_2_type(CCL_REDUCE, reduce_algo_raw);
     env_2_type(CCL_REDUCE_SCATTER, reduce_scatter_algo_raw);
-    env_2_type(CCL_SPARSE_ALLREDUCE, sparse_allreduce_algo_raw);
     env_2_type(CCL_UNORDERED_COLL, enable_unordered_coll);
     if (enable_unordered_coll && atl_transport != ccl_atl_ofi) {
         CCL_THROW("unordered collectives are supported for OFI transport only");
@@ -503,10 +502,6 @@ void env_data::print(int rank) {
         CCL_REDUCE_SCATTER,
         ": ",
         (reduce_scatter_algo_raw.length()) ? reduce_scatter_algo_raw : CCL_ENV_STR_NOT_SPECIFIED);
-    LOG_INFO(CCL_SPARSE_ALLREDUCE,
-             ": ",
-             (sparse_allreduce_algo_raw.length()) ? sparse_allreduce_algo_raw
-                                                  : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_UNORDERED_COLL, ": ", enable_unordered_coll);
 
     LOG_INFO(CCL_FUSION, ": ", enable_fusion);

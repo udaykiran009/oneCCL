@@ -44,7 +44,6 @@ struct ccl_coll_attr {
     ccl_coll_attr(const ccl::broadcast_attr& attr);
     ccl_coll_attr(const ccl::reduce_attr& attr);
     ccl_coll_attr(const ccl::reduce_scatter_attr& attr);
-    ccl_coll_attr(const ccl::sparse_allreduce_attr& attr);
 
     ccl_coll_attr(ccl_coll_attr&&) = default;
     ccl_coll_attr& operator=(ccl_coll_attr&&) = default;
@@ -64,23 +63,6 @@ struct ccl_coll_attr {
 #ifdef CCL_ENABLE_SYCL
     int is_sycl_buf = 0;
 #endif // CCL_ENABLE_SYCL
-
-    ccl::sparse_allreduce_completion_fn sparse_allreduce_completion_fn = nullptr;
-    ccl::sparse_allreduce_alloc_fn sparse_allreduce_alloc_fn = nullptr;
-    const void* sparse_allreduce_fn_ctx = nullptr;
-    ccl::sparse_coalesce_mode sparse_coalesce_mode = ccl::sparse_coalesce_mode::regular;
-};
-
-struct ccl_coll_sparse_param {
-    const void* send_ind_buf;
-    size_t send_ind_count;
-    const void* send_val_buf;
-    size_t send_val_count;
-    void* recv_ind_buf;
-    size_t recv_ind_count;
-    void* recv_val_buf;
-    size_t recv_val_count;
-    ccl_datatype itype;
 };
 
 struct ccl_coll_param {
@@ -108,8 +90,6 @@ struct ccl_coll_param {
     ccl_stream* stream;
     ccl_comm* comm;
     std::vector<ccl::event> deps;
-
-    ccl_coll_sparse_param sparse_param;
 
     ccl_coll_param();
     ccl_coll_param(const ccl_coll_param& other);

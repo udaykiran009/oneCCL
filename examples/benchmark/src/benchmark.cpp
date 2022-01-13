@@ -297,12 +297,6 @@ void do_unordered(ccl::communicator& service_comm,
 
 template <class Dtype>
 void create_cpu_colls(bench_init_attr& init_attr, user_options_t& options, coll_list_t& colls) {
-    // using namespace sparse_detail;
-    // using incremental_index_int_sparse_strategy =
-    //     sparse_allreduce_strategy_impl<int, sparse_detail::incremental_indices_distributor>;
-    // using incremental_index_bf16_sparse_strategy =
-    //     sparse_allreduce_strategy_impl<ccl::bfloat16, sparse_detail::incremental_indices_distributor>;
-
     std::stringstream error_messages_stream;
 
     for (auto names_it = options.coll_names.begin(); names_it != options.coll_names.end();) {
@@ -328,35 +322,6 @@ void create_cpu_colls(bench_init_attr& init_attr, user_options_t& options, coll_
         else if (name == reduce_scatter_strategy_impl::class_name()) {
             colls.emplace_back(new cpu_reduce_scatter_coll<Dtype>(init_attr));
         }
-        //         else if (name.find(incremental_index_int_sparse_strategy::class_name()) !=
-        //                  std::string::npos) {
-        //             if (name.find(incremental_index_bf16_sparse_strategy::class_name()) !=
-        //                 std::string::npos) {
-        //                 if (is_bf16_enabled() == 0) {
-        //                     error_messages_stream << "bfloat16 is not supported for current CPU, skipping "
-        //                                           << name << ".\n";
-        //                     names_it = options.coll_names.erase(names_it);
-        //                     continue;
-        //                 }
-        // #ifdef CCL_bf16_COMPILER
-        //                 colls.emplace_back(
-        //                     new cpu_sparse_allreduce_coll<ccl::bfloat16,
-        //                                                   int64_t,
-        //                                                   sparse_detail::incremental_indices_distributor>(
-        //                         init_attr,
-        //                         sizeof(float) / sizeof(ccl::bfloat16),
-        //                         sizeof(float) / sizeof(ccl::bfloat16)));
-        // #else
-        //                 error_messages_stream << "bfloat16 is not supported by current compiler, skipping "
-        //                                       << name << ".\n";
-        //                 names_it = options.coll_names.erase(names_it);
-        //                 continue;
-        // #endif
-        //             }
-        //             else {
-        //                 colls.emplace_back(new cpu_sparse_allreduce_coll<Dtype, int64_t>(init_attr));
-        //             }
-        //         }
         else {
             ASSERT(0, "create_colls error, unknown coll name: %s", name.c_str());
         }
@@ -377,11 +342,6 @@ void create_cpu_colls(bench_init_attr& init_attr, user_options_t& options, coll_
 #ifdef CCL_ENABLE_SYCL
 template <class Dtype>
 void create_sycl_colls(bench_init_attr& init_attr, user_options_t& options, coll_list_t& colls) {
-    // using incremental_index_int_sparse_strategy =
-    //     sparse_allreduce_strategy_impl<int, sparse_detail::incremental_indices_distributor>;
-    // using incremental_index_bf16_sparse_strategy =
-    //     sparse_allreduce_strategy_impl<ccl::bfloat16, sparse_detail::incremental_indices_distributor>;
-
     std::stringstream error_messages_stream;
 
     for (auto names_it = options.coll_names.begin(); names_it != options.coll_names.end();) {
@@ -408,48 +368,6 @@ void create_sycl_colls(bench_init_attr& init_attr, user_options_t& options, coll
         else if (name == reduce_scatter_strategy_impl::class_name()) {
             colls.emplace_back(new sycl_reduce_scatter_coll<Dtype>(init_attr));
         }
-        //         else if (name.find(incremental_index_int_sparse_strategy::class_name()) !=
-        //                  std::string::npos) {
-        //             // TODO case is not supported yet
-        //             if (true) {
-        //                 error_messages_stream << "SYCL coll: skipping " << name
-        //                                       << ", because it is not supported yet.\n";
-        //                 names_it = options.coll_names.erase(names_it);
-        //                 continue;
-        //             }
-        //             colls.emplace_back(new sycl_sparse_allreduce_coll<Dtype, int>(init_attr));
-        //         }
-        //         else if (name.find(incremental_index_bf16_sparse_strategy::class_name()) !=
-        //                  std::string::npos) {
-        //             // TODO case is not supported yet
-        //             if (true) {
-        //                 error_messages_stream << "SYCL coll: skipping " << name
-        //                                       << ", because it is not supported yet.\n";
-        //                 names_it = options.coll_names.erase(names_it);
-        //                 continue;
-        //             }
-
-        //             if (is_bf16_enabled() == 0) {
-        //                 error_messages_stream << "SYCL bf16 is not supported for current CPU, skipping "
-        //                                       << name << ".\n";
-        //                 names_it = options.coll_names.erase(names_it);
-        //                 continue;
-        //             }
-        // #ifdef CCL_bf16_COMPILER
-        //             colls.emplace_back(
-        //                 new sycl_sparse_allreduce_coll<ccl::bfloat16,
-        //                                                int64_t,
-        //                                                sparse_detail::incremental_indices_distributor>(
-        //                     init_attr,
-        //                     sizeof(float) / sizeof(ccl::bfloat16),
-        //                     sizeof(float) / sizeof(ccl::bfloat16)));
-        // #else
-        //             error_messages_stream << "SYCL bf16 is not supported by current compiler, skipping "
-        //                                   << name << ".\n";
-        //             names_it = options.coll_names.erase(names_it);
-        //             continue;
-        // #endif
-        //         }
         else {
             ASSERT(0, "create_colls error, unknown coll name: %s", name.c_str());
         }

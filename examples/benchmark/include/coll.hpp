@@ -43,8 +43,7 @@ typedef struct bench_exec_attr {
                                            ccl::shared_ptr_class<ccl::alltoallv_attr>,
                                            ccl::shared_ptr_class<ccl::reduce_attr>,
                                            ccl::shared_ptr_class<ccl::broadcast_attr>,
-                                           ccl::shared_ptr_class<ccl::reduce_scatter_attr>/*,
-                                           ccl::shared_ptr_class<ccl::sparse_allreduce_attr>*/>;
+                                           ccl::shared_ptr_class<ccl::reduce_scatter_attr>>;
 
     template <class attr_t>
     attr_t& get_attr() {

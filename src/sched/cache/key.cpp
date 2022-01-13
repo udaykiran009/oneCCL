@@ -56,14 +56,6 @@ void ccl_sched_key::set(const ccl_coll_param& param, const ccl_coll_attr& attr) 
             f.count1 = param.get_send_count();
             f.reduction = param.reduction;
             break;
-        case ccl_coll_sparse_allreduce:
-            f.count1 = param.sparse_param.send_ind_count;
-            f.count2 = param.sparse_param.send_val_count;
-            f.count3 = param.sparse_param.recv_ind_count;
-            f.count4 = param.sparse_param.recv_val_count;
-            f.itype = param.sparse_param.itype.idx();
-            f.reduction = param.reduction;
-            break;
         default: CCL_THROW("unexpected coll_type ", f.ctype);
     }
 }
@@ -96,13 +88,6 @@ bool ccl_sched_key::check(const ccl_coll_param& param, const ccl_coll_attr& attr
         case ccl_coll_reduce_scatter:
             result &= (param.get_send_count() == f.count1 && param.reduction == f.reduction);
             break;
-        case ccl_coll_sparse_allreduce:
-            result &= (param.sparse_param.send_ind_count == f.count1 &&
-                       param.sparse_param.send_val_count == f.count2 &&
-                       param.sparse_param.recv_ind_count == f.count3 &&
-                       param.sparse_param.recv_val_count == f.count4 &&
-                       param.sparse_param.itype.idx() == f.itype && param.reduction == f.reduction);
-            break;
         default: CCL_THROW("unexpected coll_type ", f.ctype);
     }
 
@@ -131,8 +116,6 @@ void ccl_sched_key::print() const {
               ccl_coll_type_to_str(f.ctype),
               ", dtype ",
               ccl::global_data::get().dtypes->name(f.dtype),
-              ", itype ",
-              ccl::global_data::get().dtypes->name(f.itype),
               ", reduction ",
               ccl_reduction_to_str(f.reduction),
               ", buf1 ",
@@ -143,10 +126,6 @@ void ccl_sched_key::print() const {
               f.count1,
               ", count2 ",
               f.count2,
-              ", count3 ",
-              f.count3,
-              ", count4 ",
-              f.count4,
               ", root ",
               f.root,
               ", comm ",
@@ -172,11 +151,9 @@ size_t ccl_sched_key_hasher::operator()(const ccl_sched_key& k) const {
         size_t vec1_sum = std::accumulate(k.vec1.begin(), k.vec1.end(), 0);
         size_t vec2_sum = std::accumulate(k.vec2.begin(), k.vec2.end(), 0);
         hash_value += k.f.ctype + utils::enum_to_underlying(k.f.dtype) +
-                      utils::enum_to_underlying(k.f.itype) +
                       utils::enum_to_underlying(k.f.reduction) + k.f.count1 + k.f.count2 +
-                      k.f.root + (size_t)k.f.buf1 + (size_t)k.f.buf2 + (size_t)k.f.count3 +
-                      (size_t)k.f.count4 + (size_t)k.f.comm + (size_t)k.f.reduction_fn + vec1_sum +
-                      vec2_sum;
+                      k.f.root + (size_t)k.f.buf1 + (size_t)k.f.buf2 + (size_t)k.f.comm +
+                      (size_t)k.f.reduction_fn + vec1_sum + vec2_sum;
     }
 
     const_cast<ccl_sched_key&>(k).set_hasher_result(hash_value);

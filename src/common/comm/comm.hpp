@@ -262,8 +262,6 @@ public:
 
     COMM_IMPL_DECLARATION;
     COMM_IMPL_CLASS_DECLARATION
-    COMM_IMPL_SPARSE_DECLARATION;
-    COMM_IMPL_SPARSE_CLASS_DECLARATION;
 
 private:
     // this is an internal part of the communicator
