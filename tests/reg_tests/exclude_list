@@ -18,3 +18,4 @@ allreduce_bidir_algo platform=ats transport=*
 opencl platform=* transport=*
 # IMPI-3210
 hmem platform=ats transport=*
+topo_affinity platform=ats,gen9 transport=*
