@@ -404,5 +404,11 @@ std::string join_strings(const std::vector<std::string>& tokens, const std::stri
     return ss.str();
 }
 
+std::string to_string(const zes_fabric_port_id_t& port) {
+    std::stringstream ss;
+    ss << "{ " << port.fabricId << " " << port.attachId << " " << (int)port.portNumber << " }";
+    return ss.str();
+}
+
 } // namespace ze
 } // namespace ccl

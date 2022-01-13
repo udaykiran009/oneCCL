@@ -138,6 +138,7 @@ std::string to_string(const ze_command_queue_group_property_flag_t& flag);
 std::string to_string(const ze_command_queue_group_properties_t& queue_property);
 std::string to_string(const ze_device_uuid_t& uuid);
 std::string to_string(queue_group_type type);
+std::string to_string(const zes_fabric_port_id_t& port);
 
 std::string join_strings(const std::vector<std::string>& tokens, const std::string& delimeter);
 

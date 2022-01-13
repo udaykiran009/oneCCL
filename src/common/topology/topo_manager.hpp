@@ -7,6 +7,8 @@
 #include <mpi.h>
 #endif // CCL_ENABLE_MPI
 
+#include <algorithm>
+#include <numeric>
 #include <set>
 #include <string>
 
@@ -16,8 +18,16 @@
 
 namespace ccl {
 
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
+struct port_topo_info {
+    zes_fabric_port_id_t local{};
+    zes_fabric_port_id_t remote{};
+};
+#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
+
 struct rank_topo_info {
     int rank;
+    int host_idx;
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
     ze_device_uuid_t uuid{};
     zes_pci_address_t pci_addr{};
@@ -36,8 +46,10 @@ class topo_manager {
 public:
     static constexpr int invalid_color = -1;
     static constexpr int invalid_host_idx = -1;
+    static constexpr int invalid_plane_idx = -1;
     static constexpr int max_hostname_len = 256;
     static constexpr int max_ranks_per_host = 1000;
+    static constexpr int max_ranks_per_plane = 8;
 
     topo_manager() = default;
     topo_manager(const topo_manager& other) = default;
@@ -63,8 +75,8 @@ public:
 
 private:
     int host_idx = invalid_host_idx;
-    std::vector<int> intra_colors{};
-    std::vector<int> inter_colors{};
+    std::vector<int> intra_card_colors{};
+    std::vector<int> inter_card_colors{};
     std::vector<std::vector<bool>> p2p_matrix;
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)

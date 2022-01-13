@@ -75,6 +75,10 @@ typedef struct libze_ops {
     decltype(zeDeviceGetMemoryProperties) *zeDeviceGetMemoryProperties;
     decltype(zeDeviceGetSubDevices) *zeDeviceGetSubDevices;
     decltype(zesDevicePciGetProperties) *zesDevicePciGetProperties;
+    decltype(zesDeviceEnumFabricPorts) *zesDeviceEnumFabricPorts;
+    decltype(zesFabricPortGetConfig) *zesFabricPortGetConfig;
+    decltype(zesFabricPortGetProperties) *zesFabricPortGetProperties;
+    decltype(zesFabricPortGetState) *zesFabricPortGetState;
 } libze_ops_t;
 
 static const char *fn_names[] = {
@@ -141,6 +145,10 @@ static const char *fn_names[] = {
     "zeDeviceGetMemoryProperties",
     "zeDeviceGetSubDevices",
     "zesDevicePciGetProperties",
+    "zesDeviceEnumFabricPorts",
+    "zesFabricPortGetConfig",
+    "zesFabricPortGetProperties",
+    "zesFabricPortGetState",
 };
 
 extern ccl::libze_ops_t libze_ops;
@@ -208,6 +216,10 @@ extern ccl::libze_ops_t libze_ops;
 #define zeDeviceGetMemoryProperties            ccl::libze_ops.zeDeviceGetMemoryProperties
 #define zeDeviceGetSubDevices                  ccl::libze_ops.zeDeviceGetSubDevices
 #define zesDevicePciGetProperties              ccl::libze_ops.zesDevicePciGetProperties
+#define zesDeviceEnumFabricPorts               ccl::libze_ops.zesDeviceEnumFabricPorts
+#define zesFabricPortGetConfig                 ccl::libze_ops.zesFabricPortGetConfig
+#define zesFabricPortGetProperties             ccl::libze_ops.zesFabricPortGetProperties
+#define zesFabricPortGetState                  ccl::libze_ops.zesFabricPortGetState
 
 void ze_api_init();
 

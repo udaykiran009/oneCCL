@@ -19,3 +19,4 @@ opencl platform=* transport=*
 # IMPI-3210
 hmem platform=ats transport=*
 topo_affinity platform=ats,gen9 transport=*
+topo_manager platform=* transport=*
