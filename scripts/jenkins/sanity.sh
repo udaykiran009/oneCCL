@@ -311,6 +311,7 @@ function set_pvc_environment()
     # Get slurm job nodelist
     scontrol show hostnames > "${PVC_ARTEFACT_DIR}/nodelist"
     export I_MPI_HYDRA_HOST_FILE="${PVC_ARTEFACT_DIR}/nodelist"
+    export HYDRA_HOST_FILE="${PVC_ARTEFACT_DIR}/nodelist"
     export HYDRA_LAUNCHER="ssh"
 
     # Compute runtime

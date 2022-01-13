@@ -40,18 +40,14 @@ run_case() {
     n=$1
     ppn=$2
     affinity_env=$3
-    case=$4
 
     for transport in ${transports}
     do
-        export CCL_ATL_TRANSPORT=${transport}
-        ${affinity_env} mpiexec -l -n $n -ppn $ppn ${SCRIPT_DIR}/benchmark ${bench_options} > ${TEST_LOG} 2>&1
-        rc=$?
-        if [ ${rc} -ne 0 ]
-        then
-            echo "Fail: case(${case})"
-            exit 1
-        fi
+        cmd="CCL_ATL_TRANSPORT=${transport}"
+        cmd+=" ${affinity_env}"
+        cmd+=" mpiexec -l -n $n -ppn $ppn ${SCRIPT_DIR}/benchmark"
+        cmd+=" ${bench_options} > ${TEST_LOG} 2>&1"
+        run_cmd "${cmd}"
         check_log ${TEST_LOG}
         rm ${TEST_LOG}
     done
@@ -59,22 +55,24 @@ run_case() {
 
 #case 1: 1 node, 6 ranks, 0-th tiles only
 affinity_env="ZE_AFFINITY_MASK=0.0,1.0,2.0,3.0,4.0,5.0"
-run_case 6 6 ${affinity_env} "1"
+run_case 6 6 "${affinity_env}"
 
 #case 2: 1 node, 12 ranks, affinity mask is randomly generated
 affinity_env=$(create_affinity_env "${random_device_list}")
-run_case 12 12 ${affinity_env} "2"
+run_case 12 12 "${affinity_env}"
 
+# MLSL-1274
 #case 3: 2 nodes, 24 ranks, affinity mask is randomly generated
-affinity_env=$(create_affinity_env "${random_device_list} ${random_device_list}")
-run_case 24 12 ${affinity_env} "3"
+#affinity_env=$(create_affinity_env "${random_device_list} ${random_device_list}")
+#run_case 24 12 "${affinity_env}"
 
+# MLSL-1274
 #case 4: ranks are placed in round-robin on 2 nodes
-run_case 24 1 "" "4"
+#run_case 24 1 ""
 
+# MLSL-1274
 #case 5: 3 ranks: 2 ranks on first card, 1 rank on second card
-affinity_env=$(create_affinity_env "1.0 1.1 2.0")
-run_case 3 3 ${affinity_env} "5"
+#affinity_env=$(create_affinity_env "1.0 1.1 2.0")
+#run_case 3 3 "${affinity_env}"
 
-rm ${BINFILE}
 echo "Pass"
