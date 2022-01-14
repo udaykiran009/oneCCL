@@ -49,7 +49,7 @@ set_run_env() {
     export HOROVOD_LOG_LEVEL=INFO
     export HOROVOD_THREAD_AFFINITY=0,1
     export HOROVOD_CCL_FIN_THREADS=1
-    export HOROVOD_CCL_ADD_EXTRA_WAIT=1
+    #export HOROVOD_CCL_ADD_EXTRA_WAIT=1 # extra waits are not needed since at least 2022.0 compiler version; disabled in HVD by default
     #export HOROVOD_FUSION_THRESHOLD=150000000
     #export HOROVOD_DISABLE_GROUP_FUSION=1
     #export HOROVOD_CYCLE_TIME=0.1
@@ -77,9 +77,9 @@ set_run_env() {
     export FI_LOG_LEVEL=debug
 
     # SYCL
-    export SYCL_PI_LEVEL_ZERO_BATCH_SIZE=1
+    # export SYCL_PI_LEVEL_ZERO_BATCH_SIZE=1 # not needed anymore
     # export SYCL_DEVICE_FILTER=level_zero # see https://jira.devtools.intel.com/browse/CMPLRLLVM-33408
-    export SYCL_PI_LEVEL_ZERO_TRACK_INDIRECT_ACCESS_MEMORY=1
+    # export SYCL_PI_LEVEL_ZERO_TRACK_INDIRECT_ACCESS_MEMORY=1 # not needed since CCL commit 5141eaf70630b364c708cae9eb664511db51dc05
 
     # conda
     export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib"
@@ -234,7 +234,7 @@ print_help() {
     echo_log "  -full_tf <bool_flag>"
     echo_log "      Enable all TF processing"
     echo_log "  -install_tf <bool_flag>"
-    echo_log "      Install TensorFlow"
+    echo_log "      Install TensorFlow; also affects HVD build"
     echo_log "  -tf_path <path>"
     echo_log "      Install TensorFlow from path (*.whl)"
     echo_log "  -download_itex <bool_flag>"
@@ -248,7 +248,7 @@ print_help() {
     echo_log "  -download_pt <bool_flag>"
     echo_log "      Download PyTorch"
     echo_log "  -install_pt <bool_flag>"
-    echo_log "      Install PyTorch"
+    echo_log "      Install PyTorch; also affects HVD build"
     echo_log "  -pt_path <path>"
     echo_log "      Install PyTorch from path (*.whl)"
     echo_log "  -download_ipex <bool_flag>"
@@ -260,7 +260,7 @@ print_help() {
     echo_log "  -download_hvd <bool_flag>"
     echo_log "      Download Horovod"
     echo_log "  -install_hvd <bool_flag>"
-    echo_log "      Install Horovod"
+    echo_log "      Install Horovod; see also install_tf & install_pt"
     echo_log "  -check_hvd <bool_flag>"
     echo_log "      Run basic Horovod test and benchmark with Tensorflow/PyTorch"
     echo_log "  -hvd_branch <branch_name>"
