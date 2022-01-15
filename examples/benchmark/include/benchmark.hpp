@@ -29,7 +29,7 @@ using namespace cl::sycl::access;
 #include "bf16.hpp"
 #include "coll.hpp"
 
-/* free letters: f g v z */
+/* free letters: v z */
 void print_help_usage(const char* app) {
     PRINT("\nUSAGE:\n"
           "\t%s [OPTIONS]\n\n"
@@ -52,6 +52,7 @@ void print_help_usage(const char* app) {
 #endif // CCL_ENABLE_NUMA
 #ifdef CCL_ENABLE_SYCL
           "\t[-a,--sycl_dev_type <sycl device type>]: %s\n"
+          "\t[-g,--sycl_root_dev <select root devices only]: %d\n"
           "\t[-m,--sycl_mem_type <sycl memory type>]: %s\n"
           "\t[-u,--sycl_usm_type <sycl usm type>]: %s\n"
 #endif // CCL_ENABLE_SYCL
@@ -82,6 +83,7 @@ void print_help_usage(const char* app) {
 #endif // CCL_ENABLE_NUMA
 #ifdef CCL_ENABLE_SYCL
           sycl_dev_names[DEFAULT_SYCL_DEV_TYPE].c_str(),
+          DEFAULT_SYCL_ROOT_DEV,
           sycl_mem_names[DEFAULT_SYCL_MEM_TYPE].c_str(),
           sycl_usm_names[DEFAULT_SYCL_USM_TYPE].c_str(),
 #endif // CCL_ENABLE_SYCL
@@ -543,7 +545,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
 #endif // CCL_ENABLE_NUMA
 
 #ifdef CCL_ENABLE_SYCL
-    const char* sycl_options = "a:m:u:";
+    const char* sycl_options = "a:g:m:u:";
     memcpy(short_options + strlen(short_options), sycl_options, strlen(sycl_options));
 #endif // CCL_ENABLE_SYCL
 
@@ -566,6 +568,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
 #endif // CCL_ENABLE_NUMA
 #ifdef CCL_ENABLE_SYCL
         { "sycl_dev_type", required_argument, nullptr, 'a' },
+        { "sycl_root_dev", required_argument, nullptr, 'g' },
         { "sycl_mem_type", required_argument, nullptr, 'm' },
         { "sycl_usm_type", required_argument, nullptr, 'u' },
 #endif // CCL_ENABLE_SYCL
@@ -675,6 +678,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
                     errors++;
                 }
                 break;
+            case 'g': options.sycl_root_dev = atoi(optarg); break;
             case 'm':
                 if (set_sycl_mem_type(optarg, options.sycl_mem_type)) {
                     PRINT("failed to parse 'sycl_mem_type' option");
@@ -827,6 +831,7 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
 #endif // CCL_ENABLE_NUMA
 #ifdef CCL_ENABLE_SYCL
                   "\n  sycl_dev_type:  %s"
+                  "\n  sycl_root_dev:  %d"
                   "\n  sycl_mem_type:  %s"
                   "\n  sycl_usm_type:  %s"
 #endif // CCL_ENABLE_SYCL
@@ -855,6 +860,7 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
 #endif // CCL_ENABLE_NUMA
 #ifdef CCL_ENABLE_SYCL
                   sycl_dev_type_str.c_str(),
+                  options.sycl_root_dev,
                   sycl_mem_type_str.c_str(),
                   sycl_usm_type_str.c_str(),
 #endif // CCL_ENABLE_SYCL

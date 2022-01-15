@@ -71,7 +71,9 @@ void ccl_comm::init(ccl_comm_id_storage::comm_id&& id,
 
     if (!is_sub_communicator) {
         topo_manager.init(atl_comm, device_ptr, context_ptr);
-        LOG_DEBUG("topo_manager:", topo_manager.to_string());
+        if (!comm_rank) {
+            LOG_INFO("topo_manager:", topo_manager.to_string());
+        }
         create_sub_comms(atl_comm);
     }
 }

@@ -2,11 +2,11 @@
 
 function run_cmd() {
     cmd="${1}"
-    # echo "run_cmd: ${cmd}"
     eval ${cmd}
     rc=$?
     if [ ${rc} -ne 0 ]
     then
+        echo "run_cmd: ${cmd}"
         echo "Fail"
         exit 1
     fi

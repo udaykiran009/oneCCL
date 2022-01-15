@@ -1,12 +1,11 @@
 #pragma once
 
-#include "sched/entry/ze/ze_call.hpp"
-
 #include <initializer_list>
 #include <string>
 #include <vector>
 
 #include "common/ze/ze_api_wrapper.hpp"
+#include "sched/entry/ze/ze_call.hpp"
 
 namespace ccl {
 
@@ -134,6 +133,7 @@ std::string to_string(ze_result_t result);
 std::string to_string(const ze_group_size_t& group_size);
 std::string to_string(const ze_group_count_t& group_count);
 std::string to_string(const ze_kernel_args_t& kernel_args);
+std::string to_string(const ze_device_property_flag_t& flag);
 std::string to_string(const ze_command_queue_group_property_flag_t& flag);
 std::string to_string(const ze_command_queue_group_properties_t& queue_property);
 std::string to_string(const ze_device_uuid_t& uuid);
@@ -141,6 +141,20 @@ std::string to_string(queue_group_type type);
 std::string to_string(const zes_fabric_port_id_t& port);
 
 std::string join_strings(const std::vector<std::string>& tokens, const std::string& delimeter);
+
+template <typename T>
+std::string flags_to_string(uint32_t flags) {
+    constexpr size_t bits = 8;
+    std::vector<std::string> output;
+    for (size_t i = 0; i < sizeof(flags) * bits; ++i) {
+        const size_t mask = 1UL << i;
+        const auto flag = flags & mask;
+        if (flag != 0) {
+            output.emplace_back(to_string(static_cast<T>(flag)));
+        }
+    }
+    return join_strings(output, " | ");
+}
 
 } // namespace ze
 } // namespace ccl

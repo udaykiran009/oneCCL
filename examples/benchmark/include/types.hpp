@@ -115,9 +115,10 @@ typedef struct user_options_t {
     int numa_node;
 #ifdef CCL_ENABLE_SYCL
     sycl_dev_type_t sycl_dev_type;
+    int sycl_root_dev;
     sycl_mem_type_t sycl_mem_type;
     sycl_usm_type_t sycl_usm_type;
-#endif
+#endif // CCL_ENABLE_SYCL
     std::list<std::string> coll_names;
     std::list<std::string> dtypes;
     std::list<std::string> reductions;
@@ -145,9 +146,10 @@ typedef struct user_options_t {
         numa_node = DEFAULT_NUMA_NODE;
 #ifdef CCL_ENABLE_SYCL
         sycl_dev_type = DEFAULT_SYCL_DEV_TYPE;
+        sycl_root_dev = DEFAULT_SYCL_ROOT_DEV;
         sycl_mem_type = DEFAULT_SYCL_MEM_TYPE;
         sycl_usm_type = DEFAULT_SYCL_USM_TYPE;
-#endif
+#endif // CCL_ENABLE_SYCL
         coll_names = tokenize<std::string>(DEFAULT_COLL_LIST, ',');
         dtypes = tokenize<std::string>(DEFAULT_DTYPES_LIST, ',');
         reductions = tokenize<std::string>(DEFAULT_REDUCTIONS_LIST, ',');

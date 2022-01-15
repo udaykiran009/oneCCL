@@ -340,6 +340,20 @@ std::string to_string(const ze_kernel_args_t& kernel_args) {
     return ss.str();
 }
 
+std::string to_string(const ze_device_property_flag_t& flag) {
+    switch (flag) {
+        case ZE_DEVICE_PROPERTY_FLAG_INTEGRATED: return "ZE_DEVICE_PROPERTY_FLAG_INTEGRATED";
+        case ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE: return "ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE";
+        case ZE_DEVICE_PROPERTY_FLAG_ECC: return "ZE_DEVICE_PROPERTY_FLAG_ECC";
+        case ZE_DEVICE_PROPERTY_FLAG_ONDEMANDPAGING:
+            return "ZE_DEVICE_PROPERTY_FLAG_ONDEMANDPAGING";
+        case ZE_DEVICE_PROPERTY_FLAG_FORCE_UINT32: return "ZE_DEVICE_PROPERTY_FLAG_FORCE_UINT32";
+        default:
+            return "unknown ze_device_property_flag_t value: " +
+                   std::to_string(static_cast<int>(flag));
+    }
+}
+
 std::string to_string(const ze_command_queue_group_property_flag_t& flag) {
     switch (flag) {
         case ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE:
@@ -356,20 +370,6 @@ std::string to_string(const ze_command_queue_group_property_flag_t& flag) {
             return "unknown ze_command_queue_group_property_flag_t value: " +
                    std::to_string(static_cast<int>(flag));
     }
-}
-
-template <typename T>
-std::string flags_to_string(uint32_t flags) {
-    constexpr size_t bits = 8;
-    std::vector<std::string> output;
-    for (size_t i = 0; i < sizeof(flags) * bits; ++i) {
-        const size_t mask = 1UL << i;
-        const auto flag = flags & mask;
-        if (flag != 0) {
-            output.emplace_back(to_string(static_cast<T>(flag)));
-        }
-    }
-    return join_strings(output, " | ");
 }
 
 std::string to_string(const ze_command_queue_group_properties_t& queue_property) {

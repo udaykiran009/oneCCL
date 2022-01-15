@@ -15,8 +15,10 @@ constexpr int topo_manager::invalid_color;
 void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
                         std::shared_ptr<ccl::device> device_ptr,
                         std::shared_ptr<ccl::context> context_ptr) {
-    int comm_rank = atl_comm->get_rank();
-    int comm_size = atl_comm->get_size();
+    comm = atl_comm;
+
+    int comm_rank = comm->get_rank();
+    int comm_size = comm->get_size();
 
     intra_card_colors.resize(comm_size, topo_manager::invalid_color);
     inter_card_colors.resize(comm_size, topo_manager::invalid_color);
@@ -38,14 +40,14 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
     }
 
     atl_req_t req{};
-    atl_comm->allgatherv(0 /* ep_idx */,
-                         my_hostname,
-                         max_hostname_len,
-                         all_hostnames.data(),
-                         recv_bytes.data(),
-                         offsets.data(),
-                         &req);
-    atl_comm->wait(0 /* ep_idx */, &req);
+    comm->allgatherv(0 /* ep_idx */,
+                     my_hostname,
+                     max_hostname_len,
+                     all_hostnames.data(),
+                     recv_bytes.data(),
+                     offsets.data(),
+                     &req);
+    comm->wait(0 /* ep_idx */, &req);
 
     std::set<std::string> unique_hostnames;
     std::string str{};
@@ -53,6 +55,8 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
         str = std::string(all_hostnames.data() + (idx * max_hostname_len), max_hostname_len);
         unique_hostnames.insert(str);
     }
+
+    CCL_THROW_IF_NOT(!unique_hostnames.empty(), "empty unique_hostnames");
 
     int local_idx = 0;
     for (auto host_name : unique_hostnames) {
@@ -68,6 +72,9 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
     CCL_THROW_IF_NOT(host_idx != topo_manager::invalid_host_idx,
                      "invalid host index for topology building, hostname: ",
                      my_hostname);
+
+    is_single_node = (unique_hostnames.size() == 1) ? true : false;
+    is_single_card = is_single_node && (comm_size <= max_ranks_per_card);
 
     if (ccl::global_data::env().topo_color != topo_color_mode::ze)
         return;
@@ -108,14 +115,14 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
     for (int i = 1; i < comm_size; i++) {
         offsets[i] = offsets[i - 1] + recv_bytes[i - 1];
     }
-    atl_comm->allgatherv(0 /* ep_idx */,
-                         &rank_info,
-                         sizeof(rank_info),
-                         reinterpret_cast<char*>(topo_info_vec.data()),
-                         recv_bytes.data(),
-                         offsets.data(),
-                         &req);
-    atl_comm->wait(0 /* ep_idx */, &req);
+    comm->allgatherv(0 /* ep_idx */,
+                     &rank_info,
+                     sizeof(rank_info),
+                     reinterpret_cast<char*>(topo_info_vec.data()),
+                     recv_bytes.data(),
+                     offsets.data(),
+                     &req);
+    comm->wait(0 /* ep_idx */, &req);
 
     // create groups with its unique color
 
@@ -146,12 +153,10 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
              comm_rank,
              " has ",
              subdev_count,
-             " subdevices, ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE=",
-             (int)(dev_props.flags & ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE));
-
-    if (dev_props.flags & ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE) {
-        LOG_INFO("(", my_hostname, ") rank ", comm_rank, " subdeviceId ", dev_props.subdeviceId);
-    }
+             " subdevices, subdeviceId=",
+             ((dev_props.flags & ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE)
+                  ? std::to_string(dev_props.subdeviceId)
+                  : "na"));
 
     uint32_t port_count{};
     ZE_CALL(zesDeviceEnumFabricPorts, (zes_device, &port_count, NULL));
@@ -215,14 +220,14 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
         offsets[i] = offsets[i - 1] + recv_bytes[i - 1];
     }
     int my_ports_count = (int)my_ports.size();
-    atl_comm->allgatherv(0,
-                         &my_ports_count,
-                         sizeof(int),
-                         reinterpret_cast<char*>(all_ports_counts.data()),
-                         recv_bytes.data(),
-                         offsets.data(),
-                         &req);
-    atl_comm->wait(0, &req);
+    comm->allgatherv(0,
+                     &my_ports_count,
+                     sizeof(int),
+                     reinterpret_cast<char*>(all_ports_counts.data()),
+                     recv_bytes.data(),
+                     offsets.data(),
+                     &req);
+    comm->wait(0, &req);
 
     // gather ports info from all the ranks
     recv_bytes.clear();
@@ -238,18 +243,19 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
 
     std::vector<port_topo_info> all_ports(
         std::accumulate(all_ports_counts.begin(), all_ports_counts.end(), 0));
-    atl_comm->allgatherv(0 /* ep_idx */,
-                         reinterpret_cast<char*>(my_ports.data()),
-                         sizeof(port_topo_info) * my_ports.size(),
-                         reinterpret_cast<char*>(all_ports.data()),
-                         recv_bytes.data(),
-                         offsets.data(),
-                         &req);
-    atl_comm->wait(0 /* ep_idx */, &req);
+    comm->allgatherv(0 /* ep_idx */,
+                     reinterpret_cast<char*>(my_ports.data()),
+                     sizeof(port_topo_info) * my_ports.size(),
+                     reinterpret_cast<char*>(all_ports.data()),
+                     recv_bytes.data(),
+                     offsets.data(),
+                     &req);
+    comm->wait(0 /* ep_idx */, &req);
 
     if (!comm_rank) {
         for (int rank_idx = 0; rank_idx < comm_size; rank_idx++) {
-            LOG_INFO("--- rank ", topo_info_vec[rank_idx].rank, " ---");
+            if (all_ports_counts[rank_idx])
+                LOG_INFO("--- rank ", topo_info_vec[rank_idx].rank, " ---");
             for (int port_idx = port_count_offsets[rank_idx];
                  port_idx < port_count_offsets[rank_idx] + all_ports_counts[rank_idx];
                  port_idx++) {
@@ -283,7 +289,7 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
             int peer_port_idx = 0;
             while (peer_port_idx < (int)all_ports.size()) {
                 if (peer_port_idx == my_port_idx) {
-                    peer_port_idx += all_ports_counts[rank]; //skipping my ports
+                    peer_port_idx += all_ports_counts[rank]; // skip my ports
                 }
                 else {
                     auto peer_port = all_ports[peer_port_idx].local;
@@ -304,7 +310,7 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
                                              peer_idx < comm_size,
                                          "peer_idx=",
                                          peer_idx,
-                                         "is not valid");
+                                         " is not valid");
 
                         planes[cur_plane_idx].insert(topo_info_vec[peer_idx].rank);
                         break;
@@ -324,17 +330,6 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
         }
     }
 
-    if (!comm_rank) {
-        for (int plane_idx = 0; plane_idx < (int)planes.size(); plane_idx++) {
-            std::stringstream ss;
-            std::copy(planes[plane_idx].begin(),
-                      planes[plane_idx].end(),
-                      std::ostream_iterator<int>(ss, ", "));
-            LOG_INFO("plane ", plane_idx, " contains ranks: ", ss.str());
-        }
-        LOG_INFO(topo_manager::to_string());
-    }
-
     CCL_THROW_IF_NOT(intra_card_colors[comm_rank] != topo_manager::invalid_color,
                      "intra_card_color for rank ",
                      comm_rank,
@@ -347,6 +342,29 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
     auto devices = global_data::get().ze_data->device_list;
     p2p_matrix = build_p2p_matrix(devices);
     LOG_DEBUG("p2p matrix: \n", to_string(p2p_matrix), "\nnumber of devices: ", devices.size());
+
+    // update is_single_card
+    bool no_invalid_colors = (std::find(intra_card_colors.begin(),
+                                        intra_card_colors.end(),
+                                        topo_manager::invalid_color) == intra_card_colors.end())
+                                 ? true
+                                 : false;
+    bool all_same_colors =
+        std::all_of(intra_card_colors.begin(), intra_card_colors.end(), [this](int c) {
+            return (c == intra_card_colors.front());
+        });
+    is_single_card = (is_single_node && (comm->get_size() <= topo_manager::max_ranks_per_card) &&
+                      no_invalid_colors && all_same_colors);
+
+    if (!comm_rank) {
+        for (int plane_idx = 0; plane_idx < (int)planes.size(); plane_idx++) {
+            std::stringstream ss;
+            std::copy(planes[plane_idx].begin(),
+                      planes[plane_idx].end(),
+                      std::ostream_iterator<int>(ss, " "));
+            LOG_INFO("plane ", plane_idx, " contains ranks: ", ss.str());
+        }
+    }
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 }
 
@@ -463,16 +481,18 @@ std::string topo_manager::to_string(const std::vector<std::vector<bool>>& matrix
 
 std::string topo_manager::to_string() {
     std::stringstream ss;
-    ss << " { ";
-    ss << "intra_card_colors: ";
+    ss << "\n{\n"
+       << "  comm_size: " << comm->get_size() << "\n"
+       << "  is_single_node: " << is_single_node << "\n"
+       << "  is_single_card: " << is_single_card << "\n"
+       << "  intra_card_colors: ";
     std::copy(
-        intra_card_colors.begin(), intra_card_colors.end(), std::ostream_iterator<int>(ss, ", "));
-    ss << "\n";
-    ss << "inter_card_colors: ";
+        intra_card_colors.begin(), intra_card_colors.end(), std::ostream_iterator<int>(ss, " "));
+    ss << "\n"
+       << "  inter_card_colors: ";
     std::copy(
-        inter_card_colors.begin(), inter_card_colors.end(), std::ostream_iterator<int>(ss, ", "));
-    ss << "\n";
-    ss << " }";
+        inter_card_colors.begin(), inter_card_colors.end(), std::ostream_iterator<int>(ss, " "));
+    ss << "\n}";
 
     return ss.str();
 }

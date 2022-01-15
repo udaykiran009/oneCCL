@@ -94,7 +94,6 @@ constexpr const char* CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE = "CCL_ALLREDUCE_NREDUC
 
 constexpr const char* CCL_ALLTOALL_SCATTER_MAX_OPS = "CCL_ALLTOALL_SCATTER_MAX_OPS";
 
-constexpr const char* CCL_TOPO_COLOR = "CCL_TOPO_COLOR";
 constexpr const char* CCL_BACKEND = "CCL_BACKEND";
 
 constexpr const char* CCL_KERNEL_PATH = "CCL_KERNEL_PATH";
@@ -108,6 +107,8 @@ constexpr const char* CCL_KERNEL_1S_IPC_WA = "CCL_KERNEL_1S_IPC_WA";
 constexpr const char* CCL_KERNEL_CLOSE_FD_WA = "CCL_KERNEL_CLOSE_FD_WA";
 
 constexpr const char* CCL_TOPO_ALGO = "CCL_TOPO_ALGO";
+constexpr const char* CCL_TOPO_COLOR = "CCL_TOPO_COLOR";
+
 constexpr const char* CCL_SYCL_OUTPUT_EVENT = "CCL_SYCL_OUTPUT_EVENT";
 constexpr const char* CCL_USE_HMEM = "CCL_USE_HMEM";
 
@@ -256,8 +257,10 @@ public:
 
     ssize_t alltoall_scatter_max_ops;
 
-    topo_color_mode topo_color;
     backend_mode backend;
+
+    int enable_topo_algo;
+    topo_color_mode topo_color;
 
 #ifdef CCL_ENABLE_SYCL
     std::string kernel_path;
@@ -270,7 +273,6 @@ public:
     int enable_kernel_1s_ipc_wa;
     int enable_close_fd_wa;
 
-    int enable_topo_algo;
     int enable_sycl_output_event;
     int use_hmem;
 

@@ -123,8 +123,10 @@ env_data::env_data()
 
           alltoall_scatter_max_ops(CCL_ENV_SIZET_NOT_SPECIFIED),
 
-          topo_color(topo_color_mode::fixed),
           backend(backend_mode::native),
+
+          enable_topo_algo(1),
+          topo_color(topo_color_mode::fixed),
 
 #ifdef CCL_ENABLE_SYCL
           kernel_path(),
@@ -137,7 +139,6 @@ env_data::env_data()
           enable_kernel_1s_ipc_wa(0),
           enable_close_fd_wa(0),
 
-          enable_topo_algo(1),
           enable_sycl_output_event(0),
           use_hmem(1),
 
@@ -191,9 +192,9 @@ void env_data::parse() {
     env_2_enum(CCL_FRAMEWORK, ccl_framework_type_names, fw_type);
 
     if (fw_type == ccl_framework_horovod) {
+        // enable_sync_coll = 1;
+        // enable_extra_ep = 1;
         worker_wait = 1;
-        enable_sync_coll = 1;
-        enable_extra_ep = 1;
         yield_type = ccl_yield_sched_yield;
     }
 
@@ -302,8 +303,10 @@ void env_data::parse() {
 
     env_2_type(CCL_ALLTOALL_SCATTER_MAX_OPS, (size_t&)alltoall_scatter_max_ops);
 
-    env_2_enum(CCL_TOPO_COLOR, topo_color_names, topo_color);
     env_2_enum(CCL_BACKEND, backend_names, backend);
+
+    env_2_type(CCL_TOPO_ALGO, enable_topo_algo);
+    env_2_enum(CCL_TOPO_COLOR, topo_color_names, topo_color);
 
 #ifdef CCL_ENABLE_SYCL
     env_2_type(CCL_KERNEL_PATH, kernel_path);
@@ -326,7 +329,6 @@ void env_data::parse() {
     env_2_type(CCL_KERNEL_1S_IPC_WA, enable_kernel_1s_ipc_wa);
     env_2_type(CCL_KERNEL_CLOSE_FD_WA, enable_close_fd_wa);
 
-    env_2_type(CCL_TOPO_ALGO, enable_topo_algo);
     env_2_type(CCL_SYCL_OUTPUT_EVENT, enable_sycl_output_event);
     env_2_type(CCL_USE_HMEM, use_hmem);
 
@@ -551,10 +553,12 @@ void env_data::print(int rank) {
                  ? std::to_string(alltoall_scatter_max_ops)
                  : CCL_ENV_STR_NOT_SPECIFIED);
 
-    LOG_INFO(CCL_TOPO_COLOR, ": ", str_by_enum(topo_color_names, topo_color));
     LOG_INFO(CCL_BACKEND, ": ", str_by_enum(backend_names, backend));
 
 #ifdef CCL_ENABLE_SYCL
+    LOG_INFO(CCL_TOPO_ALGO, ": ", enable_topo_algo);
+    LOG_INFO(CCL_TOPO_COLOR, ": ", str_by_enum(topo_color_names, topo_color));
+
     LOG_INFO(
         CCL_KERNEL_PATH, ": ", (!kernel_path.empty()) ? kernel_path : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_KERNEL_DEBUG, ": ", kernel_debug);
@@ -573,7 +577,6 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_KERNEL_1S_IPC_WA, ": ", enable_kernel_1s_ipc_wa);
     LOG_INFO(CCL_KERNEL_CLOSE_FD_WA, ": ", enable_close_fd_wa);
 
-    LOG_INFO(CCL_TOPO_ALGO, ": ", enable_topo_algo);
     LOG_INFO(CCL_SYCL_OUTPUT_EVENT, ": ", enable_sycl_output_event);
     LOG_INFO(CCL_USE_HMEM, ": ", use_hmem);
 

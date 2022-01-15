@@ -131,7 +131,7 @@ bool is_single_node(const ccl_selector_param& param) {
 }
 
 bool is_single_card(const ccl_selector_param& param) {
-    return (param.comm->size() == 2) && is_single_node(param);
+    return param.comm->get_topo_manager().is_single_card;
 }
 
 } // namespace checkers
@@ -204,6 +204,8 @@ bool ccl_is_device_side_algo(const ccl_selector_param& param) {
 }
 
 bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
+    RETURN_FALSE_IF(!ccl::global_data::env().enable_topo_algo, "topo algo is explicitly disabled");
+
     auto supported_colls = { ccl_coll_allgatherv,
                              ccl_coll_allreduce,
                              ccl_coll_bcast,
@@ -232,6 +234,7 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
                     "unordered coll is not supported");
     RETURN_FALSE_IF(ccl::global_data::env().priority_mode != ccl_priority_none, "wrong priority");
     RETURN_FALSE_IF(ccl::global_data::env().worker_count != 1, "unsupported count of workers");
+
     // this check is for multi-level scale-out for device buffers case:
     // we can't use topo algorithm without sub-communicators
     RETURN_FALSE_IF(!param.comm->get_even_comm().get(), "sub-communicators are not available");
@@ -240,15 +243,16 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
     RETURN_FALSE_IF(ccl::global_data::env().enable_ze_bidir_algo &&
                         (!checkers::is_single_card(param) || param.ctype != ccl_coll_allreduce),
                     "bidir is supported only for single-card and allreduce");
+
     RETURN_FALSE_IF(!param.comm->get_topo_manager().has_p2p_access(),
                     "no p2p access between devices");
-    RETURN_FALSE_IF(!ccl::global_data::env().enable_topo_algo, "topo algo is disabled");
+
     if (!ccl::global_data::env().disable_ze_family_check) {
         RETURN_FALSE_IF(
             checkers::is_family1_card(param) &&
                 (((!checkers::is_single_card(param) &&
-                   ((param.ctype == ccl_coll_allreduce || param.ctype == ccl_coll_reduce ||
-                     param.ctype == ccl_coll_allgatherv)))) ||
+                   (param.ctype == ccl_coll_allgatherv || param.ctype == ccl_coll_allreduce ||
+                    param.ctype == ccl_coll_bcast || param.ctype == ccl_coll_reduce))) ||
                  (param.ctype == ccl_coll_reduce_scatter)),
             "family1 multi-card for ",
             ccl_coll_type_to_str(param.ctype),

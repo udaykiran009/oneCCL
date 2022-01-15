@@ -49,6 +49,7 @@ public:
     static constexpr int invalid_plane_idx = -1;
     static constexpr int max_hostname_len = 256;
     static constexpr int max_ranks_per_host = 1000;
+    static constexpr int max_ranks_per_card = 2;
     static constexpr int max_ranks_per_plane = 8;
 
     topo_manager() = default;
@@ -63,6 +64,7 @@ public:
 
     int get_intra_card_color(int rank);
     int get_inter_card_color(int rank);
+
     bool has_p2p_access() const;
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
@@ -73,7 +75,12 @@ public:
 
     std::string to_string();
 
+    bool is_single_node = false;
+    bool is_single_card = false;
+
 private:
+    std::shared_ptr<atl_base_comm> comm;
+
     int host_idx = invalid_host_idx;
     std::vector<int> intra_card_colors{};
     std::vector<int> inter_card_colors{};
