@@ -59,7 +59,7 @@ then
     algos="topo"
 fi
 
-bench_options="-w 4 -i 8 -j off -c all -b sycl -t 2097152"
+bench_options="-w 1 -i 4 -j off -c all -b sycl -t 131072"
 
 for worker_count in ${worker_counts}
 do

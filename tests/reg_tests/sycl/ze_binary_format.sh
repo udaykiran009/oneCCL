@@ -21,7 +21,7 @@ proc_counts="2"
 ze_bin_modes="0 1"
 detection_modes="0 1"
 
-bench_options="-w 1 -i 4 -c last -l all -b sycl -t 4194304"
+bench_options="-w 1 -i 4 -c last -l all -b sycl -t 524288"
 
 for proc_count in ${proc_counts}
 do

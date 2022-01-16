@@ -18,29 +18,33 @@
 
 namespace ccl {
 
-#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
-struct port_topo_info {
-    zes_fabric_port_id_t local{};
-    zes_fabric_port_id_t remote{};
-};
-#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
-
-struct rank_topo_info {
-    int rank;
-    int host_idx;
-#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
-    ze_device_uuid_t uuid{};
-    zes_pci_address_t pci_addr{};
-#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
-
-    rank_topo_info();
-};
-
 enum class topo_color_mode : int { fixed, ze };
 static std::map<topo_color_mode, std::string> topo_color_names = {
     std::make_pair(topo_color_mode::fixed, "fixed"),
     std::make_pair(topo_color_mode::ze, "ze")
 };
+
+static constexpr int topo_uuid_len = 35;
+
+struct topo_rank_info {
+    int rank;
+    int host_idx;
+    char uuid[topo_uuid_len];
+
+    topo_rank_info();
+};
+
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
+struct topo_ze_rank_info {
+    ze_device_uuid_t device_uuid{};
+    zes_pci_address_t pci_addr{};
+};
+
+struct topo_ze_port_info {
+    zes_fabric_port_id_t local{};
+    zes_fabric_port_id_t remote{};
+};
+#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
 class topo_manager {
 public:
@@ -62,8 +66,9 @@ public:
               std::shared_ptr<ccl::device> device_ptr,
               std::shared_ptr<ccl::context> context_ptr);
 
-    int get_intra_card_color(int rank);
-    int get_inter_card_color(int rank);
+    int get_intra_card_color(int rank) const;
+    int get_inter_card_color(int rank) const;
+    std::string get_uuid(int rank) const;
 
     bool has_p2p_access() const;
 
@@ -79,17 +84,29 @@ public:
     bool is_single_card = false;
 
 private:
-    std::shared_ptr<atl_base_comm> comm;
+    void base_init(std::shared_ptr<atl_base_comm> atl_comm,
+                   std::shared_ptr<ccl::device> device_ptr,
+                   std::shared_ptr<ccl::context> context_ptr);
+    void post_init();
 
-    int host_idx = invalid_host_idx;
-    std::vector<int> intra_card_colors{};
-    std::vector<int> inter_card_colors{};
-    std::vector<std::vector<bool>> p2p_matrix;
+    void allgather(const void* send_buf, void* recv_buf, int bytes);
+    void allgatherv(const void* send_buf, void* recv_buf, const std::vector<int>& recv_bytes);
+
+    static std::string generate_uuid();
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
     ze_device_handle_t device{};
     static std::string to_string(const std::vector<std::vector<bool>>& p2p_matrix);
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
+
+    std::shared_ptr<atl_base_comm> comm;
+
+    int host_idx = invalid_host_idx;
+    std::vector<int> intra_card_colors{};
+    std::vector<int> inter_card_colors{};
+    std::vector<std::string> uuids{};
+    std::vector<topo_rank_info> rank_info_vec;
+    std::vector<std::vector<bool>> p2p_matrix;
 };
 
 } // namespace ccl

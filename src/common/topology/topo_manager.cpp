@@ -8,13 +8,15 @@
 
 namespace ccl {
 
-rank_topo_info::rank_topo_info() : rank(ccl_comm::invalid_rank) {}
+topo_rank_info::topo_rank_info() : rank(ccl_comm::invalid_rank) {
+    memset(uuid, 0, topo_uuid_len);
+}
 
 constexpr int topo_manager::invalid_color;
 
-void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
-                        std::shared_ptr<ccl::device> device_ptr,
-                        std::shared_ptr<ccl::context> context_ptr) {
+void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
+                             std::shared_ptr<ccl::device> device_ptr,
+                             std::shared_ptr<ccl::context> context_ptr) {
     comm = atl_comm;
 
     int comm_rank = comm->get_rank();
@@ -22,6 +24,8 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
 
     intra_card_colors.resize(comm_size, topo_manager::invalid_color);
     inter_card_colors.resize(comm_size, topo_manager::invalid_color);
+    uuids.resize(comm_size);
+    rank_info_vec.resize(comm_size);
     p2p_matrix.resize(comm_size);
     for (size_t i = 0; i < p2p_matrix.size(); i++) {
         p2p_matrix[i].resize(comm_size, true);
@@ -30,24 +34,9 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
     std::vector<char> all_hostnames(max_hostname_len * comm_size);
     char my_hostname[max_hostname_len] = { 0 };
     gethostname(my_hostname, max_hostname_len - 1);
-
     LOG_DEBUG("rank: ", comm_rank, ", size: ", comm_size, ", hostname: ", my_hostname);
-    int recv_byte = max_hostname_len;
-    std::vector<int> recv_bytes(comm_size, recv_byte);
-    std::vector<int> offsets(comm_size, 0);
-    for (int i = 1; i < comm_size; i++) {
-        offsets[i] = offsets[i - 1] + recv_bytes[i - 1];
-    }
 
-    atl_req_t req{};
-    comm->allgatherv(0 /* ep_idx */,
-                     my_hostname,
-                     max_hostname_len,
-                     all_hostnames.data(),
-                     recv_bytes.data(),
-                     offsets.data(),
-                     &req);
-    comm->wait(0 /* ep_idx */, &req);
+    allgather(my_hostname, all_hostnames.data(), max_hostname_len);
 
     std::set<std::string> unique_hostnames;
     std::string str{};
@@ -76,6 +65,37 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
     is_single_node = (unique_hostnames.size() == 1) ? true : false;
     is_single_card = is_single_node && (comm_size <= max_ranks_per_card);
 
+    // exchange common rank info
+    topo_rank_info rank_info{};
+    rank_info.rank = comm_rank;
+    rank_info.host_idx = host_idx;
+    std::string rank_uuid = topo_manager::generate_uuid();
+    std::copy(rank_uuid.begin(), rank_uuid.end(), rank_info.uuid);
+
+    allgather(&rank_info, rank_info_vec.data(), sizeof(rank_info));
+
+    for (size_t idx = 0; idx < rank_info_vec.size(); idx++) {
+        uuids[idx] = std::string(rank_info_vec[idx].uuid);
+    }
+
+    if (ccl::global_data::env().topo_color == topo_color_mode::fixed) {
+        for (int h_idx = 0; h_idx < (int)unique_hostnames.size(); h_idx++) {
+            std::vector<topo_rank_info> local_info_vec;
+            std::copy_if(rank_info_vec.begin(),
+                         rank_info_vec.end(),
+                         std::back_inserter(local_info_vec),
+                         [h_idx](topo_rank_info& info) {
+                             return (info.host_idx == h_idx);
+                         });
+            for (size_t idx = 0; idx < local_info_vec.size(); idx++) {
+                const topo_rank_info& info = local_info_vec[idx];
+                int rank = info.rank;
+                intra_card_colors[rank] = idx / 2;
+                inter_card_colors[rank] = idx % 2;
+            }
+        }
+    }
+
     if (ccl::global_data::env().topo_color != topo_color_mode::ze)
         return;
 
@@ -83,67 +103,79 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
     if (!(device_ptr && context_ptr))
         return;
 
-    rank_topo_info rank_info{};
-    std::vector<rank_topo_info> topo_info_vec(comm_size);
+    // exchange ze specific rank info
+    topo_ze_rank_info ze_rank_info{};
+    std::vector<topo_ze_rank_info> ze_rank_info_vec(comm_size);
 
     device = sycl::get_native<ccl::utils::get_level_zero_backend()>(device_ptr.get()->get_native());
     zes_device_handle_t zes_device = (zes_device_handle_t)device;
 
-    rank_info.rank = comm_rank;
-    rank_info.host_idx = host_idx;
-
     ze_device_properties_t dev_props = ccl::ze::default_device_props;
     ZE_CALL(zeDeviceGetProperties, (device, &dev_props));
-    rank_info.uuid = dev_props.uuid;
-    LOG_DEBUG("hostname: ",
-              my_hostname,
-              ", rank: ",
-              comm_rank,
-              ", size: ",
-              comm_size,
-              ", device uuid: ",
-              ccl::ze::to_string(rank_info.uuid));
+
+    ze_rank_info.device_uuid = dev_props.uuid;
 
     zes_pci_properties_t pci_props = {};
-    ZE_CALL(zesDevicePciGetProperties, (device, &pci_props));
-    rank_info.pci_addr = pci_props.address;
+    ZE_CALL(zesDevicePciGetProperties, (zes_device, &pci_props));
+    ze_rank_info.pci_addr = pci_props.address;
 
-    recv_bytes.clear();
-    offsets.clear();
-    recv_bytes.resize(comm_size, sizeof(rank_info));
-    offsets.resize(comm_size, 0);
-    for (int i = 1; i < comm_size; i++) {
-        offsets[i] = offsets[i - 1] + recv_bytes[i - 1];
-    }
-    comm->allgatherv(0 /* ep_idx */,
-                     &rank_info,
-                     sizeof(rank_info),
-                     reinterpret_cast<char*>(topo_info_vec.data()),
-                     recv_bytes.data(),
-                     offsets.data(),
-                     &req);
-    comm->wait(0 /* ep_idx */, &req);
+    allgather(&ze_rank_info, ze_rank_info_vec.data(), sizeof(ze_rank_info));
 
-    // create groups with its unique color
+    LOG_INFO("hostname: ",
+             my_hostname,
+             ", rank: ",
+             comm_rank,
+             ", size: ",
+             comm_size,
+             ", host_idx: ",
+             host_idx,
+             ", uuid: ",
+             rank_info.uuid,
+             ", device uuid: ",
+             ccl::ze::to_string(ze_rank_info.device_uuid));
 
-    int topo_info_size = static_cast<int>(topo_info_vec.size());
-    for (int i = 0; i < topo_info_size; i++) {
-        // skip the marked rank
-        if (intra_card_colors[i] != topo_manager::invalid_color)
-            continue;
+    // create intra card colors
 
-        if (topo_info_vec[i].host_idx != rank_info.host_idx)
-            continue;
+    for (int h_idx = 0; h_idx < (int)unique_hostnames.size(); h_idx++) {
+        int card_idx = 0;
+        size_t card_size = 0;
 
-        intra_card_colors[i] = i; // create new group with color
+        std::vector<topo_rank_info> local_info_vec;
+        std::copy_if(rank_info_vec.begin(),
+                     rank_info_vec.end(),
+                     std::back_inserter(local_info_vec),
+                     [h_idx](topo_rank_info& info) {
+                         return (info.host_idx == h_idx);
+                     });
 
-        for (int j = i + 1; j <= topo_info_size; j++) {
-            // my rank and right neighboor have the same pci address?
-            if (is_same_pci_addr(topo_info_vec[i].pci_addr, topo_info_vec[j].pci_addr)) {
-                intra_card_colors[j] = i;
+        for (size_t idx = 0; idx < local_info_vec.size(); idx++) {
+            const topo_rank_info& info = local_info_vec[idx];
+            int rank = info.rank;
+
+            if (intra_card_colors[rank] != topo_manager::invalid_color) {
+                continue;
             }
+
+            for (size_t peer_idx = 0; peer_idx < local_info_vec.size(); peer_idx++) {
+                const topo_rank_info& peer_info = local_info_vec[peer_idx];
+                int peer_rank = peer_info.rank;
+                if (is_same_pci_addr(ze_rank_info_vec[rank].pci_addr,
+                                     ze_rank_info_vec[peer_rank].pci_addr)) {
+                    intra_card_colors[peer_rank] = card_idx;
+                    card_size++;
+                    if (card_size == max_ranks_per_card) {
+                        card_idx++;
+                        card_size = 0;
+                    }
+                }
+            }
+
+            card_idx++;
+            card_size = 0;
         }
     }
+
+    // create inter card colors
 
     uint32_t subdev_count{};
     ZE_CALL(zeDeviceGetSubDevices, (device, &subdev_count, nullptr));
@@ -163,9 +195,10 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
     std::vector<zes_fabric_port_handle_t> ports(port_count);
     ZE_CALL(zesDeviceEnumFabricPorts, (zes_device, &port_count, ports.data()));
 
-    char* all_ports_env = getenv("CCL_TOPO_ALL_PORTS"); //To be deleted in future
+    // TODO: to be deleted, will rely on real port count
+    char* all_ports_env = getenv("CCL_TOPO_ALL_PORTS");
 
-    std::vector<port_topo_info> my_ports;
+    std::vector<topo_ze_port_info> my_ports;
     for (size_t i = 0; i < ports.size(); i++) {
         zes_fabric_port_properties_t prop;
         ZE_CALL(zesFabricPortGetProperties, (ports[i], &prop));
@@ -210,54 +243,32 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
         }
     }
 
-    // gather ports counts from every rank
-    std::vector<int> all_ports_counts(comm_size);
-    recv_bytes.clear();
-    offsets.clear();
-    recv_bytes.resize(comm_size, sizeof(int));
-    offsets.resize(comm_size, 0);
-    for (int i = 1; i < comm_size; i++) {
-        offsets[i] = offsets[i - 1] + recv_bytes[i - 1];
-    }
-    int my_ports_count = (int)my_ports.size();
-    comm->allgatherv(0,
-                     &my_ports_count,
-                     sizeof(int),
-                     reinterpret_cast<char*>(all_ports_counts.data()),
-                     recv_bytes.data(),
-                     offsets.data(),
-                     &req);
-    comm->wait(0, &req);
+    // exchange port counts
+    int my_port_count = (int)my_ports.size();
+    std::vector<int> all_port_counts(comm_size);
 
-    // gather ports info from all the ranks
-    recv_bytes.clear();
-    offsets.clear();
-    recv_bytes.resize(comm_size, sizeof(port_topo_info) * all_ports_counts[0]);
-    offsets.resize(comm_size, 0);
+    allgather(&my_port_count, all_port_counts.data(), sizeof(my_port_count));
+
+    // exchange port info
+    std::vector<int> recv_bytes(comm_size, sizeof(topo_ze_port_info) * all_port_counts[0]);
     std::vector<int> port_count_offsets(comm_size, 0);
+
     for (int i = 1; i < comm_size; i++) {
-        recv_bytes[i] = sizeof(port_topo_info) * all_ports_counts[i];
-        offsets[i] = offsets[i - 1] + recv_bytes[i - 1];
-        port_count_offsets[i] = port_count_offsets[i - 1] + all_ports_counts[i - 1];
+        recv_bytes[i] = sizeof(topo_ze_port_info) * all_port_counts[i];
+        port_count_offsets[i] = port_count_offsets[i - 1] + all_port_counts[i - 1];
     }
 
-    std::vector<port_topo_info> all_ports(
-        std::accumulate(all_ports_counts.begin(), all_ports_counts.end(), 0));
-    comm->allgatherv(0 /* ep_idx */,
-                     reinterpret_cast<char*>(my_ports.data()),
-                     sizeof(port_topo_info) * my_ports.size(),
-                     reinterpret_cast<char*>(all_ports.data()),
-                     recv_bytes.data(),
-                     offsets.data(),
-                     &req);
-    comm->wait(0 /* ep_idx */, &req);
+    std::vector<topo_ze_port_info> all_ports(
+        std::accumulate(all_port_counts.begin(), all_port_counts.end(), 0));
+
+    allgatherv(my_ports.data(), all_ports.data(), recv_bytes);
 
     if (!comm_rank) {
         for (int rank_idx = 0; rank_idx < comm_size; rank_idx++) {
-            if (all_ports_counts[rank_idx])
-                LOG_INFO("--- rank ", topo_info_vec[rank_idx].rank, " ---");
+            if (all_port_counts[rank_idx])
+                LOG_INFO("--- rank ", rank_info_vec[rank_idx].rank, " ---");
             for (int port_idx = port_count_offsets[rank_idx];
-                 port_idx < port_count_offsets[rank_idx] + all_ports_counts[rank_idx];
+                 port_idx < port_count_offsets[rank_idx] + all_port_counts[rank_idx];
                  port_idx++) {
                 LOG_INFO("port local ",
                          ccl::ze::to_string(all_ports[port_idx].local),
@@ -283,13 +294,13 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
         }
 
         for (int my_port_idx = port_count_offsets[rank];
-             my_port_idx < port_count_offsets[rank] + all_ports_counts[rank];
+             my_port_idx < port_count_offsets[rank] + all_port_counts[rank];
              my_port_idx++) {
             auto remote_port = all_ports[my_port_idx].remote;
             int peer_port_idx = 0;
             while (peer_port_idx < (int)all_ports.size()) {
                 if (peer_port_idx == my_port_idx) {
-                    peer_port_idx += all_ports_counts[rank]; // skip my ports
+                    peer_port_idx += all_port_counts[rank]; // skip my ports
                 }
                 else {
                     auto peer_port = all_ports[peer_port_idx].local;
@@ -312,7 +323,7 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
                                          peer_idx,
                                          " is not valid");
 
-                        planes[cur_plane_idx].insert(topo_info_vec[peer_idx].rank);
+                        planes[cur_plane_idx].insert(rank_info_vec[peer_idx].rank);
                         break;
                     }
                     peer_port_idx++;
@@ -321,19 +332,63 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
         }
     }
 
-    for (int rank = 0; rank < comm_size; rank++) {
-        for (int plane_idx = 0; plane_idx < (int)planes.size(); plane_idx++) {
-            if (planes[plane_idx].find(rank) != planes[plane_idx].end()) {
-                inter_card_colors[rank] = plane_idx;
-                break;
+    bool all_single_planes = std::all_of(planes.begin(), planes.end(), [](std::set<int>& p) {
+        return (p.size() == 1);
+    });
+
+    bool all_empty_ports = std::all_of(all_port_counts.begin(), all_port_counts.end(), [](int c) {
+        return (c == 0);
+    });
+
+    if (all_single_planes && all_empty_ports) {
+        // use simple separation of ranks between planes
+        // ranks with the same intra_card color
+        // should be placed to different planes
+        for (int h_idx = 0; h_idx < (int)unique_hostnames.size(); h_idx++) {
+            std::vector<topo_rank_info> local_info_vec;
+            std::copy_if(rank_info_vec.begin(),
+                         rank_info_vec.end(),
+                         std::back_inserter(local_info_vec),
+                         [h_idx](topo_rank_info& info) {
+                             return (info.host_idx == h_idx);
+                         });
+
+            for (size_t idx = 0; idx < local_info_vec.size(); idx++) {
+                const topo_rank_info& info = local_info_vec[idx];
+                int rank = info.rank;
+
+                if (inter_card_colors[rank] != topo_manager::invalid_color) {
+                    continue;
+                }
+
+                int plane_idx = 0;
+                for (size_t peer_idx = 0; peer_idx < local_info_vec.size(); peer_idx++) {
+                    const topo_rank_info& peer_info = local_info_vec[peer_idx];
+                    int peer_rank = peer_info.rank;
+                    if (intra_card_colors[rank] == intra_card_colors[peer_rank]) {
+                        inter_card_colors[peer_rank] = plane_idx;
+                        plane_idx++;
+                    }
+                }
+            }
+        }
+    }
+    else {
+        for (int rank = 0; rank < comm_size; rank++) {
+            for (int plane_idx = 0; plane_idx < (int)planes.size(); plane_idx++) {
+                if (planes[plane_idx].find(rank) != planes[plane_idx].end()) {
+                    inter_card_colors[rank] = plane_idx;
+                    break;
+                }
             }
         }
     }
 
-    CCL_THROW_IF_NOT(intra_card_colors[comm_rank] != topo_manager::invalid_color,
-                     "intra_card_color for rank ",
-                     comm_rank,
-                     " is not valid");
+    CCL_THROW_IF_NOT(std::find(intra_card_colors.begin(),
+                               intra_card_colors.end(),
+                               topo_manager::invalid_color) == intra_card_colors.end(),
+                     "intra_card_colors data is not valid");
+
     CCL_THROW_IF_NOT(std::find(inter_card_colors.begin(),
                                inter_card_colors.end(),
                                topo_manager::invalid_color) == inter_card_colors.end(),
@@ -365,31 +420,34 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
             LOG_INFO("plane ", plane_idx, " contains ranks: ", ss.str());
         }
     }
+
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 }
 
-int topo_manager::get_intra_card_color(int rank) {
-    int color{};
-    if (ccl::global_data::env().topo_color == topo_color_mode::ze) {
-        color = intra_card_colors[rank];
+void topo_manager::post_init() {
+    for (int rank = 0; rank < comm->get_size(); rank++) {
+        intra_card_colors[rank] += rank_info_vec[rank].host_idx * max_ranks_per_host;
+        inter_card_colors[rank] += rank_info_vec[rank].host_idx * max_ranks_per_host;
     }
-    else if (ccl::global_data::env().topo_color == topo_color_mode::fixed) {
-        color = rank / 2;
-    }
-    color = color + host_idx * max_ranks_per_host;
-    return color;
 }
 
-int topo_manager::get_inter_card_color(int rank) {
-    int color{};
-    if (ccl::global_data::env().topo_color == topo_color_mode::ze) {
-        color = inter_card_colors[rank];
-    }
-    else if (ccl::global_data::env().topo_color == topo_color_mode::fixed) {
-        color = rank % 2;
-    }
-    color = color + host_idx * max_ranks_per_host;
-    return color;
+void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
+                        std::shared_ptr<ccl::device> device_ptr,
+                        std::shared_ptr<ccl::context> context_ptr) {
+    base_init(atl_comm, device_ptr, context_ptr);
+    post_init();
+}
+
+int topo_manager::get_intra_card_color(int rank) const {
+    return intra_card_colors[rank];
+}
+
+int topo_manager::get_inter_card_color(int rank) const {
+    return inter_card_colors[rank];
+}
+
+std::string topo_manager::get_uuid(int rank) const {
+    return uuids[rank];
 }
 
 bool topo_manager::has_p2p_access() const {
@@ -406,6 +464,40 @@ bool topo_manager::has_p2p_access() const {
     return has_access;
 }
 
+void topo_manager::allgather(const void* send_buf, void* recv_buf, int bytes) {
+    std::vector<int> recv_bytes(comm->get_size(), bytes);
+    allgatherv(send_buf, recv_buf, recv_bytes);
+}
+
+void topo_manager::allgatherv(const void* send_buf,
+                              void* recv_buf,
+                              const std::vector<int>& recv_bytes) {
+    atl_req_t req{};
+
+    int comm_rank = comm->get_rank();
+    int comm_size = comm->get_size();
+
+    CCL_THROW_IF_NOT((int)recv_bytes.size() == comm->get_size(),
+                     "unexpected recv_bytes size ",
+                     recv_bytes.size(),
+                     ", comm_size ",
+                     comm_size);
+
+    std::vector<int> offsets(comm_size, 0);
+    for (int i = 1; i < comm_size; i++) {
+        offsets[i] = offsets[i - 1] + recv_bytes[i - 1];
+    }
+
+    comm->allgatherv(0 /* ep_idx */,
+                     send_buf,
+                     recv_bytes[comm_rank],
+                     recv_buf,
+                     recv_bytes.data(),
+                     offsets.data(),
+                     &req);
+    comm->wait(0 /* ep_idx */, &req);
+}
+
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 bool topo_manager::is_same_pci_addr(zes_pci_address_t addr1, zes_pci_address_t addr2) {
     bool result = true;
@@ -413,12 +505,12 @@ bool topo_manager::is_same_pci_addr(zes_pci_address_t addr1, zes_pci_address_t a
           addr1.function == addr2.function)) {
         result = false;
         LOG_DEBUG("pci addresses are not the same:"
-                  "pci_addr_1: ",
+                  " addr1: ",
                   addr1.domain,
                   addr1.bus,
                   addr1.device,
                   addr1.function,
-                  "\npci_addr_2: ",
+                  " addr2: ",
                   addr2.domain,
                   addr2.bus,
                   addr2.device,
@@ -495,6 +587,38 @@ std::string topo_manager::to_string() {
     ss << "\n}";
 
     return ss.str();
+}
+
+std::string topo_manager::generate_uuid() {
+    std::stringstream ss;
+    int pid = getpid();
+
+    auto time = std::chrono::high_resolution_clock::now();
+    uint64_t time_usec = std::chrono::duration<double, std::micro>(time.time_since_epoch()).count();
+
+    srand(time_usec);
+    int random_number = rand();
+
+    constexpr int part_1_len = 8;
+    constexpr int part_2_len = 16;
+
+    ss << std::right << std::setfill('0') << std::setw(part_1_len)
+       << std::to_string(pid).substr(0, part_1_len) << "-" << std::setw(part_1_len)
+       << std::to_string(random_number).substr(0, part_1_len) << "-" << std::setw(part_2_len)
+       << std::to_string(time_usec).substr(0, part_2_len);
+
+    std::string result = ss.str();
+
+    size_t expected_uuid_len = (topo_uuid_len - 1);
+    CCL_THROW_IF_NOT(result.size() == expected_uuid_len,
+                     "unexpected uuid len ",
+                     result.size(),
+                     ", expected ",
+                     expected_uuid_len,
+                     ", uuid ",
+                     result);
+
+    return result;
 }
 
 } // namespace ccl

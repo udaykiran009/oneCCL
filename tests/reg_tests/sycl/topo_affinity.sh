@@ -22,7 +22,7 @@ export CCL_REDUCE=topo
 #transports="ofi mpi"
 transports="mpi"
 random_device_list="3.0 1.0 3.1 4.1 0.0 4.0 2.1 2.0 1.1 5.1 0.1 5.0"
-bench_options="-w 1 -i 8 -c all -l allgatherv,allreduce,reduce -b sycl -t 2097152"
+bench_options="-w 1 -i 8 -c all -l allgatherv,allreduce,reduce -b sycl -t 131072"
 
 create_affinity_env() {
     device_list=$1

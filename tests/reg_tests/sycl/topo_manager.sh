@@ -16,24 +16,29 @@ cd ${SCRIPT_DIR}
 algos="ring topo"
 topo_color_modes="ze fixed"
 proc_counts="2 4"
+ppns="1 2"
 
-bench_options="-b sycl -w 4 -i 8 -c all -l allreduce -t 2097152"
+bench_options="-b sycl -w 1 -i 4 -c all -l allreduce,bcast -t 131072"
 
 for algo in ${algos}
 do
     for proc_count in ${proc_counts}
     do
-        for topo_color_mode in ${topo_color_modes}
+        for ppn in ${ppns}
         do
-            export CCL_ALLREDUCE=${algo}
-            export CCL_TOPO_COLOR=${topo_color_mode}
-            mpiexec -l -n ${proc_count} -ppn 2 ${SCRIPT_DIR}/benchmark ${bench_options} > ${TEST_LOG} 2>&1
-            ret_val=$?
-            if [ $ret_val -ne 0 ]
-            then
-                echo "Fail"
-                exit -1
-            fi
+            for topo_color_mode in ${topo_color_modes}
+            do
+                export CCL_ALLREDUCE=${algo}
+                export CCL_BCAST=${algo}
+                export CCL_TOPO_COLOR=${topo_color_mode}
+                mpiexec -l -n ${proc_count} -ppn ${ppn} ${SCRIPT_DIR}/benchmark ${bench_options} > ${TEST_LOG} 2>&1
+                ret_val=$?
+                if [ $ret_val -ne 0 ]
+                then
+                    echo "Fail"
+                    exit -1
+                fi
+            done
         done
     done
 done

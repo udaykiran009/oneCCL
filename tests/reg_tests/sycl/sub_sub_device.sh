@@ -30,7 +30,7 @@ transports="mpi"
 proc_counts="4"
 colls="allreduce"
 algos="ring topo"
-bench_options="-w 4 -i 8 -c all -j off -b sycl -t 1048576"
+bench_options="-w 4 -i 8 -c all -j off -b sycl -t 131072"
 
 for transport in ${transports}
 do

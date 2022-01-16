@@ -20,7 +20,7 @@ do
     do
         export CCL_ZE_COPY_ENGINE=${copy_engine}
         export CCL_ZE_SINGLE_LIST=${single_list_mode}
-        mpiexec -l -n 4 ${SCRIPT_DIR}/benchmark -l allreduce -y 2097152 > ${TEST_LOG} 2>&1
+        mpiexec -l -n 4 ${SCRIPT_DIR}/benchmark -l allreduce -y 131072 > ${TEST_LOG} 2>&1
         rc=$?
 
         if [ ${rc} -ne 0 ]

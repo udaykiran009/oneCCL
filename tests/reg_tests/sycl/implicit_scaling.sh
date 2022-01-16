@@ -23,7 +23,7 @@ root_device_modes="0 1"
 # algos="ring topo"
 algos="ring"
 
-bench_options="-w 1 -i 4 -l allreduce,bcast -c all -b sycl -t 1048576"
+bench_options="-w 1 -i 4 -l allreduce,bcast -c all -b sycl -t 131072"
 
 for transport in ${transports}
 do
