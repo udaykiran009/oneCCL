@@ -72,7 +72,6 @@ public:
 private:
     kvs_status_t init_main_server_by_string(const char* main_addr);
     kvs_status_t init_main_server_by_env();
-    kvs_status_t init_main_server_by_k8s();
     kvs_status_t init_main_server_address(const char* main_addr);
     kvs_status_t fill_local_host_ip();
     bool is_inited{ false };
@@ -99,11 +98,10 @@ private:
     int server_control_sock; /* used on server side to be controlled by local client */
 
     typedef enum ip_getting_type {
-        IGT_K8S = 0,
-        IGT_ENV = 1,
+        IGT_ENV = 0,
     } ip_getting_type_t;
 
-    ip_getting_type_t ip_getting_mode = IGT_K8S;
+    ip_getting_type_t ip_getting_mode = IGT_ENV;
 
     const std::string CCL_KVS_IP_PORT_ENV = "CCL_KVS_IP_PORT";
     const std::string CCL_KVS_IP_EXCHANGE_ENV = "CCL_KVS_IP_EXCHANGE";
@@ -111,7 +109,6 @@ private:
     const std::string CCL_KVS_IFACE_ENV = "CCL_KVS_IFACE";
 
     const std::string CCL_KVS_IP_EXCHANGE_VAL_ENV = "env";
-    const std::string CCL_KVS_IP_EXCHANGE_VAL_K8S = "k8s";
 
     const int CONNECTION_TIMEOUT = 120;
 

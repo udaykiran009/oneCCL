@@ -51,7 +51,6 @@ set(CCL_SRC
     atl/util/pm/pmi_resizable_rt/pmi_resizable/helper.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs_keeper.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/pmi_listener.cpp
-    atl/util/pm/pmi_resizable_rt/pmi_resizable/request_wrappers_k8s.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/resizable_pmi.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs_server.cpp
