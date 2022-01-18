@@ -155,7 +155,7 @@ atl_status_t atl_mpi_global_data::set_impi_env(const atl_attr_t& attr,
     setenv("I_MPI_THREAD_RUNTIME", "generic", 0);
     setenv("I_MPI_THREAD_MAX", ep_count_str, 0);
     setenv("I_MPI_THREAD_ID_KEY", EP_IDX_KEY, 0);
-    setenv("I_MPI_THREAD_LOCK_LEVEL", "vci", 0);
+    setenv("I_MPI_THREAD_LOCK_LEVEL", (attr.in.ep_count == 1) ? "global" : "vci", 0);
 
     return ATL_STATUS_SUCCESS;
 }
