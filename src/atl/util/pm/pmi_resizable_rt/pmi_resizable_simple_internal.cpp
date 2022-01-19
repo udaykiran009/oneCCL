@@ -311,7 +311,6 @@ atl_status_t pmi_resizable_simple_internal::get_local_kvs_id(size_t& res) {
 
 atl_status_t pmi_resizable_simple_internal::set_local_kvs_id(size_t local_kvs_id) {
     /*TODO: change it for collect local_per_rank id, not global*/
-    put_key(LOCAL_KVS_ID, "ID", std::to_string(local_kvs_id).c_str(), ST_CLIENT);
     return k->kvs_set_value(LOCAL_KVS_ID, "ID", std::to_string(local_kvs_id).c_str()) ==
                    KVS_STATUS_SUCCESS
                ? ATL_STATUS_SUCCESS

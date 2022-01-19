@@ -10,6 +10,7 @@ set(sources
     priority_allreduce.cpp
     reduce.cpp
     reduce_scatter.cpp
+    recreate_comm.cpp
     unordered_allreduce.cpp)
 
 set(CCL_INSTALL_TESTS "${CMAKE_CURRENT_SOURCE_DIR}")
