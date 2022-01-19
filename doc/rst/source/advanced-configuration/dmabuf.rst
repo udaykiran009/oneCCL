@@ -19,9 +19,9 @@ Requirements
 Usage
 #####
 
-|product_short|, OFI and OFI/verbs from |base_tk| support device memory transfers. Refer to `Run instructions`__ for usage.
+|product_short|, OFI and OFI/verbs from |base_tk| support device memory transfers. Refer to `Run instructions`_ for usage.
 
-If you want to build software components from sources, refer to `Build instructions`__.
+If you want to build software components from sources, refer to `Build instructions`_.
 
 
 Build instructions
