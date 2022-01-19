@@ -285,8 +285,8 @@ public:
     int disable_ze_family_check;
     int ze_serialize_mode;
     ccl_ze_copy_engine_mode ze_copy_engine;
-    int ze_max_compute_queues;
-    int ze_max_copy_queues;
+    ssize_t ze_max_compute_queues;
+    ssize_t ze_max_copy_queues;
     int enable_ze_list_dump;
     int ze_queue_index_offset;
     int ze_close_ipc_wa;

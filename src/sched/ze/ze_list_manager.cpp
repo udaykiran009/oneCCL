@@ -146,14 +146,20 @@ const char* queue_factory::get_type_str() const {
 }
 
 uint32_t queue_factory::get_max_available_queue_count() const {
-    uint32_t user_max_queues = queues.size();
+    ssize_t user_max_queues = CCL_ENV_SIZET_NOT_SPECIFIED;
     if (is_copy_queue) {
         user_max_queues = global_data::env().ze_max_copy_queues;
     }
     else {
         user_max_queues = global_data::env().ze_max_compute_queues;
     }
-    return std::min(user_max_queues, static_cast<uint32_t>(queues.size()));
+    if (user_max_queues != CCL_ENV_SIZET_NOT_SPECIFIED) {
+        return std::min(static_cast<uint32_t>(user_max_queues),
+                        static_cast<uint32_t>(queues.size()));
+    }
+    else {
+        return queues.size();
+    }
 }
 
 uint32_t queue_factory::get_queue_index(uint32_t requested_index) const {
