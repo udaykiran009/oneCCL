@@ -17,6 +17,13 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+#set default proc maps
+if (NOT PROC_MAPS)
+    set(PROC_MAPS "2:1,2")
+endif()
+
+message(STATUS "PROC_MAPS: ${PROC_MAPS}")
+
 # standalone build
 if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     set(COMMON_CMAKE_DIR ${PROJECT_SOURCE_DIR}/../../cmake)
@@ -124,19 +131,31 @@ endforeach()
 
 add_test (NAME allreduce_fusion CONFIGURATIONS allreduce_fusion COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_fusion_report.junit.xml)
 
-foreach(ppn 1; 2)
-    foreach(algo direct; rabenseifner; nreduce; ring; ring_rma; double_tree; recursive_doubling; 2d; topo)
-        add_test (NAME allreduce_${algo}_${ppn} CONFIGURATIONS allreduce_${algo}_${ppn} COMMAND mpiexec.hydra -l -n 2 -ppn ${ppn} ${CCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_${algo}_${ppn}_report.junit.xml)
-    endforeach()
+foreach(proc_map ${PROC_MAPS})
 
-    foreach(algo direct; ring; double_tree; naive; topo)
-        add_test (NAME bcast_${algo}_${ppn} CONFIGURATIONS bcast_${algo}_${ppn} COMMAND mpiexec.hydra -l -n 2 -ppn ${ppn} ${CCL_INSTALL_TESTS}/bcast_test --gtest_output=xml:${CCL_INSTALL_TESTS}/bcast_${algo}_${ppn}_report.junit.xml)
-    endforeach()
+    if (${proc_map} MATCHES "(.*):(.*)")
+        set(N ${CMAKE_MATCH_1})
+        set(PPNS ${CMAKE_MATCH_2})
+        string(REGEX REPLACE "," ";" PPNS ${PPNS})
+    else()
+        message(FATAL_ERROR "Incorrect proc_map input: ${proc_map}, expected input <n:ppn>")
+    endif()
 
-    foreach(algo direct; rabenseifner; tree; double_tree; topo)
-        add_test (NAME reduce_${algo}_${ppn} CONFIGURATIONS reduce_${algo}_${ppn} COMMAND mpiexec.hydra -l -n 2 -ppn ${ppn} ${CCL_INSTALL_TESTS}/reduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/reduce_${algo}_${ppn}_report.junit.xml)
-    endforeach()
+    foreach(ppn ${PPNS})
 
+        foreach(algo direct; rabenseifner; nreduce; ring; ring_rma; double_tree; recursive_doubling; 2d; topo)
+            add_test (NAME allreduce_${algo}_${N}_${ppn} CONFIGURATIONS allreduce_${algo}_${N}_${ppn} COMMAND mpiexec.hydra -l -n ${N} -ppn ${ppn} ${CCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_${algo}_${N}_${ppn}_report.junit.xml)
+        endforeach()
+
+        foreach(algo direct; ring; double_tree; naive; topo)
+            add_test (NAME bcast_${algo}_${N}_${ppn} CONFIGURATIONS bcast_${algo}_${N}_${ppn} COMMAND mpiexec.hydra -l -n ${N} -ppn ${ppn} ${CCL_INSTALL_TESTS}/bcast_test --gtest_output=xml:${CCL_INSTALL_TESTS}/bcast_${algo}_${N}_${ppn}_report.junit.xml)
+        endforeach()
+
+        foreach(algo direct; rabenseifner; tree; double_tree; topo)
+            add_test (NAME reduce_${algo}_${N}_${ppn} CONFIGURATIONS reduce_${algo}_${N}_${ppn} COMMAND mpiexec.hydra -l -n ${N} -ppn ${ppn} ${CCL_INSTALL_TESTS}/reduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/reduce_${algo}_${N}_${ppn}_report.junit.xml)
+        endforeach()
+
+    endforeach()
 endforeach()
 
 foreach(algo nreduce; ring; 2d)

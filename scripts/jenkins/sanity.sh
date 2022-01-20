@@ -54,6 +54,19 @@ function set_default_values()
     ENABLE_REG_TESTS="no"
     ENABLE_MPICH_OFI_TESTS="no"
 
+    if [[ ${node_label} = "ccl_test_ats" ]]
+    then
+        PROC_MAPS="2:2/4:4"
+    elif [[ ${node_label} = "ccl_test_pvc" ]]
+    then
+        PROC_MAPS="2:1,2"
+    else
+        #https://jira.devtools.intel.com/browse/MLSL-1288
+        #https://jira.devtools.intel.com/browse/MLSL-1292
+        #PROC_MAPS="2:1,2/4:2,4"
+        PROC_MAPS="2:1,2"
+    fi
+
     is_gpu_node
 }
 #==============================================================================
@@ -71,34 +84,30 @@ function parse_arguments() {
         case $1 in
         "-regular_tests" )
             ENABLE_REGULAR_TESTS="yes"
-            shift
             ;;
         "-horovod_tests" )
             ENABLE_HOROVOD_TESTS="yes"
-            shift
             ;;
         "-pytorch_tests" )
             ENABLE_PYTORCH_TESTS="yes"
-            shift
             ;;
         "-modulefile_tests" )
             ENABLE_MODULEFILE_TESTS="yes"
-            shift
             ;;
         "-functional_tests" )
             ENABLE_FUNCTIONAL_TESTS="yes"
-            shift
             ;;
         "-valgrind_check" )
             ENABLE_VALGRIND_TESTS="yes"
-            shift
             ;;
         "-reg_tests" )
             ENABLE_REG_TESTS="yes"
-            shift
             ;;
         "-mpich_ofi" )
             export ENABLE_MPICH_OFI_TESTS="yes"
+            ;;
+        "-proc_maps" )
+            PROC_MAPS="${2}"
             shift
             ;;
         *)
@@ -107,6 +116,7 @@ function parse_arguments() {
             exit 1
             ;;
         esac
+        shift
     done
 
     echo "ENABLE_REGULAR_TESTS      = ${ENABLE_REGULAR_TESTS}"
@@ -117,6 +127,7 @@ function parse_arguments() {
     echo "ENABLE_VALGRIND_TESTS     = ${ENABLE_VALGRIND_TESTS}"
     echo "ENABLE_REG_TESTS          = ${ENABLE_REG_TESTS}"
     echo "ENABLE_MPICH_OFI_TESTS    = ${ENABLE_MPICH_OFI_TESTS}"
+    echo "PROC_MAPS                 = ${PROC_MAPS}"
 }
 
 # Print usage and help information
@@ -131,6 +142,8 @@ function print_help()
     "-valgrind_check:      run valgrind check\n" \
     "-reg_tests:           run regression tests\n" \
     "-mpich_ofi:           run tests with mpich-ofi\n" \
+    "-proc_maps:           set value for n and ppns\n" \
+    "   example: ./${BASENAME}.sh -proc_maps 2:1,2/4:1,2,4\n" \
     "-help:                print this help information"
     exit 0
 }
@@ -474,7 +487,8 @@ function make_tests()
     mkdir -p build
     cd ./build
     cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
-        -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DCOMPUTE_BACKEND="${COMPUTE_BACKEND}"
+        -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DCOMPUTE_BACKEND="${COMPUTE_BACKEND}" \
+        -DPROC_MAPS="`echo ${PROC_MAPS} | tr '/' ';'`"
     make all
     check_command_exit_code $? "Compilation of functional tests is FAILED"
 }
@@ -549,18 +563,21 @@ function run_regular_tests()
 
     set_regular_tests_environment
 
-    if [[ ${IS_GPU_NODE} = "yes" ]]
-    then
-        if [[ $(hostname) = *"nnlmpinuc09"* ]]
+    for proc_map in `echo ${PROC_MAPS} | tr '/' ' '`
+    do
+        if [[ ${IS_GPU_NODE} = "yes" ]]
         then
-            export FI_TCP_IFACE=br
+            if [[ $(hostname) = *"nnlmpinuc09"* ]]
+            then
+                export FI_TCP_IFACE=br
+            else
+                export FI_TCP_IFACE=eno1
+            fi
+            ${CURRENT_WORK_DIR}/examples/run.sh --mode gpu --scope ${regular_scope} --cleanup --proc-map ${proc_map}
         else
-            export FI_TCP_IFACE=eno1
+            ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope ${regular_scope} --cleanup --proc-map ${proc_map}
         fi
-        ${CURRENT_WORK_DIR}/examples/run.sh --mode gpu --scope ${regular_scope} --cleanup
-    else
-        ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope ${regular_scope} --cleanup
-    fi
+    done
 
     log_status_fail=${PIPESTATUS[0]}
     if [ "$log_status_fail" -eq 0 ]
@@ -761,7 +778,6 @@ function run_functional_tests()
     set_functional_tests_env
     set_functional_tests_scope
 
-    ppns="1 2"
     allgatherv_algos="naive flat ring"
     allreduce_algos="rabenseifner nreduce ring double_tree recursive_doubling"
     alltoall_algos="naive scatter"
@@ -827,24 +843,35 @@ function run_functional_tests()
                     fi
                 done
 
-                for ppn in $ppns
+                for proc_map in `echo ${PROC_MAPS} | tr '/' ' '`
                 do
-                    for algo in ${allreduce_algos}
-                    do
-                        allreduce_exec_env=$(set_tests_option "CCL_ALLREDUCE=${algo}" "${func_exec_env}")
-                        run_test_cmd "${allreduce_exec_env} ctest -VV -C allreduce_${algo}_${ppn}"
-                    done
+                    n=`echo ${proc_map%:*}`
+                    ppns=`echo ${proc_map#*:} | tr ',' ' '`
 
-                    for algo in ${bcast_algos}
+                    for ppn in $ppns
                     do
-                        bcast_exec_env=$(set_tests_option "CCL_BCAST=${algo}" "${func_exec_env}")
-                        run_test_cmd "${bcast_exec_env} ctest -VV -C bcast_${algo}_${ppn}"
-                    done
+                        if [[ "$ppn" -gt "$n" ]]
+                        then
+                            continue
+                        fi
 
-                    for algo in ${reduce_algos}
-                    do
-                        reduce_exec_env=$(set_tests_option "CCL_REDUCE=${algo}" "${func_exec_env}")
-                        run_test_cmd "${reduce_exec_env} ctest -VV -C reduce_${algo}_${ppn}"
+                        for algo in ${allreduce_algos}
+                        do
+                            allreduce_exec_env=$(set_tests_option "CCL_ALLREDUCE=${algo}" "${func_exec_env}")
+                            run_test_cmd "${allreduce_exec_env} ctest -VV -C allreduce_${algo}_${n}_${ppn}"
+                        done
+
+                        for algo in ${bcast_algos}
+                        do
+                            bcast_exec_env=$(set_tests_option "CCL_BCAST=${algo}" "${func_exec_env}")
+                            run_test_cmd "${bcast_exec_env} ctest -VV -C bcast_${algo}_${n}_${ppn}"
+                        done
+
+                        for algo in ${reduce_algos}
+                        do
+                            reduce_exec_env=$(set_tests_option "CCL_REDUCE=${algo}" "${func_exec_env}")
+                            run_test_cmd "${reduce_exec_env} ctest -VV -C reduce_${algo}_${n}_${ppn}"
+                        done
                     done
                 done
 
@@ -912,24 +939,35 @@ function run_functional_tests()
                     fi
                 done
 
-                for ppn in $ppns
+                for proc_map in `echo ${PROC_MAPS} | tr '/' ' '`
                 do
-                    for algo in ${allreduce_algos}
-                    do
-                        allreduce_exec_env=$(set_tests_option "CCL_ALLREDUCE=${algo}" "${func_exec_env}")
-                        run_test_cmd "${allreduce_exec_env} ctest -VV -C allreduce_${algo}_${ppn}"
-                    done
+                    n=`echo ${proc_map%:*}`
+                    ppns=`echo ${proc_map#*:} | tr ',' ' '`
 
-                    for algo in ${bcast_algos}
+                    for ppn in $ppns
                     do
-                        bcast_exec_env=$(set_tests_option "CCL_BCAST=${algo}" "${func_exec_env}")
-                        run_test_cmd "${bcast_exec_env} ctest -VV -C bcast_${algo}_${ppn}"
-                    done
+                        if [[ "$ppn" -gt "$n" ]]
+                        then
+                            continue
+                        fi
 
-                    for algo in ${reduce_algos}
-                    do
-                        reduce_exec_env=$(set_tests_option "CCL_REDUCE=${algo}" "${func_exec_env}")
-                        run_test_cmd "${reduce_exec_env} ctest -VV -C reduce_${algo}_${ppn}"
+                        for algo in ${allreduce_algos}
+                        do
+                            allreduce_exec_env=$(set_tests_option "CCL_ALLREDUCE=${algo}" "${func_exec_env}")
+                            run_test_cmd "${allreduce_exec_env} ctest -VV -C allreduce_${algo}_${n}_${ppn}"
+                        done
+
+                        for algo in ${bcast_algos}
+                        do
+                            bcast_exec_env=$(set_tests_option "CCL_BCAST=${algo}" "${func_exec_env}")
+                            run_test_cmd "${bcast_exec_env} ctest -VV -C bcast_${algo}_${n}_${ppn}"
+                        done
+
+                        for algo in ${reduce_algos}
+                        do
+                            reduce_exec_env=$(set_tests_option "CCL_REDUCE=${algo}" "${func_exec_env}")
+                            run_test_cmd "${reduce_exec_env} ctest -VV -C reduce_${algo}_${n}_${ppn}"
+                        done
                     done
                 done
 

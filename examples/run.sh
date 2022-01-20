@@ -146,17 +146,19 @@ run_benchmark()
     echo "backend: "$backend
     local runtime=$6
     echo "runtime: "$runtime
-    local ppn=$7
+    local n=$7
+    echo "n: "$n
+    local ppn=$8
     echo "ppn: "$ppn
-    local loop=$8
+    local loop=$9
     echo "loop: "$loop
-    local coll=$9
+    local coll=${10}
     echo "coll: " $coll
-    local dtype=${10}
+    local dtype=${11}
     echo "dtype: " $dtype
-    local reduction=${11}
+    local reduction=${12}
     echo "reduction: " $reduction
-    local ranks=${12}
+    local ranks=${13}
     echo "ranks per process: " ${ranks}
     echo "================ENVIRONMENT=================="
 
@@ -232,23 +234,23 @@ run_benchmark()
 
         if [ `echo $ccl_bench_env | grep -c CCL_LOG_LEVEL` -ne 1 ]
         then
-            cmd=`echo $ccl_bench_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_options}`
+            cmd=`echo $ccl_bench_env mpiexec.hydra -n $n -ppn $ppn -l ./$example ${final_options}`
             echo "Running: $cmd"
             eval $cmd 2>&1 | tee ${test_log}
             check_test ${test_log} ${example}
         else
-            log_debug_test_log="${test_log}.2_ranks_ppn_${ppn}"
-            echo "output for run with CCL_LOG_LEVEL=debug and 2 ranks has been redirected to log file ${log_debug_test_log}"
-            cmd=`echo $ccl_bench_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example ${final_options}`
+            log_debug_test_log="${test_log}.${n}_ranks_ppn_${ppn}"
+            echo "output for run with CCL_LOG_LEVEL=debug and ${n} ranks has been redirected to log file ${log_debug_test_log}"
+            cmd=`echo $ccl_bench_env mpiexec.hydra -n $n -ppn $ppn -l ./$example ${final_options}`
             echo "Running: $cmd"
             eval $cmd > ${log_debug_test_log} 2>&1
             check_test ${log_debug_test_log} ${example}
 
             if [ "${transport}" == "ofi" ] && [ "${ppn}" == "1" ];
             then
-                log_debug_test_log="${test_log}.1_rank"
+                log_debug_test_log="${test_log}.${n}_rank"
                 echo "output for run with CCL_LOG_LEVEL=debug and 1 rank has been redirected to log file ${log_debug_test_log}"
-                cmd=`echo $ccl_bench_env mpiexec.hydra -n 1 -ppn $ppn -l ./$example ${final_options}`
+                cmd=`echo $ccl_bench_env mpiexec.hydra -n $n -ppn $ppn -l ./$example ${final_options}`
                 echo "Running: $cmd"
                 eval $cmd > ${log_debug_test_log} 2>&1
                 check_test ${log_debug_test_log} ${example}
@@ -266,18 +268,20 @@ run_example()
     echo "dir_name: " $dir_name
     local transport=$3
     echo "transport: "$transport
-    local ppn=$4
+    local n=$4
+    echo "n: "$n
+    local ppn=$5
     echo "ppn: "$ppn
-    local example=$5
+    local example=$6
     echo "example: "$example
-    local arg=$6
+    local arg=$7
     echo "arg: "$arg
     echo "================ENVIRONMENT=================="
 
     log_idx=${log_idx}+1
     local test_log="$EXAMPLE_WORK_DIR/$dir_name/run_${dir_name}_${transport}_${example}_${log_idx}.log"
 
-    cmd=`echo $ccl_extra_env mpiexec.hydra -n 2 -ppn $ppn -l ./$example $arg`
+    cmd=`echo $ccl_extra_env mpiexec.hydra -n $n -ppn $ppn -l ./$example $arg`
     echo "Running $cmd"
     eval $cmd 2>&1 | tee ${test_log}
     check_test ${test_log} ${example}
@@ -309,8 +313,8 @@ run()
     cd ${EXAMPLE_WORK_DIR}/
     pwd
 
-    ppns="1 2"
-    n=2
+    n=`echo ${PROC_MAP%:*}`
+    ppns=`echo ${PROC_MAP#*:} | tr ',' ' '`
     base_dtype_list="int8,int32,float16,float32"
     reduction_list="sum"
     ccl_base_env="FI_PROVIDER=${provider} CCL_WORKER_COUNT=${worker_count}"
@@ -406,6 +410,11 @@ run()
             do
                 for ppn in $ppns
                 do
+                    if [[ "$ppn" -gt "$n" ]];
+                    then
+                        continue
+                    fi
+
                     if [ "$dir_name" == "benchmark" ];
                     then
 
@@ -455,7 +464,7 @@ run()
                                 fi
 
                                 ccl_extra_env="${ccl_runtime_env}"
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${ppn} regular ${coll_list}
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} regular ${coll_list}
 
                                 for loop in "regular" "unordered"
                                 do
@@ -468,25 +477,25 @@ run()
                                     fi
 
                                     ccl_extra_env="CCL_PRIORITY=lifo ${ccl_runtime_env}"
-                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${ppn} ${loop} ${coll_list}
+                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} ${loop} ${coll_list}
 
                                     ccl_extra_env="CCL_WORKER_OFFLOAD=0 ${ccl_runtime_env}"
-                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${ppn} ${loop} ${coll_list}
+                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} ${loop} ${coll_list}
 
                                     ccl_extra_env="CCL_WORKER_WAIT=0 ${ccl_runtime_env}"
-                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${ppn} ${loop} ${coll_list}
+                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} ${loop} ${coll_list}
                                 done
 
                                 if [ "$runtime" != "opencl" ];
                                 then
                                     # TODO: fix issue with OCL host usm, ticket to be filled
                                     ccl_extra_env="CCL_FUSION=1 ${ccl_runtime_env}"
-                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${ppn} regular allreduce
+                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} regular allreduce
                                 fi
 
                                 ccl_extra_env="CCL_LOG_LEVEL=debug ${ccl_runtime_env}"
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${ppn} regular ${coll_list}
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${ppn} regular allreduce ${dtype_list} ${reduction_list}
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} regular ${coll_list}
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} regular allreduce ${dtype_list} ${reduction_list}
                             done
                         done
                     elif [ "$dir_name" == "sycl" ];
@@ -545,7 +554,7 @@ run()
                                 do
                                     echo "selector $selector, runtime $runtime, usm $usm"
                                     ccl_extra_env="SYCL_DEVICE_FILTER=${runtime} ${ccl_transport_env}"
-                                    run_example "${ccl_extra_env}" ${dir_name} ${transport} ${ppn} ${example} "${selector} ${usm}"
+                                    run_example "${ccl_extra_env}" ${dir_name} ${transport} ${n} ${ppn} ${example} "${selector} ${usm}"
                                 done
                             done
                         done
@@ -578,7 +587,7 @@ run()
 
                     else
                         ccl_extra_env="${ccl_transport_env}"
-                        run_example "${ccl_extra_env}" ${dir_name} ${transport} ${ppn} ${example}
+                        run_example "${ccl_extra_env}" ${dir_name} ${transport} ${n} ${ppn} ${example}
                     fi
                 done
             done
@@ -613,6 +622,9 @@ print_help()
     echo_log "  --mode mode             cpu|gpu mode"
     echo_log "  --scope scope           pr|abi|pv|all scope (default: pv)"
     echo_log "  --build-only            build only"
+    echo_log "  --run-only              run only"
+    echo_log "  --cleanup               cleanup"
+    echo_log "  --proc-map <n:ppns>     set value for n and ppns"
     echo_log "  --help                  print help information"
     echo_log
     echo_log "Usage examples:"
@@ -620,6 +632,7 @@ print_help()
     echo_log "  ${BASENAME}.sh --mode cpu"
     echo_log "  ${BASENAME}.sh --mode gpu"
     echo_log "  ${BASENAME}.sh --mode gpu --scope pr"
+    echo_log "  ${BASENAME}.sh --mode gpu --scope pr --proc-map 4:1,2,4"
     echo_log ""
     echo_log "Available knobs:"
     echo_log "  C_COMPILER = clang|icc|icx|gcc|<full path to compiler>"
@@ -638,11 +651,11 @@ parse_arguments()
             "gpu")                                      MODE="gpu" ;;
             "cpu")                                      MODE="cpu" ;;
             "pr")                                       SCOPE="pr" ;;
-            "--mode" | "-mode")                         MODE=$2 ; shift ;;
             "--scope" | "-scope")                       SCOPE=$2 ; shift ;;
             "--build-only" | "-build-only")             BUILD_ONLY="yes" ;;
             "--run-only" | "-run-only")                 RUN_ONLY="yes" ;;
             "--cleanup" | "-cleanup")                   ENABLE_CLEANUP="yes" ;;
+            "--proc-map" | "-proc-map")                 PROC_MAP=$2 ; shift ;;
             *)
             echo "$(basename $0): ERROR: unknown option ($1)"
             print_help
@@ -657,6 +670,7 @@ parse_arguments()
     [[ ! -z "$SCOPE" ]] && echo "SCOPE: $SCOPE"
     [[ ! -z "$BUILD_ONLY" ]] && echo "BUILD_ONLY: $BUILD_ONLY"
     [[ ! -z "$RUN_ONLY" ]] && echo "RUN_ONLY: $RUN_ONLY"
+    [[ -z "$PROC_MAP"  ]] && PROC_MAP="2:1,2"; echo "PROC_MAP: $PROC_MAP"
     echo
 }
 
