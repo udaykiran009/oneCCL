@@ -8,9 +8,31 @@
 #include "sched/buffer/buffer_cache.hpp"
 #include "sched/cache/cache.hpp"
 
+#include <sys/utsname.h>
+
 namespace ccl {
 
 thread_local bool global_data::is_worker_thread = false;
+
+std::string os_information::to_string() {
+    std::stringstream ss;
+    ss << " { " << sysname << " "
+        << nodename << " "
+        << release << " "
+        << version << " "
+        << machine << " }";
+    return ss.str();
+}
+
+void os_information::fill() {
+    struct utsname os;
+    uname(&os);
+    sysname = os.sysname;
+    nodename = os.nodename;
+    release = os.release;
+    version = os.version;
+    machine = os.machine;
+}
 
 global_data::global_data() {
     /* create ccl_logger before ccl::global_data
@@ -29,6 +51,10 @@ global_data& global_data::get() {
 
 env_data& global_data::env() {
     return get().env_object;
+}
+
+os_information& global_data::get_os_info() {
+    return get().os_info;
 }
 
 ccl::status global_data::reset() {
@@ -50,6 +76,10 @@ ccl::status global_data::reset() {
 ccl::status global_data::init() {
     env_object.parse();
     env_object.set_internal_env();
+    os_info.fill();
+    LOG_INFO("OS info:", os_info.to_string());
+    if (os_info.release.find("WSL2") != std::string::npos)
+        env_object.enable_topo_algo = 0;
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
     if (ccl::global_data::env().backend == backend_mode::native &&

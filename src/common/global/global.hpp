@@ -29,6 +29,17 @@ namespace ccl {
 
 class buffer_cache;
 
+struct os_information {
+    std::string sysname;
+    std::string nodename;
+    std::string release;
+    std::string version;
+    std::string machine;
+
+    std::string to_string();
+    void fill();
+};
+
 class global_data {
 public:
     global_data(const global_data&) = delete;
@@ -44,6 +55,7 @@ public:
 
     static global_data& get();
     static env_data& env();
+    static os_information& get_os_info();
 
     /* public methods to have access from listener thread function */
     void init_resize_dependent_objects();
@@ -74,6 +86,7 @@ private:
     void reset_resize_independent_objects();
 
     env_data env_object;
+    os_information os_info;
 };
 
 } // namespace ccl

@@ -402,10 +402,6 @@ run()
                     grep -v 'run.sh'`
             fi
 
-            if [[ "$DASHBOARD_PLATFORM_SW_LINUX_KERNEL_VERSION" =~ ^.*[Ww][Ss][Ll]2.*$ ]]
-            then
-                export CCL_TOPO_ALGO=0
-            fi
             for example in $examples_to_run
             do
                 for ppn in $ppns
