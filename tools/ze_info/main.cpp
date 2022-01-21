@@ -76,10 +76,19 @@ void get_device_queue_group_info(const ze_device_handle_t& device) {
 
     if (device_queue_group_nums.size() < queue_group_count) {
         device_queue_group_nums.resize(queue_group_count);
-        device_queue_group_types.resize(queue_group_count);
+        for (auto& queue_group_nums : device_queue_group_nums) {
+            if (queue_group_nums.empty()) {
+                queue_group_nums.resize(device_queue_group_nums.at(0).size(), 0);
+            }
+        }
     }
     if (device_queue_group_types.size() < queue_group_count) {
         device_queue_group_types.resize(queue_group_count);
+        for (auto& queue_group_types : device_queue_group_types) {
+            if (queue_group_types.empty()) {
+                queue_group_types.resize(device_queue_group_types.at(0).size(), "unknown");
+            }
+        }
     }
 
     for (auto& queue_group_nums : device_queue_group_nums) {
