@@ -6,6 +6,8 @@ mpich_checker platform=* transport=impi
 pkgconfig_support_checker platform=* transport=mpich
 
 # cpu
+# MLSL-1295
+recreate_comm platform=* transport=*
 
 # sycl
 allgatherv_vector platform=gen9 transport=*
