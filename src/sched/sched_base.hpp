@@ -6,7 +6,7 @@
 
 #include "atl/atl_base_comm.hpp"
 #include "coll/coll_param.hpp"
-#include "common/comm/atl_tag.hpp"
+#include "comm/atl_tag.hpp"
 #include "common/request/request.hpp"
 #include "common/utils/buffer.hpp"
 #include "sched/buffer/buffer_manager.hpp"

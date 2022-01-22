@@ -1,7 +1,7 @@
 #include "common/global/global.hpp"
 #include "common/log/log.hpp"
 #include "common/stream/stream.hpp"
-#include "common/stream/stream_provider_dispatcher_impl.hpp"
+#include "common/stream/stream_selector_impl.hpp"
 #include "common/utils/enums.hpp"
 #include "common/utils/sycl_utils.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"

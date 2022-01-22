@@ -1,5 +1,5 @@
 #include "coll/selection/selection.hpp"
-#include "common/comm/comm_id_storage.hpp"
+#include "comm/comm_id_storage.hpp"
 #include "common/datatype/datatype.hpp"
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
@@ -16,11 +16,8 @@ thread_local bool global_data::is_worker_thread = false;
 
 std::string os_information::to_string() {
     std::stringstream ss;
-    ss << " { " << sysname << " "
-        << nodename << " "
-        << release << " "
-        << version << " "
-        << machine << " }";
+    ss << " { " << sysname << " " << nodename << " " << release << " " << version << " " << machine
+       << " }";
     return ss.str();
 }
 

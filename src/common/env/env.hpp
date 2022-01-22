@@ -10,12 +10,12 @@
 #include "coll/coll.hpp"
 #include "common/framework/framework.hpp"
 #include "common/log/log.hpp"
-#include "common/topology/topo_manager.hpp"
 #include "common/utils/utils.hpp"
 #include "common/utils/yield.hpp"
 #include "comp/bf16/bf16_utils.hpp"
 #include "comp/fp16/fp16_utils.hpp"
 #include "sched/cache/cache.hpp"
+#include "topology/topo_manager.hpp"
 
 constexpr const char* CCL_ENV_STR_NOT_SPECIFIED = "<not specified>";
 constexpr const ssize_t CCL_ENV_SIZET_NOT_SPECIFIED = -1;

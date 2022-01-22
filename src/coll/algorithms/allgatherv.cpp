@@ -1,6 +1,6 @@
 #include "coll/algorithms/algorithms.hpp"
 #include "coll/coll_util.hpp"
-#include "common/comm/comm.hpp"
+#include "comm/comm.hpp"
 #include "sched/entry/factory/chunked_entry_factory.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 

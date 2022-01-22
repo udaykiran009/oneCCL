@@ -94,9 +94,10 @@ set(CCL_SRC
     coll/selection/selector_reduce.cpp
     coll/selection/selector_reduce_scatter.cpp
 
-    common/comm/atl_tag.cpp
-    common/comm/comm.cpp
-    common/comm/compiler_comm_interface_dispatcher.cpp
+    comm/atl_tag.cpp
+    comm/comm.cpp
+    comm/comm_selector.cpp
+
     common/context/context.cpp
     common/datatype/datatype.cpp
     common/device/device.cpp
@@ -109,7 +110,6 @@ set(CCL_SRC
     common/log/log.cpp
     common/request/request.cpp
     common/stream/stream.cpp
-    common/topology/topo_manager.cpp
     common/utils/memcpy.cpp
     common/utils/spinlock.cpp
     common/utils/version.cpp
@@ -155,6 +155,8 @@ set(CCL_SRC
     sched/sched_base.cpp
     sched/sched_timer.cpp
 
+    topology/topo_manager.cpp
+
     unordered_coll/unordered_coll.cpp
 
     ccl_api_functions.cpp
@@ -184,7 +186,7 @@ set(CCL_SRC
 
 if (ENABLE_STUB_BACKEND)
     set (CCL_SRC
-            common/comm/stub_comm.cpp
+            comm/stub_comm.cpp
             stub_kvs_impl.cpp
             ${CCL_SRC})
 endif()

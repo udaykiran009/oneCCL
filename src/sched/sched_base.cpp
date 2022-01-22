@@ -4,7 +4,7 @@
 #include "coll/coll_param.hpp"
 #include "coll/selection/selection.hpp"
 #include "common/global/global.hpp"
-#include "common/comm/comm.hpp"
+#include "comm/comm.hpp"
 #include "common/utils/sycl_utils.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 #include "sched/sched_base.hpp"

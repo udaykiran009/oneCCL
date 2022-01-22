@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/comm/comm.hpp"
+#include "comm/comm.hpp"
 #include "sched/entry/coll/direct/base_coll_entry.hpp"
 
 class alltoallv_entry : public base_coll_entry {

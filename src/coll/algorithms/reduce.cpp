@@ -7,7 +7,7 @@
 
 #include "coll/algorithms/algorithms.hpp"
 #include "coll/coll_util.hpp"
-#include "common/comm/comm.hpp"
+#include "comm/comm.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
 
 /* An implementation of Rabenseifner's reduce algorithm (see

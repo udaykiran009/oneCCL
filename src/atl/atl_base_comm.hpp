@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "atl/atl_def.h"
-#include "common/comm/atl_tag.hpp"
+#include "comm/atl_tag.hpp"
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/ikvs_wrapper.h"
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/internal_kvs.h"
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/users_kvs.h"

@@ -1,5 +1,5 @@
 #include "common/global/global.hpp"
-#include "common/topology/topo_manager.hpp"
+#include "topology/topo_manager.hpp"
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 #include "common/utils/sycl_utils.hpp"

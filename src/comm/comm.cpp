@@ -4,8 +4,8 @@
 #include "coll/coll.hpp"
 #include "coll/coll_common_attributes.hpp"
 #include "coll/ccl_allgather_op_attr.hpp"
-#include "common/comm/comm.hpp"
-#include "common/comm/comm_impl.hpp"
+#include "comm/comm.hpp"
+#include "comm/comm_impl.hpp"
 #include "common/global/global.hpp"
 #include "common/event/impls/host_event.hpp"
 #include "common/request/request.hpp"
@@ -202,7 +202,7 @@ void ccl_comm::allocate_resources() {
     env_object.print(rank());
 }
 
-ccl::communicator_interface_ptr ccl_comm::split(const ccl::comm_split_attr& attr) {
+ccl::comm_interface_ptr ccl_comm::split(const ccl::comm_split_attr& attr) {
     if (!attr.is_valid<ccl::comm_split_attr_id::color>()) {
         CCL_THROW(std::string(__FUNCTION__) +
                   " - 'color' split attribute for communicator is not set");

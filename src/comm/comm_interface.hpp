@@ -13,7 +13,7 @@
 #include "oneapi/ccl/stream_attr_ids_traits.hpp"
 #include "oneapi/ccl/stream.hpp"
 
-#include "common/comm/compiler_comm_interface_dispatcher.hpp"
+#include "comm/comm_selector.hpp"
 #include "internal_types.hpp"
 
 namespace native {
@@ -88,13 +88,13 @@ class reduce_scatter_attr;
     /*COMM_INTERFACE_COLL_CLASS_INSTANTIATIONS(COMM, cl::sycl::buffer<ccl::bfloat16 COMMA 1>);*/
 
 namespace ccl {
-struct communicator_interface : public communicator_interface_dispatcher {
-    virtual ~communicator_interface() = default;
+struct comm_interface : public comm_selector {
+    virtual ~comm_interface() = default;
 
     virtual int rank() const = 0;
     virtual int size() const = 0;
 
-    virtual ccl::communicator_interface_ptr split(const ccl::comm_split_attr& attr) = 0;
+    virtual ccl::comm_interface_ptr split(const ccl::comm_split_attr& attr) = 0;
 
     // collectives operation declarations
     virtual ccl::event barrier(const stream::impl_value_t& op_stream,

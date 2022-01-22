@@ -22,7 +22,7 @@ enum class stream_type : int {
 };
 
 class ccl_stream;
-class stream_provider_dispatcher {
+class stream_selector {
 public:
     using stream_native_t = typename ccl::unified_stream_type::ccl_native_t;
 

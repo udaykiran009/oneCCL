@@ -18,7 +18,7 @@
 
 #include "common/request/request.hpp"
 
-#include "common/comm/comm.hpp"
+#include "comm/comm.hpp"
 #include "coll/coll.hpp"
 #include "coll/coll_common_attributes.hpp"
 #include "coll/ccl_allgather_op_attr.hpp"

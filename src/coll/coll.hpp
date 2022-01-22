@@ -2,7 +2,7 @@
 
 #include "coll/algorithms/algorithm_utils.hpp"
 #include "coll/coll_param.hpp"
-#include "common/comm/comm.hpp"
+#include "comm/comm.hpp"
 #include "common/datatype/datatype.hpp"
 #include "common/stream/stream.hpp"
 #include "common/utils/buffer.hpp"

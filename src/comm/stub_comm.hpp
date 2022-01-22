@@ -2,13 +2,13 @@
 
 #ifdef CCL_ENABLE_STUB_BACKEND
 
-#include "common/comm/comm_interface.hpp"
+#include "comm/comm_interface.hpp"
 
 namespace ccl {
 
 class stub_kvs_impl;
 
-class alignas(CACHELINE_SIZE) stub_comm : public ccl::communicator_interface {
+class alignas(CACHELINE_SIZE) stub_comm : public ccl::comm_interface {
 public:
     stub_comm(stub_comm& src) = delete;
     stub_comm(stub_comm&& src) = default;
@@ -62,8 +62,8 @@ public:
 
     COMM_IMPL_DECLARATION_VOID_REQUIRED
 
-    ccl::communicator_interface_ptr split(const ccl::comm_split_attr& attr) override {
-        return static_cast<ccl::communicator_interface_ptr>(this);
+    ccl::comm_interface_ptr split(const ccl::comm_split_attr& attr) override {
+        return static_cast<ccl::comm_interface_ptr>(this);
     }
 
 private:

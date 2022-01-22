@@ -1,15 +1,14 @@
 #pragma once
 
-#include "common/stream/stream_provider_dispatcher.hpp"
+#include "common/stream/stream_selector.hpp"
 
 #ifdef CCL_ENABLE_SYCL
 #include <CL/sycl.hpp>
 #endif // CCL_ENABLE_SYCL
 
 // creation from sycl::queue
-std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
-    stream_native_t& native_stream,
-    const ccl::library_version& version) {
+std::unique_ptr<ccl_stream> stream_selector::create(stream_native_t& native_stream,
+                                                    const ccl::library_version& version) {
     stream_type type = stream_type::host;
 
 #ifdef CCL_ENABLE_SYCL
@@ -38,13 +37,12 @@ std::unique_ptr<ccl_stream> stream_provider_dispatcher::create(
     return ret;
 }
 
-stream_provider_dispatcher::stream_native_t stream_provider_dispatcher::get_native_stream() const {
+stream_selector::stream_native_t stream_selector::get_native_stream() const {
     return native_stream;
 }
 
 #ifdef CCL_ENABLE_SYCL
-stream_provider_dispatcher::stream_native_t* stream_provider_dispatcher::get_native_stream(
-    size_t idx) {
+stream_selector::stream_native_t* stream_selector::get_native_stream(size_t idx) {
     return &(native_streams.at(idx));
 }
 #endif // CCL_ENABLE_SYCL

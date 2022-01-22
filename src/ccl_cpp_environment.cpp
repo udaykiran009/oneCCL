@@ -4,7 +4,7 @@
 #include "common/utils/version.hpp"
 
 #if defined(CCL_ENABLE_ZE) || defined(CCL_ENABLE_SYCL)
-#include "common/comm/comm_interface.hpp"
+#include "comm/comm_interface.hpp"
 #endif //#if defined(CCL_ENABLE_ZE) || defined(CCL_ENABLE_SYCL)
 
 #include <memory>

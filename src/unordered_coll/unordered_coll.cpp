@@ -1,6 +1,6 @@
 #include "common/global/global.hpp"
 #include "sched/entry/factory/entry_factory.hpp"
-#include "common/comm/comm.hpp"
+#include "comm/comm.hpp"
 #include "unordered_coll/unordered_coll.hpp"
 
 #include <cstring>

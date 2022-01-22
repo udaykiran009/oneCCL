@@ -1,6 +1,6 @@
 #ifdef CCL_ENABLE_STUB_BACKEND
 
-#include "common/comm/stub_comm.hpp"
+#include "comm/stub_comm.hpp"
 #include "common/event/impls/stub_event.hpp"
 
 #include "stub_kvs_impl.hpp"

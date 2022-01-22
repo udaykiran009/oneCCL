@@ -1,5 +1,5 @@
 #include "coll/selection/selection.hpp"
-#include "common/comm/comm.hpp"
+#include "comm/comm.hpp"
 #include "common/global/global.hpp"
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)

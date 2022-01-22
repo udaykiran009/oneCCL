@@ -5,12 +5,11 @@
 
 #include "atl/atl_base_comm.hpp"
 #include "coll/algorithms/allreduce/allreduce_2d.hpp"
-#include "common/comm/comm_interface.hpp"
-#include "common/comm/comm_id_storage.hpp"
-#include "common/comm/atl_tag.hpp"
+#include "comm/comm_interface.hpp"
+#include "comm/comm_id_storage.hpp"
+#include "comm/atl_tag.hpp"
 #include "common/log/log.hpp"
 #include "common/stream/stream.hpp"
-#include "common/topology/topo_manager.hpp"
 #include "common/utils/tree.hpp"
 #include "common/utils/utils.hpp"
 #include "oneapi/ccl/types.hpp"
@@ -26,6 +25,7 @@
 #include "oneapi/ccl/coll_attr_ids_traits.hpp"
 #include "oneapi/ccl/coll_attr.hpp"
 #include "types_generator_defines.hpp"
+#include "topology/topo_manager.hpp"
 #include "unordered_coll/unordered_coll.hpp"
 
 // index = local_rank, value = global_rank
@@ -95,7 +95,7 @@ private:
     ccl_double_tree m_dtree;
 };
 
-class alignas(CACHELINE_SIZE) ccl_comm : public ccl::communicator_interface {
+class alignas(CACHELINE_SIZE) ccl_comm : public ccl::comm_interface {
 public:
     static constexpr int invalid_rank = -1;
 
@@ -164,7 +164,7 @@ public:
 
     void allocate_resources();
 
-    ccl::communicator_interface_ptr split(const ccl::comm_split_attr& attr) override;
+    ccl::comm_interface_ptr split(const ccl::comm_split_attr& attr) override;
 
     std::string to_string() const;
     std::string to_string_ext() const;

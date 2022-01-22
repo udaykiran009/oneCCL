@@ -35,7 +35,7 @@
 #include "common/global/global.hpp"
 
 //TODO
-#include "common/comm/comm.hpp"
+#include "comm/comm.hpp"
 
 #include "communicator_impl.hpp"
 
@@ -64,11 +64,6 @@ CCL_API int communicator::rank() const {
 CCL_API int communicator::size() const {
     return get_impl()->size();
 }
-
-/*CCL_API size_t communicator::get_group_unique_id() const
-{
-    return static_cast<size_t> (get_impl()->get_comm_group_id());
-}*/
 
 CCL_API communicator communicator::split(const comm_split_attr& attr) {
     return communicator(get_impl()->split(attr));

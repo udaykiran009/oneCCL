@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/comm/comm.hpp"
+#include "comm/comm.hpp"
 #include "sched/entry/entry.hpp"
 #include "sched/sched.hpp"
 #include "sched/ze/ze_handle_manager.hpp"

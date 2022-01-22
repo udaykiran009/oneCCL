@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/comm/comm.hpp"
+#include "comm/comm.hpp"
 
 #include "common/request/request.hpp"
 #include "common/event/impls/host_event.hpp"

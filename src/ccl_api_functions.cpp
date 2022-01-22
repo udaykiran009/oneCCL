@@ -1,11 +1,11 @@
 #include "oneapi/ccl/types.hpp"
 #include "oneapi/ccl/environment.hpp"
 #include "oneapi/ccl/api_functions.hpp"
-#include "common/comm/comm.hpp"
+#include "comm/comm.hpp"
 #include "oneapi/ccl/exception.hpp"
 
 #if defined(CCL_ENABLE_ZE) || defined(CCL_ENABLE_SYCL)
-#include "common/comm/comm_interface.hpp"
+#include "comm/comm_interface.hpp"
 #endif //#if defined(CCL_ENABLE_ZE) || defined(CCL_ENABLE_SYCL)
 
 #include "ccl_api_functions_generators.hpp"

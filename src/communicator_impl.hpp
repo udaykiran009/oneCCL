@@ -32,7 +32,7 @@ CCL_API vector_class<communicator> communicator::create_communicators(
 
     CCL_THROW_IF_NOT(devices.size() == 1, "multiple devices per process are not supported");
 
-    ccl::communicator_interface_ptr impl = ccl::communicator_interface::create_communicator_impl(
+    ccl::comm_interface_ptr impl = ccl::comm_interface::create_comm_impl(
         size, devices.begin()->first, devices.begin()->second, context, kvs);
 
     ccl::vector_class<ccl::communicator> ret;
@@ -62,7 +62,7 @@ CCL_API vector_class<communicator> communicator::create_communicators(
 communicator communicator::create_communicator(const comm_attr& attr) {
     LOG_DEBUG("create communicator");
 
-    communicator_interface_ptr impl = communicator_interface::create_communicator_impl();
+    comm_interface_ptr impl = comm_interface::create_comm_impl();
 
     return communicator(std::move(impl));
 }
@@ -81,7 +81,7 @@ communicator communicator::create_communicator(const int size,
 
     LOG_DEBUG("size: ", size);
 
-    communicator_interface_ptr impl = communicator_interface::create_communicator_impl(size, kvs);
+    comm_interface_ptr impl = comm_interface::create_comm_impl(size, kvs);
 
     return communicator(std::move(impl));
 }
@@ -99,8 +99,7 @@ communicator communicator::create_communicator(const int size,
                                                const comm_attr& attr) {
     LOG_DEBUG("size ", size, ", rank ", rank);
 
-    communicator_interface_ptr impl =
-        communicator_interface::create_communicator_impl(size, rank, kvs);
+    comm_interface_ptr impl = comm_interface::create_comm_impl(size, rank, kvs);
 
     return communicator(std::move(impl));
 }
