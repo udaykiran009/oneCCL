@@ -58,7 +58,13 @@ function set_pvc_mpich_ofi_env()
 function set_pvc_agama_env()
 {
     module use -a /home/ftartagl/graphics-compute-runtime/modulefiles
-    module load graphics-compute-runtime/agama-ci-prerelease-308
+
+    if [ -z ${1} ]
+    then
+        module load graphics-compute-runtime/agama-ci-prerelease-308
+    else
+        module load graphics-compute-runtime/agama-ci-prerelease-${1}
+    fi
 }
 
 function set_build_env() {

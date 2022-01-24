@@ -50,6 +50,8 @@ print_help() {
     echo_log "      1 - Run CCL benchmark with default config"
     echo_log "      2 - Run CCL benchmark with PVC 1 node performance config"
     echo_log "      3 - Run CCL benchmark with PVC 2 nodes performance config"
+    echo_log "  -agama <version>"
+    echo_log "      Sets agama version for benchmark run"
     echo_log ""
     echo_log "Usage examples:"
     echo_log "  ${BASENAME}.sh -build"
@@ -85,6 +87,7 @@ set_default_values() {
 
     HOSTS="c001n0001"
     BENCH_PARAMS=""
+    AGAMA="308"
 }
 
 parse_arguments() {
@@ -109,6 +112,7 @@ parse_arguments() {
             "-bench_params")                  BENCH_PARAMS="${2}" ; shift ;;
             "-freq")                          GPU_FREQUENCY="${2}" ; set_frequency ; shift ;;
             "-config")                        RUN_BENCH="yes" ; CONFIG="${2}" ; set_config ; shift ;;
+            "-agama")                         AGAMA="${2}" ; shift ;;
             *)
                 echo "$(basename $0): ERROR: unknown option ($1)"
                 print_help
@@ -147,6 +151,7 @@ parse_arguments() {
     echo_log "BENCH_PARAMS    = ${BENCH_PARAMS}"
     echo_log "FREQ            = ${GPU_FREQUENCY}"
     echo_log "CONFIG          = ${CONFIG}"
+    echo_log "AGAMA           = ${AGAMA}"
 }
 
 set_config() {
@@ -228,7 +233,7 @@ set_run_env() {
     set_pvc_mpich_ofi_env
 
     # compute-runtime
-    set_pvc_agama_env
+    set_pvc_agama_env ${AGAMA}
 }
 
 check_run_env() {
