@@ -1159,8 +1159,8 @@ atl_status_t atl_ofi_parse_mnic_name(atl_ctx_t* ctx, std::string str_to_parse) {
         LOG_DEBUG("exclude names str: ", exclude_str);
     }
 
-    auto include_names = tokenize<std::vector<std::string>>(include_str, ',');
-    auto exclude_names = tokenize<std::vector<std::string>>(exclude_str, ',');
+    auto include_names = ccl::utils::tokenize<std::vector<std::string>>(include_str, ',');
+    auto exclude_names = ccl::utils::tokenize<std::vector<std::string>>(exclude_str, ',');
 
     if (!include_names.empty() && !exclude_names.empty()) {
         auto include_set = std::set<std::string>(include_names.begin(), include_names.end());

@@ -5,7 +5,7 @@ std::string ccl_atl_tag::to_string() const {
     std::stringstream ss;
     ss << "{ "
        << "bits: " << tag_bits << ", max: " << max_tag << ", mask: " << max_tag_mask
-       << ", pof2: " << ccl_pof2(max_tag) << " }";
+       << ", pof2: " << ccl::utils::pof2(max_tag) << " }";
     return ss.str();
 }
 

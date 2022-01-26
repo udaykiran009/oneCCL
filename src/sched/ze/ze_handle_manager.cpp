@@ -256,7 +256,7 @@ void ipc_handle_manager::get_address_range(const void* ptr, void** base_ptr, siz
               ", base ptr: ",
               *base_ptr,
               ", offset: ",
-              ccl_get_ptr_diff(*base_ptr, ptr),
+              ccl::utils::get_ptr_diff(*base_ptr, ptr),
               ", size: ",
               *size);
 }

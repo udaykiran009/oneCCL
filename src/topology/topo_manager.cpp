@@ -1,4 +1,5 @@
 #include "common/global/global.hpp"
+#include "exec/exec.hpp"
 #include "topology/topo_manager.hpp"
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
@@ -13,6 +14,7 @@ topo_rank_info::topo_rank_info() : rank(ccl_comm::invalid_rank) {
 }
 
 constexpr int topo_manager::invalid_color;
+constexpr int topo_manager::max_domain_count;
 
 void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
                              std::shared_ptr<ccl::device> device_ptr,
@@ -69,6 +71,7 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
     topo_rank_info rank_info{};
     rank_info.rank = comm_rank;
     rank_info.host_idx = host_idx;
+    rank_info.local_proc_idx = ccl::global_data::get().executor->get_local_proc_idx();
     std::string rank_uuid = topo_manager::generate_uuid();
     std::copy(rank_uuid.begin(), rank_uuid.end(), rank_info.uuid);
 
@@ -80,19 +83,17 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
 
     if (ccl::global_data::env().topo_color == topo_color_mode::fixed) {
         for (int h_idx = 0; h_idx < (int)unique_hostnames.size(); h_idx++) {
-            std::vector<topo_rank_info> local_info_vec;
-            std::copy_if(rank_info_vec.begin(),
-                         rank_info_vec.end(),
-                         std::back_inserter(local_info_vec),
-                         [h_idx](topo_rank_info& info) {
-                             return (info.host_idx == h_idx);
-                         });
-            for (size_t idx = 0; idx < local_info_vec.size(); idx++) {
-                const topo_rank_info& info = local_info_vec[idx];
-                int rank = info.rank;
-                intra_card_colors[rank] = idx / 2;
-                inter_card_colors[rank] = idx % 2;
-            }
+            fill_fixed_colors(get_filtered_rank_info(rank_info_vec, h_idx));
+        }
+    }
+    else if (ccl::global_data::env().topo_color == topo_color_mode::env) {
+        domains = parse_topo_env();
+
+        CCL_THROW_IF_NOT(!domains.empty(), "domains container is empty");
+        LOG_INFO("domains: ", to_string(domains));
+
+        for (int h_idx = 0; h_idx < (int)unique_hostnames.size(); h_idx++) {
+            fill_env_colors(get_filtered_rank_info(rank_info_vec, h_idx));
         }
     }
 
@@ -135,19 +136,10 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
              ccl::ze::to_string(ze_rank_info.device_uuid));
 
     // create intra card colors
-
     for (int h_idx = 0; h_idx < (int)unique_hostnames.size(); h_idx++) {
+        std::vector<topo_rank_info> local_info_vec = get_filtered_rank_info(rank_info_vec, h_idx);
         int card_idx = 0;
         size_t card_size = 0;
-
-        std::vector<topo_rank_info> local_info_vec;
-        std::copy_if(rank_info_vec.begin(),
-                     rank_info_vec.end(),
-                     std::back_inserter(local_info_vec),
-                     [h_idx](topo_rank_info& info) {
-                         return (info.host_idx == h_idx);
-                     });
-
         for (size_t idx = 0; idx < local_info_vec.size(); idx++) {
             const topo_rank_info& info = local_info_vec[idx];
             int rank = info.rank;
@@ -169,14 +161,12 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
                     }
                 }
             }
-
             card_idx++;
             card_size = 0;
         }
     }
 
     // create inter card colors
-
     uint32_t subdev_count{};
     ZE_CALL(zeDeviceGetSubDevices, (device, &subdev_count, nullptr));
     LOG_INFO("(",
@@ -345,14 +335,7 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
         // ranks with the same intra_card color
         // should be placed to different planes
         for (int h_idx = 0; h_idx < (int)unique_hostnames.size(); h_idx++) {
-            std::vector<topo_rank_info> local_info_vec;
-            std::copy_if(rank_info_vec.begin(),
-                         rank_info_vec.end(),
-                         std::back_inserter(local_info_vec),
-                         [h_idx](topo_rank_info& info) {
-                             return (info.host_idx == h_idx);
-                         });
-
+            auto local_info_vec = get_filtered_rank_info(rank_info_vec, h_idx);
             for (size_t idx = 0; idx < local_info_vec.size(); idx++) {
                 const topo_rank_info& info = local_info_vec[idx];
                 int rank = info.rank;
@@ -383,16 +366,6 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
             }
         }
     }
-
-    CCL_THROW_IF_NOT(std::find(intra_card_colors.begin(),
-                               intra_card_colors.end(),
-                               topo_manager::invalid_color) == intra_card_colors.end(),
-                     "intra_card_colors data is not valid");
-
-    CCL_THROW_IF_NOT(std::find(inter_card_colors.begin(),
-                               inter_card_colors.end(),
-                               topo_manager::invalid_color) == inter_card_colors.end(),
-                     "inter_card_color data is not valid");
 
     auto devices = global_data::get().ze_data->device_list;
     p2p_matrix = build_p2p_matrix(devices);
@@ -429,6 +402,16 @@ void topo_manager::post_init() {
         intra_card_colors[rank] += rank_info_vec[rank].host_idx * max_ranks_per_host;
         inter_card_colors[rank] += rank_info_vec[rank].host_idx * max_ranks_per_host;
     }
+
+    CCL_THROW_IF_NOT(std::find(intra_card_colors.begin(),
+                               intra_card_colors.end(),
+                               topo_manager::invalid_color) == intra_card_colors.end(),
+                     "intra_card_colors data is not valid");
+
+    CCL_THROW_IF_NOT(std::find(inter_card_colors.begin(),
+                               inter_card_colors.end(),
+                               topo_manager::invalid_color) == inter_card_colors.end(),
+                     "inter_card_color data is not valid");
 }
 
 void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
@@ -571,24 +554,6 @@ std::string topo_manager::to_string(const std::vector<std::vector<bool>>& matrix
 }
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
-std::string topo_manager::to_string() {
-    std::stringstream ss;
-    ss << "\n{\n"
-       << "  comm_size: " << comm->get_size() << "\n"
-       << "  is_single_node: " << is_single_node << "\n"
-       << "  is_single_card: " << is_single_card << "\n"
-       << "  intra_card_colors: ";
-    std::copy(
-        intra_card_colors.begin(), intra_card_colors.end(), std::ostream_iterator<int>(ss, " "));
-    ss << "\n"
-       << "  inter_card_colors: ";
-    std::copy(
-        inter_card_colors.begin(), inter_card_colors.end(), std::ostream_iterator<int>(ss, " "));
-    ss << "\n}";
-
-    return ss.str();
-}
-
 std::string topo_manager::generate_uuid() {
     std::stringstream ss;
     int pid = getpid();
@@ -617,8 +582,189 @@ std::string topo_manager::generate_uuid() {
                      expected_uuid_len,
                      ", uuid ",
                      result);
-
     return result;
+}
+
+std::map<int, std::string> topo_manager::get_domain_string(const std::string& input_str,
+                                                           const std::string& key) {
+    std::map<int, std::string> map;
+    auto str = input_str;
+
+    size_t pos = str.find(key);
+    if (pos != std::string::npos) {
+        str.erase(pos, key.length() + 1); // + :
+    }
+
+    int domain_idx = topo_manager::invalid_domain_idx;
+    if (key == std::string(topo_manager::card_domain_name)) {
+        domain_idx = topo_manager::card_domain_idx;
+    }
+    else if (key == std::string(topo_manager::plane_domain_name)) {
+        domain_idx = topo_manager::plane_domain_idx;
+    }
+
+    CCL_THROW_IF_NOT(
+        domain_idx != topo_manager::invalid_domain_idx, "unexpected domain index: ", domain_idx);
+    map.insert({ domain_idx, str });
+    return map;
+}
+
+std::vector<std::string> topo_manager::get_subdomain_strings(const std::string& input_str) {
+    std::vector<std::string> results;
+    auto str = input_str;
+    bool can_parse = true;
+    do {
+        auto substring = ccl::utils::get_substring_between_delims(str, "{", "}");
+        results.push_back(substring);
+
+        size_t pos = str.find(substring);
+        if (pos != std::string::npos) {
+            str.erase(0, str.find("}") + 1);
+        }
+
+        if (str.empty())
+            can_parse = false;
+    } while (can_parse);
+    return results;
+}
+
+std::map<int, std::vector<std::vector<int>>> topo_manager::parse_topo_env() {
+    char* env_to_parse = getenv("CCL_TOPO_COLOR");
+    CCL_THROW_IF_NOT(env_to_parse, "CCL_TOPO_COLOR var is unavailable");
+    std::map<int, std::vector<std::vector<int>>> domains;
+
+    std::vector<std::string> domain_raw_strs;
+    ccl::utils::str_to_array(std::string(env_to_parse), ";", domain_raw_strs);
+    check_domain_count(domain_raw_strs.size());
+
+    std::vector<std::map<int, std::string>> domain_strs;
+    domain_strs.push_back(get_domain_string(domain_raw_strs[topo_manager::card_domain_idx],
+                                            std::string(topo_manager::card_domain_name)));
+    domain_strs.push_back(get_domain_string(domain_raw_strs[topo_manager::plane_domain_idx],
+                                            std::string(topo_manager::plane_domain_name)));
+
+    for (auto& domain_str : domain_strs) {
+        for (auto& domain_pair : domain_str) {
+            std::vector<std::vector<int>> proc_indexes;
+            auto substrs = get_subdomain_strings(domain_pair.second);
+            for (auto& substr : substrs) {
+                std::vector<int> procs{};
+                ccl::utils::str_to_array(substr, ",", procs);
+                proc_indexes.push_back(procs);
+            }
+            domains.insert({ domain_pair.first, proc_indexes });
+        }
+    }
+    check_domain_count(domains.size());
+    return domains;
+}
+
+void topo_manager::fill_env_colors(const std::vector<topo_rank_info>& info_vec) {
+    for (const auto& domain : domains) {
+        int color_idx = 0;
+        for (size_t subdomain_idx = 0; subdomain_idx < domain.second.size(); subdomain_idx++) {
+            std::vector<topo_rank_info> filtered_info_vec;
+            for (size_t proc_idx = 0; proc_idx < domain.second[subdomain_idx].size(); proc_idx++) {
+                for (size_t i = 0; i < info_vec.size(); i++) {
+                    if (info_vec[i].local_proc_idx == domain.second[subdomain_idx][proc_idx]) {
+                        filtered_info_vec.push_back(info_vec[i]);
+                    }
+                }
+            }
+
+            for (size_t idx = 0; idx < filtered_info_vec.size(); idx++) {
+                if (domain.first == topo_manager::card_domain_idx) {
+                    check_color(intra_card_colors[filtered_info_vec[idx].rank]);
+                    intra_card_colors[filtered_info_vec[idx].rank] = color_idx;
+                }
+                else if (domain.first == topo_manager::plane_domain_idx) {
+                    check_color(inter_card_colors[filtered_info_vec[idx].rank]);
+                    inter_card_colors[filtered_info_vec[idx].rank] = color_idx;
+                }
+            }
+            color_idx++;
+        }
+    }
+}
+
+void topo_manager::fill_fixed_colors(const std::vector<topo_rank_info>& info_vec) {
+    for (size_t idx = 0; idx < info_vec.size(); idx++) {
+        auto rank = info_vec[idx].rank;
+        intra_card_colors[rank] = idx / 2;
+        inter_card_colors[rank] = idx % 2;
+    }
+}
+
+inline void topo_manager::check_color(const int color) {
+    CCL_THROW_IF_NOT(color == topo_manager::invalid_color,
+                     "unexpected color value: ",
+                     color,
+                     ", expected: ",
+                     topo_manager::invalid_color);
+}
+
+inline void topo_manager::check_domain_count(const size_t domain_count) {
+    CCL_THROW_IF_NOT(domain_count == topo_manager::max_domain_count,
+                     "unexpected domain count:",
+                     domain_count,
+                     ", expected:",
+                     topo_manager::max_domain_count);
+}
+
+inline std::vector<topo_rank_info> topo_manager::get_filtered_rank_info(
+    std::vector<topo_rank_info>& rank_info_vec,
+    const int filter_idx) {
+    std::vector<topo_rank_info> info_vec;
+    std::copy_if(rank_info_vec.begin(),
+                 rank_info_vec.end(),
+                 std::back_inserter(info_vec),
+                 [&filter_idx](topo_rank_info& info) {
+                     return (info.host_idx == filter_idx);
+                 });
+    return info_vec;
+}
+
+std::string topo_manager::to_string() {
+    std::stringstream ss;
+    ss << "\n{\n"
+       << "  comm_size: " << comm->get_size() << "\n"
+       << "  is_single_node: " << is_single_node << "\n"
+       << "  is_single_card: " << is_single_card << "\n"
+       << "  intra_card_colors: ";
+    std::copy(
+        intra_card_colors.begin(), intra_card_colors.end(), std::ostream_iterator<int>(ss, " "));
+    ss << "\n"
+       << "  inter_card_colors: ";
+    std::copy(
+        inter_card_colors.begin(), inter_card_colors.end(), std::ostream_iterator<int>(ss, " "));
+    ss << "\n}";
+
+    return ss.str();
+}
+
+std::string topo_manager::to_string(const std::map<int, std::vector<std::vector<int>>>& domains) {
+    std::stringstream ss;
+    ss << "{\n";
+    for (const auto& domain : domains) {
+        for (size_t subdomain_idx = 0; subdomain_idx < domain.second.size(); subdomain_idx++) {
+            for (size_t proc_idx = 0; proc_idx < domain.second[subdomain_idx].size(); proc_idx++) {
+                if (subdomain_idx == 0 && proc_idx == 0) {
+                    if (domain.first == topo_manager::card_domain_idx)
+                        ss << "card:  ";
+                    else if (domain.first == topo_manager::plane_domain_idx)
+                        ss << "plane: ";
+                }
+                if (proc_idx == 0)
+                    ss << "{ ";
+                ss << domain.second[subdomain_idx][proc_idx] << " ";
+                if (proc_idx == domain.second[subdomain_idx].size() - 1)
+                    ss << "} ";
+            }
+        }
+        ss << "\n";
+    }
+    ss << "}\n";
+    return ss.str();
 }
 
 } // namespace ccl

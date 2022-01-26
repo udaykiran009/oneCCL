@@ -306,7 +306,7 @@ void env_data::parse() {
     env_2_enum(CCL_BACKEND, backend_names, backend);
 
     env_2_type(CCL_TOPO_ALGO, enable_topo_algo);
-    env_2_enum(CCL_TOPO_COLOR, topo_color_names, topo_color);
+    env_2_topo(CCL_TOPO_COLOR, topo_color_names, topo_color);
 
 #ifdef CCL_ENABLE_SYCL
     env_2_type(CCL_KERNEL_PATH, kernel_path);
@@ -651,12 +651,8 @@ int env_data::env_2_worker_affinity_auto(int local_proc_idx, size_t workers_per_
 
     LOG_DEBUG("available_cores ", available_cores);
 
-    std::set<char> delims;
-    for (char c : std::string(I_MPI_AVAILABLE_CORES_DELIMS)) {
-        delims.insert(c);
-    }
     std::vector<size_t> cores;
-    ccl_str_to_array(available_cores, delims, cores);
+    ccl::utils::str_to_array(available_cores, std::string(I_MPI_AVAILABLE_CORES_DELIMS), cores);
 
     CCL_THROW_IF_NOT(workers_per_process <= cores.size(),
                      "failed to implicitly set workers affinity, "
@@ -739,7 +735,7 @@ int env_data::parse_affinity(const std::string& input,
             break;
         }
 
-        auto range = tokenize<std::vector<std::string>>(std::string(range_str), '-');
+        auto range = ccl::utils::tokenize<std::vector<std::string>>(std::string(range_str), '-');
 
         if ((range.size() != 2) && (range.size() != 1)) {
             LOG_ERROR(

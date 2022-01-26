@@ -40,7 +40,7 @@ ccl_internal_comm::ccl_internal_comm(const std::vector<int>& local_ranks,
 void ccl_internal_comm::reset(int rank, int size) {
     m_rank = rank;
     m_size = size;
-    m_pof2 = ccl_pof2(m_size);
+    m_pof2 = ccl::utils::pof2(m_size);
 }
 
 // ccl_comm
@@ -71,7 +71,7 @@ void ccl_comm::init(ccl_comm_id_storage::comm_id&& id,
 
     if (!is_sub_communicator) {
         topo_manager.init(atl_comm, device_ptr, context_ptr);
-        if (!comm_rank) {
+        if (!comm_rank && device_ptr) {
             LOG_INFO("topo_manager:", topo_manager.to_string());
         }
         create_sub_comms(atl_comm);

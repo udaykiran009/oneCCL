@@ -17,7 +17,7 @@ namespace v1 {
 template <class context_type, class... attr_val_type>
 CCL_API context context::create_context_from_attr(context_type& native_context_handle,
                                                   attr_val_type&&... avs) {
-    auto version = utils::get_library_version();
+    auto version = ::utils::get_library_version();
 
     context str{ context::impl_value_t(new context::impl_t(native_context_handle, version)) };
     int expander[]{ (str.template set<attr_val_type::idx()>(avs.val()), 0)... };
@@ -29,7 +29,7 @@ CCL_API context context::create_context_from_attr(context_type& native_context_h
 
 template <class context_type, typename T>
 CCL_API context context::create_context(context_type&& native_context) {
-    auto version = utils::get_library_version();
+    auto version = ::utils::get_library_version();
 
     return { context::impl_value_t(
         new context::impl_t(std::forward<context_type>(native_context), version)) };

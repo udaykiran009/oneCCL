@@ -17,7 +17,7 @@ namespace v1 {
 template <class device_type, class... attr_val_type>
 CCL_API device device::create_device_from_attr(device_type& native_device_handle,
                                                attr_val_type&&... avs) {
-    auto version = utils::get_library_version();
+    auto version = ::utils::get_library_version();
 
     device str{ device::impl_value_t(new device::impl_t(native_device_handle, version)) };
     int expander[]{ (str.template set<attr_val_type::idx()>(avs.val()), 0)... };
@@ -29,7 +29,7 @@ CCL_API device device::create_device_from_attr(device_type& native_device_handle
 
 template <class device_type, typename T>
 CCL_API device device::create_device(device_type&& native_device) {
-    auto version = utils::get_library_version();
+    auto version = ::utils::get_library_version();
 
     return { device::impl_value_t(
         new device::impl_t(std::forward<device_type>(native_device), version)) };

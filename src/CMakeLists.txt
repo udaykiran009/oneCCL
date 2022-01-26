@@ -112,6 +112,7 @@ set(CCL_SRC
     common/stream/stream.cpp
     common/utils/memcpy.cpp
     common/utils/spinlock.cpp
+    common/utils/utils.cpp
     common/utils/version.cpp
     common/utils/yield.cpp
 

@@ -16,7 +16,7 @@ namespace v1 {
 
 template <class native_stream_type, typename T>
 stream stream::create_stream(native_stream_type& native_stream) {
-    auto version = utils::get_library_version();
+    auto version = ::utils::get_library_version();
     return { stream_selector::create(native_stream, version) };
 }
 

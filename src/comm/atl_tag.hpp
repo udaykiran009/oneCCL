@@ -12,10 +12,10 @@ public:
     ccl_atl_tag(size_t tag_bits, size_t max_tag) : tag_bits(tag_bits), max_tag(max_tag) {
         CCL_THROW_IF_NOT(tag_bits >= 32, "unexpected tag_bits ", tag_bits);
 
-        if (max_tag == ccl_pof2(max_tag) * 2 - 1)
+        if (max_tag == ccl::utils::pof2(max_tag) * 2 - 1)
             max_tag_mask = max_tag;
         else
-            max_tag_mask = ccl_pof2(max_tag) - 1;
+            max_tag_mask = ccl::utils::pof2(max_tag) - 1;
     }
 
     ccl_atl_tag(const ccl_atl_tag& other) = delete;

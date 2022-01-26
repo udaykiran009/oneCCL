@@ -366,6 +366,25 @@ public:
         }
     }
 
+    template <class T>
+    static int env_2_topo(const char* env_name, const std::map<T, std::string>& values, T& val) {
+        int status = 0;
+        char* env_to_parse = getenv(env_name);
+        if (env_to_parse) {
+            std::string env_str(env_to_parse);
+            if (env_str.find(std::string(topo_manager::card_domain_name)) != std::string::npos &&
+                env_str.find(std::string(topo_manager::plane_domain_name)) != std::string::npos) {
+                val = topo_color_mode::env;
+                status = 1;
+            }
+        }
+        else {
+            status = env_2_enum(env_name, values, val);
+        }
+
+        return status;
+    }
+
     static bool with_mpirun();
 
     static std::map<ccl_priority_mode, std::string> priority_mode_names;
