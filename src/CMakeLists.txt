@@ -111,6 +111,7 @@ set(CCL_SRC
     common/request/request.cpp
     common/stream/stream.cpp
     common/utils/memcpy.cpp
+    common/utils/fd_info.cpp
     common/utils/spinlock.cpp
     common/utils/utils.cpp
     common/utils/version.cpp

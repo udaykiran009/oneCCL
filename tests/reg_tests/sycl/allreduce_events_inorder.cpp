@@ -5,10 +5,12 @@
 using namespace std;
 using namespace sycl;
 
+// TODO: there seems to be an overflow when calculating the stats on large number of iterations,
+// think how we can fix this.
 void print_times(size_t rank,
                  size_t iter_count,
                  size_t kernel_count,
-                 const std::vector<std::tuple<sycl::event, sycl::event>> &kernel_events,
+                 const std::vector<std::tuple<size_t, size_t, size_t>> &kernel_events_times,
                  const std::vector<size_t> &allreduce_api_times) {
     auto convert_output = [](uint64_t val) {
         std::stringstream ss;
@@ -16,38 +18,26 @@ void print_times(size_t rank,
         return ss.str();
     };
 
-    // kernel execution
-    auto get_exec_time = [](sycl::event e) {
-        return e.get_profiling_info<sycl::info::event_profiling::command_end>() -
-               e.get_profiling_info<sycl::info::event_profiling::command_start>();
-    };
-
-    // kernel gap
-    auto get_between_kernels_exec_time = [](sycl::event prev, sycl::event next) {
-        return next.get_profiling_info<sycl::info::event_profiling::command_start>() -
-               prev.get_profiling_info<sycl::info::event_profiling::command_end>();
-    };
-
     // sum of additional time introduced by allreduce calls
     std::vector<size_t> allreduce_times;
 
-    size_t keep_iter_count = 10;
+    // number of iterations to warm up which we don't print
+    size_t warm_up_iters = std::min(iter_count, std::max(iter_count / 10, 4ul));
     for (size_t i = 0; i < iter_count; ++i) {
-        // show only last keep_iter_count iterations to reduce output
-        if (keep_iter_count < iter_count && i < (iter_count - keep_iter_count)) {
+        if (i < warm_up_iters) {
             continue;
         }
+
         std::stringstream ss;
         ss << "Rank: " << rank << ", Iteration: " << i << std::endl;
         for (size_t j = 0; j < kernel_count; ++j) {
-            auto prev = std::get<0>(kernel_events[i * kernel_count + j]);
-            auto cur = std::get<1>(kernel_events[i * kernel_count + j]);
+            const auto &ktime = kernel_events_times[i * kernel_count + j];
             ss << "FWK submit kernel: " << j << " execution time "
-               << convert_output(get_exec_time(prev)) << " us " << std::endl;
+               << convert_output(std::get<0>(ktime)) << " us " << std::endl;
             ss << "FWK update kernel: " << j << " execution time "
-               << convert_output(get_exec_time(cur)) << " us " << std::endl;
+               << convert_output(std::get<1>(ktime)) << " us " << std::endl;
 
-            size_t allreduce_time = get_between_kernels_exec_time(prev, cur);
+            size_t allreduce_time = std::get<2>(ktime);
             allreduce_times.push_back(allreduce_time);
 
             ss << "Time between FWK kernels(additional time introduced by CCL AllReduce): "
@@ -55,7 +45,9 @@ void print_times(size_t rank,
             ss << "CCL Allreduce API call: " << convert_output(allreduce_api_times[j]) << " us "
                << std::endl;
         }
-        std::cout << ss.str() << "\n" << std::endl;
+
+        if (getenv("VERBOSE_OUTPUT") != nullptr)
+            std::cout << ss.str() << "\n" << std::endl;
     }
 
     if (allreduce_times.size() < 2)
@@ -83,8 +75,35 @@ void print_times(size_t rank,
               << std::endl;
 }
 
+void append_kernel_times(std::vector<std::tuple<size_t, size_t, size_t>> &kernel_times,
+                         const std::vector<std::tuple<sycl::event, sycl::event>> &kernel_events) {
+    // kernel execution
+    auto get_exec_time = [](sycl::event e) {
+        return e.get_profiling_info<sycl::info::event_profiling::command_end>() -
+               e.get_profiling_info<sycl::info::event_profiling::command_start>();
+    };
+
+    // kernel gap
+    auto get_between_kernels_exec_time = [](sycl::event prev, sycl::event next) {
+        return next.get_profiling_info<sycl::info::event_profiling::command_start>() -
+               prev.get_profiling_info<sycl::info::event_profiling::command_end>();
+    };
+
+    for (size_t i = 0; i < kernel_events.size(); ++i) {
+        auto prev = std::get<0>(kernel_events[i]);
+        auto cur = std::get<1>(kernel_events[i]);
+
+        size_t submit_kernel_time = get_exec_time(prev);
+        size_t update_kernel_time = get_exec_time(cur);
+
+        size_t allreduce_time = get_between_kernels_exec_time(prev, cur);
+
+        kernel_times.push_back({ submit_kernel_time, update_kernel_time, allreduce_time });
+    }
+}
+
 int main(int argc, char *argv[]) {
-    size_t count = 2560 * 2048;
+    size_t count = 2 * 1024 * 1024; // 8mb of floats
 
     int size = 0;
     int rank = 0;
@@ -144,8 +163,9 @@ int main(int argc, char *argv[]) {
         ptrs[i] = { weight_buf, weight_allreduce_buf };
     }
 
-    std::vector<ccl::event> ccl_events(iter_count * kernel_count);
-    std::vector<std::tuple<sycl::event, sycl::event>> kernel_events(iter_count * kernel_count);
+    std::vector<ccl::event> ccl_events;
+    std::vector<std::tuple<sycl::event, sycl::event>> kernel_events;
+    std::vector<std::tuple<size_t, size_t, size_t>> kernel_event_times;
     std::vector<size_t> allreduce_api_times(iter_count * kernel_count);
 
     const char *disable_var = std::getenv("DISABLE_CCL_ALLREDUCE");
@@ -200,10 +220,21 @@ int main(int argc, char *argv[]) {
                 });
             });
 
-            kernel_events[num] = { submit_event, update_event };
+            kernel_events.push_back({ submit_event, update_event });
         }
         q.wait();
+
+        // once we waited for all submitted kernels and allreduce ops, we can safely
+        // destroy ccl events in order to clear underlying resources
+        ccl_events.clear();
+
+        // we can't simply keep the events since they use resources which results in
+        // issues on large number of iterations(e.g. fd leaks). To avoid that, on each
+        // iteration get their timings and destroy them.
+        append_kernel_times(kernel_event_times, kernel_events);
+        kernel_events.clear();
     }
+
     // when using CCL AllReduce, check weight accuracy after several iterations
     if (disable_var == nullptr) {
         auto weight_host_buf = allocator.allocate(byte_count, usm::alloc::host);
@@ -219,7 +250,7 @@ int main(int argc, char *argv[]) {
         std::cout << "PASSED\n" << std::endl;
     }
 
-    print_times(rank, iter_count, kernel_count, kernel_events, allreduce_api_times);
+    print_times(rank, iter_count, kernel_count, kernel_event_times, allreduce_api_times);
 
     // make sure there is no exceptions in the queue
     if (!handle_exception(q)) {

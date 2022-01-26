@@ -125,6 +125,8 @@ private:
     using mem_info_t = typename std::pair<void*, size_t>;
     mem_info_t get_mem_info(const void* ptr);
 
+    bool sockets_closed = false;
+
     void unlink_sockets();
     void close_sockets();
 };

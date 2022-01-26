@@ -137,7 +137,7 @@ env_data::env_data()
           kernel_1s_lead(0),
           enable_kernel_1s_copy_ops(0),
           enable_kernel_1s_ipc_wa(0),
-          enable_close_fd_wa(0),
+          enable_close_fd_wa(1),
 
           enable_sycl_output_event(0),
           use_hmem(1),

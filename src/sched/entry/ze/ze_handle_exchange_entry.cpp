@@ -1,4 +1,5 @@
 #include "common/global/global.hpp"
+#include "common/utils/fd_info.hpp"
 #include "sched/entry/ze/ze_handle_exchange_entry.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
 #include "sched/ze/ze_handle_manager.hpp"
@@ -257,6 +258,10 @@ void ze_handle_exchange_entry::update() {
     sched->get_memory().handle_manager.set(handles);
 
     if (ccl::global_data::env().enable_close_fd_wa) {
+        // in order to avoid possibility of reaching an opened fd limit in case of async execution
+        // (when a user submits multiple operations and waits for them keeping the corresponding
+        // ccl events and master scheds alive), we need to close sockets as soon as we can instead
+        // of waiting till destruction of the entry.
         close_sockets();
     }
 
@@ -275,12 +280,15 @@ int ze_handle_exchange_entry::create_server_socket(const std::string& socket_nam
     int sock = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sock < 0) {
         unlink_sockets();
+
         CCL_THROW("cannot create a server socket: ",
                   sock,
                   ", errno: ",
                   strerror(errno),
                   ", socket_name: ",
-                  socket_name);
+                  socket_name,
+                  ", ",
+                  to_string(ccl::utils::get_fd_info()));
     }
 
     socket_addr->sun_family = AF_UNIX;
@@ -311,8 +319,13 @@ int ze_handle_exchange_entry::create_client_socket(const std::string& socket_nam
     memset(&(*socket_addr), 0, sizeof(*(socket_addr)));
 
     int sock = socket(AF_UNIX, SOCK_STREAM, 0);
-    CCL_THROW_IF_NOT(
-        sock >= 0, "cannot create a client socket: ", sock, ", errno: ", strerror(errno));
+    CCL_THROW_IF_NOT(sock >= 0,
+                     "cannot create a client socket: ",
+                     sock,
+                     ", errno: ",
+                     strerror(errno),
+                     ", ",
+                     to_string(ccl::utils::get_fd_info()));
 
     socket_addr->sun_family = AF_UNIX;
     strncpy(socket_addr->sun_path, socket_name.c_str(), sizeof(socket_addr->sun_path) - 1);
@@ -334,13 +347,14 @@ int ze_handle_exchange_entry::accept_call(int connect_socket,
             return errno;
         }
 
-        if (errno == EMFILE) {
-            LOG_TRACE("accept no free fd: ", strerror(errno), ", socket_name: ", socket_name);
-            return errno;
-        }
-
-        CCL_THROW(
-            "accept error: ", strerror(errno), " sock: ", sock, ", socket_name: ", socket_name);
+        CCL_THROW("accept error: ",
+                  strerror(errno),
+                  " sock: ",
+                  sock,
+                  ", socket_name: ",
+                  socket_name,
+                  ", ",
+                  to_string(ccl::utils::get_fd_info()));
     }
 
     LOG_DEBUG("accept from [", comm->rank(), "] (wait) on: ", socket_name);
@@ -478,7 +492,9 @@ void ze_handle_exchange_entry::recvmsg_fd(int sock, int& fd, payload_t& payload)
         CCL_THROW("control or usual message is truncated:",
                   flag_str,
                   " control message size: ",
-                  msg.msg_controllen);
+                  msg.msg_controllen,
+                  ", ",
+                  to_string(ccl::utils::get_fd_info()));
     }
 
     for (auto cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
@@ -512,6 +528,7 @@ void ze_handle_exchange_entry::sendmsg_call(int sock, int fd, const payload_t& p
 
 void ze_handle_exchange_entry::recvmsg_call(int sock, int& fd, payload_t& payload) {
     recvmsg_fd(sock, fd, payload);
+
     LOG_DEBUG("recv: rank[",
               rank,
               "], got fd: ",
@@ -534,7 +551,14 @@ void ze_handle_exchange_entry::unlink_sockets() {
 }
 
 void ze_handle_exchange_entry::close_sockets() {
-    close(left_peer_connect_socket);
-    close(left_peer_socket);
-    close(right_peer_socket);
+    // use the flag to protect from double close: right now we close sockets
+    // in update() but this close is under env variable, so we need to close
+    // the socket during entry's destruction, to make sure we don't have any
+    // open sockets left.
+    if (!sockets_closed) {
+        close(left_peer_connect_socket);
+        close(left_peer_socket);
+        close(right_peer_socket);
+        sockets_closed = true;
+    }
 }
