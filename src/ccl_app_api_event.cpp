@@ -52,7 +52,7 @@ CCL_API const event::native_t& event::get_native() const {
 }
 
 event CCL_API event::create_from_native(native_t& native_event) {
-    auto version = ::utils::get_library_version();
+    auto version = utils::get_library_version();
 
     auto ev = std::unique_ptr<ccl_event>(new ccl_event(native_event, version));
 

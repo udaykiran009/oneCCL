@@ -418,7 +418,7 @@ void env_data::print(int rank) {
     auto& global_data = ccl::global_data::get();
 
     if (rank == 0) {
-        auto version = ::utils::get_library_version();
+        auto version = utils::get_library_version();
         LOG_INFO("library version: ", version.full);
         LOG_INFO("specification version: ", ONECCL_SPEC_VERSION);
 #ifdef CCL_ENABLE_SYCL

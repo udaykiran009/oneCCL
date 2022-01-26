@@ -26,7 +26,7 @@ CCL_API environment& environment::instance() {
 }
 
 ccl::library_version CCL_API environment::get_library_version() {
-    return ::utils::get_library_version();
+    return utils::get_library_version();
 }
 
 /******************** KVS ********************/
