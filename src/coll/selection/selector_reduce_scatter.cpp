@@ -5,7 +5,9 @@ std::map<ccl_coll_reduce_scatter_algo, std::string>
     ccl_algorithm_selector_helper<ccl_coll_reduce_scatter_algo>::algo_names = {
         std::make_pair(ccl_coll_reduce_scatter_direct, "direct"),
         std::make_pair(ccl_coll_reduce_scatter_ring, "ring"),
+#ifdef CCL_ENABLE_SYCL
         std::make_pair(ccl_coll_reduce_scatter_topo, "topo"),
+#endif // CCL_ENABLE_SYCL
     };
 
 ccl_algorithm_selector<ccl_coll_reduce_scatter>::ccl_algorithm_selector() {

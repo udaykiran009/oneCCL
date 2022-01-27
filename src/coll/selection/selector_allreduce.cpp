@@ -11,7 +11,9 @@ std::map<ccl_coll_allreduce_algo, std::string>
         std::make_pair(ccl_coll_allreduce_double_tree, "double_tree"),
         std::make_pair(ccl_coll_allreduce_recursive_doubling, "recursive_doubling"),
         std::make_pair(ccl_coll_allreduce_2d, "2d"),
+#ifdef CCL_ENABLE_SYCL
         std::make_pair(ccl_coll_allreduce_topo, "topo"),
+#endif // CCL_ENABLE_SYCL
     };
 
 ccl_algorithm_selector<ccl_coll_allreduce>::ccl_algorithm_selector() {

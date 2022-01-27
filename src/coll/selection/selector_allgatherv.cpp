@@ -10,7 +10,9 @@ std::map<ccl_coll_allgatherv_algo, std::string>
         std::make_pair(ccl_coll_allgatherv_ring, "ring"),
         std::make_pair(ccl_coll_allgatherv_flat, "flat"),
         std::make_pair(ccl_coll_allgatherv_multi_bcast, "multi_bcast"),
+#ifdef CCL_ENABLE_SYCL
         std::make_pair(ccl_coll_allgatherv_topo, "topo")
+#endif // CCL_ENABLE_SYCL
     };
 
 ccl_algorithm_selector<ccl_coll_allgatherv>::ccl_algorithm_selector() {
