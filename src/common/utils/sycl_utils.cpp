@@ -1,0 +1,77 @@
+#include "common/global/global.hpp"
+#include "common/stream/stream.hpp"
+#include "common/utils/sycl_utils.hpp"
+
+#include <CL/sycl/backend/level_zero.hpp>
+
+namespace ccl {
+namespace utils {
+
+bool is_sycl_event_completed(sycl::event event) {
+    return event.template get_info<sycl::info::event::command_execution_status>() ==
+           sycl::info::event_command_status::complete;
+}
+
+bool should_use_sycl_output_event(const ccl_stream* stream) {
+    return (stream && stream->is_sycl_device_stream() && stream->is_gpu() &&
+            ccl::global_data::env().enable_sycl_output_event);
+}
+
+std::string usm_type_to_str(sycl::usm::alloc type) {
+    switch (type) {
+        case sycl::usm::alloc::host: return "host";
+        case sycl::usm::alloc::device: return "device";
+        case sycl::usm::alloc::shared: return "shared";
+        case sycl::usm::alloc::unknown: return "unknown";
+        default: CCL_THROW("unexpected USM type: ", static_cast<int>(type));
+    }
+}
+
+std::string sycl_device_to_str(const sycl::device& dev) {
+    if (dev.is_host()) {
+        return "host";
+    }
+    else if (dev.is_cpu()) {
+        return "cpu";
+    }
+    else if (dev.is_gpu()) {
+        return "gpu";
+    }
+    else if (dev.is_accelerator()) {
+        return "accel";
+    }
+    else {
+        CCL_THROW("unexpected device type");
+    }
+}
+
+sycl::event submit_barrier(cl::sycl::queue queue) {
+#if DPCPP_VERSION >= 140000
+    return queue.ext_oneapi_submit_barrier();
+#elif DPCPP_VERSION < 140000
+    return queue.submit_barrier();
+#endif // DPCPP_VERSION
+}
+
+sycl::event submit_barrier(cl::sycl::queue queue, sycl::event event) {
+#if DPCPP_VERSION >= 140000
+    return queue.ext_oneapi_submit_barrier({ event });
+#elif DPCPP_VERSION < 140000
+    return queue.submit_barrier({ event });
+#endif // DPCPP_VERSION
+}
+
+#ifdef CCL_ENABLE_SYCL_INTEROP_EVENT
+sycl::event make_event(const sycl::context& context, const ze_event_handle_t& sync_event) {
+#if DPCPP_VERSION >= 140000
+    return sycl::make_event<sycl::backend::ext_oneapi_level_zero>(
+        { sync_event, sycl::ext::oneapi::level_zero::ownership::keep }, context);
+#elif DPCPP_VERSION < 140000
+    return sycl::level_zero::make<sycl::event>(
+        context, sync_event, sycl::level_zero::ownership::keep);
+#endif // DPCPP_VERSION
+}
+#endif // CCL_ENABLE_SYCL_INTEROP_EVENT
+
+} // namespace utils
+} // namespace ccl

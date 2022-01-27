@@ -26,6 +26,7 @@ if (CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
         sched/entry/ze/ze_reduce_local_entry.cpp
 
         common/global/ze_data.cpp
+        common/utils/sycl_utils.cpp
         common/ze/ze_api_wrapper.cpp
 
         sched/ze/ze_event_manager.cpp

@@ -5,6 +5,7 @@
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 #include "common/utils/sycl_utils.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
+#include <CL/sycl/backend/level_zero.hpp>
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
 namespace ccl {
