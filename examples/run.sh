@@ -421,12 +421,7 @@ run()
                             runtime_list="none"
                             if [ "$backend" == "sycl" ];
                             then
-                                if [ "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU" == "ats-m" ]
-                                then
-                                    runtime_list="level_zero"
-                                else
-                                    runtime_list="opencl level_zero"
-                                fi
+                                runtime_list="opencl level_zero"
                             fi
 
                             if [ "$transport" == "mpi_gpu" ];
@@ -500,12 +495,7 @@ run()
                         do
                             if [ "$selector" == "gpu" ];
                             then
-                                if [ "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU" == "ats-m" ]
-                                then
-                                    runtime_list="level_zero"
-                                else
-                                    runtime_list="opencl level_zero"
-                                fi
+                                runtime_list="opencl level_zero"
                             else
                                 runtime_list="opencl"
                             fi
@@ -737,6 +727,12 @@ check_scope()
         SCOPE="pv"
     fi
 }
+
+if [ "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU" == "ats-m" ]
+then
+    echo "ATS-M is not supported by oneCCL."
+    exit 0
+fi
 
 parse_arguments $@
 check_environment
