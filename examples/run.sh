@@ -5,6 +5,8 @@ exec | tee ./main_ouput.txt
 
 BASENAME=`basename $0 .sh`
 
+unsupported_platforms="dg2 ats-m ats-m1 ats-m3"
+
 set_example_work_dir()
 {
     SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
@@ -728,9 +730,9 @@ check_scope()
     fi
 }
 
-if [ "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU" == "ats-m" ]
+if [[ "$unsupported_platforms" == *"$DASHBOARD_PLATFORM_HW_DISCRETE_GPU"* ]]
 then
-    echo "ATS-M is not supported by oneCCL."
+    echo "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU is not supported by oneCCL."
     exit 0
 fi
 
