@@ -5,11 +5,15 @@ namespace ccl {
 namespace ze {
 
 global_data_desc::global_data_desc() {
-    // tell L0 to create sysman devices.
-    // *GetProperties() will fail if the sysman is not activated
-    setenv("ZES_ENABLE_SYSMAN", "1", 0);
+    LOG_INFO("initializing level-zero api");
+    ze_api_init();
 
     LOG_INFO("initializing level-zero");
+
+    // enables driver initialization and
+    // dependencies for system management
+    setenv("ZES_ENABLE_SYSMAN", "1", 0);
+
     ZE_CALL(zeInit, (ZE_INIT_FLAG_GPU_ONLY));
 
     uint32_t driver_count{};
@@ -45,14 +49,22 @@ global_data_desc::global_data_desc() {
 
 global_data_desc::~global_data_desc() {
     LOG_INFO("finalizing level-zero");
-    cache.reset();
 
-    for (auto& context : context_list) {
-        ZE_CALL(zeContextDestroy, (context));
+    if (!global_data::env().ze_fini_wa) {
+        cache.reset();
+        for (auto& context : context_list) {
+            ZE_CALL(zeContextDestroy, (context));
+        }
     }
+    else {
+        LOG_INFO("skip level-zero finalization");
+    }
+
     context_list.clear();
     device_list.clear();
     driver_list.clear();
+
+    ze_api_fini();
 
     LOG_INFO("finalized level-zero");
 }

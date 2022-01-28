@@ -518,7 +518,7 @@ atl_status_t atl_ofi::finalize() {
 
     global_data.ctx_count--;
     if (ctx->coord.global_idx == 0) {
-        LOG_INFO("finalize atl-ofi ctx, remaining ctx_count ", global_data.ctx_count);
+        LOG_INFO("finalizing atl-ofi, ctx_count ", global_data.ctx_count);
     }
 
     cache.clear();
@@ -540,7 +540,7 @@ atl_status_t atl_ofi::finalize() {
         }
 
         if (ctx->coord.global_idx == 0) {
-            LOG_INFO("finalized last atl-ofi ctx");
+            LOG_INFO("finalized atl-ofi");
         }
     }
 

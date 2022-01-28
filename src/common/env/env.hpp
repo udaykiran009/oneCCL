@@ -128,6 +128,7 @@ constexpr const char* CCL_ZE_SINGLE_LIST = "CCL_ZE_SINGLE_LIST";
 constexpr const char* CCL_ZE_DISABLE_FAMILY_CHECK = "CCL_ZE_DISABLE_FAMILY_CHECK";
 constexpr const char* CCL_ZE_LIBRARY_PATH = "CCL_ZE_LIBRARY_PATH";
 constexpr const char* CCL_ZE_ENABLE = "CCL_ZE_ENABLE";
+constexpr const char* CCL_ZE_FINI_WA = "CCL_ZE_FINI_WA";
 
 #ifdef CCL_ENABLE_ITT
 constexpr const char* CCL_ITT_LEVEL = "CCL_ITT_LEVEL";
@@ -292,6 +293,7 @@ public:
     int ze_close_ipc_wa;
     std::string ze_lib_path;
     int ze_enable;
+    int ze_fini_wa;
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ITT

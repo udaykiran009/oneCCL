@@ -158,6 +158,7 @@ env_data::env_data()
           ze_close_ipc_wa(0),
           ze_lib_path(),
           ze_enable(1),
+          ze_fini_wa(0),
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ITT
@@ -376,6 +377,7 @@ void env_data::parse() {
     env_2_type(CCL_ZE_CLOSE_IPC_WA, ze_close_ipc_wa);
     env_2_type(CCL_ZE_LIBRARY_PATH, ze_lib_path);
     env_2_type(CCL_ZE_ENABLE, ze_enable);
+    env_2_type(CCL_ZE_FINI_WA, ze_fini_wa);
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ITT
@@ -609,6 +611,7 @@ void env_data::print(int rank) {
              ": ",
              (!ze_lib_path.empty()) ? ze_lib_path : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_ZE_ENABLE, ": ", ze_enable);
+    LOG_INFO(CCL_ZE_FINI_WA, ": ", ze_fini_wa);
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ITT

@@ -73,17 +73,17 @@ ccl::status global_data::reset() {
 ccl::status global_data::init() {
     env_object.parse();
     env_object.set_internal_env();
+
     os_info.fill();
     LOG_INFO("OS info:", os_info.to_string());
-    if (os_info.release.find("WSL2") != std::string::npos)
+    if (os_info.release.find("WSL2") != std::string::npos) {
         env_object.enable_topo_algo = 0;
+    }
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
     if (ccl::global_data::env().backend == backend_mode::native &&
         ccl::global_data::env().ze_enable) {
         try {
-            LOG_INFO("initializing level-zero api");
-            ze_api_init();
             ze_data.reset(new ze::global_data_desc);
         }
         catch (...) {

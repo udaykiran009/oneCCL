@@ -200,7 +200,7 @@ atl_status_t atl_mpi::finalize(int global_idx) {
 
     global_data.ctx_count--;
     if (global_idx == 0) {
-        LOG_INFO("finalize atl-mpi ctx, remaining ctx_count ", global_data.ctx_count);
+        LOG_INFO("finalizing atl-mpi, ctx_count ", global_data.ctx_count);
     }
 
     int is_mpi_finalized = 0;
@@ -218,7 +218,7 @@ atl_status_t atl_mpi::finalize(int global_idx) {
             }
 
             if (global_idx == 0) {
-                LOG_INFO("finalized last atl-mpi ctx");
+                LOG_INFO("finalized atl-mpi");
             }
         }
     }
