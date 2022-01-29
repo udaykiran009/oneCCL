@@ -277,13 +277,17 @@ endif()
 # shared library
 add_library(ccl SHARED $<TARGET_OBJECTS:ccl-objects>)
 target_include_directories(ccl PUBLIC ${SRC_INCLUDE_DIRS})
-
 target_link_libraries(ccl PRIVATE ${SRC_LINK_LIBS})
 
+set_target_properties(ccl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
 if (NOT LIB_SO_VERSION AND NOT LIB_MAJOR_VERSION)
-    set_target_properties(ccl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CCL_BUILD_DIR})
+    set(DEFAULT_LIB_SO_VERSION "1.0")
+    set(DEFAULT_LIB_MAJOR_VERSION "1")
+    set_target_properties(ccl PROPERTIES VERSION ${DEFAULT_LIB_SO_VERSION})
+    set_target_properties(ccl PROPERTIES SOVERSION ${DEFAULT_LIB_MAJOR_VERSION})
 else()
-    set_target_properties(ccl PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CCL_BUILD_DIR} VERSION ${LIB_SO_VERSION} SOVERSION ${LIB_MAJOR_VERSION})
+    set_target_properties(ccl PROPERTIES VERSION ${LIB_SO_VERSION})
+    set_target_properties(ccl PROPERTIES SOVERSION ${LIB_MAJOR_VERSION})
 endif()
 
 message(STATUS "SRC C_FLAGS: ${CMAKE_C_FLAGS}")
