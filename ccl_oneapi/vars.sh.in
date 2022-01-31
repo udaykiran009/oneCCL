@@ -108,7 +108,7 @@ fi
 WORK_DIR=$(get_script_path "${vars_script_name:-}")
 CCL_ROOT="$(cd "${WORK_DIR}"/../; pwd -P)"; export CCL_ROOT
 
-if [ -z "${CCL_CONFIGURATION}" ]
+if [ -z "${CCL_CONFIGURATION:-}" ]
 then
     CCL_CONFIGURATION=${DEFAULT_CONFIGURATION}
 fi
