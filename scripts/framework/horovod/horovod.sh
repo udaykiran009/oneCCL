@@ -14,6 +14,9 @@ current_date=`date "+%Y%m%d%H%M%S"`
 LOG_FILE="${SCRIPT_DIR}/log_${current_date}.txt"
 touch ${LOG_FILE}
 
+SCRIPTS_ROOT_DIR=$(realpath ${SCRIPT_DIR}/../../)
+source ${SCRIPTS_ROOT_DIR}/utils/common.sh
+
 set_extra_proxy() {
     if [[ ${SET_EXTRA_PROXY} = "0" ]]
     then
@@ -85,34 +88,9 @@ set_run_env() {
     export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib"
 }
 
-clone_repo()
-{
-    name=$1
-    link=$2
-    branch=$3
-    output_dir=$4
-    extra_env=$5
-
-    echo_log "\nclone repo"
-    echo_log "name: ${name}"
-    echo_log "link: ${link}"
-    echo_log "branch: ${branch}"
-    echo_log "output_dir: ${output_dir}"
-    echo_log "extra_env: ${extra_env}\n"
-
-    cmd="${extra_env} git clone --single-branch --branch ${branch} ${link} ${output_dir}"
-    echo_log ${cmd}
-    eval ${cmd}
-    CheckCommandExitCode $? "git clone for repo ${name} (${repo}) failed"
-
-    echo_log "\nrepo: ${name} (${link})\n"
-    cd ${output_dir}
-    echo_log "`git log -1`\n"
-    cd -
-}
-
 CONDA_LINK="https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux-x86_64.sh"
 CONDA_INSTALL_DIR=""
+CONDA_PACKAGES="python=3.7"
 
 CCL_BASE_LINK="github.com/intel-innersource/libraries.performance.communication.oneccl"
 HOROVOD_BASE_LINK="github.com/intel-innersource/frameworks.ai.horovod.git"
@@ -654,10 +632,6 @@ parse_arguments() {
     echo_log "SET_EXTRA_PROXY    = ${SET_EXTRA_PROXY}"
 }
 
-echo_log() {
-    echo -e "$*" 2>&1 | tee -a ${LOG_FILE}
-}
-
 hvd_test() {
     if [[ ${INSTALL_TF} = "1" ]]
     then
@@ -787,95 +761,6 @@ install_ccl() {
 
     vars_file="${CCL_SRC_DIR}/build/_install/env/setvars.sh"
     source ${vars_file}
-}
-
-download_conda() {
-    if [[ ${DOWNLOAD_CONDA} != "1" ]]
-    then
-        return
-    fi
-
-    cd ${SCRIPT_WORK_DIR}
-    CONDA_FILENAME="conda.sh"
-    wget -O ${CONDA_FILENAME} ${CONDA_LINK}
-    chmod +x ${CONDA_FILENAME}
-    ./${CONDA_FILENAME} -b -p ${CONDA_INSTALL_DIR}
-    export CONDA_ENVS_PATH="${CONDA_INSTALL_DIR}/envs"
-    export CONDA_PKGS_DIRS="${CONDA_INSTALL_DIR}/pkgs"
-    export PIP_CACHE_DIR="${CONDA_INSTALL_DIR}/pip"
-    mkdir -p ${PIP_CACHE_DIR}
-}
-
-create_conda() {
-    if [[ ${CREATE_CONDA} != "1" ]]
-    then
-        return
-    fi
-
-    cd ${SCRIPT_WORK_DIR}
-
-    if [ -d "${CONDA_INSTALL_DIR}" ]
-    then
-        if [ -f "${CONDA_INSTALL_DIR}/etc/profile.d/conda.sh" ]
-        then
-            source "${CONDA_INSTALL_DIR}/etc/profile.d/conda.sh"
-        else
-            export PATH="${CONDA_INSTALL_DIR}/bin:$PATH"
-        fi
-    fi
-
-    echo_log "which conda: `which conda`"
-
-    echo_log "\n=== create conda env ===\n"
-    env_count=`conda env list | grep "${CONDA_ENV_NAME} " | wc -l`
-    if [[ $env_count -ne 0 ]]
-    then
-        echo_log "found conda env ${CONDA_ENV_NAME}"
-    else
-        echo_log "didn't find conda env ${CONDA_ENV_NAME}, create new one"
-        https_proxy=${PROXY} conda create -y -n ${CONDA_ENV_NAME} python=3.7
-    fi
-
-    activate_conda
-
-    echo_log "\n=== install packages in conda env ${CONDA_ENV_NAME} ===\n"
-    python -m pip install --upgrade pip
-
-    echo_log "\n=== CONDA_PREFIX ${CONDA_PREFIX} ===\n"
-
-    deactivate_conda
-}
-
-activate_conda() {
-    echo_log "\n=== activate conda env ${CONDA_ENV_NAME} ===\n"
-
-    if [ -d "${CONDA_INSTALL_DIR}" ]
-    then
-        CONDA_BIN_DIR="${CONDA_INSTALL_DIR}/bin"
-    else
-        CONDA_BIN_DIR=$(dirname $(which python))
-    fi
-
-    activate_script="${CONDA_BIN_DIR}/activate"
-
-    echo_log "CONDA_BIN_DIR = ${CONDA_BIN_DIR}"
-
-    if [[ ! -f ${activate_script} ]]
-    then
-        echo "ERROR: activate_script (${activate_script}) is not a file, try to run script with \"-download_conda 1 -create_conda 1\""
-        CheckCommandExitCode 1 "Install CCL failed"
-    fi
-
-    source ${activate_script} ${CONDA_ENV_NAME}
-    https_proxy=${PROXY} conda install pip
-
-    echo_log "PYTHON = $(which python)"
-    echo_log "PIP = $(which pip)"
-}
-
-deactivate_conda() {
-    echo_log "\n=== deactivate conda env ${CONDA_ENV_NAME} ===\n"
-    conda deactivate
 }
 
 remove_conda() {
@@ -1187,7 +1072,7 @@ download_ccl
 install_ccl
 
 download_conda
-create_conda
+create_conda ${CONDA_PACKAGES}
 activate_conda
 
 download_fw

@@ -48,6 +48,7 @@ function set_default_values()
     ENABLE_REGULAR_TESTS="no"
     ENABLE_HOROVOD_TESTS="no"
     ENABLE_PYTORCH_TESTS="no"
+    ENABLE_TORCH_CCL_TESTS="no"
     ENABLE_MODULEFILE_TESTS="no"
     ENABLE_FUNCTIONAL_TESTS="no"
     ENABLE_VALGRIND_TESTS="no"
@@ -90,6 +91,9 @@ function parse_arguments() {
             ;;
         "-pytorch_tests" )
             ENABLE_PYTORCH_TESTS="yes"
+            ;;
+        "-torch_ccl_tests" )
+            ENABLE_TORCH_CCL_TESTS="yes"
             ;;
         "-modulefile_tests" )
             ENABLE_MODULEFILE_TESTS="yes"
@@ -137,14 +141,17 @@ function print_help()
     "    ./${BASENAME}.sh <options> \n" \
     "<options>:\n" \
     "-regular_tests:       run examples\n" \
+    "-horovod_tests:       run Horovod tests"\
+    "-pytorch_tests:       run PyTorch tests"\
+    "-torch_ccl_tests:     run Torch-ccl tests"\
     "-modulefile_tests:    run modulefile tests\n" \
     "-functional_tests:    run functional tests\n" \
     "-valgrind_check:      run valgrind check\n" \
     "-reg_tests:           run regression tests\n" \
     "-mpich_ofi:           run tests with mpich-ofi\n" \
     "-proc_maps:           set value for n and ppns\n" \
-    "   example: ./${BASENAME}.sh -proc_maps 2:1,2/4:1,2,4\n" \
-    "-help:                print this help information"
+    "-help:                print this help information"\
+    "   example: ./${BASENAME}.sh -proc_maps 2:1,2/4:1,2,4\n"
     exit 0
 }
 
@@ -707,6 +714,34 @@ function run_pytorch_tests()
     exit 0
 }
 
+function run_torch_ccl_tests() 
+{
+
+    if [[ ${ENABLE_TORCH_CCL_TESTS} = "no" ]]
+    then
+        return
+    fi
+
+    source ${CCL_ONEAPI_DIR}/onemkl/last/mkl/latest/env/vars.sh
+    source ${CCL_ONEAPI_DIR}/tbb_oneapi/last/tbb/latest/env/vars.sh
+
+    pushd ${CURRENT_WORK_DIR}/scripts/framework/pytorch/torch_ccl/
+    ./torch_ccl.sh -download_conda 1 -create_conda 1 -download_pt 1 \
+                   -install_pt 1 -download_ipex 1 -install_ipex 1 -run_ut 1 \
+                   -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
+    log_status_fail=${PIPESTATUS[0]}
+    popd
+    if [ "$log_status_fail" -eq 0 ]
+    then
+        echo "Torch-ccl testing ... OK"
+    else
+        echo "Torch-ccl testing ... NOK"
+        exit 1
+    fi
+
+    exit 0
+}
+
 function set_modulefile_environment()
 {
     MODULES_DIR="/p/pdsd/scratch/Software/modules/latest"
@@ -1095,6 +1130,7 @@ set_runtime_env
 set_mpich_ofi_env
 run_horovod_tests
 run_pytorch_tests
+run_torch_ccl_tests
 run_modulefile_tests
 run_functional_tests
 run_valgrind_check

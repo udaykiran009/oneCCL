@@ -6,7 +6,7 @@ Comment structure **test:\<conf>**
 
 * func|dynamic_pointer_mode|mpi_adjust|priority_mode|unordered_coll_mode|fusion_mode|ofi_adjust
 * pr|example
-* horovod|pytorch
+* horovod|pytorch|torch_ccl
 * kw|abi|format
 * reg_tests
 * mpich_ats|mpich_pvc
