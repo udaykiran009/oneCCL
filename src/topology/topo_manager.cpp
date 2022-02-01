@@ -157,8 +157,7 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
                     intra_card_colors[peer_rank] = card_idx;
                     card_size++;
                     if (card_size == max_ranks_per_card) {
-                        card_idx++;
-                        card_size = 0;
+                        break;
                     }
                 }
             }
