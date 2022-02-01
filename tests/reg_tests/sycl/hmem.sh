@@ -77,8 +77,8 @@ do
                         do
                             for proc_count in ${proc_counts}
                             do
-                                # TODO: MLSL-1157
-                                if [[ ${single_list_mode} == "1" ]] && [[ ${hmem_mode} == "1" ]];
+                                if [[ ${single_list_mode} == "1" ]] && [[ ${hmem_mode} == "1" ]] && \
+                                   [[ ${PLATFORM_HW_DISCRETE_GPU} = "gen9" ]];
                                 then
                                     continue
                                 fi
