@@ -730,10 +730,16 @@ check_scope()
     fi
 }
 
-if [[ "$unsupported_platforms" == *"$DASHBOARD_PLATFORM_HW_DISCRETE_GPU"* ]]
+if [[ ! -z ${DASHBOARD_PLATFORM_HW_DISCRETE_GPU} ]]
 then
-    echo "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU is not supported by oneCCL."
-    exit 0
+    for unsupported_platform in $unsupported_platforms
+    do
+        if [ "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU" == "$unsupported_platform" ]
+        then
+            echo "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU is not supported by oneCCL."
+            exit 0
+        fi
+    done
 fi
 
 parse_arguments $@
