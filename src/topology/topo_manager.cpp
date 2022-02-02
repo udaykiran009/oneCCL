@@ -17,6 +17,18 @@ topo_rank_info::topo_rank_info() : rank(ccl_comm::invalid_rank) {
 constexpr int topo_manager::invalid_color;
 constexpr int topo_manager::max_domain_count;
 
+void topo_manager::check_ppn(const std::set<std::string>& unique_hostnames,
+                             const std::vector<std::string>& all_hostnames) {
+    std::vector<int> ppn_set;
+    for (auto host_name : unique_hostnames) {
+        ppn_set.push_back(std::count(all_hostnames.begin(), all_hostnames.end(), host_name));
+    }
+
+    is_same_ppn = std::all_of(ppn_set.begin(), ppn_set.end(), [&ppn_set](int p) {
+        return (p == ppn_set.front());
+    });
+}
+
 void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
                              std::shared_ptr<ccl::device> device_ptr,
                              std::shared_ptr<ccl::context> context_ptr) {
@@ -34,21 +46,25 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
         p2p_matrix[i].resize(comm_size, true);
     }
 
-    std::vector<char> all_hostnames(max_hostname_len * comm_size);
+    std::vector<char> all_hostnames_raw(max_hostname_len * comm_size);
     char my_hostname[max_hostname_len] = { 0 };
     gethostname(my_hostname, max_hostname_len - 1);
     LOG_DEBUG("rank: ", comm_rank, ", size: ", comm_size, ", hostname: ", my_hostname);
 
-    allgather(my_hostname, all_hostnames.data(), max_hostname_len);
+    allgather(my_hostname, all_hostnames_raw.data(), max_hostname_len);
 
     std::set<std::string> unique_hostnames;
+    std::vector<std::string> all_hostnames(comm_size);
     std::string str{};
     for (int idx = 0; idx < comm_size; idx++) {
-        str = std::string(all_hostnames.data() + (idx * max_hostname_len), max_hostname_len);
+        str = std::string(all_hostnames_raw.data() + (idx * max_hostname_len), max_hostname_len);
         unique_hostnames.insert(str);
+        all_hostnames[idx] = str;
     }
 
     CCL_THROW_IF_NOT(!unique_hostnames.empty(), "empty unique_hostnames");
+
+    check_ppn(unique_hostnames, all_hostnames);
 
     int local_idx = 0;
     for (auto host_name : unique_hostnames) {
@@ -348,21 +364,46 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 }
 
+void topo_manager::check_colors() {
+    for (size_t domain_idx = 0; domain_idx < topo_manager::max_domain_count; domain_idx++) {
+        CCL_THROW_IF_NOT(domain_idx == topo_manager::card_domain_idx ||
+                             domain_idx == topo_manager::plane_domain_idx,
+                         "unknown domain_idx detected");
+        int max_ranks_per_subdomain = (domain_idx == topo_manager::card_domain_idx)
+                                          ? topo_manager::max_ranks_per_card
+                                          : topo_manager::max_ranks_per_plane;
+        const std::vector<int>& colors =
+            (domain_idx == topo_manager::card_domain_idx) ? intra_card_colors : inter_card_colors;
+        std::string color_name = (domain_idx == topo_manager::card_domain_idx)
+                                     ? topo_manager::card_domain_name
+                                     : topo_manager::plane_domain_name;
+
+        CCL_THROW_IF_NOT(
+            std::find(colors.begin(), colors.end(), topo_manager::invalid_color) == colors.end(),
+            color_name,
+            " domain colors data is not valid");
+
+        std::set<int> unique_colors(colors.begin(), colors.end());
+
+        std::vector<int> counts;
+        for (auto unique_color : unique_colors) {
+            counts.push_back(std::count(colors.begin(), colors.end(), unique_color));
+        }
+
+        is_same_domains &=
+            std::all_of(counts.begin(), counts.end(), [&counts, &max_ranks_per_subdomain](int c) {
+                return (counts.front() == c && c <= max_ranks_per_subdomain);
+            });
+    }
+}
+
 void topo_manager::post_init() {
     for (int rank = 0; rank < comm->get_size(); rank++) {
         intra_card_colors[rank] += rank_info_vec[rank].host_idx * max_ranks_per_host;
         inter_card_colors[rank] += rank_info_vec[rank].host_idx * max_ranks_per_host;
     }
 
-    CCL_THROW_IF_NOT(std::find(intra_card_colors.begin(),
-                               intra_card_colors.end(),
-                               topo_manager::invalid_color) == intra_card_colors.end(),
-                     "intra_card_colors data is not valid");
-
-    CCL_THROW_IF_NOT(std::find(inter_card_colors.begin(),
-                               inter_card_colors.end(),
-                               topo_manager::invalid_color) == inter_card_colors.end(),
-                     "inter_card_color data is not valid");
+    check_colors();
 }
 
 void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
@@ -398,6 +439,14 @@ bool topo_manager::has_p2p_access() const {
     }
     LOG_DEBUG("p2p access status: ", has_access);
     return has_access;
+}
+
+bool topo_manager::has_same_ppn() const {
+    return is_same_ppn;
+}
+
+bool topo_manager::has_same_domains() const {
+    return is_same_domains;
 }
 
 void topo_manager::allgather(const void* send_buf, void* recv_buf, int bytes) {

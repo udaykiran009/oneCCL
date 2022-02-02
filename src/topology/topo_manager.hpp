@@ -81,6 +81,8 @@ public:
     std::string get_uuid(int rank) const;
 
     bool has_p2p_access() const;
+    bool has_same_ppn() const;
+    bool has_same_domains() const;
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
     static bool is_same_pci_addr(zes_pci_address_t addr1, zes_pci_address_t addr2);
@@ -99,6 +101,9 @@ private:
     void base_init(std::shared_ptr<atl_base_comm> atl_comm,
                    std::shared_ptr<ccl::device> device_ptr,
                    std::shared_ptr<ccl::context> context_ptr);
+    void check_colors();
+    void check_ppn(const std::set<std::string>& unique_hostnames,
+                   const std::vector<std::string>& all_hostnames);
     void post_init();
 
     void allgather(const void* send_buf, void* recv_buf, int bytes);
@@ -153,6 +158,9 @@ private:
     std::vector<topo_rank_info> rank_info_vec;
     std::vector<std::vector<bool>> p2p_matrix;
     std::map<int, std::vector<std::vector<int>>> domains;
+
+    bool is_same_ppn = true;
+    bool is_same_domains = true;
 };
 
 } // namespace ccl
