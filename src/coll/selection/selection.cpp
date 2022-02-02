@@ -153,6 +153,9 @@ static bool ccl_is_device_side_algo(ccl_coll_algo algo, const ccl_selector_param
     else if (param.ctype == ccl_coll_allreduce) {
         return algo.allreduce == ccl_coll_allreduce_topo;
     }
+    else if (param.ctype == ccl_coll_alltoallv) {
+        return algo.alltoallv == ccl_coll_alltoallv_topo;
+    }
     else if (param.ctype == ccl_coll_bcast) {
         return algo.bcast == ccl_coll_bcast_topo;
     }
@@ -171,11 +174,8 @@ bool ccl_is_device_side_algo(const ccl_selector_param& param) {
     return false;
 #endif // CCL_ENABLE_SYCL
 
-    auto supported_colls = { ccl_coll_allgatherv,
-                             ccl_coll_allreduce,
-                             ccl_coll_bcast,
-                             ccl_coll_reduce,
-                             ccl_coll_reduce_scatter };
+    auto supported_colls = { ccl_coll_allgatherv, ccl_coll_allreduce, ccl_coll_alltoallv,
+                             ccl_coll_bcast,      ccl_coll_reduce,    ccl_coll_reduce_scatter };
     RETURN_FALSE_IF(!checkers::is_coll_supported(supported_colls, param.ctype),
                     "coll ",
                     ccl_coll_type_to_str(param.ctype),
@@ -189,6 +189,9 @@ bool ccl_is_device_side_algo(const ccl_selector_param& param) {
     }
     else if (param.ctype == ccl_coll_allreduce) {
         algo.allreduce = selector->get<ccl_coll_allreduce>(param);
+    }
+    else if (param.ctype == ccl_coll_alltoallv) {
+        algo.alltoallv = selector->get<ccl_coll_alltoallv>(param);
     }
     else if (param.ctype == ccl_coll_bcast) {
         algo.bcast = selector->get<ccl_coll_bcast>(param);

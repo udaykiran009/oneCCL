@@ -321,6 +321,12 @@ ccl::status ccl_coll_build_alltoallv(ccl_sched* sched,
             CCL_CALL(ccl_coll_build_direct_alltoallv(
                 sched, send_buf, send_counts, recv_buf, recv_counts, dtype, comm));
             break;
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+        case ccl_coll_alltoallv_topo:
+            CCL_CALL(ccl_coll_build_topo_alltoallv(
+                sched, send_buf, send_counts, recv_buf, recv_counts, dtype, comm));
+            break;
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
         default:
             CCL_FATAL("unexpected alltoallv_algo ", ccl_coll_algorithm_to_str(algo));
             return ccl::status::invalid_arguments;
@@ -463,7 +469,7 @@ ccl::status ccl_coll_build_reduce(ccl_sched* sched,
             break;
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
         case ccl_coll_reduce_topo:
-            CCL_CALL(ccl_coll_build_gpu_reduce(
+            CCL_CALL(ccl_coll_build_topo_reduce(
                 sched, send_buf, recv_buf, count, dtype, reduction, root, comm));
             break;
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE

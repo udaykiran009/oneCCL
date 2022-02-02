@@ -317,3 +317,16 @@ ccl::status ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
 
     return ccl::status::success;
 }
+
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+ccl::status ccl_coll_build_topo_alltoallv(ccl_sched* sched,
+                                          ccl_buffer send_buf,
+                                          const size_t* send_counts,
+                                          ccl_buffer recv_buf,
+                                          const size_t* recv_counts,
+                                          const ccl_datatype& dtype,
+                                          ccl_comm* comm) {
+    CCL_THROW("topo alltoallv is not implemented yet");
+    return ccl::status::success;
+}
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE

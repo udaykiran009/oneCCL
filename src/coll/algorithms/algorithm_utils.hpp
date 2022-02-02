@@ -47,7 +47,8 @@ enum ccl_coll_alltoallv_algo {
 
     ccl_coll_alltoallv_direct,
     ccl_coll_alltoallv_naive,
-    ccl_coll_alltoallv_scatter
+    ccl_coll_alltoallv_scatter,
+    ccl_coll_alltoallv_topo
 };
 
 enum ccl_coll_barrier_algo {

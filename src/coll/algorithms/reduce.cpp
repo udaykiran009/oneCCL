@@ -437,14 +437,14 @@ ccl::status ccl_coll_build_binomial_reduce(ccl_sched* sched,
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 
-ccl::status ccl_coll_build_gpu_reduce(ccl_sched* sched,
-                                      ccl_buffer send_buf,
-                                      ccl_buffer recv_buf,
-                                      size_t count,
-                                      const ccl_datatype& dtype,
-                                      ccl::reduction op,
-                                      int root,
-                                      ccl_comm* comm) {
+ccl::status ccl_coll_build_topo_reduce(ccl_sched* sched,
+                                       ccl_buffer send_buf,
+                                       ccl_buffer recv_buf,
+                                       size_t count,
+                                       const ccl_datatype& dtype,
+                                       ccl::reduction op,
+                                       int root,
+                                       ccl_comm* comm) {
     LOG_DEBUG("build gpu reduce");
 
     ccl_comm* pair_comm = comm->get_pair_comm().get();
