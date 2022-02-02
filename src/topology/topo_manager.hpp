@@ -107,9 +107,17 @@ private:
     void fill_env_colors(const std::vector<topo_rank_info>& local_info_vec);
     void fill_fixed_colors(const std::vector<topo_rank_info>& info_vec);
 
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
+    void fill_ze_intra_colors(const std::vector<topo_rank_info>& local_info_vec,
+                              const std::vector<topo_ze_rank_info>& ze_info_vec);
+#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
+    void fill_ze_inter_colors(const std::vector<topo_rank_info>& local_info_vec);
+    void fill_ze_inter_colors(const std::vector<std::set<int>>& planes);
+
     inline std::vector<topo_rank_info> get_filtered_rank_info(
         std::vector<topo_rank_info>& rank_info_vec,
         const int compare_idx);
+
     static inline void check_color(const int color);
     static inline void check_domain_count(const size_t domain_count);
 
@@ -121,6 +129,17 @@ private:
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
     ze_device_handle_t device{};
     static std::string to_string(const std::vector<std::vector<bool>>& p2p_matrix);
+
+    static inline std::vector<ze_device_uuid_t> copy_dev_uuids(
+        const std::vector<topo_rank_info>& info_vec,
+        const std::vector<topo_ze_rank_info>& ze_rank_info_vec);
+    static bool is_same_dev_uuid(ze_device_uuid_t uuid1, ze_device_uuid_t uuid2);
+    static bool is_sub_vector(const std::vector<ze_device_uuid_t>& vec,
+                              const std::vector<ze_device_uuid_t>& sub_vec);
+
+    std::vector<ze_device_handle_t> get_filtered_devices(
+        const std::vector<ze_device_handle_t>& devices,
+        const std::vector<topo_ze_rank_info>& ze_rank_info_vec);
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
     std::string to_string(const std::map<int, std::vector<std::vector<int>>>& domains);

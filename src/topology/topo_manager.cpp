@@ -137,33 +137,9 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
              ccl::ze::to_string(ze_rank_info.device_uuid));
 
     // create intra card colors
+
     for (int h_idx = 0; h_idx < (int)unique_hostnames.size(); h_idx++) {
-        std::vector<topo_rank_info> local_info_vec = get_filtered_rank_info(rank_info_vec, h_idx);
-        int card_idx = 0;
-        size_t card_size = 0;
-        for (size_t idx = 0; idx < local_info_vec.size(); idx++) {
-            const topo_rank_info& info = local_info_vec[idx];
-            int rank = info.rank;
-
-            if (intra_card_colors[rank] != topo_manager::invalid_color) {
-                continue;
-            }
-
-            for (size_t peer_idx = 0; peer_idx < local_info_vec.size(); peer_idx++) {
-                const topo_rank_info& peer_info = local_info_vec[peer_idx];
-                int peer_rank = peer_info.rank;
-                if (is_same_pci_addr(ze_rank_info_vec[rank].pci_addr,
-                                     ze_rank_info_vec[peer_rank].pci_addr)) {
-                    intra_card_colors[peer_rank] = card_idx;
-                    card_size++;
-                    if (card_size == max_ranks_per_card) {
-                        break;
-                    }
-                }
-            }
-            card_idx++;
-            card_size = 0;
-        }
+        fill_ze_intra_colors(get_filtered_rank_info(rank_info_vec, h_idx), ze_rank_info_vec);
     }
 
     // create inter card colors
@@ -335,40 +311,15 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
         // ranks with the same intra_card color
         // should be placed to different planes
         for (int h_idx = 0; h_idx < (int)unique_hostnames.size(); h_idx++) {
-            auto local_info_vec = get_filtered_rank_info(rank_info_vec, h_idx);
-            for (size_t idx = 0; idx < local_info_vec.size(); idx++) {
-                const topo_rank_info& info = local_info_vec[idx];
-                int rank = info.rank;
-
-                if (inter_card_colors[rank] != topo_manager::invalid_color) {
-                    continue;
-                }
-
-                int plane_idx = 0;
-                for (size_t peer_idx = 0; peer_idx < local_info_vec.size(); peer_idx++) {
-                    const topo_rank_info& peer_info = local_info_vec[peer_idx];
-                    int peer_rank = peer_info.rank;
-                    if (intra_card_colors[rank] == intra_card_colors[peer_rank]) {
-                        inter_card_colors[peer_rank] = plane_idx;
-                        plane_idx++;
-                    }
-                }
-            }
+            fill_ze_inter_colors(get_filtered_rank_info(rank_info_vec, h_idx));
         }
     }
     else {
-        for (int rank = 0; rank < comm_size; rank++) {
-            for (int plane_idx = 0; plane_idx < (int)planes.size(); plane_idx++) {
-                if (planes[plane_idx].find(rank) != planes[plane_idx].end()) {
-                    inter_card_colors[rank] = plane_idx;
-                    break;
-                }
-            }
-        }
+        fill_ze_inter_colors(planes);
     }
 
     auto devices = global_data::get().ze_data->device_list;
-    p2p_matrix = build_p2p_matrix(devices);
+    p2p_matrix = build_p2p_matrix(get_filtered_devices(devices, ze_rank_info_vec));
     LOG_DEBUG("p2p matrix: \n", to_string(p2p_matrix), "\nnumber of devices: ", devices.size());
 
     // update is_single_card
@@ -418,7 +369,9 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
                         std::shared_ptr<ccl::device> device_ptr,
                         std::shared_ptr<ccl::context> context_ptr) {
     base_init(atl_comm, device_ptr, context_ptr);
-    post_init();
+    if (device_ptr) {
+        post_init();
+    }
 }
 
 int topo_manager::get_intra_card_color(int rank) const {
@@ -489,17 +442,110 @@ bool topo_manager::is_same_pci_addr(zes_pci_address_t addr1, zes_pci_address_t a
         result = false;
         LOG_DEBUG("pci addresses are not the same:"
                   " addr1: ",
-                  addr1.domain,
-                  addr1.bus,
-                  addr1.device,
-                  addr1.function,
+                  ccl::ze::to_string(addr1),
                   " addr2: ",
-                  addr2.domain,
-                  addr2.bus,
-                  addr2.device,
-                  addr2.function);
+                  ccl::ze::to_string(addr2));
     }
 
+    return result;
+}
+
+bool topo_manager::is_same_dev_uuid(ze_device_uuid_t uuid1, ze_device_uuid_t uuid2) {
+    bool result = true;
+    std::string state = "device uuids";
+    if (std::memcmp(&uuid1, &uuid2, sizeof(ze_device_uuid_t))) {
+        result = false;
+        state += " are not the same:";
+    }
+    else {
+        state += " are the same:";
+    }
+    LOG_DEBUG(state, " uuid1: ", ccl::ze::to_string(uuid1), ", uuid2: ", ccl::ze::to_string(uuid2));
+    return result;
+}
+
+inline std::vector<ze_device_uuid_t> topo_manager::copy_dev_uuids(
+    const std::vector<topo_rank_info>& info_vec,
+    const std::vector<topo_ze_rank_info>& ze_rank_info_vec) {
+    std::vector<ze_device_uuid_t> result;
+    for (auto const& info : info_vec) {
+        result.push_back(ze_rank_info_vec[info.rank].device_uuid);
+    }
+    return result;
+}
+
+bool topo_manager::is_sub_vector(const std::vector<ze_device_uuid_t>& vec,
+                                 const std::vector<ze_device_uuid_t>& sub_vec) {
+    std::vector<ze_device_uuid_t> unique_sub_vec;
+    for (auto const& sub_elem : sub_vec) {
+        if (std::find_if(unique_sub_vec.begin(),
+                         unique_sub_vec.end(),
+                         [&sub_elem](const ze_device_uuid_t& elem) {
+                             return is_same_dev_uuid(sub_elem, elem);
+                         }) == unique_sub_vec.end()) {
+            unique_sub_vec.push_back(sub_elem);
+        }
+    }
+
+    if (unique_sub_vec.size() > vec.size()) {
+        LOG_DEBUG("unique sub vector size can not be greater than base vector size: unique: ",
+                  unique_sub_vec.size(),
+                  ", vec: ",
+                  vec.size());
+        return false;
+    }
+
+    for (auto const& sub_elem : sub_vec) {
+        if (std::find_if(vec.begin(), vec.end(), [&sub_elem](const ze_device_uuid_t& elem) {
+                return is_same_dev_uuid(sub_elem, elem);
+            }) == vec.end()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::vector<ze_device_handle_t> topo_manager::get_filtered_devices(
+    const std::vector<ze_device_handle_t>& devices,
+    const std::vector<topo_ze_rank_info>& ze_rank_info_vec) {
+    const auto& local_info_vec = get_filtered_rank_info(rank_info_vec, host_idx);
+    // get unique device uuids per host
+    const auto& comm_dev_uuids = copy_dev_uuids(local_info_vec, ze_rank_info_vec);
+
+    // check if unique device uuids are in global dev uuids
+    CCL_THROW_IF_NOT(is_sub_vector(copy_dev_uuids(rank_info_vec, ze_rank_info_vec), comm_dev_uuids),
+                     "comm_dev_uuids should be sub vector of global device uuids");
+
+    // TODO: re-implement when the struct of handel device & dev_uuid will be created
+    // check if unique device uuids are in node_dev_uuids
+    std::vector<ze_device_uuid_t> node_dev_uuids;
+    for (auto device : devices) {
+        ze_device_properties_t dev_props;
+        zeDeviceGetProperties(device, &dev_props);
+        node_dev_uuids.push_back(dev_props.uuid);
+    }
+
+    CCL_THROW_IF_NOT(is_sub_vector(node_dev_uuids, comm_dev_uuids),
+                     "comm_dev_uuids should be sub vector of node_dev_uuids");
+
+    // get device handles which uuids from comm_dev_uuids
+    std::vector<ze_device_handle_t> result;
+    for (auto comm_dev_uuid : comm_dev_uuids) {
+        for (auto device : devices) {
+            ze_device_properties_t dev_props;
+            zeDeviceGetProperties(device, &dev_props);
+            if (is_same_dev_uuid(dev_props.uuid, comm_dev_uuid)) {
+                result.push_back(device);
+                break;
+            }
+        }
+    }
+
+    CCL_THROW_IF_NOT(result.size() == local_info_vec.size(),
+                     "unexpected count of filtered devices: ",
+                     result.size(),
+                     ", expected: ",
+                     local_info_vec.size());
     return result;
 }
 
@@ -692,6 +738,74 @@ void topo_manager::fill_fixed_colors(const std::vector<topo_rank_info>& info_vec
         auto rank = info_vec[idx].rank;
         intra_card_colors[rank] = idx / 2;
         inter_card_colors[rank] = idx % 2;
+    }
+}
+
+#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
+void topo_manager::fill_ze_intra_colors(const std::vector<topo_rank_info>& local_info_vec,
+                                        const std::vector<topo_ze_rank_info>& ze_info_vec) {
+    int card_idx = 0;
+    for (size_t idx = 0; idx < local_info_vec.size(); idx++) {
+        size_t card_size = 0;
+        const topo_rank_info& info = local_info_vec[idx];
+        int rank = info.rank;
+
+        // check if intra's elem is already filled
+        if (intra_card_colors[rank] != topo_manager::invalid_color) {
+            continue;
+        }
+        // iterate over local info comparing pci addresses for current and peer ranks
+        for (size_t peer_idx = idx; peer_idx < local_info_vec.size(); peer_idx++) {
+            const topo_rank_info& peer_info = local_info_vec[peer_idx];
+            int peer_rank = peer_info.rank;
+            // if rank & peer rank is on the card
+            if (is_same_pci_addr(ze_info_vec[rank].pci_addr, ze_info_vec[peer_rank].pci_addr)) {
+                // fill intra colors
+                intra_card_colors[peer_rank] = card_idx;
+                card_size++;
+                // if size reached card_limit
+                if (card_size == max_ranks_per_card) {
+                    // go to the next card
+                    card_idx++;
+                    // reset card size
+                    card_size = 0;
+                    break;
+                }
+            }
+        }
+    }
+}
+#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
+
+void topo_manager::fill_ze_inter_colors(const std::vector<topo_rank_info>& local_info_vec) {
+    for (size_t idx = 0; idx < local_info_vec.size(); idx++) {
+        const topo_rank_info& info = local_info_vec[idx];
+        int rank = info.rank;
+
+        if (inter_card_colors[rank] != topo_manager::invalid_color) {
+            continue;
+        }
+
+        int plane_idx = 0;
+        for (size_t peer_idx = 0; peer_idx < local_info_vec.size(); peer_idx++) {
+            const topo_rank_info& peer_info = local_info_vec[peer_idx];
+            int peer_rank = peer_info.rank;
+            if (intra_card_colors[rank] == intra_card_colors[peer_rank]) {
+                inter_card_colors[peer_rank] = plane_idx;
+                plane_idx++;
+            }
+        }
+    }
+}
+
+void topo_manager::fill_ze_inter_colors(const std::vector<std::set<int>>& planes) {
+    for (int rank = 0; rank < comm->get_size(); rank++) {
+        for (int plane_idx = 0; plane_idx < (int)planes.size(); plane_idx++) {
+            if (planes[plane_idx].find(rank) != planes[plane_idx].end()) {
+                inter_card_colors[rank] = plane_idx;
+                break;
+            }
+        }
     }
 }
 

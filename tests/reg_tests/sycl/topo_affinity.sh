@@ -141,10 +141,8 @@ if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" || ${PLATFORM_HW_DISCRETE_GPU} = "gen9
 then
     # [ATS, GEN9]: 2 ranks on one card
     run_case 2 2 "0 0" "0 1"
-
     # [ATS, GEN9]: 4 ranks one node
     run_case 4 4 "0 0 1 1" "0 1 0 1"
-
     # [ATS, GEN9]: 8 ranks one node
     run_case 8 8 "0 0 1 1 2 2 3 3" "0 1 0 1 0 1 0 1"
 
@@ -152,10 +150,8 @@ then
     then
         # [GEN9]: 2 ranks, 2 nodes
         run_case 2 1 "0 1000" "0 1000"
-
         # [GEN9]: 4 ranks, 2 nodes
         run_case 4 2 "0 0 1000 1000" "0 1 1000 1001"
-
         # [GEN9]: 8 ranks, 2 nodes
         run_case 8 4 "0 0 1 1 1000 1000 1001 1001" "0 1 0 1 1000 1001 1000 1001"
     fi

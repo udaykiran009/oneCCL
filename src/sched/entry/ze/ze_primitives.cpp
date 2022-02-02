@@ -393,6 +393,13 @@ std::string to_string(const ze_device_uuid_t& uuid) {
     return str;
 }
 
+std::string to_string(const zes_pci_address_t& addr) {
+    std::stringstream ss;
+    ss << "{ " << addr.domain << ", " << addr.bus << ", " << addr.device << ", " << addr.function
+       << "}";
+    return ss.str();
+}
+
 std::string join_strings(const std::vector<std::string>& tokens, const std::string& delimeter) {
     std::stringstream ss;
     for (size_t i = 0; i < tokens.size(); ++i) {

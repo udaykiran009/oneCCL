@@ -379,9 +379,9 @@ public:
                 val = topo_color_mode::env;
                 status = 1;
             }
-        }
-        else {
-            status = env_2_enum(env_name, values, val);
+            else {
+                status = env_2_enum(env_name, values, val);
+            }
         }
 
         return status;
