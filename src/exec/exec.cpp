@@ -4,7 +4,7 @@
 #include "exec/thread/service_worker.hpp"
 #include "exec/thread/worker.hpp"
 #include "common/env/env.hpp"
-#include "sched/extra_sched.hpp"
+#include "sched/sched.hpp"
 
 size_t ccl_executor::get_worker_idx_by_sched_id(ccl_sched* sched) {
     return sched->sched_id % workers.size();
@@ -219,17 +219,17 @@ void ccl_executor::update_workers() {
 //    return ccl::status::success;
 //}
 
-void ccl_executor::start(ccl_extra_sched* extra_sched) {
-    CCL_ASSERT(extra_sched->sched_type == ccl_sched_unordered_coll,
-               "should be unordered_coll for now");
+void ccl_executor::start(ccl_sched* sched, bool extra_sched) {
+    if (extra_sched) {
+        CCL_ASSERT(sched->sched_type == ccl_sched_unordered_coll,
+                   "should be unordered_coll for now");
 
-    extra_sched->set_counter(1);
-    workers[0]->add(extra_sched);
-}
-
-void ccl_executor::start(ccl_master_sched* sched) {
+        sched->set_counter(1);
+        workers[0]->add(sched);
+        return;
+    }
     size_t worker_idx;
-    auto& partial_scheds = sched->get_partial_scheds();
+    auto& partial_scheds = sched->get_subscheds();
     for (size_t idx = 0; idx < partial_scheds.size(); idx++) {
         worker_idx = (this->*get_worker_idx_fn)(partial_scheds[idx].get());
         LOG_DEBUG(

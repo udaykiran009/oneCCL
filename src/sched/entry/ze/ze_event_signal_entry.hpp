@@ -3,7 +3,7 @@
 #include "sched/entry/entry.hpp"
 #include "sched/sched.hpp"
 
-class ccl_master_sched;
+class ccl_sched;
 
 class ze_event_signal_entry : public sched_entry {
 public:
@@ -16,7 +16,7 @@ public:
     }
 
     ze_event_signal_entry() = delete;
-    explicit ze_event_signal_entry(ccl_sched* sched, ccl_master_sched* master_sched);
+    explicit ze_event_signal_entry(ccl_sched* sched, ccl_sched* master_sched);
     explicit ze_event_signal_entry(ccl_sched* sched, ze_event_handle_t event);
     ze_event_signal_entry(const ze_event_signal_entry&) = delete;
 
@@ -24,7 +24,7 @@ public:
     void update() override;
 
 private:
-    ccl_master_sched* const master_sched{};
+    ccl_sched* const master_sched{};
     const ze_event_handle_t event{};
 
     void handle_sycl_event_status();

@@ -10,7 +10,7 @@
 
 #define CCL_ATL_LARGE_MSG_SIZE (1024 * 1024 * 1024)
 
-ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
+ccl::status ccl_parallelizer::process(ccl_sched* sched) {
     process_base(sched);
 
 #ifdef CCL_ENABLE_SYCL
@@ -30,15 +30,15 @@ ccl::status ccl_parallelizer::process(ccl_master_sched* sched) {
     return ccl::status::success;
 }
 
-ccl::status ccl_parallelizer::process_deps(ccl_master_sched* sched) {
-    auto& part_scheds = sched->get_partial_scheds();
+ccl::status ccl_parallelizer::process_deps(ccl_sched* sched) {
+    auto& part_scheds = sched->get_subscheds();
     ccl_sched* deps_sched = part_scheds[0].get();
     size_t sched_count = part_scheds.size();
 
     for (size_t idx = 0; idx < sched_count; idx++) {
         part_scheds[idx]->set_add_mode(ccl_sched_add_front);
     }
-    sched->sync_partial_scheds();
+    sched->sync_subscheds();
 
     entry_factory::create<deps_entry>(deps_sched);
     deps_sched->add_barrier();
@@ -47,8 +47,8 @@ ccl::status ccl_parallelizer::process_deps(ccl_master_sched* sched) {
 }
 
 #ifdef CCL_ENABLE_SYCL
-ccl::status ccl_parallelizer::process_pre_post_copies(ccl_master_sched* sched) {
-    auto& part_scheds = sched->get_partial_scheds();
+ccl::status ccl_parallelizer::process_pre_post_copies(ccl_sched* sched) {
+    auto& part_scheds = sched->get_subscheds();
     size_t sched_count = part_scheds.size();
     ccl_coll_param& coll_param = sched->coll_param;
     ccl_comm* comm = coll_param.comm;
@@ -78,7 +78,7 @@ ccl::status ccl_parallelizer::process_pre_post_copies(ccl_master_sched* sched) {
         for (size_t idx = 0; idx < sched_count; idx++) {
             part_scheds[idx]->set_add_mode(ccl_sched_add_front);
         }
-        sched->sync_partial_scheds();
+        sched->sync_subscheds();
 
         for (size_t idx = 0; idx < d2h_counts.size(); idx++) {
             size_t sched_idx = idx % sched_count;
@@ -101,7 +101,7 @@ ccl::status ccl_parallelizer::process_pre_post_copies(ccl_master_sched* sched) {
         for (size_t idx = 0; idx < sched_count; idx++) {
             part_scheds[idx]->set_add_mode(ccl_sched_add_back);
         }
-        sched->sync_partial_scheds();
+        sched->sync_subscheds();
 
         for (size_t idx = 0; idx < h2d_counts.size(); idx++) {
             size_t sched_idx = idx % sched_count;
@@ -119,24 +119,24 @@ ccl::status ccl_parallelizer::process_pre_post_copies(ccl_master_sched* sched) {
                 copy_attr(copy_direction::h2d, 0));
         }
 
-        sched->sync_partial_scheds();
+        sched->sync_subscheds();
     }
 
     return ccl::status::success;
 }
 
-ccl::status ccl_parallelizer::process_output_event(ccl_master_sched* sched) {
+ccl::status ccl_parallelizer::process_output_event(ccl_sched* sched) {
     if (!ccl::utils::should_use_sycl_output_event(sched->coll_param.stream)) {
         return ccl::status::success;
     }
 
-    auto& part_scheds = sched->get_partial_scheds();
+    auto& part_scheds = sched->get_subscheds();
     size_t sched_count = part_scheds.size();
 
     for (size_t idx = 0; idx < sched_count; idx++) {
         part_scheds[idx]->set_add_mode(ccl_sched_add_back);
     }
-    sched->sync_partial_scheds();
+    sched->sync_subscheds();
 
     entry_factory::create<ze_event_signal_entry>(part_scheds[0].get(), sched);
 
@@ -144,7 +144,7 @@ ccl::status ccl_parallelizer::process_output_event(ccl_master_sched* sched) {
 }
 #endif // CCL_ENABLE_SYCL
 
-ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
+ccl::status ccl_parallelizer::process_base(ccl_sched* sched) {
     /* TODO: split on per-collective classes */
 
     CCL_ASSERT(sched);
@@ -167,7 +167,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
 
     std::vector<size_t> counts;
     std::vector<size_t> offsets;
-    auto& part_scheds = sched->get_partial_scheds();
+    auto& part_scheds = sched->get_subscheds();
     std::vector<ccl_sched*> part_scheds_vector;
 
     std::vector<ccl_buffer> ag_recv_bufs;
@@ -290,7 +290,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
         part_coll_param.ctype = ccl_coll_partial;
         part_coll_param.stream = sched->coll_param.stream;
         part_coll_param.comm = comm;
-        sched->add_partial_sched(part_coll_param);
+        sched->add_subsched(part_coll_param);
     }
 
     part_scheds_vector.resize(part_count);
@@ -357,7 +357,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
 
     switch (coll_type) {
         case ccl_coll_barrier:
-            sched->sync_partial_scheds();
+            sched->sync_subscheds();
             for (idx = 0; idx < part_count; idx++) {
                 ccl_coll_entry_param param{};
                 param.ctype = ccl_coll_barrier;
@@ -365,7 +365,7 @@ ccl::status ccl_parallelizer::process_base(ccl_master_sched* sched) {
                 param.comm = comm;
                 ccl::add_coll_entry(part_scheds[idx].get(), param);
             }
-            sched->sync_partial_scheds();
+            sched->sync_subscheds();
             break;
         case ccl_coll_bcast:
             for (idx = 0; idx < part_count; idx++) {

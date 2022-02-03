@@ -2,7 +2,7 @@
 #include "sched/queue/queue.hpp"
 #include "common/utils/sycl_utils.hpp"
 
-ze_event_signal_entry::ze_event_signal_entry(ccl_sched* sched, ccl_master_sched* master_sched)
+ze_event_signal_entry::ze_event_signal_entry(ccl_sched* sched, ccl_sched* master_sched)
         : sched_entry(sched),
           master_sched(master_sched) {
     CCL_THROW_IF_NOT(sched, "no sched");

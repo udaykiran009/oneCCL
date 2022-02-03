@@ -22,25 +22,50 @@ enum ccl_sched_in_bin_status {
     ccl_sched_in_bin_erased
 };
 
+class ccl_sched;
 typedef ccl::status (*ccl_sched_finalize_fn_t)(ccl_sched*, const void*);
 
-class ccl_extra_sched;
-class ccl_master_sched;
-
-class alignas(CACHELINE_SIZE) ccl_sched : public ccl_sched_base {
+class ccl_sched_key;
+enum class sched_type_t { regular, master, extra };
+class alignas(CACHELINE_SIZE) ccl_sched : public ccl_sched_base, public ccl_request {
 public:
     static constexpr const char* class_name() {
-        return "worker_sched";
+        return "sched";
     }
+
+    ccl_sched(const ccl_sched_create_param& param);
 
     ccl_sched(const ccl_sched_create_param& param,
               ccl_request* master_request,
-              ccl_master_sched* master_sched = nullptr);
+              ccl_sched* master_sched = nullptr);
+
+    ccl_sched(const ccl_sched_create_param& param, ccl_sched* master_sched);
+
+    ~ccl_sched() override;
+
+    ccl_sched(const ccl_sched& src) = delete;
     ccl_sched() = delete;
-    ccl_sched(const ccl_sched& other) = delete;
     ccl_sched& operator=(const ccl_sched& other) = delete;
 
-    virtual ~ccl_sched();
+    void add_subsched(const ccl_coll_param& param);
+    std::vector<std::shared_ptr<ccl_sched>>& get_subscheds();
+    void commit(ccl_parallelizer* parallelizer = nullptr);
+    ccl_request* start(ccl_executor* exec, bool reset_sched = true);
+
+    /**
+     * Reset completion counter of @b req
+     * @return pointer to req that can be used to track completion
+     */
+    ccl_request* reset_request();
+    /**
+     * Synchronizes partial schedules on local barrier
+     */
+    void sync_subscheds();
+    void dump(std::ostream& out) const;
+
+    // TODO: wrap into smart-pointer
+    using ccl_sched_ptr = ccl_sched*;
+    static ccl_sched_ptr create(const ccl_coll_param& param, const ccl_coll_attr& attr);
 
     bool is_strict_order_satisfied();
 
@@ -49,7 +74,7 @@ public:
     /**
      * Called after all the entries have been completed
      */
-    virtual void complete();
+    virtual void complete_sched();
 
     size_t get_start_idx() const {
         return start_idx;
@@ -166,11 +191,14 @@ public:
     // Currently we only set this ptr to non-null when we need it, i.e. these are the cases when we
     // construct sched and entries to run collective. There are some other cases where we don't need
     // master_sched, so it's not set there.
-    ccl_master_sched* master_sched = nullptr;
-    void dump(std::ostream& out) const;
+    ccl_sched* parent_sched = nullptr;
     size_t entries_count() const;
+    sched_type_t type;
 
 private:
+    void reset_state();
+    void prepare_subscheds();
+    std::vector<std::shared_ptr<ccl_sched>> subscheds;
     ccl_sched_finalize_fn_t finalize_fn = nullptr;
     void* finalize_fn_ctx = nullptr;
 

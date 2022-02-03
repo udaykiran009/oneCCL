@@ -152,8 +152,6 @@ set(CCL_SRC
     sched/queue/flow_control.cpp
     sched/queue/queue.cpp
     sched/queue/strict_queue.cpp
-    sched/extra_sched.cpp
-    sched/master_sched.cpp
     sched/sched.cpp
     sched/sched_base.cpp
     sched/sched_timer.cpp

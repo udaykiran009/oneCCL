@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sched/entry/entry.hpp"
-#include "sched/extra_sched.hpp"
+#include "sched/sched.hpp"
 #include "sched/queue/queue.hpp"
 
 class subsched_entry : public sched_entry {
@@ -42,12 +42,12 @@ public:
     }
 
     void build_subsched(const ccl_sched_create_param& create_param,
-                        ccl_master_sched* master_sched = nullptr) {
+                        ccl_sched* master_sched = nullptr) {
         if (subsched) {
             return;
         }
 
-        subsched.reset(new ccl_extra_sched(create_param, master_sched));
+        subsched.reset(new ccl_sched(create_param, master_sched));
         set_params();
         build_fn(subsched.get());
     }
@@ -78,7 +78,7 @@ public:
         subsched->do_progress();
         if (subsched->start_idx == subsched->entries.size()) {
             status = ccl_sched_entry_status_complete;
-            ((ccl_sched*)subsched.get())->complete();
+            ((ccl_sched*)subsched.get())->complete_sched();
         }
     }
 
@@ -104,7 +104,7 @@ protected:
         }
     }
 
-    std::unique_ptr<ccl_extra_sched> subsched;
+    std::unique_ptr<ccl_sched> subsched;
 
 private:
     std::function<void(ccl_sched*)> build_fn;

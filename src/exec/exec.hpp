@@ -5,7 +5,7 @@
 #include "common/global/global.hpp"
 #include "common/request/request.hpp"
 #include "exec/thread/listener.hpp"
-#include "sched/extra_sched.hpp"
+#include "sched/sched.hpp"
 #include "internal_types.hpp"
 
 #include <memory>
@@ -13,8 +13,7 @@
 
 class ccl_worker;
 class ccl_service_worker;
-class ccl_master_sched;
-class ccl_extra_sched;
+class ccl_sched;
 
 class alignas(CACHELINE_SIZE) ccl_executor {
     friend class ccl_listener;
@@ -49,8 +48,7 @@ public:
         return worker_guard(this);
     }
 
-    void start(ccl_extra_sched* extra_sched);
-    void start(ccl_master_sched* sched);
+    void start(ccl_sched* sched, bool extra_sched = false);
     void wait(const ccl_request* req);
     bool test(const ccl_request* req);
 
@@ -101,8 +99,8 @@ private:
     bool workers_started = false;
 };
 
-inline void ccl_release_sched(ccl_master_sched* sched) {
-    if (sched->coll_attr.to_cache) {
+inline void ccl_release_sched(ccl_sched* sched) {
+    if (sched->coll_attr.to_cache && sched->type != sched_type_t::extra) {
         ccl::global_data::get().sched_cache->release(sched);
     }
     else {
@@ -110,11 +108,7 @@ inline void ccl_release_sched(ccl_master_sched* sched) {
     }
 }
 
-inline void ccl_release_sched(ccl_extra_sched* sched) {
-    delete sched;
-}
-
-template <class sched_type = ccl_master_sched>
+template <class sched_type = ccl_sched>
 inline void ccl_wait_impl(ccl_executor* exec, ccl_request* request) {
     exec->wait(request);
     if (!exec->is_locked) {
@@ -126,7 +120,7 @@ inline void ccl_wait_impl(ccl_executor* exec, ccl_request* request) {
     }
 }
 
-template <class sched_type = ccl_master_sched>
+template <class sched_type = ccl_sched>
 inline bool ccl_test_impl(ccl_executor* exec, ccl_request* request) {
     bool completed = exec->test(request);
 

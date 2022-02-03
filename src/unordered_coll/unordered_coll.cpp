@@ -9,7 +9,7 @@ struct ccl_unordered_coll_ctx {
     ccl_comm_id_t reserved_comm_id;
     size_t match_id_size;
     void* match_id_value;
-    ccl_extra_sched* service_sched;
+    ccl_sched* service_sched;
     ccl_unordered_coll_manager* manager;
 };
 
@@ -44,7 +44,7 @@ std::shared_ptr<ccl_comm> ccl_unordered_coll_manager::get_comm(const std::string
     return nullptr;
 }
 
-ccl_request* ccl_unordered_coll_manager::postpone(ccl_master_sched* sched) {
+ccl_request* ccl_unordered_coll_manager::postpone(ccl_sched* sched) {
     CCL_ASSERT(!sched->coll_attr.match_id.empty(), "invalid match_id");
     const std::string& match_id = sched->coll_attr.match_id;
 
@@ -145,8 +145,10 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
     coll_param.dtype = ccl_datatype_int8;
     coll_param.comm = coordination_comm.get();
 
-    std::unique_ptr<ccl_extra_sched> service_sched(new ccl_extra_sched(
-        { ccl_sched_unordered_coll, coordination_comm->get_sched_id(true), coll_param }));
+    ccl_sched* null_sched = nullptr;
+    std::unique_ptr<ccl_sched> service_sched(new ccl_sched(
+        { ccl_sched_unordered_coll, coordination_comm->get_sched_id(true), coll_param },
+        null_sched));
 
     if (ccl::global_data::env().priority_mode == ccl_priority_lifo) {
         service_sched->coll_attr.priority = ccl_sched_base::get_lifo_priority();
@@ -249,7 +251,8 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
 
     LOG_DEBUG("start service_sched ", service_sched.get(), " for match_id ", match_id);
     /* release ownership */
-    ccl::global_data::get().executor->start(service_sched.release());
+    bool extra_sched = true;
+    ccl::global_data::get().executor->start(service_sched.release(), extra_sched);
 }
 
 void ccl_unordered_coll_manager::start_post_coordination_actions(ccl_unordered_coll_ctx* ctx) {
@@ -305,7 +308,7 @@ void ccl_unordered_coll_manager::start_post_coordination_actions(ccl_unordered_c
 void ccl_unordered_coll_manager::run_postponed_scheds(const std::string& match_id, ccl_comm* comm) {
     CCL_THROW_IF_NOT(comm, "communicator is null");
 
-    std::vector<ccl_master_sched*> scheds_to_run;
+    std::vector<ccl_sched*> scheds_to_run;
     std::unique_lock<ccl_spinlock> lock{ postponed_scheds_guard };
     auto scheds = postponed_scheds.equal_range(match_id);
     size_t sched_count = std::distance(scheds.first, scheds.second);
@@ -315,7 +318,7 @@ void ccl_unordered_coll_manager::run_postponed_scheds(const std::string& match_i
     transform(scheds.first,
               scheds.second,
               back_inserter(scheds_to_run),
-              [](const std::pair<std::string, ccl_master_sched*>& element) {
+              [](const std::pair<std::string, ccl_sched*>& element) {
                   return element.second;
               });
     postponed_scheds.erase(scheds.first, scheds.second);
@@ -326,8 +329,8 @@ void ccl_unordered_coll_manager::run_postponed_scheds(const std::string& match_i
     }
 }
 
-void ccl_unordered_coll_manager::run_sched(ccl_master_sched* sched, ccl_comm* comm) const {
-    auto& partial_scheds = sched->get_partial_scheds();
+void ccl_unordered_coll_manager::run_sched(ccl_sched* sched, ccl_comm* comm) const {
+    auto& partial_scheds = sched->get_subscheds();
     ccl_sched_key old_key, new_key;
     old_key.set(sched->coll_param, sched->coll_attr);
     sched->coll_param.comm = comm;
@@ -366,7 +369,7 @@ void ccl_unordered_coll_manager::add_comm(const std::string& match_id,
     CCL_ASSERT(emplace_result.second);
 }
 
-void ccl_unordered_coll_manager::postpone_sched(ccl_master_sched* sched) {
+void ccl_unordered_coll_manager::postpone_sched(ccl_sched* sched) {
     std::lock_guard<ccl_spinlock> lock{ postponed_scheds_guard };
     size_t sched_count = postponed_scheds.count(sched->coll_attr.match_id);
     LOG_DEBUG("postponed_scheds contains ",
@@ -384,7 +387,7 @@ size_t ccl_unordered_coll_manager::get_postponed_sched_count(const std::string& 
 void ccl_unordered_coll_manager::remove_service_scheds() {
     std::lock_guard<ccl_spinlock> lock{ service_scheds_guard };
     for (auto it = service_scheds.begin(); it != service_scheds.end();) {
-        ccl_extra_sched* sched = it->second;
+        ccl_sched* sched = it->second;
         if (sched->req->is_completed()) {
             LOG_DEBUG("sched ", sched, ", match_id ", it->first);
             delete sched;

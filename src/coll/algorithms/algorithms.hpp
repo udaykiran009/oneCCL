@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sched/master_sched.hpp"
 #include "sched/sched.hpp"
 #include "internal_types.hpp"
 
@@ -157,11 +156,11 @@ ccl::status ccl_coll_build_ring_allgatherv(ccl_sched* sched,
                                            const ccl_datatype& dtype,
                                            ccl_comm* comm);
 
-ccl::status ccl_coll_build_flat_allgatherv(ccl_master_sched* main_sched,
+ccl::status ccl_coll_build_flat_allgatherv(ccl_sched* main_sched,
                                            std::vector<ccl_sched*>& scheds,
                                            const ccl_coll_param& coll_param);
 
-ccl::status ccl_coll_build_multi_bcast_allgatherv(ccl_master_sched* main_sched,
+ccl::status ccl_coll_build_multi_bcast_allgatherv(ccl_sched* main_sched,
                                                   std::vector<ccl_sched*>& scheds,
                                                   const ccl_coll_param& coll_param,
                                                   size_t data_partition_count);
@@ -174,11 +173,11 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* sched,
                                            const ccl_datatype& dtype,
                                            ccl_comm* comm);
 
-ccl::status ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
+ccl::status ccl_coll_build_naive_alltoallv(ccl_sched* main_sched,
                                            std::vector<ccl_sched*>& scheds,
                                            const ccl_coll_param& coll_param);
 
-ccl::status ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
+ccl::status ccl_coll_build_scatter_alltoallv(ccl_sched* main_sched,
                                              std::vector<ccl_sched*>& scheds,
                                              const ccl_coll_param& coll_param);
 

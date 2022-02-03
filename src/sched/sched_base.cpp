@@ -258,8 +258,9 @@ void ccl_sched_base::free_memory_regions() {
     ccl_coll_param param{};
     param.ctype = ccl_coll_undefined;
     param.comm = coll_param.comm;
-    std::unique_ptr<ccl_extra_sched> dereg_sched(
-        new ccl_extra_sched({ ccl_sched_regular, sched_id, param }));
+    ccl_sched* sched = nullptr;
+    std::unique_ptr<ccl_sched> dereg_sched(
+        new ccl_sched({ ccl_sched_regular, sched_id, param }, sched));
     entry_factory::create<deregister_entry>(dereg_sched.get(), memory.mr_list, param.comm);
 
     if (ccl::global_data::get().is_worker_thread || !ccl::global_data::env().worker_offload) {

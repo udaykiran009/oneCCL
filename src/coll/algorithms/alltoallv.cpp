@@ -86,7 +86,7 @@ ccl::status ccl_coll_calculate_alltoallv_counts(const ccl_coll_param& coll_param
     return ccl::status::success;
 }
 
-ccl::status ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
+ccl::status ccl_coll_build_naive_alltoallv(ccl_sched* main_sched,
                                            std::vector<ccl_sched*>& scheds,
                                            const ccl_coll_param& coll_param) {
     LOG_DEBUG("build naive alltoallv");
@@ -178,7 +178,7 @@ ccl::status ccl_coll_build_naive_alltoallv(ccl_master_sched* main_sched,
     return ccl::status::success;
 }
 
-ccl::status ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
+ccl::status ccl_coll_build_scatter_alltoallv(ccl_sched* main_sched,
                                              std::vector<ccl_sched*>& scheds,
                                              const ccl_coll_param& coll_param) {
     LOG_DEBUG("build scatter alltoallv");
@@ -296,7 +296,7 @@ ccl::status ccl_coll_build_scatter_alltoallv(ccl_master_sched* main_sched,
     if (!inplace)
         return ccl::status::success;
 
-    main_sched->sync_partial_scheds();
+    main_sched->sync_subscheds();
 
     for (int idx = 0; idx < comm_size; idx++) {
         int src = (comm_rank + idx) % comm_size;

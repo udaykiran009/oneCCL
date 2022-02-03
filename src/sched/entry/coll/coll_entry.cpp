@@ -96,7 +96,7 @@ void coll_entry::start() {
                   ccl_coll_type_to_str(param.ctype),
                   ", count: ",
                   param.count);
-        subsched_entry::build_subsched({ sched->sched_id, coll_param }, sched->master_sched);
+        subsched_entry::build_subsched({ sched->sched_id, coll_param }, sched->parent_sched);
         LOG_DEBUG("built COLL entry: ",
                   this,
                   ", subsched: ",

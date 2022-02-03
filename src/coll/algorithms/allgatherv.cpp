@@ -161,7 +161,7 @@ ccl::status ccl_coll_get_allgatherv_bufs_and_offsets(const ccl_coll_param& coll_
     return ccl::status::success;
 }
 
-ccl::status ccl_coll_build_flat_allgatherv(ccl_master_sched* main_sched,
+ccl::status ccl_coll_build_flat_allgatherv(ccl_sched* main_sched,
                                            std::vector<ccl_sched*>& scheds,
                                            const ccl_coll_param& coll_param) {
     LOG_DEBUG("build flat allgatherv");
@@ -227,12 +227,12 @@ ccl::status ccl_coll_build_flat_allgatherv(ccl_master_sched* main_sched,
                                           idx,
                                           comm);
     }
-    main_sched->sync_partial_scheds();
+    main_sched->sync_subscheds();
 
     return ccl::status::success;
 }
 
-ccl::status ccl_coll_build_multi_bcast_allgatherv(ccl_master_sched* main_sched,
+ccl::status ccl_coll_build_multi_bcast_allgatherv(ccl_sched* main_sched,
                                                   std::vector<ccl_sched*>& scheds,
                                                   const ccl_coll_param& coll_param,
                                                   size_t data_partition_count) {
@@ -276,7 +276,7 @@ ccl::status ccl_coll_build_multi_bcast_allgatherv(ccl_master_sched* main_sched,
                                               copy_counts[idx],
                                               dtype);
         }
-        main_sched->sync_partial_scheds();
+        main_sched->sync_subscheds();
     }
 
     for (int idx = 0; idx < comm_size; idx++) {

@@ -18,7 +18,7 @@ public:
 
     virtual ~ccl_request();
 
-    bool complete();
+    bool complete_request();
 
     bool is_completed() const;
 

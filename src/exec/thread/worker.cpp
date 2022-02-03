@@ -78,7 +78,7 @@ ccl::status ccl_worker::process_strict_sched_queue() {
                 "only single sched in active strict queue can be erased since previous call");
 
             /* now it is safe to release this sched */
-            sched->req->complete();
+            sched->req->complete_request();
             continue;
         }
 
@@ -108,7 +108,7 @@ ccl::status ccl_worker::process_strict_sched_queue() {
         }
         else {
             /* now it is safe to release this sched */
-            sched->req->complete();
+            sched->req->complete_request();
         }
     }
 
@@ -197,7 +197,7 @@ ccl::status ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed_
             CCL_ASSERT(!sched->bin);
             bin_size--;
             LOG_DEBUG("completing request ", sched->req);
-            sched->complete();
+            sched->complete_sched();
             ++completed_sched_count;
         }
         else {

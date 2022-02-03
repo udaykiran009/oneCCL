@@ -93,7 +93,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
     }
 
     /* 2. create or get schedule */
-    ccl_master_sched* sched = ccl_master_sched::create(param, attr);
+    ccl_sched* sched = ccl_sched::create(param, attr);
 
     /* 3. fuse schedule */
     if (!postpone_schedule && ccl::global_data::env().enable_fusion) {
@@ -122,7 +122,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
     /* 6. regular schedule execution */
     ccl_request* request = sched->start(data.executor.get());
     if (sched->coll_attr.synchronous) {
-        ccl_wait_impl<ccl_master_sched>(data.executor.get(), request);
+        ccl_wait_impl<ccl_sched>(data.executor.get(), request);
         request = nullptr;
     }
 
