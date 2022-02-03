@@ -150,7 +150,7 @@ env_data::env_data()
           enable_ze_single_list(1),
           disable_ze_family_check(0),
           ze_serialize_mode(0),
-          ze_copy_engine(ccl_ze_copy_engine_auto),
+          ze_copy_engine(ccl_ze_copy_engine_none),
           ze_max_compute_queues(1),
           ze_max_copy_queues(CCL_ENV_SIZET_NOT_SPECIFIED),
           enable_ze_list_dump(0),
