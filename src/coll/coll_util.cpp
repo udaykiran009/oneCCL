@@ -131,8 +131,41 @@ void add_coll(ccl_sched* sched,
     if (sched->use_single_list) {
         ccl::add_wait_events(sched, wait_events);
     }
-
-    coll_entry::build_sched(sched, param);
+    if (ccl::global_data::env().ze_multi_workers) {
+        ccl_coll_attr attr{};
+        ccl_coll_param coll_param;
+        switch (param.ctype) {
+            case ccl_coll_allreduce: {
+                coll_param = ccl_coll_param::create_allreduce_param(param.send_buf.get_src(),
+                                                                    param.recv_buf.get_src(),
+                                                                    param.count,
+                                                                    param.dtype.idx(),
+                                                                    param.reduction,
+                                                                    attr,
+                                                                    param.comm,
+                                                                    param.stream);
+                break;
+            }
+            case ccl_coll_reduce: {
+                coll_param = ccl_coll_param::create_reduce_param(param.send_buf.get_src(),
+                                                                 param.recv_buf.get_src(),
+                                                                 param.count,
+                                                                 param.dtype.idx(),
+                                                                 param.reduction,
+                                                                 param.root,
+                                                                 attr,
+                                                                 param.comm,
+                                                                 param.stream);
+                break;
+            }
+            default: CCL_THROW("unexpected coll type", ccl_coll_type_to_str(param.ctype));
+        }
+        ccl_sched_create_param sched_param(sched->sched_id, coll_param);
+        entry_factory::create<subsched_entry>(sched, 0, sched_param, "SCALEOUT");
+    }
+    else {
+        coll_entry::build_sched(sched, param);
+    }
     sched->add_barrier();
 
     if (sched->use_single_list) {

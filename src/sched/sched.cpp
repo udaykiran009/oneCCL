@@ -122,16 +122,18 @@ ccl_sched::~ccl_sched() {
 #endif
 }
 
-void ccl_sched::commit(ccl_parallelizer* parallelizer) {
+void ccl_sched::commit(ccl_parallelizer* parallelizer, bool update_sched_id) {
     if (ccl::global_data::env().priority_mode == ccl_priority_lifo) {
         coll_attr.priority = ccl_sched_base::get_lifo_priority();
     }
 
     if (subscheds.empty()) {
         /* single time operations */
-        update_id();
+        if (update_sched_id) {
+            update_id();
+        }
         if (parallelizer) {
-            parallelizer->process(this);
+            parallelizer->process(this, update_sched_id);
             CCL_THROW_IF_NOT(
                 !subscheds.empty(),
                 "ccl_master_sched must have at least 1 partial sched after parallelized");
@@ -167,13 +169,13 @@ void ccl_sched::reset_state() {
 #endif
 }
 
-ccl_request* ccl_sched::start(ccl_executor* exec, bool reset_sched) {
+ccl_request* ccl_sched::start(ccl_executor* exec, bool reset_sched, bool update_sched_id) {
     /* sanity check the schedule */
     CCL_THROW_IF_NOT(coll_param.comm);
 
     LOG_DEBUG("starting schedule ", this, ", type ", ccl_coll_type_to_str(coll_param.ctype));
 
-    prepare_subscheds();
+    prepare_subscheds(update_sched_id);
 
     if (reset_sched) {
         reset_state();
@@ -214,10 +216,13 @@ ccl_request* ccl_sched::reset_request() {
     return this;
 }
 
-void ccl_sched::add_subsched(const ccl_coll_param& coll_param) {
+void ccl_sched::add_subsched(const ccl_coll_param& coll_param, bool update_sched_id) {
     subscheds.emplace_back(std::make_shared<ccl_sched>(
-        ccl_sched_create_param(
-            sched_type, coll_param.comm->get_sched_id(sched_type != ccl_sched_regular), coll_param),
+        ccl_sched_create_param(sched_type,
+                               update_sched_id
+                                   ? coll_param.comm->get_sched_id(sched_type != ccl_sched_regular)
+                                   : sched_id,
+                               coll_param),
         this,
         this));
 }
@@ -226,9 +231,9 @@ std::vector<std::shared_ptr<ccl_sched>>& ccl_sched::get_subscheds() {
     return subscheds;
 }
 
-void ccl_sched::prepare_subscheds() {
+void ccl_sched::prepare_subscheds(bool update_sched_id) {
     for (auto& sched : subscheds) {
-        sched->renew(true);
+        sched->renew(update_sched_id);
     }
 }
 

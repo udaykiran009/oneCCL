@@ -16,7 +16,7 @@ public:
     ccl_parallelizer(ccl_parallelizer&& other) = delete;
     ccl_parallelizer& operator=(ccl_parallelizer&& other) = delete;
 
-    ccl::status process(ccl_sched* sched);
+    ccl::status process(ccl_sched* sched, bool update_sched_id = true);
 
 private:
     ccl::status process_deps(ccl_sched* sched);
@@ -26,7 +26,7 @@ private:
     ccl::status process_output_event(ccl_sched* sched);
 #endif // CCL_ENABLE_SYCL
 
-    ccl::status process_base(ccl_sched* sched);
+    ccl::status process_base(ccl_sched* sched, bool update_sched_id = true);
 
     size_t max_data_partition_count;
 };

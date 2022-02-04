@@ -20,3 +20,4 @@ allreduce_bidir_algo platform=ats transport=*
 opencl platform=* transport=*
 # IMPI-3210
 hmem platform=ats transport=*
+scaleout platform=ats transport=*

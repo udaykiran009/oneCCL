@@ -47,10 +47,10 @@ public:
     ccl_sched() = delete;
     ccl_sched& operator=(const ccl_sched& other) = delete;
 
-    void add_subsched(const ccl_coll_param& param);
+    void add_subsched(const ccl_coll_param& param, bool update_sched_id = true);
     std::vector<std::shared_ptr<ccl_sched>>& get_subscheds();
-    void commit(ccl_parallelizer* parallelizer = nullptr);
-    ccl_request* start(ccl_executor* exec, bool reset_sched = true);
+    void commit(ccl_parallelizer* parallelizer = nullptr, bool update_sched_id = true);
+    ccl_request* start(ccl_executor* exec, bool reset_sched = true, bool update_sched_id = true);
 
     /**
      * Reset completion counter of @b req
@@ -197,7 +197,7 @@ public:
 
 private:
     void reset_state();
-    void prepare_subscheds();
+    void prepare_subscheds(bool update_sched_id = true);
     std::vector<std::shared_ptr<ccl_sched>> subscheds;
     ccl_sched_finalize_fn_t finalize_fn = nullptr;
     void* finalize_fn_ctx = nullptr;

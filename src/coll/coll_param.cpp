@@ -81,8 +81,7 @@ ccl_coll_param::ccl_coll_param() {
     stream = nullptr;
     comm = nullptr;
 }
-
-ccl_coll_param::ccl_coll_param(const ccl_coll_param& other) {
+void ccl_coll_param::copy(const ccl_coll_param& other) {
     ctype = other.ctype;
     send_bufs = other.send_bufs;
     recv_bufs = other.recv_bufs;
@@ -97,6 +96,9 @@ ccl_coll_param::ccl_coll_param(const ccl_coll_param& other) {
     stream = other.stream;
     copy_deps(other.deps);
     validate();
+}
+ccl_coll_param::ccl_coll_param(const ccl_coll_param& other) {
+    copy(other);
 }
 
 std::string ccl_coll_param::to_string() const {

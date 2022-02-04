@@ -10,8 +10,8 @@
 
 #define CCL_ATL_LARGE_MSG_SIZE (1024 * 1024 * 1024)
 
-ccl::status ccl_parallelizer::process(ccl_sched* sched) {
-    process_base(sched);
+ccl::status ccl_parallelizer::process(ccl_sched* sched, bool update_sched_id) {
+    process_base(sched, update_sched_id);
 
 #ifdef CCL_ENABLE_SYCL
     ccl_coll_param& param = sched->coll_param;
@@ -144,7 +144,7 @@ ccl::status ccl_parallelizer::process_output_event(ccl_sched* sched) {
 }
 #endif // CCL_ENABLE_SYCL
 
-ccl::status ccl_parallelizer::process_base(ccl_sched* sched) {
+ccl::status ccl_parallelizer::process_base(ccl_sched* sched, bool update_sched_id) {
     /* TODO: split on per-collective classes */
 
     CCL_ASSERT(sched);
@@ -290,7 +290,7 @@ ccl::status ccl_parallelizer::process_base(ccl_sched* sched) {
         part_coll_param.ctype = ccl_coll_partial;
         part_coll_param.stream = sched->coll_param.stream;
         part_coll_param.comm = comm;
-        sched->add_subsched(part_coll_param);
+        sched->add_subsched(part_coll_param, update_sched_id);
     }
 
     part_scheds_vector.resize(part_count);

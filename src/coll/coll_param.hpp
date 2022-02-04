@@ -93,6 +93,12 @@ struct ccl_coll_param {
 
     ccl_coll_param();
     ccl_coll_param(const ccl_coll_param& other);
+    ccl_coll_param& operator=(const ccl_coll_param& other) {
+        if (this != &other) {
+            copy(other);
+        }
+        return *this;
+    }
 
     std::string to_string() const;
 
@@ -190,4 +196,7 @@ struct ccl_coll_param {
                                                       ccl_comm* comm,
                                                       const ccl_stream* stream,
                                                       const std::vector<ccl::event>& deps = {});
+
+private:
+    void copy(const ccl_coll_param& other);
 };

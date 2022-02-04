@@ -19,15 +19,40 @@ public:
               build_fn(build_fn),
               op_id(op_id),
               subsched_name(subsched_name),
-              build_sched_id(sched->sched_id) {
+              build_sched_id(sched->sched_id),
+              is_master_sched(false) {
         LOG_DEBUG("subsched name: ", subsched_name ? subsched_name : "<empty>");
     }
 
-    void set_params() {
-        subsched->set_op_id(op_id);
+    subsched_entry(ccl_sched* sched,
+                   ccl_op_id_t op_id,
+                   ccl_sched_create_param sched_param,
+                   const char* subsched_name)
+            : sched_entry(sched),
+              op_id(op_id),
+              subsched_name(subsched_name),
+              build_sched_id(sched_param.id),
+              is_master_sched(true) {
+        LOG_DEBUG("subsched name: ", subsched_name ? subsched_name : "<empty>");
+        make_barrier();
+        ccl::global_data& data = ccl::global_data::get();
+        subsched.reset(new ccl_sched(sched_param));
+        bool update_sched_id = false;
+        subsched->commit(data.parallelizer.get(), update_sched_id);
+        CCL_THROW_IF_NOT(subsched->sched_id == build_sched_id);
+        auto& subscheds = subsched->get_subscheds();
+        for (size_t i = 0; i < subscheds.size(); i++) {
+            subscheds[i]->set_op_id(i);
+        }
+    }
 
-        if (subsched.get() == sched) {
-            return;
+    void set_params() {
+        if (!is_master_sched) {
+            subsched->set_op_id(op_id);
+
+            if (subsched.get() == sched) {
+                return;
+            }
         }
 
         subsched->coll_attr.reduction_fn = sched->coll_attr.reduction_fn;
@@ -43,7 +68,7 @@ public:
 
     void build_subsched(const ccl_sched_create_param& create_param,
                         ccl_sched* master_sched = nullptr) {
-        if (subsched) {
+        if (subsched || is_master_sched) {
             return;
         }
 
@@ -53,16 +78,21 @@ public:
     }
 
     void start() override {
-        build_subsched({ build_sched_id, sched->coll_param });
-
-        subsched->renew();
-        subsched->set_counter(1);
-        subsched->bin = sched->bin;
-        subsched->queue = sched->queue;
-
-        /* this makes effects on creation of tags in atl entries */
-        subsched->sched_id = sched->sched_id;
-        subsched->coll_param.comm = sched->coll_param.comm;
+        if (is_master_sched) {
+            ccl::global_data& data = ccl::global_data::get();
+            bool update_sched_id = false;
+            subsched->start(data.executor.get(), true, update_sched_id);
+        }
+        else {
+            build_subsched({ build_sched_id, sched->coll_param });
+            subsched->renew();
+            subsched->set_counter(1);
+            subsched->bin = sched->bin;
+            subsched->queue = sched->queue;
+            /* this makes effects on creation of tags in atl entries */
+            subsched->sched_id = sched->sched_id;
+            subsched->coll_param.comm = sched->coll_param.comm;
+        }
 
         if (ccl::global_data::env().sched_dump) {
             std::stringstream ostream;
@@ -75,10 +105,17 @@ public:
     }
 
     void update() override {
-        subsched->do_progress();
-        if (subsched->start_idx == subsched->entries.size()) {
-            status = ccl_sched_entry_status_complete;
-            ((ccl_sched*)subsched.get())->complete_sched();
+        if (is_master_sched) {
+            if (subsched->is_completed()) {
+                status = ccl_sched_entry_status_complete;
+            }
+        }
+        else {
+            subsched->do_progress();
+            if (subsched->start_idx == subsched->entries.size()) {
+                status = ccl_sched_entry_status_complete;
+                ((ccl_sched*)subsched.get())->complete_sched();
+            }
         }
     }
 
@@ -97,10 +134,15 @@ protected:
             return;
         }
 
-        ccl_logger::format(str, "content:\n");
-        for (size_t idx = 0; idx < subsched->entries.size(); ++idx) {
-            ccl_logger::format(str, "\t");
-            subsched->entries[idx]->dump(str, idx);
+        if (is_master_sched) {
+            subsched->dump(std::cout);
+        }
+        else {
+            ccl_logger::format(str, "content:\n");
+            for (size_t idx = 0; idx < subsched->entries.size(); ++idx) {
+                ccl_logger::format(str, "\t");
+                subsched->entries[idx]->dump(str, idx);
+            }
         }
     }
 
@@ -111,4 +153,5 @@ private:
     ccl_op_id_t op_id;
     std::string subsched_name;
     ccl_sched_id_t build_sched_id;
+    bool is_master_sched;
 };

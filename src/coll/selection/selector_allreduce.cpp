@@ -25,7 +25,8 @@ ccl_algorithm_selector<ccl_coll_allreduce>::ccl_algorithm_selector() {
             fallback_table, 0, CCL_ALLREDUCE_SHORT_MSG_SIZE, ccl_coll_allreduce_recursive_doubling);
     }
     else {
-        insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allreduce_direct);
+        // TODO: restore direct algo in fallback table
+        insert(fallback_table, 0, CCL_SELECTION_MAX_COLL_SIZE, ccl_coll_allreduce_ring);
     }
 #else // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
     if (ccl::global_data::env().atl_transport == ccl_atl_ofi) {
