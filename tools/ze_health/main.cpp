@@ -11,6 +11,7 @@
 
 #define ZE_CALL(func, args) assert(func args == 0)
 
+bool is_system_healthy = true;
 bool is_root_priv = false;
 
 std::vector<ze_driver_handle_t> drivers;
@@ -140,6 +141,9 @@ void print_fabric_port_status() {
                     std::cout << ", failed reason: "
                               << get_port_failure_flags(state.failureReasons);
                 }
+                if (status != ZES_FABRIC_PORT_STATUS_HEALTHY) {
+                    is_system_healthy = false;
+                }
 
                 std::cout << std::endl;
             }
@@ -174,6 +178,9 @@ void print_memory_status() {
                 zes_mem_state_t state{};
                 ZE_CALL(zesMemoryGetState, (handle, &state));
                 std::cout << "health: " << to_string(state.health);
+                if (state.health != ZES_MEM_HEALTH_OK) {
+                    is_system_healthy = false;
+                }
                 std::cout << ", free: " << human_bytes(state.free);
                 std::cout << std::endl;
             }
@@ -240,4 +247,6 @@ int main() {
     print_fabric_port_status();
     print_memory_status();
     print_firmwares();
+
+    return !is_system_healthy;
 }
