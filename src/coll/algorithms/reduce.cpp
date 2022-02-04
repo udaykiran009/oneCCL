@@ -532,6 +532,7 @@ ccl::status ccl_coll_build_topo_reduce(ccl_sched* sched,
                                              .recv_buf = partial_tmp_buf,
                                              .count = block_count,
                                              .dtype = dtype,
+                                             .reduction = op,
                                              .root = root_node_idx,
                                              .comm = r2r_comm };
 

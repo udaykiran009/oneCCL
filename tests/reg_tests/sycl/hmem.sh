@@ -47,9 +47,7 @@ hmem_modes="0 1"
 single_list_modes="0 1"
 algos="topo rabenseifner direct"
 
-# TODO: enable reduce coll, MLSL-1225
-# colls="allreduce reduce"
-colls="allreduce"
+colls="allreduce reduce"
 
 proc_counts="2 4"
 if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]]
