@@ -1,5 +1,4 @@
 #include "coll/selection/selection.hpp"
-#include "comm/comm_id_storage.hpp"
 #include "common/datatype/datatype.hpp"
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
@@ -110,7 +109,6 @@ void global_data::init_resize_dependent_objects() {
     }
 
     executor.reset(new ccl_executor());
-    comm_ids.reset(new ccl_comm_id_storage(ccl_comm::max_comm_count));
 }
 
 void global_data::init_resize_independent_objects() {
@@ -123,7 +121,6 @@ void global_data::init_resize_independent_objects() {
 }
 
 void global_data::reset_resize_dependent_objects() {
-    comm_ids.reset();
     fusion_manager.reset();
     sched_cache.reset();
     buffer_cache.reset();

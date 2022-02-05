@@ -37,7 +37,9 @@ void check_max_comm_number(const ccl::communicator& comm,
     do {
         try {
             auto new_comm = ccl::create_communicator(mpi_size, mpi_rank, kvs_instance);
+            PRINT_BY_ROOT(comm, "created %zu comm ", user_comms);
             ++user_comms;
+            check_allreduce_on_comm(new_comm);
             communicators.push_back(std::move(new_comm));
         }
         catch (...) {

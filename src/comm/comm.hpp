@@ -6,7 +6,6 @@
 #include "atl/atl_base_comm.hpp"
 #include "coll/algorithms/allreduce/allreduce_2d.hpp"
 #include "comm/comm_interface.hpp"
-#include "comm/comm_id_storage.hpp"
 #include "comm/atl_tag.hpp"
 #include "common/log/log.hpp"
 #include "common/stream/stream.hpp"
@@ -57,12 +56,7 @@ public:
     ccl_internal_comm() = delete;
     ccl_internal_comm(const ccl_internal_comm& other) = delete;
     ccl_internal_comm& operator=(const ccl_internal_comm& other) = delete;
-
-    ccl_internal_comm(int rank, int size, std::shared_ptr<atl_base_comm> atl_comm);
-    ccl_internal_comm(const std::vector<int>& local_ranks,
-                      int comm_size,
-                      std::shared_ptr<ccl::kvs_interface> kvs_instance);
-
+    ccl_internal_comm(int comm_id, int rank, int size, std::shared_ptr<atl_base_comm> comm);
     ~ccl_internal_comm() = default;
 
     int rank() const noexcept {
@@ -99,17 +93,14 @@ class alignas(CACHELINE_SIZE) ccl_comm : public ccl::comm_interface {
 public:
     static constexpr int invalid_rank = -1;
 
-    // maximum available number of active communicators
-    static constexpr ccl_sched_id_t max_comm_count = std::numeric_limits<ccl_comm_id_t>::max();
-
     // maximum value of schedule id in scope of the current communicator
     static constexpr ccl_sched_id_t max_sched_count = std::numeric_limits<ccl_sched_id_t>::max();
 
-    void init(ccl_comm_id_storage::comm_id&& id,
+    void init(int comm_id,
               std::shared_ptr<atl_base_comm> atl_comm,
               bool share_resources = false,
               bool is_sub_communicator = false);
-    ccl_comm(ccl_comm_id_storage::comm_id&& id,
+    ccl_comm(int comm_id,
              std::shared_ptr<atl_base_comm> atl_comm,
              bool share_resources,
              bool is_sub_communicator);
@@ -134,7 +125,7 @@ public:
 
     static ccl_comm* create(device_t device,
                             context_t context,
-                            size_t size,
+                            int size,
                             int rank,
                             ccl::shared_ptr_class<ccl::kvs_interface> kvs);
     static ccl_comm* create(int size, int rank, ccl::shared_ptr_class<ccl::kvs_interface> kvs);
@@ -146,8 +137,9 @@ private:
     ccl_comm(int size, ccl::shared_ptr_class<ikvs_wrapper> kvs);
 
     // copy-constructor with explicit comm_id
-    ccl_comm(const ccl_comm& src, ccl_comm_id_storage::comm_id&& id);
-    void create_sub_comms(std::shared_ptr<atl_base_comm> atl_comm);
+    ccl_comm(const ccl_comm& src, int comm_id);
+
+    void create_topo_subcomms();
 
     ccl_comm* get_impl() {
         return this;
@@ -156,11 +148,9 @@ private:
     static std::shared_ptr<ikvs_wrapper> get_kvs_wrapper(std::shared_ptr<ccl::kvs_interface> kvs);
 
 public:
-    ccl_comm* create_with_color(int color,
-                                ccl_comm_id_storage* comm_ids,
-                                bool share_resources) const;
+    ccl_comm* create_subcomm(int color) const;
 
-    std::shared_ptr<ccl_comm> clone_with_new_id(ccl_comm_id_storage::comm_id&& id);
+    std::shared_ptr<ccl_comm> clone_with_new_id(int comm_id);
 
     void allocate_resources();
 
@@ -174,7 +164,7 @@ public:
      * @param rank a rank which is part of the current communicator
      * @return number of @c rank in the global communicator
      */
-    int get_global_rank(int rank, bool only_global = false) const;
+    int get_global_rank(int rank) const;
 
     int get_rank_from_global(int global_rank) const;
     ccl_sched_id_t get_sched_id(bool use_internal_space);
@@ -189,6 +179,10 @@ public:
 
     std::shared_ptr<atl_base_comm> get_atl_comm() const {
         return comm_impl->atl_comm;
+    }
+
+    int get_comm_id() const {
+        return comm_impl->atl_comm->get_comm_id();
     }
 
     std::shared_ptr<ccl_comm> get_r2r_comm() const {
@@ -239,8 +233,8 @@ public:
         return comm_impl->pof2();
     }
 
-    ccl_comm_id_t id() const noexcept {
-        return comm_id->value();
+    int id() const noexcept {
+        return get_comm_id();
     }
 
     const ccl_double_tree& dtree() const {
@@ -291,8 +285,6 @@ private:
     ccl_rank2rank_map local2global_map{};
     ccl::topo_manager topo_manager;
 
-    // comm_id is not default constructible but ccl_comm is, so use unique_ptr here
-    std::unique_ptr<ccl_comm_id_storage::comm_id> comm_id;
     ccl_sched_id_t next_sched_id_internal;
     ccl_sched_id_t next_sched_id_external;
 

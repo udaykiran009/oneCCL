@@ -14,8 +14,6 @@
 #include <memory>
 #include <thread>
 
-class ccl_comm;
-class ccl_comm_id_storage;
 class ccl_datatype_storage;
 class ccl_executor;
 class ccl_sched_cache;
@@ -61,8 +59,6 @@ public:
     void init_resize_dependent_objects();
     void reset_resize_dependent_objects();
 
-    std::unique_ptr<ccl_comm_id_storage> comm_ids;
-    std::shared_ptr<ccl_comm> comm;
     std::unique_ptr<ccl_datatype_storage> dtypes;
     std::unique_ptr<ccl_executor> executor;
     std::unique_ptr<ccl_sched_cache> sched_cache;

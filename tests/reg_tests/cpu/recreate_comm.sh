@@ -15,16 +15,21 @@ cd ${SCRIPT_DIR}
 
 proc_counts="1 2 4 8"
 transports="ofi mpi"
+provs="tcp verbs psm3"
 
 for proc_count in ${proc_counts}
 do
     for transport in ${transports}
     do
-        cmd="CCL_ATL_TRANSPORT=${transport}"
-        cmd+=" mpiexec -l -n ${proc_count} -ppn 2"
-        cmd+=" ${SCRIPT_DIR}/${BASENAME} > ${TEST_LOG} 2>&1"
-        run_cmd "${cmd}"
-        check_log ${TEST_LOG}
+        for prov in ${provs}
+        do
+            cmd="CCL_ATL_TRANSPORT=${transport}"
+            cmd+=" FI_PROVIDER=${prov}"
+            cmd+=" mpiexec -l -n ${proc_count} -ppn 2"
+            cmd+=" ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1"
+            run_cmd "${cmd}"
+            check_log ${TEST_LOG}
+        done
     done
 done
 

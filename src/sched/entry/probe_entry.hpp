@@ -19,7 +19,7 @@ public:
 
     void start() override {
         atl_tag = comm->get_atl_comm()->tag->create(
-            src, sched->get_comm_id(), sched->sched_id, sched->get_op_id());
+            src, comm->get_comm_id(), sched->sched_id, sched->get_op_id());
         LOG_DEBUG("PROBE entry src ", src, ", tag ", atl_tag);
         status = ccl_sched_entry_status_started;
     }
@@ -53,7 +53,7 @@ protected:
                            ", src ",
                            src,
                            ", comm_id ",
-                           sched->get_comm_id(),
+                           comm->get_comm_id(),
                            ", atl_tag ",
                            atl_tag,
                            "\n");

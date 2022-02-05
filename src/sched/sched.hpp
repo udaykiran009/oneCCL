@@ -80,9 +80,6 @@ public:
         return start_idx;
     }
 
-    /* communicators on build and execution stages can differ */
-    ccl_comm_id_t get_comm_id();
-
     void set_op_id(ccl_op_id_t id) {
         op_id = id;
     }

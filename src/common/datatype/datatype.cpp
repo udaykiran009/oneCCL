@@ -119,7 +119,7 @@ void ccl_datatype_storage::create_internal(ccl_datatype_table_t& table,
                                            const std::string& name) {
     CCL_THROW_IF_NOT(table.find(idx) == table.end(), "datatype index is busy, idx ", idx);
     table[idx] = std::make_pair(ccl_datatype(idx, size), name);
-    LOG_DEBUG("created datatype idx: ", idx, ", size: ", size, ", name: ", name);
+    // LOG_DEBUG("created datatype idx: ", idx, ", size: ", size, ", name: ", name);
 }
 
 ccl::datatype ccl_datatype_storage::create_by_datatype_size(size_t datatype_size) {

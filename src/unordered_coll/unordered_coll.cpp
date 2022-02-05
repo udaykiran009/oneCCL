@@ -6,7 +6,7 @@
 #include <cstring>
 
 struct ccl_unordered_coll_ctx {
-    ccl_comm_id_t reserved_comm_id;
+    int reserved_comm_id;
     size_t match_id_size;
     void* match_id_value;
     ccl_sched* service_sched;
@@ -14,11 +14,11 @@ struct ccl_unordered_coll_ctx {
 };
 
 ccl_unordered_coll_manager::ccl_unordered_coll_manager(ccl_comm& parent_comm) {
-    coordination_comm = std::unique_ptr<ccl_comm>(
-        new ccl_comm(ccl::global_data::get().comm_ids->acquire(true /* internal_id_space */),
-                     parent_comm.get_atl_comm(),
-                     true /* share_resources */,
-                     true /* is_sub_communicator */));
+    coordination_comm =
+        std::unique_ptr<ccl_comm>(new ccl_comm(parent_comm.get_atl_comm()->create_comm_id(),
+                                               parent_comm.get_atl_comm(),
+                                               true /* share_resources */,
+                                               true /* is_sub_communicator */));
 
     CCL_ASSERT(coordination_comm.get(), "coordination_comm is null");
 
@@ -89,7 +89,7 @@ ccl_request* ccl_unordered_coll_manager::postpone(ccl_sched* sched) {
         auto unresolved = unresolved_comms.find(match_id);
         if (unresolved != unresolved_comms.end()) {
             LOG_DEBUG("found comm_id ",
-                      unresolved->second.value(),
+                      unresolved->second,
                       " for match_id ",
                       match_id,
                       " in unresolved_comms, ");
@@ -98,7 +98,7 @@ ccl_request* ccl_unordered_coll_manager::postpone(ccl_sched* sched) {
             lock.unlock();
 
             CCL_ASSERT(sched->coll_param.comm);
-            auto comm = sched->coll_param.comm->clone_with_new_id(std::move(comm_id));
+            auto comm = sched->coll_param.comm->clone_with_new_id(comm_id);
             add_comm(match_id, comm);
             run_sched(sched, comm.get());
         }
@@ -114,7 +114,7 @@ void ccl_unordered_coll_manager::dump(std::ostream& out) const {
         std::lock_guard<ccl_spinlock> lock{ unresolved_comms_guard };
         s << "unresolved_comms: " << std::endl;
         for (auto& comm : unresolved_comms) {
-            s << "[" << comm.first << ", " << comm.second.value() << "] " << std::endl;
+            s << "[" << comm.first << ", " << comm.second << "] " << std::endl;
         }
     }
 
@@ -168,11 +168,12 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
     ctx->service_sched = service_sched.get();
     ctx->manager = this;
 
+    ctx->reserved_comm_id = coll_param.comm->get_atl_comm()->create_comm_id();
+
     if (coordination_comm->rank() == CCL_UNORDERED_COLL_COORDINATOR) {
         ctx->match_id_size = match_id.length() + 1;
         ctx->match_id_value = service_sched->alloc_buffer(ctx->match_id_size).get_ptr();
         strncpy(static_cast<char*>(ctx->match_id_value), match_id.c_str(), ctx->match_id_size);
-        ctx->reserved_comm_id = ccl::global_data::get().comm_ids->acquire_id(true);
         LOG_DEBUG("coordinator bcasts match_id ",
                   match_id,
                   ", comm_id ",
@@ -227,18 +228,6 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
 
     service_sched->add_barrier();
 
-    /* 3. broadcast reserved comm_id */
-    ccl_coll_entry_param reserved_comm_id_param{};
-    reserved_comm_id_param.ctype = ccl_coll_bcast;
-    reserved_comm_id_param.recv_buf = ccl_buffer(&ctx->reserved_comm_id, sizeof(ccl_comm_id_t));
-    reserved_comm_id_param.count = sizeof(ccl_comm_id_t);
-    reserved_comm_id_param.dtype = ccl_datatype_int8;
-    reserved_comm_id_param.root = CCL_UNORDERED_COLL_COORDINATOR;
-    reserved_comm_id_param.comm = coll_param.comm;
-    entry_factory::create<coll_entry>(service_sched.get(), reserved_comm_id_param);
-
-    service_sched->add_barrier();
-
     /* 4. start post actions (create communicator and start postponed schedules) */
     entry_factory::create<function_entry>(
         service_sched.get(),
@@ -256,16 +245,10 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
 }
 
 void ccl_unordered_coll_manager::start_post_coordination_actions(ccl_unordered_coll_ctx* ctx) {
-    if (coordination_comm->rank() != CCL_UNORDERED_COLL_COORDINATOR) {
-        /* comm_id is not allocated yet */
-        LOG_DEBUG("start_post_coordination_actions: pull_id ", ctx->reserved_comm_id);
-        ccl::global_data::get().comm_ids->pull_id(ctx->reserved_comm_id);
-    }
-
-    ccl_comm_id_storage::comm_id id(*ccl::global_data::get().comm_ids, ctx->reserved_comm_id);
+    int id = ctx->reserved_comm_id;
     std::string match_id{ static_cast<const char*>(ctx->match_id_value) };
 
-    LOG_DEBUG("creating communicator with id ", id.value(), " for match_id ", match_id);
+    LOG_DEBUG("creating communicator with id ", id, " for match_id ", match_id);
 
     /* original comm is required to create new communicator with the same size */
     ccl_comm* original_comm = nullptr;
@@ -288,12 +271,12 @@ void ccl_unordered_coll_manager::start_post_coordination_actions(ccl_unordered_c
         LOG_DEBUG("can't find postponed sched for match_id ",
                   match_id,
                   ", postpone comm creation, reserved comm_id ",
-                  id.value());
+                  id);
         std::lock_guard<ccl_spinlock> lock{ unresolved_comms_guard };
-        unresolved_comms.emplace(match_id, std::move(id));
+        unresolved_comms.emplace(match_id, id);
     }
     else {
-        auto new_comm = original_comm->clone_with_new_id(std::move(id));
+        auto new_comm = original_comm->clone_with_new_id(id);
         add_comm(match_id, new_comm);
         run_postponed_scheds(match_id, new_comm.get());
     }

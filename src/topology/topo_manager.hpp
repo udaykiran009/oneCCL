@@ -76,6 +76,7 @@ public:
               std::shared_ptr<ccl::device> device_ptr,
               std::shared_ptr<ccl::context> context_ptr);
 
+    int get_host_idx() const;
     int get_intra_card_color(int rank) const;
     int get_inter_card_color(int rank) const;
     std::string get_uuid(int rank) const;

@@ -220,7 +220,7 @@ run_tests() {
         rm -f ${PROFILE_DIR}/regular-*.profraw
 
         # Run functional tests
-        for mode in mpi ofi mpi_adjust ofi_adjust priority_mode dynamic_pointer_mode fusion_mode unordered_coll_mode
+        for mode in mpi ofi mpi_adjust ofi_adjust priority_mode dynamic_pointer_mode fusion_mode
         do
             LLVM_PROFILE_FILE="${PROFILE_DIR}/func_${mode}-%p.profraw" runtime=${mode} ${SRC_ROOT_DIR}/scripts/jenkins/sanity.sh -functional_tests
             CheckCommandExitCode $? "functional testing failed"

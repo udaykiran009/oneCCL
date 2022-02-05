@@ -11,37 +11,33 @@ source ${ROOT_DIR}/utils.sh
 check_impi
 check_ccl
 
-#TODO: uncoment after fix MLSL-1193 (OFI) and MLSL-1241 (MPI)
+#TODO: uncoment after fix MLSL-1193 (OFI)
 #comm_size_modes="direct reverse"
-#multi_comms_support_modes="0 1"
-#algos="topo ring"
+#parallel_comm_modes="0 1"
+
 comm_size_modes="reverse"
-ranks_ordering_modes="direct reorder"
-multi_comms_support_modes="0"
+rank_order_modes="direct reorder"
+parallel_comm_modes="0"
 transports="ofi mpi"
+algos="ring topo"
 
-algos="ring"
-
-for ranks_ordering_mode in ${ranks_ordering_modes}
+for comm_size_mode in ${comm_size_modes}
 do
-    for multi_comms_support_mode in ${multi_comms_support_modes}
+    for rank_order_mode in ${rank_order_modes}
     do
-        for comm_size_mode in ${comm_size_modes}
+        for parallel_comm_mode in ${parallel_comm_modes}
         do
             for transport in ${transports}
             do
                 for algo in ${algos}
                 do
-                    export CCL_ALLREDUCE=${algo}
-                    export CCL_BCAST=${algo}
-                    export CCL_ATL_TRANSPORT=${transport}
-                    mpiexec -l -n 6 -ppn 6 ${SCRIPT_DIR}/${BINFILE} -c ${comm_size_mode} -o ${ranks_ordering_mode} -m ${multi_comms_support_mode} > ${TEST_LOG} 2>&1
-                    rc=$?
-                    if [ ${rc} -ne 0 ]
-                    then
-                        echo "Fail"
-                        exit 1
-                    fi
+                    cmd="CCL_ALLREDUCE=${algo} CCL_BCAST=${algo}"
+                    cmd+=" CCL_ATL_TRANSPORT=${transport}"
+                    cmd+=" mpiexec -l -n 6 -ppn 6 ${SCRIPT_DIR}/${BINFILE}"
+                    cmd+=" -c ${comm_size_mode}"
+                    cmd+=" -o ${rank_order_mode}"
+                    cmd+=" -p ${parallel_comm_mode} > ${TEST_LOG} 2>&1"
+                    run_cmd "${cmd}"
                     check_log ${TEST_LOG}
                 done
             done

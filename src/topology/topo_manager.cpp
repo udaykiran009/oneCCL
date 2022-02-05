@@ -415,6 +415,10 @@ void topo_manager::init(std::shared_ptr<atl_base_comm> atl_comm,
     }
 }
 
+int topo_manager::get_host_idx() const {
+    return host_idx;
+}
+
 int topo_manager::get_intra_card_color(int rank) const {
     return intra_card_colors[rank];
 }
@@ -437,7 +441,7 @@ bool topo_manager::has_p2p_access() const {
             }
         }
     }
-    LOG_DEBUG("p2p access status: ", has_access);
+    // LOG_DEBUG("p2p access status: ", has_access);
     return has_access;
 }
 
@@ -479,8 +483,8 @@ void topo_manager::allgatherv(const void* send_buf,
                      recv_buf,
                      recv_bytes.data(),
                      offsets.data(),
-                     &req);
-    comm->wait(0 /* ep_idx */, &req);
+                     req);
+    comm->wait(0 /* ep_idx */, req);
 }
 
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
@@ -509,7 +513,7 @@ bool topo_manager::is_same_dev_uuid(ze_device_uuid_t uuid1, ze_device_uuid_t uui
     else {
         state += " are the same:";
     }
-    LOG_DEBUG(state, " uuid1: ", ccl::ze::to_string(uuid1), ", uuid2: ", ccl::ze::to_string(uuid2));
+    // LOG_DEBUG(state, " uuid1: ", ccl::ze::to_string(uuid1), ", uuid2: ", ccl::ze::to_string(uuid2));
     return result;
 }
 

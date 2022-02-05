@@ -1,17 +1,4 @@
-set(sources
-    allgatherv.cpp
-    allreduce.cpp
-    alltoallv.cpp
-    broadcast.cpp
-    communicator.cpp
-    custom_allreduce.cpp
-    datatype.cpp
-    external_kvs.cpp
-    priority_allreduce.cpp
-    reduce.cpp
-    reduce_scatter.cpp
-    recreate_comm.cpp
-    unordered_allreduce.cpp)
+file(GLOB sources "*.cpp")
 
 set(CCL_INSTALL_TESTS "${CMAKE_CURRENT_SOURCE_DIR}")
 

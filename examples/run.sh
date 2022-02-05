@@ -459,16 +459,8 @@ run()
                                 ccl_extra_env="${ccl_runtime_env}"
                                 run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} regular ${coll_list}
 
-                                for loop in "regular" "unordered"
+                                for loop in "regular"
                                 do
-                                    if [ "$loop" == "unordered" ]
-                                    then
-                                        if [[ "${transport}" == *"mpi"* ]] || [ "$runtime" == "opencl" ];
-                                        then
-                                            continue
-                                        fi
-                                    fi
-
                                     ccl_extra_env="CCL_PRIORITY=lifo ${ccl_runtime_env}"
                                     run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} ${loop} ${coll_list}
 

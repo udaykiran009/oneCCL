@@ -66,7 +66,7 @@ ccl_executor::ccl_executor(const char* main_addr) {
 
     /* generate ATL attr for all future communicators */
     atl_comm_manager::set_internal_env(generate_atl_attr(env));
-    atl_comm_manager::set_exec(this);
+    atl_comm_manager::set_executor(this);
 }
 
 void ccl_executor::start_workers(int proc_idx, int proc_count) {

@@ -18,9 +18,7 @@ export CCL_ALLGATHERV=topo
 export CCL_ALLREDUCE=topo
 export CCL_REDUCE=topo
 
-# TODO: uncoment after fix MLSL-1155
-#transports="ofi mpi"
-transports="mpi"
+transports="ofi mpi"
 topo_colors="ze fixed"
 random_device_list="3.0 1.0 3.1 4.1 0.0 4.0 2.1 2.0 1.1 5.1 0.1 5.0"
 bench_ops="-w 0 -i 2 -c all -l allgatherv,allreduce,reduce -b sycl -y 1024,131072"

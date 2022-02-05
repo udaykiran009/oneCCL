@@ -5,7 +5,8 @@
 
 class atl_ofi_comm : public atl_base_comm {
 public:
-    ~atl_ofi_comm() override;
+    ~atl_ofi_comm() = default;
+
     atl_ofi_comm();
     atl_ofi_comm(std::shared_ptr<ikvs_wrapper> k);
     atl_ofi_comm(int comm_size, const std::vector<int>& ranks, std::shared_ptr<ikvs_wrapper> k);
@@ -15,8 +16,7 @@ public:
     }
 
     atl_status_t finalize() override {
-        ATL_CHECK_STATUS(pmi->pmrt_finalize(), "failed to finalize PMI");
-
+        ATL_CHECK_STATUS(pmi->pmrt_finalize(), "failed to finalize pmi");
         return transport->finalize();
     }
 
@@ -32,21 +32,13 @@ public:
         return pmi->pmrt_set_resize_function(fn);
     }
 
-    atl_status_t mr_reg(const void* buf, size_t len, atl_mr_t** mr) override {
-        return transport->mr_reg(buf, len, mr);
-    }
-
-    atl_status_t mr_dereg(atl_mr_t* mr) override {
-        return transport->mr_dereg(mr);
-    }
-
     atl_status_t send(size_t ep_idx,
                       const void* buf,
                       size_t len,
                       int dst_proc_idx,
                       uint64_t tag,
-                      atl_req_t* req) override {
-        return transport->send(eps[ep_idx], buf, len, rank2rank_map[dst_proc_idx], tag, req);
+                      atl_req_t& req) override {
+        return transport->send(eps[ep_idx], buf, len, rank2proc_map[dst_proc_idx], tag, req);
     }
 
     atl_status_t recv(size_t ep_idx,
@@ -54,8 +46,8 @@ public:
                       size_t len,
                       int src_proc_idx,
                       uint64_t tag,
-                      atl_req_t* req) override {
-        return transport->recv(eps[ep_idx], buf, len, rank2rank_map[src_proc_idx], tag, req);
+                      atl_req_t& req) override {
+        return transport->recv(eps[ep_idx], buf, len, rank2proc_map[src_proc_idx], tag, req);
     }
 
     atl_status_t probe(size_t ep_idx,
@@ -63,7 +55,7 @@ public:
                        uint64_t tag,
                        int* found,
                        size_t* recv_len) override {
-        return transport->probe(eps[ep_idx], rank2rank_map[src_proc_idx], tag, found, recv_len);
+        return transport->probe(eps[ep_idx], rank2proc_map[src_proc_idx], tag, found, recv_len);
     }
 
     atl_status_t allgatherv(size_t ep_idx,
@@ -72,7 +64,7 @@ public:
                             void* recv_buf,
                             const int* recv_lens,
                             const int* offsets,
-                            atl_req_t* req) override;
+                            atl_req_t& req) override;
 
     atl_status_t allreduce(size_t ep_idx,
                            const void* send_buf,
@@ -80,7 +72,7 @@ public:
                            size_t len,
                            atl_datatype_t dtype,
                            atl_reduction_t op,
-                           atl_req_t* req) override {
+                           atl_req_t& req) override {
         return ATL_STATUS_UNSUPPORTED;
     }
 
@@ -88,7 +80,7 @@ public:
                           const void* send_buf,
                           void* recv_buf,
                           int len,
-                          atl_req_t* req) override {
+                          atl_req_t& req) override {
         return ATL_STATUS_UNSUPPORTED;
     }
 
@@ -99,15 +91,15 @@ public:
                            void* recv_buf,
                            const int* recv_lens,
                            const int* recv_offsets,
-                           atl_req_t* req) override {
+                           atl_req_t& req) override {
         return ATL_STATUS_UNSUPPORTED;
     }
 
-    atl_status_t barrier(size_t ep_idx, atl_req_t* req) override {
+    atl_status_t barrier(size_t ep_idx, atl_req_t& req) override {
         return ATL_STATUS_UNSUPPORTED;
     }
 
-    atl_status_t bcast(size_t ep_idx, void* buf, size_t len, int root, atl_req_t* req) override {
+    atl_status_t bcast(size_t ep_idx, void* buf, size_t len, int root, atl_req_t& req) override {
         return ATL_STATUS_UNSUPPORTED;
     }
 
@@ -118,7 +110,7 @@ public:
                         int root,
                         atl_datatype_t dtype,
                         atl_reduction_t op,
-                        atl_req_t* req) override {
+                        atl_req_t& req) override {
         return ATL_STATUS_UNSUPPORTED;
     }
 
@@ -128,7 +120,7 @@ public:
                                 size_t recv_len,
                                 atl_datatype_t dtype,
                                 atl_reduction_t op,
-                                atl_req_t* req) override {
+                                atl_req_t& req) override {
         return ATL_STATUS_UNSUPPORTED;
     }
 
@@ -139,9 +131,9 @@ public:
                       uint64_t addr,
                       uintptr_t remote_key,
                       int dst_proc_idx,
-                      atl_req_t* req) override {
+                      atl_req_t& req) override {
         return transport->read(
-            eps[ep_idx], buf, len, mr, addr, remote_key, rank2rank_map[dst_proc_idx], req);
+            eps[ep_idx], buf, len, mr, addr, remote_key, rank2proc_map[dst_proc_idx], req);
     }
 
     atl_status_t write(size_t ep_idx,
@@ -151,75 +143,21 @@ public:
                        uint64_t addr,
                        uintptr_t remote_key,
                        int dst_proc_idx,
-                       atl_req_t* req) override {
+                       atl_req_t& req) override {
         return transport->write(
-            eps[ep_idx], buf, len, mr, addr, remote_key, rank2rank_map[dst_proc_idx], req);
-    }
-
-    atl_status_t wait(size_t ep_idx, atl_req_t* req) override {
-        return transport->wait(eps[ep_idx], req);
-    }
-
-    atl_status_t wait_all(size_t ep_idx, atl_req_t* req, size_t count) override {
-        return transport->wait_all(eps[ep_idx], req, count);
-    }
-
-    atl_status_t cancel(size_t ep_idx, atl_req_t* req) override {
-        return transport->cancel(eps[ep_idx], req);
-    }
-
-    atl_status_t poll(size_t ep_idx) override {
-        return transport->poll(eps[ep_idx]);
-    }
-
-    atl_status_t check(size_t ep_idx, atl_req_t* req) override {
-        return transport->check(eps[ep_idx], req);
-    }
-
-    size_t get_threads_per_process() override {
-        return threads_per_process;
-    }
-
-    size_t get_ranks_per_process() override {
-        return ranks_per_process;
-    }
-
-    int get_rank() override {
-        return rank;
-    }
-
-    int get_size() override {
-        return size;
-    }
-
-    int get_r2r_color() override {
-        return coord.local_idx;
-    }
-
-    int get_host_color() override {
-        return coord.hostname_hash;
-    }
-
-    /*
-     * TODO: Temporary change.
-     * Need to define correct to unique id
-     */
-    size_t get_id() override {
-        return 0;
+            eps[ep_idx], buf, len, mr, addr, remote_key, rank2proc_map[dst_proc_idx], req);
     }
 
     std::shared_ptr<atl_base_comm> comm_split(int color) override;
 
-    std::vector<int> get_rank2rank_map() override {
-        return rank2rank_map;
-    }
-
 private:
-    static atl_ofi* transport;
-    std::vector<atl_ep_t*> eps;
-    static std::atomic<size_t> comm_count;
+    friend atl_comm_manager;
+
+    // color, parent_rank, parent_proc_idx, hostname_hash
+    using rank_info_t = std::tuple<int, int, int, size_t>;
 
     atl_ofi_comm(atl_ofi_comm* parent, int color);
     atl_status_t init_transport(bool is_new);
-    using rank_info_t = std::tuple<int, int, size_t>;
+
+    uint64_t tag_counter = 0;
 };

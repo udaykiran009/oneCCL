@@ -39,12 +39,13 @@ endif(CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
 set(CCL_SRC
 
     atl/atl_base_comm.cpp
+    atl/atl_base_transport.cpp
     atl/atl_def.cpp
-    atl/ofi/atl_ofi_comm.cpp
-    atl/mpi/atl_mpi_comm.cpp
-    atl/mpi/atl_mpi_global_data.cpp
     atl/mpi/atl_mpi.cpp
+    atl/mpi/atl_mpi_comm.cpp
+    atl/mpi/atl_mpi_ctx.cpp
     atl/ofi/atl_ofi.cpp
+    atl/ofi/atl_ofi_comm.cpp
     atl/ofi/atl_ofi_helper.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable.cpp
     atl/util/pm/pmi_resizable_rt/pmi_resizable_simple.cpp

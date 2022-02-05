@@ -353,7 +353,7 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* sched,
 
         if (pair_comm->rank() == ccl::global_data::env().kernel_1s_lead) {
             int peer_rank = (pair_comm->rank() + 1) % pair_comm->size();
-            int global_peer_rank = pair_comm->get_global_rank(peer_rank, true);
+            int global_peer_rank = pair_comm->get_global_rank(peer_rank);
 
             /* pull data from peer tile on the same card */
             attr.peer_rank = peer_rank;
@@ -406,7 +406,7 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* sched,
 
     if (pair_comm->rank() == ccl::global_data::env().kernel_1s_lead) {
         /* 1. allocate send && recv tmp host buffers for host bcast stage */
-        int pair_start = pair_comm->get_global_rank(0, true);
+        int pair_start = pair_comm->get_global_rank(0);
         size_t host_send_buf_count = get_distance(pair_start, pair_start + pair_comm_size);
         size_t host_send_buf_bytes = host_send_buf_count * dtype.size();
 
@@ -431,8 +431,8 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* sched,
 
         /* 2. copy to host */
         for (int peer_rank = 0, dst_offset{}; peer_rank < pair_comm_size; ++peer_rank) {
-            int global_rank = pair_comm->get_global_rank(peer_rank, true) -
-                              ccl::global_data::env().kernel_1s_lead;
+            int global_rank =
+                pair_comm->get_global_rank(peer_rank) - ccl::global_data::env().kernel_1s_lead;
             size_t copy_count = recv_counts[global_rank];
             ccl_buffer src{};
             size_t src_offset = (is_inplace) ? get_distance(0, global_rank) : 0;
@@ -455,7 +455,7 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* sched,
                 buf = send_host_buf;
             }
 
-            int global_rank = r2r_comm->get_global_rank(peer_rank, true);
+            int global_rank = r2r_comm->get_global_rank(peer_rank);
             int r2r_start = global_rank - ccl::global_data::env().kernel_1s_lead;
             size_t copy_count = get_distance(r2r_start, r2r_start + pair_comm_size);
             LOG_DEBUG("bcast: peer_rank: ", global_rank, ", count ", copy_count);

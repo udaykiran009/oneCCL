@@ -151,12 +151,29 @@ container tokenize(const std::string& input, char delimeter) {
     return ret;
 }
 
+template <class Container>
+std::string vec_to_string(Container& elems) {
+    if (elems.empty()) {
+        return "<empty>";
+    }
+
+    size_t idx = 0;
+    std::ostringstream ss;
+    for (auto elem : elems) {
+        ss << elem;
+        idx++;
+        if (idx < elems.size()) {
+            ss << " ";
+        }
+    }
+    return ss.str();
+}
+
 template <typename T>
 inline T from_string(const std::string& str) {
     T val;
     std::stringstream ss(str);
     ss >> val;
-
     return val;
 }
 

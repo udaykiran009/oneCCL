@@ -62,10 +62,7 @@ function set_default_values()
     then
         PROC_MAPS="2:1,2"
     else
-        #https://jira.devtools.intel.com/browse/MLSL-1288
-        #https://jira.devtools.intel.com/browse/MLSL-1292
-        #PROC_MAPS="2:1,2/4:2,4"
-        PROC_MAPS="2:1,2"
+        PROC_MAPS="2:1,2/4:2,4"
     fi
 
     is_gpu_node
@@ -240,6 +237,7 @@ function set_regular_tests_environment()
 function set_functional_tests_env()
 {
     echo "Use default env"
+
     func_exec_env+=" CCL_LOG_LEVEL=info"
     # flush cache inside ccl::barrier to avoid OOM
     # in case of caching and large number of different match_ids
@@ -247,6 +245,11 @@ function set_functional_tests_env()
     func_exec_env+=" CCL_MNIC=global"
     func_exec_env+=" I_MPI_DEBUG=12"
     func_exec_env+=" I_MPI_JOB_TIMEOUT=360"
+
+    if [[ "${node_label}" = "ccl_test_gen9" ]]
+    then
+        func_exec_env+=" CCL_YIELD=sched_yield"
+    fi
 
     if [[ "${node_label}" = "ccl_test_ats" || "${node_label}" = "ccl_test_pvc" ]]
     then
@@ -1057,12 +1060,6 @@ function run_functional_tests()
                     run_test_cmd "${func_exec_env} ctest -VV -C default"
                 done
                 ;;
-            unordered_coll_mode )
-                set_unordered_coll_test_scope
-                func_exec_env+=" CCL_ATL_TRANSPORT=ofi"
-                func_exec_env+=" CCL_UNORDERED_COLL=1"
-                run_test_cmd "${func_exec_env} ctest -VV -C default"
-                ;;
             fusion_mode )
                 func_exec_env+=" CCL_FUSION=1"
                 for transport in ${CCL_ATL_TRANSPORT_LIST}
@@ -1072,7 +1069,7 @@ function run_functional_tests()
                 done
                 ;;
            * )
-                echo "Please specify runtime mode: runtime=ofi|mpi|ofi_adjust|mpi_adjust|priority_mode|unordered_coll_mode|dynamic_pointer_mode|fusion_mode|"
+                echo "Please specify runtime mode: runtime=ofi|mpi|ofi_adjust|mpi_adjust|priority_mode|dynamic_pointer_mode|fusion_mode|"
                 exit 1
                ;;
     esac

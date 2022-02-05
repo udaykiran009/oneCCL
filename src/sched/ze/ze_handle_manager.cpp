@@ -44,7 +44,7 @@ void ipc_handle_manager::init(const ccl_comm* init_comm, const ccl_stream* init_
     comm = const_cast<ccl_comm*>(init_comm);
 
     for (int idx = 0; idx < comm->size(); idx++) {
-        rank_map.insert({ comm->get_global_rank(idx, true), idx });
+        rank_map.insert({ comm->get_global_rank(idx), idx });
     }
 
     device = init_stream->get_ze_device();
@@ -147,7 +147,7 @@ void* ipc_handle_manager::get_ptr(int rank, size_t buf_idx, ccl_comm* map_comm) 
     check_rank(rank, (map_comm) ? map_comm : comm);
     if (map_comm && (map_comm->id() != comm->id())) {
         int old_rank = rank;
-        rank = map_comm->get_global_rank(rank, true);
+        rank = map_comm->get_global_rank(rank);
         auto rank_it = rank_map.find(rank);
         if (rank_it == rank_map.end()) {
             CCL_THROW("handle manager can not handle global rank ", rank);

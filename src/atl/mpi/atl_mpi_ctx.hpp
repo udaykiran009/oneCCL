@@ -16,7 +16,7 @@
 #define ATL_MPI_FP16
 #endif // CCL_FP16_COMPILER
 
-class atl_mpi_global_data {
+class atl_mpi_ctx {
 public:
     typedef enum { ATL_MPI_LIB_IMPI, ATL_MPI_LIB_MPICH, ATL_MPI_LIB_NONE } atl_mpi_lib_type_t;
 
@@ -70,48 +70,39 @@ private:
 
 #define MPI_LIB_INFO_MAX_COUNT 3
 
-    const atl_mpi_lib_info_t mpi_lib_infos[MPI_LIB_INFO_MAX_COUNT] = {
-        { ATL_MPI_LIB_IMPI,
-          "impi",
-          "Intel(R) MPI Library",
-          NULL,
-          2019,
-          2021,
-          "library kind:",
-          "release" },
-        { ATL_MPI_LIB_MPICH, "mpich", "MPICH Custom Information:", "drop", 34, 40, NULL, NULL },
-        { ATL_MPI_LIB_NONE, "none", "", NULL, 0, -1, NULL, NULL },
-    };
+    static const atl_mpi_lib_info_t mpi_lib_infos[MPI_LIB_INFO_MAX_COUNT];
 
     size_t get_nic_count(const char* nic_count_key);
 
 public:
-    const char* EP_IDX_KEY = "vci";
+    static const char* EP_IDX_KEY;
 
     const char* NIC_IDX_KEY = "multi_nic_pref_nic";
     const char* GLOBAL_NIC_COUNT_KEY = "num_nics";
     const char* LOCAL_NIC_COUNT_KEY = "num_close_nics";
 
     int is_external_init;
-    size_t ctx_count;
     int extra_ep;
     atl_mnic_t mnic_type;
     size_t mnic_count;
     atl_mnic_offset_t mnic_offset;
-    atl_mpi_lib_attr_t mpi_lib_attr;
     atl_mpi_bf16_data_t bf16;
     atl_mpi_fp16_data_t fp16;
+    atl_progress_mode_t progress_mode;
+    bool sync_coll;
+    size_t ep_count;
 
-    atl_mpi_global_data()
+    static atl_mpi_lib_attr_t mpi_lib_attr;
+
+    atl_mpi_ctx()
             : is_external_init(0),
-              ctx_count(0),
               extra_ep(0),
               mnic_type(ATL_MNIC_NONE),
               mnic_count(1),
-              mnic_offset(ATL_MNIC_OFFSET_NONE) {
-        mpi_lib_attr.type = ATL_MPI_LIB_NONE;
-        mpi_lib_attr.hmem = 0;
-
+              mnic_offset(ATL_MNIC_OFFSET_NONE),
+              progress_mode(ATL_PROGRESS_CHECK),
+              sync_coll(0),
+              ep_count(0) {
         bf16.dtype = MPI_DATATYPE_NULL;
         bf16.sum_op = MPI_OP_NULL;
         bf16.prod_op = MPI_OP_NULL;
@@ -124,23 +115,29 @@ public:
         fp16.min_op = MPI_OP_NULL;
         fp16.max_op = MPI_OP_NULL;
     }
-    atl_mpi_lib_attr_t get_lib_attr();
-    size_t get_ep_count(const atl_attr_t& attr);
-    atl_status_t set_impi_env(const atl_attr_t& attr, const atl_mpi_lib_attr_t& lib_attr);
+
+    static atl_mpi_lib_attr_t get_lib_attr();
+    static size_t get_ep_count(const atl_attr_t& attr);
+
     int bf16_init();
     void bf16_finalize();
     int fp16_init();
     void fp16_finalize();
-    void print_error(int error);
-    atl_status_t check_impi_env(const atl_attr_t& attr);
-    atl_status_t update_global_data(atl_attr_t* attr);
-    atl_status_t set_mpich_env(const atl_attr_t& attr);
-    atl_status_t set_base_env(const atl_attr_t& attr);
-    atl_status_t check_mpich_env(const atl_attr_t& attr);
-    atl_status_t set_env(const atl_attr_t& attr);
-    MPI_Op atl2mpi_op_fp16(atl_reduction_t rtype);
+
     MPI_Op atl2mpi_op_bf16(atl_reduction_t rtype);
-    void print_log_info();
+    MPI_Op atl2mpi_op_fp16(atl_reduction_t rtype);
+
+    static atl_status_t set_env(const atl_attr_t& attr);
+    static atl_status_t set_base_env(const atl_attr_t& attr);
+    static atl_status_t set_impi_env(const atl_attr_t& attr, const atl_mpi_lib_attr_t& lib_attr);
+    static atl_status_t set_mpich_env(const atl_attr_t& attr);
+    static atl_status_t check_impi_env(const atl_attr_t& attr);
+    static atl_status_t check_mpich_env(const atl_attr_t& attr);
+
+    atl_status_t update_global_data(const atl_attr_t& attr);
+
+    void print_mpi_error(int error);
+    std::string to_string();
 };
 
 #endif

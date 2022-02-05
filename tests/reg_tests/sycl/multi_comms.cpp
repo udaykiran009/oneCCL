@@ -3,18 +3,20 @@
 using namespace std;
 using namespace sycl;
 
-bool reorder_ranks = false;
-bool multi_comm = false;
 std::vector<int> comm_sizes{};
+bool reorder_ranks = false;
+bool parallel_comm = false;
 
-inline void parcer(int argc, char* argv[]) {
+inline void parse_args(int argc, char* argv[]) {
     int arg_num = 1;
+
     const std::string comm_create_mode = "-c";
     const std::string direct = "direct";
     const std::string reverse = "reverse";
-    const std::string ranks_ordering_mode = "-o";
+    const std::string rank_order_mode = "-o";
     const std::string reorder = "reorder";
-    const std::string multi_comms_mode = "-m";
+    const std::string parallel_comm_mode = "-p";
+
     while (arg_num + 1 < argc) {
         if (!comm_create_mode.compare(argv[arg_num])) {
             arg_num++;
@@ -36,7 +38,7 @@ inline void parcer(int argc, char* argv[]) {
             }
             arg_num++;
         }
-        else if (!ranks_ordering_mode.compare(argv[arg_num])) {
+        else if (!rank_order_mode.compare(argv[arg_num])) {
             arg_num++;
             if (!direct.compare(argv[arg_num])) {
                 reorder_ranks = false;
@@ -45,36 +47,39 @@ inline void parcer(int argc, char* argv[]) {
                 reorder_ranks = true;
             }
             else {
-                cout << "Wrong ranks ordering mode:" << argv[arg_num] << std::endl;
+                cout << "Wrong rank order mode:" << argv[arg_num] << std::endl;
                 cout << "Choose mode: direct or reorder" << std::endl;
                 cout << "Exampe: mpirun -n 2 ./multi_comms -o direct" << std::endl;
                 exit(1);
             }
             arg_num++;
         }
-        else if (!multi_comms_mode.compare(argv[arg_num])) {
+        else if (!parallel_comm_mode.compare(argv[arg_num])) {
             arg_num++;
             if (strstr(argv[arg_num], "0")) {
-                multi_comm = false;
+                parallel_comm = false;
             }
             else if (strstr(argv[arg_num], "1")) {
-                multi_comm = true;
+                parallel_comm = true;
             }
             else {
                 cout << "Wrong multi comms mode:" << argv[arg_num] << std::endl;
                 cout << "Choose mode: 0 or 1" << std::endl;
-                cout << "Exampe: mpirun -n 2 ./multi_comms -m 1" << std::endl;
+                cout << "Exampe: mpirun -n 2 ./multi_comms -p 1" << std::endl;
                 exit(1);
             }
             arg_num++;
         }
     }
+
+    cout << "arguments: comm_sizes: " << utils::vec_to_string(comm_sizes)
+         << ", reorder_ranks: " << reorder_ranks << ", parallel_comm: " << parallel_comm << "\n";
 }
 
 int main(int argc, char* argv[]) {
     std::list<size_t> elem_counts = { 17, 1024, 262145 };
 
-    int size = 0;
+    int mpi_size = 0;
     int mpi_rank = 0;
     ;
     int ccl_rank = 0;
@@ -94,18 +99,19 @@ int main(int argc, char* argv[]) {
     ccl::init();
 
     MPI_Init(NULL, NULL);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
 
     atexit(mpi_finalize);
 
     std::vector<ccl::shared_ptr_class<ccl::kvs>> kvses;
     std::vector<ccl::communicator> comms;
-    comm_sizes.resize(size);
+    comm_sizes.resize(mpi_size);
     for (size_t i = 0; i < comm_sizes.size(); i++) {
         comm_sizes[i] = i + 1;
     }
-    parcer(argc, argv);
+
+    parse_args(argc, argv);
 
     ccl_rank = mpi_rank;
     for (int comm_size : comm_sizes) {
@@ -121,7 +127,7 @@ int main(int argc, char* argv[]) {
         MPI_Comm_rank(new_comm, &local_mpi_rank);
         int bcast_root = iter_idx % comm_size;
 
-        int threshold = multi_comm ? ((int)(size / comm_size)) * comm_size : comm_size;
+        int threshold = parallel_comm ? ((int)(mpi_size / comm_size)) * comm_size : comm_size;
         if (mpi_rank >= threshold) {
             continue;
         }
@@ -136,6 +142,9 @@ int main(int argc, char* argv[]) {
             kvs = ccl::create_kvs(main_addr);
             main_addr = kvs->get_address();
         }
+
+        MPI_Comm_free(&new_comm);
+
         if (reorder_ranks) {
             ccl_rank = (mpi_rank + iter_idx) % comm_size;
         }
@@ -149,9 +158,11 @@ int main(int argc, char* argv[]) {
         auto dev = ccl::create_device(q.get_device());
         auto ctx = ccl::create_context(q.get_context());
 
-        cout << "before create_communicator for comm_size " << comm_size << "\n";
+        cout << "before create_communicator: comm_size: " << comm_size
+             << ", comm_rank: " << ccl_rank << "\n";
         comms.push_back(ccl::create_communicator(comm_size, ccl_rank, dev, ctx, kvs));
-        cout << "after create_communicator for comm_size " << comm_size << "\n";
+        cout << "after create_communicator: comm_size: " << comm_size << ", comm_rank: " << ccl_rank
+             << "\n";
 
         if (comm_size != comms.back().size()) {
             cout << "FAILED unexpected comm_size " << comms.back().size() << "\n";
@@ -197,7 +208,7 @@ int main(int argc, char* argv[]) {
             /* invoke allreduce */
             auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
 
-            cout << "before allreduce for comm_size " << comm_size << "\n";
+            cout << "before allreduce, comm_size: " << comm_size << "\n";
             ccl::allreduce(send_buf,
                            recv_buf,
                            elem_count,
@@ -207,11 +218,11 @@ int main(int argc, char* argv[]) {
                            attr,
                            deps)
                 .wait();
-            cout << "after allreduce for comm_size " << comm_size << "\n";
+            cout << "after allreduce, comm_size: " << comm_size << "\n";
 
-            cout << "before bcast for comm_size " << comm_size << "\n";
+            cout << "before bcast, comm_size: " << comm_size << "\n";
             ccl::broadcast(buf, elem_count, root, comms.back(), stream).wait();
-            cout << "after bcast for comm_size " << comm_size << "\n";
+            cout << "after bcast, comm_size: " << comm_size << "\n";
 
             /* open result buffers and check their correctness on the device side */
             buffer<int> allreduce_check_buf(elem_count);

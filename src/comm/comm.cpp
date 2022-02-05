@@ -20,21 +20,18 @@
 
 // ccl_internal_comm
 
-ccl_internal_comm::ccl_internal_comm(int rank, int size, std::shared_ptr<atl_base_comm> atl_comm)
-        : atl_comm(atl_comm),
-          m_dtree(size, rank) {
+ccl_internal_comm::ccl_internal_comm(int comm_id,
+                                     int rank,
+                                     int size,
+                                     std::shared_ptr<atl_base_comm> comm)
+        : m_dtree(size, rank) {
+    atl_comm = atl_comm_manager::create_with_id(comm, comm_id);
     reset(rank, size);
-}
 
-ccl_internal_comm::ccl_internal_comm(const std::vector<int>& local_ranks,
-                                     int comm_size,
-                                     std::shared_ptr<ccl::kvs_interface> kvs_instance)
-        : m_dtree(local_ranks.size(), comm_size) {
-    std::shared_ptr<ikvs_wrapper> kvs_wrapper(new users_kvs(kvs_instance));
-
-    atl_comm = atl_comm_manager::create_comm(comm_size, local_ranks, kvs_wrapper);
-
-    reset(atl_comm->get_rank(), atl_comm->get_size());
+    if (comm_id == comm->get_comm_id()) {
+        LOG_DEBUG("comm.id == explicit_id, reset comm.id ", comm_id);
+        comm->reset_comm_id();
+    }
 }
 
 void ccl_internal_comm::reset(int rank, int size) {
@@ -44,15 +41,13 @@ void ccl_internal_comm::reset(int rank, int size) {
 }
 
 // ccl_comm
-void ccl_comm::init(ccl_comm_id_storage::comm_id&& id,
+void ccl_comm::init(int comm_id,
                     std::shared_ptr<atl_base_comm> atl_comm,
                     bool share_resources,
                     bool is_sub_communicator) {
     comm_rank = atl_comm->get_rank();
     comm_size = atl_comm->get_size();
-    local2global_map = atl_comm->get_rank2rank_map();
-    comm_id = std::unique_ptr<ccl_comm_id_storage::comm_id>(
-        new ccl_comm_id_storage::comm_id(std::move(id)));
+
     next_sched_id_internal = ccl_comm::max_sched_count / 2;
     next_sched_id_external = 0;
 
@@ -62,8 +57,8 @@ void ccl_comm::init(ccl_comm_id_storage::comm_id&& id,
                              std::to_string(comm_rank) + ", size: " + std::to_string(comm_size));
     }
 
-    comm_impl =
-        std::unique_ptr<ccl_internal_comm>(new ccl_internal_comm(comm_rank, comm_size, atl_comm));
+    comm_impl = std::unique_ptr<ccl_internal_comm>(
+        new ccl_internal_comm(comm_id, comm_rank, comm_size, atl_comm));
 
     if (!share_resources) {
         allocate_resources();
@@ -74,41 +69,41 @@ void ccl_comm::init(ccl_comm_id_storage::comm_id&& id,
         if (!comm_rank && device_ptr) {
             LOG_INFO("topo_manager:", topo_manager.to_string());
         }
-        create_sub_comms(atl_comm);
+        create_topo_subcomms();
+    }
+    else {
+        local2global_map = atl_comm->get_rank2rank_map();
     }
 }
 
-ccl_comm::ccl_comm(ccl_comm_id_storage::comm_id&& id,
+ccl_comm::ccl_comm(int comm_id,
                    std::shared_ptr<atl_base_comm> atl_comm,
                    bool share_resources,
                    bool is_sub_communicator) {
-    init(std::move(id), atl_comm, share_resources, is_sub_communicator);
+    init(comm_id, atl_comm, share_resources, is_sub_communicator);
 }
 
 ccl_comm::ccl_comm(std::shared_ptr<atl_base_comm> atl_comm,
                    bool share_resources,
                    bool is_sub_communicator)
-        : ccl_comm(ccl::global_data::get().comm_ids->acquire(),
-                   atl_comm,
-                   share_resources,
-                   is_sub_communicator) {}
+        : ccl_comm(atl_comm->create_comm_id(), atl_comm, share_resources, is_sub_communicator) {}
 
 ccl_comm::ccl_comm(device_t device, context_t context, std::shared_ptr<atl_base_comm> atl_comm)
         : device_ptr(std::make_shared<ccl::device>(device)),
           context_ptr(std::make_shared<ccl::context>(context)) {
-    init(ccl::global_data::get().comm_ids->acquire(), atl_comm);
+    init(atl_comm->create_comm_id(), atl_comm);
 }
 
 ccl_comm::ccl_comm(int size, int rank, ccl::shared_ptr_class<ikvs_wrapper> kvs)
-        : ccl_comm(atl_comm_manager::create_comm(size, { rank }, kvs)) {}
+        : ccl_comm(atl_comm_manager::create(size, { rank }, kvs)) {}
 
 ccl_comm::ccl_comm(int size, ccl::shared_ptr_class<ikvs_wrapper> kvs)
-        : ccl_comm(atl_comm_manager::create_comm(size, { 0 }, kvs)) {}
+        : ccl_comm(atl_comm_manager::create(size, { 0 }, kvs)) {}
 
-ccl_comm::ccl_comm() : ccl_comm(atl_comm_manager::create_comm()) {}
+ccl_comm::ccl_comm() : ccl_comm(atl_comm_manager::create()) {}
 
-ccl_comm::ccl_comm(const ccl_comm& src, ccl_comm_id_storage::comm_id&& id)
-        : ccl_comm(std::move(id), src.get_atl_comm(), true, true) {
+ccl_comm::ccl_comm(const ccl_comm& src, int comm_id)
+        : ccl_comm(comm_id, src.get_atl_comm(), true, true) {
     r2r_comm = src.r2r_comm;
     node_comm = src.node_comm;
     even_comm = src.even_comm;
@@ -131,11 +126,11 @@ std::shared_ptr<ikvs_wrapper> ccl_comm::get_kvs_wrapper(std::shared_ptr<ccl::kvs
 
 ccl_comm* ccl_comm::create(device_t device,
                            context_t context,
-                           size_t size,
+                           int size,
                            int rank,
                            ccl::shared_ptr_class<ccl::kvs_interface> kvs) {
     return new ccl_comm(
-        device, context, atl_comm_manager::create_comm(size, { rank }, get_kvs_wrapper(kvs)));
+        device, context, atl_comm_manager::create(size, { rank }, get_kvs_wrapper(kvs)));
 }
 
 ccl_comm* ccl_comm::create(int size, int rank, ccl::shared_ptr_class<ccl::kvs_interface> kvs) {
@@ -146,40 +141,27 @@ ccl_comm* ccl_comm::create(int size, ccl::shared_ptr_class<ccl::kvs_interface> k
     return new ccl_comm(size, get_kvs_wrapper(kvs));
 }
 
-void ccl_comm::create_sub_comms(std::shared_ptr<atl_base_comm> atl_comm) {
-    ccl::global_data& data = ccl::global_data::get();
-
-    r2r_comm = std::shared_ptr<ccl_comm>(
-        create_with_color(atl_comm->get_r2r_color(), data.comm_ids.get(), true));
-    node_comm = std::shared_ptr<ccl_comm>(
-        create_with_color(atl_comm->get_host_color(), data.comm_ids.get(), true));
-    even_comm = std::shared_ptr<ccl_comm>(create_with_color(
-        topo_manager.get_inter_card_color(atl_comm->get_rank()), data.comm_ids.get(), true));
-    pair_comm = std::shared_ptr<ccl_comm>(create_with_color(
-        topo_manager.get_intra_card_color(atl_comm->get_rank()), data.comm_ids.get(), true));
+void ccl_comm::create_topo_subcomms() {
+    std::shared_ptr<atl_base_comm> atl_comm = get_atl_comm();
+    r2r_comm = std::shared_ptr<ccl_comm>(create_subcomm(atl_comm->get_r2r_color()));
+    node_comm = std::shared_ptr<ccl_comm>(create_subcomm(topo_manager.get_host_idx()));
+    even_comm = std::shared_ptr<ccl_comm>(
+        create_subcomm(topo_manager.get_inter_card_color(atl_comm->get_rank())));
+    pair_comm = std::shared_ptr<ccl_comm>(
+        create_subcomm(topo_manager.get_intra_card_color(atl_comm->get_rank())));
 }
 
-ccl_comm* ccl_comm::create_with_color(int color,
-                                      ccl_comm_id_storage* comm_ids,
-                                      bool share_resources) const {
+ccl_comm* ccl_comm::create_subcomm(int color) const {
     std::shared_ptr<atl_base_comm> new_atl_comm = get_atl_comm()->comm_split(color);
-    ccl_comm* comm = new ccl_comm(new_atl_comm, share_resources, true);
+    ccl_comm* comm = new ccl_comm(
+        new_atl_comm->get_comm_id(), new_atl_comm, true /*share_resources*/, true /*subcomm*/);
     comm->set_parent_comm(const_cast<ccl_comm*>(this));
-
-    LOG_DEBUG("new comm: color ",
-              color,
-              ", rank ",
-              comm->rank(),
-              ", size ",
-              comm->size(),
-              ", comm_id ",
-              comm->id());
-
+    LOG_DEBUG("new subcomm: color ", color, ", ", comm->to_string());
     return comm;
 }
 
-std::shared_ptr<ccl_comm> ccl_comm::clone_with_new_id(ccl_comm_id_storage::comm_id&& id) {
-    return std::shared_ptr<ccl_comm>(new ccl_comm(*this, std::move(id)));
+std::shared_ptr<ccl_comm> ccl_comm::clone_with_new_id(int comm_id) {
+    return std::shared_ptr<ccl_comm>(new ccl_comm(*this, comm_id));
 }
 
 // NOTE: allocate_resources must be done on ccl_comm level
@@ -208,9 +190,7 @@ ccl::comm_interface_ptr ccl_comm::split(const ccl::comm_split_attr& attr) {
                   " - 'color' split attribute for communicator is not set");
     }
 
-    ccl::global_data& data = ccl::global_data::get();
-    auto new_comm =
-        create_with_color(attr.get<ccl::comm_split_attr_id::color>(), data.comm_ids.get(), true);
+    auto new_comm = create_subcomm(attr.get<ccl::comm_split_attr_id::color>());
 
     return std::shared_ptr<ccl_comm>(new_comm);
 }
@@ -234,9 +214,8 @@ std::string ccl_comm::to_string_ext() const {
     return ss.str();
 }
 
-// TODO: remove only_global after atl/ofi refactoring
-int ccl_comm::get_global_rank(int rank, bool only_global) const {
-    if (local2global_map.empty() || !only_global) {
+int ccl_comm::get_global_rank(int rank) const {
+    if (local2global_map.empty()) {
         // global comm and its copies do not have entries in the map
         return rank;
     }

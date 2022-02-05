@@ -87,7 +87,7 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
                   " }");
     }
 
-    std::string unique_tag = std::to_string(sched->get_comm_id()) + "-" +
+    std::string unique_tag = std::to_string(comm->get_comm_id()) + "-" +
                              std::to_string(sched->sched_id) + "-" +
                              std::to_string(sched->get_op_id()) + "-" + std::to_string(getuid()) +
                              "-" + comm->get_topo_manager().get_uuid(0);

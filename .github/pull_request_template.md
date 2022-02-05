@@ -4,7 +4,7 @@
 
 Comment structure **test:\<conf>**
 
-* func|dynamic_pointer_mode|mpi_adjust|priority_mode|unordered_coll_mode|fusion_mode|ofi_adjust
+* func|dynamic_pointer_mode|mpi_adjust|priority_mode|fusion_mode|ofi_adjust
 * pr|example
 * horovod|pytorch|torch_ccl
 * kw|abi|format

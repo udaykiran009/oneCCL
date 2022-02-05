@@ -14,10 +14,7 @@ get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 cd ${SCRIPT_DIR}
 
 proc_counts="1 2 4"
-
-# TODO: MLSL-1155
-#transports="ofi mpi"
-transports="mpi"
+transports="ofi mpi"
 
 bench_options="-i 2 -w 0 -c all -l all -b sycl -t 131072"
 

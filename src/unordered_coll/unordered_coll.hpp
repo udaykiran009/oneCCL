@@ -30,7 +30,7 @@ private:
 
     std::unique_ptr<ccl_comm> coordination_comm;
 
-    using unresolved_comms_t = std::unordered_map<std::string, ccl_comm_id_storage::comm_id>;
+    using unresolved_comms_t = std::unordered_map<std::string, int>;
     unresolved_comms_t unresolved_comms{};
     mutable ccl_spinlock unresolved_comms_guard{};
 

@@ -14,7 +14,7 @@ get_bench ${SCRIPT_DIR} ${TEST_LOG}
 
 cd ${SCRIPT_DIR}
 
-transports="mpi ofi"
+transports="ofi mpi"
 proc_counts="2 4"
 
 bench_options="-w 1 -i 4 -l allgatherv -c all -b host -t 1048576"

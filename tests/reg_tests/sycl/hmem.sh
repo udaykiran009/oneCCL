@@ -38,7 +38,7 @@ export I_MPI_JOB_TIMEOUT=120
 
 worker_counts="1"
 
-# TODO: enable ofi transport, MLSL-1155 + find dmabuf-enabled nodes
+# TODO: enable ofi transport, find dmabuf-enabled nodes
 # transports="ofi mpi"
 transports="mpi"
 

@@ -14,7 +14,7 @@ cd ${SCRIPT_DIR}
 
 tests="allgatherv alltoallv"
 tests+=" broadcast custom_allreduce external_kvs"
-tests+=" priority_allreduce reduce reduce_scatter unordered_allreduce"
+tests+=" priority_allreduce reduce reduce_scatter"
 
 proc_counts="4"
 worker_counts="1 2"
@@ -33,8 +33,7 @@ do
                 do
                     if [[ ${transport} = "mpi" ]]
                     then
-                        if [[ ${test} = "unordered_allreduce" ]] ||
-                            [[ ${test} = "custom_allreduce" ]]
+                        if [[ ${test} = "custom_allreduce" ]]
                         then
                             continue
                         fi

@@ -491,7 +491,3 @@ std::vector<ccl::event>& ccl_sched::get_deps() const {
 size_t ccl_sched::entries_count() const {
     return entries.size();
 }
-
-ccl_comm_id_t ccl_sched::get_comm_id() {
-    return coll_param.comm->id();
-}
