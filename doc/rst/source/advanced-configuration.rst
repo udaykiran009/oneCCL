@@ -8,4 +8,3 @@ Advanced Configuration
    advanced-configuration/operation-caching.rst
    advanced-configuration/operation-prioritization.rst
    advanced-configuration/operation-fusion.rst
-   advanced-configuration/unordered-collectives.rst

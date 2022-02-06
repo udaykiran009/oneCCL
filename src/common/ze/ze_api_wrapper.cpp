@@ -9,23 +9,31 @@ namespace ccl {
 static void* libze_handle;
 libze_ops_t libze_ops;
 
-void ze_api_init() {
+bool ze_api_init() {
     std::string lib_path = ccl::global_data::env().ze_lib_path;
     if (lib_path.empty()) {
         lib_path = "libze_loader.so";
     }
 
     libze_handle = dlopen(lib_path.c_str(), RTLD_LAZY | RTLD_GLOBAL);
-    CCL_THROW_IF_NOT(libze_handle, "could not dlopen: ", lib_path.c_str(), ", error: ", dlerror());
+    if (!libze_handle) {
+        LOG_WARN("could not open level-zero library: ", lib_path.c_str(), ", error: ", dlerror());
+        return false;
+    }
 
     void** ops = (void**)((void*)&libze_ops);
     int fn_count = sizeof(fn_names) / sizeof(*fn_names);
 
     for (int i = 0; i < fn_count; ++i) {
         ops[i] = dlsym(libze_handle, fn_names[i]);
-        CCL_THROW_IF_NOT(ops[i], "dlsym is failed on: ", fn_names[i], ", error: ", dlerror());
+        if (!ops[i]) {
+            LOG_WARN("dlsym is failed on: ", fn_names[i], ", error: ", dlerror());
+            return false;
+        }
         LOG_DEBUG("dlsym loaded of ", fn_count, " - ", i + 1, ": ", fn_names[i]);
     }
+
+    return true;
 }
 
 void ze_api_fini() {

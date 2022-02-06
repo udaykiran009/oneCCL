@@ -406,34 +406,6 @@ Set this environment variable to enable handling of HMEM/GPU buffers by the tran
 The actual HMEM support depends on the limitations on the transport level and system configuration.
 
 
-CCL_UNORDERED_COLL
-##################
-**Syntax**
-
-:: 
-
-  CCL_UNORDERED_COLL=<value>
-
-**Arguments**
-
-.. list-table:: 
-   :widths: 25 50
-   :header-rows: 1
-   :align: left
-   
-   * - <value> 
-     - Description
-   * - ``1``
-     - Enable execution of unordered collectives.
-       You have to additionally specify ``match_id``.
-   * - ``0``
-     - Disable execution of unordered collectives (**default**).
-
-**Description**
-
-Set this environment variable to enable execution of unordered collective operations on different nodes. 
-
-
 CCL_PRIORITY
 ############
 **Syntax**

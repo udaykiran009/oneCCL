@@ -93,28 +93,28 @@ void ccl_coll_validate_user_input(const ccl_coll_param& param, const ccl_coll_at
     }
 
 #ifdef CCL_ENABLE_SYCL
-    if (param.comm->get_device() && param.comm->get_context()) {
+    if (param.comm->get_device() && param.comm->get_context() &&
+        (param.comm->get_device()->get_native().is_gpu())) {
+        CCL_THROW_IF_NOT(
+            param.stream, "specify stream for ", ccl_coll_type_to_str(param.ctype), " operation");
+
         if (!attr.is_sycl_buf) {
             ccl_check_usm_pointers(param);
         }
 
         sycl::device comm_dev = param.comm->get_device()->get_native();
         sycl::context comm_ctx = param.comm->get_context()->get_native();
-        if (param.stream) {
-            auto stream_dev = param.stream->get_native_stream().get_device();
-            auto stream_ctx = param.stream->get_native_stream().get_context();
-            CCL_THROW_IF_NOT(comm_dev == stream_dev,
-                             "device should match for communicator and stream"
-                             ", comm_dev: ",
-                             ccl::utils::sycl_device_to_str(comm_dev),
-                             ", stream_dev: ",
-                             ccl::utils::sycl_device_to_str(stream_dev));
-            CCL_THROW_IF_NOT(comm_ctx == stream_ctx,
-                             "context should match for communicator and stream");
-        }
-        else {
-            CCL_THROW("specify stream for ", ccl_coll_type_to_str(param.ctype), " operation");
-        }
+        auto stream_dev = param.stream->get_native_stream().get_device();
+        auto stream_ctx = param.stream->get_native_stream().get_context();
+
+        CCL_THROW_IF_NOT(comm_dev == stream_dev,
+                         "device should match for communicator and stream"
+                         ", comm_dev: ",
+                         ccl::utils::sycl_device_to_str(comm_dev),
+                         ", stream_dev: ",
+                         ccl::utils::sycl_device_to_str(stream_dev));
+        CCL_THROW_IF_NOT(comm_ctx == stream_ctx,
+                         "context should match for communicator and stream");
     }
 #endif // CCL_ENABLE_SYCL
 }

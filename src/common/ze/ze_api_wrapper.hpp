@@ -221,7 +221,7 @@ extern ccl::libze_ops_t libze_ops;
 #define zesFabricPortGetProperties             ccl::libze_ops.zesFabricPortGetProperties
 #define zesFabricPortGetState                  ccl::libze_ops.zesFabricPortGetState
 
-void ze_api_init();
+bool ze_api_init();
 void ze_api_fini();
 
 } //namespace ccl

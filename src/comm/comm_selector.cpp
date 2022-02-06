@@ -53,7 +53,9 @@ comm_interface_ptr comm_selector::create_comm_impl(const size_t size,
                                                    shared_ptr_class<kvs_interface> kvs) {
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
     if (ccl::global_data::env().backend == backend_mode::native) {
-        CCL_THROW_IF_NOT(ccl::global_data::get().ze_data, "ze_data was not initialized");
+        if (device.get_native().is_gpu()) {
+            CCL_THROW_IF_NOT(ccl::global_data::get().ze_data, "ze_data was not initialized");
+        }
     }
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 

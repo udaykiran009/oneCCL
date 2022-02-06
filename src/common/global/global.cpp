@@ -82,11 +82,17 @@ ccl::status global_data::init() {
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
     if (ccl::global_data::env().backend == backend_mode::native &&
         ccl::global_data::env().ze_enable) {
-        try {
-            ze_data.reset(new ze::global_data_desc);
+        LOG_INFO("initializing level-zero api");
+        if (ze_api_init()) {
+            try {
+                ze_data.reset(new ze::global_data_desc);
+            }
+            catch (...) {
+                LOG_INFO("could not initialize level-zero");
+            }
         }
-        catch (...) {
-            LOG_INFO("could not initialize level-zero");
+        else {
+            LOG_INFO("could not initialize level-zero api");
         }
     }
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL

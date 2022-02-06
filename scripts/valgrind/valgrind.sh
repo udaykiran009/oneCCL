@@ -115,19 +115,17 @@ run_benchmark()
     echo "backend: "$backend
     local runtime=$6
     echo "runtime: "$runtime
-    local loop=$7
-    echo "loop: "$loop
-    local coll=$8
+    local coll=$7
     echo "coll: " $coll
-    local dtype=$9
+    local dtype=$8
     echo "dtype: " $dtype
-    local reduction=${10}
+    local reduction=${9}
     echo "reduction: " $reduction
     echo "================ENVIRONMENT=================="
 
     log_idx=${log_idx}+1
     base_test_log="$EXAMPLE_WORK_DIR/$dir_name/run"
-    base_test_log="${base_test_log}_${transport}_${example}_b_${backend}_r_${runtime}_e_${loop}_l_${coll}_d_${dtype}_${log_idx}"
+    base_test_log="${base_test_log}_${transport}_${example}_b_${backend}_r_${runtime}_l_${coll}_d_${dtype}_${log_idx}"
 
     if [[ ${VALGRIND_SCOPE} = "regular" ]]
     then
@@ -156,11 +154,6 @@ run_benchmark()
         fi
     fi
     options="${options} --buf_count ${buf_count}"
-
-    if [ "${loop}" != "" ];
-    then
-        options="${options} --loop ${loop}"
-    fi
 
     if [ "${coll}" != "" ];
     then
@@ -305,7 +298,7 @@ run()
                             fi
 
                             ccl_extra_env="${ccl_runtime_env}"
-                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} regular ${coll} ${dtype}
+                            run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${coll} ${dtype}
                         done
                     done
                 done

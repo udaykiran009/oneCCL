@@ -29,13 +29,12 @@ using namespace cl::sycl::access;
 #include "bf16.hpp"
 #include "coll.hpp"
 
-/* free letters: v z */
+/* free letters: k e v z */
 void print_help_usage(const char* app) {
     PRINT("\nUSAGE:\n"
           "\t%s [OPTIONS]\n\n"
           "OPTIONS:\n"
           "\t[-b,--backend <backend>]: %s\n"
-          "\t[-e,--loop <execution loop>]: %s\n"
           "\t[-i,--iters <iteration count>]: %d\n"
           "\t[-w,--warmup_iters <warm up iteration count>]: %d\n"
           "\t[-j,--iter_policy <iteration policy>]: %s\n"
@@ -46,7 +45,6 @@ void print_help_usage(const char* app) {
           "\t[-c,--check <check result correctness>]: %s\n"
           "\t[-p,--cache <use persistent operations>]: %d\n"
           "\t[-q,--inplace <use same buffer as send and recv buffer>]: %d\n"
-          "\t[-k,--ranks_per_proc <number of ranks per process>]: %d\n"
 #ifdef CCL_ENABLE_NUMA
           "\t[-s,--numa_node <numa node for allocation of send and recv buffers>]: %s\n"
 #endif // CCL_ENABLE_NUMA
@@ -65,7 +63,6 @@ void print_help_usage(const char* app) {
           "example:\n\t--coll allgatherv,allreduce --backend host --elem_counts 64,1024\n",
           app,
           backend_names[DEFAULT_BACKEND].c_str(),
-          loop_names[DEFAULT_LOOP].c_str(),
           DEFAULT_ITERS,
           DEFAULT_WARMUP_ITERS,
           iter_policy_names[DEFAULT_ITER_POLICY].c_str(),
@@ -77,7 +74,6 @@ void print_help_usage(const char* app) {
           check_values_names[DEFAULT_CHECK_VALUES].c_str(),
           DEFAULT_CACHE_OPS,
           DEFAULT_INPLACE,
-          DEFAULT_RANKS_PER_PROC,
 #ifdef CCL_ENABLE_NUMA
           DEFAULT_NUMA_NODE_STR,
 #endif // CCL_ENABLE_NUMA
@@ -150,23 +146,6 @@ int set_backend(const std::string& option_value, backend_type_t& backend) {
         return -1;
 
     backend = (option_value == backend_names[BACKEND_SYCL]) ? BACKEND_SYCL : BACKEND_HOST;
-
-    return 0;
-}
-
-int set_loop(const std::string& option_value, loop_type_t& loop) {
-    std::string option_name = "loop";
-    std::set<std::string> supported_option_values{ loop_names[LOOP_REGULAR],
-                                                   loop_names[LOOP_UNORDERED] };
-
-    if (check_supported_options(option_name, option_value, supported_option_values))
-        return -1;
-
-    loop = (option_value == loop_names[LOOP_REGULAR]) ? LOOP_REGULAR : LOOP_UNORDERED;
-
-    if (loop == LOOP_UNORDERED) {
-        setenv("CCL_UNORDERED_COLL", "1", 1);
-    }
 
     return 0;
 }
@@ -536,7 +515,7 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
 
     char short_options[1024] = { 0 };
 
-    const char* base_options = "b:e:i:w:j:n:f:t:c:p:q:o:k:s:l:d:r:y:xh";
+    const char* base_options = "b:i:w:j:n:f:t:c:p:q:o:s:l:d:r:y:xh";
     memcpy(short_options, base_options, strlen(base_options));
 
 #ifdef CCL_ENABLE_NUMA
@@ -551,7 +530,6 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
 
     struct option getopt_options[] = {
         { "backend", required_argument, nullptr, 'b' },
-        { "loop", required_argument, nullptr, 'e' },
         { "iters", required_argument, nullptr, 'i' },
         { "warmup_iters", required_argument, nullptr, 'w' },
         { "iter_policy", required_argument, nullptr, 'j' },
@@ -562,7 +540,6 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
         { "check", required_argument, nullptr, 'c' },
         { "cache", required_argument, nullptr, 'p' },
         { "inplace", required_argument, nullptr, 'q' },
-        { "ranks_per_proc", required_argument, nullptr, 'k' },
 #ifdef CCL_ENABLE_NUMA
         { "numa_node", required_argument, nullptr, 's' },
 #endif // CCL_ENABLE_NUMA
@@ -586,12 +563,6 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
             case 'b':
                 if (set_backend(optarg, options.backend)) {
                     PRINT("failed to parse 'backend' option");
-                    errors++;
-                }
-                break;
-            case 'e':
-                if (set_loop(optarg, options.loop)) {
-                    PRINT("failed to parse 'loop' option");
                     errors++;
                 }
                 break;
@@ -657,13 +628,6 @@ int parse_user_options(int& argc, char**(&argv), user_options_t& options) {
                 break;
             case 'p': options.cache_ops = atoi(optarg); break;
             case 'q': options.inplace = atoi(optarg); break;
-            case 'k':
-                if (is_valid_integer_option(optarg)) {
-                    options.ranks_per_proc = atoll(optarg);
-                }
-                else
-                    errors++;
-                break;
             case 's':
                 if (is_valid_integer_option(optarg)) {
                     options.numa_node = atoll(optarg);
@@ -800,7 +764,6 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
     ss.str("");
 
     std::string backend_str = find_str_val(backend_names, options.backend);
-    std::string loop_str = find_str_val(loop_names, options.loop);
     std::string iter_policy_str = find_str_val(iter_policy_names, options.iter_policy);
     std::string check_values_str = find_str_val(check_values_names, options.check_values);
 
@@ -814,7 +777,6 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   "\noptions:"
                   "\n  processes:      %d"
                   "\n  backend:        %s"
-                  "\n  loop:           %s"
                   "\n  iters:          %zu"
                   "\n  warmup_iters:   %zu"
                   "\n  iter_policy:    %s"
@@ -825,7 +787,6 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   "\n  check:          %s"
                   "\n  cache:          %d"
                   "\n  inplace:        %d"
-                  "\n  ranks_per_proc: %zu"
 #ifdef CCL_ENABLE_NUMA
                   "\n  numa_node:      %s"
 #endif // CCL_ENABLE_NUMA
@@ -841,7 +802,6 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   "\n  csv_filepath:   %s",
                   comm.size(),
                   backend_str.c_str(),
-                  loop_str.c_str(),
                   options.iters,
                   options.warmup_iters,
                   iter_policy_str.c_str(),
@@ -852,7 +812,6 @@ void print_user_options(const user_options_t& options, const ccl::communicator& 
                   check_values_str.c_str(),
                   options.cache_ops,
                   options.inplace,
-                  options.ranks_per_proc,
 #ifdef CCL_ENABLE_NUMA
                   (options.numa_node == DEFAULT_NUMA_NODE)
                       ? DEFAULT_NUMA_NODE_STR

@@ -18,7 +18,6 @@ constexpr std::initializer_list<ccl::datatype> all_dtypes = {
 };
 
 typedef enum { BACKEND_HOST, BACKEND_SYCL } backend_type_t;
-typedef enum { LOOP_REGULAR, LOOP_UNORDERED } loop_type_t;
 typedef enum { ITER_POLICY_OFF, ITER_POLICY_AUTO } iter_policy_t;
 typedef enum { CHECK_OFF, CHECK_LAST_ITER, CHECK_ALL_ITERS } check_values_t;
 
@@ -28,9 +27,6 @@ typedef enum { SYCL_USM_SHARED, SYCL_USM_DEVICE } sycl_usm_type_t;
 
 std::map<backend_type_t, std::string> backend_names = { std::make_pair(BACKEND_HOST, "host"),
                                                         std::make_pair(BACKEND_SYCL, "sycl") };
-
-std::map<loop_type_t, std::string> loop_names = { std::make_pair(LOOP_REGULAR, "regular"),
-                                                  std::make_pair(LOOP_UNORDERED, "unordered") };
 
 std::map<iter_policy_t, std::string> iter_policy_names = { std::make_pair(ITER_POLICY_OFF, "off"),
                                                            std::make_pair(ITER_POLICY_AUTO,
@@ -100,7 +96,6 @@ void generate_counts(std::list<size_t>& counts, size_t min_count, size_t max_cou
 
 typedef struct user_options_t {
     backend_type_t backend;
-    loop_type_t loop;
     size_t iters;
     size_t warmup_iters;
     iter_policy_t iter_policy;
@@ -111,7 +106,7 @@ typedef struct user_options_t {
     check_values_t check_values;
     int cache_ops;
     int inplace;
-    size_t ranks_per_proc;
+    size_t ranks_per_proc; // not exposed in bench options
     int numa_node;
 #ifdef CCL_ENABLE_SYCL
     sycl_dev_type_t sycl_dev_type;
@@ -131,7 +126,6 @@ typedef struct user_options_t {
 
     user_options_t() {
         backend = DEFAULT_BACKEND;
-        loop = DEFAULT_LOOP;
         iters = DEFAULT_ITERS;
         warmup_iters = DEFAULT_WARMUP_ITERS;
         iter_policy = DEFAULT_ITER_POLICY;

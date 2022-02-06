@@ -152,21 +152,19 @@ run_benchmark()
     echo "n: "$n
     local ppn=$8
     echo "ppn: "$ppn
-    local loop=$9
-    echo "loop: "$loop
-    local coll=${10}
+    local coll=${9}
     echo "coll: " $coll
-    local dtype=${11}
+    local dtype=${10}
     echo "dtype: " $dtype
-    local reduction=${12}
+    local reduction=${11}
     echo "reduction: " $reduction
-    local ranks=${13}
+    local ranks=${12}
     echo "ranks per process: " ${ranks}
     echo "================ENVIRONMENT=================="
 
     log_idx=${log_idx}+1
     base_test_log="$EXAMPLE_WORK_DIR/$dir_name/run"
-    base_test_log="${base_test_log}_${transport}_${example}_b_${backend}_r_${runtime}_e_${loop}_l_${coll}_d_${dtype}_${log_idx}"
+    base_test_log="${base_test_log}_${transport}_${example}_b_${backend}_r_${runtime}_l_${coll}_d_${dtype}_${log_idx}"
 
     options="--check last"
     usm_list="none"
@@ -175,11 +173,6 @@ run_benchmark()
     if [ "${backend}" != "" ];
     then
         options="${options} --backend ${backend}"
-    fi
-
-    if [ "${loop}" != "" ];
-    then
-        options="${options} --loop ${loop}"
     fi
 
     if [ "${coll}" != "" ];
@@ -457,30 +450,27 @@ run()
                                 fi
 
                                 ccl_extra_env="${ccl_runtime_env}"
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} regular ${coll_list}
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} ${coll_list}
 
-                                for loop in "regular"
-                                do
-                                    ccl_extra_env="CCL_PRIORITY=lifo ${ccl_runtime_env}"
-                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} ${loop} ${coll_list}
+                                ccl_extra_env="CCL_PRIORITY=lifo ${ccl_runtime_env}"
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} ${coll_list}
 
-                                    ccl_extra_env="CCL_WORKER_OFFLOAD=0 ${ccl_runtime_env}"
-                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} ${loop} ${coll_list}
+                                ccl_extra_env="CCL_WORKER_OFFLOAD=0 ${ccl_runtime_env}"
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} ${coll_list}
 
-                                    ccl_extra_env="CCL_WORKER_WAIT=0 ${ccl_runtime_env}"
-                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} ${loop} ${coll_list}
-                                done
+                                ccl_extra_env="CCL_WORKER_WAIT=0 ${ccl_runtime_env}"
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} ${coll_list}
 
                                 if [ "$runtime" != "opencl" ];
                                 then
                                     # TODO: fix issue with OCL host usm, ticket to be filled
                                     ccl_extra_env="CCL_FUSION=1 ${ccl_runtime_env}"
-                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} regular allreduce
+                                    run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} allreduce
                                 fi
 
                                 ccl_extra_env="CCL_LOG_LEVEL=debug ${ccl_runtime_env}"
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} regular ${coll_list}
-                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} regular allreduce ${dtype_list} ${reduction_list}
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} ${coll_list}
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} allreduce ${dtype_list} ${reduction_list}
                             done
                         done
                     elif [ "$dir_name" == "sycl" ];

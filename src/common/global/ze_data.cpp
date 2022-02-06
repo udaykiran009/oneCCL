@@ -5,9 +5,6 @@ namespace ccl {
 namespace ze {
 
 global_data_desc::global_data_desc() {
-    LOG_INFO("initializing level-zero api");
-    ze_api_init();
-
     LOG_INFO("initializing level-zero");
 
     // enables driver initialization and
