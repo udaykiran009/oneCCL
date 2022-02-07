@@ -600,6 +600,21 @@ function run_regular_tests()
     fi
 }
 
+function run_hvd_rn50_test()
+{
+    pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
+    ./horovod.sh "-full_$1" 1 -transport mpi -provider ${FI_PROVIDER} -with_mpich $2\
+                    -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
+    log_status_fail=${PIPESTATUS[0]}
+    popd
+    if [ "$log_status_fail" -eq 0 ]
+    then
+        echo "Horovod $1 rn50 run ... OK"
+    else
+        echo "Horovod $1 rn50 run ... NOK"
+        exit 1
+    fi
+}
 
 function run_horovod_tests()
 {
@@ -614,30 +629,10 @@ function run_horovod_tests()
 
     if [ "${node_label}" == "ccl_test_ats" ]
     then
-        pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
-        ./horovod.sh -full_pt 1 -transport mpi -provider ${FI_PROVIDER} \
-                     -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
-        log_status_fail=${PIPESTATUS[0]}
-        popd
-        if [ "$log_status_fail" -eq 0 ]
-        then
-            echo "Horovod PT rn50 run ... OK"
-        else
-            echo "Horovod PT rn50 run ... NOK"
-            exit 1
-        fi
-        # pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
-        # ./horovod.sh -full_tf 1 -transport mpi -provider ${FI_PROVIDER} \
-        #              -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
-        # log_status_fail=${PIPESTATUS[0]}
-        # popd
-        # if [ "$log_status_fail" -eq 0 ]
-        # then
-        #     echo "Horovod TF rn50 run ... OK"
-        # else
-        #     echo "Horovod TF rn50 run ... NOK"
-        #     exit 1
-        # fi
+        run_hvd_rn50_test "pt" "0"
+        run_hvd_rn50_test "pt" "1"
+        # run_hvd_rn50_test "tf" "0"
+        # run_hvd_rn50_test "tf" "1"
         echo "Horovod TF rn50 run is currently blocked by https://jira.devtools.intel.com/browse/TFDO-5212"
         echo "Running Horovod TF build:"
         pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/

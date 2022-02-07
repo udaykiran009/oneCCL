@@ -16,12 +16,13 @@ touch ${LOG_FILE}
 
 SCRIPTS_ROOT_DIR=$(realpath ${SCRIPT_DIR}/../../)
 source ${SCRIPTS_ROOT_DIR}/utils/common.sh
+source ${SCRIPTS_ROOT_DIR}/utils/ats_helper.sh
 
 set_run_env() {
     # model
     export PYTHONPATH=${RN50_MODEL_TF_DIR}:${PYTHONPATH}
 
-    # Node env variables
+    # GPU SW
     export EnableDirectSubmission=1
     export DisableIndirectAccess=1
 
@@ -64,7 +65,7 @@ set_run_env() {
 
     # OFI
     export FI_PROVIDER="${PROVIDER}"
-    export FI_LOG_LEVEL=debug
+    # export FI_LOG_LEVEL=debug
 
     # SYCL
     # export SYCL_PI_LEVEL_ZERO_BATCH_SIZE=1 # not needed anymore
@@ -122,6 +123,8 @@ DEFAULT_INSTALL_CCL="0"
 
 DEFAULT_TRANSPORT="mpi"
 DEFAULT_PROVIDER="tcp"
+
+DEFAULT_WITH_MPICH="0"
 
 DEFAULT_DOWNLOAD_CONDA="0"
 DEFAULT_CREATE_CONDA="0"
@@ -256,6 +259,8 @@ print_help() {
     echo_log "      Set CCL ATL transport (mpi/ofi)"
     echo_log "  -provider <string>"
     echo_log "      Set OFI provider"
+    echo_log "  -with_mpich <bool_flag>"
+    echo_log "      Run with mpich mpiexec"
     echo_log ""
     echo_log "Usage examples:"
     echo_log "  ${BASENAME}.sh "
@@ -273,6 +278,8 @@ parse_arguments() {
 
     TRANSPORT=${DEFAULT_TRANSPORT}
     PROVIDER=${DEFAULT_PROVIDER}
+
+    WITH_MPICH=${DEFAULT_WITH_MPICH}
 
     DOWNLOAD_CONDA=${DEFAULT_DOWNLOAD_CONDA}
     CREATE_CONDA=${DEFAULT_CREATE_CONDA}
@@ -472,6 +479,10 @@ parse_arguments() {
                 ;;
             "-provider")
                 PROVIDER="${2}"
+                shift
+                ;;
+            "-with_mpich")
+                WITH_MPICH="${2}"
                 shift
                 ;;
             *)
@@ -688,6 +699,7 @@ pt_test() {
 }
 
 check_base_env() {
+    echo_log "which DPCPP:"
     which dpcpp
     CheckCommandExitCode $? "DPCPP was not found"
 
@@ -696,6 +708,7 @@ check_base_env() {
 }
 
 check_horovod_env() {
+    echo_log "which mpicxx:"
     which mpicxx
     CheckCommandExitCode $? "MPICXX was not found"
 }
@@ -771,25 +784,25 @@ download_fw() {
     if [[ ${DOWNLOAD_TF} = "1" ]]
     then
         echo_log "\n=== download TF ===\n"
-        wget -e use_proxy=no ${TF_LINK}
+        wget -nv -e use_proxy=no ${TF_LINK}
     fi
 
     if [[ ${DOWNLOAD_ITEX} = "1" ]]
     then
         echo_log "\n=== download ITEX ===\n"
-        wget -e use_proxy=no ${ITEX_LINK}
+        wget -nv -e use_proxy=no ${ITEX_LINK}
     fi
 
     if [[ ${DOWNLOAD_PT} = "1" ]]
     then
         echo_log "\n=== download PT ===\n"
-        wget -e use_proxy=no ${PT_LINK}
+        wget -nv -e use_proxy=no ${PT_LINK}
     fi
 
     if [[ ${DOWNLOAD_IPEX} = "1" ]]
     then
         echo_log "\n=== download IPEX ===\n"
-        wget -e use_proxy=no ${IPEX_LINK}
+        wget -nv -e use_proxy=no ${IPEX_LINK}
     fi
 }
 
@@ -878,6 +891,16 @@ check_fw() {
     fi
 }
 
+function set_mpich_ofi_env()
+{
+    if [[ ${WITH_MPICH} != "1" ]]
+    then
+        return
+    fi
+
+    set_ats_mpich_ofi_env
+}
+
 download_hvd() {
     if [[ ${DOWNLOAD_HVD} != "1" ]]
     then
@@ -909,6 +932,7 @@ install_hvd() {
     check_horovod_env
 
     cmd="I_MPI_CXX=dpcpp"
+    cmd="$cmd MPICH_CXX=dpcpp"
     cmd="$cmd CXX=mpicxx"
     cmd="$cmd LDSHARED=\"dpcpp -shared -fPIC\""
     cmd="$cmd CC=icx"
@@ -1042,7 +1066,7 @@ run_model_pt() {
     rn50_log_file_pt="pt_rn50_"$current_date".txt"
 
     cmd="mpiexec -n 2 -l python ${MODEL_PT_FILE} --iter=${ITER_COUNT} --warm=2 --bs ${BATCH_SIZE} \
-         --arch resnet50 --sycl 2>&1 | tee ${rn50_log_file_pt}"
+         --arch resnet50 --sycl --horovod --print-iteration-time 2>&1 | tee ${rn50_log_file_pt}"
 
     echo_log "\nIPEX rn50 cmd:\n${cmd}\n"
     eval ${cmd}
@@ -1068,6 +1092,8 @@ install_fw
 set_run_env
 
 check_fw
+
+set_mpich_ofi_env
 
 download_hvd
 install_hvd
