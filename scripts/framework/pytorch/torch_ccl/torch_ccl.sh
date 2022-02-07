@@ -47,6 +47,8 @@ DEFAULT_TORCH_PATH=""
 DEFAULT_DOWNLOAD_IPEX="0"
 DEFAULT_INSTALL_IPEX="0"
 DEFAULT_IPEX_PATH=""
+DEFAULT_DOWNLOAD_TORCH_CCL="0"
+DEFAULT_INSTALL_TORCH_CCL="0"
 
 DEFAULT_RUN_UT="0"
 DEFAULT_RUN_DEMO="0"
@@ -58,18 +60,24 @@ DEFAULT_USERNAME_1S=""
 DEFAULT_PROXY="http://proxy-us.intel.com:912"
 
 set_run_env() {
-    # Node env variables
+    # GPU SW
     export EnableDirectSubmission=1
 
     # CCL
     export CCL_LOG_LEVEL=INFO
     export CCL_SYCL_OUTPUT_EVENT=1
+    source "$(python -c 'import torch_ccl; print(torch_ccl.cwd)')/env/setvars.sh"
 
     # OFI
     export FI_PROVIDER=tcp
 
-    #MPI
+    # IMPI
     export I_MPI_DEBUG=12
+}
+
+print_run_env() {
+    echo_log "I_MPI_ROOT: ${I_MPI_ROOT}"
+    echo_log "CCL_ROOT: ${CCL_ROOT}"
 }
 
 CheckCommandExitCode() {
@@ -113,6 +121,10 @@ print_help() {
     echo_log "      Install IPEX"
     echo_log "  -ipex_path <path>"
     echo_log "      Install IPEX from path (*.whl)"
+    echo_log "  -download_torch_ccl <bool_flag>"
+    echo_log "      Download torch-ccl"
+    echo_log "  -install_torch_ccl <bool_flag>"
+    echo_log "      Install torch-ccl"
     echo_log "  -run_ut <bool_flag>"
     echo_log "      Run unit tests"
     echo_log "  -run_demo <bool_flag>"
@@ -148,6 +160,8 @@ parse_arguments() {
     DOWNLOAD_IPEX=${DEFAULT_DOWNLOAD_IPEX}
     INSTALL_IPEX=${DEFAULT_INSTALL_IPEX}
     IPEX_PATH=${DEFAULT_IPEX_PATH}
+    DOWNLOAD_TORCH_CCL=${DEFAULT_DOWNLOAD_TORCH_CCL}
+    INSTALL_TORCH_CCL=${DEFAULT_INSTALL_TORCH_CCL}
 
     RUN_UT=${DEFAULT_RUN_UT}
     RUN_DEMO=${DEFAULT_RUN_DEMO}
@@ -218,6 +232,14 @@ parse_arguments() {
                 IPEX_PATH=${2}
                 shift
                 ;;
+            "-download_torch_ccl")
+                DOWNLOAD_TORCH_CCL=${2}
+                shift
+                ;;
+            "-install_torch_ccl")
+                INSTALL_TORCH_CCL=${2}
+                shift
+                ;;
             "-run_ut")
                 RUN_UT=${2}
                 shift
@@ -261,6 +283,8 @@ parse_arguments() {
         INSTALL_PT="1"
         DOWNLOAD_IPEX="1"
         INSTALL_IPEX="1"
+        DOWNLOAD_TORCH_CCL="1"
+        INSTALL_TORCH_CCL="1"
 
         RUN_UT="1"
         RUN_DEMO="1"
@@ -278,6 +302,8 @@ parse_arguments() {
         INSTALL_PT="1"
         DOWNLOAD_IPEX="1"
         INSTALL_IPEX="1"
+        DOWNLOAD_TORCH_CCL="1"
+        INSTALL_TORCH_CCL="1"
     fi
 
     mkdir -p ${SCRIPT_WORK_DIR}
@@ -304,6 +330,8 @@ parse_arguments() {
     echo_log "DOWNLOAD_IPEX      = ${DOWNLOAD_IPEX}"
     echo_log "INSTALL_IPEX       = ${INSTALL_IPEX}"
     echo_log "IPEX_PATH          = ${IPEX_PATH}"
+    echo_log "DOWNLOAD_TORCH_CCL = ${DOWNLOAD_TORCH_CCL}"
+    echo_log "INSTALL_TORCH_CCL  = ${INSTALL_TORCH_CCL}"
 
     echo_log "RUN_UT             = ${RUN_UT}"
     echo_log "RUN_DEMO           = ${RUN_DEMO}"
@@ -329,14 +357,41 @@ remove_conda() {
     fi
 }
 
+download_torch_ccl() {
+    if [ -d "${SCRIPT_WORK_DIR}/torch_ccl" ]; then
+        rm -rf "${SCRIPT_WORK_DIR}/torch_ccl"
+    fi
+
+    clone_repo "Torch-ccl" "https://${USERNAME_1S}${TORCH_CCL_BASE_LINK}" "${TORCH_CCL_BRANCH}" \
+        "${SCRIPT_WORK_DIR}/torch_ccl" "GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S}"
+
+    pushd "${SCRIPT_WORK_DIR}/torch_ccl" || exit 1
+    rm -rf third_party/oneCCL
+    clone_repo "oneCCL" "https://${USERNAME_1S}${ONECCL_BASE_LINK}" "${ONECCL_BRANCH}" \
+        "third_party/oneCCL" "GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S}"
+    popd
+}
+
+install_torch_ccl() {
+    pushd "${SCRIPT_WORK_DIR}/torch_ccl" || exit 1
+    COMPUTE_BACKEND=dpcpp_level_zero python setup.py install
+    popd
+}
+
 download_fw() {
     if [[ ${DOWNLOAD_PT} == "1" ]]
     then
         wget -e use_proxy=no ${TORCH_LINK}
     fi
+
     if [[ ${DOWNLOAD_IPEX} == "1" ]]
     then
         wget -e use_proxy=no ${IPEX_LINK}
+    fi
+
+    if [[ ${DOWNLOAD_TORCH_CCL} == "1" ]]
+    then
+        download_torch_ccl
     fi
 }
 
@@ -351,6 +406,7 @@ install_fw() {
         fi
         python -m pip install ${TORCH_NAME}
     fi
+
     if [[ ${INSTALL_IPEX} == "1" ]]
     then
         if [[ -f ${IPEX_PATH} ]]
@@ -360,6 +416,11 @@ install_fw() {
             install_name=$(realpath ${IPEX_NAME})
         fi
         python -m pip install ${IPEX_NAME}
+    fi
+
+    if [[ ${INSTALL_TORCH_CCL} == "1" ]]
+    then
+        install_torch_ccl
     fi
 }
 
@@ -383,21 +444,6 @@ install_rn50_requirements() {
     python -m pip install torchvision==0.8.2 --no-deps
 }
 
-download_torch_ccl() {
-    if [ -d "${SCRIPT_WORK_DIR}/torch_ccl" ]; then
-        rm -rf "${SCRIPT_WORK_DIR}/torch_ccl"
-    fi
-
-    clone_repo "Torch-ccl" "https://${USERNAME_1S}${TORCH_CCL_BASE_LINK}" "${TORCH_CCL_BRANCH}" \
-        "${SCRIPT_WORK_DIR}/torch_ccl" "GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S}"
-
-    pushd "${SCRIPT_WORK_DIR}/torch_ccl" || exit 1
-    rm -rf third_party/oneCCL
-    clone_repo "oneCCL" "https://${USERNAME_1S}${ONECCL_BASE_LINK}" "${ONECCL_BRANCH}" \
-        "third_party/oneCCL" "GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S}"
-    popd
-}
-
 download_models() {
     if [ -d "${SCRIPT_WORK_DIR}/models" ]; then
         rm -rf "${SCRIPT_WORK_DIR}/models"
@@ -406,20 +452,19 @@ download_models() {
         "${SCRIPT_WORK_DIR}/models" "GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S}"
 }
 
-install_torch_ccl() {
-    pushd "${SCRIPT_WORK_DIR}/torch_ccl" || exit 1
-    COMPUTE_BACKEND=dpcpp_level_zero python setup.py install
-    popd
-}
-
 run_torch_ccl_ut() {
     if [[ ${RUN_UT} != "1" ]]
     then
         return
     fi
+
     pushd "${SCRIPT_WORK_DIR}/torch_ccl/tests" || exit 1
+
     python -m pip install hypothesis pytest
-    python -m pytest -v ./test_c10d_ccl.py
+
+    print_run_env
+    python -m pytest -s -v ./test_c10d_ccl.py
+
     if [[ "$?" == "0" ]]; then
         echo -e "[PASS] torch ccl ut pass"
     else
@@ -434,8 +479,10 @@ run_torch_ccl_demo() {
     then
         return
     fi
-    source "$(python -c 'import torch_ccl; print(torch_ccl.cwd)')/env/setvars.sh"
-    pushd "${SCRIPT_WORK_DIR}/torch_ccl" || exit 1 
+
+    pushd "${SCRIPT_WORK_DIR}/torch_ccl" || exit 1
+
+    print_run_env
     mpiexec -n 2 python ./demo/demo.py
 
     if [ "$?" == "0" ]; then
@@ -462,7 +509,8 @@ run_torch_ccl_rn50() {
     download_models
 
     pushd "${SCRIPT_WORK_DIR}/models/resnet50" || exit 1
-    source "$(python -c 'import torch_ccl; print(torch_ccl.cwd)')/env/setvars.sh"
+
+    print_run_env
     mpiexec -n 2 python main.py -a resnet50 -b 128 --xpu 0 --epochs 1 --dry-run 5 --num-iterations 20 --bf16 1 --seed 1 "${IMAGENET}"
     if [ "$?" == "0" ]; then
         echo -e "[PASS] torch ccl gpu demo pass"
@@ -476,6 +524,8 @@ run_torch_ccl_rn50() {
 main() {
     parse_arguments $@
 
+    set_extra_proxy
+
     download_conda
     create_conda ${CONDA_PACKAGES}
     activate_conda
@@ -484,10 +534,8 @@ main() {
     install_fw
     check_fw
 
-    download_torch_ccl
-    install_torch_ccl
-
     set_run_env
+
     run_torch_ccl_ut
     run_torch_ccl_demo
     run_torch_ccl_rn50

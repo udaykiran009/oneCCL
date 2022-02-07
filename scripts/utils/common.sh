@@ -320,3 +320,16 @@ deactivate_conda() {
     echo_log "\n=== deactivate conda env ${CONDA_ENV_NAME} ===\n"
     conda deactivate
 }
+
+set_extra_proxy() {
+    if [[ ${SET_EXTRA_PROXY} = "0" ]]
+    then
+        return
+    fi
+
+    export http_proxy=http://proxy-dmz.intel.com:911
+    export https_proxy=http://proxy-dmz.intel.com:912
+    export ftp_proxy=http://proxy-dmz.intel.com:911
+    export socks_proxy=http://proxy-dmz.intel.com:1080
+    export no_proxy=intel.com,.intel.com,localhost,127.0.0.1
+}

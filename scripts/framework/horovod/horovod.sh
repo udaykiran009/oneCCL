@@ -17,19 +17,6 @@ touch ${LOG_FILE}
 SCRIPTS_ROOT_DIR=$(realpath ${SCRIPT_DIR}/../../)
 source ${SCRIPTS_ROOT_DIR}/utils/common.sh
 
-set_extra_proxy() {
-    if [[ ${SET_EXTRA_PROXY} = "0" ]]
-    then
-        return
-    fi
-
-    export http_proxy=http://proxy-dmz.intel.com:911
-    export https_proxy=http://proxy-dmz.intel.com:912
-    export ftp_proxy=http://proxy-dmz.intel.com:911
-    export socks_proxy=http://proxy-dmz.intel.com:1080
-    export no_proxy=intel.com,.intel.com,localhost,127.0.0.1
-}
-
 set_run_env() {
     # model
     export PYTHONPATH=${RN50_MODEL_TF_DIR}:${PYTHONPATH}
