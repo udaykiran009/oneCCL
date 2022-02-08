@@ -334,7 +334,7 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
         fill_ze_inter_colors(planes);
     }
 
-    auto devices = global_data::get().ze_data->device_list;
+    auto devices = global_data::get().ze_data->device_handles;
     p2p_matrix = build_p2p_matrix(get_filtered_devices(devices, ze_rank_info_vec));
     LOG_DEBUG("p2p matrix: \n", to_string(p2p_matrix), "\nnumber of devices: ", devices.size());
 

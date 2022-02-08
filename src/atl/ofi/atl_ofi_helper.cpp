@@ -2,29 +2,6 @@
 
 atl_ofi_global_data_t global_data;
 
-#ifdef CCL_ENABLE_OFI_HMEM
-void atl_ofi_init_ze_data() {
-    atl_ofi_ze_data& ze_data = global_data.ze_data;
-
-    ZE_CALL(zeInit, (ZE_INIT_FLAG_GPU_ONLY));
-
-    uint32_t count = 1;
-    ZE_CALL(zeDriverGet, (&count, &ze_data.driver));
-
-    ze_data.device_count = 0;
-    ZE_CALL(zeDeviceGet, (ze_data.driver, &ze_data.device_count, nullptr));
-    ZE_CALL(zeDeviceGet, (ze_data.driver, &ze_data.device_count, ze_data.devices));
-    ZE_CALL(zeContextCreate, (ze_data.driver, &ccl::ze::default_context_desc, &ze_data.context));
-
-    CCL_THROW_IF_NOT(ze_data.driver, "null ze driver");
-    CCL_THROW_IF_NOT(ze_data.context, "null ze context");
-    CCL_THROW_IF_NOT(
-        ze_data.device_count > 0, "unexpected ze device count: ", ze_data.device_count);
-
-    LOG_DEBUG("ze device count: ", ze_data.device_count);
-}
-#endif // CCL_ENABLE_OFI_HMEM
-
 std::string atl_ofi_get_short_nic_name(const struct fi_info* prov) {
     std::stringstream ss;
     ss << prov->domain_attr->name;

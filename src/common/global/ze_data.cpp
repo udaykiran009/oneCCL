@@ -28,13 +28,22 @@ global_data_desc::global_data_desc() {
         ZE_CALL(zeDeviceGet, (driver_list.at(i), &device_count, nullptr));
         std::vector<ze_device_handle_t> devs(device_count);
         ZE_CALL(zeDeviceGet, (driver_list.at(i), &device_count, devs.data()));
-        device_list.insert(device_list.end(), devs.begin(), devs.end());
-        for (auto dev : devs) {
+        for (uint32_t idx = 0; idx < device_count; idx++) {
+            device_list.push_back(device_info(devs[idx], idx));
+            device_handles.push_back(devs[idx]);
+        }
+
+        for (uint32_t idx = 0; idx < device_count; idx++) {
+            auto dev = devs[idx];
             uint32_t subdevice_count{};
             ZE_CALL(zeDeviceGetSubDevices, (dev, &subdevice_count, nullptr));
             std::vector<ze_device_handle_t> subdevs(subdevice_count);
             ZE_CALL(zeDeviceGetSubDevices, (dev, &subdevice_count, subdevs.data()));
-            device_list.insert(device_list.end(), subdevs.begin(), subdevs.end());
+
+            for (uint32_t subdev_idx = 0; subdev_idx < subdevice_count; subdev_idx++) {
+                device_list.push_back(device_info(subdevs[subdev_idx], idx));
+                device_handles.push_back(subdevs[subdev_idx]);
+            }
         }
     }
     LOG_DEBUG("found devices: ", device_list.size());
@@ -59,6 +68,7 @@ global_data_desc::~global_data_desc() {
 
     context_list.clear();
     device_list.clear();
+    device_handles.clear();
     driver_list.clear();
 
     ze_api_fini();

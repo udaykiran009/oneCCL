@@ -54,10 +54,6 @@ atl_status_t atl_ofi::init(int* argc,
 
     LOG_INFO("fi_version: ", global_data.fi_major_version, ".", global_data.fi_minor_version);
 
-#ifdef CCL_ENABLE_OFI_HMEM
-    atl_ofi_init_ze_data();
-#endif // CCL_ENABLE_OFI_HMEM
-
     ctx.ep_count = attr->in.ep_count;
 
     coord.global_count = pmi->get_size();
@@ -1015,10 +1011,11 @@ void atl_ofi::mr_cache::get(fid_domain* domain, void* buf, size_t bytes, fid_mr*
     mr_attr.iface = FI_HMEM_SYSTEM;
     mr_attr.device.ze = 0;
 
-    atl_ofi_ze_data& ze_data = global_data.ze_data;
+    CCL_THROW_IF_NOT(ccl::global_data::get().ze_data->context_list.at(0), "ze context is null");
+    ze_context_handle_t context = ccl::global_data::get().ze_data->context_list[0];
     ze_memory_allocation_properties_t alloc_props = ccl::ze::default_alloc_props;
     ze_device_handle_t alloc_dev = nullptr;
-    ZE_CALL(zeMemGetAllocProperties, (ze_data.context, buf, &alloc_props, &alloc_dev));
+    ZE_CALL(zeMemGetAllocProperties, (context, buf, &alloc_props, &alloc_dev));
 
     LOG_DEBUG("alloc_props: dev ", alloc_dev, ", type ", alloc_props.type);
 
@@ -1032,12 +1029,14 @@ void atl_ofi::mr_cache::get(fid_domain* domain, void* buf, size_t bytes, fid_mr*
         ZE_CALL(zeDeviceGetProperties, (alloc_dev, &alloc_dev_props));
 
         int dev_idx = -1;
-        for (int idx = 0; idx < static_cast<int>(ze_data.device_count); idx++) {
+        int device_count = static_cast<int>(ccl::global_data::get().ze_data->device_list.size());
+        for (int idx = 0; idx < device_count; idx++) {
             ze_device_properties_t dev_props = ccl::ze::default_device_props;
-            ZE_CALL(zeDeviceGetProperties, (ze_data.devices[idx], &dev_props));
+            ze_device_handle_t device = ccl::global_data::get().ze_data->device_list[idx].device;
+            ZE_CALL(zeDeviceGetProperties, (device, &dev_props));
 
             if (!std::memcmp(&dev_props.uuid, &alloc_dev_props.uuid, sizeof(ze_device_uuid_t))) {
-                dev_idx = idx;
+                dev_idx = ccl::global_data::get().ze_data->device_list[idx].parent_idx;
                 LOG_DEBUG("buf ", buf, " corresponds to ze device idx ", dev_idx);
                 break;
             }

@@ -208,18 +208,6 @@ typedef struct {
     struct fid_mr* mr;
 } atl_ofi_req_t;
 
-#ifdef CCL_ENABLE_OFI_HMEM
-typedef struct atl_ofi_ze_data {
-    ze_driver_handle_t driver;
-    ze_context_handle_t context;
-    uint32_t device_count;
-    ze_device_handle_t devices[ATL_OFI_MAX_ZE_DEV_COUNT];
-
-    atl_ofi_ze_data() : driver(nullptr), context(nullptr), device_count(0) {}
-
-} atl_ofi_ze_data_t;
-#endif // CCL_ENABLE_OFI_HMEM
-
 typedef struct atl_ofi_global_data {
     int is_env_inited;
     void* dlhandle;
@@ -227,10 +215,6 @@ typedef struct atl_ofi_global_data {
 
     int fi_major_version;
     int fi_minor_version;
-
-#ifdef CCL_ENABLE_OFI_HMEM
-    atl_ofi_ze_data ze_data;
-#endif // CCL_ENABLE_OFI_HMEM
 
     atl_ofi_global_data()
             : is_env_inited(0),
@@ -243,10 +227,6 @@ typedef struct atl_ofi_global_data {
 } atl_ofi_global_data_t;
 
 extern atl_ofi_global_data_t global_data;
-
-#ifdef CCL_ENABLE_OFI_HMEM
-void atl_ofi_init_ze_data();
-#endif // CCL_ENABLE_OFI_HMEM
 
 std::string atl_ofi_get_short_nic_name(const struct fi_info* prov);
 std::string atl_ofi_get_nic_name(const struct fi_info* prov);

@@ -234,7 +234,7 @@ bool get_device_global_id(ze_device_handle_t device, ssize_t* id) {
     CCL_THROW_IF_NOT(device, "no device");
     CCL_THROW_IF_NOT(id, "no id");
     bool success{};
-    const auto& devices = global_data::get().ze_data->device_list;
+    const auto& devices = global_data::get().ze_data->device_handles;
     auto found = std::find(devices.begin(), devices.end(), device);
     if (found != devices.end()) {
         *id = std::distance(devices.begin(), found);
