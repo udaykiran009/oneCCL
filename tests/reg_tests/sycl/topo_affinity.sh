@@ -97,7 +97,7 @@ run_case() {
             elif [ "${topo_color}" != "env" ]; then
                 cmd+=" CCL_TOPO_COLOR=${topo_color}"
             fi
-            cmd+=" CCL_LOG_LEVEL=debug"
+            cmd+=" CCL_LOG_LEVEL=info"
             cmd+=" ${env_var}"
             cmd+=" mpiexec -l -n $n -ppn $ppn ${SCRIPT_DIR}/benchmark"
             cmd+=" ${bench_ops} ${extra_bench_ops} > ${TEST_LOG} 2>&1"
