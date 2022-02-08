@@ -19,9 +19,9 @@ export CCL_ALLREDUCE=topo
 export CCL_REDUCE=topo
 
 transports="ofi mpi"
-topo_colors="ze fixed"
+topo_colors="ze fixed env"
 random_device_list="3.0 1.0 3.1 4.1 0.0 4.0 2.1 2.0 1.1 5.1 0.1 5.0"
-bench_ops="-w 0 -i 2 -c all -l allgatherv,allreduce,reduce -b sycl -y 1024,131072"
+bench_ops="-w 0 -i 1 -c all -l allgatherv,allreduce,reduce -b sycl -y 1024"
 
 create_affinity_env() {
     device_list=$1
@@ -60,9 +60,14 @@ parse_colors() {
     while IFS='' read -r line; do
         if [[ $line =~ intra_card_colors:\ ([0-9\ ]+) ]]; then
             intra_str="${BASH_REMATCH[1]}"
+            break
         fi
+    done < "${TEST_LOG}"
+
+    while IFS='' read -r line; do
         if [[ $line =~ inter_card_colors:\ ([0-9\ ]+) ]]; then
             inter_str="${BASH_REMATCH[1]}"
+            break
         fi
     done < "${TEST_LOG}"
 
@@ -78,15 +83,20 @@ run_case() {
     ppn=$2
     intra_colors=$3
     inter_colors=$4
-    env_var=${5:-}
-    extra_bench_ops=${6:-}
+    topo_map=$5
+    env_var=${6:-}
+    extra_bench_ops=${7:-}
 
     for transport in ${transports}
     do
         for topo_color in ${topo_colors}
         do
-            cmd="CCL_TOPO_COLOR=${topo_color}"
-            cmd+=" CCL_ATL_TRANSPORT=${transport}"
+            cmd="CCL_ATL_TRANSPORT=${transport}"
+            if [ "${topo_color}" == "env" ]  && [ ! -z "$topo_map" ]; then
+                cmd+=" CCL_TOPO_COLOR=${topo_map}"
+            elif [ "${topo_color}" != "env" ]; then
+                cmd+=" CCL_TOPO_COLOR=${topo_color}"
+            fi
             cmd+=" CCL_LOG_LEVEL=debug"
             cmd+=" ${env_var}"
             cmd+=" mpiexec -l -n $n -ppn $ppn ${SCRIPT_DIR}/benchmark"
@@ -138,20 +148,22 @@ run_case() {
 if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" || ${PLATFORM_HW_DISCRETE_GPU} = "gen9" ]]
 then
     # [ATS, GEN9]: 2 ranks on one card
-    run_case 2 2 "0 0" "0 1"
+    run_case 2 2 "0 0" "0 1" "\"card:{0,1};plane:{0},{1}\""
     # [ATS, GEN9]: 4 ranks one node
-    run_case 4 4 "0 0 1 1" "0 1 0 1"
+    run_case 4 4 "0 0 1 1" "0 1 0 1" "\"card:{0,1},{2,3};plane:{0,2},{1,3}\""
     # [ATS, GEN9]: 8 ranks one node
-    run_case 8 8 "0 0 1 1 2 2 3 3" "0 1 0 1 0 1 0 1"
+    run_case 8 8 "0 0 1 1 2 2 3 3" "0 1 0 1 0 1 0 1" \
+                 "\"card:{0,1},{2,3},{4,5},{6,7};plane:{0,2,4,6},{1,3,5,7}"\"
 
     if [[ ${PLATFORM_HW_DISCRETE_GPU} = "gen9" ]]
     then
-        # [GEN9]: 2 ranks, 2 nodes
-        run_case 2 1 "0 1000" "0 1000"
-        # [GEN9]: 4 ranks, 2 nodes
-        run_case 4 2 "0 0 1000 1000" "0 1 1000 1001"
-        # [GEN9]: 8 ranks, 2 nodes
-        run_case 8 4 "0 0 1 1 1000 1000 1001 1001" "0 1 0 1 1000 1001 1000 1001"
+        # [GEN9]: 2 ranks on one card
+        run_case 2 1 "0 1000" "0 1000" "\"card:{0};plane:{0}\""
+        # [GEN9]: 4 ranks one node
+        run_case 4 2 "0 0 1000 1000" "0 1 1000 1001" "\"card:{0,1};plane:{0},{1}\""
+        # [GEN9]: 8 ranks one node
+        run_case 8 4 "0 0 1 1 1000 1000 1001 1001" "0 1 0 1 1000 1001 1000 1001" \
+                     "\"card:{0,1},{2,3};plane:{0,2},{1,3}"\"
     fi
 fi
 

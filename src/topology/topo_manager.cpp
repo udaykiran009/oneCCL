@@ -742,13 +742,22 @@ std::map<int, std::vector<std::vector<int>>> topo_manager::parse_topo_env() {
     domain_strs.push_back(get_domain_string(domain_raw_strs[topo_manager::plane_domain_idx],
                                             std::string(topo_manager::plane_domain_name)));
 
-    for (auto& domain_str : domain_strs) {
-        for (auto& domain_pair : domain_str) {
+    for (const auto& domain_str : domain_strs) {
+        for (const auto& domain_pair : domain_str) {
             std::vector<std::vector<int>> proc_indexes;
             auto substrs = get_subdomain_strings(domain_pair.second);
-            for (auto& substr : substrs) {
+            for (const auto& substr : substrs) {
                 std::vector<int> procs{};
                 ccl::utils::str_to_array(substr, ",", procs);
+                for (const auto& proc : procs) {
+                    const auto local_proc_count =
+                        ccl::global_data::get().executor->get_local_proc_count();
+                    CCL_THROW_IF_NOT(proc < local_proc_count,
+                                     "unexpected process number: ",
+                                     proc,
+                                     ", it should be less than: ",
+                                     local_proc_count);
+                }
                 proc_indexes.push_back(procs);
             }
             domains.insert({ domain_pair.first, proc_indexes });
