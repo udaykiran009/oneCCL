@@ -730,8 +730,9 @@ download_ccl() {
 
     if [[ ! -z "${CCL_PR_NUMBER}" ]]; then
         cd ${CCL_SRC_DIR}
-        git fetch origin pull/${CCL_PR_NUMBER}/head:pull_${CCL_PR_NUMBER}
+        GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S} git fetch origin pull/${CCL_PR_NUMBER}/head:pull_${CCL_PR_NUMBER}
         git checkout pull_${CCL_PR_NUMBER}
+        git log -1
     fi
 }
 

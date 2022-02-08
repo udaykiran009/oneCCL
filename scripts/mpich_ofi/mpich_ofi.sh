@@ -80,7 +80,7 @@ load_package() {
     fi
     if [[ ! -z ${PACKAGE_LINK} ]]
     then
-        wget ${PACKAGE_LINK}
+        wget -nv ${PACKAGE_LINK}
         rc=$?
         if [[ ${rc} != 0 ]]
         then

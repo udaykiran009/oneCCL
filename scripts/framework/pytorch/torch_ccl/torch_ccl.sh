@@ -58,6 +58,7 @@ DEFAULT_PATH_TO_TOKEN_FILE_1S=""
 DEFAULT_USERNAME_1S=""
 
 DEFAULT_PROXY="http://proxy-us.intel.com:912"
+DEFAULT_EXTRA_PROXY=0
 
 set_run_env() {
     # GPU SW
@@ -137,6 +138,10 @@ print_help() {
     echo_log "      Github username with access to Horovod repo"
     echo_log "  -proxy <url>"
     echo_log "      https proxy"
+    echo_log "  -set_extra_proxy <bool_flag>"
+    echo_log "      Set extra proxy"
+    echo_log "  -ccl_pr <number>"
+    echo_log "      Checkout specific PR from oneCCL repository"
     echo_log "Usage examples:"
     echo_log "  ${BASENAME}.sh "
     echo_log "  ${BASENAME}.sh -full 1"
@@ -171,6 +176,7 @@ parse_arguments() {
     USERNAME_1S=${DEFAULT_USERNAME_1S}
 
     PROXY=${DEFAULT_PROXY}
+    SET_EXTRA_PROXY=${DEFAULT_EXTRA_PROXY}
 
     if [[ $# -eq 0 ]]; then
         print_help
@@ -264,7 +270,14 @@ parse_arguments() {
                 PROXY="${2}"
                 shift
                 ;;
-
+            "-set_extra_proxy")
+                SET_EXTRA_PROXY="${2}"
+                shift
+                ;;
+            "-ccl_pr")
+                CCL_PR_NUMBER="${2}"
+                shift
+                ;;
             *)
                 echo "$(basename $0): ERROR: unknown option ($1)"
                 print_help
@@ -369,6 +382,14 @@ download_torch_ccl() {
     rm -rf third_party/oneCCL
     clone_repo "oneCCL" "https://${USERNAME_1S}${ONECCL_BASE_LINK}" "${ONECCL_BRANCH}" \
         "third_party/oneCCL" "GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S}"
+
+    if [[ ! -z "${CCL_PR_NUMBER}" ]]; then
+        pushd "third_party/oneCCL"
+        GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S} git fetch origin pull/${CCL_PR_NUMBER}/head:pull_${CCL_PR_NUMBER}
+        git checkout pull_${CCL_PR_NUMBER}
+        git log -1
+        popd
+    fi
     popd
 }
 
@@ -381,12 +402,12 @@ install_torch_ccl() {
 download_fw() {
     if [[ ${DOWNLOAD_PT} == "1" ]]
     then
-        wget -e use_proxy=no ${TORCH_LINK}
+        wget -nv -e use_proxy=no ${TORCH_LINK}
     fi
 
     if [[ ${DOWNLOAD_IPEX} == "1" ]]
     then
-        wget -e use_proxy=no ${IPEX_LINK}
+        wget -nv -e use_proxy=no ${IPEX_LINK}
     fi
 
     if [[ ${DOWNLOAD_TORCH_CCL} == "1" ]]

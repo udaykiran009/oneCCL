@@ -602,8 +602,13 @@ function run_regular_tests()
 
 function run_hvd_rn50_test()
 {
+    if [[ ! -z ${PR_NUMBER} ]]
+    then
+        pr_number_option="-ccl_pr ${PR_NUMBER}"
+    fi
+
     pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
-    ./horovod.sh "-full_$1" 1 -transport mpi -provider ${FI_PROVIDER} -with_mpich $2\
+    ./horovod.sh "-full_$1" 1 -transport mpi -provider ${FI_PROVIDER} ${pr_number_option} -with_mpich $2\
                     -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
     log_status_fail=${PIPESTATUS[0]}
     popd
@@ -627,63 +632,27 @@ function run_horovod_tests()
     source ${CCL_ONEAPI_DIR}/onemkl/last/mkl/latest/env/vars.sh
     source ${CCL_ONEAPI_DIR}/tbb_oneapi/last/tbb/latest/env/vars.sh
 
-    if [ "${node_label}" == "ccl_test_ats" ]
+    run_hvd_rn50_test "pt" "0"
+    run_hvd_rn50_test "pt" "1"
+    # run_hvd_rn50_test "tf" "0"
+    # run_hvd_rn50_test "tf" "1"
+    echo "Horovod TF rn50 run is currently blocked by https://jira.devtools.intel.com/browse/TFDO-5212"
+    echo "Running Horovod TF build:"
+    pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
+    ./horovod.sh -download_tf 1 -install_tf 1 \
+                -download_itex 1 -install_itex 1 \
+                -download_hvd 1 -install_hvd 1 \
+                -download_conda 1 -create_conda 1 -remove_conda 1 \
+                -transport mpi -provider ${FI_PROVIDER} \
+                -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
+    log_status_fail=${PIPESTATUS[0]}
+    popd
+    if [ "$log_status_fail" -eq 0 ]
     then
-        run_hvd_rn50_test "pt" "0"
-        run_hvd_rn50_test "pt" "1"
-        # run_hvd_rn50_test "tf" "0"
-        # run_hvd_rn50_test "tf" "1"
-        echo "Horovod TF rn50 run is currently blocked by https://jira.devtools.intel.com/browse/TFDO-5212"
-        echo "Running Horovod TF build:"
-        pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
-        ./horovod.sh -download_tf 1 -install_tf 1 \
-                    -download_itex 1 -install_itex 1 \
-                    -download_hvd 1 -install_hvd 1 \
-                    -download_conda 1 -create_conda 1 -remove_conda 1 \
-                    -transport mpi -provider ${FI_PROVIDER} \
-                    -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
-        log_status_fail=${PIPESTATUS[0]}
-        popd
-        if [ "$log_status_fail" -eq 0 ]
-        then
-            echo "Horovod TF build ... OK"
-        else
-            echo "Horovod TF build ... NOK"
-            exit 1
-        fi
+        echo "Horovod TF build ... OK"
     else
-        pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
-        ./horovod.sh -download_pt 1 -install_pt 1 \
-                    -download_ipex 1 -install_ipex 1 \
-                    -download_hvd 1 -install_hvd 1 \
-                    -download_conda 1 -create_conda 1 -remove_conda 1 \
-                    -transport mpi -provider ${FI_PROVIDER} \
-                    -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
-        log_status_fail=${PIPESTATUS[0]}
-        popd
-        if [ "$log_status_fail" -eq 0 ]
-        then
-            echo "Horovod PT build ... OK"
-        else
-            echo "Horovod PT build ... NOK"
-            exit 1
-        fi
-        pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
-        ./horovod.sh -download_tf 1 -install_tf 1 \
-                    -download_itex 1 -install_itex 1 \
-                    -download_hvd 1 -install_hvd 1 \
-                    -download_conda 1 -create_conda 1 -remove_conda 1 \
-                    -transport mpi -provider ${FI_PROVIDER} \
-                    -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
-        log_status_fail=${PIPESTATUS[0]}
-        popd
-        if [ "$log_status_fail" -eq 0 ]
-        then
-            echo "Horovod TF build ... OK"
-        else
-            echo "Horovod TF build ... NOK"
-            exit 1
-        fi
+        echo "Horovod TF build ... NOK"
+        exit 1
     fi
 
     exit 0
@@ -720,12 +689,17 @@ function run_torch_ccl_tests()
         return
     fi
 
+    if [[ ! -z ${PR_NUMBER} ]]
+    then
+        pr_number_option="-ccl_pr ${PR_NUMBER}"
+    fi
+
     source ${CCL_ONEAPI_DIR}/onemkl/last/mkl/latest/env/vars.sh
     source ${CCL_ONEAPI_DIR}/tbb_oneapi/last/tbb/latest/env/vars.sh
 
     pushd ${CURRENT_WORK_DIR}/scripts/framework/pytorch/torch_ccl/
     ./torch_ccl.sh -download_conda 1 -create_conda 1 -download_pt 1 \
-                   -install_pt 1 -download_ipex 1 -install_ipex 1 -run_ut 1 \
+                   -install_pt 1 -download_ipex 1 -install_ipex 1 -run_ut 1 ${pr_number_option} \
                    -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
     log_status_fail=${PIPESTATUS[0]}
     popd
