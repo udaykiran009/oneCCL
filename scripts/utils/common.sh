@@ -8,16 +8,7 @@ function install_oneccl_package()
         exit 1
     fi
 
-    while true
-    do
-        if [[ -f ${DEST_DIR}/install_${build_type}.lock ]]
-        then
-            echo "INFO: The package is already in the installation process..."
-            sleep 30
-        else
-            break
-        fi
-    done
+    lockfile -l 60 "${DEST_DIR}/install.lock"
 
     # Download package
     ls ${DEST_DIR} | grep l_ccl_${build_type}.*.tgz
@@ -33,7 +24,6 @@ function install_oneccl_package()
     then
         echo "INFO: Package is already installed"
     else
-        touch ${DEST_DIR}/install_${build_type}.lock
         PACKAGE_NAME=$(ls ${DEST_DIR}/ | grep l_ccl_${build_type})
         PACKAGE_NAME=${PACKAGE_NAME%.*}
         mkdir ${DEST_DIR}/tmp
@@ -42,8 +32,9 @@ function install_oneccl_package()
         unzip -P accept *.zip
         ${DEST_DIR}/tmp/${PACKAGE_NAME}/install.sh -s -d ${DEST_DIR}/${PACKAGE_NAME}
         popd
-        rm -rf ${DEST_DIR}/install_${build_type}.lock ${DEST_DIR}/tmp
+        rm -rf ${DEST_DIR}/tmp
     fi
+    rm -f "${DEST_DIR}/install.lock"
 }
 
 function check_command_exit_code() 
@@ -235,14 +226,14 @@ download_conda() {
 
     pushd "${SCRIPT_WORK_DIR}"
     CONDA_FILENAME="conda.sh"
-    wget -O ${CONDA_FILENAME} ${CONDA_LINK}
+    wget -nv -O ${CONDA_FILENAME} ${CONDA_LINK}
     chmod +x ${CONDA_FILENAME}
     ./${CONDA_FILENAME} -b -p ${CONDA_INSTALL_DIR}
     export CONDA_ENVS_PATH="${CONDA_INSTALL_DIR}/envs"
     export CONDA_PKGS_DIRS="${CONDA_INSTALL_DIR}/pkgs"
     export PIP_CACHE_DIR="${CONDA_INSTALL_DIR}/pip"
     mkdir -p "${PIP_CACHE_DIR}"
-    popd 
+    popd
 }
 
 create_conda() {
@@ -251,7 +242,7 @@ create_conda() {
         return
     fi
 
-    conda_packages=${1}
+    conda_packages="$@"
     echo_log "conda_packages: ${conda_packages}"
 
     pushd ${SCRIPT_WORK_DIR}
@@ -314,6 +305,20 @@ activate_conda() {
     
     echo_log "python = $(which python)"
     echo_log "pip    = $(which pip)"
+}
+
+remove_conda() {
+    if [[ ${REMOVE_CONDA} != "1" ]]
+    then
+        return
+    fi
+
+    conda env remove -y --name ${CONDA_ENV_NAME}
+
+    if [ -d "${CONDA_INSTALL_DIR}" ]
+    then
+        rm -rf ${CONDA_INSTALL_DIR}
+    fi
 }
 
 deactivate_conda() {

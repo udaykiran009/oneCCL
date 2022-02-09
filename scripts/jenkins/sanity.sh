@@ -293,9 +293,7 @@ function set_unordered_coll_test_scope()
 
 function set_ats_environment()
 {
-    source ~/.jenkins_helper
-
-    ATS_WORKSPACE_DIR="/home/sys_ctlab/workspace/workspace/"
+    ATS_WORKSPACE_DIR="/home/sys_ctlab/jenkins/workspace/workspace/"
     ATS_ARTEFACT_DIR="${ATS_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
     CCL_ONEAPI_DIR="/home/sys_ctlab/oneapi"
     export BUILD_COMPILER_TYPE="dpcpp"
@@ -303,8 +301,7 @@ function set_ats_environment()
 
     if [ -z ${CCL_ROOT} ]
     then
-        install_oneccl_package ${ATS_ARTEFACT_DIR}
-        source ${ATS_ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+        source ${ATS_ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
         export DASHBOARD_GPU_DEVICE_PRESENT="yes"
     fi
     export DASHBOARD_PLATFORM_HW_DISCRETE_GPU="ats"
@@ -312,8 +309,6 @@ function set_ats_environment()
 
 function set_pvc_environment()
 {
-    source ~/.jenkins_helper
-
     # Unload default system's oneapi package
     module unload oneapi
 
@@ -327,7 +322,7 @@ function set_pvc_environment()
 
     if [ -z ${CCL_ROOT} ]
     then
-        source ${PVC_ARTEFACT_DIR}/l_ccl_$build_type*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+        source ${PVC_ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
         export DASHBOARD_GPU_DEVICE_PRESENT="yes"
     fi
 
@@ -606,19 +601,33 @@ function run_hvd_rn50_test()
     then
         pr_number_option="-ccl_pr ${PR_NUMBER}"
     fi
-
     pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
-    ./horovod.sh "-full_$1" 1 -transport mpi -provider ${FI_PROVIDER} ${pr_number_option} -with_mpich $2\
-                    -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
-    log_status_fail=${PIPESTATUS[0]}
-    popd
-    if [ "$log_status_fail" -eq 0 ]
+
+    HVD_WORK_DIR="${CURRENT_WORK_DIR}/scripts/framework/horovod/work_dir_${1}_mpich_${2}"
+
+    # jfcst-xe compute nodes doesn't have access to the network
+    # The download/install sections are performed in advance on the head node.
+    if [[ ${FW_DOWNLOAD_COMPONENTS} = "yes" ]]
     then
-        echo "Horovod $1 rn50 run ... OK"
+        ./horovod.sh "-prepare_${1}" 1 -work_dir "${HVD_WORK_DIR}" ${pr_number_option} -with_mpich ${2}\
+                     -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
+        check_command_exit_code $? "ERROR: prepare Horovod/${1} failed"
     else
-        echo "Horovod $1 rn50 run ... NOK"
-        exit 1
+        if [[ ${1} == "pt" ]]
+        then
+            ./horovod.sh -install_hvd 1 -install_ccl 1 "-install_${1}" 1 "-run_model_${1}" 1 \
+                         "-check_hvd_${1}" 1 "-check_${1}" 1 -remove_conda 1 -with_mpich ${2} \
+                         -transport mpi -provider ${FI_PROVIDER} -work_dir "${HVD_WORK_DIR}"
+        else
+            echo "Horovod TF rn50 run is currently blocked by https://jira.devtools.intel.com/browse/TFDO-5212"
+            echo "Running Horovod TF build:"
+            ./horovod.sh -install_hvd 1 -install_ccl 1 "-install_${1}" 1 "-check_${1}" 1 \
+                         -remove_conda 1 -with_mpich ${2} \
+                         -transport mpi -provider ${FI_PROVIDER} -work_dir "${HVD_WORK_DIR}"
+        fi
+        check_command_exit_code $? "ERROR: Horovod/${1} run failed"
     fi
+    popd
 }
 
 function run_horovod_tests()
@@ -634,26 +643,9 @@ function run_horovod_tests()
 
     run_hvd_rn50_test "pt" "0"
     run_hvd_rn50_test "pt" "1"
-    # run_hvd_rn50_test "tf" "0"
+
+    run_hvd_rn50_test "tf" "0"
     # run_hvd_rn50_test "tf" "1"
-    echo "Horovod TF rn50 run is currently blocked by https://jira.devtools.intel.com/browse/TFDO-5212"
-    echo "Running Horovod TF build:"
-    pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
-    ./horovod.sh -download_tf 1 -install_tf 1 \
-                -download_itex 1 -install_itex 1 \
-                -download_hvd 1 -install_hvd 1 \
-                -download_conda 1 -create_conda 1 -remove_conda 1 \
-                -transport mpi -provider ${FI_PROVIDER} \
-                -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
-    log_status_fail=${PIPESTATUS[0]}
-    popd
-    if [ "$log_status_fail" -eq 0 ]
-    then
-        echo "Horovod TF build ... OK"
-    else
-        echo "Horovod TF build ... NOK"
-        exit 1
-    fi
 
     exit 0
 }
@@ -697,10 +689,16 @@ function run_torch_ccl_tests()
     source ${CCL_ONEAPI_DIR}/onemkl/last/mkl/latest/env/vars.sh
     source ${CCL_ONEAPI_DIR}/tbb_oneapi/last/tbb/latest/env/vars.sh
 
+    TORCH_CCL_WORK_DIR="${CURRENT_WORK_DIR}/scripts/framework/pytorch/torch_ccl/work_dir_torch_ccl"
     pushd ${CURRENT_WORK_DIR}/scripts/framework/pytorch/torch_ccl/
-    ./torch_ccl.sh -download_conda 1 -create_conda 1 -download_pt 1 \
-                   -install_pt 1 -download_ipex 1 -install_ipex 1 -run_ut 1 ${pr_number_option} \
-                   -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
+    if [[ ${FW_DOWNLOAD_COMPONENTS} = "yes" ]]
+    then
+        ./torch_ccl.sh -prepare 1 ${pr_number_option} -work_dir ${TORCH_CCL_WORK_DIR} \
+                       -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
+    else
+        ./torch_ccl.sh -install_torch_ccl 1 -run_ut 1 -check_pt 1 -check_ipex 1 \
+                       -remove_conda 1 -work_dir ${TORCH_CCL_WORK_DIR}
+    fi
     log_status_fail=${PIPESTATUS[0]}
     popd
     if [ "$log_status_fail" -eq 0 ]
@@ -1044,48 +1042,10 @@ function run_functional_tests()
     esac
 }
 
-function clean_nodes() {
-    echo "Start cleaning nodes..."
-
-    if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
-    then
-        echo "WARNING: I_MPI_HYDRA_HOST_FILE isn't set, only current node will be cleaned."
-        using_nodes=`hostname`
-    else
-        using_nodes=`cat ${I_MPI_HYDRA_HOST_FILE}`
-    fi
-
-    user='sys_ctl'
-    exceptions='java\|awk\|bash\|grep\|intelremotemond\|sshd\|grep\|ps\|mc'
-    for host_name in ${using_nodes}; do
-     ssh  "${host_name}" "bash -s ${user} ${exceptions} " <<'EOF'
-       echo "Host: $(hostname)"
-       User=$1
-       Exceptions=$2
-       ps -aux | grep PID | grep -v 'grep'
-       for pid in $(ps aux | grep -e "^${User}" \
-                   | grep -v "${Exceptions}" \
-                   | awk '{print $2}'); do
-           (cat /proc/${pid}/environ | tr '\0' '\n' | grep "CCL_PROCESS_CLEANUP=yes") >/dev/null 2>&1
-           rc=$?
-           if [[ ${rc} = 0 ]]
-           then
-               echo "Killed:"
-               ps -aux | grep -v 'grep' | grep ${pid}
-               echo "-------------------------------------------------"
-               kill -9 ${pid}
-           fi
-       done
-EOF
-    done
-    echo "Start cleaning nodes...DONE"
-}
-
 #==============================================================================
 #                              MAIN
 #==============================================================================
 
-clean_nodes
 set_default_values
 set_environment
 parse_arguments "$@"
@@ -1102,5 +1062,3 @@ run_functional_tests
 run_valgrind_check
 run_reg_tests
 run_regular_tests
-
-clean_nodes

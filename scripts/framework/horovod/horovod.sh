@@ -62,6 +62,7 @@ set_run_env() {
     export I_MPI_DEBUG=12
     export I_MPI_PIN_PROCESSOR_EXCLUDE_LIST=${HOROVOD_THREAD_AFFINITY}
     export I_MPI_PIN_PROCESSOR_LIST=2,3
+    BOOTSTRAP_OPTIONS="-launcher ssh -launcher-exec /usr/bin/ssh"
 
     # OFI
     export FI_PROVIDER="${PROVIDER}"
@@ -78,7 +79,9 @@ set_run_env() {
 
 CONDA_LINK="https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux-x86_64.sh"
 CONDA_INSTALL_DIR=""
+
 CONDA_PACKAGES="python=3.7"
+CONDA_FILENAME="conda.sh"
 
 CCL_BASE_LINK="github.com/intel-innersource/libraries.performance.communication.oneccl"
 HOROVOD_BASE_LINK="github.com/intel-innersource/frameworks.ai.horovod.git"
@@ -131,6 +134,8 @@ DEFAULT_CREATE_CONDA="0"
 DEFAULT_REMOVE_CONDA="0"
 DEFAULT_CONDA_ENV_NAME="test_horovod"
 
+DEFAULT_PREPARE_TF="0"
+DEFAULT_CHECK_TF="0"
 DEFAULT_FULL_TF="0"
 DEFAULT_DOWNLOAD_TF="0"
 DEFAULT_INSTALL_TF="0"
@@ -139,6 +144,8 @@ DEFAULT_DOWNLOAD_ITEX="0"
 DEFAULT_INSTALL_ITEX="0"
 DEFAULT_ITEX_PATH=""
 
+DEFAULT_PREPARE_PT="0"
+DEFAULT_CHECK_PT="0"
 DEFAULT_FULL_PT="0"
 DEFAULT_DOWNLOAD_PT="0"
 DEFAULT_INSTALL_PT="0"
@@ -149,7 +156,8 @@ DEFAULT_IPEX_PATH=""
 
 DEFAULT_DOWNLOAD_HVD="0"
 DEFAULT_INSTALL_HVD="0"
-DEFAULT_CHECK_HVD="0"
+DEFAULT_CHECK_HVD_TF="0"
+DEFAULT_CHECK_HVD_PT="0"
 DEFAULT_HVD_BRANCH="xpu"
 
 DEFAULT_DOWNLOAD_MODEL_TF="0"
@@ -199,6 +207,10 @@ print_help() {
     echo_log "      Install oneCCL"
     echo_log "  -download_tf <bool_flag>"
     echo_log "      Download TensorFlow"
+    echo_log "  -prepare_tf <bool_flag>"
+    echo_log "      Prepare workspace for testing with TF"
+    echo_log "  -check_tf <bool_flag>"
+    echo_log "      Run basic TensorFlow test"
     echo_log "  -full_tf <bool_flag>"
     echo_log "      Enable all TF processing"
     echo_log "  -install_tf <bool_flag>"
@@ -211,6 +223,10 @@ print_help() {
     echo_log "      Install ITEX"
     echo_log "  -itex_path <path>"
     echo_log "      Install ITEX from path (*.whl)"
+    echo_log "  -prepare_pt <bool_flag>"
+    echo_log "      Prepare workspace for testing with PT"
+    echo_log "  -check_pt <bool_flag>"
+    echo_log "      Run basic PyTorch test"
     echo_log "  -full_pt <bool_flag>"
     echo_log "      Enable all PT processing"
     echo_log "  -download_pt <bool_flag>"
@@ -229,8 +245,10 @@ print_help() {
     echo_log "      Download Horovod"
     echo_log "  -install_hvd <bool_flag>"
     echo_log "      Install Horovod; see also install_tf & install_pt"
-    echo_log "  -check_hvd <bool_flag>"
-    echo_log "      Run basic Horovod test and benchmark with Tensorflow/PyTorch"
+    echo_log "  -check_hvd_tf <bool_flag>"
+    echo_log "      Run basic Horovod test and benchmark with Tensorflow"
+    echo_log "  -check_hvd_pt <bool_flag>"
+    echo_log "      Run basic Horovod test and benchmark with PyTorch"
     echo_log "  -hvd_branch <branch_name>"
     echo_log "      Set Horovod branch name to download"
     echo_log "  -download_model_tf <bool_flag>"
@@ -286,12 +304,17 @@ parse_arguments() {
     REMOVE_CONDA=${DEFAULT_REMOVE_CONDA}
     CONDA_ENV_NAME=${DEFAULT_CONDA_ENV_NAME}
 
+    PREPARE_TF=${DEFAULT_PREPARE_TF}
+    CHECK_TF=${DEFAULT_CHECK_TF}
     DOWNLOAD_TF=${DEFAULT_DOWNLOAD_TF}
     INSTALL_TF=${DEFAULT_INSTALL_TF}
     TF_PATH=${DEFAULT_TF_PATH}
     DOWNLOAD_ITEX=${DEFAULT_DOWNLOAD_ITEX}
     INSTALL_ITEX=${DEFAULT_INSTALL_ITEX}
     ITEX_PATH=${DEFAULT_ITEX_PATH}
+
+    PREPARE_PT=${DEFAULT_PREPARE_PT}
+    CHECK_PT=${DEFAULT_CHECK_PT}
     DOWNLOAD_PT=${DEFAULT_DOWNLOAD_PT}
     INSTALL_PT=${DEFAULT_INSTALL_PT}
     PT_PATH=${DEFAULT_PT_PATH}
@@ -301,7 +324,8 @@ parse_arguments() {
 
     DOWNLOAD_HVD=${DEFAULT_DOWNLOAD_HVD}
     INSTALL_HVD=${DEFAULT_INSTALL_HVD}
-    CHECK_HVD=${DEFAULT_CHECK_HVD}
+    CHECK_HVD_TF=${DEFAULT_CHECK_HVD_TF}
+    CHECK_HVD_PT=${DEFAULT_CHECK_HVD_PT}
     HVD_BRANCH=${DEFAULT_HVD_BRANCH}
 
     FULL_TF=${DEFAULT_FULL_TF}
@@ -330,7 +354,7 @@ parse_arguments() {
                 shift
                 ;;
             "-full")
-                FULL_SCOPE=$2
+                FULL_SCOPE=${2}
                 shift
                 ;;
             "-download_ccl")
@@ -355,6 +379,14 @@ parse_arguments() {
                 ;;
             "-env")
                 CONDA_ENV_NAME=${2}
+                shift
+                ;;
+            "-prepare_tf")
+                PREPARE_TF=${2}
+                shift
+                ;;
+            "-check_tf")
+                CHECK_TF="${2}"
                 shift
                 ;;
             "-full_tf")
@@ -383,6 +415,14 @@ parse_arguments() {
                 ;;
             "-itex_path")
                 ITEX_PATH=${2}
+                shift
+                ;;
+            "-prepare_pt")
+                PREPARE_PT=${2}
+                shift
+                ;;
+            "-check_pt")
+                CHECK_PT="${2}"
                 shift
                 ;;
             "-full_pt")
@@ -421,12 +461,16 @@ parse_arguments() {
                 INSTALL_HVD=${2}
                 shift
                 ;;
-            "-check_hvd")
-                CHECK_HVD="${2}"
-                shift
-                ;;
             "-hvd_branch")
                 HVD_BRANCH=${2}
+                shift
+                ;;
+            "-check_hvd_tf")
+                CHECK_HVD_TF="${2}"
+                shift
+                ;;
+            "-check_hvd_pt")
+                CHECK_HVD_PT="${2}"
                 shift
                 ;;
             "-download_model_tf")
@@ -497,6 +541,7 @@ parse_arguments() {
     mkdir -p ${SCRIPT_WORK_DIR}
     CCL_SRC_DIR=${SCRIPT_WORK_DIR}/ccl
     HVD_SRC_DIR=${SCRIPT_WORK_DIR}/horovod
+    HOROVOD_DEPS_DIR=${SCRIPT_WORK_DIR}/horovod_deps
     MODEL_TF_SRC_DIR=${SCRIPT_WORK_DIR}/model
     RN50_MODEL_TF_DIR=${MODEL_TF_SRC_DIR}/models/image_recognition/tensorflow/resnet50v1_5/training
     RN50_OUTPUT_DIR=${MODEL_TF_SRC_DIR}/resnet50_chk
@@ -518,6 +563,8 @@ parse_arguments() {
 
         DOWNLOAD_MODEL_PT="1"
         RUN_MODEL_PT="1"
+        CHECK_HVD_PT="1"
+        CHECK_PT="1"
     fi
 
     if [[ ${FULL_TF} = "1" ]]
@@ -529,6 +576,8 @@ parse_arguments() {
 
         DOWNLOAD_MODEL_TF="1"
         RUN_MODEL_TF="1"
+        CHECK_HVD_TF="1"
+        CHECK_TF="1"
     fi
 
     if [[ ${FULL_SCOPE} = "1" || ${FULL_PT} = "1" || ${FULL_TF} = "1" ]]
@@ -541,7 +590,6 @@ parse_arguments() {
 
         DOWNLOAD_HVD="1"
         INSTALL_HVD="1"
-        CHECK_HVD="1"
 
         remove_conda
         if [[ -d ${SCRIPT_WORK_DIR} ]]
@@ -566,6 +614,7 @@ parse_arguments() {
         INSTALL_TF="1"
         DOWNLOAD_ITEX="1"
         INSTALL_ITEX="1"
+        CHECK_TF="1"
     fi
 
     if [[ ${DOWNLOAD_PT} = "1" ]]
@@ -573,11 +622,39 @@ parse_arguments() {
         INSTALL_PT="1"
         DOWNLOAD_IPEX="1"
         INSTALL_IPEX="1"
+        CHECK_PT="1"
     fi
 
     if [[ ${DOWNLOAD_HVD} = "1" ]]
     then
         INSTALL_HVD="1"
+    fi
+
+    if [[ ${PREPARE_PT} = "1" || ${PREPARE_TF} = "1" ]]
+    then
+        DOWNLOAD_CCL="1"
+        DOWNLOAD_HVD="1"
+        DOWNLOAD_CONDA="1"
+        CREATE_CONDA="1"
+    fi
+
+    if [[ ${PREPARE_PT} = "1" ]]
+    then
+        DOWNLOAD_PT="1"
+        INSTALL_PT="1"
+        DOWNLOAD_IPEX="1"
+        INSTALL_IPEX="1"
+        DOWNLOAD_MODEL_PT="1"
+    fi
+
+    if [[ ${PREPARE_TF} = "1" ]]
+    then
+        DOWNLOAD_TF="1"
+        INSTALL_TF="1"
+        DOWNLOAD_ITEX="1"
+        INSTALL_ITEX="1"
+        # TODO: uncomment when testing with TF will be available
+        #DOWNLOAD_MODEL_TF="1"
     fi
 
     echo_log "-----------------------------------------------------------"
@@ -597,6 +674,8 @@ parse_arguments() {
     echo_log "REMOVE_CONDA       = ${REMOVE_CONDA}"
     echo_log "CONDA_ENV_NAME     = ${CONDA_ENV_NAME}"
 
+    echo_log "PREPARE_TF         = ${PREPARE_TF}"
+    echo_log "CHECK_TF           = ${CHECK_TF}"
     echo_log "FULL_TF            = ${FULL_TF}"
     echo_log "DOWNLOAD_TF        = ${DOWNLOAD_TF}"
     echo_log "INSTALL_TF         = ${INSTALL_TF}"
@@ -605,6 +684,8 @@ parse_arguments() {
     echo_log "INSTALL_ITEX       = ${INSTALL_ITEX}"
     echo_log "ITEX_PATH          = ${ITEX_PATH}"
 
+    echo_log "PREPARE_PT         = ${PREPARE_PT}"
+    echo_log "CHECK_PT           = ${CHECK_PT}"
     echo_log "FULL_PT            = ${FULL_PT}"
     echo_log "DOWNLOAD_PT        = ${DOWNLOAD_PT}"
     echo_log "INSTALL_PT         = ${INSTALL_PT}"
@@ -615,7 +696,8 @@ parse_arguments() {
 
     echo_log "DOWNLOAD_HVD       = ${DOWNLOAD_HVD}"
     echo_log "INSTALL_HVD        = ${INSTALL_HVD}"
-    echo_log "CHECK_HVD          = ${CHECK_HVD}"
+    echo_log "CHECK_HVD_TF       = ${CHECK_HVD_TF}"
+    echo_log "CHECK_HVD_PT       = ${CHECK_HVD_PT}"
     echo_log "HVD_BRANCH         = ${HVD_BRANCH}"
 
     echo_log "DOWNLOAD_MODEL_TF  = ${DOWNLOAD_MODEL_TF}"
@@ -631,7 +713,7 @@ parse_arguments() {
 }
 
 hvd_test() {
-    if [[ ${INSTALL_TF} = "1" ]]
+    if [[ ${CHECK_HVD_TF} = "1" ]]
     then
         echo_log "============================= Basic Horovod/TF test =================================="
         cmd="python -c \"import horovod.tensorflow as hvd; hvd.init(); print(hvd.local_rank())\""
@@ -643,7 +725,8 @@ hvd_test() {
         if [[ ${CCL_CONFIGURATION} = "" ]]
         then
             echo_log "============================= Horovod/TF bench =================================="
-            cmd="mpiexec -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_bench.py --xpu gpu --framework tf"
+            cmd="mpiexec ${BOOTSTRAP_OPTIONS} -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_bench.py \
+                 --xpu gpu --framework tf"
             echo_log ${cmd}
             eval ${cmd}
             CheckCommandExitCode $? "Basic Horovod/TF test failed"
@@ -651,7 +734,7 @@ hvd_test() {
         fi
     fi
 
-    if [[ ${INSTALL_PT} = "1" ]]
+    if [[ ${CHECK_HVD_PT} = "1" ]]
     then
         echo_log "============================= Basic Horovod/PT test =================================="
         cmd="python -c \"import horovod.torch as hvd; hvd.init(); print(hvd.local_rank())\""
@@ -663,7 +746,8 @@ hvd_test() {
         if [[ ${CCL_CONFIGURATION} = "" ]]
         then
             echo_log "============================= Horovod/PT bench =================================="
-            cmd="mpiexec -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_bench.py --xpu gpu --framework pt"
+            cmd="mpiexec ${BOOTSTRAP_OPTIONS} -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_bench.py \
+                 --xpu gpu --framework pt"
             echo_log ${cmd}
             eval ${cmd}
             CheckCommandExitCode $? "Basic Horovod/PT test failed"
@@ -673,11 +757,6 @@ hvd_test() {
 }
 
 tf_test() {
-    if [[ ${INSTALL_TF} != "1" ]]
-    then
-        return
-    fi
-
     echo_log "===================================== Basic TF test ==========================================="
     echo_log "python -c \"import tensorflow as tf; print(tf.__version__); print(tf.sysconfig.get_include())\""
     python -c "import tensorflow as tf; print(tf.__version__); print(tf.sysconfig.get_include())"
@@ -686,11 +765,6 @@ tf_test() {
 }
 
 pt_test() {
-    if [[ ${INSTALL_PT} != "1" ]]
-    then
-        return
-    fi
-
     echo_log "===================================== Basic PT test ==========================================="
     echo_log "python -c \"import torch; import ipex; print(torch.__version__)\""
     python -c "import torch; import ipex; print(torch.__version__)"
@@ -762,20 +836,6 @@ install_ccl() {
 
     vars_file="${CCL_SRC_DIR}/build/_install/env/setvars.sh"
     source ${vars_file}
-}
-
-remove_conda() {
-    if [[ ${REMOVE_CONDA} != "1" ]]
-    then
-        return
-    fi
-
-    conda env remove -y --name ${CONDA_ENV_NAME}
-
-    if [ -d "${CONDA_INSTALL_DIR}" ]
-    then
-        rm -rf ${CONDA_INSTALL_DIR}
-    fi
 }
 
 download_fw() {
@@ -879,13 +939,13 @@ install_fw() {
 check_fw() {
     cd ${SCRIPT_WORK_DIR}
 
-    if [[ ${INSTALL_TF} = "1" ]]
+    if [[ ${CHECK_TF} = "1" ]]
     then
         tf_test
         CheckCommandExitCode $? "TF test failed"
     fi
 
-    if [[ ${INSTALL_PT} = "1" ]]
+    if [[ ${CHECK_PT} = "1" ]]
     then
         pt_test
         CheckCommandExitCode $? "PT test failed"
@@ -916,6 +976,13 @@ download_hvd() {
     cd ${SCRIPT_WORK_DIR}
     clone_repo "Horovod" "https://${USERNAME_1S}${HOROVOD_BASE_LINK}" "${HVD_BRANCH} --recursive" \
         ${HVD_SRC_DIR} "GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S}"
+
+    cd ${HVD_SRC_DIR}
+
+    if [[ ${PREPARE_PT} == "1" || ${PREPARE_TF} == "1" ]]
+    then
+        pip download -d ${HOROVOD_DEPS_DIR} .
+    fi
 }
 
 install_hvd() {
@@ -928,6 +995,14 @@ install_hvd() {
     then
         echo "ERROR: HVD_SRC_DIR (${HVD_SRC_DIR}) is not directory, try to run script with \"-download_hvd 1\""
         CheckCommandExitCode 1 "Install Horovod failed"
+    fi
+
+    if [[ -d ${HOROVOD_DEPS_DIR} ]]
+    then
+        for package in $(ls ${HOROVOD_DEPS_DIR})
+        do
+            pip install --no-index --find-links=${HOROVOD_DEPS_DIR} ${HOROVOD_DEPS_DIR}/${package}
+        done
     fi
 
     check_horovod_env
@@ -970,11 +1045,10 @@ install_hvd() {
 }
 
 check_hvd() {
-    if [[ ${CHECK_HVD} != "1" ]]
+    if [[ ${CHECK_HVD_TF} != "1" && ${CHECK_HVD_PT} != "1" ]]
     then
         return
     fi
-
     cd ${SCRIPT_WORK_DIR}
     hvd_test
     CheckCommandExitCode $? "Horovod test failed"
@@ -1033,7 +1107,7 @@ run_model_tf() {
     rm -rf ${MODEL_TF_SRC_DIR}/resnet50_chk/*
     rm -r ${RN50_MODEL_TF_DIR}/mlperf_resnet/__pycache__
 
-    cmd="GPU=1 mpiexec -n 2 -l python ${RN50_MODEL_TF_DIR}/mlperf_resnet/imagenet_main.py 2 \
+    cmd="GPU=1 mpiexec ${BOOTSTRAP_OPTIONS} -n 2 -l python ${RN50_MODEL_TF_DIR}/mlperf_resnet/imagenet_main.py 2 \
       --max_train_steps=${ITER_COUNT} --train_epochs=10 --epochs_between_evals=10 \
       --inter_op_parallelism_threads 1 --intra_op_parallelism_threads 24  \
       --version 1 --resnet_size 50 --model_dir=${RN50_OUTPUT_DIR} \
@@ -1066,7 +1140,8 @@ run_model_pt() {
     rn50_log_file="rn50_"$current_date".txt"
     rn50_log_file_pt="pt_rn50_"$current_date".txt"
 
-    cmd="mpiexec -n 2 -l python ${MODEL_PT_FILE} --iter=${ITER_COUNT} --warm=2 --bs ${BATCH_SIZE} \
+    cmd="mpiexec ${BOOTSTRAP_OPTIONS} -n 2 -l python ${MODEL_PT_FILE} \
+         --iter=${ITER_COUNT} --warm=2 --bs ${BATCH_SIZE} \
          --arch resnet50 --sycl --horovod --print-iteration-time 2>&1 | tee ${rn50_log_file_pt}"
 
     echo_log "\nIPEX rn50 cmd:\n${cmd}\n"

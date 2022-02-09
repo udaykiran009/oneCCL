@@ -11,12 +11,17 @@ ARTEFACT_DIR="${ARTEFACT_ROOT_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
 PVC_WORKSPACE_DIR="/home/sys_ctlab/workspace/workspace/"
 PVC_ARTEFACT_DIR="${PVC_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
 
+ATS_WORKSPACE_DIR="/home/sys_ctlab/jenkins/workspace/workspace/"
+ATS_ARTEFACT_DIR="${ATS_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
+
 echo "DEBUG: ARTEFACT_DIR          = ${ARTEFACT_DIR}"
 echo "DEBUG: ENABLE_PRE_DROP_STAGE = ${ENABLE_PRE_DROP_STAGE}"
 echo "DEBUG: ENABLE_NIGHTLY_DROP   = ${ENABLE_NIGHTLY_DROP}"
 echo "DEBUG: CCL_PACKAGE_PHASE     = ${CCL_PACKAGE_PHASE}"
 echo "DEBUG: ARTEFACT_DIR          = ${ARTEFACT_DIR}"
-echo "DEBUG: PVC_ARTEFACT_DIR      = ${CCL_PACKAGE_PHASE}"
+echo "DEBUG: PVC_ARTEFACT_DIR      = ${PVC_ARTEFACT_DIR}"
+echo "DEBUG: ATS_ARTEFACT_DIR      = ${ATS_ARTEFACT_DIR}"
+
 
 #debug
 export CCL_PACKAGE_PREFIX=l_ccl_debug_
@@ -68,5 +73,11 @@ then
     scp ${ARTEFACT_DIR}/l_ccl_release*.tgz ${AURORA_PVC}:${PVC_ARTEFACT_DIR}
     CheckCommandExitCode $? "copying release packages failed"
     scp ${ARTEFACT_DIR}/l_ccl_debug*.tgz ${AURORA_PVC}:${PVC_ARTEFACT_DIR}
+    CheckCommandExitCode $? "copying debug packages failed"
+else
+    source ~/.jfcst-xe
+    scp ${ARTEFACT_DIR}/l_ccl_release*.tgz ${JFCST_ATS}:${ATS_ARTEFACT_DIR}
+    CheckCommandExitCode $? "copying release packages failed"
+    scp ${ARTEFACT_DIR}/l_ccl_debug*.tgz ${JFCST_ATS}:${ATS_ARTEFACT_DIR}
     CheckCommandExitCode $? "copying debug packages failed"
 fi

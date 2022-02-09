@@ -34,21 +34,27 @@ ONECCL_BRANCH="master"
 ONECCL_BASE_LINK="github.com/intel-innersource/libraries.performance.communication.oneccl.git"
 
 CONDA_LINK="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
-CONDA_PACKAGES="cmake python=3.9"
+CONDA_PACKAGES="cmake python=3.9 hypothesis pytest"
 
 DEFAULT_DOWNLOAD_CONDA="0"
 DEFAULT_CREATE_CONDA="0"
 DEFAULT_REMOVE_CONDA="0"
 DEFAULT_CONDA_ENV_NAME="torch_ccl_test"
 
+DEFAULT_PREPARE="0"
 DEFAULT_DOWNLOAD_PT="0"
 DEFAULT_INSTALL_PT="0"
 DEFAULT_TORCH_PATH=""
+DEFAULT_CHECK_PT="0"
 DEFAULT_DOWNLOAD_IPEX="0"
 DEFAULT_INSTALL_IPEX="0"
 DEFAULT_IPEX_PATH=""
+DEFAULT_CHECK_IPEX="0"
+
 DEFAULT_DOWNLOAD_TORCH_CCL="0"
 DEFAULT_INSTALL_TORCH_CCL="0"
+
+DEFAULT_DOWNLOAD_MODEL="0"
 
 DEFAULT_RUN_UT="0"
 DEFAULT_RUN_DEMO="0"
@@ -110,22 +116,30 @@ print_help() {
     echo_log "      Remove conda environment after script completion"
     echo_log "  -env <name>"
     echo_log "      The name for conda environment"
+    echo_log "  -prepare <bool_flag>"
+    echo_log "      Prepare workspace for testing"
     echo_log "  -download_pt <bool_flag>"
     echo_log "      Download PyTorch"
     echo_log "  -install_pt <bool_flag>"
     echo_log "      Install PyTorch"
     echo_log "  -pt_path <path>"
     echo_log "      Install PyTorch from path (*.whl)"
+    echo_log "  -check_pt <bool_flag>"
+    echo_log "      Run basic PT test"
     echo_log "  -download_ipex <bool_flag>"
     echo_log "      Download IPEX"
     echo_log "  -install_ipex <bool_flag>"
     echo_log "      Install IPEX"
     echo_log "  -ipex_path <path>"
     echo_log "      Install IPEX from path (*.whl)"
+    echo_log "  -check_ipex <bool_flag>"
+    echo_log "      Run basic IPEX test"
     echo_log "  -download_torch_ccl <bool_flag>"
     echo_log "      Download torch-ccl"
     echo_log "  -install_torch_ccl <bool_flag>"
     echo_log "      Install torch-ccl"
+    echo_log "  -download_model <bool_flag>"
+    echo_log "      Download model"
     echo_log "  -run_ut <bool_flag>"
     echo_log "      Run unit tests"
     echo_log "  -run_demo <bool_flag>"
@@ -159,14 +173,20 @@ parse_arguments() {
     REMOVE_CONDA=${DEFAULT_REMOVE_CONDA}
     CONDA_ENV_NAME=${DEFAULT_CONDA_ENV_NAME}
 
+    PREPARE=${DEFAULT_PREPARE}
     DOWNLOAD_PT=${DEFAULT_DOWNLOAD_PT}
     INSTALL_PT=${DEFAULT_INSTALL_PT}
     TORCH_PATH=${DEFAULT_TORCH_PATH}
+    CHECK_PT=${DEFAULT_CHECK_PT}
     DOWNLOAD_IPEX=${DEFAULT_DOWNLOAD_IPEX}
     INSTALL_IPEX=${DEFAULT_INSTALL_IPEX}
     IPEX_PATH=${DEFAULT_IPEX_PATH}
+    CHECK_IPEX=${DEFAULT_CHECK_IPEX}
+
     DOWNLOAD_TORCH_CCL=${DEFAULT_DOWNLOAD_TORCH_CCL}
     INSTALL_TORCH_CCL=${DEFAULT_INSTALL_TORCH_CCL}
+
+    DOWNLOAD_MODEL=${DEFAULT_DOWNLOAD_MODEL}
 
     RUN_UT=${DEFAULT_RUN_UT}
     RUN_DEMO=${DEFAULT_RUN_DEMO}
@@ -214,6 +234,10 @@ parse_arguments() {
                 CONDA_ENV_NAME=${2}
                 shift
                 ;;
+            "-prepare")
+                PREPARE=${2}
+                shift
+                ;;
             "-download_pt")
                 DOWNLOAD_PT=${2}
                 shift
@@ -224,6 +248,10 @@ parse_arguments() {
                 ;;
             "-pt_path")
                 TORCH_PATH=${2}
+                shift
+                ;;
+            "-check_pt")
+                CHECK_PT=${2}
                 shift
                 ;;
             "-download_ipex")
@@ -238,12 +266,20 @@ parse_arguments() {
                 IPEX_PATH=${2}
                 shift
                 ;;
+            "-check_ipex")
+                CHECK_IPEX=${2}
+                shift
+                ;;
             "-download_torch_ccl")
                 DOWNLOAD_TORCH_CCL=${2}
                 shift
                 ;;
             "-install_torch_ccl")
                 INSTALL_TORCH_CCL=${2}
+                shift
+                ;;
+            "-download_model")
+                DOWNLOAD_MODELs=${2}
                 shift
                 ;;
             "-run_ut")
@@ -294,10 +330,15 @@ parse_arguments() {
 
         DOWNLOAD_PT="1"
         INSTALL_PT="1"
+        CHECK_PT="1"
         DOWNLOAD_IPEX="1"
         INSTALL_IPEX="1"
+        CHECK_IPEX="1"
+
         DOWNLOAD_TORCH_CCL="1"
         INSTALL_TORCH_CCL="1"
+
+        DOWNLOAD_MODEL="1"
 
         RUN_UT="1"
         RUN_DEMO="1"
@@ -327,6 +368,17 @@ parse_arguments() {
         CREATE_CONDA="1"
     fi
 
+    if [[ ${PREPARE} = "1" ]]
+    then
+        DOWNLOAD_CONDA="1"
+        CREATE_CONDA="1"
+        DOWNLOAD_PT="1"
+        INSTALL_PT="1"
+        DOWNLOAD_IPEX="1"
+        INSTALL_IPEX="1"
+        DOWNLOAD_TORCH_CCL="1"
+    fi
+
     echo_log "-----------------------------------------------------------"
     echo_log "PARAMETERS"
     echo_log "-----------------------------------------------------------"
@@ -337,14 +389,20 @@ parse_arguments() {
     echo_log "REMOVE_CONDA       = ${REMOVE_CONDA}"
     echo_log "CONDA_ENV_NAME     = ${CONDA_ENV_NAME}"
 
+    echo_log "PREPARE            = ${PREPARE}"
     echo_log "DOWNLOAD_PT        = ${DOWNLOAD_PT}"
     echo_log "INSTALL_PT         = ${INSTALL_PT}"
     echo_log "TORCH_PATH         = ${TORCH_PATH}"
+    echo_log "CHECK_PT           = ${CHECK_PT}"
     echo_log "DOWNLOAD_IPEX      = ${DOWNLOAD_IPEX}"
     echo_log "INSTALL_IPEX       = ${INSTALL_IPEX}"
     echo_log "IPEX_PATH          = ${IPEX_PATH}"
+    echo_log "CHECK_IPEX         = ${CHECK_IPEX}"
+
     echo_log "DOWNLOAD_TORCH_CCL = ${DOWNLOAD_TORCH_CCL}"
     echo_log "INSTALL_TORCH_CCL  = ${INSTALL_TORCH_CCL}"
+
+    echo_log "DOWNLOAD_MODEL     = ${DOWNLOAD_MODEL}"
 
     echo_log "RUN_UT             = ${RUN_UT}"
     echo_log "RUN_DEMO           = ${RUN_DEMO}"
@@ -357,17 +415,6 @@ parse_arguments() {
 deactivate_conda() {
     echo_log "\n=== deactivate conda env ${CONDA_ENV_NAME} ===\n"
     conda deactivate
-}
-
-remove_conda() {
-    if [[ ${REMOVE_CONDA} != "1" ]]
-    then
-        return
-    fi
-    conda env remove -y --name ${CONDA_ENV_NAME}
-    if [ -d "${CONDA_INSTALL_DIR}" ]; then
-        rm -rf ${CONDA_INSTALL_DIR}
-    fi
 }
 
 download_torch_ccl() {
@@ -446,31 +493,35 @@ install_fw() {
 }
 
 check_fw() {
-    if [[ ${INSTALL_PT} == "1" ]]
+    if [[ ${CHECK_PT} == "1" ]]
     then
-        echo_log "Torch Version: $(python -c 'import torch; print(torch.__version__)')"
-        echo_log "Torch has MKL: $(python -c 'import torch; print(torch.has_mkl)')"
+        cmd="python -c 'import torch; print(f\"Torch Version: {torch.__version__}\"); print(f\"Torch has MKL: {torch.has_mkl}\")'"
+        echo_log ${cmd}
+        eval ${cmd}
+        CheckCommandExitCode $? "Basic PyTorch test failed"
     fi
-
-    if [[ ${INSTALL_IPEX} == "1" ]]
+    if [[ ${CHECK_IPEX} == "1" ]]
     then
-        echo_log "IPEX Version:"
-        echo_log "$(python -c 'import ipex; ipex.version()')"
-        echo_log "IPEX oneMKL:  $(python -c 'import ipex; import torch; print(torch.xpu.settings.has_onemkl())')"
+        cmd="python -c 'import torch; import ipex; print(f\"IPEX Version: {ipex.version()}\"); print(f\"IPEX oneMKL: {torch.xpu.settings.has_onemkl()}\")'"
+        echo_log ${cmd}
+        eval ${cmd}
+        CheckCommandExitCode $? "Basic IPEX test failed"
     fi
-}
-
-install_rn50_requirements() {
-    python -m pip install --no-cache-dir -I pillow
-    python -m pip install torchvision==0.8.2 --no-deps
 }
 
 download_models() {
+    if [[ ${DOWNLOAD_MODEL} != "1" ]]
+    then
+        return
+    fi
     if [ -d "${SCRIPT_WORK_DIR}/models" ]; then
         rm -rf "${SCRIPT_WORK_DIR}/models"
     fi
     clone_repo "GPU models" "https://${USERNAME_1S}${MODELS_BASE_LINK}" "${MODELS_BRANCH}" \
         "${SCRIPT_WORK_DIR}/models" "GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S}"
+
+    python -m pip install --no-cache-dir -I pillow
+    python -m pip install torchvision==0.8.2 --no-deps
 }
 
 run_torch_ccl_ut() {
@@ -480,8 +531,6 @@ run_torch_ccl_ut() {
     fi
 
     pushd "${SCRIPT_WORK_DIR}/torch_ccl/tests" || exit 1
-
-    python -m pip install hypothesis pytest
 
     print_run_env
     python -m pytest -s -v ./test_c10d_ccl.py
@@ -526,9 +575,6 @@ run_torch_ccl_rn50() {
         exit 1
     fi
 
-    install_rn50_requirements
-    download_models
-
     pushd "${SCRIPT_WORK_DIR}/models/resnet50" || exit 1
 
     print_run_env
@@ -558,7 +604,10 @@ main() {
     set_run_env
 
     run_torch_ccl_ut
+
     run_torch_ccl_demo
+
+    download_models
     run_torch_ccl_rn50
     
 }
