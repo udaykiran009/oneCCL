@@ -239,6 +239,10 @@ Set this environment variable to specify minimum number of bytes in chunk for re
 Fusion
 ######
 
+
+The group of environment variables to control fusion of collective operations.
+
+
 CCL_FUSION
 **********
 
@@ -351,6 +355,10 @@ Set this environment variable to specify the frequency of checking for collectiv
 ATL
 ###
 
+
+The group of environment variables to control ATL (abstract transport layer).
+
+
 CCL_ATL_TRANSPORT
 *****************
 **Syntax**
@@ -435,8 +443,15 @@ CCL_PRIORITY
 Set this environment variable to control priority mode of collective operations. 
 
 
+Workers
+#######
+
+
+The group of environment variables to control worker threads.
+
+
 CCL_WORKER_COUNT
-################
+****************
 **Syntax**
 
 :: 
@@ -461,7 +476,7 @@ Set this environment variable to specify the number of |product_short| worker th
 
 
 CCL_WORKER_AFFINITY
-###################
+*******************
 **Syntax**
 
 :: 
@@ -495,7 +510,7 @@ Set this environment variable to specify cpu affinity for |product_short| worker
 
 
 CCL_WORKER_MEM_AFFINITY
-#######################
+***********************
 **Syntax**
 
 :: 
@@ -722,3 +737,66 @@ CCL_ITT_LEVEL
 Set this environment variable to specify ``Intel(R) Instrumentation and Tracing Technology`` (ITT) profiling level.
 Once the environment variable is enabled (value > 0), it is possible to collect and display profiling
 data for |product_short| using tools such as ``Intel(R) VTune(TM) Amplifier``.
+
+
+Low-precision datatypes
+#######################
+
+
+The group of environment variables to control processing of low-precision datatypes.
+
+
+CCL_BF16
+********
+**Syntax**
+
+::
+
+  CCL_BF16=<value>
+
+**Arguments**
+
+.. list-table::
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``avx512f``
+     - Select implementation based on AVX512F instructions.
+   * - ``avx512bf``
+     - Select implementation based on AVX512_BF16 instructions.
+
+**Description**
+
+Set this environment variable to select implementation for BF16 <-> FP32 conversion on reduction phase of collective operation.
+Default value depends on instruction set support on specific CPU. AVX512_BF16-based implementation has precedence over AVX512F-based one.
+
+
+CCL_FP16
+********
+**Syntax**
+
+::
+
+  CCL_FP16=<value>
+
+**Arguments**
+
+.. list-table::
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``f16c``
+     - Select implementation based on F16C instructions.
+   * - ``avx512f``
+     - Select implementation based on AVX512F instructions.
+
+**Description**
+
+Set this environment variable to select implementation for FP16 <-> FP32 conversion on reduction phase of collective operation.
+Default value depends on instruction set support on specific CPU. AVX512F-based implementation has precedence over F16C-based one.
