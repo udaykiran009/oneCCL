@@ -115,10 +115,10 @@ atl_status_t atl_mpi_comm::init_transport(bool is_new,
 
     init_tag();
 
+    update_eps(); // TODO: align with atl_ofi_comm?
     comm_id = create_comm_id();
     comm_count++;
 
-    update_eps();
     update_executor();
 
     return ATL_STATUS_SUCCESS;

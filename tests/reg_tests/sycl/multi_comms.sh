@@ -11,13 +11,9 @@ source ${ROOT_DIR}/utils.sh
 check_impi
 check_ccl
 
-#TODO: uncoment after fix MLSL-1193 (OFI)
-#comm_size_modes="direct reverse"
-#parallel_comm_modes="0 1"
-
-comm_size_modes="reverse"
+comm_size_modes="reverse direct"
 rank_order_modes="direct reorder"
-parallel_comm_modes="0"
+parallel_comm_modes="0 1"
 transports="ofi mpi"
 algos="ring topo"
 
@@ -29,6 +25,14 @@ do
         do
             for transport in ${transports}
             do
+                if [ ${transport} == "ofi" ];
+                then
+                    #TODO: uncoment after fix MLSL-1193 (OFI)
+                    if [ ${comm_size_mode} == "direct" ] || [ ${parallel_comm_mode} == "1" ]; then
+                        continue
+                    fi
+                fi
+
                 for algo in ${algos}
                 do
                     cmd="CCL_ALLREDUCE=${algo} CCL_BCAST=${algo}"

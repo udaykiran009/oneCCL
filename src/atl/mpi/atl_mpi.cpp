@@ -88,8 +88,6 @@ atl_status_t atl_mpi::init(int* argc,
     attr->out.max_tag = (is_tag_ub_set) ? *((int*)tag_ub_ptr) : 0;
     attr->out.max_order_waw_size = 0;
 
-    coord = create_proc_coord(MPI_COMM_WORLD);
-
     return ATL_STATUS_SUCCESS;
 
 err_init:
