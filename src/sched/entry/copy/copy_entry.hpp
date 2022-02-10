@@ -46,6 +46,8 @@ protected:
                            attr.in_buf_offset,
                            ", out_buf_offset ",
                            attr.out_buf_offset,
+                           ", direction ",
+                           to_string(attr.direction),
                            "\n");
     }
 
