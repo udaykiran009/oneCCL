@@ -1,0 +1,91 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(cd $(dirname "${BASH_SOURCE}") && pwd -P)
+ROOT_DIR="$(dirname "${SCRIPT_DIR}")"
+BASENAME="$(basename $0 .sh)"
+TEST_LOG="${BASENAME}.log"
+
+source ${ROOT_DIR}/utils.sh
+
+check_impi
+check_ccl
+
+parse_str() {
+    expected_str=$1
+    match_count=0
+    while IFS='' read -r line;
+    do
+        if [[ "$line" == *"$expected_str"* ]];
+        then
+            match_count=$((match_count+1))
+            break
+        fi
+    done < ${TEST_LOG}
+    if [[ "$match_count" == "0" ]];
+    then
+        echo "Fail: couldn't find expected value" >> ${TEST_LOG} 2>&1
+    else
+        echo "Found matches: ${match_count}" >> ${TEST_LOG} 2>&1
+    fi
+}
+
+if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]]
+then
+    proc_count="2"
+elif [[ ${PLATFORM_HW_DISCRETE_GPU} = "gen9" ]]
+then
+    proc_count="4"
+else
+    echo "Failed: unexpected platform: ${PLATFORM_HW_DISCRETE_GPU}" >> ${TEST_LOG} 2>&1
+    check_log ${TEST_LOG}
+fi
+
+proc_launchers="hydra none"
+test_binaries="multi_comms benchmark"
+
+test_options=""
+multi_comms_options="-c direct -o direct"
+bench_options="-b sycl -w 1 -i 4 -c all -l allreduce -y 131072"
+
+for binary in ${test_binaries}
+do
+    for proc_launcher in ${proc_launchers}
+    do
+        cmd="CCL_ATL_TRANSPORT=mpi"
+        cmd+=" CCL_LOG_LEVEL=info"
+        cmd+=" CCL_WORKER_COUNT=2"
+        cmd+=" CCL_WORKER_AFFINITY=1,2,3,4"
+        if [ "$proc_launcher" == "none" ];
+        then
+            cmd+=" I_MPI_GTOOL=\"env CCL_LOCAL_RANK=0:0;env CCL_LOCAL_RANK=1:1\" CCL_LOCAL_SIZE=2"
+        fi
+        cmd+=" CCL_PROCESS_LAUNCHER=${proc_launcher}"
+        cmd+=" mpiexec -n ${proc_count} -ppn 2 ${SCRIPT_DIR}/${binary}"
+
+        if [ "multi_comms" == ${binary} ];
+        then
+            test_options="${multi_comms_options}"
+        elif [ "benchmark" == ${binary} ];
+        then
+            test_options="${bench_options}"
+        else
+            echo "Failed: unexpected binary" >> ${TEST_LOG} 2>&1
+            check_log ${TEST_LOG}
+        fi
+        cmd+=" ${test_options} > ${TEST_LOG} 2>&1"
+        run_cmd "${cmd}"
+
+        parse_str "local process [0:2]: worker: 0, cpu: 1"
+        parse_str "local process [0:2]: worker: 1, cpu: 2"
+        parse_str "local process [1:2]: worker: 0, cpu: 3"
+        parse_str "local process [1:2]: worker: 1, cpu: 4"
+
+        parse_str ", local_proc_idx: 0, local_proc_count: 2"
+        parse_str ", local_proc_idx: 1, local_proc_count: 2"
+
+        check_log ${TEST_LOG}
+        rm ${TEST_LOG}
+    done
+done
+
+echo "Pass"

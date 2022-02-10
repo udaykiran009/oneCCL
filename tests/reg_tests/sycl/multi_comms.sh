@@ -49,5 +49,5 @@ do
     done
 done
 
-rm ${BINFILE} ${TEST_LOG}
+rm ${TEST_LOG}
 echo "Pass"

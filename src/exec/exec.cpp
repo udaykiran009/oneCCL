@@ -273,36 +273,49 @@ void ccl_executor::do_work() {
     }
 }
 
+void ccl_executor::getenv_local_coord(const char* local_proc_idx_env_name,
+                                      const char* local_proc_count_env_name) {
+    char* local_idx_env = getenv(local_proc_idx_env_name);
+    char* local_count_env = getenv(local_proc_count_env_name);
+    if (local_idx_env && local_count_env) {
+        local_proc_idx = std::atoi(local_idx_env);
+        local_proc_count = std::atoi(local_count_env);
+        CCL_THROW_IF_NOT(local_proc_idx != CCL_ENV_INT_NOT_SPECIFIED,
+                         "unexpected local_proc_idx ",
+                         local_proc_idx);
+        CCL_THROW_IF_NOT(local_proc_count != CCL_ENV_INT_NOT_SPECIFIED,
+                         "unexpected local_proc_count ",
+                         local_proc_count);
+    }
+    else {
+        LOG_WARN(local_idx_env, " or ", local_count_env, " not found");
+        LOG_WARN("use local_proc_idx: ", local_proc_idx, " , local_proc_count: ", local_proc_count)
+    }
+}
+
 void ccl_executor::set_local_coord(int proc_idx, int proc_count) {
     local_proc_idx = proc_idx;
     local_proc_count = proc_count;
     auto& env = ccl::global_data::env();
-    if (env.atl_transport == ccl_atl_mpi) {
-        /* hydra specific env variables */
-        const char local_idx_env_name[] = "MPI_LOCALRANKID";
-        const char local_count_env_name[] = "MPI_LOCALNRANKS";
-        char* local_idx_env = getenv(local_idx_env_name);
-        char* local_count_env = getenv(local_count_env_name);
-        if (local_idx_env && local_count_env) {
-            int local_idx = std::atoi(local_idx_env);
-            int local_count = std::atoi(local_count_env);
 
-            if (local_idx != local_proc_idx) {
-                LOG_DEBUG("unexpected local_proc_idx ", local_proc_idx, ", expected ", local_idx);
-            }
-            if (local_count != local_proc_count) {
-                LOG_DEBUG(
-                    "unexpected local_proc_count ", local_proc_count, ", expected ", local_count);
-            }
-            local_proc_idx = local_idx;
-            local_proc_count = local_count;
-        }
-        else {
-            LOG_WARN(local_idx_env_name, " or ", local_count_env_name, " not found");
-            LOG_WARN(
-                "use local_proc_idx: ", local_proc_idx, " , local_proc_count: ", local_proc_count);
-        }
+    if (env.process_launcher == process_launcher_mode::hydra) {
+        getenv_local_coord("MPI_LOCALRANKID", "MPI_LOCALNRANKS");
     }
+    else if (env.process_launcher == process_launcher_mode::torch) {
+        getenv_local_coord("LOCAL_RANK", "LOCAL_WORLD_SIZE");
+    }
+    else if (env.process_launcher == process_launcher_mode::none) {
+        getenv_local_coord("CCL_LOCAL_RANK", "CCL_LOCAL_SIZE");
+    }
+    else {
+        CCL_THROW("unexpected process launcher");
+    }
+    LOG_INFO("process launcher: ",
+             ccl::env_data::process_launcher_names[env.process_launcher],
+             ", local_proc_idx: ",
+             local_proc_idx,
+             ", local_proc_count: ",
+             local_proc_count);
 }
 
 size_t ccl_executor::get_worker_count() const {

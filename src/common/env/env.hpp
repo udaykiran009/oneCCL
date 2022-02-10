@@ -19,6 +19,7 @@
 
 constexpr const char* CCL_ENV_STR_NOT_SPECIFIED = "<not specified>";
 constexpr const ssize_t CCL_ENV_SIZET_NOT_SPECIFIED = -1;
+constexpr const int CCL_ENV_INT_NOT_SPECIFIED = -1;
 
 constexpr const char* CCL_LOG_LEVEL = "CCL_LOG_LEVEL";
 constexpr const char* CCL_QUEUE_DUMP = "CCL_QUEUE_DUMP";
@@ -106,6 +107,11 @@ constexpr const char* CCL_KERNEL_1S_USE_COPY_OPS = "CCL_KERNEL_1S_USE_COPY_OPS";
 constexpr const char* CCL_KERNEL_1S_IPC_WA = "CCL_KERNEL_1S_IPC_WA";
 constexpr const char* CCL_KERNEL_CLOSE_FD_WA = "CCL_KERNEL_CLOSE_FD_WA";
 
+constexpr const char* CCL_LOCAL_RANK = "CCL_LOCAL_RANK";
+constexpr const char* CCL_LOCAL_SIZE = "CCL_LOCAL_SIZE";
+
+constexpr const char* CCL_PROCESS_LAUNCHER = "CCL_PROCESS_LAUNCHER";
+
 constexpr const char* CCL_TOPO_ALGO = "CCL_TOPO_ALGO";
 constexpr const char* CCL_TOPO_COLOR = "CCL_TOPO_COLOR";
 
@@ -163,6 +169,8 @@ enum class backend_mode {
     stub
 #endif // CCL_ENABLE_STUB_BACKEND
 };
+
+enum class process_launcher_mode { hydra, torch, none };
 
 namespace ccl {
 
@@ -260,6 +268,10 @@ public:
     ssize_t alltoall_scatter_max_ops;
 
     backend_mode backend;
+
+    int local_rank;
+    int local_size;
+    process_launcher_mode process_launcher;
 
     int enable_topo_algo;
     topo_color_mode topo_color;
@@ -397,6 +409,7 @@ public:
     static std::map<ccl_staging_buffer, std::string> staging_buffer_names;
     static std::map<ccl_ze_copy_engine_mode, std::string> ze_copy_engine_names;
     static std::map<backend_mode, std::string> backend_names;
+    static std::map<process_launcher_mode, std::string> process_launcher_names;
 
     int env_2_worker_affinity(int local_proc_idx, int local_proc_count);
     int env_2_worker_mem_affinity(int local_proc_count);

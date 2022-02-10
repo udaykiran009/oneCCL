@@ -54,6 +54,12 @@ std::map<backend_mode, std::string> env_data::backend_names = {
 #endif // CCL_ENABLE_STUB_BACKEND
 };
 
+std::map<process_launcher_mode, std::string> env_data::process_launcher_names = {
+    std::make_pair(process_launcher_mode::hydra, "hydra"),
+    std::make_pair(process_launcher_mode::torch, "torch"),
+    std::make_pair(process_launcher_mode::none, "none")
+};
+
 env_data::env_data()
         : was_printed(false),
 
@@ -124,6 +130,11 @@ env_data::env_data()
           alltoall_scatter_max_ops(CCL_ENV_SIZET_NOT_SPECIFIED),
 
           backend(backend_mode::native),
+
+          local_rank(CCL_ENV_INT_NOT_SPECIFIED),
+          local_size(CCL_ENV_INT_NOT_SPECIFIED),
+
+          process_launcher(process_launcher_mode::hydra),
 
           enable_topo_algo(1),
           topo_color(topo_color_mode::fixed),
@@ -306,6 +317,11 @@ void env_data::parse() {
     env_2_type(CCL_ALLTOALL_SCATTER_MAX_OPS, (size_t&)alltoall_scatter_max_ops);
 
     env_2_enum(CCL_BACKEND, backend_names, backend);
+
+    env_2_type(CCL_LOCAL_RANK, local_rank);
+    env_2_type(CCL_LOCAL_SIZE, local_size);
+
+    env_2_enum(CCL_PROCESS_LAUNCHER, process_launcher_names, process_launcher);
 
     env_2_type(CCL_TOPO_ALGO, enable_topo_algo);
     env_2_topo(CCL_TOPO_COLOR, topo_color_names, topo_color);
@@ -561,6 +577,11 @@ void env_data::print(int rank) {
                  : CCL_ENV_STR_NOT_SPECIFIED);
 
     LOG_INFO(CCL_BACKEND, ": ", str_by_enum(backend_names, backend));
+
+    LOG_INFO(CCL_LOCAL_RANK, ": ", local_rank);
+    LOG_INFO(CCL_LOCAL_SIZE, ": ", local_size);
+
+    LOG_INFO(CCL_PROCESS_LAUNCHER, ": ", str_by_enum(process_launcher_names, process_launcher));
 
 #ifdef CCL_ENABLE_SYCL
     LOG_INFO(CCL_TOPO_ALGO, ": ", enable_topo_algo);

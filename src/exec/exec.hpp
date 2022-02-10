@@ -86,6 +86,7 @@ private:
     std::unique_ptr<ccl_sched_queue> create_sched_queue(size_t idx, size_t ep_per_worker);
     void do_work();
     void set_local_coord(int proc_idx, int proc_count);
+    void getenv_local_coord(const char* local_idx_env_name, const char* local_count_env_name);
 
     std::vector<std::unique_ptr<ccl_worker>> workers;
     // TODO: Rework to support listener
