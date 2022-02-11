@@ -174,6 +174,9 @@ function set_mpich_ofi_env() {
         return
     fi
 
+    export HYDRA_LAUNCHER="ssh"
+    export HYDRA_LAUNCHER_EXEC="/usr/bin/ssh"
+
     if [[ ${node_label} = "ccl_test_ats" ]]
     then
         set_ats_mpich_ofi_env
@@ -184,26 +187,19 @@ function set_mpich_ofi_env() {
 }
 
 function set_provider_env() {
-    if [[ "${node_label}" = "ccl_test_ats" ]] &&
-       [[ ${ENABLE_FUNCTIONAL_TESTS} = "yes" ||
-          ${ENABLE_REGULAR_TESTS} = "yes" ||
-          ${ENABLE_REG_TESTS} = "yes" ]]
-    then
-        export FI_PROVIDER=tcp
-    fi
 
-    if [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]]
+    if [[ "${node_label}" = "ccl_test_ats" ]]
     then
-        if [[ "${node_label}" = "ccl_test_ats" ]] &&
-           [[ ${ENABLE_REG_TESTS} = "yes" ]]
+        if [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]]
         then
             export FI_PROVIDER=sockets
         else
             export FI_PROVIDER=psm3
         fi
-    fi
-
-    if [[ "${node_label}" = "ccl_test_pvc" ]]
+    elif [[ "${node_label}" = "ccl_test_gen9" ]]
+    then
+        export FI_PROVIDER=tcp
+    elif [[ "${node_label}" = "ccl_test_pvc" ]]
     then
         export FI_PROVIDER=cxi
     fi

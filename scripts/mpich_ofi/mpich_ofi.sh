@@ -70,7 +70,7 @@ load_package() {
     then
         LINE="$(curl -s ${MPICH_OFI_DEFAULT_LINK} | grep "drop" | tail -1)"
         LATEST_DROP="$(echo "${LINE}" | grep -o 'drop[0-9]*.[0-9]' | tail -1)"
-        PACKAGE_NAME="$(curl -s "${MPICH_OFI_DEFAULT_LINK}${LATEST_DROP}/ats/" | grep -o ">mpich-ofi.*icc-debug.*\.rpm" | cut -c 2-)"
+        PACKAGE_NAME="$(curl -s "${MPICH_OFI_DEFAULT_LINK}${LATEST_DROP}/ats/" | grep -o ">mpich-ofi-all.*-default.*\.rpm" | cut -c 2-)"
         PACKAGE_LINK="${MPICH_OFI_DEFAULT_LINK}${LATEST_DROP}/ats/${PACKAGE_NAME}"
 
         echo "DEBUG: LINE         = ${LINE}"

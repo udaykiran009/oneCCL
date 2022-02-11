@@ -15,11 +15,7 @@ cd ${SCRIPT_DIR}
 
 proc_counts="1 2 4"
 transports="ofi mpi"
-provs="tcp"
-if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]]
-then
-    provs="tcp psm3"
-fi
+provs="$(get_default_and_native_provs)"
 algos="ring topo"
 
 for proc_count in ${proc_counts}

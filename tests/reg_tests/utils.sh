@@ -95,3 +95,24 @@ function get_bench() {
         cp ${CCL_ROOT}/examples/benchmark/benchmark ${dst_dir}
     fi
 }
+
+function get_default_prov() {
+    if [[ ${TRANSPORT} == "mpich" ]]
+    then
+        echo "sockets"
+    else
+        echo "tcp"
+    fi
+}
+
+function get_default_and_native_provs() {
+    if [[ ${TRANSPORT} == "mpich" ]]
+    then
+        echo "$(get_default_prov)"
+    elif [[ ${PLATFORM_HW_DISCRETE_GPU} == "ats" ]]
+    then
+        echo "$(get_default_prov) psm3"
+    else
+        echo "$(get_default_prov)"
+    fi
+}

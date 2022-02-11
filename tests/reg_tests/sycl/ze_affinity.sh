@@ -14,7 +14,7 @@ get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 cd ${SCRIPT_DIR}
 
 export SYCL_DEVICE_FILTER=level_zero
-export FI_PROVIDER=tcp
+export FI_PROVIDER="$(get_default_prov)"
 
 transports="mpi"
 proc_counts="2"

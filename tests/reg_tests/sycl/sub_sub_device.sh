@@ -24,7 +24,7 @@ export ZE_ENABLE_PCI_ID_DEVICE_ORDER=1
 export ZE_AFFINITY_MASK=0.0
 #,0.1,1.0,1.1,2.0,2.1,3.0,3.1,4.0,4.1,5.0,5.1
 
-export FI_PROVIDER=tcp
+export FI_PROVIDER="$(get_default_prov)"
 
 transports="mpi"
 proc_counts="4"

@@ -11,10 +11,12 @@ pkgconfig_support_checker platform=* transport=mpich
 allgatherv_vector platform=gen9 transport=*
 allreduce_events platform=gen9 transport=*
 allreduce_events_inorder platform=gen9 transport=*
-sub_sub_device platform=* transport=*
 allreduce_bidir_algo platform=ats transport=*
-# MLSL-1212
-opencl platform=* transport=*
 # IMPI-3210
 hmem platform=ats transport=*
+# MLSL-1212
+opencl platform=* transport=*
+# no gtool support in MPICH
+process_launcher platform=* transport=mpich
 scaleout platform=ats transport=*
+sub_sub_device platform=* transport=*

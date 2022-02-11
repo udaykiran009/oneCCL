@@ -16,12 +16,8 @@ cd ${SCRIPT_DIR}
 export SYCL_DEVICE_FILTER=level_zero
 export CCL_ALLTOALL=scatter
 
-if [[ ${TRANSPORT} != "mpich" ]]
-then
-    export FI_PROVIDER=tcp
-fi
-
 transports="mpi ofi"
+provs="$(get_default_and_native_provs)"
 proc_counts="2"
 worker_counts="2"
 staging_buffers="regular usm"
@@ -38,12 +34,20 @@ do
         do
             for staging_buffer in ${staging_buffers}
             do
-                cmd="CCL_ATL_TRANSPORT=${transport} CCL_WORKER_COUNT=${worker_count}"
-                cmd+=" CCL_STAGING_BUFFER=${staging_buffer}"
-                cmd+=" mpiexec -l -n ${proc_count} -ppn 2 ${SCRIPT_DIR}/benchmark"
-                cmd+=" ${bench_options} > ${TEST_LOG} 2>&1"
-                run_cmd "${cmd}"
-                check_log ${TEST_LOG}
+                for prov in ${provs}
+                do
+                    if [[ ${staging_buffer} == "usm" && ${prov} == "psm3" ]]
+                    then
+                        continue
+                    fi
+                    cmd="CCL_ATL_TRANSPORT=${transport} CCL_WORKER_COUNT=${worker_count}"
+                    cmd+=" CCL_STAGING_BUFFER=${staging_buffer}"
+                    cmd+=" FI_PROVIDER=${prov}"
+                    cmd+=" mpiexec -l -n ${proc_count} -ppn 2 ${SCRIPT_DIR}/benchmark"
+                    cmd+=" ${bench_options} > ${TEST_LOG} 2>&1"
+                    run_cmd "${cmd}"
+                    check_log ${TEST_LOG}
+                done
             done
         done
     done
