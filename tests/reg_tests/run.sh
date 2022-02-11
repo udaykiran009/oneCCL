@@ -239,7 +239,8 @@ run_tests() {
             echo "DEBUG: Processing a ${dir} directory"
             tests=$(ls *.sh 2> /dev/null)
             for test in ${tests}; do
-                is_exclude=$(is_exclude_test $(basename ${test} .sh))
+                local name=$(basename ${test} .sh)
+                is_exclude=$(is_exclude_test ${name})
                 if [[ ${is_exclude} -ne 0 ]]; then
                     echo "${test} was excluded. Skip"
                     continue
@@ -247,6 +248,7 @@ run_tests() {
                 echo "${test}"
                 ./${test}
                 if [[ $? -ne 0 ]]; then
+                    cat ./${name}.log
                     failed_test+=(${test})
                 fi
             done
