@@ -2,7 +2,7 @@
 .. _`float16`: https://en.wikipedia.org/wiki/Half-precision_floating-point_format
 
 =======================
-Low-precision datatypes
+Low-precision Datatypes
 =======================
 
 |product_short| provides support for collective operations on low-precision (LP) datatypes (`bfloat16`_ and `float16`_).
@@ -11,10 +11,11 @@ Reduction of LP buffers (for example as phase in ``ccl::allreduce``) includes co
 
 |product_short| utilizes CPU vector instructions for FP32 <-> LP conversion.
 
-For BF16 <-> FP32 conversion |product_short| provides AVX512F and AVX512_BF16-based implementations. AVX512F-based implementation requires GCC 4.9 or higher. AVX512_BF16-based implementation requires GCC 10.0 or higher and GNU binutils 2.33 or higher.
-AVX512_BF16-based implementation may provide less accuracy loss due to multiple up-down conversions.
+For BF16 <-> FP32 conversion |product_short| provides ``AVX512F`` and ``AVX512_BF16``-based implementations.
+``AVX512F``-based implementation requires GCC 4.9 or higher. ``AVX512_BF16``-based implementation requires GCC 10.0 or higher and GNU binutils 2.33 or higher.
+``AVX512_BF16``-based implementation may provide less accuracy loss after multiple up-down conversions.
 
-For FP16 <-> FP32 conversion |product_short| provides F16C and AVX512F-based implementations.
+For FP16 <-> FP32 conversion |product_short| provides ``F16C`` and ``AVX512F``-based implementations.
 Both implementations require GCC 4.9 or higher.
 
-Please refer to the :ref:`Low-precision datatypes` section for details about relevant environment variables.
+Refer to :ref:`Low-precision datatypes` for details about relevant environment variables.

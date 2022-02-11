@@ -1,9 +1,9 @@
 .. _`here`: https://github.com/ofiwg/libfabric/releases/tag/v1.13.2
 .. _`documentation`: https://one-api.gitlab-pages.devtools.intel.com/level_zero/core/PROG.html#affinity-mask
 
-=====================================
-Enabling OFI/verbs dmabuf support
-=====================================
+=================================
+Enabling OFI/verbs/dmabuf Support
+=================================
 
 |product_short| provides experimental support for data transfers between Intel GPU memory and NIC using Linux dmabuf, which is exposed through OFI API for verbs provider.
 

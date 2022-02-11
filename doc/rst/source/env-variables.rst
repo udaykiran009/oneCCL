@@ -236,212 +236,6 @@ CCL_RS_MIN_CHUNK_SIZE
 Set this environment variable to specify minimum number of bytes in chunk for reduce_scatter phase in ring allreduce. Affects actual value of ``CCL_RS_CHUNK_COUNT``.
 
 
-Fusion
-######
-
-
-The group of environment variables to control fusion of collective operations.
-
-
-CCL_FUSION
-**********
-
-**Syntax**
-
-:: 
-
-  CCL_FUSION=<value>
-
-**Arguments**
-
-.. list-table:: 
-   :widths: 25 50
-   :header-rows: 1
-   :align: left
-   
-   * - <value> 
-     - Description
-   * - ``1``
-     - Enable fusion of collective operations
-   * - ``0``
-     - Disable fusion of collective operations (**default**)
-
-**Description**
-
-Set this environment variable to control fusion of collective operations.
-The real fusion depends on additional settings described below.
-
-
-CCL_FUSION_BYTES_THRESHOLD
-**************************
-**Syntax**
-
-:: 
-
-  CCL_FUSION_BYTES_THRESHOLD=<value>
-
-**Arguments**
-
-.. list-table:: 
-   :widths: 25 50
-   :header-rows: 1
-   :align: left
-   
-   * - <value> 
-     - Description
-   * - ``SIZE``
-     - Bytes threshold for a collective operation. If the size of a communication buffer in bytes is less than or equal
-       to ``SIZE``, then |product_short| fuses this operation with the other ones.
-
-**Description**
-
-Set this environment variable to specify the threshold of the number of bytes for a collective operation to be fused.
-
-
-CCL_FUSION_COUNT_THRESHOLD
-**************************
-**Syntax**
-
-:: 
-
-  CCL_FUSION_COUNT_THRESHOLD=<value>
-
-**Arguments**
-
-.. list-table:: 
-   :widths: 25 50
-   :header-rows: 1
-   :align: left
-   
-   * - <value> 
-     - Description
-   * - ``COUNT``
-     - The threshold for the number of collective operations.
-       |product_short| can fuse together no more than ``COUNT`` operations at a time.
-
-**Description**
-
-Set this environment variable to specify count threshold for a collective operation to be fused.
-
-
-CCL_FUSION_CYCLE_MS
-*******************
-**Syntax**
-
-:: 
-
-  CCL_FUSION_CYCLE_MS=<value>
-
-**Arguments**
-
-.. list-table:: 
-   :widths: 25 50
-   :header-rows: 1
-   :align: left
-   
-   * - <value> 
-     - Description
-   * - ``MS``
-     - The frequency of checking for collectives operations to be fused, in milliseconds:
-       
-       - Small ``MS`` value can improve latency. 
-       - Large ``MS`` value can help to fuse larger number of operations at a time.
-
-**Description**
-
-Set this environment variable to specify the frequency of checking for collectives operations to be fused.
-
-
-ATL
-###
-
-
-The group of environment variables to control ATL (abstract transport layer).
-
-
-CCL_ATL_TRANSPORT
-*****************
-**Syntax**
-
-:: 
-
-  CCL_ATL_TRANSPORT=<value>
-
-**Arguments**
-
-.. list-table:: 
-   :widths: 25 50
-   :header-rows: 1
-   :align: left
-   
-   * - <value> 
-     - Description
-   * - ``mpi``
-     - MPI transport (**default**).
-   * - ``ofi``
-     - OFI (Libfabric\*) transport.
-
-**Description**
-
-Set this environment variable to select the transport for inter-process communications.
-
-
-CCL_ATL_HMEM
-************
-**Syntax**
-
-::
-
-  CCL_ATL_HMEM=<value>
-
-**Arguments**
-
-.. list-table::
-   :widths: 25 50
-   :header-rows: 1
-   :align: left
-
-   * - <value>
-     - Description
-   * - ``1``
-     - Enable heterogeneous memory support on the transport layer.
-   * - ``0``
-     - Disable heterogeneous memory support on the transport layer (**default**).
-
-**Description**
-
-Set this environment variable to enable handling of HMEM/GPU buffers by the transport layer.
-The actual HMEM support depends on the limitations on the transport level and system configuration.
-
-
-CCL_PRIORITY
-############
-**Syntax**
-
-:: 
-
-  CCL_PRIORITY=<value>
-
-**Arguments**
-
-.. list-table:: 
-   :widths: 25 50
-   :header-rows: 1
-   :align: left
-   
-   * - <value> 
-     - Description
-   * - ``direct``
-     - You have to explicitly specify priority using ``priority``.
-   * - ``lifo``
-     - Priority is implicitly increased on each collective call. You do not have to specify priority.
-   * - ``none``
-     - Disable prioritization (**default**).
-
-**Description**
-
-Set this environment variable to control priority mode of collective operations. 
-
 
 Workers
 #######
@@ -490,7 +284,7 @@ CCL_WORKER_AFFINITY
    :header-rows: 1
    :align: left
    
-   * - <cpulist> 
+   * - <cpulist>
      - Description
    * - ``auto``
      - Workers are automatically pinned to last cores of pin domain.
@@ -500,8 +294,8 @@ CCL_WORKER_AFFINITY
    * - ``<cpulist>``
      - A comma-separated list of core numbers and/or ranges of core numbers for all local workers, one number per worker.
        The i-th local worker is pinned to the i-th core in the list.
-       For example <a>,<b>-<c> defines list of cores contaning core with number <a>
-       and range of cores with numbers from <b> to <c>.
+       For example ``<a>,<b>-<c>`` defines list of cores contaning core with number ``<a>``
+       and range of cores with numbers from ``<b>`` to ``<c>``.
        The number should not exceed the number of cores available on the system.
 
 **Description**
@@ -524,7 +318,7 @@ CCL_WORKER_MEM_AFFINITY
    :header-rows: 1
    :align: left
    
-   * - <nodelist> 
+   * - <nodelist>
      - Description
    * - ``auto``
      - Workers are automatically pinned to NUMA nodes that correspond to CPU affinity of workers.
@@ -538,39 +332,20 @@ CCL_WORKER_MEM_AFFINITY
 Set this environment variable to specify memory affinity for |product_short| worker threads.
 
 
-CCL_LOG_LEVEL
-#############
+ATL
+###
+
+
+The group of environment variables to control ATL (abstract transport layer).
+
+
+CCL_ATL_TRANSPORT
+*****************
 **Syntax**
 
 :: 
 
-  CCL_LOG_LEVEL=<value>
-
-**Arguments**
-
-.. list-table:: 
-   :header-rows: 1
-   :align: left
-   
-   * - <value> 
-   * - ``error``
-   * - ``warn`` (**default**)
-   * - ``info``
-   * - ``debug``
-   * - ``trace``
-
-**Description**
-
-Set this environment variable to control logging level.
-
-
-CCL_MAX_SHORT_SIZE
-##################
-**Syntax**
-
-:: 
-
-  CCL_MAX_SHORT_SIZE=<value>
+  CCL_ATL_TRANSPORT=<value>
 
 **Arguments**
 
@@ -581,19 +356,49 @@ CCL_MAX_SHORT_SIZE
    
    * - <value> 
      - Description
-   * - ``SIZE``
-     - Bytes threshold for a collective operation (``0`` if not specified). If the size of a communication buffer in bytes is less than or equal to ``SIZE``, then |product_short| does not split operation between workers. Applicable for ``allreduce``, ``reduce`` and ``broadcast``.
+   * - ``mpi``
+     - MPI transport (**default**).
+   * - ``ofi``
+     - OFI (libfabric\*) transport.
 
 **Description**
 
-Set this environment variable to specify the threshold of the number of bytes for a collective operation to be split.
+Set this environment variable to select the transport for inter-process communications.
+
+
+CCL_ATL_HMEM
+************
+**Syntax**
+
+::
+
+  CCL_ATL_HMEM=<value>
+
+**Arguments**
+
+.. list-table::
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``1``
+     - Enable heterogeneous memory support on the transport layer.
+   * - ``0``
+     - Disable heterogeneous memory support on the transport layer (**default**).
+
+**Description**
+
+Set this environment variable to enable handling of HMEM/GPU buffers by the transport layer.
+The actual HMEM support depends on the limitations on the transport level and system configuration.
 
 
 Multi-NIC
 #########
 
 
-CCL_MNIC, CCL_MNIC_NAME and CCL_MNIC_COUNT define filters to select multiple NICs.
+``CCL_MNIC``, ``CCL_MNIC_NAME`` and ``CCL_MNIC_COUNT`` define filters to select multiple NICs.
 |product_short| workers will be pinned on selected NICs in a round-robin way.
 
 
@@ -681,13 +486,20 @@ Set this environment variable to specify the maximum number of NICs to be select
 The actual number of NICs selected may be smaller due to limitations on transport level or system configuration.
 
 
-CCL_SYCL_OUTPUT_EVENT
-#####################
+Low-precision datatypes
+#######################
+
+
+The group of environment variables to control processing of low-precision datatypes.
+
+
+CCL_BF16
+********
 **Syntax**
 
 ::
 
-  CCL_SYCL_OUTPUT_EVENT=<value>
+  CCL_BF16=<value>
 
 **Arguments**
 
@@ -698,16 +510,69 @@ CCL_SYCL_OUTPUT_EVENT
 
    * - <value>
      - Description
-   * - ``1``
-     - Enable support for SYCL output event.
-   * - ``0``
-     - Disable support for SYCL output event (**default**).
+   * - ``avx512f``
+     - Select implementation based on ``AVX512F`` instructions.
+   * - ``avx512bf``
+     - Select implementation based on ``AVX512_BF16`` instructions.
 
 **Description**
 
-Set this environment variable to control support for SYCL output event.
-Once the support is enabled, you can retrieve SYCL output event from |product_short| event using ``get_native()`` method.
-|product_short| event must be associated with |product_short| communication operation.
+Set this environment variable to select implementation for BF16 <-> FP32 conversion on reduction phase of collective operation.
+Default value depends on instruction set support on specific CPU. ``AVX512_BF16``-based implementation has precedence over ``AVX512F``-based one.
+
+
+CCL_FP16
+********
+**Syntax**
+
+::
+
+  CCL_FP16=<value>
+
+**Arguments**
+
+.. list-table::
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``f16c``
+     - Select implementation based on ``F16C`` instructions.
+   * - ``avx512f``
+     - Select implementation based on ``AVX512F`` instructions.
+
+**Description**
+
+Set this environment variable to select implementation for FP16 <-> FP32 conversion on reduction phase of collective operation.
+Default value depends on instruction set support on specific CPU. ``AVX512F``-based implementation has precedence over ``F16C``-based one.
+
+
+CCL_LOG_LEVEL
+#############
+**Syntax**
+
+:: 
+
+  CCL_LOG_LEVEL=<value>
+
+**Arguments**
+
+.. list-table:: 
+   :header-rows: 1
+   :align: left
+   
+   * - <value> 
+   * - ``error``
+   * - ``warn`` (**default**)
+   * - ``info``
+   * - ``debug``
+   * - ``trace``
+
+**Description**
+
+Set this environment variable to control logging level.
 
 
 CCL_ITT_LEVEL
@@ -739,20 +604,21 @@ Once the environment variable is enabled (value > 0), it is possible to collect 
 data for |product_short| using tools such as ``Intel(R) VTune(TM) Amplifier``.
 
 
-Low-precision datatypes
-#######################
+Fusion
+######
 
 
-The group of environment variables to control processing of low-precision datatypes.
+The group of environment variables to control fusion of collective operations.
 
 
-CCL_BF16
-********
+CCL_FUSION
+**********
+
 **Syntax**
 
 ::
 
-  CCL_BF16=<value>
+  CCL_FUSION=<value>
 
 **Arguments**
 
@@ -763,24 +629,24 @@ CCL_BF16
 
    * - <value>
      - Description
-   * - ``avx512f``
-     - Select implementation based on AVX512F instructions.
-   * - ``avx512bf``
-     - Select implementation based on AVX512_BF16 instructions.
+   * - ``1``
+     - Enable fusion of collective operations
+   * - ``0``
+     - Disable fusion of collective operations (**default**)
 
 **Description**
 
-Set this environment variable to select implementation for BF16 <-> FP32 conversion on reduction phase of collective operation.
-Default value depends on instruction set support on specific CPU. AVX512_BF16-based implementation has precedence over AVX512F-based one.
+Set this environment variable to control fusion of collective operations.
+The real fusion depends on additional settings described below.
 
 
-CCL_FP16
-********
+CCL_FUSION_BYTES_THRESHOLD
+**************************
 **Syntax**
 
 ::
 
-  CCL_FP16=<value>
+  CCL_FUSION_BYTES_THRESHOLD=<value>
 
 **Arguments**
 
@@ -791,12 +657,147 @@ CCL_FP16
 
    * - <value>
      - Description
-   * - ``f16c``
-     - Select implementation based on F16C instructions.
-   * - ``avx512f``
-     - Select implementation based on AVX512F instructions.
+   * - ``SIZE``
+     - Bytes threshold for a collective operation. If the size of a communication buffer in bytes is less than or equal
+       to ``SIZE``, then |product_short| fuses this operation with the other ones.
 
 **Description**
 
-Set this environment variable to select implementation for FP16 <-> FP32 conversion on reduction phase of collective operation.
-Default value depends on instruction set support on specific CPU. AVX512F-based implementation has precedence over F16C-based one.
+Set this environment variable to specify the threshold of the number of bytes for a collective operation to be fused.
+
+
+CCL_FUSION_COUNT_THRESHOLD
+**************************
+**Syntax**
+
+::
+
+  CCL_FUSION_COUNT_THRESHOLD=<value>
+
+**Arguments**
+
+.. list-table::
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``COUNT``
+     - The threshold for the number of collective operations.
+       |product_short| can fuse together no more than ``COUNT`` operations at a time.
+
+**Description**
+
+Set this environment variable to specify count threshold for a collective operation to be fused.
+
+
+CCL_FUSION_CYCLE_MS
+*******************
+**Syntax**
+
+::
+
+  CCL_FUSION_CYCLE_MS=<value>
+
+**Arguments**
+
+.. list-table::
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``MS``
+     - The frequency of checking for collectives operations to be fused, in milliseconds:
+
+       - Small ``MS`` value can improve latency.
+       - Large ``MS`` value can help to fuse larger number of operations at a time.
+
+**Description**
+
+Set this environment variable to specify the frequency of checking for collectives operations to be fused.
+
+
+CCL_PRIORITY
+############
+**Syntax**
+
+::
+
+  CCL_PRIORITY=<value>
+
+**Arguments**
+
+.. list-table::
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``direct``
+     - You have to explicitly specify priority using ``priority``.
+   * - ``lifo``
+     - Priority is implicitly increased on each collective call. You do not have to specify priority.
+   * - ``none``
+     - Disable prioritization (**default**).
+
+**Description**
+
+Set this environment variable to control priority mode of collective operations.
+
+
+CCL_MAX_SHORT_SIZE
+##################
+**Syntax**
+
+::
+
+  CCL_MAX_SHORT_SIZE=<value>
+
+**Arguments**
+
+.. list-table::
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``SIZE``
+     - Bytes threshold for a collective operation (``0`` if not specified). If the size of a communication buffer in bytes is less than or equal to ``SIZE``, then |product_short| does not split operation between workers. Applicable for ``allreduce``, ``reduce`` and ``broadcast``.
+
+**Description**
+
+Set this environment variable to specify the threshold of the number of bytes for a collective operation to be split.
+
+
+CCL_SYCL_OUTPUT_EVENT
+#####################
+**Syntax**
+
+::
+
+  CCL_SYCL_OUTPUT_EVENT=<value>
+
+**Arguments**
+
+.. list-table::
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``1``
+     - Enable support for SYCL output event.
+   * - ``0``
+     - Disable support for SYCL output event (**default**).
+
+**Description**
+
+Set this environment variable to control support for SYCL output event.
+Once the support is enabled, you can retrieve SYCL output event from |product_short| event using ``get_native()`` method.
+|product_short| event must be associated with |product_short| communication operation.
