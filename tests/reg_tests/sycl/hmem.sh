@@ -44,6 +44,7 @@ transports="mpi"
 
 send_proxy_modes="none regular"
 hmem_modes="0 1"
+pipeline_modes="0 1"
 single_list_modes="0 1"
 algos="topo rabenseifner direct"
 
@@ -67,31 +68,42 @@ do
         do
             for hmem_mode in ${hmem_modes}
             do
-                for single_list_mode in ${single_list_modes}
+                for pipeline_mode in ${pipeline_modes}
                 do
-                    for algo in ${algos}
+                    for single_list_mode in ${single_list_modes}
                     do
-                        for coll in ${colls}
+                        for algo in ${algos}
                         do
-                            for proc_count in ${proc_counts}
+                            for coll in ${colls}
                             do
-                                if [[ ${single_list_mode} == "1" ]] && [[ ${hmem_mode} == "1" ]] && \
-                                   [[ ${PLATFORM_HW_DISCRETE_GPU} = "gen9" ]];
-                                then
-                                    continue
-                                fi
-                                cmd="CCL_WORKER_COUNT=${worker_count}"
-                                cmd+=" CCL_ATL_TRANSPORT=${transport}"
-                                cmd+=" CCL_ATL_SEND_PROXY=${send_proxy_mode}"
-                                cmd+=" CCL_ATL_HMEM=${hmem_mode}"
-                                cmd+=" CCL_ZE_SINGLE_LIST=${single_list_mode}"
-                                cmd+=" CCL_ALLREDUCE=${algo}"
-                                cmd+=" CCL_REDUCE=${algo}"
-                                cmd+=" mpiexec -l -n ${proc_count} -ppn 2 ${SCRIPT_DIR}/benchmark"
-                                cmd+=" ${bench_options} -l ${coll} > ${TEST_LOG} 2>&1"
-                                run_cmd "${cmd}"
-                                check_log ${TEST_LOG}
-                                check_hmem_log ${TEST_LOG} ${hmem_mode}
+                                for proc_count in ${proc_counts}
+                                do
+                                    if [[ ${single_list_mode} == "1" ]] && [[ ${hmem_mode} == "1" ]] && \
+                                    [[ ${PLATFORM_HW_DISCRETE_GPU} = "gen9" ]];
+                                    then
+                                        continue
+                                    fi
+                                    if [[ ${pipeline_mode} == "1" ]] && \
+                                    [[ ( ${tranpsort} == "mpi" && ${TRANSPORT} = "mpich" ) || \
+                                    ( ${tranpsort} == "mpi" && ${hmem_mode} == "0" ) || \
+                                    ( ${transport} == "ofi" ) ]]
+                                    then
+                                        continue 
+                                    fi
+                                    cmd="CCL_WORKER_COUNT=${worker_count}"
+                                    cmd+=" CCL_ATL_TRANSPORT=${transport}"
+                                    cmd+=" CCL_ATL_SEND_PROXY=${send_proxy_mode}"
+                                    cmd+=" CCL_ATL_HMEM=${hmem_mode}"
+                                    cmd+=" I_MPI_OFFLOAD_PIPELINE=${pipeline_mode}"
+                                    cmd+=" CCL_ZE_SINGLE_LIST=${single_list_mode}"
+                                    cmd+=" CCL_ALLREDUCE=${algo}"
+                                    cmd+=" CCL_REDUCE=${algo}"
+                                    cmd+=" mpiexec -l -n ${proc_count} -ppn 2 ${SCRIPT_DIR}/benchmark"
+                                    cmd+=" ${bench_options} -l ${coll} >> ${TEST_LOG} 2>&1"
+                                    run_cmd "${cmd}"
+                                    check_log ${TEST_LOG}
+                                    check_hmem_log ${TEST_LOG} ${hmem_mode}
+                                done
                             done
                         done
                     done
