@@ -14,8 +14,7 @@ check_ccl
 proc_counts="1 2 4"
 inplace_modes="0 1"
 transports="ofi mpi"
-# TODO: add topo algo MLSL-1145
-algos="multi_bcast flat"
+algos="topo multi_bcast flat"
 
 for proc_count in ${proc_counts}
 do

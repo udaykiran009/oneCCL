@@ -459,8 +459,7 @@ ccl::status ccl_parallelizer::process_base(ccl_sched* sched, bool update_sched_i
             selector_param.recv_counts = coll_param.recv_counts.data();
             if (algo.allgatherv == ccl_coll_allgatherv_direct ||
                 algo.allgatherv == ccl_coll_allgatherv_naive ||
-                algo.allgatherv == ccl_coll_allgatherv_ring ||
-                ccl_is_device_side_algo(selector_param)) {
+                algo.allgatherv == ccl_coll_allgatherv_ring) {
                 ccl_coll_entry_param param{};
                 param.ctype = ccl_coll_allgatherv;
                 param.send_buf = ccl_buffer(coll_param.get_send_buf_ptr(),
@@ -476,16 +475,20 @@ ccl::status ccl_parallelizer::process_base(ccl_sched* sched, bool update_sched_i
                 ccl::add_coll_entry(part_scheds[0].get(), param);
             }
             else {
-                CCL_ASSERT(algo.allgatherv == ccl_coll_allgatherv_flat ||
-                               algo.allgatherv == ccl_coll_allgatherv_multi_bcast,
-                           "unexpected allgatherv algorithm");
-
                 if (algo.allgatherv == ccl_coll_allgatherv_flat) {
                     ccl_coll_build_flat_allgatherv(sched, part_scheds_vector, coll_param);
                 }
-                else {
+                else if (algo.allgatherv == ccl_coll_allgatherv_multi_bcast) {
                     ccl_coll_build_multi_bcast_allgatherv(
                         sched, part_scheds_vector, coll_param, max_data_partition_count);
+                }
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+                else if (algo.allgatherv == ccl_coll_allgatherv_topo) {
+                    ccl_coll_build_topo_allgatherv(sched, part_scheds_vector, coll_param);
+                }
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
+                else {
+                    CCL_THROW("unexpected allgatherv algorithm");
                 }
             }
             break;

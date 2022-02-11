@@ -249,8 +249,8 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
 
 #ifdef CCL_ENABLE_SYCL
     RETURN_FALSE_IF(ccl::global_data::env().enable_ze_bidir_algo &&
-                        (!checkers::is_single_card(param) || param.ctype != ccl_coll_allreduce),
-                    "bidir is supported only for single-card and allreduce");
+                        !checkers::is_single_card(param) && param.ctype == ccl_coll_allreduce,
+                    "bidir for allreduce is supported only for single-card");
 
     RETURN_FALSE_IF(!param.comm->get_topo_manager().has_p2p_access(),
                     "no p2p access between devices");
@@ -280,7 +280,8 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
                     "unsupported comm size for ",
                     ccl_coll_type_to_str(param.ctype));
 
-    RETURN_FALSE_IF((param.ctype == ccl_coll_bcast || param.ctype == ccl_coll_reduce_scatter) &&
+    RETURN_FALSE_IF((param.ctype == ccl_coll_allgatherv || param.ctype == ccl_coll_bcast ||
+                     param.ctype == ccl_coll_reduce_scatter) &&
                         !checkers::is_single_node(param),
                     "multi-node for ",
                     ccl_coll_type_to_str(param.ctype),

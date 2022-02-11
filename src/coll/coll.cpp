@@ -142,25 +142,49 @@ ccl::status ccl_coll_build_allgatherv(ccl_sched* sched,
                                       ccl_comm* comm) {
     ccl::status status = ccl::status::success;
 
-    ccl_selector_param param;
-    param.ctype = ccl_coll_allgatherv;
-    param.recv_counts = recv_counts;
-    param.dtype = dtype;
-    param.comm = comm;
-    param.stream = sched->coll_param.stream;
-    param.buf = send_buf.get_ptr();
-    param.is_vector_buf = sched->coll_attr.is_vector_buf;
+    ccl_selector_param selector_param;
+    selector_param.ctype = ccl_coll_allgatherv;
+    selector_param.recv_counts = recv_counts;
+    selector_param.dtype = dtype;
+    selector_param.comm = comm;
+    selector_param.stream = sched->coll_param.stream;
+    selector_param.buf = send_buf.get_ptr();
+    selector_param.is_vector_buf = false;
 #ifdef CCL_ENABLE_SYCL
-    param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
+    selector_param.is_sycl_buf = sched->coll_attr.is_sycl_buf;
 #endif // CCL_ENABLE_SYCL
-    param.hint_algo = sched->hint_algo;
+    selector_param.hint_algo = sched->hint_algo;
 
-    auto algo = ccl::global_data::get().algorithm_selector->get<ccl_coll_allgatherv>(param);
+    auto algo =
+        ccl::global_data::get().algorithm_selector->get<ccl_coll_allgatherv>(selector_param);
+
+    auto get_coll_param = [&]() {
+        ccl_coll_param coll_param{};
+        coll_param.ctype = ccl_coll_allgatherv;
+        coll_param.send_bufs.push_back(send_buf.get_ptr());
+        coll_param.send_counts.push_back(send_count);
+        coll_param.recv_bufs.push_back(recv_buf.get_ptr());
+        coll_param.recv_counts.reserve(comm->size());
+        coll_param.recv_counts.insert(
+            coll_param.recv_counts.end(), recv_counts, recv_counts + comm->size());
+        coll_param.dtype = dtype;
+        coll_param.comm = comm;
+        coll_param.stream = sched->coll_param.stream;
+        return coll_param;
+    };
+    std::vector<ccl_sched*> part_scheds = { sched };
 
     switch (algo) {
         case ccl_coll_allgatherv_direct:
             CCL_CALL(ccl_coll_build_direct_allgatherv(
                 sched, send_buf, send_count, recv_buf, recv_counts, dtype, comm));
+            break;
+        case ccl_coll_allgatherv_flat:
+            CCL_CALL(ccl_coll_build_flat_allgatherv(nullptr, part_scheds, get_coll_param()));
+            break;
+        case ccl_coll_allgatherv_multi_bcast:
+            CCL_CALL(
+                ccl_coll_build_multi_bcast_allgatherv(nullptr, part_scheds, get_coll_param(), 1));
             break;
         case ccl_coll_allgatherv_naive:
             CCL_CALL(ccl_coll_build_naive_allgatherv(
@@ -172,8 +196,7 @@ ccl::status ccl_coll_build_allgatherv(ccl_sched* sched,
             break;
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
         case ccl_coll_allgatherv_topo:
-            CCL_CALL(ccl_coll_build_topo_allgatherv(
-                sched, send_buf, send_count, recv_buf, recv_counts, dtype, comm));
+            CCL_CALL(ccl_coll_build_topo_allgatherv(nullptr, part_scheds, get_coll_param()));
             break;
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
         default:

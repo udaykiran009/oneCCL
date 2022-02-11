@@ -811,6 +811,7 @@ function run_functional_tests()
     if [[ ${IS_GPU_NODE} = "yes" ]]
     then
         allreduce_algos="${allreduce_algos} topo"
+        allgatherv_algos="${allgatherv_algos} topo"
         bcast_algos="${bcast_algos} topo"
         reduce_algos="${reduce_algos} topo"
     fi
@@ -832,6 +833,7 @@ function run_functional_tests()
                 for algo in ${allgatherv_algos}
                 do
                     allgatherv_exec_env=$(set_tests_option "CCL_ALLGATHERV=${algo}" "${func_exec_env}")
+                    allgatherv_exec_env=$(set_tests_option "CCL_TEST_DYNAMIC_POINTER=0" "${allgatherv_exec_env}")
                     run_test_cmd "${allgatherv_exec_env} ctest -VV -C allgatherv_${algo}"
                 done
 
@@ -920,6 +922,7 @@ function run_functional_tests()
                 for algo in ${allgatherv_algos}
                 do
                     allgatherv_exec_env=$(set_tests_option "CCL_ALLGATHERV=${algo}" "${func_exec_env}")
+                    allgatherv_exec_env=$(set_tests_option "CCL_TEST_DYNAMIC_POINTER=0" "${allgatherv_exec_env}")
                     run_test_cmd "${allgatherv_exec_env} ctest -VV -C allgatherv_${algo}"
                 done
 

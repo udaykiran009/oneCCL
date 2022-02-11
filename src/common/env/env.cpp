@@ -122,6 +122,8 @@ env_data::env_data()
           ar2d_chunk_count(1),
           ar2d_min_chunk_size(65536),
 
+          allgatherv_topo_large_scale(0),
+
           allreduce_2d_base_size(CCL_ENV_SIZET_NOT_SPECIFIED),
           allreduce_2d_switch_dims(0),
           allreduce_nreduce_buffering(0),
@@ -308,6 +310,8 @@ void env_data::parse() {
     env_2_type(CCL_AR2D_MIN_CHUNK_SIZE, ar2d_min_chunk_size);
     CCL_THROW_IF_NOT(
         ar2d_min_chunk_size >= 1, "incorrect ", CCL_AR2D_MIN_CHUNK_SIZE, " ", ar2d_min_chunk_size);
+
+    env_2_type(CCL_ALLGATHERV_TOPO_LARGE_SCALE, allgatherv_topo_large_scale);
 
     env_2_type(CCL_ALLREDUCE_2D_BASE_SIZE, (size_t&)allreduce_2d_base_size);
     env_2_type(CCL_ALLREDUCE_2D_SWITCH_DIMS, allreduce_2d_switch_dims);
@@ -556,6 +560,8 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_RS_MIN_CHUNK_SIZE, ": ", rs_min_chunk_size);
     LOG_INFO(CCL_AR2D_CHUNK_COUNT, ": ", ar2d_chunk_count);
     LOG_INFO(CCL_AR2D_MIN_CHUNK_SIZE, ": ", ar2d_min_chunk_size);
+
+    LOG_INFO(CCL_ALLGATHERV_TOPO_LARGE_SCALE, ": ", allgatherv_topo_large_scale);
 
     LOG_INFO(CCL_ALLREDUCE_2D_BASE_SIZE,
              ": ",

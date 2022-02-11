@@ -125,7 +125,7 @@ foreach(src ${sources})
     add_test (NAME ${executable} CONFIGURATIONS default COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/${executable} --gtest_output=xml:${CCL_INSTALL_TESTS}/${executable}_default_report.junit.xml)
 endforeach()
 
-foreach(algo direct; naive; flat; multi_bcast)
+foreach(algo direct; naive; flat; multi_bcast; topo)
 add_test (NAME allgatherv_${algo} CONFIGURATIONS allgatherv_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/allgatherv_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allgatherv_${algo}_report.junit.xml)
 endforeach()
 
