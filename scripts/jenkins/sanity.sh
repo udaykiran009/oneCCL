@@ -247,9 +247,12 @@ function set_functional_tests_env()
         func_exec_env+=" CCL_YIELD=sched_yield"
     fi
 
-    if [[ "${node_label}" = "ccl_test_ats" || "${node_label}" = "ccl_test_pvc" ]]
+    if [[ "${node_label}" = "ccl_test_ats" ]]
     then
-        func_exec_env+=" CCL_MNIC_NAME=eno,eth,hfi,^mlx,unknown"
+        func_exec_env+=" CCL_MNIC_NAME=eno,eth,hfi,mlx,^unknown"
+    elif [[ "${node_label}" = "ccl_test_pvc" ]]
+    then
+        func_exec_env+=" CCL_MNIC_NAME=cxi,eno,eth,hfi,mlx,^unknown"
     else
         func_exec_env+=" CCL_MNIC_NAME=br,eno,eth,hfi,mlx,^unknown"
     fi
