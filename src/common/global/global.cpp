@@ -87,8 +87,11 @@ ccl::status global_data::init() {
             try {
                 ze_data.reset(new ze::global_data_desc);
             }
+            catch (const ccl::exception& e) {
+                LOG_INFO("could not initialize level-zero: ", e.what());
+            }
             catch (...) {
-                LOG_INFO("could not initialize level-zero");
+                LOG_INFO("could not initialize level-zero: unknown error");
             }
         }
         else {
