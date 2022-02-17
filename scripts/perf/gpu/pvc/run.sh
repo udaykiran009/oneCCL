@@ -14,51 +14,54 @@ source ${CURRENT_WORK_DIR}/scripts/utils/common.sh
 source ${CURRENT_WORK_DIR}/scripts/utils/pvc_helper.sh
 
 print_help() {
-    echo_log "Usage: ${BASENAME}.sh <options>"
-    echo_log "  -work_dir <dir>"
-    echo_log "      Use existing work directory"
-    echo_log "  -full"
-    echo_log "      Run full scope of steps"
-    echo_log "  -build"
-    echo_log "      Build CCL"
-    echo_log "  -run"
-    echo_log "      Run CCL benchmark"
-    echo_log "  -check_anr"
-    echo_log "      Perfom ANR links check"
-    echo_log "  -check_cxi"
-    echo_log "      Perfom CXI cards check"
-    echo_log "  -p <url>"
-    echo_log "      https proxy"
-    echo_log "  -colls <values>"
-    echo_log "      Set colls values"
-    echo_log "  -cache_modes <values>"
-    echo_log "      Set cache_modes values"
-    echo_log "  -ulls_modes <values>"
-    echo_log "      Set ulls_modes values"
-    echo_log "  -proc_maps <n:ppns>"
-    echo_log "      Set values for n and ppns"
-    echo_log "  -algos <values>"
-    echo_log "      Set algos values"
-    echo_log "  -hosts <values>"
-    echo_log "      Set hosts values"
-    echo_log "  -bench_params <params>"
-    echo_log "      Set benchmark params"
-    echo_log "  -freq <frequency>"
-    echo_log "      Sets a fixed frequency in megahertz on all tiles"
-    echo_log "  -config <1|2|3>"
-    echo_log "      Set config"
-    echo_log "      1 - Run CCL benchmark with default config"
-    echo_log "      2 - Run CCL benchmark with PVC 1 node performance config"
-    echo_log "      3 - Run CCL benchmark with PVC 2 nodes performance config"
-    echo_log "  -agama <version>"
-    echo_log "      Sets agama version for benchmark run"
-    echo_log ""
-    echo_log "Usage examples:"
-    echo_log "  ${BASENAME}.sh -build"
-    echo_log "  ${BASENAME}.sh -work_dir <dir> -run -conf 2"
-    echo_log "  ${BASENAME}.sh -work_dir <dir> -run -freq 1000 -hosts c001n0002"
-    echo_log "  ${BASENAME}.sh -work_dir <dir> -run -hosts c001n0001,c001n0002 -proc_maps 2:2/4:2 -bench_params \"-i 20 -t 8388608\""
-    echo_log ""
+    echo "Usage: ${BASENAME}.sh <options>"
+    echo "  -work_dir <dir>"
+    echo "      Use existing work directory"
+    echo "  -ccl_path <path>"
+    echo "      Use for set oneCCL source path"
+    echo "      If CCL_ROOT is set, try to use this path first"
+    echo "  -full"
+    echo "      Run full scope of steps"
+    echo "  -build"
+    echo "      Build CCL"
+    echo "  -run"
+    echo "      Run CCL benchmark"
+    echo "  -check_anr"
+    echo "      Perfom ANR links check"
+    echo "  -check_cxi"
+    echo "      Perfom CXI cards check"
+    echo "  -p <url>"
+    echo "      https proxy"
+    echo "  -colls <values>"
+    echo "      Set colls values"
+    echo "  -cache_modes <values>"
+    echo "      Set cache_modes values"
+    echo "  -ulls_modes <values>"
+    echo "      Set ulls_modes values"
+    echo "  -proc_maps <n:ppns>"
+    echo "      Set values for n and ppns"
+    echo "  -algos <values>"
+    echo "      Set algos values"
+    echo "  -hosts <values>"
+    echo "      Set hosts values"
+    echo "  -bench_params <params>"
+    echo "      Set benchmark params"
+    echo "  -freq <frequency>"
+    echo "      Sets a fixed frequency in megahertz on all tiles"
+    echo "  -config <1|2|3>"
+    echo "      Set config"
+    echo "      1 - Run CCL benchmark with default config"
+    echo "      2 - Run CCL benchmark with PVC 1 node performance config"
+    echo "      3 - Run CCL benchmark with PVC 2 nodes performance config"
+    echo "  -agama <version>"
+    echo "      Sets agama version for benchmark run"
+    echo ""
+    echo "Usage examples:"
+    echo "  ${BASENAME}.sh -build"
+    echo "  ${BASENAME}.sh -work_dir <dir> -run -config 2"
+    echo "  ${BASENAME}.sh -work_dir <dir> -run -freq 1000 -hosts c001n0002"
+    echo "  ${BASENAME}.sh -work_dir <dir> -run -hosts c001n0001,c001n0002 -proc_maps 2:2/4:2 -bench_params \"-i 20 -t 8388608\""
+    echo ""
 }
 
 remove_commas() {
@@ -70,7 +73,8 @@ set_default_values() {
     CCL_BRANCH="master"
     LOG_FILE="${SCRIPT_DIR}/log_${current_date}.txt"
 
-    SCRIPT_WORK_DIR="${SCRIPT_DIR}/work_dir_${current_date}"
+    SCRIPT_WORK_DIR="${SCRIPT_DIR}/work_dir"
+    CCL_PATH="${SCRIPT_WORK_DIR}/build/_install"
     BUILD_CCL="no"
     RUN_BENCH="no"
     CHECK_ANR="no"
@@ -97,6 +101,7 @@ parse_arguments() {
         case $1 in
             "-h" | "--help" | "-help")        print_help ; exit 0 ;;
             "-work_dir")                      SCRIPT_WORK_DIR="${2}" ; shift ;;
+            "-ccl_path")                      CCL_PATH="${2}" ; shift ;;
             "-full")                          BUILD_CCL="yes" ; RUN_BENCH="yes" ; CHECK_ANR="yes" ; CHECK_CXI="yes" ;;
             "-build")                         BUILD_CCL="yes" ;;
             "-run")                           RUN_BENCH="yes" ;;
@@ -122,20 +127,13 @@ parse_arguments() {
         shift
     done
 
-    mkdir -p ${SCRIPT_WORK_DIR}
     touch ${LOG_FILE}
-
-    CCL_SRC_DIR=${SCRIPT_WORK_DIR}/ccl
-    CCL_INSTALL_DIR=${CCL_SRC_DIR}/_install
-
-    echo_log "CCL_ROOT: $CCL_ROOT"
-    ccl_vars_file_1="${CCL_ROOT}/env/setvars.sh"
-    ccl_vars_file_2="${CCL_INSTALL_DIR}/env/setvars.sh"
 
     echo_log "-----------------------------------------------------------"
     echo_log "PARAMETERS"
     echo_log "-----------------------------------------------------------"
     echo_log "SCRIPT_WORK_DIR = ${SCRIPT_WORK_DIR}"
+    echo_log "CCL_PATH        = ${CCL_PATH}"
     echo_log "BUILD_CCL       = ${BUILD_CCL}"
     echo_log "RUN_BENCH       = ${RUN_BENCH}"
     echo_log "CHECK_ANR       = ${CHECK_ANR}"
@@ -152,6 +150,7 @@ parse_arguments() {
     echo_log "FREQ            = ${GPU_FREQUENCY}"
     echo_log "CONFIG          = ${CONFIG}"
     echo_log "AGAMA           = ${AGAMA}"
+    echo_log "-----------------------------------------------------------"
 }
 
 set_config() {
@@ -166,7 +165,6 @@ set_config() {
         ULLS_MODES="1"
         PROC_MAPS="4:2/12:6/24:12"
         ALGOS="topo ring"
-        COPY_ENGINE="auto"
         HOSTS="c001n0001,c001n0002"
         BENCH_PARAMS="-w 4 -c last -j off -i 20 -t 8388608 -d int32"
     elif [[ ${CONFIG} = "2" ]]
@@ -176,7 +174,6 @@ set_config() {
         ULLS_MODES="0 1"
         PROC_MAPS="2:2/4:4/12:12"
         ALGOS="topo"
-        COPY_ENGINE="none"
         HOSTS="c001n0001"
         BENCH_PARAMS="-w 4 -c last -j off -i 100 -y 2097152"
     elif [[ ${CONFIG} = "3" ]]
@@ -186,7 +183,6 @@ set_config() {
         ULLS_MODES="0 1"
         PROC_MAPS="8:4/24:12"
         ALGOS="topo"
-        COPY_ENGINE="none"
         HOSTS="c001n0001,c001n0002"
         BENCH_PARAMS="-w 4 -c last -j off -i 100 -y 2097152"
     else
@@ -216,17 +212,18 @@ set_run_env() {
     set_build_env
     check_build_env
 
-    # CCL
-    if [[ -f ${ccl_vars_file_1} ]]
+    if [[ -f ${CCL_ROOT}/env/setvars.sh ]]
     then
-        echo_log "CCL source path: ${ccl_vars_file_1}"
-        source ${ccl_vars_file_1}
-    elif [[ -f ${ccl_vars_file_2} ]]
+        source ${CCL_ROOT}/env/setvars.sh
+        echo_log "ccl source path: ${CCL_ROOT}/env/setvars.sh"
+    elif [[ -f ${CCL_PATH}/env/setvars.sh ]]
     then
-        echo_log "CCL source path: ${ccl_vars_file_2}"
-        source ${ccl_vars_file_2}
+        source ${CCL_PATH}/env/setvars.sh
+        echo_log "ccl source path: ${CCL_PATH}/env/setvars.sh"
     else
-        check_command_exit_code 1 "Can not find CCL vars file: ${ccl_vars_file_1} or ${ccl_vars_file_2}"
+        check_command_exit_code 1 "Can not find CCL setvars.sh file.\n \
+         CCL_PATH: ${CCL_PATH}/env/setvars.sh\n \
+         CCL_ROOT: ${CCL_ROOT}/env/setvars.sh"
     fi
 
     # MPICH
@@ -268,24 +265,22 @@ build_ccl() {
     set_build_env
     check_build_env
 
-    if [[ -d ${CCL_SRC_DIR} ]]
+    if [[ -d ${SCRIPT_WORK_DIR} ]]
     then
-        rm -rf ${CCL_SRC_DIR}
+        rm -rf ${SCRIPT_WORK_DIR}
     fi
 
-    cd ${SCRIPT_WORK_DIR}
-
     https_proxy=${PROXY} git clone --branch ${CCL_BRANCH} \
-        --single-branch ${CCL_LINK} ${CCL_SRC_DIR}
+        --single-branch ${CCL_LINK} ${SCRIPT_WORK_DIR}
     check_command_exit_code $? "Download CCL failed"
 
-    if [[ ! -d ${CCL_SRC_DIR} ]]
+    if [[ ! -d ${SCRIPT_WORK_DIR} ]]
     then
-        echo_log "ERROR: CCL_SRC_DIR (${CCL_SRC_DIR}) is not directory, try to run script with \"-build 1\""
+        echo_log "ERROR: SCRIPT_WORK_DIR (${SCRIPT_WORK_DIR}) is not directory, try to run script with \"-build\""
         check_command_exit_code 1 "Install CCL failed"
     fi
 
-    cd ${CCL_SRC_DIR}
+    cd ${SCRIPT_WORK_DIR}
 
     rm -rf build
     mkdir build
@@ -293,8 +288,7 @@ build_ccl() {
 
     cmake .. -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=dpcpp \
         -DCOMPUTE_BACKEND=dpcpp \
-        -DBUILD_CONFIG=0 -DBUILD_FT=0 -DBUILD_EXAMPLES=1 \
-        -DCMAKE_INSTALL_PREFIX=${CCL_INSTALL_DIR}
+        -DBUILD_CONFIG=0 -DBUILD_FT=0 -DBUILD_EXAMPLES=1
     check_command_exit_code $? "Configure CCL failed"
 
     make -j16 install
