@@ -116,3 +116,22 @@ function get_default_and_native_provs() {
         echo "$(get_default_prov)"
     fi
 }
+
+function check_hmem_log() {
+    log_path=$1
+    hmem_mode=$2
+    passed_pattern="in: { .* hmem: ${hmem_mode}"
+    passed_count=`grep -E -c -i "${passed_pattern}" ${log_path}`
+    if [[ ${passed_count} -eq 0 ]]
+    then
+        echo "Error: did not find input hmem enable in log ${log_path}"
+        exit 1
+    fi
+    passed_pattern="out: { .* hmem: ${hmem_mode}"
+    passed_count=`grep -E -c -i "${passed_pattern}" ${log_path}`
+    if [[ ${passed_count} -eq 0 ]]
+    then
+        echo "Error: did not find output hmem enable in log ${log_path}"
+        exit 1
+    fi
+}
