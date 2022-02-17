@@ -661,8 +661,7 @@ parse_arguments() {
         INSTALL_TF="1"
         DOWNLOAD_ITEX="1"
         INSTALL_ITEX="1"
-        # TODO: uncomment when testing with TF will be available
-        #DOWNLOAD_MODEL_TF="1"
+        DOWNLOAD_MODEL_TF="1"
     fi
 
     echo_log "-----------------------------------------------------------"
@@ -918,7 +917,7 @@ install_fw() {
         echo_log "\n=== upgrade numpy ===\n"
         pip install numpy --upgrade
 
-        echo_log "\n=== upgrade mpi4py ===\n"
+        echo_log "\n=== install mpi4py ===\n"
         pip install mpi4py --no-deps
 
         echo_log "\n=== install PT ===\n"
@@ -1117,7 +1116,8 @@ run_model_tf() {
     rm -rf ${MODEL_TF_SRC_DIR}/resnet50_chk/*
     rm -r ${RN50_MODEL_TF_DIR}/mlperf_resnet/__pycache__
 
-    mpiexec_env="GPU=1" mpiexec_args="${BOOTSTRAP_OPTIONS}" app="python ${RN50_MODEL_TF_DIR}/mlperf_resnet/imagenet_main.py" \
+    # OverrideRevision=0 is a workaround for NaN failure TFDOQA-4198
+    mpiexec_env="OverrideRevision=0 GPU=1" mpiexec_args="${BOOTSTRAP_OPTIONS}" app="python ${RN50_MODEL_TF_DIR}/mlperf_resnet/imagenet_main.py" \
         app_args="2 --max_train_steps=${ITER_COUNT} --train_epochs=10 --epochs_between_evals=10 \
           --inter_op_parallelism_threads 1 --intra_op_parallelism_threads 24 \
           --version 1 --resnet_size 50 --model_dir=${RN50_OUTPUT_DIR} \

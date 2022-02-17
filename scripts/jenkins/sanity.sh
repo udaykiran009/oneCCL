@@ -612,19 +612,10 @@ function run_hvd_rn50_test()
                      -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
         check_command_exit_code $? "ERROR: prepare Horovod/${1} failed"
     else
-        if [[ ${1} == "pt" ]]
-        then
-            ./horovod.sh -install_hvd 1 -install_ccl 1 "-install_${1}" 1 "-run_model_${1}" 1 \
-                         "-check_hvd_${1}" 1 "-check_${1}" 1 -remove_conda 1 -with_mpich ${2} \
-                         -transport mpi -provider ${FI_PROVIDER} -work_dir "${HVD_WORK_DIR}" \
-                         -proc_maps ${PROC_MAPS}
-        else
-            echo "Horovod TF rn50 run is currently blocked by https://jira.devtools.intel.com/browse/TFDO-5212"
-            echo "Running Horovod TF build:"
-            ./horovod.sh -install_hvd 1 -install_ccl 1 "-install_${1}" 1 "-check_${1}" 1 \
-                         -remove_conda 1 -with_mpich ${2} -proc_maps ${PROC_MAPS} \
-                         -transport mpi -provider ${FI_PROVIDER} -work_dir "${HVD_WORK_DIR}"
-        fi
+        ./horovod.sh -install_hvd 1 -install_ccl 1 "-install_${1}" 1 "-run_model_${1}" 1 \
+                     "-check_hvd_${1}" 1 "-check_${1}" 1 -remove_conda 1 -with_mpich ${2} \
+                     -transport mpi -provider ${FI_PROVIDER} -work_dir "${HVD_WORK_DIR}" \
+                     -proc_maps ${PROC_MAPS}
         check_command_exit_code $? "ERROR: Horovod/${1} run failed"
     fi
     popd
