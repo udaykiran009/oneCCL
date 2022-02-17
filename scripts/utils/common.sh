@@ -338,3 +338,24 @@ set_extra_proxy() {
     export socks_proxy=http://proxy-dmz.intel.com:1080
     export no_proxy=intel.com,.intel.com,localhost,127.0.0.1
 }
+
+proc_map_iterator() {
+    local mpiexec_env="${mpiexec_env}"
+    local mpiexec_args="${mpiexec_args}"
+    local app="${app}"
+    local app_args="${app_args}"
+    local logging="${logging}"
+    rc=0
+    for proc_map in $(echo ${PROC_MAPS} | tr '/' ' ')
+    do
+        n=$(echo ${proc_map%:*})
+        ppns=$(echo ${proc_map#*:} | tr ',' ' ')
+        for ppn in ${ppns}
+        do
+            echo "[DEBUG]: command: ${mpiexec_env} mpiexec ${mpiexec_args} -n ${n} -ppn ${ppn} -l ${app} ${app_args} ${logging}"
+            eval "${mpiexec_env} mpiexec ${mpiexec_args} -n ${n} -ppn ${ppn} -l ${app} ${app_args} ${logging}"
+            rc=$((rc+$?))
+        done
+    done
+    return ${rc}
+}

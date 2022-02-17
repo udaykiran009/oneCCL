@@ -5,7 +5,7 @@ set_default_values()
     BASENAME=$(basename $0 .sh)
     SCRIPT_DIR=$(cd $(dirname "$BASH_SOURCE") && pwd -P)
     USE_DEFAULT_MPICH_OFI="yes"
-    MPICH_OFI_DEFAULT_LINK="https://af02p-or.devtools.intel.com/artifactory/list/mpich-aurora-or-local/"
+    MPICH_OFI_DEFAULT_LINK="https://af02p-or.devtools.intel.com/artifactory/list/mpich-aurora-or-local"
     PACKAGE_NAME=""
 }
 
@@ -68,15 +68,21 @@ load_package() {
     pushd ${SCRIPT_DIR}
     if [[ ${USE_DEFAULT_MPICH_OFI} = "yes" ]]
     then
-        LINE="$(curl -s ${MPICH_OFI_DEFAULT_LINK} | grep "drop" | tail -1)"
-        LATEST_DROP="$(echo "${LINE}" | grep -o 'drop[0-9]*.[0-9]' | tail -1)"
-        PACKAGE_NAME="$(curl -s "${MPICH_OFI_DEFAULT_LINK}${LATEST_DROP}/ats/" | grep -o ">mpich-ofi-all.*-default.*\.rpm" | cut -c 2-)"
-        PACKAGE_LINK="${MPICH_OFI_DEFAULT_LINK}${LATEST_DROP}/ats/${PACKAGE_NAME}"
+        for drop in $(curl -s "${MPICH_OFI_DEFAULT_LINK}/" | grep -Eo "drop[0-9, .]*" | tac | uniq)
+        do
+            if curl -o /dev/null -s -I -f "${MPICH_OFI_DEFAULT_LINK}/${drop}/ats/"
+            then
+                PACKAGE_NAME="$(curl -s "${MPICH_OFI_DEFAULT_LINK}/${drop}/ats/" | grep -o ">mpich-ofi-all.*-default.*\.rpm" | cut -c 2-)"
+                PACKAGE_LINK="${MPICH_OFI_DEFAULT_LINK}/${drop}/ats/${PACKAGE_NAME}"
 
-        echo "DEBUG: LINE         = ${LINE}"
-        echo "DEBUG: LATEST_DROP  = ${LATEST_DROP}"
-        echo "DEBUG: PACKAGE_NAME = ${PACKAGE_NAME}"
-        echo "DEBUG: PACKAGE_LINK = ${PACKAGE_LINK}"
+                echo "DEBUG: DROP         = ${drop}"
+                echo "DEBUG: PACKAGE_NAME = ${PACKAGE_NAME}"
+                echo "DEBUG: PACKAGE_LINK = ${PACKAGE_LINK}"
+                break
+            else
+                echo "WARNING: ${MPICH_OFI_DEFAULT_LINK}/${drop} doesn't contain ats package"
+            fi
+        done
     fi
     if [[ ! -z ${PACKAGE_LINK} ]]
     then

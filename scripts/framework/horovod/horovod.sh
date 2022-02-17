@@ -167,6 +167,7 @@ DEFAULT_RUN_MODEL_PT="0"
 DEFAULT_BATCH_SIZE="128"
 DEFAULT_ITER_COUNT="200"
 
+DEFAULT_PROC_MAPS="2:2"
 DEFAULT_PATH_TO_TOKEN_FILE_1S=""
 DEFAULT_USERNAME_1S=""
 DEFAULT_PROXY="http://proxy-us.intel.com:912"
@@ -263,6 +264,8 @@ print_help() {
     echo_log "      Batch size for RN50 training"
     echo_log "  -iter_count <count>"
     echo_log "      Iteration count for RN50 training"
+    echo_log "  -proc_maps <n:ppns>/..."
+    echo_log "      Map with n and ppns values"
     echo_log "  -token <path>"
     echo_log "      Path to file with github credentials"
     echo_log "  -username <name>"
@@ -337,6 +340,7 @@ parse_arguments() {
     BATCH_SIZE=${DEFAULT_BATCH_SIZE}
     ITER_COUNT=${DEFAULT_ITER_COUNT}
 
+    PROC_MAPS=${DEFAULT_PROC_MAPS}
     PATH_TO_TOKEN_FILE_1S=${DEFAULT_PATH_TO_TOKEN_FILE_1S}
     USERNAME_1S=${DEFAULT_USERNAME_1S}
     PROXY=${DEFAULT_PROXY}
@@ -495,6 +499,10 @@ parse_arguments() {
                 ;;
             "-iter_count")
                 ITER_COUNT="${2}"
+                shift
+                ;;
+            "-proc_maps")
+                PROC_MAPS="${2}"
                 shift
                 ;;
             "-token")
@@ -707,6 +715,7 @@ parse_arguments() {
     echo_log "BATCH_SIZE         = ${BATCH_SIZE}"
     echo_log "ITER_COUNT         = ${ITER_COUNT}"
 
+    echo_log "PROC_MAPS          = ${PROC_MAPS}"
     echo_log "USERNAME_1S        = ${USERNAME_1S}"
     echo_log "PROXY              = ${PROXY}"
     echo_log "SET_EXTRA_PROXY    = ${SET_EXTRA_PROXY}"
@@ -724,11 +733,10 @@ hvd_test() {
 
         if [[ ${CCL_CONFIGURATION} = "" ]]
         then
-            echo_log "============================= Horovod/TF bench =================================="
-            cmd="mpiexec ${BOOTSTRAP_OPTIONS} -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_bench.py \
-                 --xpu gpu --framework tf"
-            echo_log ${cmd}
-            eval ${cmd}
+            echo_log "============================= Horovod/TF bench =================================="\
+            mpiexec_args="${BOOTSTRAP_OPTIONS}" app="python ${HVD_SRC_DIR}/benchmark/hvd_bench.py" \
+                app_args="--xpu gpu --framework tf" \
+                proc_map_iterator
             CheckCommandExitCode $? "Basic Horovod/TF test failed"
             echo_log "============================= ****************** =================================="
         fi
@@ -746,10 +754,9 @@ hvd_test() {
         if [[ ${CCL_CONFIGURATION} = "" ]]
         then
             echo_log "============================= Horovod/PT bench =================================="
-            cmd="mpiexec ${BOOTSTRAP_OPTIONS} -n 2 -l python ${HVD_SRC_DIR}/benchmark/hvd_bench.py \
-                 --xpu gpu --framework pt"
-            echo_log ${cmd}
-            eval ${cmd}
+            mpiexec_args="${BOOTSTRAP_OPTIONS}" app="python ${HVD_SRC_DIR}/benchmark/hvd_bench.py" \
+                app_args="--xpu gpu --framework pt" \
+                proc_map_iterator
             CheckCommandExitCode $? "Basic Horovod/PT test failed"
             echo_log "============================= ****************** =================================="
         fi
@@ -910,6 +917,9 @@ install_fw() {
 
         echo_log "\n=== upgrade numpy ===\n"
         pip install numpy --upgrade
+
+        echo_log "\n=== upgrade mpi4py ===\n"
+        pip install mpi4py --no-deps
 
         echo_log "\n=== install PT ===\n"
         if [[ -f ${PT_PATH} ]]
@@ -1107,14 +1117,13 @@ run_model_tf() {
     rm -rf ${MODEL_TF_SRC_DIR}/resnet50_chk/*
     rm -r ${RN50_MODEL_TF_DIR}/mlperf_resnet/__pycache__
 
-    cmd="GPU=1 mpiexec ${BOOTSTRAP_OPTIONS} -n 2 -l python ${RN50_MODEL_TF_DIR}/mlperf_resnet/imagenet_main.py 2 \
-      --max_train_steps=${ITER_COUNT} --train_epochs=10 --epochs_between_evals=10 \
-      --inter_op_parallelism_threads 1 --intra_op_parallelism_threads 24  \
-      --version 1 --resnet_size 50 --model_dir=${RN50_OUTPUT_DIR} \
-      --use_synthetic_data --batch_size=${BATCH_SIZE} --use_bfloat16 2>&1 | tee ${rn50_log_file}"
-
-    echo_log "\nrn50 cmd:\n${cmd}\n"
-    eval ${cmd}
+    mpiexec_env="GPU=1" mpiexec_args="${BOOTSTRAP_OPTIONS}" app="python ${RN50_MODEL_TF_DIR}/mlperf_resnet/imagenet_main.py" \
+        app_args="2 --max_train_steps=${ITER_COUNT} --train_epochs=10 --epochs_between_evals=10 \
+          --inter_op_parallelism_threads 1 --intra_op_parallelism_threads 24 \
+          --version 1 --resnet_size 50 --model_dir=${RN50_OUTPUT_DIR} \
+          --use_synthetic_data --batch_size=${BATCH_SIZE} --use_bfloat16" \
+        logging="2>&1 | tee ${rn50_log_file}" \
+        proc_map_iterator
     CheckCommandExitCode $? "Model test failed"
 
     # calculate avg performance
@@ -1140,12 +1149,10 @@ run_model_pt() {
     rn50_log_file="rn50_"$current_date".txt"
     rn50_log_file_pt="pt_rn50_"$current_date".txt"
 
-    cmd="mpiexec ${BOOTSTRAP_OPTIONS} -n 2 -l python ${MODEL_PT_FILE} \
-         --iter=${ITER_COUNT} --warm=2 --bs ${BATCH_SIZE} \
-         --arch resnet50 --sycl --horovod --print-iteration-time 2>&1 | tee ${rn50_log_file_pt}"
-
-    echo_log "\nIPEX rn50 cmd:\n${cmd}\n"
-    eval ${cmd}
+    mpiexec_args="${BOOTSTRAP_OPTIONS}" app="python ${MODEL_PT_FILE}" \
+        app_args="--iter=${ITER_COUNT} --warm=2 --bs ${BATCH_SIZE} --arch resnet50 --sycl --horovod --print-iteration-time" \
+        logging="2>&1 | tee ${rn50_log_file_pt}" \
+        proc_map_iterator
     CheckCommandExitCode $? "IPEX Model test failed"
 }
 

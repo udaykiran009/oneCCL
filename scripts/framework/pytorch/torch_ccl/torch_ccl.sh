@@ -60,6 +60,8 @@ DEFAULT_RUN_UT="0"
 DEFAULT_RUN_DEMO="0"
 DEFAULT_RUN_RN50="0"
 
+DEFAULT_PROC_MAPS="2:2"
+
 DEFAULT_PATH_TO_TOKEN_FILE_1S=""
 DEFAULT_USERNAME_1S=""
 
@@ -146,6 +148,8 @@ print_help() {
     echo_log "      Run demo test"
     echo_log "  -run_rn50 <bool_flag>"
     echo_log "      Run ResNet50"
+    echo_log "  -proc_maps <n:ppns>/..."
+    echo_log "      Map with n and ppns values"
     echo_log "  -token <path>"
     echo_log "      Path to file with github credentials"
     echo_log "  -username <name>"
@@ -191,6 +195,8 @@ parse_arguments() {
     RUN_UT=${DEFAULT_RUN_UT}
     RUN_DEMO=${DEFAULT_RUN_DEMO}
     RUN_RN50=${DEFAULT_RUN_RN50}
+
+    PROC_MAPS=${DEFAULT_PROC_MAPS}
 
     PATH_TO_TOKEN_FILE_1S=${DEFAULT_PATH_TO_TOKEN_FILE_1S}
     USERNAME_1S=${DEFAULT_USERNAME_1S}
@@ -292,6 +298,10 @@ parse_arguments() {
                 ;;
             "-run_rn50")
                 RUN_RN50=${2}
+                shift
+                ;;
+            "-proc_maps")
+                PROC_MAPS="${2}"
                 shift
                 ;;
             "-token")
@@ -407,6 +417,8 @@ parse_arguments() {
     echo_log "RUN_UT             = ${RUN_UT}"
     echo_log "RUN_DEMO           = ${RUN_DEMO}"
     echo_log "RUN_RN50           = ${RUN_RN50}"
+
+    echo_log "PROC_MAPS          = ${PROC_MAPS}"
 
     echo_log "USERNAME_1S        = ${USERNAME_1S}"
     echo_log "PROXY              = ${PROXY}"
@@ -553,7 +565,7 @@ run_torch_ccl_demo() {
     pushd "${SCRIPT_WORK_DIR}/torch_ccl" || exit 1
 
     print_run_env
-    mpiexec -n 2 python ./demo/demo.py
+    app="python ./demo/demo.py" proc_map_iterator
 
     if [ "$?" == "0" ]; then
         echo -e "[PASS] torch ccl gpu demo pass"
@@ -578,7 +590,8 @@ run_torch_ccl_rn50() {
     pushd "${SCRIPT_WORK_DIR}/models/resnet50" || exit 1
 
     print_run_env
-    mpiexec -n 2 python main.py -a resnet50 -b 128 --xpu 0 --epochs 1 --dry-run 5 --num-iterations 20 --bf16 1 --seed 1 "${IMAGENET}"
+    app="python main.py" app_args="-a resnet50 -b 128 --xpu 0 --epochs 1 --dry-run 5 --num-iterations 20 --bf16 1 --seed 1 ${IMAGENET}" \
+        proc_map_iterator
     if [ "$?" == "0" ]; then
         echo -e "[PASS] torch ccl gpu demo pass"
     else

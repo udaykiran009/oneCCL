@@ -616,12 +616,13 @@ function run_hvd_rn50_test()
         then
             ./horovod.sh -install_hvd 1 -install_ccl 1 "-install_${1}" 1 "-run_model_${1}" 1 \
                          "-check_hvd_${1}" 1 "-check_${1}" 1 -remove_conda 1 -with_mpich ${2} \
-                         -transport mpi -provider ${FI_PROVIDER} -work_dir "${HVD_WORK_DIR}"
+                         -transport mpi -provider ${FI_PROVIDER} -work_dir "${HVD_WORK_DIR}" \
+                         -proc_maps ${PROC_MAPS}
         else
             echo "Horovod TF rn50 run is currently blocked by https://jira.devtools.intel.com/browse/TFDO-5212"
             echo "Running Horovod TF build:"
             ./horovod.sh -install_hvd 1 -install_ccl 1 "-install_${1}" 1 "-check_${1}" 1 \
-                         -remove_conda 1 -with_mpich ${2} \
+                         -remove_conda 1 -with_mpich ${2} -proc_maps ${PROC_MAPS} \
                          -transport mpi -provider ${FI_PROVIDER} -work_dir "${HVD_WORK_DIR}"
         fi
         check_command_exit_code $? "ERROR: Horovod/${1} run failed"
@@ -695,7 +696,7 @@ function run_torch_ccl_tests()
         ./torch_ccl.sh -prepare 1 ${pr_number_option} -work_dir ${TORCH_CCL_WORK_DIR} \
                        -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
     else
-        ./torch_ccl.sh -install_torch_ccl 1 -run_ut 1 -check_pt 1 -check_ipex 1 \
+        ./torch_ccl.sh -install_torch_ccl 1 -run_ut 1 -check_pt 1 -check_ipex 1 -proc_maps ${PROC_MAPS} \
                        -remove_conda 1 -work_dir ${TORCH_CCL_WORK_DIR}
     fi
     log_status_fail=${PIPESTATUS[0]}
