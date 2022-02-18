@@ -159,7 +159,7 @@ void ccl_unordered_coll_manager::start_coordination(const std::string& match_id)
               " (service_sched ",
               service_sched.get(),
               ", req ",
-              static_cast<ccl_request*>(service_sched.get()),
+              service_sched->get_request(),
               ")");
 
     /* 1. broadcast match_id_size */
@@ -371,7 +371,7 @@ void ccl_unordered_coll_manager::remove_service_scheds() {
     std::lock_guard<ccl_spinlock> lock{ service_scheds_guard };
     for (auto it = service_scheds.begin(); it != service_scheds.end();) {
         ccl_sched* sched = it->second;
-        if (sched->req->is_completed()) {
+        if (sched->is_completed()) {
             LOG_DEBUG("sched ", sched, ", match_id ", it->first);
             delete sched;
             it = service_scheds.erase(it);

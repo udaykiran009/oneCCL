@@ -155,6 +155,7 @@ set(CCL_SRC
     sched/queue/strict_queue.cpp
     sched/sched.cpp
     sched/sched_base.cpp
+    sched/sched_restart_manager.cpp
     sched/sched_timer.cpp
 
     topology/topo_manager.cpp

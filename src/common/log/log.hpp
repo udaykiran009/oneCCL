@@ -184,8 +184,17 @@ public:
 
     static std::map<ccl_log_level, std::string> level_names;
 
+    static void set_abort_on_throw(int val) {
+        abort_on_throw = val;
+    }
+
+    static bool is_abort_on_throw_enabled() {
+        return abort_on_throw;
+    }
+
 private:
     static ccl_log_level level;
+    static bool abort_on_throw;
 
     ccl_streambuf streambuf;
     std::ostream out_stream;
@@ -301,7 +310,13 @@ extern ccl_logger logger;
                            __FUNCTION__, \
                            ": EXCEPTION: ", \
                            ##__VA_ARGS__); \
-        throw ccl::exception(throw_msg_ss.str()); \
+        if (ccl_logger::is_abort_on_throw_enabled()) { \
+            LOG_ERROR(throw_msg_ss.str()); \
+            abort(); \
+        } \
+        else { \
+            throw ccl::exception(throw_msg_ss.str()); \
+        } \
     } while (0)
 
 /**
@@ -319,7 +334,12 @@ extern ccl_logger logger;
                            ": EXCEPTION: ", \
                            ##__VA_ARGS__); \
         LOG_ERROR("Error - ", ##__VA_ARGS__); \
-        throw ccl::exception(throw_msg_ss.str()); \
+        if (ccl_logger::is_abort_on_throw_enabled()) { \
+            abort(); \
+        } \
+        else { \
+            throw ccl::exception(throw_msg_ss.str()); \
+        } \
     } while (0)
 /**
  * Helper macro to throw ccl::exception exception if provided condition is not true.

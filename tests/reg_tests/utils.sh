@@ -47,10 +47,13 @@ function check_log() {
     failed_pattern+="|kill|runtime_error|terminate|timed|unexpected"
     failed_pattern+="|[^-W]error|exception"
     failed_pattern+="|job ending due to application timeout"
-    failed_count=`grep -E -c -i "${failed_pattern}" ${log_path}`
+
+    # patterns to exclude as they're printed in non-error cases
+    suppress_pattern="\-\-abort\-signal|CCL_ABORT_ON_THROW"
+    failed_strings=`grep -E -i "${failed_pattern}" ${log_path} | grep -Ev "${supress_pattern}"`
+    failed_count=`${failed_strings} | wc -l`
     if [ ${failed_count} -ne 0 ]
     then
-        failed_strings=`grep -E -i "${failed_pattern}" ${log_path}`
         echo "Error: found error in log ${log_path}"
         echo ""
         echo "${failed_strings}"

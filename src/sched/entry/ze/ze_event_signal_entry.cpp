@@ -16,7 +16,10 @@ ze_event_signal_entry::ze_event_signal_entry(ccl_sched* sched, ze_event_handle_t
 }
 
 void ze_event_signal_entry::start() {
-    auto signal_event = (master_sched) ? master_sched->get_memory().sync_event : event;
+    auto signal_event =
+        (master_sched) ? ccl::utils::get_native_event(master_sched->get_request()->get_sync_event())
+                       : event;
+
     LOG_DEBUG("signal event: ", signal_event);
     ZE_CALL(zeEventHostSignal, (signal_event));
 
@@ -24,8 +27,8 @@ void ze_event_signal_entry::start() {
 }
 
 void ze_event_signal_entry::handle_sycl_event_status() {
-    if (ccl::utils::is_sycl_event_completed(master_sched->get_native_event()) &&
-        ccl::utils::is_sycl_event_completed(master_sched->get_sync_event())) {
+    if (ccl::utils::is_sycl_event_completed(master_sched->get_request()->get_native_event()) &&
+        ccl::utils::is_sycl_event_completed(master_sched->get_request()->get_sync_event())) {
         LOG_DEBUG("native and sync events are completed");
         status = ccl_sched_entry_status_complete;
     }

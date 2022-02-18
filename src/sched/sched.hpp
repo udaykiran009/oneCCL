@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/request/request.hpp"
 #include "sched/sched_base.hpp"
 #include "sched/sched_timer.hpp"
 #include "sched/queue/flow_control.hpp"
@@ -25,23 +26,22 @@ enum ccl_sched_in_bin_status {
 class ccl_sched;
 typedef ccl::status (*ccl_sched_finalize_fn_t)(ccl_sched*, const void*);
 
+class sched_restart_manager;
+
 class ccl_sched_key;
-enum class sched_type_t { regular, master, extra };
-class alignas(CACHELINE_SIZE) ccl_sched : public ccl_sched_base, public ccl_request {
+// TODO: after removing duplicate code, the only sched types currently
+// in use: extra and master. Need to rework code further for unification
+enum class sched_type_t { /* regular , */ master, extra };
+class alignas(CACHELINE_SIZE) ccl_sched : public ccl_sched_base {
 public:
     static constexpr const char* class_name() {
         return "sched";
     }
 
-    ccl_sched(const ccl_sched_create_param& param);
-
-    ccl_sched(const ccl_sched_create_param& param,
-              ccl_request* master_request,
-              ccl_sched* master_sched = nullptr);
-
+    ccl_sched(const ccl_sched_create_param& param, bool top_level_sched = false);
     ccl_sched(const ccl_sched_create_param& param, ccl_sched* master_sched);
 
-    ~ccl_sched() override;
+    ~ccl_sched();
 
     ccl_sched(const ccl_sched& src) = delete;
     ccl_sched() = delete;
@@ -50,7 +50,14 @@ public:
     void add_subsched(const ccl_coll_param& param, bool update_sched_id = true);
     std::vector<std::shared_ptr<ccl_sched>>& get_subscheds();
     void commit(ccl_parallelizer* parallelizer = nullptr, bool update_sched_id = true);
-    ccl_request* start(ccl_executor* exec, bool reset_sched = true, bool update_sched_id = true);
+    // start executing the schedule
+    ccl_request* start(ccl_executor* exec,
+                       // reset sched's state(e.g. its request)
+                       bool reset_sched = true,
+                       // generate a new sched id
+                       bool update_sched_id = true,
+                       // if true - we're restarting the same sched after it's been delayed
+                       bool restart = false);
 
     /**
      * Reset completion counter of @b req
@@ -74,7 +81,8 @@ public:
     /**
      * Called after all the entries have been completed
      */
-    virtual void complete_sched();
+    void complete();
+    bool is_completed() const;
 
     size_t get_start_idx() const {
         return start_idx;
@@ -99,7 +107,7 @@ public:
     /**
      * Reset runtime parameters and all entries
      */
-    void renew(bool need_update_id = false);
+    void renew(bool need_update_id = false, bool reset = false);
 
     using ccl_sched_base::add_entry_front_t;
     using ccl_sched_base::add_entry_back_t;
@@ -181,14 +189,10 @@ public:
         finalize_fn = fn;
         finalize_fn_ctx = ctx;
     }
-    ccl_request* req = nullptr;
-    // pointer to a master schedule this sched belongs to. If this sched is a partial sched, then
-    // it's the same as the req ptr above. But it's going to be different if the sched is created
-    // as part of extra_sched.
-    // Currently we only set this ptr to non-null when we need it, i.e. these are the cases when we
-    // construct sched and entries to run collective. There are some other cases where we don't need
-    // master_sched, so it's not set there.
+
+    // pointer to the parent sched, nullptr for type == master
     ccl_sched* parent_sched = nullptr;
+
     size_t entries_count() const;
     sched_type_t type;
 
@@ -200,4 +204,39 @@ private:
     void* finalize_fn_ctx = nullptr;
 
     ccl::sched_timer timer;
+
+public:
+    ccl_request* get_request();
+    const ccl_request* get_request() const;
+
+    // check if the sched needs to be restarted
+    // to complete delayed requests
+    void try_to_restart();
+
+    // cleanup structs related to the request from
+    // the schedule
+    bool release_request(ccl_request* req);
+    // release event associated with the request, this
+    // needs to be here because the pool is stored per
+    // schedule
+    void release_sync_event(ccl_request* req);
+
+private:
+    void set_output_event(ccl_request* req);
+    void update_active_request(bool use_delayed);
+    static void complete_itt(const ccl_stream* stream);
+
+    int calculate_request_count() const;
+
+    // active request that tracks the currently running execution
+    ccl_request* req;
+
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+    const bool use_output_event = false;
+#endif
+    const bool top_level_sched;
+
+    std::unique_ptr<sched_restart_manager> restart_manager;
+
+    friend class sched_restart_manager;
 };

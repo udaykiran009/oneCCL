@@ -1,7 +1,10 @@
 #pragma once
 
+#include <unordered_map>
+
 #include "sched/entry/ze/ze_cache.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
+#include "sched/ze/ze_event_manager.hpp"
 
 #include "sched/sched_timer.hpp"
 
@@ -24,6 +27,7 @@ struct global_data_desc {
     std::vector<device_info> device_list;
     std::vector<ze_device_handle_t> device_handles;
     std::unique_ptr<ze::cache> cache;
+    std::unordered_map<ze_context_handle_t, ccl::ze::dynamic_event_pool> dynamic_event_pools;
 
     std::atomic<size_t> kernel_counter{};
 

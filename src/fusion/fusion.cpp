@@ -8,8 +8,8 @@
 
 ccl::status complete_user_request(const void* ctx) {
     ccl_sched* sched = (ccl_sched*)ctx;
-    LOG_DEBUG("complete fusion request: ", static_cast<ccl_request*>(sched));
-    sched->complete_request();
+    LOG_DEBUG("complete fusion request: ", sched->get_request());
+    sched->complete();
     return ccl::status::success;
 }
 
@@ -117,7 +117,7 @@ bool ccl_fusion_manager::add(ccl_sched* sched) {
     }
 
     CCL_THROW_IF_NOT(sched->is_completed(), "incorrect completion counter");
-    sched->set_counter(1);
+    sched->get_request()->set_counter(1);
 
     {
         std::lock_guard<ccl_fusion_manager::lock_t> lock{ guard };
@@ -205,13 +205,13 @@ ccl_sched* ccl_fusion_manager::build_sched() {
         fill_sched = is_created;
 
         if (!is_created) {
-            LOG_DEBUG("found fused_sched in cache");
+            LOG_DEBUG("found fused_sched in cache: ", sched);
             if (!sched->is_completed()) {
                 LOG_DEBUG("it is not completed sched");
                 stat_overlapped_exec_calls++;
                 if (ccl::global_data::get().executor->get_worker_count() > 1) {
                     LOG_DEBUG("found fused_sched in cache, which is not completed yet");
-                    ccl::global_data::get().executor->wait(sched);
+                    ccl::global_data::get().executor->wait(sched->get_request());
                 }
                 else {
                     CCL_THROW_IF_NOT(sched->is_completed(),
@@ -374,7 +374,7 @@ void ccl_fusion_manager::execute() {
     if (ccl::global_data::env().fusion_check_urgent && !exec_queue.empty()) {
         /* recheck scheds from exec_queue, maybe some of them were marked as urgent since previous call */
         for (auto it = exec_queue.begin(); it != exec_queue.end(); ++it) {
-            if ((*it)->urgent) {
+            if ((*it)->get_request()->urgent) {
                 LOG_DEBUG("found urgent sched in exec_queue, flush exec_queue");
                 flush_exec_queue = true;
                 break;
@@ -416,7 +416,7 @@ void ccl_fusion_manager::execute() {
                     exec_queue_sum_bytes += size;
 
                     if (ccl::global_data::env().fusion_check_urgent && !flush_exec_queue &&
-                        s->urgent) {
+                        s->get_request()->urgent) {
                         LOG_DEBUG(
                             "found urgent sched in postponed_queue, flush exec_queue, postponed_queue size ",
                             postponed_queue.size());

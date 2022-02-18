@@ -224,7 +224,7 @@ void ccl_executor::start(ccl_sched* sched, bool extra_sched) {
         CCL_ASSERT(sched->sched_type == ccl_sched_unordered_coll,
                    "should be unordered_coll for now");
 
-        sched->set_counter(1);
+        sched->get_request()->set_counter(1);
         workers[0]->add(sched);
         return;
     }

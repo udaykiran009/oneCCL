@@ -1,4 +1,5 @@
 #include "common/global/global.hpp"
+#include "common/log/log.hpp"
 #include "exec/exec.hpp"
 #include "exec/thread/worker.hpp"
 
@@ -20,7 +21,12 @@ ccl_worker::ccl_worker(size_t idx, std::unique_ptr<ccl_sched_queue> queue)
           sched_queue(std::move(queue)) {}
 
 void ccl_worker::add(ccl_sched* sched) {
-    LOG_DEBUG("add sched ", sched, ", coll ", ccl_coll_type_to_str(sched->coll_param.ctype));
+    LOG_DEBUG("add sched ",
+              sched,
+              ", coll ",
+              ccl_coll_type_to_str(sched->coll_param.ctype),
+              " bin: ",
+              sched->bin);
 
     CCL_ASSERT(sched);
     CCL_ASSERT(!sched->bin);
@@ -30,7 +36,7 @@ void ccl_worker::add(ccl_sched* sched) {
 
     if (sched->strict_order) {
         /* to keep valid non-completed req until safe releasing */
-        sched->req->increase_counter(1);
+        sched->get_request()->increase_counter(1);
         strict_sched_queue->add(sched);
     }
     else {
@@ -78,14 +84,17 @@ ccl::status ccl_worker::process_strict_sched_queue() {
                 "only single sched in active strict queue can be erased since previous call");
 
             /* now it is safe to release this sched */
-            sched->req->complete_request();
+            sched->complete();
             continue;
         }
 
         if (sched->get_in_bin_status() == ccl_sched_in_bin_none) {
             CCL_THROW_IF_NOT(!sched->bin, "unexpected bin ", sched->bin);
             /* here we add sched from strict_queue to regular queue for real execution */
-            LOG_DEBUG("add sched ", sched, " from strict_queue to exec_queue, req ", sched->req);
+            LOG_DEBUG("add sched ",
+                      sched,
+                      " from strict_queue to exec_queue, req ",
+                      sched->get_request());
             sched_queue->add(sched);
         }
 
@@ -108,7 +117,7 @@ ccl::status ccl_worker::process_strict_sched_queue() {
         }
         else {
             /* now it is safe to release this sched */
-            sched->req->complete_request();
+            sched->complete();
         }
     }
 
@@ -188,7 +197,7 @@ ccl::status ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed_
                       ", coll ",
                       ccl_coll_type_to_str(sched->coll_param.ctype),
                       ", req ",
-                      sched->req,
+                      sched->get_request(),
                       ", entry_count ",
                       sched->entries.size());
 
@@ -196,8 +205,8 @@ ccl::status ccl_worker::process_sched_bin(ccl_sched_bin* bin, size_t& completed_
             sched_queue->erase(bin, sched_idx);
             CCL_ASSERT(!sched->bin);
             bin_size--;
-            LOG_DEBUG("completing request ", sched->req);
-            sched->complete_sched();
+            LOG_DEBUG("completing request ", sched->get_request(), " for ", sched);
+            sched->complete();
             ++completed_sched_count;
         }
         else {

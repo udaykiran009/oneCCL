@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/utils/sycl_utils.hpp"
 #include "sched/entry/entry.hpp"
 
 class deps_entry : public sched_entry {

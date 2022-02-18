@@ -38,6 +38,8 @@ sycl::event submit_barrier(cl::sycl::queue queue, sycl::event event);
 sycl::event make_event(const sycl::context& context, const ze_event_handle_t& sync_event);
 #endif // CCL_ENABLE_SYCL_INTEROP_EVENT
 
+ze_event_handle_t get_native_event(sycl::event event);
+
 } // namespace utils
 } // namespace ccl
 

@@ -34,6 +34,7 @@ public:
               build_sched_id(sched_param.id),
               is_master_sched(true) {
         LOG_DEBUG("subsched name: ", subsched_name ? subsched_name : "<empty>");
+
         make_barrier();
         ccl::global_data& data = ccl::global_data::get();
         subsched.reset(new ccl_sched(sched_param));
@@ -86,7 +87,7 @@ public:
         else {
             build_subsched({ build_sched_id, sched->coll_param });
             subsched->renew();
-            subsched->set_counter(1);
+            subsched->get_request()->set_counter(1);
             subsched->bin = sched->bin;
             subsched->queue = sched->queue;
             /* this makes effects on creation of tags in atl entries */
@@ -114,7 +115,7 @@ public:
             subsched->do_progress();
             if (subsched->start_idx == subsched->entries.size()) {
                 status = ccl_sched_entry_status_complete;
-                ((ccl_sched*)subsched.get())->complete_sched();
+                ((ccl_sched*)subsched.get())->complete();
             }
         }
     }

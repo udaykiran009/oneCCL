@@ -64,6 +64,7 @@ env_data::env_data()
         : was_printed(false),
 
           log_level(ccl_log_level::warn),
+          abort_on_throw(0),
           queue_dump(0),
           sched_dump(0),
           sched_profile(0),
@@ -185,7 +186,9 @@ env_data::env_data()
 
 void env_data::parse() {
     env_2_enum(CCL_LOG_LEVEL, ccl_logger::level_names, log_level);
+    env_2_type(CCL_ABORT_ON_THROW, abort_on_throw);
     ccl_logger::set_log_level(log_level);
+    ccl_logger::set_abort_on_throw(abort_on_throw);
     env_2_type(CCL_QUEUE_DUMP, queue_dump);
     env_2_type(CCL_SCHED_DUMP, sched_dump);
     env_2_type(CCL_SCHED_PROFILE, sched_profile);
@@ -486,6 +489,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_WORKER_WAIT, ": ", worker_wait);
 
     LOG_INFO(CCL_LOG_LEVEL, ": ", str_by_enum(ccl_logger::level_names, log_level));
+    LOG_INFO(CCL_ABORT_ON_THROW, ": ", abort_on_throw);
     LOG_INFO(CCL_QUEUE_DUMP, ": ", queue_dump);
     LOG_INFO(CCL_SCHED_DUMP, ": ", sched_dump);
     LOG_INFO(CCL_SCHED_PROFILE, ": ", sched_profile);

@@ -39,6 +39,7 @@ void ccl_sched_cache::recache(const ccl_sched_key& old_key, ccl_sched_key&& new_
 
 void ccl_sched_cache::release(ccl_sched* sched) {
     reference_counter--;
+    LOG_DEBUG("releasing sched to cache: ", sched);
     LOG_TRACE("reference_counter=", reference_counter);
 }
 

@@ -73,5 +73,9 @@ sycl::event make_event(const sycl::context& context, const ze_event_handle_t& sy
 }
 #endif // CCL_ENABLE_SYCL_INTEROP_EVENT
 
+ze_event_handle_t get_native_event(sycl::event event) {
+    return sycl::get_native<ccl::utils::get_level_zero_backend()>(event);
+}
+
 } // namespace utils
 } // namespace ccl

@@ -103,7 +103,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
                       ", coll ",
                       ccl_coll_type_to_str(sched->coll_param.ctype),
                       " will be fused");
-            return sched;
+            return sched->get_request();
         }
     }
 

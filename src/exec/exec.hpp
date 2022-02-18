@@ -3,6 +3,7 @@
 #include "atl/atl_base_comm.hpp"
 #include "coll/coll.hpp"
 #include "common/global/global.hpp"
+#include "common/log/log.hpp"
 #include "common/request/request.hpp"
 #include "exec/thread/listener.hpp"
 #include "sched/sched.hpp"
@@ -109,15 +110,31 @@ inline void ccl_release_sched(ccl_sched* sched) {
     }
 }
 
+inline void ccl_release_request(ccl_request* req) {
+    CCL_THROW_IF_NOT(req->get_sched(), "sched is not set for request");
+
+    auto* sched = req->get_sched();
+    // if the released request is not the current active one, then we need
+    // to explicitly delete it, otherwise it's going to be deleted in sched's
+    // destructor
+    if (req != req->get_sched()->get_request()) {
+        LOG_DEBUG("deleting req ", req, " detached from sched ", sched);
+        delete req;
+    }
+
+    ccl_release_sched(sched);
+}
+
 template <class sched_type = ccl_sched>
 inline void ccl_wait_impl(ccl_executor* exec, ccl_request* request) {
     exec->wait(request);
     if (!exec->is_locked) {
-        LOG_DEBUG("req ",
-                  request,
-                  " completed, sched ",
-                  ccl_coll_type_to_str(static_cast<sched_type*>(request)->coll_param.ctype));
-        ccl_release_sched(static_cast<sched_type*>(request));
+        LOG_DEBUG(
+            "req ",
+            request,
+            " completed, sched ",
+            ccl_coll_type_to_str(static_cast<sched_type*>(request->get_sched())->coll_param.ctype));
+        ccl_release_request(request);
     }
 }
 
@@ -126,12 +143,12 @@ inline bool ccl_test_impl(ccl_executor* exec, ccl_request* request) {
     bool completed = exec->test(request);
 
     if (completed) {
-        sched_type* sched = static_cast<sched_type*>(request);
+        sched_type* sched = static_cast<sched_type*>(request->get_sched());
         LOG_DEBUG(
             "req ", request, " completed, sched ", ccl_coll_type_to_str(sched->coll_param.ctype));
 
         if (!exec->is_locked) {
-            ccl_release_sched(sched);
+            ccl_release_request(request);
         }
     }
 

@@ -46,7 +46,8 @@ void ccl_sched_base::set_coll_attr(const ccl_coll_attr& attr) {
 void ccl_sched_base::update_coll_param_and_attr(const ccl_coll_param& param,
                                                 const ccl_coll_attr& attr) {
 #ifdef CCL_ENABLE_SYCL
-    coll_param.sync_deps(param.stream, param.deps);
+    // we already have barrier event in the list, just update coll param
+    coll_param.copy_deps(param.deps);
 #endif // CCL_ENABLE_SYCL
 
     bool has_pre_post_copies =

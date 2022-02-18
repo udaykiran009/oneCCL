@@ -46,10 +46,12 @@ check_test()
     failed_pattern+="|kill|runtime_error|terminate|timed|unexpected"
     failed_pattern+="|[^-W]error|exception"
     failed_pattern+="|job ending due to application timeout"
+    failed_supress_pattern="\-\-abort\-signal|CCL_ABORT_ON_THROW"
+
     skipped_pattern="skip test|unavailable"
 
     test_passed=`grep -E -c -i "${passed_pattern}" ${test_log}`
-    test_failed=`grep -E -c -i "${failed_pattern}" ${test_log}`
+    test_failed=`grep -E -i "${failed_pattern}" ${test_log} | grep -Evc "${failed_supress_pattern}"`
     test_skipped=`grep -E -c -i "${skipped_pattern}" ${test_log}`
 
     if ([ ${test_passed} -eq 0 ] || [ ${test_skipped} -eq 0 ]) && [ ${test_failed} -ne 0 ]
@@ -617,7 +619,7 @@ parse_arguments()
         case $1 in
             "-h" | "--help" | "-help")                  print_help ; exit 0 ;;
             "--mode" | "-mode")                         MODE=$2 ; shift ;;
-            # ./run.sh cpu|gpu used for backward compatibility for PV 
+            # ./run.sh cpu|gpu used for backward compatibility for PV
             "gpu")                                      MODE="gpu" ;;
             "cpu")                                      MODE="cpu" ;;
             "pr")                                       SCOPE="pr" ;;

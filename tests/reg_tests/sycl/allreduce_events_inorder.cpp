@@ -1,9 +1,47 @@
 #include "sycl_base.hpp"
 
 #include <numeric>
+#include <sstream>
+
+#include <getopt.h>
 
 using namespace std;
 using namespace sycl;
+
+enum class exec_mode { single_allreduce, multi_allreduce };
+
+struct run_args {
+    exec_mode mode = exec_mode::multi_allreduce;
+    size_t count = 2 * 1024 * 1024; // 8mb of floats
+    size_t iter_count = 20;
+    size_t kernel_count = 15;
+    bool enable_cache = false;
+    size_t skip_iter_count = 0;
+    bool verbose_output = false;
+    bool disable_allreduce = false;
+
+    void print() {
+        std::stringstream ss;
+        ss << "Using parameters: \n";
+        ss << "mode: ";
+        if (mode == exec_mode::single_allreduce)
+            ss << "0 - single allreduce\n";
+        else
+            ss << "1 - multi allreduce\n";
+
+        ss << "count: " << count << "\n";
+        ss << "iter_count: " << iter_count << "\n";
+        ss << "kernel_count: " << kernel_count << "\n";
+        ss << "cache: " << enable_cache << "\n";
+        ss << "skip_iter_count: " << skip_iter_count << "\n";
+        ss << "verbose: " << verbose_output << "\n";
+        ss << "disable_allreduce: " << disable_allreduce << "\n";
+
+        std::cout << ss.str() << std::endl;
+    }
+};
+
+static run_args args;
 
 // TODO: there seems to be an overflow when calculating the stats on large number of iterations,
 // think how we can fix this.
@@ -46,7 +84,7 @@ void print_times(size_t rank,
                << std::endl;
         }
 
-        if (getenv("VERBOSE_OUTPUT") != nullptr)
+        if (args.verbose_output)
             std::cout << ss.str() << "\n" << std::endl;
     }
 
@@ -96,27 +134,108 @@ void append_kernel_times(std::vector<std::tuple<size_t, size_t, size_t>> &kernel
         size_t submit_kernel_time = get_exec_time(prev);
         size_t update_kernel_time = get_exec_time(cur);
 
+        // TODO: how to handle single buffer mode?
         size_t allreduce_time = get_between_kernels_exec_time(prev, cur);
 
         kernel_times.push_back({ submit_kernel_time, update_kernel_time, allreduce_time });
     }
 }
 
+bool process_args(int argc, char *argv[], run_args &args) {
+    char c;
+
+    const char *short_ops = "b:c:i:k:ps:vd";
+    struct option ops[] = { { "buffer", required_argument, nullptr, 'b' },
+                            { "count", required_argument, nullptr, 'c' },
+                            { "iter_count", required_argument, nullptr, 'i' },
+                            { "kernel_count", required_argument, nullptr, 'k' },
+                            { "cache", no_argument, nullptr, 'p' },
+                            { "skip_iter_count", required_argument, nullptr, 's' },
+                            { "verbose", no_argument, nullptr, 'v' },
+                            { "disable_allreduce", no_argument, nullptr, 'd' },
+                            { nullptr, 0, nullptr, 0 } };
+
+    while (true) {
+        c = getopt_long(argc, argv, short_ops, ops, nullptr);
+        if (c == -1)
+            break;
+
+        switch (c) {
+            case 'b': {
+                int val = atoi(optarg);
+                if (val == 0) {
+                    args.mode = exec_mode::single_allreduce;
+                }
+                else if (val == 1) {
+                    args.mode = exec_mode::multi_allreduce;
+                }
+                else {
+                    return false;
+                }
+                break;
+            }
+            case 'c': args.count = atoi(optarg); break;
+            case 'i': args.iter_count = atoi(optarg); break;
+            case 'k': args.kernel_count = atoi(optarg); break;
+            case 'p': args.enable_cache = true; break;
+            case 's': args.skip_iter_count = atoi(optarg); break;
+            case 'v': args.verbose_output = true; break;
+            case 'd': args.disable_allreduce = true; break;
+            default: return false;
+        }
+    }
+
+    return true;
+}
+
+void print_help() {
+    std::stringstream ss;
+    auto convert_val = [](bool val) {
+        if (val) {
+            return "enabled";
+        }
+        else {
+            return "disabled";
+        }
+    };
+
+    ss << "Usage:\n";
+    ss << "\t[-b,--buffer <mode>]:\n";
+    ss << "\t   0 - single buffer mode\n";
+    ss << "\t   1 - multi buffer mode\n";
+    ss << "\t   default: " << (int)args.mode << "\n";
+
+    ss << "\t[-c,--count <num elements>] (default: " << args.count << ") \n";
+    ss << "\t[-i,--iter_count <num iterations>] (default: " << args.iter_count << ")\n";
+    ss << "\t[-k,--kernel_count <num kernels per iteration>] (default: " << args.kernel_count
+       << ")\n";
+
+    ss << "\t[-p,--cache](default: " << convert_val(args.enable_cache) << ")\n";
+
+    ss << "\t[-s,--skip_iter_count <num iters to skip wait> (default: " << args.skip_iter_count
+       << ")\n";
+    ss << "\t[-v,--verbose](default: " << convert_val(args.verbose_output) << ")\n";
+    ss << "\t[-d,--disable_allreduce](default: " << convert_val(args.disable_allreduce) << ")\n";
+
+    std::cout << ss.str() << std::endl;
+}
+
 int main(int argc, char *argv[]) {
-    size_t count = 2 * 1024 * 1024; // 8mb of floats
+    if (!process_args(argc, argv, args)) {
+        print_help();
+        return 1;
+    }
+
+    args.print();
+
+    exec_mode mode = args.mode;
+    size_t count = args.count;
 
     int size = 0;
     int rank = 0;
 
-    size_t iter_count = 20;
-    size_t kernel_count = 15;
-
-    if (argc > 1)
-        kernel_count = atoi(argv[1]);
-    if (argc > 2)
-        count = atoi(argv[2]);
-    if (argc > 3)
-        iter_count = atoi(argv[3]);
+    size_t iter_count = args.iter_count;
+    size_t kernel_count = args.kernel_count;
 
     size_t byte_count = count * 4;
 
@@ -155,73 +274,159 @@ int main(int argc, char *argv[]) {
     auto stream = ccl::create_stream(q);
 
     // store allocated mem ptrs to free them later
+    // for single buffer, only 1 allocation is needed
     std::vector<std::pair<float *, float *>> ptrs(kernel_count);
     // allocate all the buffers
-    for (size_t i = 0; i < kernel_count; i++) {
-        float *weight_buf = allocator.allocate(byte_count, usm::alloc::device);
-        float *weight_allreduce_buf = allocator.allocate(byte_count, usm::alloc::device);
-        ptrs[i] = { weight_buf, weight_allreduce_buf };
+    if (mode == exec_mode::multi_allreduce) {
+        for (size_t i = 0; i < kernel_count; i++) {
+            float *weight_buf = allocator.allocate(byte_count, usm::alloc::device);
+            float *weight_allreduce_buf = allocator.allocate(byte_count, usm::alloc::device);
+            ptrs[i] = { weight_buf, weight_allreduce_buf };
+        }
+    }
+    else {
+        float *weight_buf = allocator.allocate(byte_count * kernel_count, usm::alloc::device);
+        float *weight_allreduce_buf =
+            allocator.allocate(byte_count * kernel_count, usm::alloc::device);
+        // in case of single buffer set all ptrs with the same buffers for consistency
+        for (size_t i = 0; i < kernel_count; ++i) {
+            ptrs[i] = { weight_buf + byte_count / sizeof(float) * i,
+                        weight_allreduce_buf + byte_count / sizeof(float) * i };
+        }
     }
 
     std::vector<ccl::event> ccl_events;
     std::vector<std::tuple<sycl::event, sycl::event>> kernel_events;
     std::vector<std::tuple<size_t, size_t, size_t>> kernel_event_times;
+
     std::vector<size_t> allreduce_api_times(iter_count * kernel_count);
 
-    const char *disable_var = std::getenv("DISABLE_CCL_ALLREDUCE");
-    for (size_t i = 0; i < iter_count; ++i) {
-        std::cout << "Running iteration " << i << std::endl;
+    std::vector<ccl::allreduce_attr> attrs;
+    // prepare match_id's for each kernel
+    for (size_t kernel_idx = 0; kernel_idx < kernel_count; ++kernel_idx) {
+        attrs.emplace_back(ccl::create_operation_attr<ccl::allreduce_attr>());
+        if (args.enable_cache) {
+            auto &attr = attrs.back();
 
-        for (size_t j = 0; j < kernel_count; j++) {
-            size_t num = i * kernel_count + j;
-            float *weight_buf = ptrs[j].first;
-            float *weight_allreduce_buf = ptrs[j].second;
+            ccl::string_class match_id = "allreduce";
+            attr.set<ccl::operation_attr_id::to_cache>(true);
+            match_id = match_id + std::to_string(kernel_idx);
+            attr.set<ccl::operation_attr_id::match_id>(match_id);
+        }
+    }
 
-            // step1: FWK kernel submission
-            sycl::event submit_event;
-            if (i == 0) {
-                submit_event = q.submit([&](auto &h) {
-                    h.parallel_for(count, [=](auto id) {
-                        // initial weight in first iteration
-                        weight_buf[id] = j * (rank + 1);
-                    });
-                });
-            }
-            else {
-                submit_event = q.submit([&](auto &h) {
-                    h.parallel_for(count, [=](auto id) {
-                        // make weight differ in each iteration
-                        weight_buf[id] = weight_buf[id] + (j * (rank + 1));
-                    });
-                });
-            }
+    auto run_op_kernel = [&](int iter_idx, int kernel_idx) {
+        float *weight_buf = ptrs[kernel_idx].first;
 
-            // step2: Call CCL AllReduce API
-            if (disable_var == nullptr) {
-                // we have to store the output event so it won't be destroyed
-                // too early, although we don't have to do anything with it
-                // as the test uses in-order queue and ccl already syncs it with
-                // internal ones that run our kernels
-                auto coll_start = std::chrono::high_resolution_clock::now();
-                auto ccl_event = ccl::allreduce(
-                    weight_buf, weight_allreduce_buf, count, ccl::reduction::sum, comm, stream);
-                auto coll_end = std::chrono::high_resolution_clock::now();
-                ccl_events.push_back(std::move(ccl_event));
-                allreduce_api_times[num] =
-                    std::chrono::duration_cast<std::chrono::nanoseconds>(coll_end - coll_start)
-                        .count();
-            }
-
-            // step3: Weight update
-            auto update_event = q.submit([&](auto &h) {
+        if (iter_idx == 0) {
+            return q.submit([&](auto &h) {
                 h.parallel_for(count, [=](auto id) {
-                    // update weight in each iteration
-                    weight_buf[id] = weight_allreduce_buf[id] * 0.5;
+                    // initial weight in first iteration
+                    weight_buf[id] = kernel_idx * (rank + 1);
                 });
             });
+        }
+        else {
+            return q.submit([&](auto &h) {
+                h.parallel_for(count, [=](auto id) {
+                    // make weight differ in each iteration
+                    weight_buf[id] = weight_buf[id] + (kernel_idx * (rank + 1));
+                });
+            });
+        }
+    };
+
+    auto run_allreduce = [&](int iter_idx, int kernel_idx) {
+        if (!args.disable_allreduce) {
+            float *weight_buf = ptrs[kernel_idx].first;
+            float *weight_allreduce_buf = ptrs[kernel_idx].second;
+            size_t buf_count = (mode == exec_mode::single_allreduce) ? count * kernel_count : count;
+            size_t num = iter_idx * kernel_count + kernel_idx;
+
+            auto coll_start = std::chrono::high_resolution_clock::now();
+            auto ccl_event = ccl::allreduce(weight_buf,
+                                            weight_allreduce_buf,
+                                            buf_count,
+                                            ccl::reduction::sum,
+                                            comm,
+                                            stream,
+                                            attrs[kernel_idx]);
+
+            auto coll_end = std::chrono::high_resolution_clock::now();
+            // we don't really need the associated sycl event, but just
+            // call get_native() to eunsure that it doesn't break anything
+            (void)ccl_event.get_native();
+            // we have to store the output event so it won't be destroyed
+            // too early, although we don't have to do anything with it
+            // as the test uses in-order queue and ccl already syncs it with
+            // internal ones that run our kernels
+            ccl_events.push_back(std::move(ccl_event));
+
+            allreduce_api_times[num] =
+                std::chrono::duration_cast<std::chrono::nanoseconds>(coll_end - coll_start).count();
+        }
+    };
+
+    auto run_upd_kernel = [&](int iter_idx, int kernel_idx) {
+        float *weight_buf = ptrs[kernel_idx].first;
+        float *weight_allreduce_buf = ptrs[kernel_idx].second;
+
+        return q.submit([&](auto &h) {
+            h.parallel_for(count, [=](auto id) {
+                // update weight in each iteration
+                weight_buf[id] = weight_allreduce_buf[id] * 0.5;
+            });
+        });
+    };
+
+    auto multi_allreduce_iteration = [&](int iter_idx) {
+        for (size_t kernel_idx = 0; kernel_idx < kernel_count; kernel_idx++) {
+            // step 1: FWK kernel submission
+            auto submit_event = run_op_kernel(iter_idx, kernel_idx);
+
+            // step 2: Call CCL AllReduce API
+            run_allreduce(iter_idx, kernel_idx);
+
+            // step 3: Weight update
+            auto update_event = run_upd_kernel(iter_idx, kernel_idx);
 
             kernel_events.push_back({ submit_event, update_event });
         }
+    };
+
+    auto single_allreduce_iteration = [&](int iter_idx) {
+        std::vector<sycl::event> submit_events;
+        std::vector<sycl::event> update_events;
+        for (size_t kernel_idx = 0; kernel_idx < kernel_count; kernel_idx++) {
+            // step 1: FWK kernel submission
+            submit_events.push_back(run_op_kernel(iter_idx, kernel_idx));
+        }
+
+        // step 2: Call CCL AllReduce API
+        run_allreduce(iter_idx, 0);
+
+        for (size_t kernel_idx = 0; kernel_idx < kernel_count; kernel_idx++) {
+            // step 3: Weight update
+            update_events.push_back(run_upd_kernel(iter_idx, kernel_idx));
+        }
+
+        for (size_t kernel_idx = 0; kernel_idx < kernel_count; ++kernel_idx) {
+            kernel_events.push_back({ submit_events[kernel_idx], update_events[kernel_idx] });
+        }
+    };
+
+    for (size_t iter_idx = 0; iter_idx < iter_count; ++iter_idx) {
+        if (mode == exec_mode::multi_allreduce) {
+            multi_allreduce_iteration(iter_idx);
+        }
+        else {
+            single_allreduce_iteration(iter_idx);
+        }
+
+        if (args.skip_iter_count != 0 &&
+            ((iter_idx % args.skip_iter_count != 0) && (iter_idx != args.iter_count - 1)))
+            continue;
+
         q.wait();
 
         // once we waited for all submitted kernels and allreduce ops, we can safely
@@ -236,13 +441,16 @@ int main(int argc, char *argv[]) {
     }
 
     // when using CCL AllReduce, check weight accuracy after several iterations
-    if (disable_var == nullptr) {
+    if (!args.disable_allreduce) {
         auto weight_host_buf = allocator.allocate(byte_count, usm::alloc::host);
         q.memcpy(weight_host_buf, ptrs[kernel_count - 1].first, byte_count);
         q.wait();
 
+        const float check_value = (kernel_count - 1) * iter_count * size * (size + 1) / 4;
+
         for (size_t n = 0; n < count; n++) {
-            if (weight_host_buf[n] != (kernel_count - 1) * iter_count * size * (size + 1) / 4) {
+            if (weight_host_buf[n] != check_value) {
+                std::cout << weight_host_buf[n] << " vs " << check_value << std::endl;
                 std::cout << "FAILED\n" << std::endl;
                 return -1;
             }
@@ -257,9 +465,15 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    for (auto p : ptrs) {
-        allocator.deallocate(p.first);
-        allocator.deallocate(p.second);
+    if (mode == exec_mode::multi_allreduce) {
+        for (auto p : ptrs) {
+            allocator.deallocate(p.first);
+            allocator.deallocate(p.second);
+        }
+    }
+    else {
+        allocator.deallocate(ptrs[0].first);
+        allocator.deallocate(ptrs[0].second);
     }
 
     return 0;
