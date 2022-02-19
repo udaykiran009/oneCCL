@@ -7,11 +7,7 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 find_expected_algo() {
     found_algo_str=$1
@@ -49,9 +45,11 @@ parse_algo() {
 }
 
 export SYCL_DEVICE_FILTER=level_zero
+
 transports="mpi ofi"
+
 expected_non_topo_algos="direct ring recursive_doubling"
-bench_options="-w 1 -i 2 -c all -l allreduce -b sycl -w 1 -i 2 -t 131072"
+bench_options="-w 1 -i 2 -c all -l allreduce -b sycl -t 131072 $(get_default_bench_dtype)"
 
 run_case() {
     expected_str=$1

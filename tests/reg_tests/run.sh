@@ -176,19 +176,25 @@ check_mode() {
 define_compiler() {
     case ${MODE} in
     "cpu" )
-        if [[ -z "${C_COMPILER}" ]]; then
-            if [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icx,"* ]]; then
+        if [[ -z "${C_COMPILER}" ]]
+        then
+            if [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icx,"* ]]
+            then
                 C_COMPILER=icx
-            elif [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]; then
+            elif [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]
+            then
                 C_COMPILER=icc
             else
                 C_COMPILER=gcc
             fi
         fi
-        if [[ -z "${CXX_COMPILER}" ]]; then
-            if [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icx,"* ]]; then
+        if [[ -z "${CXX_COMPILER}" ]]
+        then
+            if [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icx,"* ]]
+            then
                 CXX_COMPILER=icpx
-            elif [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]; then
+            elif [[ ",${DASHBOARD_INSTALL_TOOLS_INSTALLED}," == *",icc,"* ]]
+            then
                 CXX_COMPILER=icpc
             else
                 CXX_COMPILER=g++
@@ -196,10 +202,12 @@ define_compiler() {
         fi
         ;;
     "gpu"|* )
-        if [ -z "${C_COMPILER}" ]; then 
+        if [ -z "${C_COMPILER}" ]
+        then
             C_COMPILER=icx
         fi
-        if [ -z "${CXX_COMPILER}" ]; then
+        if [ -z "${CXX_COMPILER}" ]
+        then
             CXX_COMPILER=dpcpp
             COMPUTE_BACKEND="dpcpp"
         fi
@@ -208,7 +216,8 @@ define_compiler() {
 }
 
 build() {
-    if [[ ${ENABLE_BUILD} = "yes" ]]; then
+    if [[ ${ENABLE_BUILD} = "yes" ]]
+    then
         print_header "Build tests..."
         rm -rf build
         mkdir ${SCRIPT_DIR}/build
@@ -221,33 +230,40 @@ build() {
 }
 
 run_tests() {
-    if [[ ${ENABLE_TESTING} = "yes" ]]; then
+    if [[ ${ENABLE_TESTING} = "yes" ]]
+    then
         print_header "Run tests..."
         declare -a failed_test
         test_dirs="common"
 
-        if [[ ${MODE} = "cpu" ]]; then
+        if [[ ${MODE} = "cpu" ]]
+        then
             test_dirs="${test_dirs} cpu"
         fi
 
-        if [[ ${MODE} = "gpu" ]]; then
+        if [[ ${MODE} = "gpu" ]]
+        then
             test_dirs="${test_dirs} sycl"
         fi
 
-        for dir in ${test_dirs}; do
+        for dir in ${test_dirs}
+        do
             pushd ${SCRIPT_DIR}/${dir}
             echo "DEBUG: Processing a ${dir} directory"
             tests=$(ls *.sh 2> /dev/null)
-            for test in ${tests}; do
+            for test in ${tests}
+            do
                 local name=$(basename ${test} .sh)
                 is_exclude=$(is_exclude_test ${name})
-                if [[ ${is_exclude} -ne 0 ]]; then
+                if [[ ${is_exclude} -ne 0 ]]
+                then
                     echo "${test} was excluded. Skip"
                     continue
                 fi
                 echo "${test}"
                 ./${test}
-                if [[ $? -ne 0 ]]; then
+                if [[ $? -ne 0 ]]
+                then
                     cat ./${name}.log
                     failed_test+=(${test})
                 fi
@@ -255,9 +271,11 @@ run_tests() {
             popd
         done
 
-        if [[ ${#failed_test[@]} > 0 ]]; then
+        if [[ ${#failed_test[@]} > 0 ]]
+        then
             echo "${#failed_test[@]} FAILED TESTS: "
-            for test in "${failed_test[@]}"; do
+            for test in "${failed_test[@]}"
+            do
                 echo "    ${test}"
             done
             check_command_exit_code ${#failed_test[@]} "testing failed"

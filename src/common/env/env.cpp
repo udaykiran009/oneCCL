@@ -588,8 +588,14 @@ void env_data::print(int rank) {
 
     LOG_INFO(CCL_BACKEND, ": ", str_by_enum(backend_names, backend));
 
-    LOG_INFO(CCL_LOCAL_RANK, ": ", local_rank);
-    LOG_INFO(CCL_LOCAL_SIZE, ": ", local_size);
+    LOG_INFO(CCL_LOCAL_RANK,
+             ": ",
+             (local_rank != CCL_ENV_INT_NOT_SPECIFIED) ? std::to_string(local_rank)
+                                                       : CCL_ENV_STR_NOT_SPECIFIED);
+    LOG_INFO(CCL_LOCAL_SIZE,
+             ": ",
+             (local_size != CCL_ENV_INT_NOT_SPECIFIED) ? std::to_string(local_size)
+                                                       : CCL_ENV_STR_NOT_SPECIFIED);
 
     LOG_INFO(CCL_PROCESS_LAUNCHER, ": ", str_by_enum(process_launcher_names, process_launcher));
 

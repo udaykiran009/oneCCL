@@ -7,11 +7,7 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 export CCL_ATL_SYNC_COLL=1
 export CCL_ATL_TRANSPORT=mpi
@@ -21,7 +17,7 @@ export CCL_BARRIER=direct
 
 export I_MPI_FABRICS=shm
 
-bench_options="-b sycl -w 4 -i 8 -c all -l allreduce -y 1000"
+bench_options="-b sycl -w 4 -i 8 -c all -l allreduce -y 1000 $(get_default_bench_dtype)"
 lock_levels="global vci"
 
 for lock_level in ${lock_levels}

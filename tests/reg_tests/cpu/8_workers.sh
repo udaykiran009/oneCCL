@@ -7,18 +7,14 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG}
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG}
 
 worker_counts="1 4 8"
 proc_counts="2"
 transports="ofi mpi"
 ofi_provs="tcp verbs"
 
-bench_options="-c all -b host -t 2097152"
+bench_options="-c all -b host -t 2097152 $(get_default_bench_dtype)"
 
 if [[ $(hostname) == *"nnlmpiclx03"* ]]
 then

@@ -7,17 +7,13 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG}
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG}
 
 proc_counts="4 8"
 transports="ofi mpi"
 ofi_provs="tcp psm3"
 
-bench_options="-c all -b host -t 2097152"
+bench_options="-c all -b host -t 2097152 $(get_default_bench_dtype)"
 
 for proc_count in ${proc_counts}
 do

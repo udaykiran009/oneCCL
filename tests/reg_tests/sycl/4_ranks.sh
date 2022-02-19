@@ -7,16 +7,12 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 proc_counts="1 2 4"
 transports="ofi mpi"
 
-bench_options="-i 2 -w 0 -c all -l all -b sycl -t 131072"
+bench_options="-i 2 -w 0 -c all -l all -b sycl -t 131072 $(get_default_bench_dtype)"
 
 for proc_count in ${proc_counts}
 do

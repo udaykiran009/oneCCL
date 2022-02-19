@@ -7,13 +7,9 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
-cd ${SCRIPT_DIR}
-
-#common vars
+# common vars
 export CCL_ALLGATHERV=topo
 export CCL_ALLREDUCE=topo
 export CCL_REDUCE=topo

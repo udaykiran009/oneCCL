@@ -7,11 +7,7 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 export SYCL_DEVICE_FILTER=level_zero
 
@@ -23,7 +19,7 @@ root_device_modes="0 1"
 # algos="ring topo"
 algos="ring"
 
-bench_options="-w 1 -i 4 -l allreduce,bcast -c all -b sycl -t 131072"
+bench_options="-w 1 -i 4 -l allreduce,bcast -c all -b sycl -t 131072 $(get_default_bench_dtype)"
 
 for transport in ${transports}
 do

@@ -7,11 +7,7 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 export SYCL_DEVICE_FILTER=level_zero
 export CFESingleSliceDispatchCCSMode=1
@@ -30,7 +26,8 @@ transports="mpi"
 proc_counts="4"
 colls="allreduce"
 algos="ring topo"
-bench_options="-w 4 -i 8 -c all -j off -b sycl -t 131072"
+
+bench_options="-w 4 -i 8 -c all -j off -b sycl -t 131072 $(get_default_bench_dtype)"
 
 for transport in ${transports}
 do

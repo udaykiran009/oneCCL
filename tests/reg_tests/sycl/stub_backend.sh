@@ -8,8 +8,7 @@ BINFILE="${BASENAME}"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 function check_stub_backend_log() {
     COMM_ID="$1"

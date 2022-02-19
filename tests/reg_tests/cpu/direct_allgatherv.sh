@@ -8,16 +8,12 @@ BINFILE=${BASENAME}
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG}
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG}
 
 transports="ofi mpi"
 proc_counts="2 4"
 
-bench_options="-w 1 -i 4 -l allgatherv -c all -b host -t 1048576"
+bench_options="-w 1 -i 4 -l allgatherv -c all -b host -t 1048576 $(get_default_bench_dtype)"
 
 for transport in ${transports}
 do

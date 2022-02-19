@@ -7,10 +7,7 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG}
 
 tests="allgatherv alltoallv"
 tests+=" broadcast custom_allreduce external_kvs"

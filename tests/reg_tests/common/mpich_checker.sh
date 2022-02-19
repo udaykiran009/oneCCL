@@ -9,11 +9,7 @@ LOG=${SCRIPT_DIR}/${TEST_LOG}
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${LOG} "sycl"
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 export CCL_ATL_TRANSPORT=mpi
 
@@ -39,7 +35,7 @@ export CCL_LOG_LEVEL=debug
 
 mnic_types="local global"
 mnic_counts="1 2"
-bench_options="-w 0 -i 1 -y 64 -b host"
+bench_options="-w 0 -i 1 -y 64 -b host $(get_default_bench_dtype)"
 
 for mnic_type in ${mnic_types}
 do

@@ -10,17 +10,13 @@ TEST_LOG="${BASENAME}.log"
 source ${ROOT_DIR}/utils.sh
 export CCL_WORKER_OFFLOAD=0
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG}
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG}
 
 proc_counts="24"
 transports="ofi mpi"
 ofi_provs="tcp"
 
-bench_options="-w 1 -i 4 -d all -c all -b host -y 17,1024,65536,4194304 -l allreduce"
+bench_options="-w 0 -i 4 -d all -c all -b host -y 17,1024,65536,1048576 -l allreduce"
 
 for proc_count in ${proc_counts}
 do

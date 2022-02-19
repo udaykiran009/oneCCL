@@ -7,11 +7,7 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 export CCL_USE_HMEM=1
 export I_MPI_JOB_TIMEOUT=120
@@ -25,7 +21,8 @@ proc_counts="2 4"
 libfabric_dmabuf_peer_mem_path="/home/sys_ctlab/prog/libfabric_dmabuf_peer_mem/lib"
 libfabrics="default dmabuf_peer_mem"
 provs="verbs"
-bench_options="-l allreduce,reduce -w 1 -i 4 -j off -c all -b sycl -t 131072"
+
+bench_options="-l allreduce,reduce -w 1 -i 4 -j off -c all -b sycl -t 131072 $(get_default_bench_dtype)"
 
 for worker_count in ${worker_counts}
 do

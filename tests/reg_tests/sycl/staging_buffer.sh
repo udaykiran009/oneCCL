@@ -7,11 +7,7 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 export SYCL_DEVICE_FILTER=level_zero
 export CCL_ALLTOALL=scatter
@@ -24,7 +20,7 @@ staging_buffers="regular usm"
 
 base_pattern="1,2,4,7,8,16,17,32,64,128,133,256,1077,16384,16387"
 full_pattern="${base_pattern},${base_pattern},${base_pattern}"
-bench_options="-n 16 -w 2 -i 8 -c all -l alltoall -b sycl -y ${full_pattern}"
+bench_options="-n 16 -w 2 -i 8 -c all -l alltoall -b sycl -y ${full_pattern} $(get_default_bench_dtype)"
 
 for transport in ${transports}
 do

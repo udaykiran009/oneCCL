@@ -10,13 +10,9 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
-cd ${SCRIPT_DIR}
-
-bench_options="-b sycl -w 4 -i 8 -c all -l allreduce -y 1000"
+bench_options="-b sycl -w 4 -i 8 -c all -l allreduce -y 1000 $(get_default_bench_dtype)"
 
 export CCL_ITT_LEVEL=1
 

@@ -7,11 +7,7 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 export SYCL_DEVICE_FILTER=level_zero
 export CCL_ALLREDUCE="ring:0-262143;topo:262144-max"
@@ -21,7 +17,7 @@ proc_counts="2"
 ze_bin_modes="0 1"
 detection_modes="0 1"
 
-bench_options="-w 1 -i 4 -c last -l all -b sycl -t 524288"
+bench_options="-w 1 -i 4 -c last -l all -b sycl -t 524288 $(get_default_bench_dtype)"
 
 for proc_count in ${proc_counts}
 do

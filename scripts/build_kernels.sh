@@ -7,41 +7,34 @@ BASENAME=$(basename $0 .sh)
 global_filename=""
 has_a_option=false # compilation for all kernels
 has_d_option=0 # compilation with debug logs. Default: disable
-has_t_option=1 # support atomics. Default: enable
 has_h_option=false # help
 
 function print_help() {
     echo -e "Compile OpenCL kernels into SPIR-V binaries \n" \
             "Options:\n"\
             " [-a]:            Compile all .cl files in the current folder: ./${BASENAME}.sh -a\n" \
-            " [filename]:      Name of the file to compile. Example: ./${BASENAME}.sh ring_allreduce.cl\n" \
+            " [filename]:      Name of the file to compile. Example: ./${BASENAME}.sh kernels.cl\n" \
             " [-d <enable/disable debug logs>]      by default ${has_d_option} - exmaple: -d 1\n" \
-            " [-t <enable/disable atomics support>] by default ${has_t_option} - example: -t 0\n" \
             " [-h]:            Print this help message\n\n" \
             "Examples: ./${BASENAME}.sh -a -d 0\n" \
             "          ./${BASENAME}.sh filename\n" \
-            "          ./${BASENAME}.sh -d 1 -t 0 filename\n" \
+            "          ./${BASENAME}.sh -d 1 filename\n" \
     exit 0
 }
 
 function parse_options() {
-    while getopts :ad:t:h opt; do
+    while getopts :ad:h opt
+    do
         case $opt in
             a) has_a_option=true ;; # build all kernels
             d) has_d_option=${OPTARG}
-               if [ "$has_d_option" != "1" ] && [ "$has_d_option" != "0" ]; then
+               if [ "$has_d_option" != "1" ] && [ "$has_d_option" != "0" ]
+               then
                       echo "Error: -d option got an arg: $OPTARG. See help:"
                       print_help
                       exit 1
                fi
                ;; # build with debug logs
-            t) has_t_option="${OPTARG}"
-               if [ "$has_t_option" != "1" ] && [ "$has_t_option" != "0" ]; then
-                    echo "Error: -t option got an incorrect arg: $OPTARG. See help:"
-                    print_help
-                    exit 1
-               fi
-               ;; # support atomics enable
             h) print_help; exit ;;
             :) echo "Missing argument for option -$OPTARG, See help:";
                print_help
@@ -50,13 +43,15 @@ function parse_options() {
                exit 1;;
         esac
     done
+
     shift $((OPTIND -1))
     global_filename=$1
 }
 
 # Verify that the specified command is available
 function check_cmd() {
-    if ! [ -x "$(command -v $1)" ]; then
+    if ! [ -x "$(command -v $1)" ]
+    then
         echo "Error: $1 is not in PATH"
         exit 1
     fi
@@ -74,18 +69,16 @@ function run_build() {
     local defines="-DCCL_BF16_GPU_TRUNCATE"
 
     kernel="$KERNELS_PATH/$kernel_file_name"
-    if [[ ! -f "$kernel" ]]; then
+    if [[ ! -f "$kernel" ]]
+    then
         echo "Error: unknown kernel file: $kernel"
         exit 1
     fi
 
-    if [ $has_d_option -eq 1 ]; then
+    if [ $has_d_option -eq 1 ]
+    then
         echo "Add -DENABLE_KERNEL_DEBUG in compilation time"
         defines+=" -DENABLE_KERNEL_DEBUG"
-    fi
-    if [ $has_t_option -eq 1 ]; then
-        echo "Add -DENABLE_KERNEL_ATOMICS in compilation time"
-        defines+=" -DENABLE_KERNEL_ATOMICS"
     fi
 
     # Get full file name inluding path but without file extension
@@ -105,16 +98,19 @@ function run_build() {
 function run_all_build() {
     # run_build already aware of kernel path, so just list the directory and
     # provide names of the kernels
-    for f in `find $KERNELS_PATH -type f -name "*.cl" -printf "%f\n"`; do
+    for f in `find $KERNELS_PATH -type f -name "*.cl" -printf "%f\n"`
+    do
         echo "Building $f"
         run_build $f
     done
 }
 
 function main() {
-    if $has_a_option; then
+    if $has_a_option
+    then
         run_all_build
-    elif [ -n "$global_filename" ]; then
+    elif [ -n "$global_filename" ]
+    then
         run_build $global_filename
     else
         print_help

@@ -8,8 +8,7 @@ BINFILE="${BASENAME}"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 export CCL_SYCL_OUTPUT_EVENT=1
 export CCL_ZE_CLOSE_IPC_WA=1

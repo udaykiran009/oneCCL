@@ -8,8 +8,7 @@ BINFILE="${BASENAME}"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 mpiexec -l -n 3 -ppn 1 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
 rc=$?

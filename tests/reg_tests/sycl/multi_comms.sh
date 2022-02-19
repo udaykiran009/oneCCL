@@ -8,8 +8,7 @@ BINFILE="${BASENAME}"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 comm_size_modes="reverse direct"
 rank_order_modes="direct reorder"

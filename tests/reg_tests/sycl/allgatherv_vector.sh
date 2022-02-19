@@ -8,8 +8,7 @@ BINFILE="${BASENAME}"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 proc_counts="1 2 4"
 inplace_modes="0 1"

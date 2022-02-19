@@ -7,11 +7,7 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG}
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG}
 
 export CCL_ATL_TRANSPORT=ofi
 export CCL_ALLREDUCE=nreduce
@@ -20,7 +16,7 @@ proc_counts="2 8"
 inplace_modes="0 1"
 buffering_modes="0 1"
 segment_sizes="16384 262144"
-bench_options="-w 1 -i 4 -c all -b host -t 2000000"
+bench_options="-w 1 -i 4 -c all -b host -t 2000000 $(get_default_bench_dtype)"
 
 for proc_count in ${proc_counts}
 do

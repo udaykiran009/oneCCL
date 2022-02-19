@@ -7,11 +7,7 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 export CCL_YIELD=sched_yield
 
@@ -30,7 +26,7 @@ colls="allgatherv,allreduce,reduce,bcast"
 single_list_modes="0 1"
 cache_modes="0 1"
 
-bench_options="-w 2 -i 4 -j off -c all -b sycl -y 17,1024,131072"
+bench_options="-w 2 -i 4 -j off -c all -b sycl -y 17,1024,131072 $(get_default_bench_dtype)"
 
 for transport in ${transports}
 do

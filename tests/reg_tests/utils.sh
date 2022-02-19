@@ -99,6 +99,10 @@ function get_bench() {
     fi
 }
 
+function get_default_bench_dtype() {
+    echo "-d int32"
+}
+
 function get_default_prov() {
     if [[ ${TRANSPORT} == "mpich" ]]
     then
@@ -137,4 +141,16 @@ function check_hmem_log() {
         echo "Error: did not find output hmem enable in log ${log_path}"
         exit 1
     fi
+}
+
+make_common_actions() {
+    work_dir=$1
+    log_path=$2
+    bench_backend=${3:-}
+
+    check_impi
+    check_ccl
+    get_bench ${work_dir} ${log_path} ${bench_backend}
+
+    cd ${work_dir}
 }

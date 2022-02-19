@@ -7,18 +7,14 @@ TEST_LOG="${BASENAME}.log"
 
 source ${ROOT_DIR}/utils.sh
 
-check_impi
-check_ccl
-get_bench ${SCRIPT_DIR} ${TEST_LOG} "sycl"
-
-cd ${SCRIPT_DIR}
+make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
 algos="ring topo"
 topo_color_modes="ze fixed"
 proc_counts="2 4"
 ppns="1 2"
 
-bench_options="-b sycl -w 1 -i 4 -c all -l allreduce,bcast -t 131072"
+bench_options="-b sycl -w 1 -i 4 -c all -l allreduce,bcast -t 131072 $(get_default_bench_dtype)"
 
 for algo in ${algos}
 do
