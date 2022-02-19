@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "options.hpp"
+
 #define ZE_CALL(func, args) assert(func args == 0)
 
 bool is_system_healthy = true;
@@ -222,8 +224,10 @@ void print_firmwares() {
     }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     setenv("ZES_ENABLE_SYSMAN", "1", 1);
+
+    parse_options(argc, argv);
 
     if (!getuid()) {
         is_root_priv = true;
@@ -244,9 +248,15 @@ int main() {
         ZE_CALL(zeDeviceGet, (driver, &device_count, device_list.data()));
     }
 
-    print_fabric_port_status();
-    print_memory_status();
-    print_firmwares();
+    if (options.show_all || options.show_links_only) {
+        print_fabric_port_status();
+    }
+    if (options.show_all || options.show_mem_only) {
+        print_memory_status();
+    }
+    if (options.show_all || options.show_firmware_only) {
+        print_firmwares();
+    }
 
     return !is_system_healthy;
 }

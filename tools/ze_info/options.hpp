@@ -28,7 +28,7 @@ void parse_options(int argc, char* argv[]) {
         }
     };
 
-    const char* const short_options = "hi:r";
+    const char* short_options = "hi:r";
 
     int ch;
     while ((ch = getopt_long(argc, argv, short_options, long_options, nullptr)) != -1) {

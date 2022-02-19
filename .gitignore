@@ -19,3 +19,4 @@ doc/doxygen/*
 include/oneapi/ccl/config.h
 *.bc
 tools/ze_info/ze_info
+tools/ze_health/ze_health
