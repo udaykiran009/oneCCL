@@ -261,6 +261,12 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
     RETURN_FALSE_IF(!param.comm->get_topo_manager().has_same_domains(),
                     "processes are not properly distributed among domains");
 
+    if (!ccl::global_data::env().disable_ze_port_check) {
+        RETURN_FALSE_IF(
+            !checkers::is_single_card(param) && param.comm->get_topo_manager().has_failed_ports(),
+            "failed fabric ports");
+    }
+
     if (!ccl::global_data::env().disable_ze_family_check) {
         RETURN_FALSE_IF(
             checkers::is_family1_card(param) &&

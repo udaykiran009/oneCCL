@@ -25,8 +25,7 @@ function common_env() {
 }
 
 function run_cmd() {
-    echo "Running $1"
-    echo "Running $1" >> ${TEST_LOG}
+    echo "Run $1" >> ${TEST_LOG}
     eval $1 >> ${TEST_LOG} 2>&1
     echo "\n\n" >> ${TEST_LOG}
 }
@@ -86,6 +85,8 @@ function test_run() {
 
     rm -rf ${TEST_LOG}
 
+    echo "Running in test mode" >> ${TEST_LOG}
+
     for algo in $algos
     do
         for allreduce_mode in $allreduce_modes
@@ -113,6 +114,7 @@ function test_run() {
 }
 
 function perf_run() {
+    echo "Running in perf mode"
     common_env
 
     mpiexec -n 2 -ppn 2 ${SCRIPT_DIR}/${BINFILE}
@@ -126,7 +128,6 @@ function perf_run() {
     echo "Pass"
 }
 
-echo "Running in $mode mode"
 if [[ $mode == "test" ]]
 then
     test_run

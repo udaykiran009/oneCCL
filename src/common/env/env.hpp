@@ -135,6 +135,7 @@ constexpr const char* CCL_ZE_QUEUE_INDEX_OFFSET = "CCL_ZE_QUEUE_INDEX_OFFSET";
 constexpr const char* CCL_ZE_CLOSE_IPC_WA = "CCL_ZE_CLOSE_IPC_WA";
 constexpr const char* CCL_ZE_SINGLE_LIST = "CCL_ZE_SINGLE_LIST";
 constexpr const char* CCL_ZE_DISABLE_FAMILY_CHECK = "CCL_ZE_DISABLE_FAMILY_CHECK";
+constexpr const char* CCL_ZE_DISABLE_PORT_CHECK = "CCL_ZE_DISABLE_PORT_CHECK";
 constexpr const char* CCL_ZE_LIBRARY_PATH = "CCL_ZE_LIBRARY_PATH";
 constexpr const char* CCL_ZE_ENABLE = "CCL_ZE_ENABLE";
 constexpr const char* CCL_ZE_FINI_WA = "CCL_ZE_FINI_WA";
@@ -303,6 +304,7 @@ public:
     int ze_cache_ipc_handles_threshold;
     int enable_ze_single_list;
     int disable_ze_family_check;
+    int disable_ze_port_check;
     int ze_serialize_mode;
     ccl_ze_copy_engine_mode ze_copy_engine;
     ssize_t ze_max_compute_queues;
