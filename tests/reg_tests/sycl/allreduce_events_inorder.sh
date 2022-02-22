@@ -113,11 +113,20 @@ function test_run() {
     echo "Pass"
 }
 
+function run_cmd_no_log() {
+    echo "Running $1"
+    eval $1
+    printf "\n\n"
+}
+
 function perf_run() {
     echo "Running in perf mode"
     common_env
 
-    mpiexec -n 2 -ppn 2 ${SCRIPT_DIR}/${BINFILE}
+    # strip perf arg from the list and use it for the binary
+    args=$(echo $@ | sed 's/perf//g')
+
+    run_cmd_no_log "mpiexec -n 2 -ppn 2 ${SCRIPT_DIR}/${BINFILE} $args"
     rc=$?
     if [[ ${rc} -ne 0 ]]
     then
@@ -132,6 +141,6 @@ if [[ $mode == "test" ]]
 then
     test_run
 else
-    perf_run
+    perf_run $@
 fi
 

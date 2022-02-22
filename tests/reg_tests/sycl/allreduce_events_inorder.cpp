@@ -144,7 +144,7 @@ void append_kernel_times(std::vector<std::tuple<size_t, size_t, size_t>> &kernel
 bool process_args(int argc, char *argv[], run_args &args) {
     char c;
 
-    const char *short_ops = "b:c:i:k:ps:vd";
+    const char *short_ops = "b:c:i:k:ps:vdh";
     struct option ops[] = { { "buffer", required_argument, nullptr, 'b' },
                             { "count", required_argument, nullptr, 'c' },
                             { "iter_count", required_argument, nullptr, 'i' },
@@ -153,6 +153,7 @@ bool process_args(int argc, char *argv[], run_args &args) {
                             { "skip_iter_count", required_argument, nullptr, 's' },
                             { "verbose", no_argument, nullptr, 'v' },
                             { "disable_allreduce", no_argument, nullptr, 'd' },
+                            { "help", no_argument, nullptr, 'h' },
                             { nullptr, 0, nullptr, 0 } };
 
     while (true) {
@@ -181,6 +182,7 @@ bool process_args(int argc, char *argv[], run_args &args) {
             case 's': args.skip_iter_count = atoi(optarg); break;
             case 'v': args.verbose_output = true; break;
             case 'd': args.disable_allreduce = true; break;
+            case 'h':
             default: return false;
         }
     }
@@ -216,6 +218,7 @@ void print_help() {
        << ")\n";
     ss << "\t[-v,--verbose](default: " << convert_val(args.verbose_output) << ")\n";
     ss << "\t[-d,--disable_allreduce](default: " << convert_val(args.disable_allreduce) << ")\n";
+    ss << "\t[-h,--help] - print help message\n";
 
     std::cout << ss.str() << std::endl;
 }
