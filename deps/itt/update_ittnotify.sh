@@ -4,11 +4,12 @@
 # it has old binutils 2.25 which prevents
 # any incompatibility issues
 
-REPO=https://github.com/intel/ittapi.git
+repo=https://github.com/intel/ittapi.git
+tag="v3.23.0"
 
 install_path_root=`pwd`
 
-git clone $REPO ittapi
+git clone --depth 1 --branch ${tag} ${repo} ittapi
 pushd ./ittapi
 python ./buildall.py --force_bits 64
 

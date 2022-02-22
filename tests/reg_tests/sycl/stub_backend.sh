@@ -15,7 +15,7 @@ function check_stub_backend_log() {
     TEST_LOG="$2"
     NUM_RANKS="$3"
 
-    if [[ ! $(grep -c "running stub communicator id: ${COMM_ID}" ${TEST_LOG}) == "${NUM_RANKS}" ]]; then
+    if [[ $(grep -o "running stub communicator id: ${COMM_ID}" ${TEST_LOG} | wc -l) != "${NUM_RANKS}" ]]; then
         echo "failed to find a correct comm id, expected: ${COMM_ID}"
         exit 1
     fi

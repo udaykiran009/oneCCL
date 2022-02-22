@@ -413,6 +413,16 @@ function set_environment()
         check_cxi
         check_anr
     fi
+
+    # HVD env
+    if [[ -z "${fw}" ]]
+    then
+        export fw="pt"
+    fi
+    if [[ -z "${enable_mpich}" ]]
+    then
+        export enable_mpich="0"
+    fi
 }
 
 function set_reg_tests_environment()
@@ -596,27 +606,31 @@ function run_regular_tests()
 
 function run_hvd_rn50_test()
 {
+    local fw="${1}"
+    local enable_mpich="${2}"
+
     if [[ ! -z ${PR_NUMBER} ]]
     then
         pr_number_option="-ccl_pr ${PR_NUMBER}"
     fi
+
     pushd ${CURRENT_WORK_DIR}/scripts/framework/horovod/
 
-    HVD_WORK_DIR="${CURRENT_WORK_DIR}/scripts/framework/horovod/work_dir_${1}_mpich_${2}"
+    HVD_WORK_DIR="${CURRENT_WORK_DIR}/scripts/framework/horovod/work_dir_${fw}_mpich_${enable_mpich}"
 
     # jfcst-xe compute nodes doesn't have access to the network
     # The download/install sections are performed in advance on the head node.
     if [[ ${FW_DOWNLOAD_COMPONENTS} = "yes" ]]
     then
-        ./horovod.sh "-prepare_${1}" 1 -work_dir "${HVD_WORK_DIR}" ${pr_number_option} -with_mpich ${2}\
+        ./horovod.sh "-prepare_${fw}" 1 -work_dir "${HVD_WORK_DIR}" ${pr_number_option} -with_mpich ${enable_mpich}\
                      -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
-        check_command_exit_code $? "ERROR: prepare Horovod/${1} failed"
+        check_command_exit_code $? "ERROR: prepare Horovod/${fw} failed"
     else
-        ./horovod.sh -install_hvd 1 -install_ccl 1 "-install_${1}" 1 "-run_model_${1}" 1 \
-                     "-check_hvd_${1}" 1 "-check_${1}" 1 -remove_conda 1 -with_mpich ${2} \
+        ./horovod.sh -install_hvd 1 -install_ccl 1 "-install_${fw}" 1 "-run_model_${fw}" 1 \
+                     "-check_hvd_${fw}" 1 "-check_${fw}" 1 -remove_conda 1 -with_mpich ${enable_mpich} \
                      -transport mpi -provider ${FI_PROVIDER} -work_dir "${HVD_WORK_DIR}" \
                      -proc_maps ${PROC_MAPS}
-        check_command_exit_code $? "ERROR: Horovod/${1} run failed"
+        check_command_exit_code $? "ERROR: Horovod/${fw} run failed"
     fi
     popd
 }
@@ -632,11 +646,7 @@ function run_horovod_tests()
     source ${CCL_ONEAPI_DIR}/onemkl/last/mkl/latest/env/vars.sh
     source ${CCL_ONEAPI_DIR}/tbb_oneapi/last/tbb/latest/env/vars.sh
 
-    run_hvd_rn50_test "pt" "0"
-    run_hvd_rn50_test "pt" "1"
-
-    run_hvd_rn50_test "tf" "0"
-    # run_hvd_rn50_test "tf" "1"
+    run_hvd_rn50_test "${fw}" "${enable_mpich}"
 
     exit 0
 }
