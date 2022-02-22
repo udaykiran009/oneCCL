@@ -14,13 +14,16 @@ find_expected_algo() {
     expected_strs=$2
 
     match_count=0
-    for expected_str in ${expected_strs}; do
-        if [[ "$found_algo_str" == "$expected_str" ]]; then
+    for expected_str in ${expected_strs}
+    do
+        if [[ "$found_algo_str" == "$expected_str" ]]
+        then
             match_count=$((match_count+1))
         fi
     done
 
-    if [[ "$match_count" == "0" ]]; then
+    if [[ "$match_count" == "0" ]]
+    then
         echo "Fail: couldn't find expected algo" >> ${TEST_LOG} 2>&1
     else
         echo "Found matches: ${match_count}" >> ${TEST_LOG} 2>&1
@@ -31,10 +34,13 @@ parse_algo() {
     expected_strs=$1
 
     found_algo_str=""
-    while IFS='' read -r line; do
-        if [[ $line =~ "selected algo: coll allreduce, "(.*) ]]; then
+    while IFS='' read -r line
+    do
+        if [[ $line =~ "selected algo: coll allreduce, "(.*) ]]
+        then
             found_sub_str=${BASH_REMATCH[1]}
-            if [[ $found_sub_str =~ algo\ ([a-zA-Z0-9_]*) ]]; then
+            if [[ $found_sub_str =~ algo\ ([a-zA-Z0-9_]*) ]]
+            then
                 found_algo_str="${BASH_REMATCH[1]}"
                 break
             fi
@@ -65,7 +71,6 @@ run_case() {
         cmd+=" mpiexec -l -n 2 ${SCRIPT_DIR}/benchmark"
         cmd+=" ${bench_options} ${extra_bench_ops} > ${TEST_LOG} 2>&1"
         run_cmd "${cmd}"
-
         parse_algo "${expected_str}"
         check_log ${TEST_LOG}
         rm ${TEST_LOG}
@@ -74,9 +79,10 @@ run_case() {
 
 run_case "topo"
 run_case "${expected_non_topo_algos}" "CCL_TOPO_P2P_ACCESS=0"
-#TODO: MLSL-1347 verify the selection issue
-#if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]]; then
-#    run_case "${expected_non_topo_algos}" "" "-g 1"
-#fi
+if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]]
+then
+   run_case "${expected_non_topo_algos}" "" "-g 1"
+   run_case "${expected_non_topo_algos}" "ZE_AFFINITY_MASK=0.0,1.0"
+fi
 
 echo "Pass"

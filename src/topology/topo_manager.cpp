@@ -325,7 +325,7 @@ domains_t topo_manager::parse_topo_env() {
     return domains;
 }
 
-std::string topo_manager::to_string() {
+std::string topo_manager::to_string() const {
     std::stringstream ss;
 
     ss << "\n{\n"
@@ -396,6 +396,40 @@ bool topo_manager::check_colors() const {
                 return (counts.front() == c && c <= max_ranks_per_subdomain);
             });
     }
+
+    // check expected distribution of colors between intra/inter_card_colors
+
+    // if ranks have the same color in intra_card_colors
+    // that means that these ranks are located on the same card
+    // and it means that the same ranks in inter_card_colors
+    // should have unique values, i.e. located in different planes
+
+    auto unique_intra_colors = std::set<int>(intra_card_colors.begin(), intra_card_colors.end());
+    for (int unique_intra_color : unique_intra_colors) {
+        std::vector<size_t> intra_color_indexes;
+        for (size_t idx = 0; idx < intra_card_colors.size(); idx++) {
+            if (intra_card_colors[idx] == unique_intra_color) {
+                intra_color_indexes.push_back(idx);
+            }
+        }
+
+        std::set<int> inter_colors;
+        for (size_t idx : intra_color_indexes) {
+            inter_colors.insert(inter_card_colors[idx]);
+        }
+
+        CCL_THROW_IF_NOT(inter_colors.size() == intra_color_indexes.size(),
+                         "unexpected distribution of intra/inter colors: unique_intra_color ",
+                         unique_intra_color,
+                         " is used ",
+                         intra_color_indexes.size(),
+                         " times in intra_card_colors "
+                         "but inter_card_colors has ",
+                         inter_colors.size(),
+                         " unique colors on the same indexes",
+                         to_string());
+    }
+
     return expected_colors;
 }
 
@@ -484,37 +518,41 @@ void topo_manager::fill_ze_colors() {
 void topo_manager::fill_ze_intra_colors(const rank_info_vec_t& local_info_vec) {
     CCL_THROW_IF_NOT(!local_info_vec.empty());
     CCL_THROW_IF_NOT(!ze_rank_info_vec.empty());
-    int card_idx = 0;
-    for (size_t idx = 0; idx < local_info_vec.size(); idx++) {
-        size_t card_size = 0;
-        const topo_rank_info& info = local_info_vec[idx];
-        int rank = info.rank;
 
-        // check if intra's elem is already filled
-        if (intra_card_colors[rank] != topo_manager::invalid_color) {
-            continue;
+    // card = pci_addr + vector of ranks on this card
+    // further these ranks will be grouped
+    // according to max_ranks_per_card threshold
+    using card_info_t = typename std::pair<zes_pci_address_t, std::vector<int>>;
+
+    std::vector<card_info_t> cards;
+
+    for (const auto& info : local_info_vec) {
+        const auto& pci_addr = ze_rank_info_vec[info.rank].pci_addr;
+        auto card_it =
+            std::find_if(cards.begin(), cards.end(), [&pci_addr](const card_info_t& info) {
+                return ze::is_same_pci_addr(pci_addr, info.first);
+            });
+        if (card_it == cards.end()) {
+            cards.push_back(std::make_pair(pci_addr, std::vector<int>{ info.rank }));
         }
+        else {
+            card_it->second.push_back(info.rank);
+        }
+    }
 
-        // iterate over local info comparing pci addresses for current and peer ranks
-        for (size_t peer_idx = idx; peer_idx < local_info_vec.size(); peer_idx++) {
-            const topo_rank_info& peer_info = local_info_vec[peer_idx];
-            int peer_rank = peer_info.rank;
-            // if rank & peer rank is on the card
-            if (ze::is_same_pci_addr(ze_rank_info_vec[rank].pci_addr,
-                                     ze_rank_info_vec[peer_rank].pci_addr)) {
-                // fill intra colors
-                check_invalid_color(intra_card_colors[peer_rank]);
-
-                intra_card_colors[peer_rank] = card_idx;
-                card_size++;
-                // if size reached card_limit
-                if (card_size == max_ranks_per_card) {
-                    // go to the next card
-                    card_idx++;
-                    // reset card size
-                    card_size = 0;
-                    break;
-                }
+    int color = 0;
+    size_t ranks_per_color = 0;
+    for (const auto& card : cards) {
+        const auto& card_ranks = card.second;
+        auto unique_card_ranks = std::set<int>(card_ranks.begin(), card_ranks.end());
+        CCL_THROW_IF_NOT(card_ranks.size() == unique_card_ranks.size());
+        for (const auto& rank : card_ranks) {
+            check_invalid_color(intra_card_colors[rank]);
+            intra_card_colors[rank] = color;
+            ranks_per_color++;
+            if ((ranks_per_color == max_ranks_per_card) || (rank == card_ranks.back())) {
+                color++;
+                ranks_per_color = 0;
             }
         }
     }
@@ -586,7 +624,7 @@ void topo_manager::fill_ze_inter_colors() {
             }
         }
 
-        if (single_rank_planes && (port_count == 0)) {
+        if (single_rank_planes || (port_count == 0)) {
             // use simple separation of ranks between planes
             // ranks with the same intra_card color
             // should be placed to different planes
@@ -600,6 +638,8 @@ void topo_manager::fill_ze_inter_colors() {
 }
 
 void topo_manager::fill_ze_inter_colors(const rank_info_vec_t& local_info_vec) {
+    CCL_THROW_IF_NOT(!local_info_vec.empty());
+
     for (const auto& info : local_info_vec) {
         int rank = info.rank;
 
@@ -632,8 +672,9 @@ void topo_manager::fill_ze_inter_colors(const std::vector<std::set<int>>& planes
 }
 
 bool topo_manager::check_p2p_access() const {
-    if (ccl::global_data::env().enable_p2p_access != CCL_ENV_INT_NOT_SPECIFIED)
+    if (ccl::global_data::env().enable_p2p_access != CCL_ENV_INT_NOT_SPECIFIED) {
         return ccl::global_data::env().enable_p2p_access;
+    }
 
     for (size_t i = 0; i < p2p_matrix.size(); i++) {
         for (size_t j = 0; j < p2p_matrix[i].size(); j++) {

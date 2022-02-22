@@ -128,7 +128,7 @@ public:
     static std::string generate_uuid();
     static domains_t parse_topo_env();
 
-    std::string to_string();
+    std::string to_string() const;
 
     bool is_single_node = false;
     bool is_single_card = false;
