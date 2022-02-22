@@ -141,6 +141,7 @@ env_data::env_data()
 
           enable_topo_algo(1),
           topo_color(topo_color_mode::fixed),
+          enable_p2p_access(CCL_ENV_INT_NOT_SPECIFIED),
 
 #ifdef CCL_ENABLE_SYCL
           kernel_path(),
@@ -333,6 +334,7 @@ void env_data::parse() {
 
     env_2_type(CCL_TOPO_ALGO, enable_topo_algo);
     env_2_topo(CCL_TOPO_COLOR, topo_color_names, topo_color);
+    env_2_type(CCL_TOPO_P2P_ACCESS, enable_p2p_access);
 
 #ifdef CCL_ENABLE_SYCL
     env_2_type(CCL_KERNEL_PATH, kernel_path);
@@ -604,6 +606,7 @@ void env_data::print(int rank) {
 #ifdef CCL_ENABLE_SYCL
     LOG_INFO(CCL_TOPO_ALGO, ": ", enable_topo_algo);
     LOG_INFO(CCL_TOPO_COLOR, ": ", str_by_enum(topo_color_names, topo_color));
+    LOG_INFO(CCL_TOPO_P2P_ACCESS, ": ", enable_p2p_access);
 
     LOG_INFO(
         CCL_KERNEL_PATH, ": ", (!kernel_path.empty()) ? kernel_path : CCL_ENV_STR_NOT_SPECIFIED);

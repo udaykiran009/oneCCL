@@ -20,16 +20,15 @@ find_expected_algo() {
         fi
     done
 
-    if [[ "$count_matches" == "0" ]]; then
+    if [[ "$match_count" == "0" ]]; then
         echo "Fail: couldn't find expected algo" >> ${TEST_LOG} 2>&1
     else
-        echo "Found matches: ${count_matches}" >> ${TEST_LOG} 2>&1
+        echo "Found matches: ${match_count}" >> ${TEST_LOG} 2>&1
     fi
 }
 
 parse_algo() {
-    filename=$1
-    expected_strs=$2
+    expected_strs=$1
 
     found_algo_str=""
     while IFS='' read -r line; do
@@ -37,9 +36,10 @@ parse_algo() {
             found_sub_str=${BASH_REMATCH[1]}
             if [[ $found_sub_str =~ algo\ ([a-zA-Z0-9_]*) ]]; then
                 found_algo_str="${BASH_REMATCH[1]}"
+                break
             fi
         fi
-    done < $filename
+    done < ${TEST_LOG}
 
     find_expected_algo "${found_algo_str}" "${expected_strs}"
 }
@@ -66,16 +66,17 @@ run_case() {
         cmd+=" ${bench_options} ${extra_bench_ops} > ${TEST_LOG} 2>&1"
         run_cmd "${cmd}"
 
-        parse_algo ${TEST_LOG} "${expected_str}"
+        parse_algo "${expected_str}"
         check_log ${TEST_LOG}
         rm ${TEST_LOG}
     done
 }
 
 run_case "topo"
-run_case "${expected_non_topo_algos}" "EnableCrossDeviceAccess=0"
-if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]]; then
-    run_case "${expected_non_topo_algos}" "" "-g 1"
-fi
+run_case "${expected_non_topo_algos}" "CCL_TOPO_P2P_ACCESS=0"
+#TODO: MLSL-1347 verify the selection issue
+#if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]]; then
+#    run_case "${expected_non_topo_algos}" "" "-g 1"
+#fi
 
 echo "Pass"

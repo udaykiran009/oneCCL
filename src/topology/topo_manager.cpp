@@ -632,6 +632,9 @@ void topo_manager::fill_ze_inter_colors(const std::vector<std::set<int>>& planes
 }
 
 bool topo_manager::check_p2p_access() const {
+    if (ccl::global_data::env().enable_p2p_access != CCL_ENV_INT_NOT_SPECIFIED)
+        return ccl::global_data::env().enable_p2p_access;
+
     for (size_t i = 0; i < p2p_matrix.size(); i++) {
         for (size_t j = 0; j < p2p_matrix[i].size(); j++) {
             if (!p2p_matrix[i][j]) {

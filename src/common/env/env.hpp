@@ -117,6 +117,7 @@ constexpr const char* CCL_PROCESS_LAUNCHER = "CCL_PROCESS_LAUNCHER";
 
 constexpr const char* CCL_TOPO_ALGO = "CCL_TOPO_ALGO";
 constexpr const char* CCL_TOPO_COLOR = "CCL_TOPO_COLOR";
+constexpr const char* CCL_TOPO_P2P_ACCESS = "CCL_TOPO_P2P_ACCESS";
 
 constexpr const char* CCL_SYCL_OUTPUT_EVENT = "CCL_SYCL_OUTPUT_EVENT";
 constexpr const char* CCL_USE_HMEM = "CCL_USE_HMEM";
@@ -282,6 +283,7 @@ public:
 
     int enable_topo_algo;
     topo_color_mode topo_color;
+    int enable_p2p_access;
 
 #ifdef CCL_ENABLE_SYCL
     std::string kernel_path;
