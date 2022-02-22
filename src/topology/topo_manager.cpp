@@ -656,7 +656,13 @@ fabric_ports_t topo_manager::get_fabric_ports() {
 
     uint32_t port_count{};
 
-    ZE_CALL(zesDeviceEnumFabricPorts, ((zes_device_handle_t)ze_device, &port_count, NULL));
+    // ZE_CALL(zesDeviceEnumFabricPorts, ((zes_device_handle_t)ze_device, &port_count, NULL));
+    if (zesDeviceEnumFabricPorts((zes_device_handle_t)ze_device, &port_count, NULL) ==
+        ZE_RESULT_ERROR_UNINITIALIZED) {
+        LOG_INFO("can not retrieve ze fabric ports");
+        return {};
+    }
+
     std::vector<zes_fabric_port_handle_t> ports(port_count);
     ZE_CALL(zesDeviceEnumFabricPorts, ((zes_device_handle_t)ze_device, &port_count, ports.data()));
 
@@ -1102,8 +1108,15 @@ void topo_manager::ze_base_init(std::shared_ptr<ccl::device> device,
     ze_rank_info.device_uuid = dev_props.uuid;
 
     zes_pci_properties_t pci_props = {};
-    ZE_CALL(zesDevicePciGetProperties, ((zes_device_handle_t)ze_device, &pci_props));
-    ze_rank_info.pci_addr = pci_props.address;
+
+    // ZE_CALL(zesDevicePciGetProperties, ((zes_device_handle_t)ze_device, &pci_props));
+    if (zesDevicePciGetProperties((zes_device_handle_t)ze_device, &pci_props) ==
+        ZE_RESULT_ERROR_UNINITIALIZED) {
+        LOG_INFO("can not retrieve ze pci properties");
+    }
+    else {
+        ze_rank_info.pci_addr = pci_props.address;
+    }
 
     allgather(&ze_rank_info, ze_rank_info_vec.data(), sizeof(ze_rank_info));
 

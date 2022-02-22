@@ -38,7 +38,7 @@ set_run_env() {
 
     # HVD
     export HOROVOD_LOG_LEVEL=INFO
-    export HOROVOD_THREAD_AFFINITY=0,1
+    export HOROVOD_THREAD_AFFINITY=0,1,2,3
     export HOROVOD_CCL_FIN_THREADS=1
     #export HOROVOD_CCL_ADD_EXTRA_WAIT=1 # extra waits are not needed since at least 2022.0 compiler version; disabled in HVD by default
     #export HOROVOD_FUSION_THRESHOLD=150000000
@@ -48,7 +48,7 @@ set_run_env() {
     # CCL
     export CCL_LOG_LEVEL=INFO
     export CCL_WORKER_COUNT=1
-    export CCL_WORKER_AFFINITY=4-19
+    export CCL_WORKER_AFFINITY=8-11
     export CCL_ATL_TRANSPORT="${TRANSPORT}"
     export CCL_SYCL_OUTPUT_EVENT=1
     vars_file="${CCL_SRC_DIR}/build/_install/env/setvars.sh"
@@ -61,7 +61,7 @@ set_run_env() {
     # IMPI
     export I_MPI_DEBUG=12
     export I_MPI_PIN_PROCESSOR_EXCLUDE_LIST=${HOROVOD_THREAD_AFFINITY}
-    export I_MPI_PIN_PROCESSOR_LIST=2,3
+    export I_MPI_PIN_PROCESSOR_LIST=4,5,6,7
     BOOTSTRAP_OPTIONS="-launcher ssh -launcher-exec /usr/bin/ssh"
 
     # OFI

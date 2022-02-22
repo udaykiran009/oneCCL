@@ -426,7 +426,7 @@ std::string to_string(const ze_command_queue_group_properties_t& props) {
 std::string to_string(const zes_pci_address_t& addr) {
     std::stringstream ss;
     ss << "{ " << addr.domain << ", " << addr.bus << ", " << addr.device << ", " << addr.function
-       << "}";
+       << " }";
     return ss.str();
 }
 
@@ -437,7 +437,7 @@ std::string to_string(const ze_device_uuid_t& uuid) {
         tmp += std::to_string(entry);
         tmp += ", ";
     }
-    str += "[ " + tmp.substr(0, tmp.size() - 2) + " ]";
+    str += "{ " + tmp.substr(0, tmp.size() - 2) + " }";
     return str;
 }
 

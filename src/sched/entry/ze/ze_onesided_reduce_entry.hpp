@@ -83,4 +83,6 @@ private:
 
     ze_kernel_handle_t empty_kernel;
     std::string empty_kernel_name;
+
+    bool skip_entry{};
 };
