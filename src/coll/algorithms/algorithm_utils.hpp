@@ -39,7 +39,8 @@ enum ccl_coll_alltoall_algo {
 
     ccl_coll_alltoall_direct,
     ccl_coll_alltoall_naive,
-    ccl_coll_alltoall_scatter
+    ccl_coll_alltoall_scatter,
+    ccl_coll_alltoall_topo
 };
 
 enum ccl_coll_alltoallv_algo {

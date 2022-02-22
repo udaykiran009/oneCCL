@@ -812,6 +812,8 @@ function run_functional_tests()
     if [[ ${IS_GPU_NODE} = "yes" ]]
     then
         allreduce_algos="${allreduce_algos} topo"
+        alltoall_algos="${alltoall_algos} topo"
+        alltoallv_algos="${alltoallv_algos} topo"
         allgatherv_algos="${allgatherv_algos} topo"
         bcast_algos="${bcast_algos} topo"
         reduce_algos="${reduce_algos} topo"

@@ -82,16 +82,19 @@ function is_gpu_node()
 
 function set_tests_option()
 {
-    local option="${1}"
+    local options="${1}"
     local current_scope="${2}"
-    local option_name=${option%=*}
-    local pattern=$(echo ${current_scope} | grep -oE "${option_name}[^ ]*")
-    if [[ -z ${pattern} ]]
-    then
-        current_scope="${current_scope} ${option}"
-    else
-        current_scope=${current_scope/${pattern}/${option}}
-    fi
+    for option in ${options}
+    do
+        local option_name=${option%=*}
+        local pattern=$(echo ${current_scope} | grep -oE "${option_name}[^ ]*")
+        if [[ -z ${pattern} ]]
+        then
+            current_scope="${current_scope} ${option}"
+        else
+            current_scope=${current_scope/${pattern}/${option}}
+        fi
+    done
     echo ${current_scope}
 }
 
