@@ -21,6 +21,9 @@ typedef struct kvs_request {
     char name[MAX_KVS_NAME_LENGTH]{};
     char key[MAX_KVS_KEY_LENGTH]{};
     char val[MAX_KVS_VAL_LENGTH]{};
+    kvs_request() {
+        memset((void*)this, 0, sizeof(kvs_request));
+    }
 } kvs_request_t;
 
 typedef struct server_args {
