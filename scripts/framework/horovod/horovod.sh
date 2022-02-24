@@ -70,7 +70,7 @@ set_run_env() {
 
     # SYCL
     # export SYCL_PI_LEVEL_ZERO_BATCH_SIZE=1 # not needed anymore
-    # export SYCL_DEVICE_FILTER=level_zero # see https://jira.devtools.intel.com/browse/CMPLRLLVM-33408
+    export SYCL_DEVICE_FILTER=level_zero
     # export SYCL_PI_LEVEL_ZERO_TRACK_INDIRECT_ACCESS_MEMORY=1 # not needed since CCL commit 5141eaf70630b364c708cae9eb664511db51dc05
 
     # conda
@@ -94,12 +94,12 @@ MODEL_PT_BASE_LINK="https://gitlab.devtools.intel.com/aemani/dlutils/-/raw/maste
 
 if [ -z "$TF_LINK" ]
 then
-    TF_LINK="http://mlpc.intel.com/downloads/nightly-itex/suse/ww50.2/tensorflow-2.7.0-cp37-cp37m-linux_x86_64.whl"
+    TF_LINK="http://mlpc.intel.com/downloads/weekly/ww48/PVC-suse/tensorflow-2.7.0-cp37-cp37m-linux_x86_64.whl"
 fi
 
 if [ -z "$ITEX_LINK" ]
 then
-    ITEX_LINK="http://mlpc.intel.com/downloads/nightly-itex/suse/ww50.2/intel_extension_for_tensorflow-0.3.0-cp37-cp37m-linux_x86_64.whl"
+    ITEX_LINK="http://mlpc.intel.com/downloads/weekly/ww48/PVC-suse/intel_extension_for_tensorflow-0.2.2-cp37-cp37m-linux_x86_64.whl"
 fi
 
 TF_NAME=`basename $TF_LINK`
@@ -732,6 +732,12 @@ hvd_test() {
 
         if [[ ${CCL_CONFIGURATION} = "" ]]
         then
+            echo_log "============================= Horovod/TF allreduce bench =================================="
+            mpiexec_args="${BOOTSTRAP_OPTIONS}" app="python ${HVD_SRC_DIR}/benchmark/hvd_allreduce_tf.py" \
+                app_args="--iters 10" \
+                proc_map_iterator
+            CheckCommandExitCode $? "HVD allreduce test failed"
+            echo_log "============================= ****************** =================================="
             echo_log "============================= Horovod/TF bench =================================="\
             mpiexec_args="${BOOTSTRAP_OPTIONS}" app="python ${HVD_SRC_DIR}/benchmark/hvd_bench.py" \
                 app_args="--xpu gpu --framework tf" \
@@ -752,6 +758,18 @@ hvd_test() {
 
         if [[ ${CCL_CONFIGURATION} = "" ]]
         then
+            echo_log "============================= Horovod/PT broadcast bench =================================="
+            mpiexec_args="${BOOTSTRAP_OPTIONS}" app="python ${HVD_SRC_DIR}/benchmark/hvd_allreduce_pt.py" \
+                app_args="--iter 10 --no-cuda --broadcast" \
+                proc_map_iterator
+            CheckCommandExitCode $? "HVD broadcast test failed"
+            echo_log "============================= ****************** =================================="
+            echo_log "============================= Horovod/PT allreduce bench =================================="
+            mpiexec_args="${BOOTSTRAP_OPTIONS}" app="python ${HVD_SRC_DIR}/benchmark/hvd_allreduce_pt.py" \
+                app_args="--iter 10 --no-cuda" \
+                proc_map_iterator
+            CheckCommandExitCode $? "HVD allreduce test failed"
+            echo_log "============================= ****************** =================================="
             echo_log "============================= Horovod/PT bench =================================="
             mpiexec_args="${BOOTSTRAP_OPTIONS}" app="python ${HVD_SRC_DIR}/benchmark/hvd_bench.py" \
                 app_args="--xpu gpu --framework pt" \
@@ -987,6 +1005,20 @@ download_hvd() {
         ${HVD_SRC_DIR} "GIT_ASKPASS=${PATH_TO_TOKEN_FILE_1S}"
 
     cd ${HVD_SRC_DIR}
+
+    if [[ ${PREPARE_PT} == "1" ]]
+    then
+        wget -P benchmark -e use_proxy=no \
+            https://gitlab.devtools.intel.com/aemani/dlutils/-/raw/master/hvd_allreduce_pt.py
+    fi
+    if [[ ${PREPARE_TF} == "1" ]]
+    then
+        mkdir benchmark
+        # using private token as the repo is private
+        https_proxy="" curl --header "PRIVATE-TOKEN: Ayxmiwc_C6TGd4H1Cso8" \
+            "https://gitlab.devtools.intel.com/api/v4/projects/101266/repository/files/tests%2Fhvd_bench%2Fhvd_allreduce_tf.py/raw?ref=master" \
+            > benchmark/hvd_allreduce_tf.py
+    fi
 
     if [[ ${PREPARE_PT} == "1" || ${PREPARE_TF} == "1" ]]
     then

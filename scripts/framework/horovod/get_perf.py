@@ -34,7 +34,7 @@ def main(argv):
                     rank_id = int(ls[0][1:-1])
                     if rank_id + 1 > rank_size:
                         rank_size = rank_id + 1
-                if len(logs) <= rank_id:
+                while len(logs) < rank_size:
                     logs.append([])
                 logs[rank_id].append(ts * 1000)
 
