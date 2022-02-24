@@ -169,7 +169,7 @@ set_config() {
         BENCH_PARAMS="-w 4 -c last -j off -i 20 -t 8388608 -d int32"
     elif [[ ${CONFIG} = "2" ]]
     then
-        COLLS="reduce allreduce allgatherv"
+        COLLS="reduce allreduce allgatherv alltoallv"
         CACHE_MODES="0 1"
         ULLS_MODES="0 1"
         PROC_MAPS="2:2/4:4/12:12"
@@ -178,7 +178,7 @@ set_config() {
         BENCH_PARAMS="-w 4 -c last -j off -i 100 -y 2097152"
     elif [[ ${CONFIG} = "3" ]]
     then
-        COLLS="reduce allreduce allgatherv"
+        COLLS="reduce allreduce allgatherv alltoallv"
         CACHE_MODES="0 1"
         ULLS_MODES="0 1"
         PROC_MAPS="8:4/24:12"
@@ -328,12 +328,21 @@ run_bench() {
                     do
                         for algo in ${ALGOS}
                         do
+
+                            extra_env=""
+
                             if [[ ${algo} = "ring" ]] && [[ ${COPY_ENGINE} != "none" ]]
                             then
                                 continue
                             fi
 
-                            exec_env="${base_env} CCL_ALLGATHERV=${algo}"
+                            if [[ ${coll} = "alltoall"* ]]
+                            then
+                                extra_env="CCL_ZE_BIDIR_ALGO=1"
+                            fi
+
+                            exec_env="${base_env} ${extra_env}"
+                            exec_env+=" CCL_ALLGATHERV=${algo}"
                             exec_env+=" CCL_ALLREDUCE=${algo}"
                             exec_env+=" CCL_REDUCE=${algo}"
                             exec_env+=" CCL_ZE_COPY_ENGINE=${COPY_ENGINE}"
