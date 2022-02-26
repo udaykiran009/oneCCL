@@ -226,6 +226,8 @@ typedef struct atl_ofi_global_data {
     }
 } atl_ofi_global_data_t;
 
+using ep_names_t = std::vector<std::vector<char>>;
+
 extern atl_ofi_global_data_t global_data;
 
 std::string atl_ofi_get_short_nic_name(const struct fi_info* prov);
@@ -235,19 +237,18 @@ atl_ofi_prov_t* atl_ofi_get_prov(atl_ofi_ctx_t& ctx,
                                  const atl_ep_t& ep,
                                  int peer_proc_idx,
                                  size_t msg_size);
-fi_addr_t atl_ofi_get_addr(atl_ofi_ctx_t& ctx, atl_ofi_prov_t* prov, int proc_idx, size_t ep_idx);
 atl_status_t atl_ofi_get_local_proc_coord(atl_proc_coord_t& coord, std::shared_ptr<ipmi> pmi);
 atl_status_t atl_ofi_prov_update_addr_table(atl_ofi_ctx_t& ctx,
                                             const atl_proc_coord_t& coord,
                                             size_t prov_idx,
                                             std::shared_ptr<ipmi> pmi,
-                                            std::list<std::vector<char>>& ep_names);
+                                            ep_names_t& ep_names);
 atl_status_t atl_ofi_prov_ep_get_name(atl_ofi_prov_t* prov, size_t ep_idx);
 atl_status_t atl_ofi_prov_eps_connect(atl_ofi_ctx_t& ctx,
                                       const atl_proc_coord_t& coord,
                                       size_t prov_idx,
                                       std::shared_ptr<ipmi> pmi,
-                                      std::list<std::vector<char>>& ep_names);
+                                      ep_names_t& ep_names);
 void atl_ofi_prov_ep_destroy(atl_ofi_prov_t* prov, atl_ofi_prov_ep_t* ep);
 void atl_ofi_prov_destroy(atl_ofi_ctx_t& ctx, atl_ofi_prov_t* prov);
 int atl_ofi_wait_cancel_cq(struct fid_cq* cq);
@@ -267,7 +268,7 @@ atl_status_t atl_ofi_prov_init(atl_ofi_ctx_t& ctx,
                                atl_ofi_prov_t* prov,
                                atl_attr_t* attr,
                                std::shared_ptr<ipmi> pmi,
-                               std::list<std::vector<char>>& ep_names);
+                               ep_names_t& ep_names);
 atl_status_t atl_ofi_adjust_out_tag(atl_ofi_prov_t* prov, atl_attr_t* attr);
 atl_status_t atl_ofi_parse_mnic_name(atl_ofi_ctx_t& ctx, std::string str_to_parse);
 int atl_ofi_is_allowed_nic_name(atl_ofi_ctx_t& ctx, struct fi_info* info);
@@ -276,6 +277,6 @@ atl_status_t atl_ofi_open_nw_provs(atl_ofi_ctx_t& ctx,
                                    struct fi_info* base_hints,
                                    atl_attr_t* attr,
                                    std::shared_ptr<ipmi> pmi,
-                                   std::list<std::vector<char>>& ep_names,
+                                   std::vector<ep_names_t>& ep_names,
                                    bool log_on_error);
 void atl_ofi_init_req(atl_req_t& req, atl_ofi_prov_ep_t* prov_ep, struct fid_ep* fi_ep);

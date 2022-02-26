@@ -93,9 +93,6 @@ private:
     // TODO: Rework to support listener
     //  std::unique_ptr<ccl_listener> listener;
 
-    typedef size_t (ccl_executor::*get_worker_idx_fn_t)(ccl_sched* sched);
-    get_worker_idx_fn_t get_worker_idx_fn;
-    size_t rr_worker_idx = 0; /* to distribute work in round-robin */
     int local_proc_idx;
     int local_proc_count;
     bool workers_started = false;

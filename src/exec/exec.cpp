@@ -10,11 +10,6 @@ size_t ccl_executor::get_worker_idx_by_sched_id(ccl_sched* sched) {
     return sched->sched_id % workers.size();
 }
 
-size_t ccl_executor::get_worker_idx_round_robin(ccl_sched* sched) {
-    ++rr_worker_idx %= workers.size();
-    return rr_worker_idx;
-}
-
 size_t ccl_executor::calculate_atl_ep_count(size_t worker_count) {
     size_t ep_count = worker_count;
 
@@ -59,10 +54,6 @@ std::unique_ptr<ccl_sched_queue> ccl_executor::create_sched_queue(size_t idx,
 
 ccl_executor::ccl_executor(const char* main_addr) {
     auto& env = ccl::global_data::env();
-
-    get_worker_idx_fn = (env.enable_fusion || env.enable_unordered_coll)
-                            ? &ccl_executor::get_worker_idx_by_sched_id
-                            : &ccl_executor::get_worker_idx_round_robin;
 
     /* generate ATL attr for all future communicators */
     atl_comm_manager::set_internal_env(generate_atl_attr(env));
@@ -231,7 +222,7 @@ void ccl_executor::start(ccl_sched* sched, bool extra_sched) {
     size_t worker_idx;
     auto& partial_scheds = sched->get_subscheds();
     for (size_t idx = 0; idx < partial_scheds.size(); idx++) {
-        worker_idx = (this->*get_worker_idx_fn)(partial_scheds[idx].get());
+        worker_idx = get_worker_idx_by_sched_id(partial_scheds[idx].get());
         LOG_DEBUG(
             "worker idx: ", worker_idx, ", coll: ", ccl_coll_type_to_str(sched->coll_param.ctype));
         workers[worker_idx]->add(partial_scheds[idx].get());

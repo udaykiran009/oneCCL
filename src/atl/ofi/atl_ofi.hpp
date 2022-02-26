@@ -8,6 +8,7 @@
 #include "atl/atl_base_transport.hpp"
 #include "atl/ofi/atl_ofi_helper.hpp"
 #include "common/utils/hash.hpp"
+#include "common/utils/spinlock.hpp"
 
 class atl_ofi : public atl_base_transport {
 public:
@@ -158,8 +159,8 @@ public:
         return ATL_STATUS_UNSUPPORTED;
     }
 
-    atl_status_t get_rank2rank_map(std::shared_ptr<ipmi> pmi,
-                                   std::vector<int>& rank2rank_map) override;
+    atl_status_t get_rank2proc_map(std::shared_ptr<ipmi> pmi,
+                                   std::vector<int>& rank2proc_map) override;
 
     std::string to_string() override;
 
@@ -179,6 +180,10 @@ private:
                                 int fi_version,
                                 std::shared_ptr<ipmi> pmi,
                                 bool log_on_error);
+    fi_addr_t atl_ofi_get_addr(atl_ofi_ctx_t& ctx,
+                               atl_ofi_prov_t* prov,
+                               int proc_idx,
+                               size_t ep_idx);
 
     atl_ofi_ctx_t ctx;
 
@@ -218,7 +223,11 @@ private:
     };
 
     fi_cache cache{};
+    // accumulates ep names from all comms
+    // each new portion added into that vector corresponds to single process
+    // prov_idx : ep_idx : ep_name
+    std::vector<ep_names_t> ep_names{};
 
-    /* accumulates ep names from all comms */
-    std::list<std::vector<char>> ep_names{};
+    bool need_extra_exchange{ false };
+    ccl_spinlock addr_table_guard;
 };

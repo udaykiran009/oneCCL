@@ -199,8 +199,8 @@ public:
                             size_t color,
                             int local_idx) override;
 
-    atl_status_t get_rank2rank_map(std::shared_ptr<ipmi> pmi,
-                                   std::vector<int>& rank2rank_map) override {
+    atl_status_t get_rank2proc_map(std::shared_ptr<ipmi> pmi,
+                                   std::vector<int>& rank2proc_map) override {
         return ATL_STATUS_UNSUPPORTED;
     }
 

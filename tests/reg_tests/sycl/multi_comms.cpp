@@ -176,20 +176,41 @@ int main(int argc, char* argv[]) {
             cout << "check elem_count: " << elem_count << "\n";
 
             /* create buffers */
-            auto send_buf = sycl::malloc_device<int>(elem_count, q);
-            auto recv_buf = sycl::malloc_device<int>(elem_count, q);
-            auto buf = sycl::malloc_device<int>(elem_count, q);
+            auto allgatherv_send_buf = sycl::malloc_device<int>(elem_count, q);
+            auto allgatherv_recv_buf = sycl::malloc_device<int>(elem_count * comm_size, q);
+            std::vector<size_t> allgatherv_recv_counts(comm_size, elem_count);
+
+            auto allreduce_send_buf = sycl::malloc_device<int>(elem_count, q);
+            auto allreduce_recv_buf = sycl::malloc_device<int>(elem_count, q);
+
+            auto alltoallv_send_buf = sycl::malloc_device<int>(elem_count * comm_size, q);
+            auto alltoallv_recv_buf = sycl::malloc_device<int>(elem_count * comm_size, q);
+            std::vector<size_t> alltoallv_send_counts(comm_size, elem_count);
+            std::vector<size_t> alltoallv_recv_counts(comm_size, elem_count);
+
+            auto bcast_buf = sycl::malloc_device<int>(elem_count, q);
 
             /* open buffers and modify them on the device side */
             auto e = q.submit([&](auto& h) {
                 h.parallel_for(elem_count, [=](auto id) {
-                    send_buf[id] = ccl_rank + id + 1;
-                    recv_buf[id] = -1;
+                    allgatherv_send_buf[id] = ccl_rank + id + 1;
+                    for (int i = 0; i < comm_size; i++) {
+                        allgatherv_recv_buf[id * comm_size + i] = -1;
+                    }
+
+                    allreduce_send_buf[id] = ccl_rank + id + 1;
+                    allreduce_recv_buf[id] = -1;
+
+                    for (int i = 0; i < comm_size; i++) {
+                        alltoallv_send_buf[id * comm_size + i] = ccl_rank + 1;
+                        alltoallv_recv_buf[id * comm_size + i] = -1;
+                    }
+
                     if (ccl_rank == root) {
-                        buf[id] = id + 1;
+                        bcast_buf[id] = id + 1;
                     }
                     else {
-                        buf[id] = -1;
+                        bcast_buf[id] = -1;
                     }
                 });
             });
@@ -205,40 +226,73 @@ int main(int argc, char* argv[]) {
             vector<ccl::event> deps;
             deps.push_back(ccl::create_event(e));
 
+            /* invoke allgatherv */
+            auto allgatherv_attr = ccl::create_operation_attr<ccl::allgatherv_attr>();
+
+            cout << "before allgatherv, comm_size: " << comm_size << "\n";
+            ccl::allgatherv(allgatherv_send_buf,
+                            elem_count,
+                            allgatherv_recv_buf,
+                            allgatherv_recv_counts,
+                            comms.back(),
+                            stream,
+                            allgatherv_attr,
+                            deps)
+                .wait();
+            cout << "after allgatherv, comm_size: " << comm_size << "\n";
+
             /* invoke allreduce */
-            auto attr = ccl::create_operation_attr<ccl::allreduce_attr>();
+            auto allreduce_attr = ccl::create_operation_attr<ccl::allreduce_attr>();
 
             cout << "before allreduce, comm_size: " << comm_size << "\n";
-            ccl::allreduce(send_buf,
-                           recv_buf,
+            ccl::allreduce(allreduce_send_buf,
+                           allreduce_recv_buf,
                            elem_count,
                            ccl::reduction::sum,
                            comms.back(),
                            stream,
-                           attr,
+                           allreduce_attr,
                            deps)
                 .wait();
             cout << "after allreduce, comm_size: " << comm_size << "\n";
 
+            /* invoke alltoallv */
+            auto alltoallv_attr = ccl::create_operation_attr<ccl::alltoallv_attr>();
+
+            cout << "before alltoallv, comm_size: " << comm_size << "\n";
+            ccl::alltoallv(alltoallv_send_buf,
+                           alltoallv_send_counts,
+                           alltoallv_recv_buf,
+                           alltoallv_recv_counts,
+                           comms.back(),
+                           stream,
+                           alltoallv_attr,
+                           deps)
+                .wait();
+            cout << "after alltoallv, comm_size: " << comm_size << "\n";
+
+            /* invoke bcast */
             cout << "before bcast, comm_size: " << comm_size << "\n";
-            ccl::broadcast(buf, elem_count, root, comms.back(), stream).wait();
+            ccl::broadcast(bcast_buf, elem_count, root, comms.back(), stream).wait();
             cout << "after bcast, comm_size: " << comm_size << "\n";
 
             /* open result buffers and check their correctness on the device side */
+            buffer<int> allgatherv_check_buf(elem_count * comm_size);
             buffer<int> allreduce_check_buf(elem_count);
+            buffer<int> alltoallv_check_buf(elem_count * comm_size);
             buffer<int> bcast_check_buf(elem_count);
             q.submit([&](auto& h) {
                 accessor allreduce_check_buf_acc(allreduce_check_buf, h, write_only);
                 accessor bcast_check_buf_acc(bcast_check_buf, h, write_only);
                 h.parallel_for(elem_count, [=](auto id) {
-                    if (recv_buf[id] != static_cast<int>(check_sum + comm_size * id)) {
+                    if (allreduce_recv_buf[id] != static_cast<int>(check_sum + comm_size * id)) {
                         allreduce_check_buf_acc[id] = -1;
                     }
                     else {
                         allreduce_check_buf_acc[id] = 0;
                     }
 
-                    if (buf[id] != static_cast<int>(id + 1)) {
+                    if (bcast_buf[id] != static_cast<int>(id + 1)) {
                         bcast_check_buf_acc[id] = -1;
                     }
                     else {
@@ -246,6 +300,27 @@ int main(int argc, char* argv[]) {
                     }
                 });
             });
+            q.submit([&](auto& h) {
+                 sycl::accessor allgatherv_check_buf_acc(allgatherv_check_buf, h, sycl::write_only);
+                 sycl::accessor alltoallv_check_buf_acc(alltoallv_check_buf, h, sycl::write_only);
+                 h.parallel_for(elem_count, [=](auto id) {
+                     for (int i = 0; i < comm_size; i++) {
+                         if (allgatherv_recv_buf[i * elem_count + id] !=
+                             static_cast<int>(i + id + 1)) {
+                             allgatherv_check_buf_acc[i * elem_count + id] = -1;
+                         }
+                         else {
+                             allgatherv_check_buf_acc[i * elem_count + id] = 0;
+                         }
+                         if (alltoallv_recv_buf[i * elem_count + id] != static_cast<int>(i + 1)) {
+                             alltoallv_check_buf_acc[i * elem_count + id] = -1;
+                         }
+                         else {
+                             alltoallv_check_buf_acc[i * elem_count + id] = 0;
+                         }
+                     }
+                 });
+             }).wait();
 
             if (!handle_exception(q)) {
                 return -1;
@@ -253,13 +328,36 @@ int main(int argc, char* argv[]) {
 
             /* print out the result of the test on the host side */
             {
+                host_accessor allgatherv_check_buf_acc(allgatherv_check_buf, read_only);
                 host_accessor allreduce_check_buf_acc(allreduce_check_buf, read_only);
+                host_accessor alltoallv_check_buf_acc(alltoallv_check_buf, read_only);
                 host_accessor bcast_check_buf_acc(bcast_check_buf, read_only);
                 size_t i;
                 for (i = 0; i < elem_count; i++) {
+                    int j;
+                    for (j = 0; j < comm_size; j++) {
+                        if (allgatherv_check_buf_acc[i * comm_size + j] == -1) {
+                            cout << "FAILED allgatherv at idx " << i * comm_size + j << "\n";
+                            fail_counter++;
+                            break;
+                        }
+                    }
+                    if (j != comm_size) {
+                        break;
+                    }
                     if (allreduce_check_buf_acc[i] == -1) {
                         cout << "FAILED allreduce at idx " << i << "\n";
                         fail_counter++;
+                        break;
+                    }
+                    for (j = 0; j < comm_size; j++) {
+                        if (alltoallv_check_buf_acc[i * comm_size + j] == -1) {
+                            cout << "FAILED alltoallv at idx " << i * comm_size + j << "\n";
+                            fail_counter++;
+                            break;
+                        }
+                    }
+                    if (j != comm_size) {
                         break;
                     }
                     if (bcast_check_buf_acc[i] == -1) {
@@ -274,9 +372,13 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            sycl::free(send_buf, q);
-            sycl::free(recv_buf, q);
-            sycl::free(buf, q);
+            sycl::free(allgatherv_send_buf, q);
+            sycl::free(allgatherv_recv_buf, q);
+            sycl::free(allreduce_send_buf, q);
+            sycl::free(allreduce_recv_buf, q);
+            sycl::free(alltoallv_send_buf, q);
+            sycl::free(alltoallv_recv_buf, q);
+            sycl::free(bcast_buf, q);
         }
     }
 

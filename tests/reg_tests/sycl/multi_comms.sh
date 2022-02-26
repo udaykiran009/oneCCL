@@ -24,22 +24,24 @@ do
         do
             for transport in ${transports}
             do
-                if [ ${transport} == "ofi" ];
-                then
-                    #TODO: uncoment after fix MLSL-1193 (OFI)
-                    if [ ${comm_size_mode} == "direct" ] || [ ${parallel_comm_mode} == "1" ]; then
-                        continue
-                    fi
-                fi
-
                 for algo in ${algos}
                 do
-                    cmd="CCL_ALLREDUCE=${algo} CCL_BCAST=${algo}"
+                    a2a_algo=${algo}
+                    if [ ${algo} == "ring" ]
+                    then
+                        a2a_algo="scatter"
+                    fi
+
+                    cmd="CCL_ALLGATHERV=${algo}"
+                    cmd+=" CCL_ALLREDUCE=${algo}"
+                    cmd+=" CCL_ALLTOALLV=${a2a_algo}"
+                    cmd+=" CCL_BCAST=${algo}"
                     cmd+=" CCL_ATL_TRANSPORT=${transport}"
                     cmd+=" mpiexec -l -n 6 -ppn 6 ${SCRIPT_DIR}/${BINFILE}"
                     cmd+=" -c ${comm_size_mode}"
                     cmd+=" -o ${rank_order_mode}"
                     cmd+=" -p ${parallel_comm_mode} > ${TEST_LOG} 2>&1"
+
                     run_cmd "${cmd}"
                     check_log ${TEST_LOG}
                 done
