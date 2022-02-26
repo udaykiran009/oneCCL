@@ -416,10 +416,9 @@ std::string to_string(ze_command_queue_group_property_flag_t flag) {
 
 std::string to_string(const ze_command_queue_group_properties_t& props) {
     std::stringstream ss;
-    ss << "stype: " << props.stype << ", pNext: " << (void*)props.pNext
-       << ", flags: " << flags_to_string<ze_command_queue_group_property_flag_t>(props.flags)
-       << ", maxMemoryFillPatternSize: " << props.maxMemoryFillPatternSize
-       << ", numQueues: " << props.numQueues;
+    ss << "flags: " << flags_to_string<ze_command_queue_group_property_flag_t>(props.flags)
+       << ", max_memory_fill_pattern_size: " << props.maxMemoryFillPatternSize
+       << ", num_queues: " << props.numQueues;
     return ss.str();
 }
 
@@ -490,7 +489,7 @@ std::string to_string(const zes_fabric_port_state_t& state) {
            << flags_to_string<zes_fabric_port_failure_flag_t>(state.failureReasons);
     }
     else {
-        ss << ", remotePortId: " << to_string(state.remotePortId);
+        ss << ", remote_port_id: " << to_string(state.remotePortId);
     }
 
     ss << " }";

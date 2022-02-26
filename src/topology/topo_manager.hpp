@@ -45,10 +45,22 @@ struct topo_host_info {
     topo_host_info(int idx, const std::string& name, const std::set<int>& ranks = {});
 };
 
+using host_info_vec_t = typename std::vector<topo_host_info>;
+using rank_info_vec_t = typename std::vector<topo_rank_info>;
+std::string to_string(const rank_info_vec_t& rank_info_vec, const host_info_vec_t& host_info_vec);
+
+// each element in map = domain = domain_idx + vector of subdomains
+// subdomain = vector of local process indexes
+using domains_t = typename std::map<int, std::vector<std::vector<int>>>;
+std::string to_string(const domains_t& domains);
+
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 struct topo_ze_rank_info {
     ze_device_uuid_t device_uuid{};
     zes_pci_address_t pci_addr{};
+    uint32_t subdev_count{};
+    uint32_t subdev_id{};
+    ze_device_property_flags_t dev_prop_flags{};
 };
 
 struct topo_ze_port_info {
@@ -62,21 +74,16 @@ struct topo_ze_port_info {
 };
 
 using ze_rank_info_vec_t = typename std::vector<topo_ze_rank_info>;
+std::string to_string(const ze_rank_info_vec_t& ze_rank_info_vec,
+                      const host_info_vec_t& host_info_vec);
+
 using p2p_matrix_t = typename std::vector<std::vector<bool>>;
 using fabric_ports_t = typename std::vector<std::vector<topo_ze_port_info>>;
+using plane_t = typename std::set<int>;
 
 std::string to_string(const p2p_matrix_t& p2p_matrix);
 
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
-
-using host_info_vec_t = typename std::vector<topo_host_info>;
-using rank_info_vec_t = typename std::vector<topo_rank_info>;
-
-// each element in map = domain = domain_idx + vector of subdomains
-// subdomain = vector of local process indexes
-using domains_t = typename std::map<int, std::vector<std::vector<int>>>;
-
-std::string to_string(const domains_t& domains);
 
 class topo_manager {
 public:
@@ -149,10 +156,12 @@ private:
 
     void fill_ze_inter_colors();
     void fill_ze_inter_colors(const rank_info_vec_t& local_info_vec);
-    void fill_ze_inter_colors(const std::vector<std::set<int>>& planes);
+    void fill_ze_inter_colors(const std::vector<plane_t>& planes);
 
     bool check_p2p_access() const;
     fabric_ports_t get_fabric_ports();
+
+    static void check_planes(const std::vector<plane_t>& planes);
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
     rank_info_vec_t get_filtered_rank_info_vec(int filter_host_idx) const;

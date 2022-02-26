@@ -154,3 +154,18 @@ make_common_actions() {
 
     cd ${work_dir}
 }
+
+create_ze_affinity_env() {
+    device_list=$1
+
+    result_env=""
+    counter=0
+
+    for device in ${device_list}
+    do
+        result_env+="env ZE_AFFINITY_MASK=${device}:${counter};"
+        counter=$((counter + 1))
+    done
+
+    echo "I_MPI_GTOOL=\"$result_env"\"
+}

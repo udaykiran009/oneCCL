@@ -19,7 +19,88 @@ topo_host_info::topo_host_info(int idx, const std::string& name, const std::set<
           name(name),
           ranks(ranks) {}
 
+std::string to_string(const rank_info_vec_t& rank_info_vec, const host_info_vec_t& host_info_vec) {
+    CCL_THROW_IF_NOT(!rank_info_vec.empty());
+    CCL_THROW_IF_NOT(!host_info_vec.empty());
+    std::stringstream ss;
+    ss << "\n{\n"
+       << "  comm_size: " << rank_info_vec.size() << "\n";
+
+    for (const auto& host_info : host_info_vec) {
+        ss << "    host: { idx: " << host_info.idx << ", name: " << host_info.name << " }\n";
+        for (auto rank : host_info.ranks) {
+            const auto& rank_info = rank_info_vec[rank];
+            ss << "      rank: { idx: " << rank << ", local_proc_idx: " << rank_info.local_proc_idx
+               << ", uuid: " << rank_info.uuid << " }\n";
+        }
+    }
+    ss << "}";
+    return ss.str();
+}
+
+std::string to_string(const domains_t& domains) {
+    std::stringstream ss;
+
+    ss << "\n{\n";
+
+    for (const auto& domain : domains) {
+        auto& subdomains = domain.second;
+        for (size_t subdomain_idx = 0; subdomain_idx < subdomains.size(); subdomain_idx++) {
+            auto& subdomain = subdomains[subdomain_idx];
+            for (size_t proc_idx = 0; proc_idx < subdomain.size(); proc_idx++) {
+                if (subdomain_idx == 0 && proc_idx == 0) {
+                    if (domain.first == topo_manager::card_domain_idx)
+                        ss << "  card:  ";
+                    else if (domain.first == topo_manager::plane_domain_idx)
+                        ss << "  plane: ";
+                }
+
+                if (proc_idx == 0) {
+                    ss << "{ ";
+                }
+
+                ss << subdomain[proc_idx] << " ";
+
+                if (proc_idx == subdomain.size() - 1) {
+                    ss << "} ";
+                }
+            }
+        }
+        ss << "\n";
+    }
+
+    ss << "}\n";
+
+    return ss.str();
+}
+
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+std::string to_string(const ze_rank_info_vec_t& ze_rank_info_vec,
+                      const host_info_vec_t& host_info_vec) {
+    CCL_THROW_IF_NOT(!ze_rank_info_vec.empty());
+    CCL_THROW_IF_NOT(!host_info_vec.empty());
+    std::stringstream ss;
+    ss << "\n{\n"
+       << "  comm_size: " << ze_rank_info_vec.size() << "\n";
+
+    for (const auto& host_info : host_info_vec) {
+        ss << "    host: { idx: " << host_info.idx << ", name: " << host_info.name << " }\n";
+        for (auto rank : host_info.ranks) {
+            const auto& rank_info = ze_rank_info_vec[rank];
+            ss << "      rank: { idx: " << rank
+               << ", device_uuid: " << ccl::ze::to_string(rank_info.device_uuid)
+               << ", subdev_count: " << rank_info.subdev_count << ", subdev_id: "
+               << ((rank_info.dev_prop_flags & ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE)
+                       ? std::to_string(rank_info.subdev_id)
+                       : "na")
+               << " }\n";
+        }
+    }
+
+    ss << "}";
+    return ss.str();
+}
+
 std::string to_string(const p2p_matrix_t& matrix) {
     CCL_THROW_IF_NOT(!matrix.empty());
 
@@ -62,42 +143,6 @@ std::string to_string(const p2p_matrix_t& matrix) {
     return ss.str();
 }
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
-
-std::string to_string(const domains_t& domains) {
-    std::stringstream ss;
-
-    ss << "\n{\n";
-
-    for (const auto& domain : domains) {
-        auto& subdomains = domain.second;
-        for (size_t subdomain_idx = 0; subdomain_idx < subdomains.size(); subdomain_idx++) {
-            auto& subdomain = subdomains[subdomain_idx];
-            for (size_t proc_idx = 0; proc_idx < subdomain.size(); proc_idx++) {
-                if (subdomain_idx == 0 && proc_idx == 0) {
-                    if (domain.first == topo_manager::card_domain_idx)
-                        ss << "  card:  ";
-                    else if (domain.first == topo_manager::plane_domain_idx)
-                        ss << "  plane: ";
-                }
-
-                if (proc_idx == 0) {
-                    ss << "{ ";
-                }
-
-                ss << subdomain[proc_idx] << " ";
-
-                if (proc_idx == subdomain.size() - 1) {
-                    ss << "} ";
-                }
-            }
-        }
-        ss << "\n";
-    }
-
-    ss << "}\n";
-
-    return ss.str();
-}
 
 constexpr int topo_manager::invalid_color;
 constexpr int topo_manager::max_domain_count;
@@ -162,20 +207,23 @@ std::vector<ze_device_handle_t> topo_manager::get_filtered_devices(
 
     const auto& host_rank_info_vec = get_filtered_rank_info_vec(host_idx);
 
-    // get comm_device_uuids - uuids from ranks on this host
+    // get comm_dev_uuids - uuids from ranks on this host
     const auto& comm_dev_uuids = copy_dev_uuids(host_rank_info_vec);
 
-    // check if comm_device_uuids are in global dev uuids
-    CCL_THROW_IF_NOT(is_sub_vector(copy_dev_uuids(rank_info_vec), comm_dev_uuids),
-                     "comm_dev_uuids should be sub vector of global device uuids");
+    // check if host-local comm device uuids are in global dev uuids
+    const auto& global_comm_dev_uuids = copy_dev_uuids(rank_info_vec);
+    CCL_THROW_IF_NOT(is_sub_vector(global_comm_dev_uuids, comm_dev_uuids),
+                     "comm_dev_uuids should be sub vector of global_comm_dev_uuids",
+                     ", comm_dev_uuids size ",
+                     comm_dev_uuids.size(),
+                     ", global_comm_dev_uuids size ",
+                     global_comm_dev_uuids.size());
 
-    // check if comm_device_uuids are in node_dev_uuids
+    // get node_dev_uuids - uuids for all devices visible on this host
     std::vector<ze_device_uuid_t> node_dev_uuids;
     for (const auto& node_device : node_devices) {
         node_dev_uuids.push_back(node_device.uuid);
     }
-    CCL_THROW_IF_NOT(is_sub_vector(node_dev_uuids, comm_dev_uuids),
-                     "comm_dev_uuids should be sub vector of node_dev_uuids");
 
     // get device handles for comm uuids
     std::vector<ze_device_handle_t> result;
@@ -188,10 +236,38 @@ std::vector<ze_device_handle_t> topo_manager::get_filtered_devices(
         }
     }
 
-    CCL_THROW_IF_NOT(result.size() == host_rank_info_vec.size(),
+    // optional checks
+    // they may fail in case of narrow affinity mask
+    // TODO: make these checks mandatory
+
+    char* affinity_mask_env = getenv("ZE_AFFINITY_MASK");
+
+    if (!is_sub_vector(node_dev_uuids, comm_dev_uuids)) {
+        LOG_WARN("comm_dev_uuids is not sub-vector of node_dev_uuids",
+                 ", comm_dev_uuids size ",
+                 comm_dev_uuids.size(),
+                 ", node_dev_uuids size ",
+                 node_dev_uuids.size(),
+                 ", this may happen due to narrow device affinity mask (",
+                 ((affinity_mask_env) ? affinity_mask_env : "default"),
+                 ")");
+    }
+
+    if (result.size() != host_rank_info_vec.size()) {
+        LOG_WARN("number of result device uuids does not match number of ranks per host",
+                 ", result size ",
+                 result.size(),
+                 ", host_rank_info_vec size ",
+                 host_rank_info_vec.size(),
+                 ", this may happen due to narrow device affinity mask (",
+                 ((affinity_mask_env) ? affinity_mask_env : "default"),
+                 ")");
+    }
+
+    CCL_THROW_IF_NOT(result.size() <= host_rank_info_vec.size(),
                      "unexpected number of filtered devices: ",
                      result.size(),
-                     ", expected: ",
+                     ", expected not larger than: ",
                      host_rank_info_vec.size());
     return result;
 }
@@ -566,25 +642,41 @@ void topo_manager::fill_ze_inter_colors() {
     CCL_THROW_IF_NOT(!host_info_vec.empty());
 
     for (const auto& host_info : host_info_vec) {
-        std::vector<std::set<int>> planes;
+        std::vector<plane_t> planes;
+
+        // service container to track what cards were already added into plane
+        // subsequent ranks with same address are skipped and added into separate plane
+        // index - plane index
+        // value - set of unique pci addresses within this plane
+        std::vector<std::set<zes_pci_address_t, ccl::ze::pci_address_comparator>> plane_pci_addrs;
+
+        // service container with set of ranks already used in one of planes
+        // these ranks are not used for creation of subsequent planes
+        std::set<int> used_ranks;
 
         for (auto rank : host_info.ranks) {
             int cur_plane_idx = topo_manager::invalid_plane_idx;
             for (size_t plane_idx = 0; plane_idx < planes.size(); plane_idx++) {
                 if (planes[plane_idx].find(rank) != planes[plane_idx].end()) {
                     cur_plane_idx = plane_idx;
+                    LOG_DEBUG("found rank ", rank, " in existing plane ", cur_plane_idx);
                     break;
                 }
             }
 
             if (cur_plane_idx == topo_manager::invalid_plane_idx) {
                 planes.push_back({ rank });
+                plane_pci_addrs.push_back({ ze_rank_info_vec[rank].pci_addr });
+                used_ranks.insert(rank);
                 cur_plane_idx = planes.size() - 1;
+                LOG_DEBUG("inserted rank ", rank, " into new plane ", cur_plane_idx);
             }
 
             if (fabric_ports.empty()) {
                 continue;
             }
+
+            auto& pci_addrs = plane_pci_addrs[cur_plane_idx];
 
             for (const auto& rank_port : fabric_ports[rank]) {
                 for (auto peer_rank : host_info.ranks) {
@@ -593,8 +685,18 @@ void topo_manager::fill_ze_inter_colors() {
                         continue;
                     }
                     for (const auto& peer_port : fabric_ports[peer_rank]) {
-                        if (ze::is_same_fabric_port(peer_port.local, rank_port.remote)) {
+                        const auto& peer_pci_addr = ze_rank_info_vec[peer_rank].pci_addr;
+                        bool is_unique_pci_addr =
+                            (pci_addrs.find(peer_pci_addr) == pci_addrs.end());
+                        bool is_same_fabric_port =
+                            ze::is_same_fabric_port(peer_port.local, rank_port.remote);
+                        bool not_used_rank = (used_ranks.find(peer_rank) == used_ranks.end());
+                        if (is_unique_pci_addr && is_same_fabric_port && not_used_rank) {
                             planes[cur_plane_idx].insert(peer_rank);
+                            pci_addrs.insert(peer_pci_addr);
+                            used_ranks.insert(peer_rank);
+                            LOG_DEBUG(
+                                "inserted peer_rank ", peer_rank, " into plane ", cur_plane_idx);
                             break;
                         }
                     }
@@ -659,7 +761,9 @@ void topo_manager::fill_ze_inter_colors(const rank_info_vec_t& local_info_vec) {
     }
 }
 
-void topo_manager::fill_ze_inter_colors(const std::vector<std::set<int>>& planes) {
+void topo_manager::fill_ze_inter_colors(const std::vector<plane_t>& planes) {
+    check_planes(planes);
+
     for (int rank = 0; rank < comm->get_size(); rank++) {
         for (int plane_idx = 0; plane_idx < (int)planes.size(); plane_idx++) {
             if (planes[plane_idx].find(rank) != planes[plane_idx].end()) {
@@ -690,6 +794,7 @@ fabric_ports_t topo_manager::get_fabric_ports() {
     int comm_rank = comm->get_rank();
     int comm_size = comm->get_size();
 
+    CCL_THROW_IF_NOT(!rank_info_vec.empty());
     CCL_THROW_IF_NOT(fabric_ports.empty());
     CCL_THROW_IF_NOT(host_idx != topo_manager::invalid_host_idx);
     CCL_THROW_IF_NOT(!host_info_vec.empty());
@@ -707,8 +812,13 @@ fabric_ports_t topo_manager::get_fabric_ports() {
     std::vector<zes_fabric_port_handle_t> ports(port_count);
     ZE_CALL(zesDeviceEnumFabricPorts, ((zes_device_handle_t)ze_device, &port_count, ports.data()));
 
-    // TODO: to be deleted, will rely on real port count
-    char* all_ports_env = getenv("CCL_TOPO_ALL_PORTS");
+    bool use_all_ports =
+        (ccl::ze::get_device_family(ze_device) == ccl::device_family::family2) ? true : false;
+    char* use_all_ports_env = getenv("CCL_TOPO_ALL_PORTS");
+    if (use_all_ports_env) {
+        use_all_ports = atoi(use_all_ports_env);
+    }
+    LOG_DEBUG("use all fabric ports: ", use_all_ports);
 
     std::vector<topo_ze_port_info> my_ports;
     for (const auto& port : ports) {
@@ -736,8 +846,7 @@ fabric_ports_t topo_manager::get_fabric_ports() {
             state.status == ZES_FABRIC_PORT_STATUS_DEGRADED ||
             state.status == ZES_FABRIC_PORT_STATUS_FAILED) {
             // port is connected
-            if ((all_ports_env && atoi(all_ports_env)) ||
-                (prop.onSubdevice && prop.subdeviceId == dev_props.subdeviceId)) {
+            if (use_all_ports || (prop.onSubdevice && prop.subdeviceId == dev_props.subdeviceId)) {
                 my_ports.push_back({ host_idx, prop.portId, state.remotePortId, state.status });
             }
 
@@ -747,6 +856,8 @@ fabric_ports_t topo_manager::get_fabric_ports() {
                          host_info_vec[host_idx].name,
                          ", rank: ",
                          comm_rank,
+                         ", local_port_id: ",
+                         ccl::ze::to_string(prop.portId),
                          ", port issue: ",
                          ccl::ze::to_string(state));
             }
@@ -787,20 +898,21 @@ fabric_ports_t topo_manager::get_fabric_ports() {
 
     // print all ports before filtering
     if (comm_rank == 0) {
+        LOG_DEBUG("all fabric ports");
         for (int rank = 0; rank < comm_size; rank++) {
             if (all_port_counts[rank]) {
-                LOG_INFO("--- rank ", rank, ", host_idx ", host_idx, " ---");
+                LOG_DEBUG("--- rank ", rank, ", host_idx ", rank_info_vec[rank].host_idx, " ---");
             }
 
             for (int port_idx = port_count_offsets[rank];
                  port_idx < port_count_offsets[rank] + all_port_counts[rank];
                  port_idx++) {
-                LOG_INFO("port: status: ",
-                         ccl::ze::to_string(all_ports[port_idx].local_status),
-                         ", local_id: ",
-                         ccl::ze::to_string(all_ports[port_idx].local),
-                         ", remote_id: ",
-                         ccl::ze::to_string(all_ports[port_idx].remote));
+                LOG_DEBUG("port: status: ",
+                          ccl::ze::to_string(all_ports[port_idx].local_status),
+                          ", local_id: ",
+                          ccl::ze::to_string(all_ports[port_idx].local),
+                          ", remote_id: ",
+                          ccl::ze::to_string(all_ports[port_idx].remote));
             }
         }
     }
@@ -825,12 +937,15 @@ fabric_ports_t topo_manager::get_fabric_ports() {
                     comm_ports[rank].push_back(port);
                 }
                 else {
-                    LOG_DEBUG("host_idx ",
-                              h_idx,
-                              ": local port ",
-                              ccl::ze::to_string(port.local),
-                              " is connected with unknown remote port ",
-                              ccl::ze::to_string(port.remote));
+                    if (host_idx == 0) {
+                        LOG_DEBUG("host_idx ",
+                                  h_idx,
+                                  ": local port ",
+                                  ccl::ze::to_string(port.local),
+                                  " is connected with unknown remote port ",
+                                  ccl::ze::to_string(port.remote),
+                                  ", skipping");
+                    }
                 }
             }
         }
@@ -846,43 +961,88 @@ fabric_ports_t topo_manager::get_fabric_ports() {
                      ", expected not greater than: ",
                      all_ports.size());
 
-    // report about failed ports and remove them
-    size_t failed_port_count = 0;
-    for (int rank = 0; rank < comm_size; rank++) {
-        auto& rank_ports = comm_ports[rank];
-        for (const auto& port : rank_ports) {
-            if (port.local_status == ZES_FABRIC_PORT_STATUS_FAILED) {
-                LOG_DEBUG("rank: ",
-                          rank,
-                          ", port ",
-                          ccl::ze::to_string(port.local),
-                          " is in failed status, skipping");
-                failed_port_count++;
+    if (!ccl::global_data::env().disable_ze_port_check) {
+        // report about failed ports and remove them
+
+        size_t failed_port_count = 0;
+        for (int rank = 0; rank < comm_size; rank++) {
+            auto& rank_ports = comm_ports[rank];
+            for (const auto& port : rank_ports) {
+                if (port.local_status == ZES_FABRIC_PORT_STATUS_FAILED) {
+                    LOG_DEBUG("rank: ",
+                              rank,
+                              ", port ",
+                              ccl::ze::to_string(port.local),
+                              " is in failed status, skipping");
+                    failed_port_count++;
+                }
             }
+
+            rank_ports.erase(std::remove_if(rank_ports.begin(),
+                                            rank_ports.end(),
+                                            [](topo_ze_port_info p) {
+                                                return p.local_status ==
+                                                       ZES_FABRIC_PORT_STATUS_FAILED;
+                                            }),
+                             rank_ports.end());
         }
 
-        rank_ports.erase(std::remove_if(rank_ports.begin(),
-                                        rank_ports.end(),
-                                        [](topo_ze_port_info p) {
-                                            return p.local_status == ZES_FABRIC_PORT_STATUS_FAILED;
-                                        }),
-                         rank_ports.end());
+        if (failed_port_count) {
+            port_status = port_health_status::fail;
+            LOG_INFO("removed ", failed_port_count, " failed ports from topology");
+        }
+
+        // make sure that no more failed ports in final container
+        for (const auto& rank_ports : comm_ports) {
+            for (const auto& port : rank_ports) {
+                CCL_THROW_IF_NOT(port.local_status != ZES_FABRIC_PORT_STATUS_FAILED,
+                                 "unexpected port status");
+            }
+        }
     }
 
-    if (failed_port_count) {
-        port_status = port_health_status::fail;
-        LOG_INFO("removed ", failed_port_count, " failed ports from topology");
-    }
-
-    // make sure that no more failed ports in final container
+    // print filtered ports
+    total_comm_ports_count = 0;
     for (const auto& rank_ports : comm_ports) {
-        for (const auto& port : rank_ports) {
-            CCL_THROW_IF_NOT(port.local_status != ZES_FABRIC_PORT_STATUS_FAILED,
-                             "unexpected port status");
+        total_comm_ports_count += rank_ports.size();
+    }
+
+    if ((comm_rank == 0) && total_comm_ports_count) {
+        LOG_DEBUG("filtered fabric ports");
+        for (int rank = 0; rank < comm_size; rank++) {
+            const auto& rank_ports = comm_ports[rank];
+
+            if (!rank_ports.empty()) {
+                LOG_DEBUG("--- rank ", rank, ", host_idx ", rank_info_vec[rank].host_idx, " ---");
+            }
+
+            for (const auto& port : rank_ports) {
+                LOG_DEBUG("port: status: ",
+                          ccl::ze::to_string(port.local_status),
+                          ", local_id: ",
+                          ccl::ze::to_string(port.local),
+                          ", remote_id: ",
+                          ccl::ze::to_string(port.remote));
+            }
         }
     }
 
     return comm_ports;
+}
+
+void topo_manager::check_planes(const std::vector<plane_t>& planes) {
+    plane_t combined_plane;
+    size_t expected_size = 0;
+    for (const auto& plane : planes) {
+        combined_plane.insert(plane.begin(), plane.end());
+        expected_size += plane.size();
+    }
+    CCL_THROW_IF_NOT(combined_plane.size() == expected_size,
+                     "unexpected distribution of ranks between planes",
+                     ", combined_plane size ",
+                     combined_plane.size(),
+                     ", expected_size ",
+                     expected_size);
 }
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
@@ -1104,17 +1264,9 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
     is_single_card = (is_single_node && (comm->get_size() <= topo_manager::max_ranks_per_card) &&
                       no_invalid_colors && all_same_colors);
 
-    LOG_INFO("rank: ",
-             comm_rank,
-             ", size: ",
-             comm_size,
-             ", uuid: ",
-             rank_info.uuid,
-             ", host: { name: ",
-             host_info_vec[host_idx].name,
-             ", idx: ",
-             host_idx,
-             " }");
+    if (comm_rank == 0) {
+        LOG_INFO("rank_info_vec: ", ccl::to_string(rank_info_vec, host_info_vec));
+    }
 }
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
@@ -1159,6 +1311,10 @@ void topo_manager::ze_base_init(std::shared_ptr<ccl::device> device,
         ze_rank_info.pci_addr = pci_props.address;
     }
 
+    ZE_CALL(zeDeviceGetSubDevices, (ze_device, &ze_rank_info.subdev_count, nullptr));
+    ze_rank_info.subdev_id = dev_props.subdeviceId;
+    ze_rank_info.dev_prop_flags = dev_props.flags;
+
     allgather(&ze_rank_info, ze_rank_info_vec.data(), sizeof(ze_rank_info));
 
     // build fabric port info
@@ -1172,26 +1328,9 @@ void topo_manager::ze_base_init(std::shared_ptr<ccl::device> device,
               "\nnumber of node devices: ",
               node_devices.size());
 
-    uint32_t subdev_count{};
-    ZE_CALL(zeDeviceGetSubDevices, (ze_device, &subdev_count, nullptr));
-
-    LOG_INFO("rank: ",
-             comm_rank,
-             ", size: ",
-             comm_size,
-             ", device uuid: ",
-             ccl::ze::to_string(ze_rank_info.device_uuid),
-             ", subdevices: ",
-             subdev_count,
-             ", subdevice_id: ",
-             ((dev_props.flags & ZE_DEVICE_PROPERTY_FLAG_SUBDEVICE)
-                  ? std::to_string(dev_props.subdeviceId)
-                  : "na"),
-             ", host: { name: ",
-             host_info_vec[host_idx].name,
-             ", idx: ",
-             host_idx,
-             " }");
+    if (comm_rank == 0) {
+        LOG_INFO("ze_rank_info_vec: ", ccl::to_string(ze_rank_info_vec, host_info_vec));
+    }
 }
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 

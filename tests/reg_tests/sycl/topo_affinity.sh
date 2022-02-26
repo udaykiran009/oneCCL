@@ -19,18 +19,6 @@ topo_colors="ze fixed env"
 random_device_list="3.0 1.0 3.1 4.1 0.0 4.0 2.1 2.0 1.1 5.1 0.1 5.0"
 bench_ops="-w 0 -i 1 -c all -l allgatherv,allreduce,reduce -b sycl -y 1024"
 
-create_affinity_env() {
-    device_list=$1
-
-    result_env=""
-    counter=0
-    for device in ${device_list}; do
-        result_env+="env ZE_AFFINITY_MASK=${device}:${counter};"
-        counter=$((counter + 1))
-    done
-    echo "I_MPI_GTOOL=\"$result_env"\"
-}
-
 check_string() {
     input_str=$1
     if [ -z "$input_str" ]; then
@@ -123,12 +111,12 @@ run_case() {
     #run_case 6 6 "0 1 2 3 4 5" "0 0 0 0 0 0" "" "-g 1"
 
     #[PVC] case 4: 1 node, 12 ranks, affinity mask is randomly generated
-    #affinity_env=$(create_affinity_env "${random_device_list}")
+    #affinity_env=$(create_ze_affinity_env "${random_device_list}")
     #run_case 12 12 "" "" "${affinity_env}"
 
     # MLSL-1274
     #[PVC] case 5: 2 nodes, 24 ranks, affinity mask is randomly generated
-    #affinity_env=$(create_affinity_env "${random_device_list} ${random_device_list}")
+    #affinity_env=$(create_ze_affinity_env "${random_device_list} ${random_device_list}")
     #run_case 24 12 "" "" "${affinity_env}"
 
     # MLSL-1274
@@ -137,7 +125,7 @@ run_case() {
 
     # MLSL-1274
     #[PVC] case 7: 3 ranks: 2 ranks on first card, 1 rank on second card
-    #affinity_env=$(create_affinity_env "1.0 1.1 2.0")
+    #affinity_env=$(create_ze_affinity_env "1.0 1.1 2.0")
     #run_case 3 3 "" "" ${affinity_env}"
 #fi
 
