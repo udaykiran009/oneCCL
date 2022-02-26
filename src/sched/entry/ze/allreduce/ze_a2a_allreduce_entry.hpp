@@ -34,7 +34,8 @@ public:
                                     ccl_comm* comm,
                                     std::vector<ze_event_handle_t> wait_events = {},
                                     size_t send_buf_idx = 0,
-                                    size_t recv_buf_idx = 1);
+                                    size_t recv_buf_idx = 1,
+                                    size_t peer_buf_offset = 0);
 
     void init_ze_hook() override;
 
@@ -72,6 +73,7 @@ private:
 
     const size_t send_buf_idx;
     const size_t recv_buf_idx;
+    const size_t peer_buf_offset;
 
     const int peer_count;
 

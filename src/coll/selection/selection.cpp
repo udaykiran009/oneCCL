@@ -253,16 +253,6 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
     RETURN_FALSE_IF(!param.comm->get_even_comm().get(), "sub-communicators are not available");
 
 #ifdef CCL_ENABLE_SYCL
-    RETURN_FALSE_IF(ccl::global_data::env().enable_ze_bidir_algo &&
-                        (checkers::is_family1_card(param) || !checkers::is_single_card(param)) &&
-                        param.ctype == ccl_coll_allreduce,
-                    "bidir for allreduce is not supported for family1 card or for multi-card");
-
-    RETURN_FALSE_IF(
-        (!ccl::global_data::env().enable_ze_bidir_algo || checkers::is_family1_card(param)) &&
-            (param.ctype == ccl_coll_alltoall || param.ctype == ccl_coll_alltoallv),
-        "alltoall(v) is supported with bidir only or not on family1 card");
-
     RETURN_FALSE_IF(!param.comm->get_topo_manager().has_p2p_access(),
                     "no p2p access between devices");
 
@@ -272,6 +262,10 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
     RETURN_FALSE_IF(!param.comm->get_topo_manager().has_same_domains(),
                     "processes are not properly distributed among domains");
 
+    RETURN_FALSE_IF(!ccl::global_data::env().enable_ze_bidir_algo &&
+                        (param.ctype == ccl_coll_alltoall || param.ctype == ccl_coll_alltoallv),
+                    "alltoall(v) is supported with bidir only");
+
     if (!ccl::global_data::env().disable_ze_port_check) {
         RETURN_FALSE_IF(
             !checkers::is_single_card(param) && param.comm->get_topo_manager().has_failed_ports(),
@@ -280,9 +274,15 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
 
     if (!ccl::global_data::env().disable_ze_family_check) {
         RETURN_FALSE_IF(checkers::is_family1_card(param) && !checkers::is_single_card(param),
-                        "family1 multi-card for ",
+                        "multi-card ",
                         ccl_coll_type_to_str(param.ctype),
-                        " is not supported");
+                        " is not supported for family1");
+
+        RETURN_FALSE_IF(
+            checkers::is_family1_card(param) && ccl::global_data::env().enable_ze_bidir_algo,
+            "bidir ",
+            ccl_coll_type_to_str(param.ctype),
+            " is not supported for family1");
     }
 #endif // CCL_ENABLE_SYCL
 

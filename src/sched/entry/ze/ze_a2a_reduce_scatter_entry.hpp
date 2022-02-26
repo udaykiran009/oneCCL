@@ -31,7 +31,8 @@ public:
                                          ccl::reduction op,
                                          ccl_comm* comm,
                                          std::vector<ze_event_handle_t> wait_events = {},
-                                         size_t peer_buf_idx = 0);
+                                         size_t peer_buf_idx = 0,
+                                         size_t peer_buf_offset = 0);
 
     void init_ze_hook() override;
 
@@ -44,7 +45,7 @@ public:
                           int peer_count,
                           int comm_rank,
                           size_t block_count,
-                          size_t offset_bytes,
+                          size_t rank_buf_offset,
                           std::vector<ze_event_handle_t>& copy_events,
                           std::vector<ze_kernel>& kernels,
                           std::vector<ze_event_handle_t>& kernel_events,
@@ -54,7 +55,8 @@ public:
                           ze_device_handle_t device,
                           ze_context_handle_t context,
                           ccl::reduction op,
-                          size_t worker_idx);
+                          size_t worker_idx,
+                          size_t peer_buf_offset);
 
 private:
     static constexpr size_t event_group_count{ 3 }; // copy + kernel + copy
@@ -65,6 +67,7 @@ private:
     const ccl::reduction op;
     const std::vector<size_t> recv_counts;
     const size_t peer_buf_idx;
+    const size_t peer_buf_offset;
     const int peer_count;
 
     std::vector<ze_event_handle_t> pre_copy_events;
@@ -74,7 +77,7 @@ private:
     std::vector<ze_kernel> kernels;
     std::vector<ze_event_handle_t> kernel_events;
 
-    static void kernel_init(size_t offset_bytes,
+    static void kernel_init(size_t rank_buf_offset,
                             size_t block_count,
                             void* send_buf,
                             void* base_ptr,

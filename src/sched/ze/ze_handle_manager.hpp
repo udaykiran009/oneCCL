@@ -39,6 +39,7 @@ struct ipc_handle_desc {
 
 class ipc_handle_manager {
 public:
+    // matrix with ipc handles, row - rank, column - buf_idx
     using mem_handle_map_t = typename std::vector<std::vector<ipc_handle_desc>>;
 
     ipc_handle_manager() = default;

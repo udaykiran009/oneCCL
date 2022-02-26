@@ -34,17 +34,20 @@ void ze_a2a_allgatherv_entry::fill_list(const ze_base_entry* entry,
                                         const std::vector<ccl_buffer>& peer_recv_bufs,
                                         int peer_count,
                                         size_t copy_bytes,
-                                        size_t offset_bytes,
+                                        const ccl_datatype& dtype,
+                                        size_t rank_buf_offset,
                                         bool is_inplace,
                                         std::vector<ze_event_handle_t>& copy_events,
-                                        ze_event_handle_t wait_event) {
+                                        ze_event_handle_t wait_event,
+                                        size_t peer_buf_offset) {
     /* copy send_buf to peer buffers */
     for (int i = 0; i < peer_count; ++i) {
         void* src = send_buf;
         if (is_inplace) {
-            src = static_cast<char*>(recv_buf) + offset_bytes;
+            src = static_cast<char*>(recv_buf) + rank_buf_offset * dtype.size();
         }
-        void* dst = static_cast<char*>(peer_recv_bufs[i].get_ptr()) + offset_bytes;
+        void* dst = static_cast<char*>(peer_recv_bufs[i].get_ptr()) +
+                    (rank_buf_offset + peer_buf_offset) * dtype.size();
         auto list = entry->get_copy_list(i, true);
         ZE_CALL(zeCommandListAppendMemoryCopy,
                 (list, dst, src, copy_bytes, copy_events.at(i), (wait_event) ? 1 : 0, &wait_event));
@@ -53,7 +56,7 @@ void ze_a2a_allgatherv_entry::fill_list(const ze_base_entry* entry,
     if (!is_inplace) {
         /* copy send_buf to my buffer */
         void* src = send_buf;
-        void* dst = static_cast<char*>(recv_buf) + offset_bytes;
+        void* dst = static_cast<char*>(recv_buf) + rank_buf_offset * dtype.size();
         auto list = entry->get_copy_list();
         ZE_CALL(
             zeCommandListAppendMemoryCopy,
@@ -70,7 +73,7 @@ void ze_a2a_allgatherv_entry::init_ze_hook() {
         ccl_buffer buf{};
         sched->get_memory().handle_manager.get(peer_rank, peer_buf_idx, buf, comm);
         CCL_THROW_IF_NOT(buf.get_ptr(), "null IPC buffer is received");
-        peer_recv_bufs[i] = buf + peer_buf_offset * dtype.size();
+        peer_recv_bufs[i] = buf;
     }
 
     bool is_inplace{};
@@ -78,8 +81,9 @@ void ze_a2a_allgatherv_entry::init_ze_hook() {
         is_inplace = true;
     }
 
-    size_t offset_count = std::accumulate(recv_counts.begin(), recv_counts.begin() + comm_rank, 0);
-    size_t offset_bytes = offset_count * dtype.size();
+    size_t rank_buf_offset =
+        std::accumulate(recv_counts.begin(), recv_counts.begin() + comm_rank, 0);
+
     size_t block_bytes =
         (!is_inplace) ? (send_count * dtype.size()) : recv_counts[comm_rank] * dtype.size();
     LOG_DEBUG("rank: ", comm_rank, ", block_bytes: ", block_bytes);
@@ -96,9 +100,12 @@ void ze_a2a_allgatherv_entry::init_ze_hook() {
               peer_recv_bufs,
               peer_count,
               block_bytes,
-              offset_bytes,
+              dtype,
+              rank_buf_offset,
               is_inplace,
-              copy_events);
+              copy_events,
+              nullptr,
+              peer_buf_offset);
 }
 
 void ze_a2a_allgatherv_entry::update() {

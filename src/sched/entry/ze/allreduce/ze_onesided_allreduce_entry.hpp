@@ -33,7 +33,7 @@ public:
                                          ccl::reduction op,
                                          ccl_comm* comm,
                                          std::vector<ze_event_handle_t> wait_events = {},
-                                         const size_t buf_offset_cnt = 0);
+                                         size_t peer_buf_offset = 0);
 
     void init_ze_hook() override;
     void finalize_ze_hook() override;

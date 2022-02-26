@@ -17,7 +17,7 @@ ze_onesided_allreduce_entry::ze_onesided_allreduce_entry(ccl_sched* sched,
                                                          reduction op,
                                                          ccl_comm* comm,
                                                          std::vector<ze_event_handle_t> wait_events,
-                                                         const size_t buf_offset_cnt)
+                                                         size_t peer_buf_offset)
         : ze_base_entry(sched, comm, 3 /* request additional events */, wait_events),
           send_buf(send_buf),
           recv_buf(recv_buf),
@@ -25,7 +25,7 @@ ze_onesided_allreduce_entry::ze_onesided_allreduce_entry(ccl_sched* sched,
           dtype(dtype),
           op(op),
           buf_size_bytes(dtype.size() * cnt),
-          buf_offset_bytes(dtype.size() * buf_offset_cnt) {}
+          buf_offset_bytes(dtype.size() * peer_buf_offset) {}
 
 void ze_onesided_allreduce_entry::init_ze_hook() {
     /* create kernels */
@@ -33,8 +33,8 @@ void ze_onesided_allreduce_entry::init_ze_hook() {
     ccl_buffer right_recv_buf;
     int peer_rank = (comm_rank + 1) % comm_size;
 
-    send_buf_ptr = static_cast<char*>(send_buf.get_ptr()) + buf_offset_bytes;
-    recv_buf_ptr = static_cast<char*>(recv_buf.get_ptr()) + buf_offset_bytes;
+    send_buf_ptr = send_buf.get_ptr();
+    recv_buf_ptr = recv_buf.get_ptr();
     if (send_buf_ptr == recv_buf_ptr) {
         sched->get_memory().handle_manager.get(peer_rank, 1, right_send_buf, comm);
         sched->get_memory().handle_manager.get(peer_rank, 1, right_recv_buf, comm);

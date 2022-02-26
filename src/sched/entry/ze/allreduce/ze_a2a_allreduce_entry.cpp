@@ -21,7 +21,8 @@ ze_a2a_allreduce_entry::ze_a2a_allreduce_entry(ccl_sched* sched,
                                                ccl_comm* comm,
                                                std::vector<ze_event_handle_t> wait_events,
                                                size_t send_buf_idx,
-                                               size_t recv_buf_idx)
+                                               size_t recv_buf_idx,
+                                               size_t peer_buf_offset)
         : ze_base_entry(sched, comm, comm->size() * event_group_count, wait_events),
           send_buf(send_buf),
           recv_buf(recv_buf),
@@ -30,6 +31,7 @@ ze_a2a_allreduce_entry::ze_a2a_allreduce_entry(ccl_sched* sched,
           op(op),
           send_buf_idx(send_buf_idx),
           recv_buf_idx(recv_buf_idx),
+          peer_buf_offset(peer_buf_offset),
           peer_count(comm->size() - 1) {
     size_t segment_count = cnt / comm->size();
     bool count_check =
@@ -72,7 +74,7 @@ void ze_a2a_allreduce_entry::init_ze_hook() {
     void* tmp_buf = sched->alloc_buffer(alloc_param).get_ptr();
 
     LOG_DEBUG("rank ",
-              comm_size,
+              comm_rank,
               ", main_block_count: ",
               main_block_count,
               ", block_count: ",
@@ -83,7 +85,6 @@ void ze_a2a_allreduce_entry::init_ze_hook() {
               cnt);
 
     /* copy peer segments to temp buffer */
-    size_t main_block_bytes = main_block_count * dtype.size();
     size_t block_bytes = block_count * dtype.size();
 
     pre_copy_events.resize(peer_count);
@@ -97,7 +98,6 @@ void ze_a2a_allreduce_entry::init_ze_hook() {
     }
 
     barrier_event = ze_base_entry::create_event();
-
     ze_a2a_reduce_scatter_entry::fill_list(this,
                                            send_buf.get_ptr(),
                                            tmp_buf,
@@ -105,7 +105,7 @@ void ze_a2a_allreduce_entry::init_ze_hook() {
                                            peer_count,
                                            comm_rank,
                                            block_count,
-                                           comm_rank * main_block_bytes,
+                                           comm_rank * main_block_count,
                                            pre_copy_events,
                                            kernels,
                                            kernel_events,
@@ -115,13 +115,13 @@ void ze_a2a_allreduce_entry::init_ze_hook() {
                                            device,
                                            context,
                                            op,
-                                           worker_idx);
+                                           worker_idx,
+                                           peer_buf_offset);
 
     post_copy_events.resize(comm_size);
     for (auto& event : post_copy_events) {
         event = ze_base_entry::create_event();
     }
-
     ze_a2a_allgatherv_entry::fill_list(this,
                                        comm_rank,
                                        tmp_buf,
@@ -129,10 +129,12 @@ void ze_a2a_allreduce_entry::init_ze_hook() {
                                        peer_recv_bufs,
                                        peer_count,
                                        block_bytes,
-                                       comm_rank * main_block_bytes,
+                                       dtype,
+                                       comm_rank * main_block_count,
                                        false,
                                        post_copy_events,
-                                       kernel_events.back());
+                                       kernel_events.back(),
+                                       peer_buf_offset);
 }
 
 void ze_a2a_allreduce_entry::start() {

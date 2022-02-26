@@ -42,10 +42,12 @@ public:
                           const std::vector<ccl_buffer>& peer_recv_bufs,
                           int peer_count,
                           size_t copy_bytes,
-                          size_t offset_bytes,
+                          const ccl_datatype& dtype,
+                          size_t rank_buf_offset,
                           bool is_inplace,
                           std::vector<ze_event_handle_t>& copy_events,
-                          ze_event_handle_t wait_event = nullptr);
+                          ze_event_handle_t wait_event = nullptr,
+                          size_t peer_buf_offset = 0);
 
 protected:
     void dump_detail(std::stringstream& str) const override {
