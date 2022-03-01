@@ -3,10 +3,18 @@
 #include "common/request/request.hpp"
 
 #ifdef ENABLE_DEBUG
-void ccl_request::set_dump_callback(dump_func &&callback) {
+void ccl_request::set_dump_callback(dump_func&& callback) {
     dump_callback = std::move(callback);
 }
 #endif
+
+ccl_request::ccl_request(ccl_sched& sched) : sched(sched) {
+#ifdef ENABLE_DEBUG
+    set_dump_callback([&sched](std::ostream& out) {
+        sched.dump(out);
+    });
+#endif
+}
 
 ccl_request::~ccl_request() {
     auto counter = completion_counter.load(std::memory_order_acquire);

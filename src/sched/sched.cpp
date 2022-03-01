@@ -36,11 +36,6 @@ ccl_sched::ccl_sched(const ccl_sched_create_param& param, ccl_sched* master_sche
           restart_manager() {
     type = sched_type_t::extra;
     strict_order = ccl::global_data::env().enable_strict_order;
-#ifdef ENABLE_DEBUG
-    get_request()->set_dump_callback([this](std::ostream& out) {
-        dump(out);
-    });
-#endif
 }
 
 ccl_sched::ccl_sched(const ccl_sched_create_param& param, bool top_level_sched)
@@ -60,12 +55,6 @@ ccl_sched::ccl_sched(const ccl_sched_create_param& param, bool top_level_sched)
         ccl::global_data::get().ze_data->dynamic_event_pools.try_emplace(
             coll_param.stream->get_ze_context(), coll_param.stream);
     }
-#endif
-
-#ifdef ENABLE_DEBUG
-    get_request()->set_dump_callback([this](std::ostream& out) {
-        dump(out);
-    });
 #endif
 }
 

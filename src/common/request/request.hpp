@@ -14,11 +14,8 @@ class ccl_sched;
 class alignas(CACHELINE_SIZE) ccl_request {
 public:
     using dump_func = std::function<void(std::ostream&)>;
-#ifdef ENABLE_DEBUG
-    void set_dump_callback(dump_func&& callback);
-#endif
 
-    ccl_request(ccl_sched& sched) : sched(sched) {}
+    ccl_request(ccl_sched& sched);
 
     virtual ~ccl_request();
 
@@ -70,6 +67,10 @@ public:
     std::atomic_int completion_counter{ 0 };
 
 private:
+#ifdef ENABLE_DEBUG
+    void set_dump_callback(dump_func&& callback);
+#endif
+
 #ifdef CCL_ENABLE_SYCL
     // The actual event from submit_barrier. It's returned to the user via ccl::event.get_native()
     sycl::event native_event;
