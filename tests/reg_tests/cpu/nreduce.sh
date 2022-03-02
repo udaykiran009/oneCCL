@@ -16,7 +16,7 @@ proc_counts="2 8"
 inplace_modes="0 1"
 buffering_modes="0 1"
 segment_sizes="16384 262144"
-bench_options="-w 1 -i 4 -c all -b host -t 2000000 $(get_default_bench_dtype)"
+bench_options="-w 1 -i 4 -c all -b host -t 2097152 $(get_default_bench_dtype)"
 
 for proc_count in ${proc_counts}
 do

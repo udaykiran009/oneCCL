@@ -125,10 +125,6 @@ foreach(src ${sources})
     add_test (NAME ${executable} CONFIGURATIONS default COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/${executable} --gtest_output=xml:${CCL_INSTALL_TESTS}/${executable}_default_report.junit.xml)
 endforeach()
 
-foreach(algo direct; naive; flat; multi_bcast; topo)
-add_test (NAME allgatherv_${algo} CONFIGURATIONS allgatherv_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/allgatherv_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allgatherv_${algo}_report.junit.xml)
-endforeach()
-
 add_test (NAME allreduce_fusion CONFIGURATIONS allreduce_fusion COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_fusion_report.junit.xml)
 
 foreach(proc_map ${PROC_MAPS})
@@ -143,8 +139,20 @@ foreach(proc_map ${PROC_MAPS})
 
     foreach(ppn ${PPNS})
 
+        foreach(algo direct; naive; flat; multi_bcast; topo)
+            add_test (NAME allgatherv_${algo}_${N}_${ppn} CONFIGURATIONS allgatherv_${algo}_${N}_${ppn} COMMAND mpiexec.hydra -l -n ${N} -ppn ${ppn} ${CCL_INSTALL_TESTS}/allgatherv_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allgatherv_${algo}_${N}_${ppn}_report.junit.xml)
+        endforeach()
+
         foreach(algo direct; rabenseifner; nreduce; ring; ring_rma; double_tree; recursive_doubling; 2d; topo)
             add_test (NAME allreduce_${algo}_${N}_${ppn} CONFIGURATIONS allreduce_${algo}_${N}_${ppn} COMMAND mpiexec.hydra -l -n ${N} -ppn ${ppn} ${CCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_${algo}_${N}_${ppn}_report.junit.xml)
+        endforeach()
+
+        foreach(algo direct; naive; scatter; topo)
+            add_test (NAME alltoall_${algo}_${N}_${ppn} CONFIGURATIONS alltoall_${algo}_${N}_${ppn} COMMAND mpiexec.hydra -l -n ${N} -ppn ${ppn} ${CCL_INSTALL_TESTS}/alltoall_test --gtest_output=xml:${CCL_INSTALL_TESTS}/alltoall_${algo}_${N}_${ppn}_report.junit.xml)
+        endforeach()
+
+        foreach(algo direct; naive; scatter; topo)
+            add_test (NAME alltoallv_${algo}_${N}_${ppn} CONFIGURATIONS alltoallv_${algo}_${N}_${ppn} COMMAND mpiexec.hydra -l -n ${N} -ppn ${ppn} ${CCL_INSTALL_TESTS}/alltoallv_test --gtest_output=xml:${CCL_INSTALL_TESTS}/alltoallv_${algo}_${N}_${ppn}_report.junit.xml)
         endforeach()
 
         foreach(algo direct; ring; double_tree; naive; topo)
@@ -155,29 +163,9 @@ foreach(proc_map ${PROC_MAPS})
             add_test (NAME reduce_${algo}_${N}_${ppn} CONFIGURATIONS reduce_${algo}_${N}_${ppn} COMMAND mpiexec.hydra -l -n ${N} -ppn ${ppn} ${CCL_INSTALL_TESTS}/reduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/reduce_${algo}_${N}_${ppn}_report.junit.xml)
         endforeach()
 
+        foreach(algo direct; ring)
+            add_test (NAME reduce_scatter_${algo}_${N}_${ppn} CONFIGURATIONS reduce_scatter_${algo}_${N}_${ppn} COMMAND mpiexec.hydra -l -n ${N} -ppn ${ppn} ${CCL_INSTALL_TESTS}/reduce_scatter_test --gtest_output=xml:${CCL_INSTALL_TESTS}/reduce_scatter_${algo}_${N}_${ppn}_report.junit.xml)
+        endforeach()
+
     endforeach()
-endforeach()
-
-foreach(algo nreduce; ring; 2d)
-add_test (NAME allreduce_${algo}_chunked CONFIGURATIONS allreduce_${algo}_chunked COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/allreduce_test --gtest_output=xml:${CCL_INSTALL_TESTS}/allreduce_${algo}_chunked_report.junit.xml)
-endforeach()
-
-foreach(algo direct; naive; scatter; topo)
-add_test (NAME alltoall_${algo} CONFIGURATIONS alltoall_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/alltoall_test --gtest_output=xml:${CCL_INSTALL_TESTS}/alltoall_${algo}_report.junit.xml)
-endforeach()
-
-foreach(algo scatter)
-add_test (NAME alltoall_${algo}_chunked CONFIGURATIONS alltoall_${algo}_chunked COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/alltoall_test --gtest_output=xml:${CCL_INSTALL_TESTS}/alltoall_${algo}_chunked_report.junit.xml)
-endforeach()
-
-foreach(algo direct; naive; scatter; topo)
-add_test (NAME alltoallv_${algo} CONFIGURATIONS alltoallv_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/alltoallv_test --gtest_output=xml:${CCL_INSTALL_TESTS}/alltoallv_${algo}_report.junit.xml)
-endforeach()
-
-foreach(algo scatter)
-add_test (NAME alltoallv_${algo}_chunked CONFIGURATIONS alltoallv_${algo}_chunked COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/alltoallv_test --gtest_output=xml:${CCL_INSTALL_TESTS}/alltoallv_${algo}_chunked_report.junit.xml)
-endforeach()
-
-foreach(algo direct; ring)
-add_test (NAME reduce_scatter_${algo} CONFIGURATIONS reduce_scatter_${algo} COMMAND mpiexec.hydra -l -n 2 -ppn 1 ${CCL_INSTALL_TESTS}/reduce_scatter_test --gtest_output=xml:${CCL_INSTALL_TESTS}/reduce_scatter_${algo}_report.junit.xml)
 endforeach()

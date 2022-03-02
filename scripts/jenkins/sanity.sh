@@ -784,41 +784,6 @@ function run_functional_tests()
     set_functional_tests_env
     set_functional_tests_scope
 
-    allgatherv_algos="naive flat ring"
-    allreduce_algos="rabenseifner nreduce ring double_tree recursive_doubling"
-    alltoall_algos="naive scatter"
-    alltoallv_algos=${alltoall_algos}
-    bcast_algos="ring double_tree naive"
-    reduce_algos="rabenseifner tree"
-    reduce_scatter_algos="ring"
-
-    if [ ${runtime} == "mpi_adjust" ]
-    then
-        allgatherv_algos="${allgatherv_algos} direct"
-        allreduce_algos="${allreduce_algos} direct"
-        alltoall_algos="${alltoall_algos} direct"
-        alltoallv_algos=${alltoall_algos}
-        bcast_algos="${bcast_algos} direct"
-        reduce_algos="${reduce_algos} direct"
-        reduce_scatter_algos="${reduce_scatter_algos} direct"
-    fi
-
-    if [ ${runtime} == "ofi_adjust" ]
-    then
-        allgatherv_algos="${allgatherv_algos} multi_bcast"
-        allreduce_algos="${allreduce_algos} 2d" # ring_rma
-    fi
-
-    if [[ ${IS_GPU_NODE} = "yes" ]]
-    then
-        allreduce_algos="${allreduce_algos} topo"
-        alltoall_algos="${alltoall_algos} topo"
-        alltoallv_algos="${alltoallv_algos} topo"
-        allgatherv_algos="${allgatherv_algos} topo"
-        bcast_algos="${bcast_algos} topo"
-        reduce_algos="${reduce_algos} topo"
-    fi
-
     case "$runtime" in
            ofi )
                 func_exec_env+=" CCL_ATL_TRANSPORT=ofi"
@@ -830,125 +795,46 @@ function run_functional_tests()
                 run_test_cmd "${func_exec_env} ctest -VV -C default"
                 run_test_cmd "${func_exec_env} ctest -VV -C regression"
                 ;;
-           mpi_adjust )
-                func_exec_env+=" CCL_ATL_TRANSPORT=mpi"
+           ofi_adjust | mpi_adjust )
 
-                for algo in ${allgatherv_algos}
-                do
-                    allgatherv_exec_env=$(set_tests_option "CCL_ALLGATHERV=${algo}" "${func_exec_env}")
-                    allgatherv_exec_env=$(set_tests_option "CCL_TEST_DYNAMIC_POINTER=0" "${allgatherv_exec_env}")
-                    run_test_cmd "${allgatherv_exec_env} ctest -VV -C allgatherv_${algo}"
-                done
+                allgatherv_algos="naive flat ring"
+                allreduce_algos="rabenseifner nreduce ring double_tree recursive_doubling 2d"
+                alltoall_algos="naive scatter"
+                alltoallv_algos=${alltoall_algos}
+                bcast_algos="ring double_tree naive"
+                reduce_algos="rabenseifner tree"
+                reduce_scatter_algos="ring"
 
-                for algo in ${allreduce_algos}
-                do
-                    if [ "$algo" == "ring" ];
-                    then
-                        allreduce_ring_exec_env="${func_exec_env} CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=${algo}"
-                        run_test_cmd "${allreduce_ring_exec_env} ctest -VV -C allreduce_${algo}_chunked"
-                    elif [[ "$algo" == "nreduce" ]];
-                    then
-                        allreduce_nreduce_exec_env="${func_exec_env} CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=${algo}"
-                        run_test_cmd "${allreduce_nreduce_exec_env} ctest -VV -C allreduce_${algo}_chunked"
-                    fi
-                done
+                if [ ${runtime} == "mpi_adjust" ]
+                then
+                    allgatherv_algos="${allgatherv_algos} direct"
+                    allreduce_algos="${allreduce_algos} direct"
+                    alltoall_algos="${alltoall_algos} direct"
+                    alltoallv_algos=${alltoall_algos}
+                    bcast_algos="${bcast_algos} direct"
+                    reduce_algos="${reduce_algos} direct"
+                    reduce_scatter_algos="${reduce_scatter_algos} direct"
 
-                for proc_map in `echo ${PROC_MAPS} | tr '/' ' '`
-                do
-                    n=`echo ${proc_map%:*}`
-                    ppns=`echo ${proc_map#*:} | tr ',' ' '`
+                    func_exec_env+=" CCL_ATL_TRANSPORT=mpi"
+                fi
 
-                    for ppn in $ppns
-                    do
-                        if [[ "$ppn" -gt "$n" ]]
-                        then
-                            continue
-                        fi
+                if [ ${runtime} == "ofi_adjust" ]
+                then
+                    allgatherv_algos="${allgatherv_algos} multi_bcast"
+                    # allreduce_algos="${allreduce_algos} ring_rma"
 
-                        for algo in ${allreduce_algos}
-                        do
-                            allreduce_exec_env=$(set_tests_option "CCL_ALLREDUCE=${algo}" "${func_exec_env}")
-                            run_test_cmd "${allreduce_exec_env} ctest -VV -C allreduce_${algo}_${n}_${ppn}"
-                        done
+                    func_exec_env+=" CCL_ATL_TRANSPORT=ofi"
+                fi
 
-                        for algo in ${bcast_algos}
-                        do
-                            bcast_exec_env=$(set_tests_option "CCL_BCAST=${algo}" "${func_exec_env}")
-                            run_test_cmd "${bcast_exec_env} ctest -VV -C bcast_${algo}_${n}_${ppn}"
-                        done
-
-                        for algo in ${reduce_algos}
-                        do
-                            reduce_exec_env=$(set_tests_option "CCL_REDUCE=${algo}" "${func_exec_env}")
-                            run_test_cmd "${reduce_exec_env} ctest -VV -C reduce_${algo}_${n}_${ppn}"
-                        done
-                    done
-                done
-
-                for algo in ${alltoall_algos}
-                do
-                    if [ "$algo" == "scatter" ];
-                    then
-                        alltoall_scatter_exec_env="${func_exec_env}"
-                        alltoall_scatter_exec_env+=" CCL_ALLTOALL_SCATTER_MAX_OPS=2"
-                        alltoall_scatter_exec_env+=" CCL_CHUNK_COUNT=${worker_count}"
-                        alltoall_scatter_exec_env+=" CCL_ALLTOALL=${algo}"
-                        run_test_cmd "${alltoall_scatter_exec_env} ctest -VV -C alltoall_${algo}_chunked"
-                    fi
-                    alltoall_exec_env=$(set_tests_option "CCL_ALLTOALL=${algo}" "${func_exec_env}")
-                    run_test_cmd "${alltoall_exec_env} ctest -VV -C alltoall_${algo}"
-                done
-
-                for algo in ${alltoallv_algos}
-                do
-                    if [ "$algo" == "scatter" ];
-                    then
-                        alltoallv_scatter_exec_env="${func_exec_env}"
-                        alltoallv_scatter_exec_env+=" CCL_ALLTOALL_SCATTER_MAX_OPS=2"
-                        alltoallv_scatter_exec_env+=" CCL_CHUNK_COUNT=${worker_count}"
-                        alltoallv_scatter_exec_env+=" CCL_ALLTOALLV=${algo}"
-                        run_test_cmd "${alltoallv_scatter_exec_env} ctest -VV -C alltoallv_${algo}_chunked"
-                    fi
-                    alltoallv_exec_env=$(set_tests_option "CCL_ALLTOALLV=${algo}" "${func_exec_env}")
-                    run_test_cmd "${alltoallv_exec_env} ctest -VV -C alltoallv_${algo}"
-                done
-
-                for algo in ${reduce_scatter_algos}
-                do
-                    reduce_scatter_exec_env=$(set_tests_option "CCL_REDUCE_SCATTER=${algo}" "${func_exec_env}")
-                    run_test_cmd "${reduce_scatter_exec_env} ctest -VV -C reduce_scatter_${algo}"
-                done
-               ;;
-           ofi_adjust )
-                func_exec_env+=" CCL_ATL_TRANSPORT=ofi"
-
-                for algo in ${allgatherv_algos}
-                do
-                    allgatherv_exec_env=$(set_tests_option "CCL_ALLGATHERV=${algo}" "${func_exec_env}")
-                    allgatherv_exec_env=$(set_tests_option "CCL_TEST_DYNAMIC_POINTER=0" "${allgatherv_exec_env}")
-                    run_test_cmd "${allgatherv_exec_env} ctest -VV -C allgatherv_${algo}"
-                done
-
-                for algo in ${allreduce_algos}
-                do
-                    if [[ "$algo" == "ring_rma" ]]
-                    then
-                        allreduce_ring_rma_exec_env="${func_exec_env} CCL_ATL_RMA=1 CCL_ALLREDUCE=${algo}"
-                        run_test_cmd "${allreduce_ring_rma_exec_env} ctest -VV -C allreduce_${algo}"
-                    elif [[ "$algo" == "nreduce" ]]
-                    then
-                        allreduce_nreduce_exec_env="${func_exec_env} CCL_CHUNK_COUNT=2 CCL_ALLREDUCE=${algo}"
-                        run_test_cmd "${allreduce_nreduce_exec_env} ctest -VV -C allreduce_${algo}_chunked"
-                    elif [[ "$algo" == "ring" ]]
-                    then
-                        allreduce_ring_exec_env="${func_exec_env} CCL_RS_CHUNK_COUNT=2 CCL_ALLREDUCE=${algo}"
-                        run_test_cmd "${allreduce_ring_exec_env} ctest -VV -C allreduce_${algo}_chunked"
-                    elif [[ "$algo" == "2d" ]]
-                    then
-                        allreduce_2d_exec_env="${func_exec_env} CCL_AR2D_CHUNK_COUNT=2 CCL_ALLREDUCE=${algo}"
-                        run_test_cmd "${allreduce_2d_exec_env} ctest -VV -C allreduce_${algo}_chunked"
-                    fi
-                done
+                if [[ ${IS_GPU_NODE} = "yes" ]]
+                then
+                    allreduce_algos="${allreduce_algos} topo"
+                    alltoall_algos="${alltoall_algos} topo"
+                    alltoallv_algos="${alltoallv_algos} topo"
+                    allgatherv_algos="${allgatherv_algos} topo"
+                    bcast_algos="${bcast_algos} topo"
+                    reduce_algos="${reduce_algos} topo"
+                fi
 
                 for proc_map in `echo ${PROC_MAPS} | tr '/' ' '`
                 do
@@ -962,10 +848,34 @@ function run_functional_tests()
                             continue
                         fi
 
+                        for algo in ${allgatherv_algos}
+                        do
+                            allgatherv_exec_env=$(set_tests_option "CCL_ALLGATHERV=${algo}" "${func_exec_env}")
+                            allgatherv_exec_env=$(set_tests_option "CCL_TEST_DYNAMIC_POINTER=0" "${allgatherv_exec_env}")
+                            run_test_cmd "${allgatherv_exec_env} ctest -VV -C allgatherv_${algo}_${n}_${ppn}"
+                        done
+
                         for algo in ${allreduce_algos}
                         do
+                            # if [[ "$algo" == "ring_rma" ]]
+                            # then
+                            #     allreduce_ring_rma_exec_env="${func_exec_env} CCL_ATL_RMA=1 CCL_ALLREDUCE=${algo}"
+                            #     run_test_cmd "${allreduce_ring_rma_exec_env} ctest -VV -C allreduce_${algo}"
+                            # fi
                             allreduce_exec_env=$(set_tests_option "CCL_ALLREDUCE=${algo}" "${func_exec_env}")
                             run_test_cmd "${allreduce_exec_env} ctest -VV -C allreduce_${algo}_${n}_${ppn}"
+                        done
+
+                        for algo in ${alltoall_algos}
+                        do
+                            alltoall_exec_env=$(set_tests_option "CCL_ALLTOALL=${algo}" "${func_exec_env}")
+                            run_test_cmd "${alltoall_exec_env} ctest -VV -C alltoall_${algo}_${n}_${ppn}"
+                        done
+
+                        for algo in ${alltoallv_algos}
+                        do
+                            alltoallv_exec_env=$(set_tests_option "CCL_ALLTOALLV=${algo}" "${func_exec_env}")
+                            run_test_cmd "${alltoallv_exec_env} ctest -VV -C alltoallv_${algo}_${n}_${ppn}"
                         done
 
                         for algo in ${bcast_algos}
@@ -979,41 +889,13 @@ function run_functional_tests()
                             reduce_exec_env=$(set_tests_option "CCL_REDUCE=${algo}" "${func_exec_env}")
                             run_test_cmd "${reduce_exec_env} ctest -VV -C reduce_${algo}_${n}_${ppn}"
                         done
+
+                        for algo in ${reduce_scatter_algos}
+                        do
+                            reduce_scatter_exec_env=$(set_tests_option "CCL_REDUCE_SCATTER=${algo}" "${func_exec_env}")
+                            run_test_cmd "${reduce_scatter_exec_env} ctest -VV -C reduce_scatter_${algo}_${n}_${ppn}"
+                        done
                     done
-                done
-
-                for algo in ${alltoall_algos}
-                do
-                    if [ "$algo" == "scatter" ];
-                    then
-                        alltoall_scatter_exec_env="${func_exec_env}"
-                        alltoall_scatter_exec_env+=" CCL_ALLTOALL_SCATTER_MAX_OPS=2"
-                        alltoall_scatter_exec_env+=" CCL_CHUNK_COUNT=${worker_count}"
-                        alltoall_scatter_exec_env+=" CCL_ALLTOALL=${algo}"
-                        run_test_cmd "${alltoall_scatter_exec_env} ctest -VV -C alltoall_${algo}_chunked"
-                    fi
-                    alltoall_exec_env=$(set_tests_option "CCL_ALLTOALL=${algo}" "${func_exec_env}")
-                    run_test_cmd "${alltoall_exec_env} ctest -VV -C alltoall_${algo}"
-                done
-
-                for algo in ${alltoallv_algos}
-                do
-                    if [ "$algo" == "scatter" ];
-                    then
-                        alltoallv_scatter_exec_env="${func_exec_env}"
-                        alltoallv_scatter_exec_env+=" CCL_ALLTOALL_SCATTER_MAX_OPS=2"
-                        alltoallv_scatter_exec_env+=" CCL_CHUNK_COUNT=${worker_count}"
-                        alltoallv_scatter_exec_env+=" CCL_ALLTOALLV=${algo}"
-                        run_test_cmd "${alltoallv_scatter_exec_env} ctest -VV -C alltoallv_${algo}_chunked"
-                    fi
-                    alltoallv_exec_env=$(set_tests_option "CCL_ALLTOALLV=${algo}" "${func_exec_env}")
-                    run_test_cmd "${alltoallv_exec_env} ctest -VV -C alltoallv_${algo}"
-                done
-
-                for algo in ${reduce_scatter_algos}
-                do
-                    reduce_scatter_exec_env=$(set_tests_option "CCL_REDUCE_SCATTER=${algo}" "${func_exec_env}")
-                    run_test_cmd "${reduce_scatter_exec_env} ctest -VV -C reduce_scatter_${algo}"
                 done
                ;;
             priority_mode )

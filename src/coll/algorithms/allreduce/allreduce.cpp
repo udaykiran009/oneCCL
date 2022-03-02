@@ -254,115 +254,6 @@ ccl::status ccl_coll_build_rabenseifner_allreduce(ccl_sched* sched,
     return status;
 }
 
-ccl::status ccl_coll_build_recursive_doubling_allreduce(ccl_sched* sched,
-                                                        ccl_buffer send_buf,
-                                                        ccl_buffer recv_buf,
-                                                        size_t count,
-                                                        const ccl_datatype& dtype,
-                                                        ccl::reduction op,
-                                                        ccl_comm* comm) {
-    LOG_DEBUG("build recursive_doubling allreduce");
-
-    ccl::status status = ccl::status::success;
-
-    int pof2, rem, comm_size, rank;
-    int newrank, mask, newdst, dst;
-
-    comm_size = comm->size();
-    rank = comm->rank();
-
-    size_t dtype_size = dtype.size();
-
-    ccl_buffer tmp_buf = sched->alloc_buffer({ count * dtype_size, send_buf });
-
-    /* copy local data into recv_buf */
-    if (send_buf != recv_buf) {
-        entry_factory::create<copy_entry>(sched, send_buf, recv_buf, count, dtype);
-        sched->add_barrier();
-    }
-
-    if (comm_size == 1)
-        return status;
-
-    /* get nearest power-of-two less than or equal to comm_size */
-    pof2 = comm->pof2();
-    rem = comm_size - pof2;
-
-    /* In the non-power-of-two case, all even-numbered
-     * processes of rank < 2*rem send their data to
-     * (rank+1). These even-numbered processes no longer
-     * participate in the algorithm until the very end. The
-     * remaining processes form a nice power-of-two. */
-
-    if (rank < 2 * rem) {
-        if (rank % 2 == 0) { /* even */
-            entry_factory::create<send_entry>(sched, recv_buf, count, dtype, rank + 1, comm);
-            sched->add_barrier();
-
-            /* temporarily set the rank to -1 so that this
-             * process does not pariticipate in recursive
-             * doubling */
-            newrank = -1;
-        }
-        else { /* odd */
-            entry_factory::create<recv_entry>(sched, tmp_buf, count, dtype, rank - 1, comm);
-            sched->add_barrier();
-
-            /* do the reduction on received data. since the
-             * ordering is right, it doesn't matter whether
-             * the operation is commutative or not. */
-
-            entry_factory::create<reduce_local_entry>(
-                sched, tmp_buf, count, recv_buf, nullptr, dtype, op);
-            sched->add_barrier();
-
-            /* change the rank */
-            newrank = rank / 2;
-        }
-    }
-    else /* rank >= 2*rem */
-        newrank = rank - rem;
-
-    if (newrank != -1) {
-        mask = 0x1;
-        while (mask < pof2) {
-            newdst = newrank ^ mask;
-            /* find real rank of dest */
-            dst = (newdst < rem) ? newdst * 2 + 1 : newdst + rem;
-
-            /* Send the most current data, which is in recv_buf. Recv
-             * into tmp_buf */
-            entry_factory::create<recv_entry>(sched, tmp_buf, count, dtype, dst, comm);
-            /* sendrecv, no barrier here */
-            entry_factory::create<send_entry>(sched, recv_buf, count, dtype, dst, comm);
-            sched->add_barrier();
-
-            /* tmp_buf contains data received in this step.
-             * recv_buf contains data accumulated so far */
-            entry_factory::create<reduce_local_entry>(
-                sched, tmp_buf, count, recv_buf, nullptr, dtype, op);
-            sched->add_barrier();
-
-            mask <<= 1;
-        }
-    }
-
-    /* In the non-power-of-two case, all odd-numbered
-     * processes of rank < 2*rem send the result to
-     * (rank-1), the ranks who didn't participate above. */
-    if (rank < 2 * rem) {
-        if (rank % 2) { /* odd */
-            entry_factory::create<send_entry>(sched, recv_buf, count, dtype, rank - 1, comm);
-        }
-        else { /* even */
-            entry_factory::create<recv_entry>(sched, recv_buf, count, dtype, rank + 1, comm);
-        }
-        sched->add_barrier();
-    }
-
-    return status;
-}
-
 ccl::status ccl_coll_build_nreduce_allreduce(ccl_sched* sched,
                                              ccl_buffer send_buf,
                                              ccl_buffer recv_buf,
@@ -540,6 +431,290 @@ ccl::status ccl_coll_build_ring_allreduce(ccl_sched* sched,
         sched, recv_buf, recv_counts[comm->rank()], recv_buf, recv_counts.data(), dtype, comm);
 
     sched->add_barrier();
+
+    return status;
+}
+
+ccl::status ccl_coll_build_recursive_doubling_allreduce(ccl_sched* sched,
+                                                        ccl_buffer send_buf,
+                                                        ccl_buffer recv_buf,
+                                                        size_t count,
+                                                        const ccl_datatype& dtype,
+                                                        ccl::reduction op,
+                                                        ccl_comm* comm) {
+    LOG_DEBUG("build recursive_doubling allreduce");
+
+    ccl::status status = ccl::status::success;
+
+    int pof2, rem, comm_size, rank;
+    int newrank, mask, newdst, dst;
+
+    comm_size = comm->size();
+    rank = comm->rank();
+
+    size_t dtype_size = dtype.size();
+
+    ccl_buffer tmp_buf = sched->alloc_buffer({ count * dtype_size, send_buf });
+
+    /* copy local data into recv_buf */
+    if (send_buf != recv_buf) {
+        entry_factory::create<copy_entry>(sched, send_buf, recv_buf, count, dtype);
+        sched->add_barrier();
+    }
+
+    if (comm_size == 1)
+        return status;
+
+    /* get nearest power-of-two less than or equal to comm_size */
+    pof2 = comm->pof2();
+    rem = comm_size - pof2;
+
+    /* In the non-power-of-two case, all even-numbered
+     * processes of rank < 2*rem send their data to
+     * (rank+1). These even-numbered processes no longer
+     * participate in the algorithm until the very end. The
+     * remaining processes form a nice power-of-two. */
+
+    if (rank < 2 * rem) {
+        if (rank % 2 == 0) { /* even */
+            entry_factory::create<send_entry>(sched, recv_buf, count, dtype, rank + 1, comm);
+            sched->add_barrier();
+
+            /* temporarily set the rank to -1 so that this
+             * process does not pariticipate in recursive
+             * doubling */
+            newrank = -1;
+        }
+        else { /* odd */
+            entry_factory::create<recv_entry>(sched, tmp_buf, count, dtype, rank - 1, comm);
+            sched->add_barrier();
+
+            /* do the reduction on received data. since the
+             * ordering is right, it doesn't matter whether
+             * the operation is commutative or not. */
+
+            entry_factory::create<reduce_local_entry>(
+                sched, tmp_buf, count, recv_buf, nullptr, dtype, op);
+            sched->add_barrier();
+
+            /* change the rank */
+            newrank = rank / 2;
+        }
+    }
+    else /* rank >= 2*rem */
+        newrank = rank - rem;
+
+    if (newrank != -1) {
+        mask = 0x1;
+        while (mask < pof2) {
+            newdst = newrank ^ mask;
+            /* find real rank of dest */
+            dst = (newdst < rem) ? newdst * 2 + 1 : newdst + rem;
+
+            /* Send the most current data, which is in recv_buf. Recv
+             * into tmp_buf */
+            entry_factory::create<recv_entry>(sched, tmp_buf, count, dtype, dst, comm);
+            /* sendrecv, no barrier here */
+            entry_factory::create<send_entry>(sched, recv_buf, count, dtype, dst, comm);
+            sched->add_barrier();
+
+            /* tmp_buf contains data received in this step.
+             * recv_buf contains data accumulated so far */
+            entry_factory::create<reduce_local_entry>(
+                sched, tmp_buf, count, recv_buf, nullptr, dtype, op);
+            sched->add_barrier();
+
+            mask <<= 1;
+        }
+    }
+
+    /* In the non-power-of-two case, all odd-numbered
+     * processes of rank < 2*rem send the result to
+     * (rank-1), the ranks who didn't participate above. */
+    if (rank < 2 * rem) {
+        if (rank % 2) { /* odd */
+            entry_factory::create<send_entry>(sched, recv_buf, count, dtype, rank - 1, comm);
+        }
+        else { /* even */
+            entry_factory::create<recv_entry>(sched, recv_buf, count, dtype, rank + 1, comm);
+        }
+        sched->add_barrier();
+    }
+
+    return status;
+}
+
+static void ccl_allreduce_2d_add_allreduce_allgather(ccl_sched* sched,
+                                                     ccl_buffer send_buf,
+                                                     ccl_buffer recv_buf,
+                                                     size_t count,
+                                                     const ccl_datatype& dtype,
+                                                     ccl::reduction op,
+                                                     ccl_comm* comm,
+                                                     ccl_comm* first_dim_comm,
+                                                     ccl_comm* second_dim_comm,
+                                                     size_t chunk_idx,
+                                                     size_t chunk_count) {
+    size_t dtype_size = dtype.size();
+    size_t main_chunk_size = count / chunk_count;
+    size_t last_chunk_size = main_chunk_size + count % chunk_count;
+    size_t cnt = (chunk_idx == (chunk_count - 1)) ? last_chunk_size : main_chunk_size;
+    ccl_buffer rbuf = recv_buf + chunk_idx * main_chunk_size * dtype_size;
+
+    size_t main_block_count = cnt / first_dim_comm->size();
+    size_t last_block_count = main_block_count + cnt % first_dim_comm->size();
+    size_t ar_count = (first_dim_comm->rank() == (first_dim_comm->size() - 1)) ? last_block_count
+                                                                               : main_block_count;
+
+    if (ar_count) {
+        // TODO: add second level selection to distinguish high and low level algorithms
+        ccl_buffer ar_buf = rbuf + first_dim_comm->rank() * main_block_count * dtype_size;
+        ccl_coll_build_nreduce_allreduce(
+            sched, ar_buf, ar_buf, ar_count, dtype, op, second_dim_comm);
+        sched->add_barrier();
+    }
+
+    std::vector<size_t> ag_recv_counts(first_dim_comm->size(), main_block_count);
+    ag_recv_counts[first_dim_comm->size() - 1] = last_block_count;
+
+    // TODO: skip direct algo since it may be started
+    // with different order on different ranks
+    sched->hint_algo.allgatherv = ccl_coll_allgatherv_ring;
+    ccl_coll_build_allgatherv(
+        sched, rbuf, ar_count, rbuf, ag_recv_counts.data(), dtype, first_dim_comm);
+    sched->hint_algo.allgatherv = ccl_coll_allgatherv_undefined;
+}
+
+static void ccl_allreduce_2d_add_reduce_scatter_allreduce_allgather(ccl_sched* sched,
+                                                                    ccl_buffer send_buf,
+                                                                    ccl_buffer recv_buf,
+                                                                    size_t count,
+                                                                    const ccl_datatype& dtype,
+                                                                    ccl::reduction op,
+                                                                    ccl_comm* comm,
+                                                                    ccl_comm* first_dim_comm,
+                                                                    ccl_comm* second_dim_comm,
+                                                                    size_t chunk_idx,
+                                                                    size_t chunk_count) {
+    size_t dtype_size = dtype.size();
+    size_t main_chunk_size = count / chunk_count;
+    size_t last_chunk_size = main_chunk_size + count % chunk_count;
+    size_t cnt = (chunk_idx == (chunk_count - 1)) ? last_chunk_size : main_chunk_size;
+    ccl_buffer sbuf = send_buf + chunk_idx * main_chunk_size * dtype_size;
+    ccl_buffer rbuf = recv_buf + chunk_idx * main_chunk_size * dtype_size;
+
+    ccl_coll_build_reduce_scatter(sched, sbuf, rbuf, cnt, dtype, op, first_dim_comm, true);
+    sched->add_barrier();
+
+    if (chunk_idx == (chunk_count - 1) || (chunk_count == 1)) {
+        ccl_allreduce_2d_add_allreduce_allgather(sched,
+                                                 send_buf,
+                                                 recv_buf,
+                                                 count,
+                                                 dtype,
+                                                 op,
+                                                 comm,
+                                                 first_dim_comm,
+                                                 second_dim_comm,
+                                                 chunk_idx,
+                                                 chunk_count);
+    }
+    else {
+        entry_factory::create<subsched_entry>(
+            sched,
+            chunk_idx,
+            [send_buf,
+             recv_buf,
+             count,
+             &dtype,
+             op,
+             comm,
+             first_dim_comm,
+             second_dim_comm,
+             chunk_idx,
+             chunk_count](ccl_sched* s) {
+                ccl_allreduce_2d_add_allreduce_allgather(s,
+                                                         send_buf,
+                                                         recv_buf,
+                                                         count,
+                                                         dtype,
+                                                         op,
+                                                         comm,
+                                                         first_dim_comm,
+                                                         second_dim_comm,
+                                                         chunk_idx,
+                                                         chunk_count);
+            },
+            "AR_AG");
+
+        entry_factory::create<subsched_entry>(
+            sched,
+            chunk_idx + 1,
+            [send_buf,
+             recv_buf,
+             count,
+             &dtype,
+             op,
+             comm,
+             first_dim_comm,
+             second_dim_comm,
+             chunk_idx,
+             chunk_count](ccl_sched* s) {
+                ccl_allreduce_2d_add_reduce_scatter_allreduce_allgather(s,
+                                                                        send_buf,
+                                                                        recv_buf,
+                                                                        count,
+                                                                        dtype,
+                                                                        op,
+                                                                        comm,
+                                                                        first_dim_comm,
+                                                                        second_dim_comm,
+                                                                        chunk_idx + 1,
+                                                                        chunk_count);
+            },
+            "RS_AR_AG");
+    }
+}
+
+ccl::status ccl_coll_build_2d_allreduce(ccl_sched* sched,
+                                        ccl_buffer send_buf,
+                                        ccl_buffer recv_buf,
+                                        size_t count,
+                                        const ccl_datatype& dtype,
+                                        ccl::reduction op,
+                                        ccl_comm* comm) {
+    ccl::status status = ccl::status::success;
+
+    size_t chunk_count = ccl::global_data::env().allreduce_2d_chunk_count;
+
+    bool switch_dims = ccl::global_data::env().allreduce_2d_switch_dims;
+    ccl_comm* first_dim_comm =
+        (switch_dims) ? comm->get_r2r_comm().get() : comm->get_node_comm().get();
+    ccl_comm* second_dim_comm =
+        (switch_dims) ? comm->get_node_comm().get() : comm->get_r2r_comm().get();
+
+    LOG_DEBUG("build 2d allreduce: chunk_count: ",
+              chunk_count,
+              ", switch_dims: ",
+              switch_dims,
+              ", comm: ",
+              comm->to_string(),
+              ", 1st dim comm: ",
+              first_dim_comm->to_string(),
+              ", 2nd dim comm: ",
+              second_dim_comm->to_string());
+
+    ccl_allreduce_2d_add_reduce_scatter_allreduce_allgather(sched,
+                                                            send_buf,
+                                                            recv_buf,
+                                                            count,
+                                                            dtype,
+                                                            op,
+                                                            comm,
+                                                            first_dim_comm,
+                                                            second_dim_comm,
+                                                            0 /* chunk_idx */,
+                                                            chunk_count);
 
     return status;
 }

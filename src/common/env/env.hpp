@@ -85,16 +85,15 @@ constexpr const char* CCL_CHUNK_COUNT = "CCL_CHUNK_COUNT";
 constexpr const char* CCL_MIN_CHUNK_SIZE = "CCL_MIN_CHUNK_SIZE";
 constexpr const char* CCL_RS_CHUNK_COUNT = "CCL_RS_CHUNK_COUNT";
 constexpr const char* CCL_RS_MIN_CHUNK_SIZE = "CCL_RS_MIN_CHUNK_SIZE";
-constexpr const char* CCL_AR2D_CHUNK_COUNT = "CCL_AR2D_CHUNK_COUNT";
-constexpr const char* CCL_AR2D_MIN_CHUNK_SIZE = "CCL_AR2D_MIN_CHUNK_SIZE";
 
 constexpr const char* CCL_ALLGATHERV_TOPO_LARGE_SCALE = "CCL_ALLGATHERV_TOPO_LARGE_SCALE";
 
-constexpr const char* CCL_ALLREDUCE_2D_BASE_SIZE = "CCL_ALLREDUCE_2D_BASE_SIZE";
-constexpr const char* CCL_ALLREDUCE_2D_SWITCH_DIMS = "CCL_ALLREDUCE_2D_SWITCH_DIMS";
-
 constexpr const char* CCL_ALLREDUCE_NREDUCE_BUFFERING = "CCL_ALLREDUCE_NREDUCE_BUFFERING";
 constexpr const char* CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE = "CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE";
+
+constexpr const char* CCL_ALLREDUCE_2D_CHUNK_COUNT = "CCL_ALLREDUCE_2D_CHUNK_COUNT";
+constexpr const char* CCL_ALLREDUCE_2D_MIN_CHUNK_SIZE = "CCL_ALLREDUCE_2D_MIN_CHUNK_SIZE";
+constexpr const char* CCL_ALLREDUCE_2D_SWITCH_DIMS = "CCL_ALLREDUCE_2D_SWITCH_DIMS";
 
 constexpr const char* CCL_ALLTOALL_SCATTER_MAX_OPS = "CCL_ALLTOALL_SCATTER_MAX_OPS";
 
@@ -263,15 +262,15 @@ public:
     size_t min_chunk_size;
     size_t rs_chunk_count;
     size_t rs_min_chunk_size;
-    size_t ar2d_chunk_count;
-    size_t ar2d_min_chunk_size;
 
     int allgatherv_topo_large_scale;
 
-    ssize_t allreduce_2d_base_size;
-    int allreduce_2d_switch_dims;
     int allreduce_nreduce_buffering;
     ssize_t allreduce_nreduce_segment_size;
+
+    size_t allreduce_2d_chunk_count;
+    size_t allreduce_2d_min_chunk_size;
+    int allreduce_2d_switch_dims;
 
     ssize_t alltoall_scatter_max_ops;
 

@@ -74,7 +74,6 @@ set(CCL_SRC
     coll/coll_util.cpp
     coll/algorithms/allgatherv.cpp
     coll/algorithms/allreduce/allreduce.cpp
-    coll/algorithms/allreduce/allreduce_2d.cpp
     coll/algorithms/allreduce/allreduce_rma.cpp
     coll/algorithms/algorithm_utils.cpp
     coll/algorithms/alltoall.cpp

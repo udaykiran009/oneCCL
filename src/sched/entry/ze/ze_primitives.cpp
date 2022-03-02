@@ -298,6 +298,51 @@ bool is_same_fabric_port(const zes_fabric_port_id_t& port1, const zes_fabric_por
     return result;
 }
 
+bool pci_address_comparator::operator()(const zes_pci_address_t& a,
+                                        const zes_pci_address_t& b) const {
+    if (a.domain == b.domain) {
+        if (a.bus == b.bus) {
+            if (a.device == b.device) {
+                if (a.function == b.function) {
+                    return false;
+                }
+                else {
+                    return (a.function < b.function);
+                }
+            }
+            else {
+                return (a.device < b.device);
+            }
+        }
+        else {
+            return (a.bus < b.bus);
+        }
+    }
+    else {
+        return (a.domain < b.domain);
+    }
+}
+
+bool fabric_port_comparator::operator()(const zes_fabric_port_id_t& a,
+                                        const zes_fabric_port_id_t& b) const {
+    if (a.fabricId == b.fabricId) {
+        if (a.attachId == b.attachId) {
+            if (a.portNumber == b.portNumber) {
+                return false;
+            }
+            else {
+                return (a.portNumber < b.portNumber);
+            }
+        }
+        else {
+            return (a.attachId < b.attachId);
+        }
+    }
+    else {
+        return (a.fabricId < b.fabricId);
+    }
+}
+
 std::string to_string(ze_result_t result) {
     switch (result) {
         case ZE_RESULT_SUCCESS: return "ZE_RESULT_SUCCESS";

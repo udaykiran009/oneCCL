@@ -171,17 +171,7 @@ void ccl_comm::allocate_resources() {
     if (ccl::global_data::env().enable_unordered_coll) {
         comm_impl->unordered_coll_manager.reset(new ccl_unordered_coll_manager(*this));
     }
-
-    auto& env_object = ccl::global_data::env();
-
-    comm_impl->allreduce_2d_builder.reset(new ccl_allreduce_2d_builder(
-        (env_object.allreduce_2d_base_size != CCL_ENV_SIZET_NOT_SPECIFIED)
-            ? env_object.allreduce_2d_base_size
-            : ccl::global_data::get().executor->get_local_proc_count(),
-        env_object.allreduce_2d_switch_dims,
-        this));
-
-    env_object.print(rank());
+    ccl::global_data::env().print(rank());
 }
 
 ccl::comm_interface_ptr ccl_comm::split(const ccl::comm_split_attr& attr) {

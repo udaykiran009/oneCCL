@@ -36,7 +36,6 @@
 
 #include "coll/algorithms/algorithms.hpp"
 #include "coll/algorithms/algorithm_utils.hpp"
-#include "coll/algorithms/allreduce/allreduce_2d.hpp"
 #include "coll/selection/selection.hpp"
 #include "exec/exec.hpp"
 #include "fusion/fusion.hpp"
@@ -268,8 +267,8 @@ ccl::status ccl_coll_build_allreduce(ccl_sched* sched,
                 sched, send_buf, recv_buf, count, dtype, reduction, comm));
             break;
         case ccl_coll_allreduce_2d:
-            CCL_CALL(comm->get_allreduce_2d_builder()->build(
-                sched, send_buf, recv_buf, count, dtype, reduction));
+            CCL_CALL(ccl_coll_build_2d_allreduce(
+                sched, send_buf, recv_buf, count, dtype, reduction, comm));
             break;
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
         case ccl_coll_allreduce_topo:

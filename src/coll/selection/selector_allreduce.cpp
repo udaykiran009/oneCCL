@@ -64,9 +64,6 @@ bool ccl_algorithm_selector_helper<ccl_coll_allreduce_algo>::can_use(
         can_use = false;
     else if (algo == ccl_coll_allreduce_nreduce && !(param.count / param.comm->size()))
         can_use = false;
-    else if (algo == ccl_coll_allreduce_2d &&
-             (ccl::global_data::env().atl_transport == ccl_atl_mpi))
-        can_use = false;
     else if (algo == ccl_coll_allreduce_direct &&
              (ccl::global_data::env().atl_transport == ccl_atl_ofi))
         can_use = false;

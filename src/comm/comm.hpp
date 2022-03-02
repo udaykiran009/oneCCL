@@ -4,7 +4,6 @@
 #include <unordered_map>
 
 #include "atl/atl_base_comm.hpp"
-#include "coll/algorithms/allreduce/allreduce_2d.hpp"
 #include "comm/comm_interface.hpp"
 #include "comm/atl_tag.hpp"
 #include "common/log/log.hpp"
@@ -79,7 +78,6 @@ public:
 
     std::shared_ptr<atl_base_comm> atl_comm;
     std::unique_ptr<ccl_unordered_coll_manager> unordered_coll_manager;
-    std::unique_ptr<ccl_allreduce_2d_builder> allreduce_2d_builder;
 
 private:
     int m_rank;
@@ -216,9 +214,6 @@ public:
 
     std::unique_ptr<ccl_unordered_coll_manager>& get_unordered_coll_manager() const {
         return comm_impl->unordered_coll_manager;
-    }
-    std::unique_ptr<ccl_allreduce_2d_builder>& get_allreduce_2d_builder() const {
-        return comm_impl->allreduce_2d_builder;
     }
 
     int rank() const override {
