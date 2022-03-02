@@ -10,7 +10,11 @@ static void* libze_handle;
 libze_ops_t libze_ops;
 
 bool ze_api_init() {
+    // lib_path specifies the name and full path to the level-zero library
+    // it should be absolute and validated path
+    // pointing to desired libze_loader library
     std::string lib_path = ccl::global_data::env().ze_lib_path;
+
     if (lib_path.empty()) {
         lib_path = "libze_loader.so";
     }

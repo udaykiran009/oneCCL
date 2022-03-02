@@ -801,3 +801,28 @@ CCL_SYCL_OUTPUT_EVENT
 Set this environment variable to control support for SYCL output event.
 Once the support is enabled, you can retrieve SYCL output event from |product_short| event using ``get_native()`` method.
 |product_short| event must be associated with |product_short| communication operation.
+
+
+CCL_ZE_LIBRARY_PATH
+###################
+**Syntax**
+
+::
+
+  CCL_ZE_LIBRARY_PATH=<value>
+
+**Arguments**
+
+.. list-table::
+   :widths: 25 50
+   :header-rows: 1
+   :align: left
+
+   * - <value>
+     - Description
+   * - ``PATH/NAME``
+     - Specify the name and full path to the ``Level-Zero`` library for dynamic loading by |product_short|.
+
+**Description**
+
+Set this environment variable to specify the name and full path to ``Level-Zero`` library. The path should be absolute and validated. Set this variable if ``Level-Zero`` is not located in the default path. By default |product_short| uses ``libze_loader.so`` name for dynamic loading.
