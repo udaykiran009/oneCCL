@@ -40,7 +40,7 @@ set_run_env() {
     export HOROVOD_LOG_LEVEL=INFO
     export HOROVOD_THREAD_AFFINITY=0,1,2,3
     export HOROVOD_CCL_FIN_THREADS=1
-    #export HOROVOD_CCL_ADD_EXTRA_WAIT=1 # extra waits are not needed since at least 2022.0 compiler version; disabled in HVD by default
+    export HOROVOD_CCL_ADD_EXTRA_WAIT=1 # WA for crashes: issue TBD. CMPLRLLVM-32016 (hangs) related?
     #export HOROVOD_FUSION_THRESHOLD=150000000
     #export HOROVOD_DISABLE_GROUP_FUSION=1
     #export HOROVOD_CYCLE_TIME=0.1
@@ -69,7 +69,7 @@ set_run_env() {
     # export FI_LOG_LEVEL=debug
 
     # SYCL
-    # export SYCL_PI_LEVEL_ZERO_BATCH_SIZE=1 # not needed anymore
+    export SYCL_PI_LEVEL_ZERO_BATCH_SIZE=1 # WA for NaN failure on A0/A1 stepping: issue TBD
     export SYCL_DEVICE_FILTER=level_zero
     # export SYCL_PI_LEVEL_ZERO_TRACK_INDIRECT_ACCESS_MEMORY=1 # not needed since CCL commit 5141eaf70630b364c708cae9eb664511db51dc05
 
@@ -723,6 +723,9 @@ parse_arguments() {
 hvd_test() {
     if [[ ${CHECK_HVD_TF} = "1" ]]
     then
+        # WA for HVD+TF 4-ranks hang: issue TBD
+        PROC_MAPS=${DEFAULT_PROC_MAPS}
+
         echo_log "============================= Basic Horovod/TF test =================================="
         cmd="python -c \"import horovod.tensorflow as hvd; hvd.init(); print(hvd.local_rank())\""
         echo_log ${cmd}
