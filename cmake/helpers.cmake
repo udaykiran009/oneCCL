@@ -22,7 +22,7 @@ function(set_lp_env)
     else()
         set(CCL_BF16_COMPILER OFF)
     endif()
-    message(STATUS "BF16 compiler: ${CCL_BF16_COMPILER}")
+    message(STATUS "BF16 AVX512F compiler: ${CCL_BF16_COMPILER}")
 
     execute_process(COMMAND ld -v
             OUTPUT_VARIABLE BINUTILS_VERSION_RAW
@@ -55,7 +55,7 @@ function(set_lp_env)
         message(STATUS "BF16 target attributes: ${CCL_BF16_TARGET_ATTRIBUTES}")
     endif()
 
-    option(CCL_BF16_GPU_TRUNCATE "Truncate BF16 in GPU operations" ON)
+    option(CCL_BF16_GPU_TRUNCATE "Truncate BF16 in GPU operations" OFF)
     if (CCL_BF16_GPU_TRUNCATE)
         add_definitions(-DCCL_BF16_GPU_TRUNCATE)
     endif()

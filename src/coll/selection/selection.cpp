@@ -81,6 +81,13 @@ bool ccl_is_direct_algo(const ccl_selector_param& param) {
 
 namespace checkers {
 
+bool is_unknown_device_family(const ccl_selector_param& param) {
+    if (param.stream) {
+        return param.stream->get_device_family() == ccl::device_family::unknown;
+    }
+    return false;
+}
+
 bool is_family1_card(const ccl_selector_param& param) {
     if (param.stream) {
         return param.stream->get_device_family() == ccl::device_family::family1;
@@ -284,6 +291,13 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
             ccl_coll_type_to_str(param.ctype),
             " is not supported for family1");
     }
+
+#ifndef CCL_BF16_GPU_TRUNCATE
+    RETURN_FALSE_IF(
+        checkers::is_unknown_device_family(param) && (param.dtype.idx() == ccl::datatype::bfloat16),
+        "bfloat16 is not supported for unknown device family");
+#endif // !CCL_BF16_GPU_TRUNCATE
+
 #endif // CCL_ENABLE_SYCL
 
     RETURN_FALSE_IF((((param.ctype == ccl_coll_allreduce) || (param.ctype == ccl_coll_bcast) ||
@@ -317,52 +331,34 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
 }
 
 bool ccl_can_use_datatype(ccl_coll_algo algo, const ccl_selector_param& param) {
-    // regular datatype, don't need to check for an additional support
-    if (param.dtype.idx() != ccl::datatype::bfloat16 &&
-        param.dtype.idx() != ccl::datatype::float16) {
+    if (param.dtype.idx() != ccl::datatype::float16) {
         return true;
     }
 
     bool can_use = true;
 
-    bool device_side_algo = ccl_is_device_side_algo(algo, param);
-
-    // algorithms running on device side support fp16 and bf16 both
+    // algorithms running on device side support fp16
     // so we don't need to require their support on the host
-    if (!device_side_algo) {
-        if (param.dtype == ccl::datatype::bfloat16) {
-            bool bf16_hw_support =
-                ccl::global_data::env().bf16_impl_type != ccl_bf16_no_hardware_support;
-            bool bf16_compiler_support =
-                ccl::global_data::env().bf16_impl_type != ccl_bf16_no_compiler_support;
+    bool device_side_algo = ccl_is_device_side_algo(algo, param);
+    if (device_side_algo) {
+        return true;
+    }
 
-            can_use = bf16_compiler_support && bf16_hw_support;
+    if (param.dtype == ccl::datatype::float16) {
+        bool fp16_hw_support =
+            ccl::global_data::env().fp16_impl_type != ccl_fp16_no_hardware_support;
+        bool fp16_compiler_support =
+            ccl::global_data::env().fp16_impl_type != ccl_fp16_no_compiler_support;
 
-            if (!can_use) {
-                LOG_DEBUG("BF16 datatype is requested for ",
-                          ccl_coll_type_to_str(param.ctype),
-                          " running on CPU but not fully supported: hw: ",
-                          bf16_hw_support,
-                          " compiler: ",
-                          bf16_compiler_support);
-            }
-        }
-        else if (param.dtype == ccl::datatype::float16) {
-            bool fp16_hw_support =
-                ccl::global_data::env().fp16_impl_type != ccl_fp16_no_hardware_support;
-            bool fp16_compiler_support =
-                ccl::global_data::env().fp16_impl_type != ccl_fp16_no_compiler_support;
+        can_use = fp16_hw_support && fp16_compiler_support;
 
-            can_use = fp16_hw_support && fp16_compiler_support;
-
-            if (!can_use) {
-                LOG_DEBUG("FP16 datatype is requested for ",
-                          ccl_coll_type_to_str(param.ctype),
-                          " running on CPU but not fully supported: hw: ",
-                          fp16_hw_support,
-                          " compiler: ",
-                          fp16_compiler_support);
-            }
+        if (!can_use) {
+            LOG_DEBUG("FP16 datatype is requested for ",
+                      ccl_coll_type_to_str(param.ctype),
+                      " running on CPU but not fully supported: hw: ",
+                      fp16_hw_support,
+                      " compiler: ",
+                      fp16_compiler_support);
         }
     }
 

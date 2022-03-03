@@ -5,7 +5,8 @@
         /* https://www.mcs.anl.gov/papers/P4093-0713_1.pdf */ \
         int comm_size = comm.size(); \
         double log_base2 = log(comm_size) / log(2); \
-        double g = (log_base2 * BF16_PRECISION) / (1 - (log_base2 * BF16_PRECISION)); \
+        double precision = 2 * BF16_PRECISION; \
+        double g = (log_base2 * precision) / (1 - (log_base2 * precision)); \
         for (size_t i = 0; i < COUNT; i++) { \
             double expected = ((comm_size * (comm_size - 1) / 2) + ((float)(i)*comm_size)); \
             double max_error = g * expected; \

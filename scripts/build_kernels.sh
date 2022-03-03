@@ -65,8 +65,11 @@ function run_cmd() {
 function run_build() {
     local kernel_file_name=$1
 
+    local defines=""
+
     # should be aligned with cmake function set_lp_env
-    local defines="-DCCL_BF16_GPU_TRUNCATE"
+    # defines+=" -DCCL_BF16_GPU_TRUNCATE"
+    # defines+=" -DCCL_FP16_GPU_TRUNCATE"
 
     kernel="$KERNELS_PATH/$kernel_file_name"
     if [[ ! -f "$kernel" ]]

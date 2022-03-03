@@ -57,19 +57,28 @@ done
 
 cd $dstdir
 
-for CUR_FILE in `find .  -type f | grep -e "\.hpp$" -e "\.cpp$" -e "\.h$" -e "\.c$" | grep -v "googletest" | grep -v "deps"`; do
+for CUR_FILE in `find .  -type f | grep -e "\.hpp$" -e "\.cpp$" -e "\.h$" -e "\.c$" | grep -v "googletest" | grep -v "deps"`
+do
 	ed $CUR_FILE < ../scripts/copyright/copyright.c ; \
 done
-for CUR_FILE in `find .  -type f | grep  -e "\.sh$" -e "\.sh.in$" | grep -v "googletest"` ; do
+
+for CUR_FILE in `find .  -type f | grep  -e "\.sh$" -e "\.sh.in$" | grep -v "googletest"`
+do
 	ed $CUR_FILE < ../scripts/copyright/copyright.sh > /dev/null 2>&1; \
 done
-for CUR_FILE in `find .  -type f | grep -e "\.py$"| grep -v "doc" | grep -v "googletest"` ; do
+
+for CUR_FILE in `find .  -type f | grep -e "\.py$"| grep -v "doc" | grep -v "googletest"`
+do
 	ed $CUR_FILE < ../scripts/copyright/copyright.m > /dev/null 2>&1; \
 done
-for CUR_FILE in `find .  -type f | grep -e "Makefile$" -e "CMakeLists.txt"| grep -v "doc" | grep -v "googletest"` ; do
+
+for CUR_FILE in `find .  -type f | grep -e "Makefile$" -e "CMakeLists.txt"| grep -v "doc" | grep -v "googletest"`
+do
 	ed $CUR_FILE < ../scripts/copyright/copyright.m > /dev/null 2>&1; \
 done
-for CUR_FILE in `find .  -type f | grep -e "\.cmake.in$" | grep -v "googletest"` ; do
+
+for CUR_FILE in `find .  -type f | grep -e "\.cmake.in$" | grep -v "googletest"`
+do
 	ed $CUR_FILE < ../scripts/copyright/copyright.m > /dev/null 2>&1; \
 done
 

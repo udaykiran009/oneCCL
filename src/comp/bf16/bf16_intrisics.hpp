@@ -1,16 +1,5 @@
 #pragma once
 
-#ifdef CCL_BF16_COMPILER
-
-#include <immintrin.h>
-#include <inttypes.h>
-
-#include "common/global/global.hpp"
-#include "comp/bf16/bf16_utils.hpp"
-#include "oneapi/ccl/types.hpp"
-
-#define CCL_BF16_IN_M256 16
-
 #ifdef CCL_BF16_TARGET_ATTRIBUTES
 
 #ifdef CCL_BF16_AVX512BF_COMPILER
@@ -37,6 +26,17 @@
 
 #endif // CCL_BF16_TARGET_ATTRIBUTES
 
+#ifdef CCL_BF16_COMPILER
+
+#include <immintrin.h>
+#include <inttypes.h>
+
+#include "common/global/global.hpp"
+#include "comp/bf16/bf16_utils.hpp"
+#include "oneapi/ccl/types.hpp"
+
+#define CCL_BF16_IN_M256 16
+
 typedef __m512 (*ccl_bf16_reduction_func_ptr)(__m512 a, __m512 b);
 BF16_TARGET_ATTRIBUTE_BWF __m512 bf16_sum_wrap(__m512 a, __m512 b);
 BF16_TARGET_ATTRIBUTE_BWF __m512 bf16_prod_wrap(__m512 a, __m512 b);
@@ -58,7 +58,7 @@ BF16_INLINE_TARGET_ATTRIBUTE_BW void ccl_fp32_store_as_bf16_avx512f(const void* 
 BF16_INLINE_TARGET_ATTRIBUTE void ccl_fp32_store_as_bf16_avx512bf(const void* src, void* dst) {
     _mm256_storeu_si256((__m256i*)(dst), (__m256i)_mm512_cvtneps_pbh(_mm512_loadu_ps(src)));
 }
-#endif
+#endif // CCL_BF16_AVX512BF_COMPILER
 
 #define CCL_BF16_DEFINE_REDUCE_FUNC(impl_type) \
 \
@@ -101,7 +101,7 @@ BF16_INLINE_TARGET_ATTRIBUTE void ccl_fp32_store_as_bf16_avx512bf(const void* sr
 CCL_BF16_DEFINE_REDUCE_FUNC(avx512f);
 #ifdef CCL_BF16_AVX512BF_COMPILER
 CCL_BF16_DEFINE_REDUCE_FUNC(avx512bf);
-#endif
+#endif // CCL_BF16_AVX512BF_COMPILER
 
 BF16_INLINE_TARGET_ATTRIBUTE_ALL void ccl_bf16_reduce_impl(const void* in_buf,
                                                            void* inout_buf,
@@ -118,12 +118,17 @@ BF16_INLINE_TARGET_ATTRIBUTE_ALL void ccl_bf16_reduce_impl(const void* in_buf,
 
     auto impl_type = ccl::global_data::env().bf16_impl_type;
 
-    if (impl_type == ccl_bf16_avx512f)
+    if (impl_type == ccl_bf16_avx512f) {
         ccl_bf16_reduce_impl_avx512f(in_buf, inout_buf, in_cnt, func);
+    }
 #ifdef CCL_BF16_AVX512BF_COMPILER
-    else if (impl_type == ccl_bf16_avx512bf)
+    else if (impl_type == ccl_bf16_avx512bf) {
         ccl_bf16_reduce_impl_avx512bf(in_buf, inout_buf, in_cnt, func);
-#endif
+    }
+#endif // CCL_BF16_AVX512BF_COMPILER
+    else {
+        CCL_THROW("unexpected bf16_impl_type: ", impl_type);
+    }
 }
 
 #endif // CCL_BF16_COMPILER

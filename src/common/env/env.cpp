@@ -182,7 +182,7 @@ env_data::env_data()
           itt_level(0),
 #endif // CCL_ENABLE_ITT
 
-          bf16_impl_type(ccl_bf16_no_compiler_support),
+          bf16_impl_type(ccl_bf16_scalar),
           fp16_impl_type(ccl_fp16_no_compiler_support) {
 }
 
@@ -419,14 +419,7 @@ void env_data::parse() {
 #endif // CCL_ENABLE_ITT
 
     auto bf16_impl_types = ccl_bf16_get_impl_types();
-    ccl_bf16_impl_type bf16_env_impl_type;
-    if (env_2_enum(CCL_BF16, bf16_env_impl_names, bf16_env_impl_type)) {
-        CCL_THROW_IF_NOT(bf16_impl_types.find(bf16_env_impl_type) != bf16_impl_types.end(),
-                         "unsupported BF16 impl type: ",
-                         bf16_env_impl_names[bf16_env_impl_type]);
-        bf16_impl_type = bf16_env_impl_type;
-    }
-    else {
+    if (!env_2_enum(CCL_BF16, bf16_impl_names, bf16_impl_type)) {
         bf16_impl_type = *bf16_impl_types.rbegin();
     }
 

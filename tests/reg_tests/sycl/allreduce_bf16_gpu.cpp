@@ -66,7 +66,7 @@ int main() {
     void* send_buf_bf16_device = malloc_device(bf16_buf_size, q);
     void* recv_buf_bf16_device = malloc_device(bf16_buf_size, q);
 
-    // Copy our bf16 array to device memory
+    // copy our bf16 buffer to device memory
     q.memcpy(send_buf_bf16_device, send_buf_bf16, bf16_buf_size).wait();
 
     ccl::allreduce(send_buf_bf16_device,

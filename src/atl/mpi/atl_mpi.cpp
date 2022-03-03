@@ -765,14 +765,14 @@ MPI_Datatype atl_mpi::atl2mpi_dtype(atl_datatype_t dtype) {
 }
 
 MPI_Op atl_mpi::atl2mpi_op(atl_reduction_t rtype, MPI_Datatype dtype) {
-#ifdef ATL_MPI_BF16
-    if (dtype == ctx.bf16.dtype)
+    if (dtype == ctx.bf16.dtype) {
         return ctx.atl2mpi_op_bf16(rtype);
-#endif // ATL_MPI_BF16
+    }
 
 #ifdef ATL_MPI_FP16
-    if (dtype == ctx.fp16.dtype)
+    if (dtype == ctx.fp16.dtype) {
         return ctx.atl2mpi_op_fp16(rtype);
+    }
 #endif // ATL_MPI_FP16
 
     (void)dtype;
