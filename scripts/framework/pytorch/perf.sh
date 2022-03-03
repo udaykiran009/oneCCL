@@ -29,6 +29,21 @@ set_base_env() {
         CCL_ENV+=" CCL_ATL_TRANSPORT=ofi"
     fi
 
+    if [[ ${CHUNKING} = "1" ]]
+    then
+        if [[ ${ALGO} = "nreduce" ]]
+        then
+            CCL_ENV+=" CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE=2097152"
+        elif [[ ${ALGO} = "2d" ]]
+        then
+            CCL_ENV+=" CCL_ALLREDUCE_2D_CHUNK_COUNT=2"
+            # CCL_ENV+=" CCL_ALLREDUCE_2D_SWITCH_DIMS=1"
+        elif [[ ${ALGO} = "ring" ]]
+        then
+            CCL_ENV+=" CCL_RS_CHUNK_COUNT=2"
+        fi
+    fi
+
     CCL_ENV+=" CCL_LOG_LEVEL=info"
     CCL_ENV+=" CCL_ALLREDUCE=${ALGO} CCL_MAX_SHORT_SIZE=131072 CCL_BUFFER_CACHE=1"
     CCL_ENV+=" ATL_PROGRESS_MODE=1 CCL_WORKER_WAIT=0"
@@ -87,6 +102,7 @@ DEFAULT_MSG_SIZES="dlrm"
 DEFAULT_CLUSTER="lab"
 DEFAULT_MNIC="0"
 DEFAULT_ALGO="ring"
+DEFAULT_CHUNKING="0"
 
 echo_log() {
     echo -e "$*" 2>&1 | tee -a ${LOG_FILE}
@@ -128,6 +144,8 @@ print_help() {
     echo_log "      Enable multi-NIC"
     echo_log "  -algo <name>"
     echo_log "      Run with specified allreduce algorithm"
+    cho_log "  -chunking <bool_flag>"
+    echo_log "      Enable chunking/segmentation for allreduce algorithm"
     echo_log ""
     echo_log "Usage examples:"
     echo_log "  ${BASENAME}.sh -full 1"
@@ -147,6 +165,7 @@ parse_arguments() {
     CLUSTER=${DEFAULT_CLUSTER}
     MNIC=${DEFAULT_MNIC}
     ALGO=${DEFAULT_ALGO}
+    CHUNKING=${DEFAULT_CHUNKING}
 
     while [ $# -ne 0 ]
     do
@@ -193,6 +212,10 @@ parse_arguments() {
                 ;;
             "-algo")
                 ALGO="${2}"
+                shift
+                ;;
+            "-chunking")
+                CHUNKING="${2}"
                 shift
                 ;;
             *)
@@ -264,6 +287,7 @@ parse_arguments() {
     echo_log "CLUSTER             = ${CLUSTER}"
     echo_log "MNIC                = ${MNIC}"
     echo_log "ALGO                = ${ALGO}"
+    echo_log "CHUNKING            = ${CHUNKING}"
 
     echo_log "EXTERNAL_ITER_COUNT = ${EXTERNAL_ITER_COUNT}"
 
