@@ -169,8 +169,8 @@ private:
     static void check_invalid_color(int color);
     static void check_domain_count(size_t domain_count);
 
-    static std::map<int, std::string> get_domain_string(const std::string& input_str,
-                                                        const std::string& key);
+    static std::pair<int, std::string> get_domain_pair(const std::string& input_str,
+                                                       const std::string& key);
     static std::vector<std::string> get_subdomain_strings(const std::string& input_str);
 
     void build_host_info();

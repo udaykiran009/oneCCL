@@ -293,9 +293,11 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
     }
 
 #ifndef CCL_BF16_GPU_TRUNCATE
-    RETURN_FALSE_IF(
-        checkers::is_unknown_device_family(param) && (param.dtype.idx() == ccl::datatype::bfloat16),
-        "bfloat16 is not supported for unknown device family");
+    RETURN_FALSE_IF(checkers::is_unknown_device_family(param) &&
+                        (param.dtype.idx() == ccl::datatype::bfloat16) &&
+                        (param.ctype == ccl_coll_allreduce || param.ctype == ccl_coll_reduce ||
+                         param.ctype == ccl_coll_reduce_scatter),
+                    "bfloat16 reduction is not supported for unknown device family");
 #endif // !CCL_BF16_GPU_TRUNCATE
 
 #endif // CCL_ENABLE_SYCL

@@ -140,7 +140,11 @@ env_data::env_data()
           process_launcher(process_launcher_mode::hydra),
 
           enable_topo_algo(1),
+#ifdef CCL_ENABLE_SYCL
+          topo_color(topo_color_mode::ze),
+#else // CCL_ENABLE_SYCL
           topo_color(topo_color_mode::fixed),
+#endif // CCL_ENABLE_SYCL
           enable_p2p_access(CCL_ENV_INT_NOT_SPECIFIED),
 
 #ifdef CCL_ENABLE_MPI
@@ -619,7 +623,10 @@ void env_data::print(int rank) {
 #ifdef CCL_ENABLE_SYCL
     LOG_INFO(CCL_TOPO_ALGO, ": ", enable_topo_algo);
     LOG_INFO(CCL_TOPO_COLOR, ": ", str_by_enum(topo_color_names, topo_color));
-    LOG_INFO(CCL_TOPO_P2P_ACCESS, ": ", enable_p2p_access);
+    LOG_INFO(CCL_TOPO_P2P_ACCESS,
+             ": ",
+             (enable_p2p_access != CCL_ENV_INT_NOT_SPECIFIED) ? std::to_string(enable_p2p_access)
+                                                              : CCL_ENV_STR_NOT_SPECIFIED);
 
     LOG_INFO(
         CCL_KERNEL_PATH, ": ", (!kernel_path.empty()) ? kernel_path : CCL_ENV_STR_NOT_SPECIFIED);

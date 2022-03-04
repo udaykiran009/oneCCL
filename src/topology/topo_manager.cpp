@@ -370,32 +370,42 @@ domains_t topo_manager::parse_topo_env() {
     ccl::utils::str_to_array(std::string(env_to_parse), ";", domain_raw_strs);
     check_domain_count(domain_raw_strs.size());
 
-    std::vector<std::map<int, std::string>> domain_strs;
-    domain_strs.push_back(get_domain_string(domain_raw_strs[topo_manager::card_domain_idx],
-                                            std::string(topo_manager::card_domain_name)));
-    domain_strs.push_back(get_domain_string(domain_raw_strs[topo_manager::plane_domain_idx],
-                                            std::string(topo_manager::plane_domain_name)));
+    std::vector<std::pair<int, std::string>> domain_pairs;
+    domain_pairs.push_back(get_domain_pair(domain_raw_strs[topo_manager::card_domain_idx],
+                                           std::string(topo_manager::card_domain_name)));
+    domain_pairs.push_back(get_domain_pair(domain_raw_strs[topo_manager::plane_domain_idx],
+                                           std::string(topo_manager::plane_domain_name)));
 
-    for (const auto& domain_str : domain_strs) {
-        for (const auto& domain_pair : domain_str) {
-            std::vector<std::vector<int>> proc_indexes;
-            auto substrs = get_subdomain_strings(domain_pair.second);
-            for (const auto& substr : substrs) {
-                std::vector<int> procs{};
-                ccl::utils::str_to_array(substr, ",", procs);
-                for (const auto& proc : procs) {
-                    const auto local_proc_count =
-                        ccl::global_data::get().executor->get_local_proc_count();
-                    CCL_THROW_IF_NOT(proc < local_proc_count,
-                                     "unexpected process number: ",
-                                     proc,
-                                     ", it should be less than: ",
-                                     local_proc_count);
-                }
-                proc_indexes.push_back(procs);
-            }
-            domains.insert({ domain_pair.first, proc_indexes });
+    const auto local_proc_count = ccl::global_data::get().executor->get_local_proc_count();
+
+    std::vector<int> all_local_procs(local_proc_count);
+    std::iota(all_local_procs.begin(), all_local_procs.end(), 0);
+
+    for (const auto& domain_pair : domain_pairs) {
+        std::vector<std::vector<int>> proc_indexes;
+        auto domain_idx = domain_pair.first;
+        auto& domain_raw_str = domain_pair.second;
+        auto substrs = get_subdomain_strings(domain_raw_str);
+        for (const auto& substr : substrs) {
+            std::vector<int> procs{};
+            ccl::utils::str_to_array(substr, ",", procs);
+            proc_indexes.push_back(procs);
         }
+
+        std::vector<int> all_domain_procs;
+        for (const auto& procs : proc_indexes) {
+            all_domain_procs.insert(all_domain_procs.end(), procs.begin(), procs.end());
+        }
+        std::sort(all_domain_procs.begin(), all_domain_procs.end());
+
+        CCL_THROW_IF_NOT(all_domain_procs == all_local_procs,
+                         "unexpected process indexes for topo domain ",
+                         domain_raw_strs[domain_idx],
+                         ", all local processes should be covered by user-supplied topo domain",
+                         ", local process count ",
+                         local_proc_count);
+
+        domains.insert({ domain_idx, proc_indexes });
     }
     check_domain_count(domains.size());
     return domains;
@@ -544,6 +554,7 @@ void topo_manager::allgatherv(const void* send_buf,
 }
 
 void topo_manager::fill_env_colors(const rank_info_vec_t& info_vec) {
+    CCL_THROW_IF_NOT(!domains.empty());
     for (const auto& domain : domains) {
         auto& subdomains = domain.second;
         int color_idx = 0;
@@ -604,11 +615,15 @@ void topo_manager::fill_ze_intra_colors(const rank_info_vec_t& local_info_vec) {
 
     for (const auto& info : local_info_vec) {
         const auto& pci_addr = ze_rank_info_vec[info.rank].pci_addr;
+
+        // search last card with the same pci_addr
         auto card_it =
-            std::find_if(cards.begin(), cards.end(), [&pci_addr](const card_info_t& info) {
+            std::find_if(cards.rbegin(), cards.rend(), [&pci_addr](const card_info_t& info) {
                 return ze::is_same_pci_addr(pci_addr, info.first);
             });
-        if (card_it == cards.end()) {
+
+        // if there is no such card or card already filled create new one
+        if (card_it == cards.rend() || (card_it->second.size() == max_ranks_per_card)) {
             cards.push_back(std::make_pair(pci_addr, std::vector<int>{ info.rank }));
         }
         else {
@@ -616,20 +631,13 @@ void topo_manager::fill_ze_intra_colors(const rank_info_vec_t& local_info_vec) {
         }
     }
 
-    int color = 0;
-    size_t ranks_per_color = 0;
-    for (const auto& card : cards) {
-        const auto& card_ranks = card.second;
+    for (size_t card_idx = 0; card_idx < cards.size(); card_idx++) {
+        const auto& card_ranks = cards[card_idx].second;
         auto unique_card_ranks = std::set<int>(card_ranks.begin(), card_ranks.end());
         CCL_THROW_IF_NOT(card_ranks.size() == unique_card_ranks.size());
         for (const auto& rank : card_ranks) {
             check_invalid_color(intra_card_colors[rank]);
-            intra_card_colors[rank] = color;
-            ranks_per_color++;
-            if ((ranks_per_color == max_ranks_per_card) || (rank == card_ranks.back())) {
-                color++;
-                ranks_per_color = 0;
-            }
+            intra_card_colors[rank] = card_idx;
         }
     }
 }
@@ -1074,9 +1082,8 @@ void topo_manager::check_domain_count(size_t domain_count) {
                      topo_manager::max_domain_count);
 }
 
-std::map<int, std::string> topo_manager::get_domain_string(const std::string& input_str,
-                                                           const std::string& key) {
-    std::map<int, std::string> map;
+std::pair<int, std::string> topo_manager::get_domain_pair(const std::string& input_str,
+                                                          const std::string& key) {
     auto str = input_str;
 
     size_t pos = str.find(key);
@@ -1094,8 +1101,8 @@ std::map<int, std::string> topo_manager::get_domain_string(const std::string& in
 
     CCL_THROW_IF_NOT(
         domain_idx != topo_manager::invalid_domain_idx, "unexpected domain index: ", domain_idx);
-    map.insert({ domain_idx, str });
-    return map;
+
+    return std::make_pair(domain_idx, str);
 }
 
 std::vector<std::string> topo_manager::get_subdomain_strings(const std::string& input_str) {
@@ -1217,14 +1224,21 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
                          idx);
     }
 
-#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-    ze_base_init(device, context);
-    is_p2p_access_enabled = check_p2p_access();
-#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
-
     if (!(device && context)) {
         return;
     }
+
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+    if (device.get()->get_native().get_backend() == utils::get_level_zero_backend()) {
+        ze_base_init(device, context);
+    }
+    else {
+        if (ccl::global_data::env().topo_color == topo_color_mode::ze) {
+            LOG_INFO("fallback to fixed topo color mode");
+            ccl::global_data::env().topo_color = topo_color_mode::fixed;
+        }
+    }
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 
     if (ccl::global_data::env().topo_color == topo_color_mode::fixed) {
         for (int h_idx = 0; h_idx < (int)host_info_vec.size(); h_idx++) {
@@ -1277,19 +1291,6 @@ void topo_manager::ze_base_init(std::shared_ptr<ccl::device> device,
     int comm_rank = comm->get_rank();
     int comm_size = comm->get_size();
 
-    p2p_matrix.resize(comm_size);
-    for (size_t i = 0; i < p2p_matrix.size(); i++) {
-        p2p_matrix[i].resize(comm_size, false);
-    }
-
-    if (!(device && context)) {
-        return;
-    }
-
-    if (device.get()->get_native().get_backend() != utils::get_level_zero_backend()) {
-        return;
-    }
-
     ze_device = sycl::get_native<utils::get_level_zero_backend()>(device.get()->get_native());
     CCL_THROW_IF_NOT(ze_device, "null ze device");
     ZE_CALL(zeDeviceGetProperties, (ze_device, &dev_props));
@@ -1323,6 +1324,7 @@ void topo_manager::ze_base_init(std::shared_ptr<ccl::device> device,
     // build p2p connectivity info
     const auto& node_devices = global_data::get().ze_data->devices;
     p2p_matrix = build_p2p_matrix(get_filtered_devices(node_devices));
+    is_p2p_access_enabled = check_p2p_access();
     LOG_DEBUG("p2p matrix: \n",
               ccl::to_string(p2p_matrix),
               "\nnumber of node devices: ",

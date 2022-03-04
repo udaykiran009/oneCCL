@@ -85,8 +85,6 @@ global_data_desc::~global_data_desc() {
     device_handles.clear();
     drivers.clear();
 
-    ze_api_fini();
-
     LOG_INFO("finalized level-zero");
 }
 

@@ -32,9 +32,10 @@ bool mpi_api_init() {
 }
 
 void mpi_api_fini() {
-    LOG_DEBUG("close MPI lib: handle:", mpi_lib_info.handle);
+    LOG_DEBUG("close MPI lib: handle: ", mpi_lib_info.handle);
     close_library(mpi_lib_info);
 }
 
 } //namespace ccl
+
 #endif //CCL_ENABLE_MPI

@@ -62,13 +62,13 @@ queue_factory::queue_factory(ze_device_handle_t device,
     if (!global_data::env().disable_ze_family_check) {
         if (queue_props.size() == 1 && queue_props.front().numQueues == 1 &&
             (get_device_family(device) == ccl::device_family::unknown)) {
-            ze_device_properties_t device_props;
-            ZE_CALL(zeDeviceGetProperties, (device, &device_props));
-            bool is_integrated = device_props.flags & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED;
+            ze_device_properties_t dev_props = ccl::ze::default_device_props;
+            ZE_CALL(zeDeviceGetProperties, (device, &dev_props));
+            bool is_integrated = dev_props.flags & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED;
 
             CCL_THROW_IF_NOT(is_integrated,
                              "unexpected device properties flags: ",
-                             flags_to_string<ze_device_property_flag_t>(device_props.flags));
+                             flags_to_string<ze_device_property_flag_t>(dev_props.flags));
         }
     }
 

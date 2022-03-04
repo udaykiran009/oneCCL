@@ -42,16 +42,19 @@ check_test()
     local test_file=$2
 
     passed_pattern="passed|# all done"
+
     failed_pattern="abort|^bad$|corrupt|fail|^fault$|[^-W]invalid"
     failed_pattern+="|kill|runtime_error|terminate|timed|unexpected"
     failed_pattern+="|[^-W]error|exception"
     failed_pattern+="|job ending due to application timeout"
-    failed_supress_pattern="\-\-abort\-signal|CCL_ABORT_ON_THROW"
+
+    exclude_pattern="\-\-abort\-signal|CCL_ABORT_ON_THROW"
+    exclude_pattern+="|fi_strerror|MPI_Error_string"
 
     skipped_pattern="skip test|unavailable"
 
     test_passed=`grep -E -c -i "${passed_pattern}" ${test_log}`
-    test_failed=`grep -E -i "${failed_pattern}" ${test_log} | grep -Evc "${failed_supress_pattern}"`
+    test_failed=`grep -E -i "${failed_pattern}" ${test_log} | grep -Evc "${exclude_pattern}"`
     test_skipped=`grep -E -c -i "${skipped_pattern}" ${test_log}`
 
     if ([ ${test_passed} -eq 0 ] || [ ${test_skipped} -eq 0 ]) && [ ${test_failed} -ne 0 ]

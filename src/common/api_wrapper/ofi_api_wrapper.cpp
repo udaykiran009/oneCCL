@@ -30,7 +30,7 @@ bool ofi_api_init() {
 }
 
 void ofi_api_fini() {
-    LOG_DEBUG("close OFI lib: handle:", ofi_lib_info.handle);
+    LOG_DEBUG("close OFI lib: handle: ", ofi_lib_info.handle);
     close_library(ofi_lib_info);
 }
 

@@ -220,9 +220,9 @@ endif()
 set(SRC_SHARED_LINKER_FLAGS "${SRC_SHARED_LINKER_FLAGS} -Wl,--version-script=${PROJECT_SOURCE_DIR}/ccl.map")
 
 if (${CMAKE_C_COMPILER_ID} STREQUAL "Intel" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
-    #To suppress for 'offsetof applied to non-POD (Plain Old Data) types is nonstandar'
+    # To suppress for 'offsetof applied to non-POD (Plain Old Data) types is nonstandar'
     set(SRC_CXX_FLAGS "${SRC_CXX_FLAGS} -diag-disable=1875")
-    # To supress "overloaded virtual function is only partially overridden in class", as we intentially
+    # To suppress "overloaded virtual function is only partially overridden in class", as we intentially
     # don't override some base class' overloads in order to keep a default implementation for them
     set(SRC_CXX_FLAGS "${SRC_CXX_FLAGS} -diag-disable=654")
 endif()

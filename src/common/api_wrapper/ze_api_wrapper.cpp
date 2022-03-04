@@ -32,7 +32,7 @@ bool ze_api_init() {
 }
 
 void ze_api_fini() {
-    LOG_DEBUG("close level-zero lib: handle:", ze_lib_info.handle);
+    LOG_DEBUG("close level-zero lib: handle: ", ze_lib_info.handle);
     close_library(ze_lib_info);
 }
 

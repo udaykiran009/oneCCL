@@ -15,6 +15,7 @@ then
 else
     make_common_actions ${SCRIPT_DIR} ${TEST_LOG}
 fi
+
 check_run() {
     expected_str=$1
     log=$2
@@ -28,6 +29,7 @@ bench_options="-j off -w 1 -i 2 -c all -l allreduce -y 1024"
 CCL_LOG_LEVEL=debug CCL_ATL_TRANSPORT=ofi CCL_OFI_LIBRARY_PATH="/lib/fake-path/libfabric.so.123" \
 mpiexec -l -n 2 -ppn 2 ${SCRIPT_DIR}/benchmark ${bench_options} > ${LOG} 2>&1
 check_ret $?
+check_log ${LOG}
 check_run "could not initialize OFI api" ${LOG}
 rm ${LOG}
 
@@ -35,6 +37,7 @@ rm ${LOG}
 CCL_LOG_LEVEL=debug CCL_ATL_TRANSPORT=mpi CCL_MPI_LIBRARY_PATH="/lib/fake-path/libmpi.so.123" \
 mpiexec -l -n 2 -ppn 2 ${SCRIPT_DIR}/benchmark ${bench_options} > ${LOG} 2>&1
 check_ret $?
+check_log ${LOG}
 check_run "could not initialize MPI api" ${LOG}
 rm ${LOG}
 
@@ -50,16 +53,18 @@ fi
 check_run "could not initialize any transport library" ${LOG}
 rm ${LOG}
 
-#case 4: correct OFI path
-CCL_ATL_TRANSPORT=ofi CCL_OFI_LIBRARY_PATH="${CCL_ROOT}/lib/libfabric.so.1" \
+# case 4: correct OFI path
+CCL_ATL_TRANSPORT=ofi CCL_OFI_LIBRARY_PATH="${I_MPI_ROOT}/libfabric/lib/libfabric.so.1" \
 mpiexec -l -n 2 -ppn 2 ${SCRIPT_DIR}/benchmark ${bench_options} > ${LOG} 2>&1
 check_ret $?
+check_log ${LOG}
 rm ${LOG}
 
-#case 5: correct MPI path
-CCL_ATL_TRANSPORT=mpi CCL_MPI_LIBRARY_PATH="${CCL_ROOT}/lib/libmpi.so.12" \
+# case 5: correct MPI path
+CCL_ATL_TRANSPORT=mpi CCL_MPI_LIBRARY_PATH="${I_MPI_ROOT}/lib/release/libmpi.so.12" \
 mpiexec -l -n 2 -ppn 2 ${SCRIPT_DIR}/benchmark ${bench_options} > ${LOG} 2>&1
 check_ret $?
+check_log ${LOG}
 rm ${LOG}
 
 echo "Pass"

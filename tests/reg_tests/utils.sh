@@ -49,10 +49,11 @@ function check_log() {
     failed_pattern+="|job ending due to application timeout"
 
     # patterns to exclude as they're printed in non-error cases
-    suppress_pattern="\-\-abort\-signal|CCL_ABORT_ON_THROW"
-    failed_strings=`grep -E -i "${failed_pattern}" ${log_path} | grep -Ev "${supress_pattern}"`
-    failed_count=`${failed_strings} | wc -l`
-    if [ ${failed_count} -ne 0 ]
+    exclude_pattern="\-\-abort\-signal|CCL_ABORT_ON_THROW"
+    exclude_pattern+="|fi_strerror|MPI_Error_string|fake-path"
+
+    failed_strings=`grep -E -i "${failed_pattern}" ${log_path} | grep -Ev "${exclude_pattern}"`
+    if [ "${failed_strings}" != "" ]
     then
         echo "Error: found error in log ${log_path}"
         echo ""
@@ -75,7 +76,7 @@ check_ret() {
     if [[ $rc -ne 0 ]]
     then
         echo "Fail"
-        exit -1
+        exit 1
     fi
 }
 
