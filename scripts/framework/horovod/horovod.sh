@@ -855,7 +855,7 @@ install_ccl() {
     mkdir build
     cd build
     cmake .. -DBUILD_FT=0 -DBUILD_EXAMPLES=0 \
-        -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_BACKEND=dpcpp
+        -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=dpcpp
     CheckCommandExitCode $? "Configure CCL failed"
 
     make -j install

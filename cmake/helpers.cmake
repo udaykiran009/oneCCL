@@ -204,7 +204,7 @@ function(activate_compute_backend MODULES_PATH COMPUTE_BACKEND)
         # remember current target for `target_link_libraries` in ccl
         set (COMPUTE_BACKEND_TARGET_NAME Intel::SYCL_level_zero)
         set (COMPUTE_BACKEND_TARGET_NAME Intel::SYCL_level_zero PARENT_SCOPE)
-        message ("COMPUTE_BACKEND_TARGET_NAME=${COMPUTE_BACKEND_TARGET_NAME} requested. Using DPC++ provider")
+        message (STATUS "COMPUTE_BACKEND_TARGET_NAME: ${COMPUTE_BACKEND_TARGET_NAME} requested. Using DPC++ provider")
     endif()
 
     # extract target properties
@@ -230,6 +230,18 @@ function(activate_compute_backend MODULES_PATH COMPUTE_BACKEND)
     set(COMPUTE_BACKEND_INCLUDE_DIRS ${COMPUTE_BACKEND_INCLUDE_DIRS_LOCAL}  PARENT_SCOPE)
 
 endfunction(activate_compute_backend)
+
+function(define_compute_backend)
+    if (NOT DEFINED COMPUTE_BACKEND)
+        message(STATUS "COMPUTE_BACKEND is not defined")
+        if (${CMAKE_CXX_COMPILER} MATCHES ".*dpcpp")
+            set(COMPUTE_BACKEND "dpcpp" CACHE STRING "compute backend value")
+            message(STATUS "COMPUTE_BACKEND: ${COMPUTE_BACKEND} (set by default)")
+        endif()
+    else()
+        message(STATUS "COMPUTE_BACKEND: ${COMPUTE_BACKEND} (set by user)")
+    endif()
+endfunction(define_compute_backend)
 
 function(set_compute_backend COMMON_CMAKE_DIR)
     activate_compute_backend("${COMMON_CMAKE_DIR}" ${COMPUTE_BACKEND})

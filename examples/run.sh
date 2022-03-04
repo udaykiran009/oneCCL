@@ -292,7 +292,7 @@ build()
     echo "Building"
     cmake .. -DCMAKE_C_COMPILER="${C_COMPILER}" \
                 -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" \
-                -DCOMPUTE_BACKEND="${COMPUTE_BACKEND}"  2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
+                2>&1 | tee ${EXAMPLE_WORK_DIR}/build_output.log
     make -j 2>&1 | tee -a ${EXAMPLE_WORK_DIR}/build_output.log
     error_count=`grep -E -i -c 'error|abort|fail'  ${EXAMPLE_WORK_DIR}/build_output.log` > /dev/null 2>&1
     if [ "${error_count}" != "0" ]
@@ -691,7 +691,6 @@ check_mode()
         if [ -z "${CXX_COMPILER}" ]
         then
             CXX_COMPILER=dpcpp
-            COMPUTE_BACKEND="dpcpp"
         fi
         ;;
     esac

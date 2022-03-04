@@ -134,7 +134,7 @@ then
     cd ./mlsl2
     mkdir build
     cd build
-    cmake .. -DBUILD_FT=0 -DBUILD_UT=0 -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_BACKEND=dpcpp
+    cmake .. -DBUILD_FT=0 -DBUILD_UT=0 -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=dpcpp
     make -j12 install
 fi
 

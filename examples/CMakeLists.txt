@@ -84,6 +84,7 @@ endif()
 include_directories(include)
 
 add_subdirectory(cpu)
+
 if ("${COMPUTE_BACKEND}" STREQUAL "dpcpp")
     add_subdirectory(sycl)
 endif()

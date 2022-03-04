@@ -501,7 +501,7 @@ function make_tests()
     mkdir -p build
     cd ./build
     cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER="${C_COMPILER}" \
-        -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DCOMPUTE_BACKEND="${COMPUTE_BACKEND}" \
+        -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" \
         -DPROC_MAPS="`echo ${PROC_MAPS} | tr '/' ';'`"
     make all
     check_command_exit_code $? "Compilation of functional tests is FAILED"

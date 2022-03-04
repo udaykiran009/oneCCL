@@ -209,7 +209,6 @@ define_compiler() {
         if [ -z "${CXX_COMPILER}" ]
         then
             CXX_COMPILER=dpcpp
-            COMPUTE_BACKEND="dpcpp"
         fi
         ;;
     esac
@@ -222,7 +221,7 @@ build() {
         rm -rf build
         mkdir ${SCRIPT_DIR}/build
         pushd ${SCRIPT_DIR}/build
-        cmake .. -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DCOMPUTE_BACKEND="${COMPUTE_BACKEND}"
+        cmake .. -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}"
         make VERBOSE=1 -j${MAKE_JOB_COUNT} install
         check_command_exit_code $? "build failed"
         popd

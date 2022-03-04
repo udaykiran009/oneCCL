@@ -65,7 +65,7 @@ message(STATUS "Enable SYCL interop event support: ${ENABLE_SYCL_INTEROP_EVENT}"
 message(STATUS "Enable OFI HMEM support: ${ENABLE_OFI_HMEM}")
 message(STATUS "Enable OFI out-of-tree providers support: ${ENABLE_OFI_OOT_PROV}")
 message(STATUS "Enable ITT profiling support: ${ENABLE_ITT}")
-message(STATUS "Enable stub backend" ${ENABLE_STUB_BACKEND})
+message(STATUS "Enable stub backend: ${ENABLE_STUB_BACKEND}")
 
 add_definitions(-DCCL_C_COMPILER="${CMAKE_C_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}")
 add_definitions(-DCCL_CXX_COMPILER="${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
@@ -151,6 +151,9 @@ if (NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel")
 endif()
 
 set(COMMON_CMAKE_DIR ${PROJECT_SOURCE_DIR}/cmake)
+
+define_compute_backend()
+
 if (COMPUTE_BACKEND)
     precheck_compute_backend()
     message(STATUS "COMPUTE_BACKEND: ${COMPUTE_BACKEND}")

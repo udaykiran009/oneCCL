@@ -10,6 +10,13 @@ project(${PROJECT_NAME})
 message(STATUS "PROJECT_NAME: ${PROJECT_NAME}")
 message(STATUS "PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 
+# include helpers if we build in standalone mode
+if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+    set(COMMON_CMAKE_DIR ${PROJECT_SOURCE_DIR}/../../cmake)
+    include(${COMMON_CMAKE_DIR}/helpers.cmake)
+    define_compute_backend()
+endif()
+
 set(EXAMPLES_DIR ${PROJECT_SOURCE_DIR}/../../examples)
 set(EXAMPLES_INC_DIRS ${EXAMPLES_DIR}/include)
 message(STATUS "EXAMPLES_INC_DIRS: ${EXAMPLES_INC_DIRS}")
@@ -53,6 +60,7 @@ endif()
 
 add_subdirectory(cpu)
 
+message(STATUS "COMPUTE_BACKEND: ${COMPUTE_BACKEND}")
 if ("${COMPUTE_BACKEND}" STREQUAL "dpcpp")
     add_subdirectory(sycl)
 endif()
