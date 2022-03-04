@@ -1,4 +1,5 @@
 #include "coll/selection/selection.hpp"
+#include "common/api_wrapper/api_wrapper.hpp"
 #include "common/datatype/datatype.hpp"
 #include "common/global/global.hpp"
 #include "exec/exec.hpp"
@@ -66,11 +67,16 @@ ccl::status global_data::reset() {
     ze_data.reset();
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
+    api_wrappers_fini();
+
     return ccl::status::success;
 }
 
 ccl::status global_data::init() {
     env_object.parse();
+
+    api_wrappers_init();
+
     env_object.set_internal_env();
 
     os_info.fill();
@@ -78,27 +84,6 @@ ccl::status global_data::init() {
     if (os_info.release.find("WSL2") != std::string::npos) {
         env_object.enable_topo_algo = 0;
     }
-
-#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
-    if (ccl::global_data::env().backend == backend_mode::native &&
-        ccl::global_data::env().ze_enable) {
-        LOG_INFO("initializing level-zero api");
-        if (ze_api_init()) {
-            try {
-                ze_data.reset(new ze::global_data_desc);
-            }
-            catch (const ccl::exception& e) {
-                LOG_INFO("could not initialize level-zero: ", e.what());
-            }
-            catch (...) {
-                LOG_INFO("could not initialize level-zero: unknown error");
-            }
-        }
-        else {
-            LOG_INFO("could not initialize level-zero api");
-        }
-    }
-#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
 
     init_resize_dependent_objects();
     init_resize_independent_objects();

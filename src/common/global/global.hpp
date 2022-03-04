@@ -6,7 +6,6 @@
 #if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
 #include "common/global/ze_data.hpp"
 #endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL
-
 #include "common/utils/utils.hpp"
 #include "hwloc/hwloc_wrapper.hpp"
 #include "internal_types.hpp"

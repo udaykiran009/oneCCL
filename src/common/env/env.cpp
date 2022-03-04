@@ -143,6 +143,11 @@ env_data::env_data()
           topo_color(topo_color_mode::fixed),
           enable_p2p_access(CCL_ENV_INT_NOT_SPECIFIED),
 
+#ifdef CCL_ENABLE_MPI
+          mpi_lib_path(),
+#endif // CCL_ENABLE_MPI
+          ofi_lib_path(),
+
 #ifdef CCL_ENABLE_SYCL
           kernel_path(),
           kernel_debug(0),
@@ -340,6 +345,11 @@ void env_data::parse() {
     env_2_type(CCL_TOPO_ALGO, enable_topo_algo);
     env_2_topo(CCL_TOPO_COLOR, topo_color_names, topo_color);
     env_2_type(CCL_TOPO_P2P_ACCESS, enable_p2p_access);
+
+#ifdef CCL_ENABLE_MPI
+    env_2_type(CCL_MPI_LIBRARY_PATH, mpi_lib_path);
+#endif // CCL_ENABLE_MPI
+    env_2_type(CCL_OFI_LIBRARY_PATH, ofi_lib_path);
 
 #ifdef CCL_ENABLE_SYCL
     env_2_type(CCL_KERNEL_PATH, kernel_path);
@@ -596,6 +606,15 @@ void env_data::print(int rank) {
                                                        : CCL_ENV_STR_NOT_SPECIFIED);
 
     LOG_INFO(CCL_PROCESS_LAUNCHER, ": ", str_by_enum(process_launcher_names, process_launcher));
+
+#ifdef CCL_ENABLE_MPI
+    LOG_INFO(CCL_MPI_LIBRARY_PATH,
+             ": ",
+             (!mpi_lib_path.empty()) ? mpi_lib_path : CCL_ENV_STR_NOT_SPECIFIED);
+#endif // CCL_ENABLE_MPI
+    LOG_INFO(CCL_OFI_LIBRARY_PATH,
+             ": ",
+             (!ofi_lib_path.empty()) ? ofi_lib_path : CCL_ENV_STR_NOT_SPECIFIED);
 
 #ifdef CCL_ENABLE_SYCL
     LOG_INFO(CCL_TOPO_ALGO, ": ", enable_topo_algo);

@@ -3,10 +3,6 @@
 #include <dlfcn.h>
 #include <inttypes.h>
 #include <math.h>
-#include <rdma/fabric.h>
-#include <rdma/fi_cm.h>
-#include <rdma/fi_tagged.h>
-#include <rdma/fi_rma.h>
 #include <set>
 #include <sstream>
 #include <stdio.h>
@@ -20,6 +16,7 @@
 #include <errno.h>
 
 #include "atl/util/pm/pm_rt.h"
+#include "common/api_wrapper/ofi_api_wrapper.hpp"
 #include "common/global/global.hpp"
 #include "common/utils/utils.hpp"
 #include "hwloc/hwloc_wrapper.hpp"

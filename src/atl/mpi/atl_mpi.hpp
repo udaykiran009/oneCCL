@@ -2,10 +2,9 @@
 
 #ifdef CCL_ENABLE_MPI
 
-#include <mpi.h>
-
 #include "atl/atl_base_transport.hpp"
 #include "atl/mpi/atl_mpi_ctx.hpp"
+#include "common/api_wrapper/mpi_api_wrapper.hpp"
 
 #define ATL_MPI_RET(ret) (ret != MPI_SUCCESS) ? ATL_STATUS_FAILURE : ATL_STATUS_SUCCESS
 

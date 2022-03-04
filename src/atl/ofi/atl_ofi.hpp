@@ -2,11 +2,11 @@
 
 #include <iostream>
 #include <memory>
-#include <rdma/fi_domain.h>
 #include <unordered_map>
 
 #include "atl/atl_base_transport.hpp"
 #include "atl/ofi/atl_ofi_helper.hpp"
+#include "common/api_wrapper/ofi_api_wrapper.hpp"
 #include "common/utils/hash.hpp"
 #include "common/utils/spinlock.hpp"
 

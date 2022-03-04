@@ -70,6 +70,15 @@ function check_command_exit_code() {
     fi
 }
 
+check_ret() {
+    rc=$1
+    if [[ $rc -ne 0 ]]
+    then
+        echo "Fail"
+        exit -1
+    fi
+}
+
 function get_bench() {
     dst_dir=$1
     log_path=$2

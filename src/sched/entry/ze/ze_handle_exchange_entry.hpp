@@ -7,7 +7,7 @@
 
 #include <poll.h>
 #include <sys/un.h>
-#include "common/ze/ze_api_wrapper.hpp"
+#include "common/api_wrapper/ze_api_wrapper.hpp"
 
 class ze_handle_exchange_entry : public sched_entry {
 public:

@@ -108,7 +108,7 @@ parse_arguments() {
                 exit 0
                 ;;
             "-mode"|"--mode")
-                MODE=${2}
+                export MODE=${2}
                 shift
                 ;;
             "-exclude-list"|"--exclude-list")
@@ -166,9 +166,9 @@ check_mode() {
             echo "WARNING: DASHBOARD_INSTALL_TOOLS_INSTALLED variable doesn't contain 'dpcpp' or the DASHBOARD_GPU_DEVICE_PRESENT variable is missing"
             echo "WARNING: Using cpu configuration of the library"
             source ${CCL_ROOT}/env/vars.sh --ccl-configuration=cpu
-            MODE="cpu"
+            export MODE="cpu"
         else
-            MODE="gpu"
+            export MODE="gpu"
         fi
     fi
 }

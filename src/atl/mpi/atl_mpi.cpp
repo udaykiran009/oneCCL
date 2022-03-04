@@ -37,7 +37,6 @@ atl_status_t atl_mpi::init(int* argc,
     }
 
     MPI_Initialized(&ctx.is_external_init);
-
     if (!ctx.is_external_init) {
         ret = MPI_Init_thread(argc, argv, required_thread_level, &provided_thread_level);
         if (provided_thread_level < required_thread_level) {
@@ -641,7 +640,6 @@ atl_status_t atl_mpi::finalize(int global_idx) {
 
     int is_mpi_finalized = 0;
     MPI_Finalized(&is_mpi_finalized);
-
     if (!is_mpi_finalized) {
         ctx.bf16_finalize();
         ctx.fp16_finalize();

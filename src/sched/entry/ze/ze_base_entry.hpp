@@ -5,7 +5,7 @@
 #include "sched/sched.hpp"
 #include "sched/entry/entry.hpp"
 
-#include "common/ze/ze_api_wrapper.hpp"
+#include "common/api_wrapper/ze_api_wrapper.hpp"
 
 using namespace ccl::ze;
 

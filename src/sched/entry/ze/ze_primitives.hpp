@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "common/ze/ze_api_wrapper.hpp"
+#include "common/api_wrapper/ze_api_wrapper.hpp"
 #include "sched/entry/ze/ze_call.hpp"
 
 namespace ccl {

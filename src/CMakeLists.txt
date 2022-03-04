@@ -27,7 +27,7 @@ if (CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
 
         common/global/ze_data.cpp
         common/utils/sycl_utils.cpp
-        common/ze/ze_api_wrapper.cpp
+        common/api_wrapper/ze_api_wrapper.cpp
 
         sched/ze/ze_event_manager.cpp
         sched/ze/ze_handle_manager.cpp
@@ -117,6 +117,10 @@ set(CCL_SRC
     common/utils/utils.cpp
     common/utils/version.cpp
     common/utils/yield.cpp
+
+    common/api_wrapper/api_wrapper.cpp
+    common/api_wrapper/mpi_api_wrapper.cpp
+    common/api_wrapper/ofi_api_wrapper.cpp
 
     comp/bf16/bf16.cpp
     comp/bf16/bf16_intrisics.cpp
@@ -240,13 +244,10 @@ list(APPEND SRC_INCLUDE_DIRS
      ${HWLOC_INCLUDE_DIR}
      ${ITT_INCLUDE_DIR})
 
-list(APPEND SRC_LINK_DIRS ${LIBFABRIC_LIB_DIR})
-
 list(APPEND SRC_LINK_LIBS
      dl
      pthread
      ${EXTERNAL_LIBS}
-     fabric
      ${HWLOC_LIB_DIR}/libhwloc.a
      ${ITT_LIB_DIR}/libittnotify.a)
 
@@ -254,8 +255,6 @@ if (ENABLE_MPI)
     set(SRC_C_FLAGS "${SRC_C_FLAGS} -DCCL_ENABLE_MPI")
     set(SRC_CXX_FLAGS "${SRC_CXX_FLAGS} -DCCL_ENABLE_MPI")
     list(APPEND SRC_INCLUDE_DIRS ${MPI_INCLUDE_DIR})
-    list(APPEND SRC_LINK_DIRS ${MPI_LIB_DIR})
-    list(APPEND SRC_LINK_LIBS mpi)
 endif()
 
 link_directories(${SRC_LINK_DIRS})

@@ -369,7 +369,7 @@ post_build()
         -D_GNU_SOURCE -fvisibility=hidden -O3 -DNDEBUG \
         -std=gnu99 -O3 -shared -Wl,-soname=${LIBCCL_SONAME} \
         -o libccl.so.${LIBCCL_SO_VERSION} *.o ${LDFLAGS} \
-        -L${WORKSPACE}/build/_install/lib/ -lmpi -lm -lfabric -ldl -pthread
+        -L${WORKSPACE}/build/_install/lib/ -lm -ldl -pthread
 
     CheckCommandExitCode $? "post build failed"
     rm -rf *.o
