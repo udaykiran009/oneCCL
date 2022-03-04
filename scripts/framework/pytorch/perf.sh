@@ -49,9 +49,13 @@ set_base_env() {
     CCL_ENV+=" ATL_PROGRESS_MODE=1 CCL_WORKER_WAIT=0"
 
     MPI_ENV+=" I_MPI_DEBUG=12"
-    PSM3_ENV+=" PSM3_MULTI_EP=1 PSM3_RDMA=1 PSM3_MR_CACHE_MODE=2"
+    PSM3_ENV+=" PSM3_MULTI_EP=1 PSM3_RDMA=1"
     PSM3_ENV+=" PSM3_IDENTIFY=1 PSM3_ALLOW_ROUTERS=1"
-    PSM3_ENV+=" PSM3_MQ_RNDV_NIC_THRESH=524288 FI_PSM3_TIMEOUT=0"
+    if [[ ${CLUSTER} != "diamond_spr" ]]
+    then
+        PSM3_ENV+=" PSM3_MR_CACHE_MODE=2 PSM3_MQ_RNDV_NIC_THRESH=524288 FI_PSM3_TIMEOUT=0"
+    fi
+    
 
     if [[ ${CLUSTER} = "lab" ]]
     then
@@ -64,9 +68,8 @@ set_base_env() {
         CCL_ENV+=" FI_PROVIDER_PATH=/home/files/psm3/11.2.0.0.90-rhel83"
     elif [[ ${CLUSTER} = "diamond_spr" ]]
     then
-        SNIC_NAME="mlx5_0"
-        MNIC_NAME="mlx5_0,mlx5_2"
-        CCL_ENV+=" FI_PROVIDER_PATH=/home/tmp/s9spsm3"
+        SNIC_NAME="irdma-cvl0mav"
+        MNIC_NAME="irdma-cvl0mav,irdma-cvl1mav"
     fi
 
     MNIC_TOPO="global"
@@ -74,7 +77,12 @@ set_base_env() {
     if [[ ${MNIC} = "1" ]]
     then
         CCL_ENV+=" CCL_MNIC=${MNIC_TOPO} CCL_MNIC_NAME=${MNIC_NAME} CCL_MNIC_COUNT=2"
-        PSM3_ENV+=" PSM3_ADDR_FMT=3"
+        if [[ ${CLUSTER} != "diamond_spr" ]]
+        then
+            PSM3_ENV+=" PSM3_ADDR_FMT=3"
+        else
+            PSM3_ENV+=" PSM3_NIC=irdma-cvl*"
+        fi
     else
         PSM3_ENV+=" PSM3_NIC=${SNIC_NAME}"
     fi
