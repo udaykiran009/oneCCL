@@ -213,7 +213,7 @@ atl_status_t pmi_resizable_simple::pmrt_kvs_get(char* kvs_key,
 
     ret = decode(val_storage, kvs_val, kvs_val_len);
     if (ret) {
-        LOG_ERROR("encode failed");
+        LOG_ERROR("decode failed");
         return ATL_STATUS_FAILURE;
     }
 
@@ -250,12 +250,13 @@ atl_status_t pmi_resizable_simple::kvs_get_value(const char* kvs_name,
 
     time_t start_time = time(NULL);
     size_t kvs_get_time = 0;
+    std::string value_vec;
 
     do {
-        KVS_2_ATL_CHECK_STATUS(k->kvs_get_value_by_name_key(result_kvs_name.c_str(), key, value),
+        KVS_2_ATL_CHECK_STATUS(k->kvs_get_value_by_name_key(result_kvs_name, key, value_vec),
                                "failed to get value");
         kvs_get_time = time(NULL) - start_time;
-    } while (strlen(value) == 0 && kvs_get_time < kvs_get_timeout);
+    } while (value_vec.empty() && kvs_get_time < kvs_get_timeout);
 
     if (kvs_get_time >= kvs_get_timeout) {
         LOG_ERROR("KVS get error: timeout limit (%zu > %zu), prefix: %s, key %s\n",
@@ -265,7 +266,7 @@ atl_status_t pmi_resizable_simple::kvs_get_value(const char* kvs_name,
                   key);
         return ATL_STATUS_FAILURE;
     }
-
+    snprintf(value, value_vec.length(), "%s", value_vec.c_str());
     return ATL_STATUS_SUCCESS;
 }
 
@@ -426,19 +427,19 @@ atl_status_t pmi_resizable_simple::make_map_requested2global() {
 #endif
 
 atl_status_t pmi_resizable_simple::get_local_kvs_id(size_t& res) {
-    char local_kvs_id[MAX_KVS_VAL_LENGTH];
+    std::string local_kvs_id;
     res = 0;
     /*TODO: change it for collect local_per_rank id, not global*/
     KVS_2_ATL_CHECK_STATUS(k->kvs_get_value_by_name_key(LOCAL_KVS_ID, "ID", local_kvs_id),
                            "failed to get local kvs id");
-    res = atoi(local_kvs_id);
+    res = atoi(local_kvs_id.c_str());
     return ATL_STATUS_SUCCESS;
 }
 
 atl_status_t pmi_resizable_simple::set_local_kvs_id(size_t local_kvs_id) {
     /*TODO: change it for collect local_per_rank id, not global*/
     put_key(LOCAL_KVS_ID, "ID", std::to_string(local_kvs_id).c_str(), ST_CLIENT);
-    return (k->kvs_set_value(LOCAL_KVS_ID, "ID", std::to_string(local_kvs_id).c_str()) ==
+    return (k->kvs_set_value(LOCAL_KVS_ID, "ID", std::to_string(local_kvs_id)) ==
             KVS_STATUS_SUCCESS)
                ? ATL_STATUS_SUCCESS
                : ATL_STATUS_FAILURE;
@@ -451,8 +452,7 @@ pmi_resizable_simple::~pmi_resizable_simple() {
 atl_status_t pmi_resizable_simple::remove_initial_data() {
     std::string result_kvs_name = std::string(RANKS_PER_THREAD) + std::to_string(0);
     remove_val(result_kvs_name.c_str(), std::to_string(ranks[0]).c_str(), ST_CLIENT);
-    return k->kvs_remove_name_key(result_kvs_name.c_str(), std::to_string(ranks[0]).c_str()) ==
-                   KVS_STATUS_SUCCESS
+    return k->kvs_remove_name_key(result_kvs_name, std::to_string(ranks[0])) == KVS_STATUS_SUCCESS
                ? ATL_STATUS_SUCCESS
                : ATL_STATUS_FAILURE;
 }
