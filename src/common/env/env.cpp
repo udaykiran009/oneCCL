@@ -68,6 +68,7 @@ env_data::env_data()
           queue_dump(0),
           sched_dump(0),
           sched_profile(0),
+          entry_max_update_time_sec(CCL_ENV_SIZET_NOT_SPECIFIED),
 
           fw_type(ccl_framework_none),
 
@@ -206,6 +207,13 @@ void env_data::parse() {
     env_2_type(CCL_QUEUE_DUMP, queue_dump);
     env_2_type(CCL_SCHED_DUMP, sched_dump);
     env_2_type(CCL_SCHED_PROFILE, sched_profile);
+    env_2_type(CCL_ENTRY_MAX_UPDATE_TIME_SEC, entry_max_update_time_sec);
+    CCL_THROW_IF_NOT(
+        entry_max_update_time_sec == CCL_ENV_SIZET_NOT_SPECIFIED || entry_max_update_time_sec > 0,
+        "incorrect ",
+        CCL_ENTRY_MAX_UPDATE_TIME_SEC,
+        " ",
+        entry_max_update_time_sec);
 
     if (fw_type == ccl_framework_none) {
         /* try to automatically detect framework */
@@ -515,6 +523,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_QUEUE_DUMP, ": ", queue_dump);
     LOG_INFO(CCL_SCHED_DUMP, ": ", sched_dump);
     LOG_INFO(CCL_SCHED_PROFILE, ": ", sched_profile);
+    LOG_INFO(CCL_ENTRY_MAX_UPDATE_TIME_SEC, ": ", entry_max_update_time_sec);
 
     LOG_INFO(CCL_FRAMEWORK, ": ", str_by_enum(ccl_framework_type_names, fw_type));
 

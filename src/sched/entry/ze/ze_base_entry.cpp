@@ -153,6 +153,22 @@ bool ze_base_entry::is_event_completed(ze_event_handle_t event) {
 
 void ze_base_entry::update() {
     bool complete = is_event_completed(entry_event);
+    if (is_update_time_expired) {
+        size_t complete_event_count = 0;
+        for (auto &event : wait_events) {
+            if (is_event_completed(event)) {
+                complete_event_count++;
+            }
+        }
+        LOG_DEBUG("completed ",
+                  complete_event_count,
+                  " of ",
+                  wait_events.size(),
+                  " wait events. Entry event ",
+                  entry_event,
+                  " is ",
+                  (complete) ? "completed" : "not completed");
+    }
 
     if (complete) {
         LOG_DEBUG(name(), " ", this, " entry complete");

@@ -37,9 +37,7 @@ enum ccl_condition {
 class alignas(CACHELINE_SIZE) sched_entry {
 public:
     sched_entry() = delete;
-    explicit sched_entry(ccl_sched* sched, bool is_barrier = false)
-            : sched(sched),
-              barrier(is_barrier) {}
+    explicit sched_entry(ccl_sched* sched, bool is_barrier = false);
 
     virtual ~sched_entry() {}
 
@@ -62,7 +60,8 @@ public:
 
     static const char* status_to_str(ccl_sched_entry_status status);
 
-    ccl::sched_timer timer;
+    ccl::sched_timer total_timer;
+    ccl::sched_timer update_timer;
 
     virtual void init(){};
     virtual void finalize(){};
@@ -80,4 +79,9 @@ protected:
     size_t start_idx = 0;
     ccl_sched_entry_status status = ccl_sched_entry_status_not_started;
     ccl_sched_entry_exec_mode exec_mode = ccl_sched_entry_exec_regular;
+
+    bool use_total_timer = false;
+    bool detect_update_time_expiration = false;
+    bool use_update_timer = false;
+    bool is_update_time_expired = false;
 };

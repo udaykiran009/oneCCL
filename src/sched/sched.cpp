@@ -376,7 +376,7 @@ void ccl_sched::complete() {
     // completing it one more time setting the counter to 0.
     if (get_request()->complete_counter() == 1) {
         if (ccl::global_data::env().sched_profile) {
-            timer.stop();
+            timer.update();
             if (entries.size() > 0) {
                 std::stringstream ss;
                 ss << "\ncoll:";
@@ -389,10 +389,12 @@ void ccl_sched::complete() {
                     ss << " count:" << profile_param->get_send_count();
                 }
 
-                ss << " time(usec):\ntotal: " << timer.str() << "\n";
+                ss << " time(usec): sched total:\n" << to_string(timer) << "\n";
                 for (size_t idx = 0; idx < entries.size(); ++idx) {
-                    ss << "[" << idx << "] " << entries[idx]->name() << ": "
-                       << entries[idx]->timer.str() << "\n";
+                    ss << "[" << idx << "] " << entries[idx]->name()
+                       << ": total: " << to_string(entries[idx]->total_timer);
+                    ss << ", update: " << to_string(entries[idx]->update_timer);
+                    ss << "\n";
                 }
                 ss << "-----------------------------";
                 logger.info(ss.str());

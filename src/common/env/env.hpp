@@ -26,6 +26,8 @@ constexpr const char* CCL_ABORT_ON_THROW = "CCL_ABORT_ON_THROW";
 constexpr const char* CCL_QUEUE_DUMP = "CCL_QUEUE_DUMP";
 constexpr const char* CCL_SCHED_DUMP = "CCL_SCHED_DUMP";
 constexpr const char* CCL_SCHED_PROFILE = "CCL_SCHED_PROFILE";
+// maximum amount of time in seconds an entry can spend in update. for debug purpose
+constexpr const char* CCL_ENTRY_MAX_UPDATE_TIME_SEC = "CCL_ENTRY_MAX_UPDATE_TIME_SEC";
 
 constexpr const char* CCL_FRAMEWORK = "CCL_FRAMEWORK";
 
@@ -215,6 +217,7 @@ public:
     int queue_dump;
     int sched_dump;
     int sched_profile;
+    ssize_t entry_max_update_time_sec;
 
     ccl_framework_type fw_type;
 
