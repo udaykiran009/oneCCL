@@ -1,6 +1,5 @@
 #pragma once
 
-#include "sched/entry/copy/copy_helper.hpp"
 #include "sched/entry/ze/ze_base_entry.hpp"
 
 struct copy_attr;
@@ -15,12 +14,7 @@ public:
         return class_name();
     }
 
-    virtual std::string name_ext() const override {
-        std::stringstream out;
-        out << name() << " ";
-        out << "size: " << count;
-        return out.str();
-    }
+    virtual std::string name_ext() const override;
 
     explicit ze_copy_entry(ccl_sched* sched,
                            ccl_buffer in_buf,

@@ -113,7 +113,7 @@ BF16_INLINE_TARGET_ATTRIBUTE_ALL void ccl_bf16_reduce_impl(const void* in_buf,
         case ccl::reduction::prod: func = &bf16_prod_wrap; break;
         case ccl::reduction::min: func = &bf16_min_wrap; break;
         case ccl::reduction::max: func = &bf16_max_wrap; break;
-        default: CCL_FATAL("unexpected value ", utils::enum_to_underlying(op));
+        default: CCL_FATAL("unexpected value ", ccl::utils::enum_to_underlying(op));
     }
 
     auto impl_type = ccl::global_data::env().bf16_impl_type;

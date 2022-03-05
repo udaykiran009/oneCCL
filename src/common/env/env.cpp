@@ -121,7 +121,9 @@ env_data::env_data()
           rs_chunk_count(1),
           rs_min_chunk_size(65536),
 
+#ifdef CCL_ENABLE_SYCL
           allgatherv_topo_large_scale(0),
+#endif // CCL_ENABLE_SYCL
 
           allreduce_nreduce_buffering(0),
           allreduce_nreduce_segment_size(CCL_ENV_SIZET_NOT_SPECIFIED),
@@ -178,6 +180,7 @@ env_data::env_data()
           ze_copy_engine(ccl_ze_copy_engine_none),
           ze_max_compute_queues(1),
           ze_max_copy_queues(CCL_ENV_SIZET_NOT_SPECIFIED),
+          ze_enable_ccs_fallback_for_copy(1),
           enable_ze_list_dump(0),
           ze_queue_index_offset(1),
           ze_close_ipc_wa(0),
@@ -318,7 +321,9 @@ void env_data::parse() {
     CCL_THROW_IF_NOT(
         rs_min_chunk_size >= 1, "incorrect ", CCL_RS_MIN_CHUNK_SIZE, " ", rs_min_chunk_size);
 
+#ifdef CCL_ENABLE_SYCL
     env_2_type(CCL_ALLGATHERV_TOPO_LARGE_SCALE, allgatherv_topo_large_scale);
+#endif // CCL_ENABLE_SYCL
 
     env_2_type(CCL_ALLREDUCE_NREDUCE_BUFFERING, allreduce_nreduce_buffering);
     env_2_type(CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE, (size_t&)allreduce_nreduce_segment_size);
@@ -414,6 +419,7 @@ void env_data::parse() {
                      CCL_ZE_MAX_COPY_QUEUES,
                      " ",
                      ze_max_copy_queues);
+    env_2_type(CCL_ZE_ENABLE_CCS_FALLBACK_FOR_COPY, ze_enable_ccs_fallback_for_copy);
     env_2_type(CCL_ZE_LIST_DUMP, enable_ze_list_dump);
     env_2_type(CCL_ZE_QUEUE_INDEX_OFFSET, ze_queue_index_offset);
     CCL_THROW_IF_NOT(ze_queue_index_offset >= 0,
@@ -579,7 +585,9 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_RS_CHUNK_COUNT, ": ", rs_chunk_count);
     LOG_INFO(CCL_RS_MIN_CHUNK_SIZE, ": ", rs_min_chunk_size);
 
+#ifdef CCL_ENABLE_SYCL
     LOG_INFO(CCL_ALLGATHERV_TOPO_LARGE_SCALE, ": ", allgatherv_topo_large_scale);
+#endif // CCL_ENABLE_SYCL
 
     LOG_INFO(CCL_ALLREDUCE_NREDUCE_BUFFERING, ": ", allreduce_nreduce_buffering);
     LOG_INFO(CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE,
@@ -669,6 +677,7 @@ void env_data::print(int rank) {
              (ze_max_copy_queues != CCL_ENV_SIZET_NOT_SPECIFIED)
                  ? std::to_string(ze_max_copy_queues)
                  : CCL_ENV_STR_NOT_SPECIFIED);
+    LOG_INFO(CCL_ZE_ENABLE_CCS_FALLBACK_FOR_COPY, ": ", ze_enable_ccs_fallback_for_copy);
     LOG_INFO(CCL_ZE_LIST_DUMP, ": ", enable_ze_list_dump);
     LOG_INFO(CCL_ZE_QUEUE_INDEX_OFFSET, ": ", ze_queue_index_offset);
     LOG_INFO(CCL_ZE_CLOSE_IPC_WA, ": ", ze_close_ipc_wa);

@@ -7,7 +7,6 @@
 
 #include <poll.h>
 #include <sys/un.h>
-#include "common/api_wrapper/ze_api_wrapper.hpp"
 
 class ze_handle_exchange_entry : public sched_entry {
 public:
@@ -32,20 +31,7 @@ public:
     void update() override;
 
 protected:
-    void dump_detail(std::stringstream& str) const override {
-        ccl_logger::format(str,
-                           "comm ",
-                           comm->to_string(),
-                           ", right_peer ",
-                           right_peer_socket_name,
-                           ", left_peer ",
-                           left_peer_socket_name,
-                           ", in_buffers size ",
-                           in_buffers.size(),
-                           ", handles size ",
-                           handles.size(),
-                           "\n");
-    }
+    void dump_detail(std::stringstream& str) const override;
 
 private:
     static constexpr size_t socket_max_str_len = 100;

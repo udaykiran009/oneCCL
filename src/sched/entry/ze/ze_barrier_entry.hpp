@@ -2,8 +2,6 @@
 
 #include "sched/entry/factory/entry_factory.hpp"
 
-#include "common/api_wrapper/ze_api_wrapper.hpp"
-
 class ze_barrier_entry : public sched_entry {
 public:
     static constexpr const char* class_name() noexcept {
@@ -27,13 +25,10 @@ public:
     void finalize() override;
 
 protected:
-    void dump_detail(std::stringstream& str) const override {
-        ccl_logger::format(
-            str, "comm ", comm->to_string(), ", wait_events ", wait_events.size(), "\n");
-    }
+    void dump_detail(std::stringstream& str) const override;
 
 private:
-    ccl_comm* comm;
+    const ccl_comm* comm;
     const int rank;
     const int comm_size;
     size_t last_completed_event_idx{};

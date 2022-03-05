@@ -1,5 +1,6 @@
 #pragma once
 
+#include "sched/entry/copy/copy_helper.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
 
 #include <list>
@@ -123,13 +124,14 @@ public:
                                            uint32_t index = 0);
     ze_command_list_handle_t get_copy_list(const sched_entry* entry = nullptr,
                                            const std::vector<ze_event_handle_t>& wait_events = {},
-                                           uint32_t index = 0,
-                                           bool peer_card_copy = false);
+                                           copy_direction direction = copy_direction::d2d,
+                                           uint32_t index = 0);
 
     void clear();
     void reset_execution_state();
 
     bool can_use_copy_queue() const;
+    bool can_use_main_queue() const;
     bool is_executed() const;
 
 private:
@@ -167,16 +169,16 @@ private:
     std::list<std::pair<queue_info_t, list_info_t>> access_list;
     bool executed = false;
     bool use_copy_queue = false;
-    bool can_use_main_queue = false;
-    bool can_use_link_queue = false;
+    bool main_queue_available = false;
+    bool link_queue_available = false;
 
     std::pair<queue_factory*, queue_map_t*> get_factory_and_map(bool is_copy,
-                                                                bool peer_card_copy) const;
+                                                                copy_direction direction) const;
     list_info_t get_list(const sched_entry* entry,
                          uint32_t index,
                          bool is_copy,
                          const std::vector<ze_event_handle_t>& wait_events,
-                         bool peer_card_copy);
+                         copy_direction direction);
 
     void execute_list(queue_info_t& queue, list_info_t& list);
 

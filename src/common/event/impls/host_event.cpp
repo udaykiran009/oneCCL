@@ -1,7 +1,10 @@
 #include "common/request/request.hpp"
 #include "common/event/impls/host_event.hpp"
-#include "common/utils/sycl_utils.hpp"
 #include "exec/exec.hpp"
+
+#ifdef CCL_ENABLE_SYCL
+#include "common/utils/sycl_utils.hpp"
+#endif // CCL_ENABLE_SYCL
 
 namespace ccl {
 

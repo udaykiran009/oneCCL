@@ -3,7 +3,6 @@
 #include "common/log/log.hpp"
 #include "common/request/request.hpp"
 #include "common/utils/sync_object.hpp"
-#include "common/utils/sycl_utils.hpp"
 #include "parallelizer/parallelizer.hpp"
 #include "sched/cache/cache.hpp"
 #include "sched/cache/key.hpp"
@@ -14,6 +13,7 @@
 #include "sched/sched_restart_manager.hpp"
 
 #ifdef CCL_ENABLE_SYCL
+#include "common/utils/sycl_utils.hpp"
 #include <CL/sycl.hpp>
 #include <CL/sycl/backend/level_zero.hpp>
 

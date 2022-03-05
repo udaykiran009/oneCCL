@@ -143,7 +143,7 @@ void ipc_handle_manager::set(const mem_handle_map_t& handles_arg) {
     LOG_DEBUG("handles are set successfully, size of handles: ", handles.size());
 }
 
-void* ipc_handle_manager::get_ptr(int rank, size_t buf_idx, ccl_comm* map_comm) {
+void* ipc_handle_manager::get_ptr(int rank, size_t buf_idx, const ccl_comm* map_comm) {
     check_rank(rank, (map_comm) ? map_comm : comm);
     if (map_comm && (map_comm->id() != comm->id())) {
         int old_rank = rank;
@@ -208,14 +208,14 @@ void* ipc_handle_manager::get_ptr(int rank, size_t buf_idx, ccl_comm* map_comm) 
     return static_cast<void*>(static_cast<char*>(mem_ptr) + handle_info.mem_offset);
 }
 
-void ipc_handle_manager::get(int rank, size_t buf_idx, ccl_buffer& buf, ccl_comm* map_comm) {
+void ipc_handle_manager::get(int rank, size_t buf_idx, ccl_buffer& buf, const ccl_comm* map_comm) {
     buf.set(get_ptr(rank, buf_idx, map_comm));
 }
 
 void ipc_handle_manager::get(int rank,
                              size_t buf_idx,
                              ze_event_pool_handle_t& buf,
-                             ccl_comm* map_comm) {
+                             const ccl_comm* map_comm) {
     buf = (ze_event_pool_handle_t)get_ptr(rank, buf_idx, map_comm);
 }
 
@@ -261,7 +261,7 @@ void ipc_handle_manager::get_address_range(const void* ptr, void** base_ptr, siz
               *size);
 }
 
-void ipc_handle_manager::check_rank(int rank, ccl_comm* check_comm) {
+void ipc_handle_manager::check_rank(int rank, const ccl_comm* check_comm) {
     CCL_THROW_IF_NOT(
         (rank >= 0) && (rank < static_cast<int>(handles.size())) && (rank < check_comm->size()),
         "invalid rank: ",

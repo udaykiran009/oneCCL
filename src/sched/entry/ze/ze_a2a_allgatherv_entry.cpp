@@ -48,7 +48,8 @@ void ze_a2a_allgatherv_entry::fill_list(const ze_base_entry* entry,
         }
         void* dst = static_cast<char*>(peer_recv_bufs[i].get_ptr()) +
                     (rank_buf_offset + peer_buf_offset) * dtype.size();
-        auto list = entry->get_copy_list(i, true);
+        // TODO: if we on the same device, then use t2t direction
+        auto list = entry->get_copy_list(copy_direction::c2c, i);
         ZE_CALL(zeCommandListAppendMemoryCopy,
                 (list, dst, src, copy_bytes, copy_events.at(i), (wait_event) ? 1 : 0, &wait_event));
     }
@@ -57,7 +58,7 @@ void ze_a2a_allgatherv_entry::fill_list(const ze_base_entry* entry,
         /* copy send_buf to my buffer */
         void* src = send_buf;
         void* dst = static_cast<char*>(recv_buf) + rank_buf_offset * dtype.size();
-        auto list = entry->get_copy_list();
+        auto list = entry->get_copy_list(copy_direction::t2t);
         ZE_CALL(
             zeCommandListAppendMemoryCopy,
             (list, dst, src, copy_bytes, copy_events.back(), (wait_event) ? 1 : 0, &wait_event));
@@ -117,4 +118,15 @@ void ze_a2a_allgatherv_entry::update() {
 
     ZE_CALL(zeEventHostSignal, (ze_base_entry::entry_event));
     ze_base_entry::update();
+}
+
+std::string ze_a2a_allgatherv_entry::name_ext() const {
+    std::stringstream out;
+    out << name() << " ";
+    out << "send size: " << send_count;
+    return out.str();
+}
+
+void ze_a2a_allgatherv_entry::dump_detail(std::stringstream& str) const {
+    ccl_logger::format(str, "comm ", comm->to_string(), "\n");
 }

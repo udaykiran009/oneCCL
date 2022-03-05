@@ -6,19 +6,14 @@
 class ze_a2a_allgatherv_entry : public ze_base_entry {
 public:
     static constexpr const char* class_name() noexcept {
-        return "ZE_ALLGATHERV";
+        return "ZE_A2A_ALLGATHERV";
     }
 
     const char* name() const override {
         return class_name();
     }
 
-    virtual std::string name_ext() const override {
-        std::stringstream out;
-        out << name() << " ";
-        out << "send size: " << send_count;
-        return out.str();
-    }
+    virtual std::string name_ext() const override;
 
     explicit ze_a2a_allgatherv_entry(ccl_sched* sched,
                                      ccl_buffer send_buf,
@@ -50,9 +45,7 @@ public:
                           size_t peer_buf_offset = 0);
 
 protected:
-    void dump_detail(std::stringstream& str) const override {
-        ccl_logger::format(str, "comm ", comm->to_string(), "\n");
-    }
+    void dump_detail(std::stringstream& str) const override;
 
 private:
     static constexpr size_t event_group_count{ 1 }; // copy phase

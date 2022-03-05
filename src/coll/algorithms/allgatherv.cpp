@@ -352,8 +352,8 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* main_sched,
     // using add_sched_barrier_for_parallel_copies function
     std::list<ze_event_handle_t> parallel_copy_events;
 
-    // for small msg sizes we get more performance without main blitter using (overhead?)
-    const bool can_use_main_blitter = (send_count * dtype.size()) > 1048576;
+    // for small msg sizes we get more performance without main CE using (main CE has overhead)
+    const bool can_use_small_msg_optimization = (send_count * dtype.size()) <= (1 * 1024 * 1024);
 
     // we use small scale algorithm by default and enable large scale algorithm using knob,
     // because small scale algorithm show more perfomance for today
@@ -369,10 +369,11 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* main_sched,
             copy_attr attr{};
             attr.peer_rank = peer_rank;
             attr.peer_buf_idx = peer_buf_idx;
-            attr.direction = copy_direction::d2d;
+            // using of link CE for small msgs give us more performance
+            const bool use_c2c_direction = (comm == even_comm) || can_use_small_msg_optimization;
+            attr.direction = (use_c2c_direction) ? copy_direction::c2c : copy_direction::d2d;
             attr.map_comm = comm;
             attr.hint_queue_index = parallel_copy_events.size();
-            attr.is_peer_card_copy = (comm == even_comm) ? true : !can_use_main_blitter;
             auto entry = entry_factory::create<ze_copy_entry>(
                 sched, in_buf, ccl_buffer(), count, dtype, attr, wait_events);
             parallel_copy_events.push_back(entry->entry_event);
@@ -387,10 +388,10 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* main_sched,
             copy_attr attr{};
             attr.peer_rank = peer_rank;
             attr.peer_buf_idx = send_buf_idx;
-            attr.direction = copy_direction::d2d;
+            const bool use_c2c_direction = (comm == even_comm) || can_use_small_msg_optimization;
+            attr.direction = (use_c2c_direction) ? copy_direction::c2c : copy_direction::d2d;
             attr.map_comm = comm;
             attr.hint_queue_index = parallel_copy_events.size();
-            attr.is_peer_card_copy = (comm == even_comm) ? true : !can_use_main_blitter;
             auto entry = entry_factory::create<ze_copy_entry>(sched,
                                                               ccl_buffer(),
                                                               recv_bufs[global_rank],
@@ -414,7 +415,7 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* main_sched,
         /* copy data from my send_buf to my recv_buf */
         copy_attr attr{};
         attr.hint_queue_index = parallel_copy_events.size();
-        attr.is_peer_card_copy = true;
+        attr.direction = copy_direction::t2t;
         auto entry = entry_factory::create<ze_copy_entry>(sched,
                                                           send_buf,
                                                           recv_bufs[comm->rank()],
@@ -427,11 +428,11 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* main_sched,
 
     const bool is_small_scale_algorithm = is_multi_card && !can_use_large_scale_algorithm;
     if (is_small_scale_algorithm) {
-        LOG_DEBUG("Use small scale algorithm");
+        LOG_DEBUG("use small scale algorithm");
     }
     const bool is_large_scale_algorithm = is_multi_card && can_use_large_scale_algorithm;
     if (is_large_scale_algorithm) {
-        LOG_DEBUG("Use large scale algorithm");
+        LOG_DEBUG("use large scale algorithm");
     }
 
     if (is_small_scale_algorithm) {

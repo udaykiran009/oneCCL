@@ -1,11 +1,11 @@
 #pragma once
 
-#include "comm/comm.hpp"
-#include "common/global/global.hpp"
-#include "sched/sched.hpp"
+#include "sched/entry/copy/copy_helper.hpp"
 #include "sched/entry/entry.hpp"
+#include "sched/queue/queue.hpp"
 
-#include "common/api_wrapper/ze_api_wrapper.hpp"
+class ccl_sched;
+class ccl_comm;
 
 using namespace ccl::ze;
 
@@ -23,7 +23,8 @@ public:
     virtual void update() override;
 
     ze_command_list_handle_t get_comp_list(uint32_t index = 0) const;
-    ze_command_list_handle_t get_copy_list(uint32_t index = 0, bool peer_card_copy = false) const;
+    ze_command_list_handle_t get_copy_list(copy_direction direction = copy_direction::d2d,
+                                           uint32_t index = 0) const;
 
     ze_event_handle_t entry_event{};
 

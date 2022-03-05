@@ -1,8 +1,6 @@
 #pragma once
 
-#include <numeric>
 #include "common/utils/buffer.hpp"
-#include "comp/comp.hpp"
 #include "sched/entry/ze/ze_base_entry.hpp"
 
 class ze_a2a_reduce_scatter_entry : public ze_base_entry {
@@ -15,12 +13,7 @@ public:
         return class_name();
     }
 
-    virtual std::string name_ext() const override {
-        std::stringstream out;
-        out << name() << " ";
-        out << "size: " << std::accumulate(recv_counts.begin(), recv_counts.end(), 0);
-        return out.str();
-    }
+    virtual std::string name_ext() const override;
 
     ze_a2a_reduce_scatter_entry() = delete;
     explicit ze_a2a_reduce_scatter_entry(ccl_sched* sched,

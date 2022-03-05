@@ -274,19 +274,19 @@ list_manager::list_manager(const ccl_sched_base* sched, const ccl_stream* stream
         std::make_unique<queue_factory>(device, context, queue_group_type::compute);
     comp_list_factory = std::make_unique<list_factory>(device, context, false);
 
-    can_use_main_queue = queue_factory::can_use_queue_group(device, queue_group_type::main);
-    if (can_use_main_queue) {
+    main_queue_available = queue_factory::can_use_queue_group(device, queue_group_type::main);
+    if (main_queue_available) {
         main_queue_factory =
             std::make_unique<queue_factory>(device, context, queue_group_type::main);
     }
 
-    can_use_link_queue = queue_factory::can_use_queue_group(device, queue_group_type::link);
-    if (can_use_link_queue) {
+    link_queue_available = queue_factory::can_use_queue_group(device, queue_group_type::link);
+    if (link_queue_available) {
         link_queue_factory =
             std::make_unique<queue_factory>(device, context, queue_group_type::link);
     }
 
-    use_copy_queue = can_use_main_queue || can_use_link_queue;
+    use_copy_queue = main_queue_available || link_queue_available;
     if (use_copy_queue) {
         copy_list_factory = std::make_unique<list_factory>(device, context, true);
     }
@@ -298,25 +298,46 @@ list_manager::~list_manager() {
 
 std::pair<queue_factory*, list_manager::queue_map_t*> list_manager::get_factory_and_map(
     bool is_copy,
-    bool peer_card_copy) const {
+    copy_direction direction) const {
+    CCL_THROW_IF_NOT((!is_copy && direction == copy_direction::undefined) ||
+                         (is_copy && direction != copy_direction::undefined),
+                     "wrong direction");
+
     queue_factory* factory = nullptr;
     queue_map_t* queue_map = nullptr;
-    if (is_copy) {
-        if (can_use_link_queue && peer_card_copy) {
+
+    if (direction == copy_direction::c2c) {
+        if (link_queue_available) {
             factory = link_queue_factory.get();
             queue_map = const_cast<queue_map_t*>(&link_queue_map);
         }
-        else {
+        else if (main_queue_available) {
             factory = main_queue_factory.get();
             queue_map = const_cast<queue_map_t*>(&main_queue_map);
         }
     }
-    else {
+    // h2d, d2h, d2d, t2t
+    else if (direction != copy_direction::undefined) {
+        const bool use_compute_fallback =
+            ccl::global_data::env().ze_enable_ccs_fallback_for_copy && !main_queue_available;
+
+        if (main_queue_available) {
+            factory = main_queue_factory.get();
+            queue_map = const_cast<queue_map_t*>(&main_queue_map);
+        }
+        else if (link_queue_available && !use_compute_fallback) {
+            factory = link_queue_factory.get();
+            queue_map = const_cast<queue_map_t*>(&link_queue_map);
+        }
+    }
+
+    // fallback
+    if (!factory || !queue_map) {
         factory = comp_queue_factory.get();
         queue_map = const_cast<queue_map_t*>(&comp_queue_map);
     }
-    CCL_THROW_IF_NOT(factory, "no factory");
-    CCL_THROW_IF_NOT(queue_map, "no map");
+
+    CCL_THROW_IF_NOT(factory && queue_map, "unable select list queue");
     return std::make_pair(factory, queue_map);
 }
 
@@ -324,9 +345,9 @@ list_info_t list_manager::get_list(const sched_entry* entry,
                                    uint32_t index,
                                    bool is_copy,
                                    const std::vector<ze_event_handle_t>& wait_events,
-                                   bool peer_card_copy) {
+                                   copy_direction direction) {
     // get comp or copy primitives
-    auto factory_map_pair = get_factory_and_map(is_copy, peer_card_copy);
+    auto factory_map_pair = get_factory_and_map(is_copy, direction);
     queue_factory* factory = factory_map_pair.first;
     queue_map_t* queue_map = factory_map_pair.second;
     auto queue = factory->get(index);
@@ -357,8 +378,10 @@ list_info_t list_manager::get_list(const sched_entry* entry,
 
     // if we dont have any lists for current queue
     if (new_list_for_queue && new_entry_for_list) {
+        auto& list_factory = (is_copy) ? copy_list_factory : comp_list_factory;
+        CCL_THROW_IF_NOT(list_factory, "no factory");
         // creaete new list
-        list = (is_copy) ? copy_list_factory->get(queue) : comp_list_factory->get(queue);
+        list = list_factory->get(queue);
         access_list.push_back({ queue, list });
         // remember list for current entry
         entry_map[entry].push_back(std::make_pair(queue, list));
@@ -395,23 +418,20 @@ ze_command_list_handle_t list_manager::get_comp_list(
     const sched_entry* entry,
     const std::vector<ze_event_handle_t>& wait_events,
     uint32_t index) {
-    auto list = get_list(entry, index, false, wait_events, false);
+    auto list = get_list(entry, index, false, wait_events, copy_direction::undefined);
     return list->get_native();
 }
 
 ze_command_list_handle_t list_manager::get_copy_list(
     const sched_entry* entry,
     const std::vector<ze_event_handle_t>& wait_events,
-    uint32_t index,
-    bool peer_card_copy) {
-    // use main for intra copy or link for inter copy
-    if ((!peer_card_copy && can_use_main_queue) || (peer_card_copy && can_use_link_queue)) {
-        auto list = get_list(entry, index, true, wait_events, peer_card_copy);
+    copy_direction direction,
+    uint32_t index) {
+    if (link_queue_available || main_queue_available) {
+        auto list = get_list(entry, index, true, wait_events, direction);
         return list->get_native();
     }
-    else {
-        return get_comp_list(entry, wait_events, index);
-    }
+    return get_comp_list(entry, wait_events, index);
 }
 
 void list_manager::clear() {
@@ -455,6 +475,10 @@ void list_manager::reset_execution_state() {
 
 bool list_manager::can_use_copy_queue() const {
     return use_copy_queue;
+}
+
+bool list_manager::can_use_main_queue() const {
+    return main_queue_available;
 }
 
 bool list_manager::is_executed() const {

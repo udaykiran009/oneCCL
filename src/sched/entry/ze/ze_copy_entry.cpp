@@ -1,3 +1,4 @@
+#include "sched/entry/copy/copy_helper.hpp"
 #include "sched/entry/ze/ze_copy_entry.hpp"
 
 using namespace ccl;
@@ -36,8 +37,14 @@ void ze_copy_entry::init_ze_hook() {
     void* src = static_cast<char*>(in_buf.get_ptr()) + attr.in_buf_offset * dtype.size();
 
     ze_command_list_handle_t list =
-        ze_base_entry::get_copy_list(attr.hint_queue_index, attr.is_peer_card_copy);
-
+        ze_base_entry::get_copy_list(attr.direction, attr.hint_queue_index);
     ZE_CALL(zeCommandListAppendMemoryCopy,
             (list, dst, src, dtype.size() * count, ze_base_entry::entry_event, 0, nullptr));
+}
+
+std::string ze_copy_entry::name_ext() const {
+    std::stringstream out;
+    out << name() << " ";
+    out << "size: " << count;
+    return out.str();
 }

@@ -1,6 +1,7 @@
+#include "common/utils/sycl_utils.hpp"
 #include "sched/entry/ze/ze_event_signal_entry.hpp"
 #include "sched/queue/queue.hpp"
-#include "common/utils/sycl_utils.hpp"
+#include "sched/sched.hpp"
 
 ze_event_signal_entry::ze_event_signal_entry(ccl_sched* sched, ccl_sched* master_sched)
         : sched_entry(sched),

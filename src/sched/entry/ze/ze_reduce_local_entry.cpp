@@ -59,3 +59,10 @@ void ze_reduce_local_entry::init_ze_hook() {
 void ze_reduce_local_entry::finalize_ze_hook() {
     global_data::get().ze_data->cache->push(worker_idx, module, kernel_name, kernel);
 }
+
+std::string ze_reduce_local_entry::name_ext() const {
+    std::stringstream out;
+    out << name() << " ";
+    out << "in size: " << in_cnt;
+    return out.str();
+}

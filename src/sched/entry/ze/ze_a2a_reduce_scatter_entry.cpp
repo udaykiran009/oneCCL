@@ -1,3 +1,4 @@
+#include "comp/comp.hpp"
 #include "sched/entry/ze/ze_a2a_reduce_scatter_entry.hpp"
 #include "sched/entry/ze/ze_cache.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
@@ -102,7 +103,8 @@ void ze_a2a_reduce_scatter_entry::fill_list(const ze_base_entry* entry,
         void* src = static_cast<char*>(peer_send_bufs[i].get_ptr()) +
                     (rank_buf_offset + peer_buf_offset) * dtype.size();
         void* dst = static_cast<char*>(tmp_buf) + i * copy_bytes;
-        auto list = entry->get_copy_list(i, true);
+        // TODO: if we on the same device, then use t2t direction
+        auto list = entry->get_copy_list(copy_direction::c2c, i);
         ZE_CALL(zeCommandListAppendMemoryCopy,
                 (list, dst, src, copy_bytes, copy_events.at(i), 0, nullptr));
     }
@@ -206,4 +208,11 @@ void ze_a2a_reduce_scatter_entry::update() {
     }
     ZE_CALL(zeEventHostSignal, (ze_base_entry::entry_event));
     ze_base_entry::update();
+}
+
+std::string ze_a2a_reduce_scatter_entry::name_ext() const {
+    std::stringstream out;
+    out << name() << " ";
+    out << "size: " << std::accumulate(recv_counts.begin(), recv_counts.end(), 0);
+    return out.str();
 }

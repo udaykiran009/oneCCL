@@ -17,12 +17,7 @@ public:
         return class_name();
     }
 
-    virtual std::string name_ext() const override {
-        std::stringstream out;
-        out << name() << " ";
-        out << "size: " << cnt;
-        return out.str();
-    }
+    virtual std::string name_ext() const override;
 
     ze_onesided_reduce_entry() = delete;
     explicit ze_onesided_reduce_entry(ccl_sched* sched,
@@ -43,24 +38,7 @@ public:
     void update() override;
 
 protected:
-    void dump_detail(std::stringstream& str) const override {
-        ccl_logger::format(str,
-                           "dt ",
-                           ccl::global_data::get().dtypes->name(dtype),
-                           ", cnt ",
-                           cnt,
-                           ", send_buf ",
-                           send_buf,
-                           ", recv_buf ",
-                           recv_buf,
-                           ", op ",
-                           ccl_reduction_to_str(op),
-                           ", comm ",
-                           comm->to_string(),
-                           ", context ",
-                           context,
-                           "\n");
-    }
+    void dump_detail(std::stringstream& str) const override;
 
 private:
     ccl_buffer send_buf;

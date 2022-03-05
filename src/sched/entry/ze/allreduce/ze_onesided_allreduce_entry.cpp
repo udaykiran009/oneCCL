@@ -1,10 +1,12 @@
 #include "common/stream/stream.hpp"
+#include "comp/comp.hpp"
 #include "sched/entry/ze/allreduce/ze_onesided_allreduce_entry.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
 #include "sched/entry/ze/ze_cache.hpp"
 #include "sched/queue/queue.hpp"
 
 #include <string>
+#include <sstream>
 
 using namespace ccl;
 using namespace ccl::ze;
@@ -187,4 +189,30 @@ void ze_onesided_allreduce_entry::update() {
     if (global_data::env().enable_kernel_sync && global_data::get().ze_data->kernel_counter > 0) {
         global_data::get().ze_data->kernel_counter--;
     }
+}
+
+std::string ze_onesided_allreduce_entry::name_ext() const {
+    std::stringstream out;
+    out << name() << " ";
+    out << "size: " << cnt;
+    return out.str();
+}
+
+void ze_onesided_allreduce_entry::dump_detail(std::stringstream& str) const {
+    ccl_logger::format(str,
+                       "dt ",
+                       ccl::global_data::get().dtypes->name(dtype),
+                       ", cnt ",
+                       cnt,
+                       ", send_buf ",
+                       send_buf,
+                       ", recv_buf ",
+                       recv_buf,
+                       ", op ",
+                       ccl_reduction_to_str(op),
+                       ", comm ",
+                       comm->to_string(),
+                       ", context ",
+                       context,
+                       "\n");
 }

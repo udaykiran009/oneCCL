@@ -86,7 +86,10 @@ constexpr const char* CCL_MIN_CHUNK_SIZE = "CCL_MIN_CHUNK_SIZE";
 constexpr const char* CCL_RS_CHUNK_COUNT = "CCL_RS_CHUNK_COUNT";
 constexpr const char* CCL_RS_MIN_CHUNK_SIZE = "CCL_RS_MIN_CHUNK_SIZE";
 
+#ifdef CCL_ENABLE_SYCL
+// use alternative allgatherv topo algorithm
 constexpr const char* CCL_ALLGATHERV_TOPO_LARGE_SCALE = "CCL_ALLGATHERV_TOPO_LARGE_SCALE";
+#endif // CCL_ENABLE_SYCL
 
 constexpr const char* CCL_ALLREDUCE_NREDUCE_BUFFERING = "CCL_ALLREDUCE_NREDUCE_BUFFERING";
 constexpr const char* CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE = "CCL_ALLREDUCE_NREDUCE_SEGMENT_SIZE";
@@ -123,6 +126,7 @@ constexpr const char* CCL_MPI_LIBRARY_PATH = "CCL_MPI_LIBRARY_PATH";
 #endif // CCL_ENABLE_MPI
 constexpr const char* CCL_OFI_LIBRARY_PATH = "CCL_OFI_LIBRARY_PATH";
 
+#ifdef CCL_ENABLE_SYCL
 constexpr const char* CCL_SYCL_OUTPUT_EVENT = "CCL_SYCL_OUTPUT_EVENT";
 constexpr const char* CCL_USE_HMEM = "CCL_USE_HMEM";
 
@@ -132,9 +136,13 @@ constexpr const char* CCL_ZE_CACHE = "CCL_ZE_CACHE";
 constexpr const char* CCL_ZE_CACHE_IPC_HANDLES = "CCL_ZE_CACHE_IPC_HANDLES";
 constexpr const char* CCL_ZE_CACHE_IPC_HANDLES_THRESHOLD = "CCL_ZE_CACHE_IPC_HANDLES_THRESHOLD";
 constexpr const char* CCL_ZE_SERIALIZE = "CCL_ZE_SERIALIZE";
+
 constexpr const char* CCL_ZE_COPY_ENGINE = "CCL_ZE_COPY_ENGINE";
 constexpr const char* CCL_ZE_MAX_COMPUTE_QUEUES = "CCL_ZE_MAX_COMPUTE_QUEUES";
 constexpr const char* CCL_ZE_MAX_COPY_QUEUES = "CCL_ZE_MAX_COPY_QUEUES";
+// use CCS for intra-card copy if main CE is not available
+constexpr const char* CCL_ZE_ENABLE_CCS_FALLBACK_FOR_COPY = "CCL_ZE_ENABLE_CCS_FALLBACK_FOR_COPY";
+
 constexpr const char* CCL_ZE_LIST_DUMP = "CCL_ZE_LIST_DUMP";
 constexpr const char* CCL_ZE_QUEUE_INDEX_OFFSET = "CCL_ZE_QUEUE_INDEX_OFFSET";
 constexpr const char* CCL_ZE_CLOSE_IPC_WA = "CCL_ZE_CLOSE_IPC_WA";
@@ -145,6 +153,7 @@ constexpr const char* CCL_ZE_LIBRARY_PATH = "CCL_ZE_LIBRARY_PATH";
 constexpr const char* CCL_ZE_ENABLE = "CCL_ZE_ENABLE";
 constexpr const char* CCL_ZE_FINI_WA = "CCL_ZE_FINI_WA";
 constexpr const char* CCL_ZE_MULTI_WORKERS = "CCL_ZE_MULTI_WORKERS";
+#endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ITT
 constexpr const char* CCL_ITT_LEVEL = "CCL_ITT_LEVEL";
@@ -268,7 +277,9 @@ public:
     size_t rs_chunk_count;
     size_t rs_min_chunk_size;
 
+#ifdef CCL_ENABLE_SYCL
     int allgatherv_topo_large_scale;
+#endif // CCL_ENABLE_SYCL
 
     int allreduce_nreduce_buffering;
     ssize_t allreduce_nreduce_segment_size;
@@ -320,6 +331,7 @@ public:
     ccl_ze_copy_engine_mode ze_copy_engine;
     ssize_t ze_max_compute_queues;
     ssize_t ze_max_copy_queues;
+    int ze_enable_ccs_fallback_for_copy;
     int enable_ze_list_dump;
     int ze_queue_index_offset;
     int ze_close_ipc_wa;

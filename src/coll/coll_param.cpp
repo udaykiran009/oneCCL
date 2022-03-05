@@ -2,7 +2,10 @@
 
 #include "coll/coll_param.hpp"
 #include "common/global/global.hpp"
+
+#ifdef CCL_ENABLE_SYCL
 #include "common/utils/sycl_utils.hpp"
+#endif // CCL_ENABLE_SYCL
 
 #define COPY_COMMON_OP_ATTRS(from, to) \
     to->priority = from.get<ccl::operation_attr_id::priority>(); \

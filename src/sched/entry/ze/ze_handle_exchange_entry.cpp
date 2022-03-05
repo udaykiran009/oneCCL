@@ -164,7 +164,7 @@ void ze_handle_exchange_entry::update() {
                 payload_t payload{};
                 payload.mem_offset = handles[rank][buf_idx].mem_offset;
                 payload.remote_pid = getpid();
-                void* ptr = in_buffers[buf_idx].first;
+                const void* ptr = in_buffers[buf_idx].first;
 
                 ze_context_handle_t remote_context{};
                 ze_device_handle_t remote_device{};
@@ -561,4 +561,19 @@ void ze_handle_exchange_entry::close_sockets() {
         close(right_peer_socket);
         sockets_closed = true;
     }
+}
+
+void ze_handle_exchange_entry::dump_detail(std::stringstream& str) const {
+    ccl_logger::format(str,
+                       "comm ",
+                       comm->to_string(),
+                       ", right_peer ",
+                       right_peer_socket_name,
+                       ", left_peer ",
+                       left_peer_socket_name,
+                       ", in_buffers size ",
+                       in_buffers.size(),
+                       ", handles size ",
+                       handles.size(),
+                       "\n");
 }

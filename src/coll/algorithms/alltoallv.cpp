@@ -425,7 +425,7 @@ ccl::status ccl_coll_build_topo_alltoallv(ccl_sched* main_sched,
                 attr.direction = copy_direction::d2d;
                 attr.map_comm = comm;
                 attr.hint_queue_index = parallel_copy_events.size();
-                attr.is_peer_card_copy = true;
+                attr.direction = copy_direction::c2c;
                 auto entry = entry_factory::create<ze_copy_entry>(sched,
                                                                   bufs[peer_rank],
                                                                   ccl_buffer(),
@@ -448,7 +448,7 @@ ccl::status ccl_coll_build_topo_alltoallv(ccl_sched* main_sched,
     auto copy_to_self = [&](ccl_buffer& send, ccl_buffer& recv, const size_t count) {
         copy_attr attr{};
         attr.hint_queue_index = parallel_copy_events.size();
-        attr.is_peer_card_copy = true;
+        attr.direction = copy_direction::c2c;
         auto entry = entry_factory::create<ze_copy_entry>(
             sched, send, recv, count, dtype, attr, wait_events);
         parallel_copy_events.push_back(entry->entry_event);

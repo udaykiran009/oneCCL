@@ -1,7 +1,5 @@
 #pragma once
 
-#if defined(CCL_ENABLE_ZE) && defined(CCL_ENABLE_SYCL)
-
 #include "common/api_wrapper/ze_api_wrapper.hpp"
 
 #include <CL/sycl.hpp>
@@ -42,5 +40,3 @@ ze_event_handle_t get_native_event(sycl::event event);
 
 } // namespace utils
 } // namespace ccl
-
-#endif // CCL_ENABLE_ZE && CCL_ENABLE_SYCL

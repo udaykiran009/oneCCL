@@ -1,5 +1,5 @@
-#include "ze_barrier_entry.hpp"
-
+#include "common/api_wrapper/ze_api_wrapper.hpp"
+#include "sched/entry/ze/ze_barrier_entry.hpp"
 #include "sched/entry/ze/ze_base_entry.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
 
@@ -82,4 +82,8 @@ void ze_barrier_entry::update() {
             }
         }
     }
+}
+
+void ze_barrier_entry::dump_detail(std::stringstream& str) const {
+    ccl_logger::format(str, "comm ", comm->to_string(), ", wait_events ", wait_events.size(), "\n");
 }

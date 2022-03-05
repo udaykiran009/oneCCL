@@ -55,7 +55,7 @@ void ccl_bf16_reduce_scalar_impl(const void* in_buf,
         case ccl::reduction::prod: func = &bf16_prod_scalar; break;
         case ccl::reduction::min: func = &bf16_min_scalar; break;
         case ccl::reduction::max: func = &bf16_max_scalar; break;
-        default: CCL_FATAL("unexpected value ", utils::enum_to_underlying(op));
+        default: CCL_FATAL("unexpected value ", ccl::utils::enum_to_underlying(op));
     }
 
     uint16_t* in_buf_int = (uint16_t*)in_buf;

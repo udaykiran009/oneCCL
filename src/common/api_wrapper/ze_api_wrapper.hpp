@@ -2,6 +2,9 @@
 
 #include "oneapi/ccl/config.h"
 
+#include <string>
+#include <vector>
+
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
 
 #include <ze_api.h>

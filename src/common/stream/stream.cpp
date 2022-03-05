@@ -3,10 +3,10 @@
 #include "common/stream/stream.hpp"
 #include "common/stream/stream_selector_impl.hpp"
 #include "common/utils/enums.hpp"
-#include "common/utils/sycl_utils.hpp"
 #include "oneapi/ccl/native_device_api/export_api.hpp"
 
 #ifdef CCL_ENABLE_SYCL
+#include "common/utils/sycl_utils.hpp"
 #include <CL/sycl/backend/level_zero.hpp>
 #endif // CCL_ENABLE_SYCL
 
@@ -21,7 +21,8 @@ std::string to_string(device_family family) {
 } // namespace ccl
 
 std::string to_string(const stream_type& type) {
-    using stream_str_enum = utils::enum_to_str<utils::enum_to_underlying(stream_type::last_value)>;
+    using stream_str_enum =
+        ccl::utils::enum_to_str<ccl::utils::enum_to_underlying(stream_type::last_value)>;
     return stream_str_enum({ "host", "cpu", "gpu" }).choose(type, "unknown");
 }
 

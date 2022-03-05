@@ -52,9 +52,9 @@ public:
 
     void set(const mem_handle_map_t& handles_arg);
 
-    void* get_ptr(int rank, size_t buf_idx, ccl_comm* map_comm);
-    void get(int rank, size_t buf_idx, ccl_buffer& buf, ccl_comm* map_comm = nullptr);
-    void get(int rank, size_t buf_idx, ze_event_pool_handle_t& buf, ccl_comm* map_comm);
+    void* get_ptr(int rank, size_t buf_idx, const ccl_comm* map_comm);
+    void get(int rank, size_t buf_idx, ccl_buffer& buf, const ccl_comm* map_comm = nullptr);
+    void get(int rank, size_t buf_idx, ze_event_pool_handle_t& buf, const ccl_comm* map_comm);
 
     void get_handle(const void* buffer, ze_ipc_mem_handle_t* handle);
     void get_handle(ze_event_pool_handle_t pool, ze_ipc_event_pool_handle_t* handle);
@@ -80,7 +80,7 @@ private:
      */
     std::list<mem_handle_cache::value_t> cached_handles;
 
-    void check_rank(int rank, ccl_comm* check_comm);
+    void check_rank(int rank, const ccl_comm* check_comm);
 };
 
 } // namespace ze

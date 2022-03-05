@@ -189,3 +189,29 @@ void ze_onesided_reduce_entry::update() {
         ccl::global_data::get().ze_data->kernel_counter--;
     }
 }
+
+std::string ze_onesided_reduce_entry::name_ext() const {
+    std::stringstream out;
+    out << name() << " ";
+    out << "size: " << cnt;
+    return out.str();
+}
+
+void ze_onesided_reduce_entry::dump_detail(std::stringstream& str) const {
+    ccl_logger::format(str,
+                       "dt ",
+                       ccl::global_data::get().dtypes->name(dtype),
+                       ", cnt ",
+                       cnt,
+                       ", send_buf ",
+                       send_buf,
+                       ", recv_buf ",
+                       recv_buf,
+                       ", op ",
+                       ccl_reduction_to_str(op),
+                       ", comm ",
+                       comm->to_string(),
+                       ", context ",
+                       context,
+                       "\n");
+}

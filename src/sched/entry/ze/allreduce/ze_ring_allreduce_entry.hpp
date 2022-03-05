@@ -1,7 +1,6 @@
 #pragma once
 
 #include "common/utils/buffer.hpp"
-#include "comp/comp.hpp"
 #include "sched/entry/ze/ze_base_entry.hpp"
 
 class ze_ring_allreduce_entry : public ze_base_entry {
@@ -14,12 +13,7 @@ public:
         return class_name();
     }
 
-    virtual std::string name_ext() const override {
-        std::stringstream out;
-        out << name() << " ";
-        out << "size: " << cnt;
-        return out.str();
-    }
+    virtual std::string name_ext() const override;
 
     ze_ring_allreduce_entry() = delete;
     explicit ze_ring_allreduce_entry(ccl_sched* sched,
@@ -42,24 +36,7 @@ public:
     void reset_fields();
 
 protected:
-    void dump_detail(std::stringstream& str) const override {
-        ccl_logger::format(str,
-                           "dt ",
-                           ccl::global_data::get().dtypes->name(dtype),
-                           ", cnt ",
-                           cnt,
-                           ", send_buf ",
-                           send_buf,
-                           ", recv_buf ",
-                           recv_buf,
-                           ", op ",
-                           ccl_reduction_to_str(op),
-                           ", comm ",
-                           comm->to_string(),
-                           ", context ",
-                           context,
-                           "\n");
-    }
+    void dump_detail(std::stringstream& str) const override;
 
 private:
     static constexpr uint32_t local_events_count{ 3 };

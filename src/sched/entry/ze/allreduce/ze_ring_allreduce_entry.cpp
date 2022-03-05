@@ -1,3 +1,4 @@
+#include "comp/comp.hpp"
 #include "common/stream/stream.hpp"
 #include "sched/entry/ze/allreduce/ze_ring_allreduce_entry.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
@@ -538,4 +539,30 @@ void ze_ring_allreduce_entry::reset_fields() {
         std::fill(rs_reduce_started.begin(), rs_reduce_started.end(), false);
         std::fill(ag_copy_started.begin(), ag_copy_started.end(), false);
     }
+}
+
+std::string ze_ring_allreduce_entry::name_ext() const {
+    std::stringstream out;
+    out << name() << " ";
+    out << "size: " << cnt;
+    return out.str();
+}
+
+void ze_ring_allreduce_entry::dump_detail(std::stringstream& str) const {
+    ccl_logger::format(str,
+                       "dt ",
+                       ccl::global_data::get().dtypes->name(dtype),
+                       ", cnt ",
+                       cnt,
+                       ", send_buf ",
+                       send_buf,
+                       ", recv_buf ",
+                       recv_buf,
+                       ", op ",
+                       ccl_reduction_to_str(op),
+                       ", comm ",
+                       comm->to_string(),
+                       ", context ",
+                       context,
+                       "\n");
 }
