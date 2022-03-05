@@ -177,7 +177,7 @@ env_data::env_data()
           disable_ze_family_check(0),
           disable_ze_port_check(0),
           ze_serialize_mode(0),
-          ze_copy_engine(ccl_ze_copy_engine_none),
+          ze_copy_engine(ccl_ze_copy_engine_link),
           ze_max_compute_queues(1),
           ze_max_copy_queues(CCL_ENV_SIZET_NOT_SPECIFIED),
           ze_enable_ccs_fallback_for_copy(1),

@@ -87,7 +87,7 @@ set_default_values() {
     ULLS_MODES="1"
     PROC_MAPS="2:2"
     ALGOS="topo"
-    COPY_ENGINE="auto"
+    COPY_ENGINE="link"
 
     HOSTS="c001n0001"
     BENCH_PARAMS=""
