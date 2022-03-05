@@ -2,6 +2,7 @@
 
 function run_cmd() {
     cmd="${1}"
+    # echo "run_cmd: ${cmd}"
     eval ${cmd}
     rc=$?
     if [ ${rc} -ne 0 ]
@@ -34,8 +35,13 @@ function check_ccl() {
 
 function check_log() {
     log_path=$1
+    extra_passed_pattern=${2:-}
 
     passed_pattern="passed|# all done"
+    if [ "${extra_passed_pattern}" != "" ]
+    then
+        passed_pattern+="|${extra_passed_pattern}"
+    fi
     passed_count=`grep -E -c -i "${passed_pattern}" ${log_path}`
     if [ ${passed_count} -eq 0 ]
     then
@@ -45,7 +51,7 @@ function check_log() {
 
     failed_pattern="abort|^bad$|corrupt|fail|^fault$|[^-W]invalid"
     failed_pattern+="|kill|runtime_error|terminate|timed|unexpected"
-    failed_pattern+="|[^-W]error|exception"
+    failed_pattern+="|[^-W]error|exception|connection refused"
     failed_pattern+="|job ending due to application timeout"
 
     # patterns to exclude as they're printed in non-error cases

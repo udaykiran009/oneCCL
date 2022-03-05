@@ -7,8 +7,7 @@ sched_entry::sched_entry(ccl_sched* sched, bool is_barrier) : sched(sched), barr
     use_total_timer = ccl::global_data::env().sched_profile;
     detect_update_time_expiration =
         ccl::global_data::env().entry_max_update_time_sec != CCL_ENV_SIZET_NOT_SPECIFIED;
-    use_update_timer =
-        ccl::global_data::env().sched_profile || detect_update_time_expiration;
+    use_update_timer = ccl::global_data::env().sched_profile || detect_update_time_expiration;
 }
 
 void sched_entry::do_progress() {

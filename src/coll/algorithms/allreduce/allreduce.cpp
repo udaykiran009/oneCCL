@@ -917,7 +917,7 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
         wait_events.push_back(barrier_event);
     }
 
-    if (!is_single_card) {
+    if (!is_single_card && pair_comm->size() > 1) {
         LOG_DEBUG("topo/scale_up/intra: use ze_onesided_bcast");
         int peer_rank = (pair_comm->rank() + 1) % pair_comm->size();
         auto entry = entry_factory::create<ze_copy_entry>(sched,

@@ -9,7 +9,6 @@ source ${ROOT_DIR}/utils.sh
 
 make_common_actions ${SCRIPT_DIR} ${TEST_LOG} "sycl"
 
-export CCL_USE_HMEM=1
 export I_MPI_JOB_TIMEOUT=120
 
 worker_counts="1"
@@ -18,11 +17,50 @@ hmem_modes="0 1"
 single_list_modes="0 1"
 algos="topo rabenseifner"
 proc_counts="2 4"
-libfabric_dmabuf_peer_mem_path="/home/sys_ctlab/prog/libfabric_dmabuf_peer_mem/lib"
 libfabrics="default dmabuf_peer_mem"
 provs="verbs"
 
 bench_options="-l allreduce,reduce -w 1 -i 4 -j off -c all -b sycl -t 131072 $(get_default_bench_dtype)"
+
+artefact_dir="/home/sys_ctlab/prog"
+ofi_bench_path="${artefact_dir}/dmabuf-rdma-tests/fi-rdmabw-xe"
+ofi_lib_path="${artefact_dir}/libfabric_dmabuf_peer_mem/lib"
+
+dmabuf_peer_mem_env="FI_HOOK=dmabuf_peer_mem"
+dmabuf_peer_mem_env+=" FI_PROVIDER=verbs"
+dmabuf_peer_mem_env+=" FI_VERBS_INLINE_SIZE=0"
+dmabuf_peer_mem_env+=" MLX5_SCATTER_TO_CQE=0"
+dmabuf_peer_mem_env+=" LD_LIBRARY_PATH=${ofi_lib_path}:${LD_LIBRARY_PATH}"
+dmabuf_peer_mem_env+=" FI_PROVIDER_PATH=${ofi_lib_path}/libfabric"
+
+check_dmabuf_peer_mem() {
+    if [ -z "$(lsmod | grep dmabuf_peer_mem)" ]
+    then
+        echo "Fail: dmabuf_peer_mem driver is not found" >> ${TEST_LOG} 2>&1
+        exit 1
+    fi
+
+    env="${dmabuf_peer_mem_env}"
+    ofi_bench_options="-m device -t send -n 4"
+    device_pairs="0_0 0_1 1_1 0.0_0.1 0.0_1.0 0.0_1.1"
+
+    for device_pair in ${device_pairs}
+    do
+        server_device=$(echo $device_pair | cut -d_ -f1)
+        client_device=$(echo $device_pair | cut -d_ -f2)
+        cmd="${env} ${ofi_bench_path} ${ofi_bench_options} -d ${server_device} >> ${TEST_LOG} 2>&1 &"
+        cmd+=" ${env} ${ofi_bench_path} ${ofi_bench_options} -d ${client_device} localhost >> ${TEST_LOG} 2>&1"
+
+        run_cmd "${cmd}"
+        check_log ${TEST_LOG} "4194304"
+        rm ${TEST_LOG}
+
+        # to avoid "connection refused" issue
+        sleep 4
+    done
+}
+
+check_dmabuf_peer_mem
 
 for worker_count in ${worker_counts}
 do
@@ -40,24 +78,24 @@ do
                         do
                             for prov in ${provs}
                             do
-                                if [[ ${libfabric} == "dmabuf_peer_mem" ]]
-                                then
-                                    fabric_env="FI_HOOK=dmabuf_peer_mem"
-                                    fabric_env+=" FI_VERBS_INLINE_SIZE=0"
-                                    fabric_env+=" MLX5_SCATTER_TO_CQE=0"
-                                    fabric_env+=" LD_LIBRARY_PATH=${libfabric_dmabuf_peer_mem_path}:${libfabric_dmabuf_peer_mem_path}/libfabric:${LD_LIBRARY_PATH}"
-                                    fabric_env+=" FI_PROVIDER_PATH=${libfabric_dmabuf_peer_mem_path}/libfabric"
-                                fi 
-                                cmd=${fabric_env}
-                                cmd+=" CCL_WORKER_COUNT=${worker_count}"
+                                cmd="CCL_WORKER_COUNT=${worker_count}"
                                 cmd+=" CCL_ATL_TRANSPORT=ofi"
                                 cmd+=" CCL_ATL_SEND_PROXY=${send_proxy_mode}"
                                 cmd+=" CCL_ATL_HMEM=${hmem_mode}"
+                                cmd+=" CCL_USE_HMEM=1"
+                                cmd+=" CCL_LOG_LEVEL=info"
                                 cmd+=" CCL_ZE_SINGLE_LIST=${single_list_mode}"
                                 cmd+=" CCL_ALLREDUCE=${algo}"
                                 cmd+=" FI_PROVIDER=${prov}"
+
+                                if [[ ${libfabric} == "dmabuf_peer_mem" ]]
+                                then
+                                    cmd+=" ${dmabuf_peer_mem_env}"
+                                fi
+
                                 cmd+=" mpiexec -l -n ${proc_count} -ppn 2 ${SCRIPT_DIR}/benchmark"
                                 cmd+=" ${bench_options} > ${TEST_LOG} 2>&1"
+
                                 run_cmd "${cmd}"
                                 check_log ${TEST_LOG}
                                 check_hmem_log ${TEST_LOG} ${hmem_mode}
