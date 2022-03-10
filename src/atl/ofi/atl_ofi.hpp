@@ -180,10 +180,7 @@ private:
                                 int fi_version,
                                 std::shared_ptr<ipmi> pmi,
                                 bool log_on_error);
-    fi_addr_t atl_ofi_get_addr(atl_ofi_ctx_t& ctx,
-                               atl_ofi_prov_t* prov,
-                               int proc_idx,
-                               size_t ep_idx);
+    fi_addr_t atl_ofi_get_addr(atl_ofi_prov_t* prov, int proc_idx, size_t ep_idx);
 
     atl_ofi_ctx_t ctx;
 
@@ -213,7 +210,7 @@ private:
 
         void clear();
 
-        void init(size_t instance_count, int enable_hmem);
+        void init(size_t instance_count, int ctx_enable_hmem);
         void get(size_t idx, fid_domain* domain, void* buf, size_t bytes, fid_mr** mr);
         void push(size_t idx, fid_mr* mr);
 

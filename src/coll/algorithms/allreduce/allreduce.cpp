@@ -839,8 +839,9 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
     }
     sched->add_barrier();
 
+    ze_event_handle_t barrier_event{};
     if (is_multi_card) {
-        auto barrier_event =
+        barrier_event =
             ccl::add_comm_barrier(sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
         wait_events.push_back(barrier_event);
 
@@ -859,7 +860,7 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
                                                                        pair_comm_offset);
             wait_events.push_back(entry->entry_event);
 
-            auto barrier_event = ccl::add_comm_barrier(
+            barrier_event = ccl::add_comm_barrier(
                 sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
             wait_events.push_back(barrier_event);
         }
@@ -879,7 +880,7 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
                                                                             pair_comm_offset);
             wait_events.push_back(entry->entry_event);
 
-            auto barrier_event = ccl::add_comm_barrier(
+            barrier_event = ccl::add_comm_barrier(
                 sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
             wait_events.push_back(barrier_event);
         }
@@ -912,7 +913,7 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
                                                                     pair_comm_offset);
         wait_events.push_back(entry->entry_event);
 
-        auto barrier_event =
+        barrier_event =
             ccl::add_comm_barrier(sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
         wait_events.push_back(barrier_event);
     }

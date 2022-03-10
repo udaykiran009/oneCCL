@@ -35,7 +35,7 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
     CCL_THROW_IF_NOT(!in_buffers.empty(), "in_buffers should be non empty");
 
     if (comm_size == 1) {
-        skip_rank = rank;
+        this->skip_rank = rank;
     }
 
     poll_fds.reserve(max_pfds);
@@ -53,7 +53,7 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
         mem_info_t mem_info{};
 
         ze_ipc_mem_handle_t handle{};
-        if (rank != skip_rank) {
+        if (rank != this->skip_rank) {
             if (mem_type == ccl::ze::ipc_mem_type::memory) {
                 // zeMemGetIpcHandle requires the provided pointer to be the base of an allocation.
                 // We handle this the following way: for an input buffer retrieve its base pointer
@@ -116,8 +116,8 @@ void ze_handle_exchange_entry::start() {
 void ze_handle_exchange_entry::update() {
     if (!is_created) {
         // server
-        left_peer_connect_socket = create_server_socket(
-            left_peer_socket_name, &left_peer_addr, &left_peer_addr_len, comm_size);
+        left_peer_connect_socket =
+            create_server_socket(left_peer_socket_name, &left_peer_addr, &left_peer_addr_len);
 
         // client
         right_peer_socket =
@@ -158,7 +158,7 @@ void ze_handle_exchange_entry::update() {
         for (int peer_idx = start_peer_idx; peer_idx < comm_size - 1; peer_idx++) {
             int peer = (comm_size + rank - 1 - peer_idx) % comm_size;
 
-            if ((peer_idx == 0) && !skip_first_send && (rank != skip_rank)) {
+            if ((peer_idx == 0) && !skip_first_send && (rank != this->skip_rank)) {
                 // send own handle to right peer
                 int send_fd = ccl::ze::get_fd_from_handle(handles[rank][buf_idx].handle);
                 payload_t payload{};
@@ -189,7 +189,7 @@ void ze_handle_exchange_entry::update() {
                 skip_first_send = true;
             }
 
-            if (peer == skip_rank)
+            if (peer == this->skip_rank)
                 continue;
 
             int poll_ret = poll(&poll_fds[0], poll_fds.size(), timeout_ms);
@@ -272,8 +272,7 @@ void ze_handle_exchange_entry::update() {
 
 int ze_handle_exchange_entry::create_server_socket(const std::string& socket_name,
                                                    struct sockaddr_un* socket_addr,
-                                                   int* addr_len,
-                                                   int comm_size) {
+                                                   int* addr_len) {
     int ret = 0;
     memset(&(*socket_addr), 0, sizeof((*socket_addr)));
 

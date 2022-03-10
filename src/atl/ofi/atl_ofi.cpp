@@ -347,7 +347,7 @@ atl_status_t atl_ofi::send(atl_ep_t& ep,
     msg.iov_count = 1;
     msg.tag = tag;
     msg.ignore = 0;
-    msg.addr = atl_ofi_get_addr(ctx, prov, dst_proc_idx, ep.idx);
+    msg.addr = atl_ofi_get_addr(prov, dst_proc_idx, ep.idx);
     msg.context = &ofi_req->fi_ctx;
     msg.data = 0;
 
@@ -388,7 +388,7 @@ atl_status_t atl_ofi::recv(atl_ep_t& ep,
     msg.iov_count = 1;
     msg.tag = tag;
     msg.ignore = 0;
-    msg.addr = atl_ofi_get_addr(ctx, prov, src_proc_idx, ep.idx);
+    msg.addr = atl_ofi_get_addr(prov, src_proc_idx, ep.idx);
     msg.context = &ofi_req->fi_ctx;
     msg.data = 0;
 
@@ -442,7 +442,7 @@ atl_status_t atl_ofi::probe(atl_ep_t& ep,
         msg->msg_iov = nullptr;
         msg->desc = nullptr;
         msg->iov_count = 0;
-        msg->addr = atl_ofi_get_addr(ctx, prov, src_proc_idx, ep.idx);
+        msg->addr = atl_ofi_get_addr(prov, src_proc_idx, ep.idx);
         msg->tag = tag;
         msg->ignore = 0;
         msg->context = &(req->fi_ctx);
@@ -528,7 +528,7 @@ atl_status_t atl_ofi::read(atl_ep_t& ep,
                           buf,
                           len,
                           (void*)mr->local_key,
-                          atl_ofi_get_addr(ctx, prov, dst_proc_idx, ep.idx),
+                          atl_ofi_get_addr(prov, dst_proc_idx, ep.idx),
                           addr,
                           remote_key,
                           &ofi_req->fi_ctx),
@@ -562,7 +562,7 @@ atl_status_t atl_ofi::write(atl_ep_t& ep,
                            buf,
                            len,
                            (void*)mr->local_key,
-                           atl_ofi_get_addr(ctx, prov, dst_proc_idx, ep.idx),
+                           atl_ofi_get_addr(prov, dst_proc_idx, ep.idx),
                            addr,
                            remote_key,
                            &ofi_req->fi_ctx),
@@ -1031,8 +1031,8 @@ void atl_ofi::fi_cache::clear() {
     }
 }
 
-void atl_ofi::fi_cache::init(size_t instance_count, int enable_hmem) {
-    this->enable_hmem = enable_hmem;
+void atl_ofi::fi_cache::init(size_t instance_count, int ctx_enable_hmem) {
+    this->enable_hmem = ctx_enable_hmem;
     memory_regions.resize(instance_count);
 }
 
@@ -1160,10 +1160,8 @@ void atl_ofi::mr_cache::push(fid_mr* mr) {
     }
     fi_close(&mr->fid);
 }
-fi_addr_t atl_ofi::atl_ofi_get_addr(atl_ofi_ctx_t& ctx,
-                                    atl_ofi_prov_t* prov,
-                                    int proc_idx,
-                                    size_t ep_idx) {
+
+fi_addr_t atl_ofi::atl_ofi_get_addr(atl_ofi_prov_t* prov, int proc_idx, size_t ep_idx) {
     std::lock_guard<ccl_spinlock> lock{ addr_table_guard };
     return *(prov->addr_table + ((ctx.ep_count * (proc_idx - prov->first_proc_idx)) + ep_idx));
 }

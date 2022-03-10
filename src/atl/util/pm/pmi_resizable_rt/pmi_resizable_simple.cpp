@@ -72,7 +72,7 @@ atl_status_t pmi_resizable_simple::make_requested_info() {
     return ATL_STATUS_SUCCESS;
 }
 
-atl_status_t pmi_resizable_simple::pmrt_main_addr_reserve(char* main_addr) {
+atl_status_t pmi_resizable_simple::pmrt_main_addr_reserve(char* addr) {
     return ATL_STATUS_UNSUPPORTED;
 }
 

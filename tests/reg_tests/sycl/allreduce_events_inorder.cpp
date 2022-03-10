@@ -141,7 +141,7 @@ void append_kernel_times(std::vector<std::tuple<size_t, size_t, size_t>> &kernel
     }
 }
 
-bool process_args(int argc, char *argv[], run_args &args) {
+bool process_args(int argc, char *argv[], run_args &test_args) {
     char c;
 
     const char *short_ops = "b:c:i:k:ps:vdh";
@@ -175,13 +175,13 @@ bool process_args(int argc, char *argv[], run_args &args) {
                 }
                 break;
             }
-            case 'c': args.count = atoi(optarg); break;
-            case 'i': args.iter_count = atoi(optarg); break;
-            case 'k': args.kernel_count = atoi(optarg); break;
-            case 'p': args.enable_cache = true; break;
-            case 's': args.skip_iter_count = atoi(optarg); break;
-            case 'v': args.verbose_output = true; break;
-            case 'd': args.disable_allreduce = true; break;
+            case 'c': test_args.count = atoi(optarg); break;
+            case 'i': test_args.iter_count = atoi(optarg); break;
+            case 'k': test_args.kernel_count = atoi(optarg); break;
+            case 'p': test_args.enable_cache = true; break;
+            case 's': test_args.skip_iter_count = atoi(optarg); break;
+            case 'v': test_args.verbose_output = true; break;
+            case 'd': test_args.disable_allreduce = true; break;
             case 'h':
             default: return false;
         }

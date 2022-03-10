@@ -95,7 +95,7 @@ atl_status_t atl_ofi_comm::allgatherv(size_t ep_idx,
         if (peer == rank)
             continue;
 
-        uint64_t op_tag = tag->create(rank, tag_comm_id, tag_counter);
+        uint64_t op_tag = tag_creator->create(rank, tag_comm_id, tag_counter);
         // LOG_DEBUG("ofi_allgatherv: send: rank: ", rank,
         //     ", peer: ", peer,
         //     ", comm_id: ", comm_id,
@@ -113,7 +113,7 @@ atl_status_t atl_ofi_comm::allgatherv(size_t ep_idx,
             }
         } while (ret == ATL_STATUS_AGAIN);
 
-        op_tag = tag->create(peer, tag_comm_id, tag_counter);
+        op_tag = tag_creator->create(peer, tag_comm_id, tag_counter);
         // LOG_DEBUG("ofi_allgatherv: recv: rank: ", rank,
         //     ", peer: ", peer,
         //     ", comm_id: ", comm_id,

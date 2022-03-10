@@ -147,7 +147,6 @@ ccl::status ccl_coll_get_allgatherv_bufs_and_offsets(const ccl_coll_param& coll_
     }
     else {
         size_t offset = 0;
-        size_t dtype_size = coll_param.dtype.size();
         for (int idx = 0; idx < comm_size; idx++) {
             size_t bytes = coll_param.get_recv_count(idx) * dtype_size;
             recv_bufs[idx].set(coll_param.get_recv_buf(), offset + bytes, offset);

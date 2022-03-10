@@ -94,30 +94,31 @@
         size_t alignment = CCL_REG_MSG_ALIGNMENT; \
         if (size >= CCL_LARGE_MSG_THRESHOLD) \
             alignment = CCL_LARGE_MSG_ALIGNMENT; \
-        void* ptr = CCL_MEMALIGN_IMPL(size, alignment); \
-        CCL_THROW_IF_NOT(ptr, "CCL cannot allocate bytes: ", size, ", out of memory, ", name); \
-        ptr; \
+        void* mem_ptr = CCL_MEMALIGN_IMPL(size, alignment); \
+        CCL_THROW_IF_NOT(mem_ptr, "CCL cannot allocate bytes: ", size, ", out of memory, ", name); \
+        mem_ptr; \
     })
 
 #define CCL_MEMALIGN_WRAPPER(size, align, name) \
     ({ \
-        void* ptr = CCL_MEMALIGN_IMPL(size, align); \
-        CCL_THROW_IF_NOT(ptr, "CCL cannot allocate bytes: ", size, ", out of memory, ", name); \
-        ptr; \
+        void* mem_ptr = CCL_MEMALIGN_IMPL(size, align); \
+        CCL_THROW_IF_NOT(mem_ptr, "CCL cannot allocate bytes: ", size, ", out of memory, ", name); \
+        mem_ptr; \
     })
 
 #define CCL_REALLOC_WRAPPER(old_ptr, old_size, new_size, align, name) \
     ({ \
-        void* ptr = CCL_REALLOC_IMPL(old_ptr, old_size, new_size, align); \
-        CCL_THROW_IF_NOT(ptr, "CCL cannot allocate bytes: ", new_size, ", out of memory, ", name); \
-        ptr; \
+        void* mem_ptr = CCL_REALLOC_IMPL(old_ptr, old_size, new_size, align); \
+        CCL_THROW_IF_NOT( \
+            mem_ptr, "CCL cannot allocate bytes: ", new_size, ", out of memory, ", name); \
+        mem_ptr; \
     })
 
 #define CCL_CALLOC_WRAPPER(size, align, name) \
     ({ \
-        void* ptr = CCL_CALLOC_IMPL(size, align); \
-        CCL_THROW_IF_NOT(ptr, "CCL cannot allocate bytes: ", size, ", out of memory, ", name); \
-        ptr; \
+        void* mem_ptr = CCL_CALLOC_IMPL(size, align); \
+        CCL_THROW_IF_NOT(mem_ptr, "CCL cannot allocate bytes: ", size, ", out of memory, ", name); \
+        mem_ptr; \
     })
 
 #define CCL_MALLOC(size, name)          CCL_MALLOC_WRAPPER(size, name)

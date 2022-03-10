@@ -32,7 +32,7 @@ private:
     const int rank;
     const int comm_size;
     size_t last_completed_event_idx{};
-    size_t event_idx{};
+    size_t wait_event_idx{};
 
     ze_event_pool_handle_t local_pool{};
     ze_event_handle_t signal_event{};

@@ -365,7 +365,7 @@ void ccl_sched::complete() {
 
     // save sched type because we cannot assume that the sched with type == master
     // is not destroyed after we complete the request
-    auto* parent_sched = this->parent_sched;
+    auto* parent_schedule = this->parent_sched;
 
     // it's important to do finalization/cleanup before full completion of the request
     // because right after its completion, the request and the sched can be destroyed
@@ -407,21 +407,21 @@ void ccl_sched::complete() {
         // so we can finaly complete it
         get_request()->complete();
 
-        if (parent_sched) {
+        if (parent_schedule) {
             // after we call try_to_restart() on the parent, it's request might be changed
             // so rememeber it here to call complete on
-            auto parent_req = parent_sched->get_request();
+            auto parent_req = parent_schedule->get_request();
             // check for completed parent request, see comment above for how this works
             if (parent_req->complete_counter() == 1) {
                 // itt tracks only top-level sched execution
                 if (top_level_sched)
-                    complete_itt(parent_sched->coll_param.stream);
+                    complete_itt(parent_schedule->coll_param.stream);
                 // if we don't use cache, it doesn't make sense to restart the sched
                 // as there are never be any requests to restart
-                if (parent_sched->coll_attr.to_cache) {
+                if (parent_schedule->coll_attr.to_cache) {
                     // current sched execution is completed, always check if we need to
                     // restart it again
-                    parent_sched->try_to_restart();
+                    parent_schedule->try_to_restart();
                 }
                 parent_req->complete();
             }
@@ -476,7 +476,7 @@ size_t ccl_sched::entries_count() const {
 }
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-void ccl_sched::set_output_event(ccl_request* req) {
+void ccl_sched::set_output_event(ccl_request* request) {
     if (!use_output_event) {
         return;
     }
@@ -497,9 +497,9 @@ void ccl_sched::set_output_event(ccl_request* req) {
     LOG_DEBUG("convert L0 event: ", ev, "into a SYCL event and submit a barrier");
 
     auto sync_event = ccl::utils::make_event(context, ev);
-    req->set_sync_event(sync_event);
-    req->set_native_event(ccl::utils::submit_barrier(q, sync_event));
-    CCL_THROW_IF_NOT(!(req->get_native_event().is_host()), "something is wrong");
+    request->set_sync_event(sync_event);
+    request->set_native_event(ccl::utils::submit_barrier(q, sync_event));
+    CCL_THROW_IF_NOT(!(request->get_native_event().is_host()), "something is wrong");
 
 #else // CCL_ENABLE_SYCL_INTEROP_EVENT
     CCL_THROW("interop event functionality is not available with current configuration, "

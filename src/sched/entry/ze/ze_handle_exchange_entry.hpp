@@ -46,7 +46,7 @@ private:
 
     const int rank;
     const int comm_size;
-    const int skip_rank;
+    int skip_rank;
 
     int start_buf_idx{};
     int start_peer_idx{};
@@ -79,8 +79,7 @@ private:
 
     int create_server_socket(const std::string& socket_name,
                              struct sockaddr_un* socket_addr,
-                             int* addr_len,
-                             int comm_size);
+                             int* addr_len);
     int create_client_socket(const std::string& left_peer_socket_name,
                              struct sockaddr_un* sockaddr_cli,
                              int* len);

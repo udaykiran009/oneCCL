@@ -49,11 +49,12 @@ void ze_ring_allreduce_entry::atl_ops_init() {
     sync_send_flags.resize(total_iter_count, comm_rank);
 
     for (int i = 0; i < total_iter_count; ++i) {
-        send_tags[i] = comm->get_atl_comm()->tag->create(right_peer,
-                                                         comm->get_comm_id(),
-                                                         sched->sched_id,
-                                                         sched->get_op_id() + i + op_id_offset);
-        recv_tags[i] = comm->get_atl_comm()->tag->create(
+        send_tags[i] =
+            comm->get_atl_comm()->tag_creator->create(right_peer,
+                                                      comm->get_comm_id(),
+                                                      sched->sched_id,
+                                                      sched->get_op_id() + i + op_id_offset);
+        recv_tags[i] = comm->get_atl_comm()->tag_creator->create(
             comm_rank, comm->get_comm_id(), sched->sched_id, sched->get_op_id() + i + op_id_offset);
     }
 

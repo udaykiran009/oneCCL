@@ -127,8 +127,11 @@ if (${CMAKE_VERSION} VERSION_LESS 3.1)
     set(C_COMPILER_FLAGS "-std=gnu99")
 endif()
 
-# TODO: add -Wshadow
-set(COMPILER_WARN_FLAGS "-Wall -Wextra -Wno-unused-parameter -Werror")
+if (${CMAKE_C_COMPILER_ID} STREQUAL "Clang" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    set(EXTRA_WARN_FLAGS "-Wshadow")
+endif()
+
+set(COMPILER_WARN_FLAGS "-Wall -Wextra -Wno-unused-parameter -Werror ${EXTRA_WARN_FLAGS}")
 
 # common release/debug compilation settings
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_COMPILER_FLAGS} ${COMPILER_WARN_FLAGS} -D_GNU_SOURCE -fvisibility=internal")

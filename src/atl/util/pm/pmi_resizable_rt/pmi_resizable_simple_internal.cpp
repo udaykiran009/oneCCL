@@ -133,7 +133,7 @@ atl_status_t pmi_resizable_simple_internal::barrier_reg() {
     return ATL_STATUS_SUCCESS;
 }
 
-atl_status_t pmi_resizable_simple_internal::pmrt_main_addr_reserve(char* main_addr) {
+atl_status_t pmi_resizable_simple_internal::pmrt_main_addr_reserve(char* addr) {
     LOG_ERROR("unsupported");
     return ATL_STATUS_UNSUPPORTED;
 }
@@ -224,7 +224,7 @@ atl_status_t pmi_resizable_simple_internal::pmrt_kvs_get(char* kvs_key,
                                                          size_t kvs_val_len) {
     int ret;
     char key_storage[max_keylen];
-    std::string val_storage;
+    std::string val_storage_str;
 
     ret = snprintf(key_storage, max_keylen - 1, RESIZABLE_PMI_RT_KEY_FORMAT, kvs_key, proc_idx);
     if (ret < 0) {
@@ -232,9 +232,9 @@ atl_status_t pmi_resizable_simple_internal::pmrt_kvs_get(char* kvs_key,
         return ATL_STATUS_FAILURE;
     }
 
-    ATL_CHECK_STATUS(kvs_get_value(KVS_NAME, key_storage, val_storage), "failed to get val");
+    ATL_CHECK_STATUS(kvs_get_value(KVS_NAME, key_storage, val_storage_str), "failed to get val");
 
-    ret = decode(val_storage.c_str(), kvs_val, kvs_val_len);
+    ret = decode(val_storage_str.c_str(), kvs_val, kvs_val_len);
     if (ret) {
         LOG_ERROR("decode failed");
         return ATL_STATUS_FAILURE;

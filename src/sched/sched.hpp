@@ -222,7 +222,7 @@ public:
     void release_sync_event(ccl_request* req);
 
 private:
-    void set_output_event(ccl_request* req);
+    void set_output_event(ccl_request* request);
     void update_active_request(bool use_delayed);
     static void complete_itt(const ccl_stream* stream);
 

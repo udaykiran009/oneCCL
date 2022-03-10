@@ -20,12 +20,12 @@ ze_base_entry::ze_base_entry(ccl_sched *sched,
           comm(comm),
           use_single_list(sched->use_single_list),
           wait_events(wait_events) {
-    if (!comm) {
-        comm = sched->coll_param.comm;
+    if (!this->comm) {
+        this->comm = sched->coll_param.comm;
     }
-    CCL_THROW_IF_NOT(comm, "no comm");
-    comm_rank = comm->rank();
-    comm_size = comm->size();
+    CCL_THROW_IF_NOT(this->comm, "no comm");
+    comm_rank = this->comm->rank();
+    comm_size = this->comm->size();
 
     // we can be here in case of copy_entry which may not have ze backend here, so check it
     if (sched->coll_param.stream &&

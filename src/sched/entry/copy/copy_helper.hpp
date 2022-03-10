@@ -156,7 +156,7 @@ struct sycl_copier {
         }
     }
 
-    std::string get_dtype_name(const ccl_datatype& dtype) const;
+    std::string get_dtype_name(const ccl_datatype& dt) const;
 
     copy_direction direction;
     ccl_buffer in_buf;

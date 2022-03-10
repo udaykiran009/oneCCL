@@ -143,7 +143,7 @@ kvs_status_t helper::wait_accept(void) {
     my_rank = 0;
 
     while (1) {
-        KVS_CHECK_STATUS(get_value_by_name_key(KVS_ACCEPT, my_hostname, my_rank_str),
+        KVS_CHECK_STATUS(get_value_by_name_key(KVS_ACCEPT, pmi_hostname, my_rank_str),
                          "failed to get value");
         if (my_rank_str.empty())
             continue;
@@ -218,9 +218,8 @@ kvs_status_t helper::update_kvs_info(int new_rank) {
     char kvs_key[MAX_KVS_KEY_LENGTH];
     char kvs_val[MAX_KVS_VAL_LENGTH];
     size_t kvs_list_size = get_kvs_list_size(ST_CLIENT);
-    size_t k;
 
-    for (k = 0; k < kvs_list_size; k++) {
+    for (size_t kvs_idx = 0; kvs_idx < kvs_list_size; kvs_idx++) {
         cut_head(kvs_name, kvs_key, kvs_val, ST_CLIENT);
 
         KVS_CHECK_STATUS(remove_name_key(kvs_name, kvs_key), "failed to remove name and key");
@@ -242,9 +241,9 @@ kvs_status_t helper::move_to_new_rank(int new_rank) {
 
     SET_STR(rank_str, INT_STR_SIZE, RANK_TEMPLATE, new_rank);
 
-    //    request_set_val(KVS_POD_REQUEST, my_hostname, rank_str);
+    //    request_set_val(KVS_POD_REQUEST, pmi_hostname, rank_str);
 
-    KVS_CHECK_STATUS(set_value(KVS_POD_NUM, rank_str, my_hostname), "failed to update kvs info");
+    KVS_CHECK_STATUS(set_value(KVS_POD_NUM, rank_str, pmi_hostname), "failed to update kvs info");
     return KVS_STATUS_SUCCESS;
 }
 
@@ -302,19 +301,19 @@ kvs_status_t helper::post_my_info(void) {
 
     SET_STR(my_rank_str, INT_STR_SIZE, RANK_TEMPLATE, my_rank);
 
-    KVS_CHECK_STATUS(set_value(KVS_POD_NUM, my_rank_str, my_hostname), "failed to set rank");
+    KVS_CHECK_STATUS(set_value(KVS_POD_NUM, my_rank_str, pmi_hostname), "failed to set rank");
 
     KVS_CHECK_STATUS(get_barrier_idx(barrier_num), "failed to get barrier idx");
 
     SET_STR(barrier_num_str, INT_STR_SIZE, SIZE_T_TEMPLATE, barrier_num);
 
-    KVS_CHECK_STATUS(set_value(KVS_BARRIER, my_hostname, barrier_num_str),
+    KVS_CHECK_STATUS(set_value(KVS_BARRIER, pmi_hostname, barrier_num_str),
                      "failed to set barrier idx");
 
-    KVS_CHECK_STATUS(remove_name_key(KVS_ACCEPT, my_hostname),
+    KVS_CHECK_STATUS(remove_name_key(KVS_ACCEPT, pmi_hostname),
                      "failed to remove accepted hostname");
 
-    KVS_CHECK_STATUS(remove_name_key(KVS_APPROVED_NEW_POD, my_hostname),
+    KVS_CHECK_STATUS(remove_name_key(KVS_APPROVED_NEW_POD, pmi_hostname),
                      "failed to remove approved hostname");
 
     barrier_num++;
@@ -409,7 +408,7 @@ kvs_status_t helper::occupied_rank(char* rank) {
         KVS_CHECK_STATUS(update(clear_shift_list, clear_list, 0), "failed to initial update");
     }
     else {
-        KVS_CHECK_STATUS(set_value(KVS_NEW_POD, my_hostname, rank), "failed to set rank");
+        KVS_CHECK_STATUS(set_value(KVS_NEW_POD, pmi_hostname, rank), "failed to set rank");
     }
     return KVS_STATUS_SUCCESS;
 }
@@ -424,7 +423,7 @@ kvs_status_t helper::reg_rank(void) {
     size_t i;
 
     my_rank = 0;
-    KVS_CHECK_STATUS(set_value(KVS_POD_REQUEST, my_hostname, INITIAL_RANK_NUM),
+    KVS_CHECK_STATUS(set_value(KVS_POD_REQUEST, pmi_hostname, INITIAL_RANK_NUM),
                      "failed to set initial rank");
 
     SET_STR(rank_str, INT_STR_SIZE, RANK_TEMPLATE, my_rank);
@@ -440,7 +439,7 @@ kvs_status_t helper::reg_rank(void) {
         for (i = 0; i < count_values; i++) {
             if (!strcmp(kvs_values[i].c_str(), rank_str)) {
                 my_num_in_pod_request_line++;
-                if (!strcmp(kvs_keys[i].c_str(), my_hostname))
+                if (!strcmp(kvs_keys[i].c_str(), pmi_hostname))
                     break;
             }
         }
@@ -466,18 +465,18 @@ kvs_status_t helper::reg_rank(void) {
         if (!wait_shift) {
             my_rank++;
             SET_STR(rank_str, INT_STR_SIZE, RANK_TEMPLATE, my_rank);
-            KVS_CHECK_STATUS(set_value(KVS_POD_REQUEST, my_hostname, rank_str),
+            KVS_CHECK_STATUS(set_value(KVS_POD_REQUEST, pmi_hostname, rank_str),
                              "failed to set rank");
         }
     }
 
-    KVS_CHECK_STATUS(remove_name_key(KVS_POD_REQUEST, my_hostname), "failed to remove host info");
+    KVS_CHECK_STATUS(remove_name_key(KVS_POD_REQUEST, pmi_hostname), "failed to remove host info");
 
     return KVS_STATUS_SUCCESS;
 }
 
 kvs_status_t helper::get_replica_size(size_t& replica_size) {
-    return k->kvs_get_replica_size(replica_size);
+    return kvs->kvs_get_replica_size(replica_size);
 }
 
 kvs_status_t helper::up_kvs(const char* new_kvs_name, const char* old_kvs_name) {
@@ -526,30 +525,30 @@ kvs_status_t helper::get_keys_values_by_name(const std::string& kvs_name,
                                              std::vector<std::string>& kvs_keys,
                                              std::vector<std::string>& kvs_values,
                                              size_t& count) {
-    return k->kvs_get_keys_values_by_name(kvs_name, kvs_keys, kvs_values, count);
+    return kvs->kvs_get_keys_values_by_name(kvs_name, kvs_keys, kvs_values, count);
 }
 kvs_status_t helper::set_value(const std::string& kvs_name,
                                const std::string& kvs_key,
                                const std::string& kvs_val) {
-    return k->kvs_set_value(kvs_name, kvs_key, kvs_val);
+    return kvs->kvs_set_value(kvs_name, kvs_key, kvs_val);
 }
 kvs_status_t helper::remove_name_key(const std::string& kvs_name, const std::string& kvs_key) {
-    return k->kvs_remove_name_key(kvs_name, kvs_key);
+    return kvs->kvs_remove_name_key(kvs_name, kvs_key);
 }
 kvs_status_t helper::get_value_by_name_key(const std::string& kvs_name,
                                            const std::string& kvs_key,
                                            std::string& kvs_val) {
-    return k->kvs_get_value_by_name_key(kvs_name, kvs_key, kvs_val);
+    return kvs->kvs_get_value_by_name_key(kvs_name, kvs_key, kvs_val);
 }
 size_t helper::init(const char* main_addr) {
-    return k->kvs_init(main_addr);
+    return kvs->kvs_init(main_addr);
 }
 kvs_status_t helper::main_server_address_reserve(char* main_addr) {
-    return k->kvs_main_server_address_reserve(main_addr);
+    return kvs->kvs_main_server_address_reserve(main_addr);
 }
 kvs_status_t helper::get_count_names(const std::string& kvs_name, size_t& count_names) {
-    return k->kvs_get_count_names(kvs_name, count_names);
+    return kvs->kvs_get_count_names(kvs_name, count_names);
 }
 kvs_status_t helper::finalize(void) {
-    return k->kvs_finalize();
+    return kvs->kvs_finalize();
 }

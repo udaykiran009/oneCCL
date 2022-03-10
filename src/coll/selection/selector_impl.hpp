@@ -431,7 +431,7 @@ void ccl_algorithm_selector_base<algo_group_type>::insert(
         return;
 
     /* merge adjacent ranges for the same algorithm */
-    for (auto iter = table.begin(); iter != table.end();) {
+    for (iter = table.begin(); iter != table.end();) {
         ccl_selection_unpack_elem(elem_size, elem_algo, elem_border, iter, table);
 
         if (elem_border == ccl_selection_border_right || elem_border == ccl_selection_border_both) {

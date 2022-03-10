@@ -217,7 +217,7 @@ public:
         comm_id = atl_comm_id_storage::invalid_comm_id;
     }
 
-    std::shared_ptr<ccl_atl_tag> tag;
+    std::shared_ptr<ccl_atl_tag> tag_creator;
     static atl_attr_t attr;
 
 protected:

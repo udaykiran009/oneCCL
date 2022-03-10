@@ -5,7 +5,7 @@
 #include "sched/queue/queue.hpp"
 
 void recv_copy_entry::start() {
-    atl_tag = comm->get_atl_comm()->tag->create(
+    atl_tag = comm->get_atl_comm()->tag_creator->create(
         src, comm->get_comm_id(), sched->sched_id, sched->get_op_id());
     LOG_DEBUG("starting RECV in RECV_COPY entry, src ",
               src,

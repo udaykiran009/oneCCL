@@ -70,8 +70,8 @@ void sycl_copier::set_queue(const sycl::queue* external_q) {
     CCL_THROW_IF_NOT(q);
 }
 
-std::string sycl_copier::get_dtype_name(const ccl_datatype& dtype) const {
-    return ccl::global_data::get().dtypes->name(dtype);
+std::string sycl_copier::get_dtype_name(const ccl_datatype& dt) const {
+    return ccl::global_data::get().dtypes->name(dt);
 }
 
 #endif // CCL_ENABLE_SYCL

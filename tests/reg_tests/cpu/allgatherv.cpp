@@ -110,7 +110,8 @@ int main() {
              std::vector<float*> recv_bufs(comm.size(), nullptr);
              std::vector<size_t> recv_counts(comm.size(), msg_count);
 
-             for (int idx = 0; idx < comm.size(); idx++) recv_bufs[idx] = new float[msg_count];
+             for (int rank_idx = 0; rank_idx < comm.size(); rank_idx++) recv_bufs[rank_idx] =
+                 new float[msg_count];
 
              attr.set<ccl::operation_attr_id::to_cache>(false);
              run_collective("warmup_allgatherv", send_buf, recv_buf, recv_counts, comm, attr);
