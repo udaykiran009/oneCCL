@@ -14,6 +14,14 @@ current_date=`date "+%Y%m%d%H%M%S"`
 LOG_FILE="${SCRIPT_DIR}/perf_log_${current_date}"
 touch ${LOG_FILE}
 
+compare() {
+    res=0
+    if [[ $1 != $2]]
+        res=1
+    fi
+    return $res
+}
+
 set_base_env() {
 
     CCL_ENV=""
@@ -55,7 +63,6 @@ set_base_env() {
     then
         PSM3_ENV+=" PSM3_MR_CACHE_MODE=2 PSM3_MQ_RNDV_NIC_THRESH=524288 FI_PSM3_TIMEOUT=0"
     fi
-    
 
     if [[ ${CLUSTER} = "lab" ]]
     then
@@ -68,8 +75,40 @@ set_base_env() {
         CCL_ENV+=" FI_PROVIDER_PATH=/home/files/psm3/11.2.0.0.90-rhel83"
     elif [[ ${CLUSTER} = "diamond_spr" ]]
     then
-        SNIC_NAME="irdma-cvl0mav"
-        MNIC_NAME="irdma-cvl0mav,irdma-cvl1mav"
+        if [[ ${NIC_NAME} = "cvl" ]]
+        then
+            SNIC_NAME="irdma-cvl0mav"
+            MNIC_NAME="irdma-cvl0mav,irdma-cvl1mav"
+            MNIC_MASK="PSM3_NIC=irdma-cvl*"
+        elif [[ ${NIC_NAME} = "cb" ]]
+        then
+            SNIC_NAME="irdma-cb0"
+            MNIC_NAME="irdma-cb0,irdma-cb1"
+            MNIC_MASK="PSM3_NIC=irdma-cb*"
+
+            nic0_node= $(cat /sys/class/infiniband/irdma-cb0/device/numa_node)
+            nic1_node= $(cat /sys/class/infiniband/irdma-cb1/device/numa_node)
+
+            compare ${nic0_node} ${nic1_node}
+            check_exit_code $? "NICs are on different sockets"
+
+            NUMA_NODE="$nic0_node"
+        elif [[ ${NIC_NAME} = "mlx" ]]
+        then
+            SNIC_NAME="mlx5_0"
+            MNIC_NAME="mlx5_0,mlx5_1"
+
+            nic0_node= $(cat /sys/class/infiniband/mlx5_0/device/numa_node)
+            nic1_node= $(cat /sys/class/infiniband/mlx5_1/device/numa_node)
+
+            compare ${nic0_node} ${nic1_node}
+            check_exit_code $? "NICs are on different sockets"
+
+            NUMA_NODE="$nic0_node"
+        else
+            echo "ERROR: unknown nic name: ${NIC_NAME}"
+            exit 1
+        fi
     fi
 
     MNIC_TOPO="global"
@@ -81,7 +120,7 @@ set_base_env() {
         then
             PSM3_ENV+=" PSM3_ADDR_FMT=3"
         else
-            PSM3_ENV+=" PSM3_NIC=irdma-cvl*"
+            PSM3_ENV+=" ${MNIC_MASK}"
         fi
     else
         PSM3_ENV+=" PSM3_NIC=${SNIC_NAME}"
@@ -95,7 +134,7 @@ PROVS="psm3"
 NODE_COUNTS="16"
 WORKER_COUNTS="1 2 4 8 16"
 COLLS="allreduce"
-NUMA_NODES="0 1"
+NUMA_NODE="0"
 
 CCL_LINK="https://github.com/intel-innersource/libraries.performance.communication.oneccl.git"
 CCL_BRANCH="master"
@@ -111,10 +150,13 @@ DEFAULT_CLUSTER="lab"
 DEFAULT_MNIC="0"
 DEFAULT_ALGO="ring"
 DEFAULT_CHUNKING="0"
+DEFAULT_PPN="1"
+DEFAULT_NIC_NAME=""
 
 echo_log() {
     echo -e "$*" 2>&1 | tee -a ${LOG_FILE}
 }
+
 
 check_exit_code() {
     if [ $1 -ne 0 ]
@@ -152,8 +194,12 @@ print_help() {
     echo_log "      Enable multi-NIC"
     echo_log "  -algo <name>"
     echo_log "      Run with specified allreduce algorithm"
-    cho_log "  -chunking <bool_flag>"
+    echo_log "  -chunking <bool_flag>"
     echo_log "      Enable chunking/segmentation for allreduce algorithm"
+    echo_log "  -ppn <number>"
+    echo_log "      Set number of processes per node"
+    echo_log "  -nic_name <name>"
+    echo_log "      Name of the NIC to run on: mlx, cb, cvl"
     echo_log ""
     echo_log "Usage examples:"
     echo_log "  ${BASENAME}.sh -full 1"
@@ -174,6 +220,8 @@ parse_arguments() {
     MNIC=${DEFAULT_MNIC}
     ALGO=${DEFAULT_ALGO}
     CHUNKING=${DEFAULT_CHUNKING}
+    PPN=${DEFAULT_PPN}
+    NIC_NAME=${DEFAULT_NIC_NAME}
 
     while [ $# -ne 0 ]
     do
@@ -224,6 +272,14 @@ parse_arguments() {
                 ;;
             "-chunking")
                 CHUNKING="${2}"
+                shift
+                ;;
+            "-ppn")
+                PPN="${2}"
+                shift
+                ;;
+            "-nic_name")
+                NIC_NAME="${2}"
                 shift
                 ;;
             *)
@@ -296,6 +352,8 @@ parse_arguments() {
     echo_log "MNIC                = ${MNIC}"
     echo_log "ALGO                = ${ALGO}"
     echo_log "CHUNKING            = ${CHUNKING}"
+    echo_log "PPN                 = ${PPN}"
+    echo_log "NIC_NAME            = ${NIC_NAME}"
 
     echo_log "EXTERNAL_ITER_COUNT = ${EXTERNAL_ITER_COUNT}"
 
@@ -552,44 +610,54 @@ run_tests() {
 
                 for coll in ${COLLS}
                 do
-                    for numa_node in ${NUMA_NODES}
+                    first_cores=($(lscpu | grep "NUMA node[0-9] CPU(s):" | awk '{ print $4 }' | awk -F "-|," '{ print $1 }'))
+
+                    # skip 0-th core from each numa node
+                    for i in "${!first_cores[@]}"
                     do
-                        main_core=$((worker_count+1))
-                        if [[ ${numa_node} = "1" ]]
-                        then
-                            # use first core from NUMA node 1
-                            main_core=$(lscpu | grep "NUMA node1 CPU(s):" | awk '{ print $4 }' | awk -F "-|," '{ print $1 }')
-                        fi
+                        first_cores[$i]=$((first_cores[$i] + 1))
+                    done
 
-                        config_env="${BASE_ENV} I_MPI_PIN_PROCESSOR_LIST=${main_core}"
-                        config_env="${config_env} CCL_WORKER_AFFINITY=1-${worker_count}"
-                        config_env="${config_env} CCL_WORKER_COUNT=${worker_count}"
-                        config_env="${config_env} FI_PROVIDER=${prov}"
-                        if [[ ${prov} = "psm3" ]]
-                        then
-                            config_env="${config_env} ${PSM3_ENV}"
-                        fi
+                    if [[ ${PPN} = "1" ]]
+                    then
+                        config_env="${BASE_ENV} I_MPI_PIN_PROCESSOR_LIST=${first_cores[$NUMA_NODE]}"
+                        config_env+=" CCL_WORKER_AFFINITY=$((first_cores[$NUMA_NODE] + 1))-$((first_cores[$NUMA_NODE] + worker_count))"
+                    elif [[ ${PPN} = "2" ]]
+                    then
+                        config_env="${BASE_ENV} I_MPI_PIN_PROCESSOR_LIST=${first_cores[0]},${first_cores[1]}"
+                        config_env+=" CCL_WORKER_AFFINITY=$((first_cores[0] + 1))-$((first_cores[0] + worker_count))"
+                        config_env+=",$((first_cores[1] + 1))-$((first_cores[1] + worker_count))"
+                    else
+                        echo "ERROR: unexpected ppn: ${PPN}"
+                        exit 1
+                    fi
 
-                        bench_args="-c all -i 30 -w 10 -j off -d float32 -p 0 -l ${coll} -s ${numa_node}"
-                        if [[ ${coll} = "allreduce" ]]
-                        then
-                            bench_args="-q 1 ${bench_args}"
-                        fi
-                        bench_args="${msg_sizes_arg} ${bench_args}"
+                    config_env="${config_env} CCL_WORKER_COUNT=${worker_count}"
+                    config_env="${config_env} FI_PROVIDER=${prov}"
+                    if [[ ${prov} = "psm3" ]]
+                    then
+                        config_env="${config_env} ${PSM3_ENV}"
+                    fi
 
-                        cmd="${config_env} mpiexec -l -n ${node_count} -ppn 1"
-                        cmd="${cmd} ${bench_path} ${bench_args} 2>&1 | tee -a ${PROV_LOG_FILE}"
+                    bench_args="-c all -i 30 -w 10 -j off -d float32 -p 0 -l ${coll}"
+                    if [[ ${coll} = "allreduce" ]]
+                    then
+                        bench_args="-q 1 ${bench_args}"
+                    fi
+                    bench_args="${msg_sizes_arg} ${bench_args}"
 
-                        for iter in `seq 1 ${EXTERNAL_ITER_COUNT}`
-                        do
-                            config="prov=${prov} nodes=${node_count} workers=${worker_count}"
-                            config="${config} coll=${coll} numa_node=${numa_node} iter=${iter}"
-                            echo -e "\nexec config: ${config}\n" | tee -a ${PROV_LOG_FILE}
-                            echo -e "\n${cmd}\n" | tee -a ${PROV_LOG_FILE}
-                            echo -e "\n$(lscpu)\n" | tee -a ${PROV_LOG_FILE}
-                            eval ${cmd}
-                            check_exit_code $? "${config} failed"
-                        done
+                    cmd="${config_env} mpiexec -l -n $((node_count * PPN)) -ppn ${PPN}"
+                    cmd="${cmd} ${bench_path} ${bench_args} 2>&1 | tee -a ${PROV_LOG_FILE}"
+
+                    for iter in `seq 1 ${EXTERNAL_ITER_COUNT}`
+                    do
+                        config="prov=${prov} nodes=${node_count} workers=${worker_count}"
+                        config="${config} coll=${coll} numa_node=${numa_node} iter=${iter} ppn=${PPN}"
+                        echo -e "\nexec config: ${config}\n" | tee -a ${PROV_LOG_FILE}
+                        echo -e "\n${cmd}\n" | tee -a ${PROV_LOG_FILE}
+                        echo -e "\n$(lscpu)\n" | tee -a ${PROV_LOG_FILE}
+                        eval ${cmd}
+                        check_exit_code $? "${config} failed"
                     done
                 done
             done
