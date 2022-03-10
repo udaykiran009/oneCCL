@@ -545,6 +545,8 @@ run_torch_ccl_ut() {
     pushd "${SCRIPT_WORK_DIR}/torch_ccl/tests" || exit 1
 
     print_run_env
+    # w/a for https://jira.devtools.intel.com/browse/MLSL-1328
+    export CCL_ATL_TRANSPORT=ofi
     python -m pytest -s -v ./test_c10d_ccl.py
 
     if [[ "$?" == "0" ]]; then
