@@ -16,7 +16,7 @@ for proc_count in ${proc_counts}
 do
     cmd="CCL_WORKER_COUNT=2"
     cmd+=" CCL_ATL_TRANSPORT=ofi"
-    cmd+=" FI_PROVIDER=tcp"
+    cmd+=" FI_PROVIDER=$(get_default_prov)"
     cmd+=" mpiexec -l -n ${proc_count} -ppn 2"
     cmd+=" ${SCRIPT_DIR}/${BASENAME} > ${TEST_LOG} 2>&1"
     run_cmd "${cmd}"

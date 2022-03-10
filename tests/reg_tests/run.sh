@@ -3,12 +3,10 @@
 BASENAME=$(basename $0 .sh)
 SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
 
-SRC_ROOT_DIR=$(dirname $(dirname ${SCRIPT_DIR}))
-
 CORE_COUNT=$(( $(lscpu | grep "^Socket(s):" | awk '{print $2}' ) * $(lscpu | grep "^Core(s) per socket:" | awk '{print $4}') ))
 MAKE_JOB_COUNT=$(( CORE_COUNT / 3 > 4 ? CORE_COUNT / 3 : 4 ))
 
-source ${SRC_ROOT_DIR}/scripts/utils/common.sh
+source ${SCRIPT_DIR}/utils.sh
 
 pushd () {
     command pushd "$@" > /dev/null
@@ -27,16 +25,18 @@ print_help() {
     echo "      Specific path to the file with excluded tests"
     echo "  --build-only"
     echo "      Enable only the build stage"
-    echo "  --platform <ats|gen9|pvc>"
+    echo "  --platform <ats|gen|pvc>"
     echo "      Discrete GPU platform name"
     echo "  --transport <impi|mpich>"
     echo "      Transport name (default impi)"
+    echo "  --pv "
+    echo "      Set up PV testing environment"
     echo ""
     echo "Usage examples:"
     echo "  ${BASENAME}.sh --mode cpu"
     echo "  ${BASENAME}.sh --exclude-list /p/pdsd/Users/asoluyan/GitHub/oneccl/tests/reg_tests/exclude_list"
     echo "  ${BASENAME}.sh --build-only"
-    echo "  ${BASENAME}.sh --mode gpu --platform gen9"
+    echo "  ${BASENAME}.sh --mode gpu --platform gen"
     echo ""
 }
 
@@ -58,7 +58,7 @@ is_exclude_test() {
             value="$(echo ${item} | awk -F "=" '{print $2}')"
             if [[ ${prop} = "platform" ]]
             then
-                if [[ ${value} = *"${PLATFORM_HW_DISCRETE_GPU}"* || ${value} = "*" ]]
+                if [[ ${value} = "${PLATFORM_HW_GPU}" || ${value} = "*" ]]
                 then
                     is_exclude_platform=1
                 fi
@@ -92,8 +92,8 @@ set_default_values() {
     export I_MPI_DEBUG=12
 }
 
-set_gen9_env() {
-    if [[ ${PLATFORM_HW_DISCRETE_GPU} = "gen9" ]]
+set_gen_env() {
+    if [[ ${PLATFORM_HW_GPU} = "gen" ]]
     then
         export CCL_YIELD=sched_yield
     fi
@@ -116,16 +116,18 @@ parse_arguments() {
                 shift
                 ;;
             "-build-only"|"--build-only")
-                ENABLE_BUILD="yes"
                 ENABLE_TESTING="no"
                 ;;
             "-platform"|"--platform")
-                export PLATFORM_HW_DISCRETE_GPU=${2}
+                export PLATFORM_HW_GPU=${2}
                 shift
                 ;;
             "-transport"|"--transport")
                 export TRANSPORT=${2}
                 shift
+                ;;
+            "-pv"|"--pv")
+                export PV_ENVIRONMENT="yes"
                 ;;
             *)
                 echo "$(basename ${0}): ERROR: unknown option (${1})"
@@ -136,12 +138,40 @@ parse_arguments() {
         shift
     done
 
+    if [[ ${PV_ENVIRONMENT} = "yes" ]]
+    then
+        echo "$(cat ${EXCLUDE_LIST} ${SCRIPT_DIR}/exclude_list_pv)" > ${SCRIPT_DIR}/exclude_list_pv
+        EXCLUDE_LIST=${SCRIPT_DIR}/exclude_list_pv
+    fi
+
     check_mode
 
-    if [[ ${MODE} = "gpu" ]] && [[ -z ${PLATFORM_HW_DISCRETE_GPU} ]]
+    if [[ ${MODE} = "gpu" ]] && [[ -z ${PLATFORM_HW_GPU} ]]
     then
-        export PLATFORM_HW_DISCRETE_GPU="ats"
+        if [[ ${PV_ENVIRONMENT} = "yes" ]]
+        then
+            if [[ ! -z ${DASHBOARD_PLATFORM_HW_DISCRETE_GPU} ]]
+            then
+                if [[ ${DASHBOARD_PLATFORM_HW_DISCRETE_GPU} = "ats"* ]]
+                then
+                    export PLATFORM_HW_GPU="ats"
+                elif [[ ${DASHBOARD_PLATFORM_HW_DISCRETE_GPU} = "pvc" ]]
+                then
+                    export PLATFORM_HW_GPU="pvc"
+                elif [[ ${DASHBOARD_PLATFORM_HW_DISCRETE_GPU} = "dg"* ]]
+                then
+                    export PLATFORM_HW_GPU="dg"
+                else
+                    echo "Platform not defined: ${DASHBOARD_PLATFORM_HW_DISCRETE_GPU}"
+                fi
+            else
+                export PLATFORM_HW_GPU="gen"
+            fi
+        else
+            export PLATFORM_HW_GPU="ats"
+        fi
     fi
+
     if [[ -z ${TRANSPORT} ]]
     then
         export TRANSPORT="impi"
@@ -154,8 +184,9 @@ parse_arguments() {
     echo "ENABLE_BUILD             = ${ENABLE_BUILD}"
     echo "ENABLE_TESTING           = ${ENABLE_TESTING}"
     echo "EXCLUDE_LIST             = ${EXCLUDE_LIST}"
-    echo "PLATFORM_HW_DISCRETE_GPU = ${PLATFORM_HW_DISCRETE_GPU}"
+    echo "PLATFORM_HW_GPU          = ${PLATFORM_HW_GPU}"
     echo "TRANSPORT                = ${TRANSPORT}"
+    echo "PV_ENVIRONMENT           = ${PV_ENVIRONMENT}"
 }
 
 check_mode() {
@@ -221,7 +252,7 @@ build() {
         rm -rf build
         mkdir ${SCRIPT_DIR}/build
         pushd ${SCRIPT_DIR}/build
-        cmake .. -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}"
+        cmake .. -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" -DPV_ENVIRONMENT="${PV_ENVIRONMENT}"
         make VERBOSE=1 -j${MAKE_JOB_COUNT} install
         check_command_exit_code $? "build failed"
         popd
@@ -286,7 +317,7 @@ run_tests() {
 
 set_default_values
 parse_arguments $@
-set_gen9_env
+set_gen_env
 define_compiler
 build
 run_tests

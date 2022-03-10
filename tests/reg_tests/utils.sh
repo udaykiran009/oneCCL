@@ -1,5 +1,7 @@
 #!/bin/bash
 
+UTILS_SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
+
 function run_cmd() {
     cmd="${1}"
     # echo "run_cmd: ${cmd}"
@@ -94,9 +96,19 @@ function get_bench() {
     build_dir="build"
     cmake_str=""
 
-    if [ ! -f ${CCL_ROOT}/examples/benchmark/benchmark ]
+    if [[ -z ${PV_ENVIRONMENT} ]]
     then
-        cd ${CCL_ROOT}/examples
+        examples_dir="${CCL_ROOT}/examples"
+        benchmark_dir="${examples_dir}/benchmark"
+    else
+        examples_dir="${UTILS_SCRIPT_DIR}/../examples"
+        benchmark_dir="${examples_dir}/build/benchmark"
+    fi
+
+    if [ ! -f ${benchmark_dir}/benchmark ]
+    then
+        cd ${examples_dir}
+
         if [ "${backend}" == "sycl" ]
         then
             build_dir="build_sycl"
@@ -109,9 +121,9 @@ function get_bench() {
         make benchmark &>> ${log_path}
 
         check_command_exit_code $? "Benchmark build failed"
-        cp ${CCL_ROOT}/examples/${build_dir}/benchmark/benchmark ${dst_dir}
+        cp ${examples_dir}/${build_dir}/benchmark/benchmark ${dst_dir}
     else
-        cp ${CCL_ROOT}/examples/benchmark/benchmark ${dst_dir}
+        cp ${benchmark_dir}/benchmark ${dst_dir}
     fi
 }
 
@@ -120,7 +132,10 @@ function get_default_bench_dtype() {
 }
 
 function get_default_prov() {
-    if [[ ${TRANSPORT} == "mpich" ]]
+    if [[ ${PV_ENVIRONMENT} == "yes" ]]
+    then
+        echo "tcp"
+    elif [[ ${TRANSPORT} == "mpich" ]]
     then
         echo "sockets"
     else
@@ -129,14 +144,23 @@ function get_default_prov() {
 }
 
 function get_default_and_native_provs() {
-    if [[ ${TRANSPORT} == "mpich" ]]
+    if [[ ${PV_ENVIRONMENT} == "yes" ]] || [[ ${TRANSPORT} == "mpich" ]]
     then
         echo "$(get_default_prov)"
-    elif [[ ${PLATFORM_HW_DISCRETE_GPU} == "ats" ]]
+    elif [[ ${PLATFORM_HW_GPU} == "ats" ]] || [[ -z ${PLATFORM_HW_GPU} ]]
     then
         echo "$(get_default_prov) psm3"
     else
         echo "$(get_default_prov)"
+    fi
+}
+
+function get_default_and_ext_native_provs() {
+    if [[ -z ${PLATFORM_HW_GPU} ]]
+    then
+        echo "$(get_default_and_native_provs) verbs"
+    else
+        echo "$(get_default_and_native_provs)"
     fi
 }
 

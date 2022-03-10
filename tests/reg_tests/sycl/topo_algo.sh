@@ -18,7 +18,7 @@ export CCL_REDUCE=topo
 
 transports="ofi mpi"
 proc_counts="2 4 8"
-if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]]
+if [[ ${PLATFORM_HW_GPU} = "ats" ]]
 then
     proc_counts="2 4"
 fi

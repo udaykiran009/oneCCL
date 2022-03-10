@@ -79,7 +79,7 @@ run_case() {
 
 run_case "topo"
 run_case "${expected_non_topo_algos}" "CCL_TOPO_P2P_ACCESS=0"
-if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]]
+if [[ ${PLATFORM_HW_GPU} = "ats" ]]
 then
    run_case "${expected_non_topo_algos}" "" "-g 1"
    run_case "${expected_non_topo_algos}" "ZE_AFFINITY_MASK=0.0,1.0"

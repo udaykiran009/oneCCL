@@ -429,7 +429,7 @@ function set_reg_tests_environment()
 {
     if [[ "${node_label}" = "ccl_test_gen9" ]]
     then
-        export PLATFORM="gen9"
+        export PLATFORM="gen"
     elif [[ "${node_label}" = "ccl_test_ats" ]]
     then
         export PLATFORM="ats"

@@ -16,7 +16,7 @@ tests+=" priority_allreduce reduce reduce_scatter"
 proc_counts="4"
 worker_counts="1 2"
 transports="ofi mpi"
-ofi_provs="tcp"
+ofi_provs="$(get_default_prov)"
 
 for test in ${tests}
 do

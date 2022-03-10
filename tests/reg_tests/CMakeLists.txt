@@ -17,9 +17,15 @@ if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     define_compute_backend()
 endif()
 
-set(EXAMPLES_DIR ${PROJECT_SOURCE_DIR}/../../examples)
+if (NOT PV_ENVIRONMENT)
+    set(EXAMPLES_DIR ${PROJECT_SOURCE_DIR}/../../examples)
+else()
+    set(EXAMPLES_DIR ${PROJECT_SOURCE_DIR}/../examples)
+endif()
+
 set(EXAMPLES_INC_DIRS ${EXAMPLES_DIR}/include)
 message(STATUS "EXAMPLES_INC_DIRS: ${EXAMPLES_INC_DIRS}")
+message(STATUS "EXAMPLES_LIB_DIRS: ${EXAMPLES_LIB_DIRS}")
 include_directories(${EXAMPLES_INC_DIRS})
 link_directories(${EXAMPLES_LIB_DIRS})
 

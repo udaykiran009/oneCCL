@@ -14,7 +14,7 @@ make_common_actions ${SCRIPT_DIR} ${TEST_LOG}
 
 proc_counts="24"
 transports="ofi mpi"
-ofi_provs="tcp"
+ofi_provs="$(get_default_prov)"
 
 bench_options="-w 0 -i 4 -d all -c all -b host -y 17,1024,65536,1048576 -l allreduce"
 

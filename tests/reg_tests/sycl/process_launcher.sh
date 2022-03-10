@@ -28,14 +28,14 @@ parse_str() {
     fi
 }
 
-if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]]
+if [[ ${PLATFORM_HW_GPU} = "ats" ]] || [[ ${PLATFORM_HW_GPU} = "dg" ]] || [[ ${PLATFORM_HW_GPU} = "pvc" ]]
 then
     proc_count="2"
-elif [[ ${PLATFORM_HW_DISCRETE_GPU} = "gen9" ]]
+elif [[ ${PLATFORM_HW_GPU} = "gen" ]]
 then
     proc_count="4"
 else
-    echo "Failed: unexpected platform: ${PLATFORM_HW_DISCRETE_GPU}" >> ${TEST_LOG} 2>&1
+    echo "Failed: unexpected platform: ${PLATFORM_HW_GPU}" >> ${TEST_LOG} 2>&1
     check_log ${TEST_LOG}
 fi
 

@@ -5,8 +5,6 @@ exec | tee ./main_ouput.txt
 
 BASENAME=`basename $0 .sh`
 
-unsupported_platforms="dg2 ats-m ats-m1 ats-m3"
-
 set_example_work_dir()
 {
     SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
@@ -715,18 +713,6 @@ check_scope()
         SCOPE="pv"
     fi
 }
-
-if [[ ! -z ${DASHBOARD_PLATFORM_HW_DISCRETE_GPU} ]]
-then
-    for unsupported_platform in $unsupported_platforms
-    do
-        if [ "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU" == "$unsupported_platform" ]
-        then
-            echo "$DASHBOARD_PLATFORM_HW_DISCRETE_GPU is not supported by oneCCL."
-            exit 0
-        fi
-    done
-fi
 
 parse_arguments $@
 check_environment

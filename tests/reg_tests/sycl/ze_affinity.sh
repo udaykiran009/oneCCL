@@ -45,7 +45,7 @@ do
             run_case ${transport} ${proc_count} "ZE_AFFINITY_MASK=${regular_affinity_mask}"
         done
 
-        if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" ]]
+        if [[ ${PLATFORM_HW_GPU} = "ats" ]]
         then
             affinity_env=$(create_ze_affinity_env "${narrow_affinity_mask_1}")
             run_case ${transport} ${proc_count} "${affinity_env}"

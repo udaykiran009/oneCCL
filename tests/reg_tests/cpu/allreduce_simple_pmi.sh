@@ -12,7 +12,7 @@ make_common_actions ${SCRIPT_DIR} ${TEST_LOG}
 proc_counts="4"
 worker_counts="1 2"
 transports="ofi mpi"
-ofi_provs="tcp"
+ofi_provs="$(get_default_prov)"
 pmi_types="simple_pmi internal_pmi"
 for pmi_type in ${pmi_types}
 do

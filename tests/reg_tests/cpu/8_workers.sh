@@ -12,7 +12,7 @@ make_common_actions ${SCRIPT_DIR} ${TEST_LOG}
 worker_counts="1 4 8"
 proc_counts="2"
 transports="ofi mpi"
-ofi_provs="tcp verbs"
+ofi_provs="$(get_default_and_ext_native_provs)"
 
 bench_options="-c all -b host -t 2097152 $(get_default_bench_dtype)"
 

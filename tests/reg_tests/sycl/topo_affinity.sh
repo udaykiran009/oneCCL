@@ -101,31 +101,31 @@ run_case() {
     done
 }
 
-if [[ ${PLATFORM_HW_DISCRETE_GPU} = "ats" || ${PLATFORM_HW_DISCRETE_GPU} = "gen9" ]]
+if [[ ${PLATFORM_HW_GPU} = "ats" || ${PLATFORM_HW_GPU} = "gen" ]]
 then
-    # [ATS/GEN9]: case 1: 1 node, 2 ranks
+    # [ATS/GEN]: case 1: 1 node, 2 ranks
     run_case 2 2 "0 0" "0 1" "\"card:{0,1};plane:{0},{1}\""
 
-    # [ATS/GEN9]: case 2: 1 node, 4 ranks
+    # [ATS/GEN]: case 2: 1 node, 4 ranks
     run_case 4 4 "0 0 1 1" "0 1 0 1" "\"card:{0,1},{2,3};plane:{0,2},{1,3}\""
 
-    # [ATS/GEN9]: case 3: 1 node, 8 ranks
+    # [ATS/GEN]: case 3: 1 node, 8 ranks
     run_case 8 8 "0 0 1 1 2 2 3 3" "0 1 0 1 0 1 0 1" \
                  "\"card:{0,1},{2,3},{4,5},{6,7};plane:{0,2,4,6},{1,3,5,7}"\"
 
-    if [[ ${PLATFORM_HW_DISCRETE_GPU} = "gen9" ]]
+    if [[ ${PLATFORM_HW_GPU} = "gen" ]]
     then
-        # [GEN9]: case 4: 2 nodes, 2 ranks
+        # [GEN]: case 4: 2 nodes, 2 ranks
         run_case 2 1 "0 1000" "0 1000" "\"card:{0};plane:{0}\""
 
-        # [GEN9]: case 5: 2 nodes, 4 ranks
+        # [GEN]: case 5: 2 nodes, 4 ranks
         run_case 4 2 "0 0 1000 1000" "0 1 1000 1001" "\"card:{0,1};plane:{0},{1}\""
 
-        # [GEN9]: case 6: 2 nodes, 8 ranks
+        # [GEN]: case 6: 2 nodes, 8 ranks
         run_case 8 4 "0 0 1 1 1000 1000 1001 1001" "0 1 0 1 1000 1001 1000 1001" \
                      "\"card:{0,1},{2,3};plane:{0,2},{1,3}"\"
     fi
-elif [[ ${PLATFORM_HW_DISCRETE_GPU} = "pvc" ]]
+elif [[ ${PLATFORM_HW_GPU} = "pvc" ]]
 then
     # [PVC] case 1: 1 node, 6 ranks, 0-th tiles only
     affinity_env="ZE_AFFINITY_MASK=0.0,1.0,2.0,3.0,4.0,5.0"
