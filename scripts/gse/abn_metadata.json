@@ -1,7 +1,7 @@
 {
-    "oneCCLBench_allreduce_512bytes_level_zero_perf": {
+    "oneCCLBench_all_n2_512bytes_g0_level_zero_perf": {
         "api": "L0",
-        "commandLine": "benchmark.sh level_zero 128",
+        "commandLine": "benchmark.sh level_zero 2 128 0",
         "metrics": {
             "512_bytes": {
                 "type": "METRIC",
@@ -16,9 +16,9 @@
         "mainScore": "512_bytes",
         "validReturnCodes": [0]
 	},
-	"oneCCLBench_allreduce_16kbytes_level_zero_perf": {
+	"oneCCLBench_all_n2_16kbytes_g0_level_zero_perf": {
         "api": "L0",
-        "commandLine": "benchmark.sh level_zero 4096",
+        "commandLine": "benchmark.sh level_zero 2 4096 0",
         "metrics": {
             "16_kbytes": {
                 "type": "METRIC",
@@ -33,9 +33,9 @@
         "mainScore": "16_kbytes",
         "validReturnCodes": [0]
 	},
-	"oneCCLBench_allreduce_8mbytes_level_zero_perf": {
+	"oneCCLBench_all_n2_8mbytes_g0_level_zero_perf": {
         "api": "L0",
-        "commandLine": "benchmark.sh level_zero 2097152",
+        "commandLine": "benchmark.sh level_zero 2 2097152 0",
         "metrics": {
             "8_mbytes": {
                 "type": "METRIC",
@@ -50,9 +50,9 @@
         "mainScore": "8_mbytes",
         "validReturnCodes": [0]
 	},
-    "oneCCLBench_allreduce_512bytes_opencl_perf": {
-        "api": "OCL",
-        "commandLine": "benchmark.sh opencl 128",
+    "oneCCLBench_all_n4_512bytes_g0_level_zero_perf": {
+        "api": "L0",
+        "commandLine": "benchmark.sh level_zero 4 128 0",
         "metrics": {
             "512_bytes": {
                 "type": "METRIC",
@@ -66,10 +66,10 @@
         },
         "mainScore": "512_bytes",
         "validReturnCodes": [0]
-	},
-	"oneCCLBench_allreduce_16kbytes_opencl_perf": {
-        "api": "OCL",
-        "commandLine": "benchmark.sh opencl 4096",
+    },
+    "oneCCLBench_all_n4_16kbytes_g0_level_zero_perf": {
+        "api": "L0",
+        "commandLine": "benchmark.sh level_zero 4 4096 0",
         "metrics": {
             "16_kbytes": {
                 "type": "METRIC",
@@ -78,15 +78,15 @@
                 "unitExponent": -3,
                 "lowerIsBetter": true,
                 "originName": "",
-                "regex": "16384(\\s+[0-9,.]+){4}"
+                "regex": ".*16384(\\s+[0-9,.]+){4}"
             }
         },
         "mainScore": "16_kbytes",
         "validReturnCodes": [0]
-	},
-	"oneCCLBench_allreduce_8mbytes_opencl_perf": {
-        "api": "OCL",
-        "commandLine": "benchmark.sh opencl 2097152",
+    },
+    "oneCCLBench_all_n4_8mbytes_g0_level_zero_perf": {
+        "api": "L0",
+        "commandLine": "benchmark.sh level_zero 4 2097152 0",
         "metrics": {
             "8_mbytes": {
                 "type": "METRIC",
@@ -100,6 +100,158 @@
         },
         "mainScore": "8_mbytes",
         "validReturnCodes": [0]
-	}
+    },
+    "oneCCLBench_allreduce_n4_512bytes_g0_opencl_perf": {
+        "api": "OCL",
+        "commandLine": "benchmark.sh opencl 4 128 0",
+        "metrics": {
+            "512_bytes": {
+                "type": "METRIC",
+                "quantityName": "time",
+                "unitSymbol": "s",
+                "unitExponent": -3,
+                "lowerIsBetter": true,
+                "originName": "",
+                "regex": "512(\\s+[0-9,.]+){4}"
+            }
+        },
+        "mainScore": "512_bytes",
+        "validReturnCodes": [0]
+    },
+    "oneCCLBench_allreduce_n4_16kbytes_g0_opencl_perf": {
+        "api": "OCL",
+        "commandLine": "benchmark.sh opencl 4 4096 0",
+        "metrics": {
+            "16_kbytes": {
+                "type": "METRIC",
+                "quantityName": "time",
+                "unitSymbol": "s",
+                "unitExponent": -3,
+                "lowerIsBetter": true,
+                "originName": "",
+                "regex": "16384(\\s+[0-9,.]+){4}"
+            }
+        },
+        "mainScore": "16_kbytes",
+        "validReturnCodes": [0]
+    },
+    "oneCCLBench_allreduce_n4_8mbytes_g0_opencl_perf": {
+        "api": "OCL",
+        "commandLine": "benchmark.sh opencl 4 2097152 0",
+        "metrics": {
+            "8_mbytes": {
+                "type": "METRIC",
+                "quantityName": "time",
+                "unitSymbol": "s",
+                "unitExponent": -3,
+                "lowerIsBetter": true,
+                "originName": "",
+                "regex": "8388608(\\s+[0-9,.]+){4}"
+            }
+        },
+        "mainScore": "8_mbytes",
+        "validReturnCodes": [0]
+    },
+    "oneCCLBench_all_n2_512bytes_g1_level_zero_perf": {
+        "api": "L0",
+        "commandLine": "benchmark.sh level_zero 2 128 1",
+        "metrics": {
+            "512_bytes": {
+                "type": "METRIC",
+                "quantityName": "time",
+                "unitSymbol": "s",
+                "unitExponent": -3,
+                "lowerIsBetter": true,
+                "originName": "",
+                "regex": "512(\\s+[0-9,.]+){4}"
+            }
+        },
+        "mainScore": "512_bytes",
+        "validReturnCodes": [0]
+    },
+    "oneCCLBench_all_n2_16kbytes_g1_level_zero_perf": {
+        "api": "L0",
+        "commandLine": "benchmark.sh level_zero 2 4096 1",
+        "metrics": {
+            "16_kbytes": {
+                "type": "METRIC",
+                "quantityName": "time",
+                "unitSymbol": "s",
+                "unitExponent": -3,
+                "lowerIsBetter": true,
+                "originName": "",
+                "regex": ".*16384(\\s+[0-9,.]+){4}"
+            }
+        },
+        "mainScore": "16_kbytes",
+        "validReturnCodes": [0]
+    },
+    "oneCCLBench_all_n2_8mbytes_g1_level_zero_perf": {
+        "api": "L0",
+        "commandLine": "benchmark.sh level_zero 2 2097152 1",
+        "metrics": {
+            "8_mbytes": {
+                "type": "METRIC",
+                "quantityName": "time",
+                "unitSymbol": "s",
+                "unitExponent": -3,
+                "lowerIsBetter": true,
+                "originName": "",
+                "regex": "8388608(\\s+[0-9,.]+){4}"
+            }
+        },
+        "mainScore": "8_mbytes",
+        "validReturnCodes": [0]
+    },
+    "oneCCLBench_all_n4_512bytes_g1_level_zero_perf": {
+        "api": "L0",
+        "commandLine": "benchmark.sh level_zero 4 128 1",
+        "metrics": {
+            "512_bytes": {
+                "type": "METRIC",
+                "quantityName": "time",
+                "unitSymbol": "s",
+                "unitExponent": -3,
+                "lowerIsBetter": true,
+                "originName": "",
+                "regex": "512(\\s+[0-9,.]+){4}"
+            }
+        },
+        "mainScore": "512_bytes",
+        "validReturnCodes": [0]
+    },
+    "oneCCLBench_all_n4_16kbytes_g1_level_zero_perf": {
+        "api": "L0",
+        "commandLine": "benchmark.sh level_zero 4 4096 1",
+        "metrics": {
+            "16_kbytes": {
+                "type": "METRIC",
+                "quantityName": "time",
+                "unitSymbol": "s",
+                "unitExponent": -3,
+                "lowerIsBetter": true,
+                "originName": "",
+                "regex": ".*16384(\\s+[0-9,.]+){4}"
+            }
+        },
+        "mainScore": "16_kbytes",
+        "validReturnCodes": [0]
+    },
+    "oneCCLBench_all_n4_8mbytes_g1_level_zero_perf": {
+        "api": "L0",
+        "commandLine": "benchmark.sh level_zero 4 2097152 1",
+        "metrics": {
+            "8_mbytes": {
+                "type": "METRIC",
+                "quantityName": "time",
+                "unitSymbol": "s",
+                "unitExponent": -3,
+                "lowerIsBetter": true,
+                "originName": "",
+                "regex": "8388608(\\s+[0-9,.]+){4}"
+            }
+        },
+        "mainScore": "8_mbytes",
+        "validReturnCodes": [0]
+    }
 }
-

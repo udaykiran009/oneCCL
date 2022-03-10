@@ -54,14 +54,14 @@ check_run "could not initialize any transport library" ${LOG}
 rm ${LOG}
 
 # case 4: correct OFI path
-CCL_ATL_TRANSPORT=ofi CCL_OFI_LIBRARY_PATH="${I_MPI_ROOT}/libfabric/lib/libfabric.so.1" \
+CCL_ATL_TRANSPORT=ofi CCL_OFI_LIBRARY_PATH="$(get_ofi_path)" \
 mpiexec -l -n 2 -ppn 2 ${SCRIPT_DIR}/benchmark ${bench_options} > ${LOG} 2>&1
 check_ret $?
 check_log ${LOG}
 rm ${LOG}
 
 # case 5: correct MPI path
-CCL_ATL_TRANSPORT=mpi CCL_MPI_LIBRARY_PATH="${I_MPI_ROOT}/lib/release/libmpi.so.12" \
+CCL_ATL_TRANSPORT=mpi CCL_MPI_LIBRARY_PATH="$(get_mpi_path)" \
 mpiexec -l -n 2 -ppn 2 ${SCRIPT_DIR}/benchmark ${bench_options} > ${LOG} 2>&1
 check_ret $?
 check_log ${LOG}

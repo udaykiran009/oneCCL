@@ -52,7 +52,8 @@ function set_pvc_mpich_ofi_env()
     module unload mpich/icc-cxi
     module use /home/tdoodi/drop44-release/install_12_6/modulefiles
     module load mpich/icc-cxi/44.2
-    export LD_LIBRARY_PATH=/usr/lib64/:${LD_LIBRARY_PATH}
+    export MPICH_LIBFABRIC_PATH="/usr/lib64/"
+    export LD_LIBRARY_PATH=${MPICH_LIBFABRIC_PATH}:${LD_LIBRARY_PATH}
 }
 
 function set_pvc_agama_env()

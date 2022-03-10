@@ -9,10 +9,10 @@ function set_ats_mpich_ofi_env()
     then
         ${CURRENT_WORK_DIR}/scripts/mpich_ofi/mpich_ofi.sh
     fi
-    LIBFABRIC_DIR="/home/sys_csr1/software/libfabric/sockets-dynamic"
+    export MPICH_LIBFABRIC_PATH="/home/sys_csr1/software/libfabric/sockets-dynamic/lib"
     MPICH_OFI_INSTALL_PATH=$( cd ${CURRENT_WORK_DIR}/scripts/mpich_ofi/install/usr/mpi/mpich-ofi*/ && pwd -P )
     echo "MPICH_OFI_INSTALL_PATH: ${MPICH_OFI_INSTALL_PATH}"
     export PATH="${MPICH_OFI_INSTALL_PATH}/bin:${PATH}"
-    export LD_LIBRARY_PATH="${MPICH_OFI_INSTALL_PATH}/lib:${LIBFABRIC_DIR}/lib:${LD_LIBRARY_PATH}"
+    export LD_LIBRARY_PATH="${MPICH_OFI_INSTALL_PATH}/lib:${MPICH_LIBFABRIC_PATH}:${LD_LIBRARY_PATH}"
     unset FI_PROVIDER_PATH
 }

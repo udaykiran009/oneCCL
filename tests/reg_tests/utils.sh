@@ -209,3 +209,30 @@ create_ze_affinity_env() {
 
     echo "I_MPI_GTOOL=\"$result_env"\"
 }
+
+get_ofi_path() {
+    if [[ ${TRANSPORT} == "mpich" ]]
+    then
+        # taken from ats_* and pvc_helper.sh
+        echo "${MPICH_LIBFABRIC_PATH}/libfabric.so.1"
+    else
+        echo "${I_MPI_ROOT}/libfabric/lib/libfabric.so.1"
+    fi
+}
+
+get_mpi_path() {
+    if [[ ${TRANSPORT} == "mpich" ]]
+    then
+        # get first libmpi.so.12 from LD_LIBRARY_PATH
+        for dir in $(echo ${LD_LIBRARY_PATH}} | tr ":" "\n")
+        do
+            if [[ -f "${dir}/libmpi.so.12" ]]
+            then
+                echo "${dir}/libmpi.so.12"
+                break
+            fi
+        done
+    else
+        echo "${I_MPI_ROOT}/lib/release/libmpi.so.12"
+    fi
+}
