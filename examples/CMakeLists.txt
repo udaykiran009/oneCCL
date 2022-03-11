@@ -1,5 +1,18 @@
 cmake_minimum_required (VERSION 2.8)
 
+set(PROJECT_NAME "oneCCL examples")
+project(${PROJECT_NAME})
+
+message(STATUS "PROJECT_NAME: ${PROJECT_NAME}")
+message(STATUS "PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
+
+# include helpers if we build in standalone mode
+if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+    set(COMMON_CMAKE_DIR ${PROJECT_SOURCE_DIR}/../cmake)
+    include(${COMMON_CMAKE_DIR}/helpers.cmake)
+    define_compute_backend()
+endif()
+
 if (DEFINED ENV{CCL_CONFIGURATION})
     set(CCL_CONFIGURATION "$ENV{CCL_CONFIGURATION}")
     if(${CCL_CONFIGURATION} STREQUAL "cpu_gpu_dpcpp")

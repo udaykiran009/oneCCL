@@ -1,6 +1,6 @@
 #!/bin/bash
 
-UTILS_SCRIPT_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
+REG_TESTS_DIR=`cd $(dirname "$BASH_SOURCE") && pwd -P`
 
 function run_cmd() {
     cmd="${1}"
@@ -93,15 +93,17 @@ function get_bench() {
     log_path=$2
     backend=$3
 
+    src_root_dir=$(realpath "${REG_TESTS_DIR}/../../")
+
     build_dir="build"
     cmake_str=""
 
     if [[ -z ${PV_ENVIRONMENT} ]]
     then
-        examples_dir="${CCL_ROOT}/examples"
+        examples_dir="${src_root_dir}/examples"
         benchmark_dir="${examples_dir}/benchmark"
     else
-        examples_dir="${UTILS_SCRIPT_DIR}/../examples"
+        examples_dir="${REG_TESTS_DIR}/../examples"
         benchmark_dir="${examples_dir}/build/benchmark"
     fi
 
@@ -112,7 +114,7 @@ function get_bench() {
         if [ "${backend}" == "sycl" ]
         then
             build_dir="build_sycl"
-            cmake_str="-DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=dpcpp -DCOMPUTE_BACKEND=dpcpp"
+            cmake_str="-DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=dpcpp"
         fi
         mkdir -p ${build_dir}
         cd ${build_dir}
