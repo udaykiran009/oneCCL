@@ -16,7 +16,8 @@ touch ${LOG_FILE}
 
 compare() {
     res=0
-    if [[ $1 != $2]]
+    if [[ $1 != $2 ]]
+    then
         res=1
     fi
     return $res
@@ -652,7 +653,7 @@ run_tests() {
                     for iter in `seq 1 ${EXTERNAL_ITER_COUNT}`
                     do
                         config="prov=${prov} nodes=${node_count} workers=${worker_count}"
-                        config="${config} coll=${coll} numa_node=${numa_node} iter=${iter} ppn=${PPN}"
+                        config="${config} coll=${coll} numa_node=$NUMA_NODE iter=${iter} ppn=${PPN}"
                         echo -e "\nexec config: ${config}\n" | tee -a ${PROV_LOG_FILE}
                         echo -e "\n${cmd}\n" | tee -a ${PROV_LOG_FILE}
                         echo -e "\n$(lscpu)\n" | tee -a ${PROV_LOG_FILE}
