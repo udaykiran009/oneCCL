@@ -22,11 +22,11 @@ void add_comm_barrier(ccl_sched* sched,
                       ze_event_pool_handle_t ipc_pool = {},
                       size_t ipc_event_idx = 0);
 
-ze_event_handle_t add_comm_barrier(ccl_sched* sched,
-                                   ccl_comm* comm,
-                                   const std::vector<ze_event_handle_t>& wait_events,
-                                   ze_event_pool_handle_t ipc_pool = {},
-                                   size_t ipc_event_idx = 0);
+void add_comm_barrier(ccl_sched* sched,
+                      ccl_comm* comm,
+                      std::vector<ze_event_handle_t>& wait_events,
+                      ze_event_pool_handle_t ipc_pool = {},
+                      size_t ipc_event_idx = 0);
 
 void add_handle_exchange(ccl_sched* sched,
                          ccl_comm* comm,

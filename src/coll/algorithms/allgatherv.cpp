@@ -443,8 +443,7 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* main_sched,
         /* Small scale algorithm: step 2 & 3. intra-card copy */
         LOG_DEBUG("topo/scale_up/intra: copy from self to peers");
         if (!is_lead_rank && !ccl::global_data::env().enable_ze_bidir_algo) {
-            auto barrier_event = ccl::add_comm_barrier(sched, pair_comm, wait_events);
-            wait_events.push_back(barrier_event);
+            ccl::add_comm_barrier(sched, pair_comm, wait_events);
         }
 
         for (int rank = pair_comm->rank(); rank < comm->size(); rank += pair_comm->size()) {
@@ -453,8 +452,7 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* main_sched,
         add_sched_barrier_for_parallel_copies();
 
         if (is_lead_rank && !ccl::global_data::env().enable_ze_bidir_algo) {
-            auto barrier_event = ccl::add_comm_barrier(sched, pair_comm, wait_events);
-            wait_events.push_back(barrier_event);
+            ccl::add_comm_barrier(sched, pair_comm, wait_events);
         }
     }
     else {
@@ -462,14 +460,12 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* main_sched,
         /* Large scale algorithm: step 1 & 2. intra-card copy */
         LOG_DEBUG("topo/scale_up/intra: copy to self from peers");
         if (!is_lead_rank && !ccl::global_data::env().enable_ze_bidir_algo) {
-            auto barrier_event = ccl::add_comm_barrier(sched, pair_comm, wait_events);
-            wait_events.push_back(barrier_event);
+            ccl::add_comm_barrier(sched, pair_comm, wait_events);
         }
         recv_from_peers(pair_comm);
         add_sched_barrier_for_parallel_copies();
         if (is_lead_rank && !ccl::global_data::env().enable_ze_bidir_algo) {
-            auto barrier_event = ccl::add_comm_barrier(sched, pair_comm, wait_events);
-            wait_events.push_back(barrier_event);
+            ccl::add_comm_barrier(sched, pair_comm, wait_events);
         }
     }
 
@@ -488,8 +484,7 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* main_sched,
     }
 
     ccl_comm* barrier_comm = (is_large_scale_algorithm) ? even_comm : pair_comm;
-    auto barrier_event = ccl::add_comm_barrier(sched, barrier_comm, wait_events);
-    wait_events.push_back(barrier_event);
+    ccl::add_comm_barrier(sched, barrier_comm, wait_events);
 
     // TODO: scaleout here
 

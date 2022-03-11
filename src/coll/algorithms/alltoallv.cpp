@@ -454,11 +454,6 @@ ccl::status ccl_coll_build_topo_alltoallv(ccl_sched* main_sched,
         parallel_copy_events.push_back(entry->entry_event);
     };
 
-    auto barrier_comm = [&](ccl_comm* comm) {
-        auto barrier_event = ccl::add_comm_barrier(sched, comm, wait_events);
-        wait_events.push_back(barrier_event);
-    };
-
     if (is_inplace) {
         for (int idx = 0; idx < comm_size; idx++) {
             CCL_THROW_IF_NOT(send_bufs[idx].get_ptr() == recv_bufs[idx].get_ptr(),
@@ -470,7 +465,7 @@ ccl::status ccl_coll_build_topo_alltoallv(ccl_sched* main_sched,
             copy_to_self(recv_bufs[idx], tmp_bufs[idx], send_counts[idx]);
         }
         add_sched_barrier_for_parallel_copies();
-        barrier_comm(node_comm);
+        ccl::add_comm_barrier(sched, node_comm, wait_events);
 
         // copy from my tmp buffer to peer recv
         copy_to_peers(tmp_bufs, send_counts);
@@ -483,7 +478,7 @@ ccl::status ccl_coll_build_topo_alltoallv(ccl_sched* main_sched,
     }
 
     add_sched_barrier_for_parallel_copies();
-    barrier_comm(node_comm);
+    ccl::add_comm_barrier(sched, node_comm, wait_events);
 
     return ccl::status::success;
 }

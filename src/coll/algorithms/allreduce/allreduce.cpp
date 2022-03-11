@@ -839,12 +839,8 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
     }
     sched->add_barrier();
 
-    ze_event_handle_t barrier_event{};
     if (is_multi_card) {
-        barrier_event =
-            ccl::add_comm_barrier(sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
-        wait_events.push_back(barrier_event);
-
+        ccl::add_comm_barrier(sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
         if (is_single_node) {
             LOG_DEBUG("topo/scale_up/intra: use ze_a2a_allreduce_entry");
             auto entry = entry_factory::create<ze_a2a_allreduce_entry>(sched,
@@ -860,9 +856,7 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
                                                                        pair_comm_offset);
             wait_events.push_back(entry->entry_event);
 
-            barrier_event = ccl::add_comm_barrier(
-                sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
-            wait_events.push_back(barrier_event);
+            ccl::add_comm_barrier(sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
         }
         else {
             LOG_DEBUG("topo/scale_up/inter: use ze_a2a_reduce_scatter_entry");
@@ -879,10 +873,7 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
                                                                             recv_buf_idx,
                                                                             pair_comm_offset);
             wait_events.push_back(entry->entry_event);
-
-            barrier_event = ccl::add_comm_barrier(
-                sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
-            wait_events.push_back(barrier_event);
+            ccl::add_comm_barrier(sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
         }
     }
 
@@ -912,10 +903,7 @@ ccl::status ccl_coll_build_topo_allreduce(ccl_sched* sched,
                                                                     recv_buf_idx,
                                                                     pair_comm_offset);
         wait_events.push_back(entry->entry_event);
-
-        barrier_event =
-            ccl::add_comm_barrier(sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
-        wait_events.push_back(barrier_event);
+        ccl::add_comm_barrier(sched, even_comm, wait_events, ipc_event_pool, ipc_event_count++);
     }
 
     if (!is_single_card && pair_comm->size() > 1) {
