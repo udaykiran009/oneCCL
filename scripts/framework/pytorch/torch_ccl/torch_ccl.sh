@@ -67,6 +67,7 @@ DEFAULT_USERNAME_1S=""
 
 DEFAULT_PROXY="http://proxy-us.intel.com:912"
 DEFAULT_EXTRA_PROXY=0
+DEFAULT_TRANSPORT="mpi"
 
 set_run_env() {
     # GPU SW
@@ -75,6 +76,7 @@ set_run_env() {
     # CCL
     export CCL_LOG_LEVEL=INFO
     export CCL_SYCL_OUTPUT_EVENT=1
+    export CCL_ATL_TRANSPORT="${TRANSPORT}"
     source "$(python -c 'import torch_ccl; print(torch_ccl.cwd)')/env/setvars.sh"
 
     # OFI
@@ -160,6 +162,8 @@ print_help() {
     echo_log "      Set extra proxy"
     echo_log "  -ccl_pr <number>"
     echo_log "      Checkout specific PR from oneCCL repository"
+    echo_log "  -transport <string>"
+    echo_log "      Set CCL ATL transport (mpi/ofi)"
     echo_log "Usage examples:"
     echo_log "  ${BASENAME}.sh "
     echo_log "  ${BASENAME}.sh -full 1"
@@ -203,6 +207,7 @@ parse_arguments() {
 
     PROXY=${DEFAULT_PROXY}
     SET_EXTRA_PROXY=${DEFAULT_EXTRA_PROXY}
+    TRANSPORT=${DEFAULT_TRANSPORT}
 
     if [[ $# -eq 0 ]]; then
         print_help
@@ -324,6 +329,10 @@ parse_arguments() {
                 CCL_PR_NUMBER="${2}"
                 shift
                 ;;
+            "-transport")
+                TRANSPORT="${2}"
+                shift
+                ;;
             *)
                 echo "$(basename $0): ERROR: unknown option ($1)"
                 print_help
@@ -422,6 +431,7 @@ parse_arguments() {
 
     echo_log "USERNAME_1S        = ${USERNAME_1S}"
     echo_log "PROXY              = ${PROXY}"
+    echo_log "TRANSPORT          = ${TRANSPORT}"
 }
 
 deactivate_conda() {
