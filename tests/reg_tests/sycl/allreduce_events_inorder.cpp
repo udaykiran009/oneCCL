@@ -377,7 +377,7 @@ int main(int argc, char *argv[]) {
         return q.submit([&](auto &h) {
             h.parallel_for(count, [=](auto id) {
                 // update weight in each iteration
-                weight_buf[id] = weight_allreduce_buf[id] * 0.5;
+                weight_buf[id] = weight_allreduce_buf[id] / size;
             });
         });
     };
@@ -449,12 +449,45 @@ int main(int argc, char *argv[]) {
         q.memcpy(weight_host_buf, ptrs[kernel_count - 1].first, byte_count);
         q.wait();
 
-        const float check_value = (kernel_count - 1) * iter_count * size * (size + 1) / 4;
+        // here's how the formula is calculated for expected value:
+        //
+        // on 0-th iteration op_kernel fills buffer with values:
+        // init_value = (kernel_idx * (rank + 1))
+        //
+        // after allreduce buffer contains identical values which is sum across all ranks:
+        // init_sum = kernel_idx * sum(i from 1 to size) = kernel_idx * (size * (size + 1)) / 2
+        //
+        // after update_kernel buffer values are adjusted, this is result of 0-th iteration:
+        // r0 = init_sum / size
+        //
+        // since 1-st iteration op_kernel sums previous value r(i-1) and init_value and does allreduce again
+        // this is result of first iteration:
+        // r(i) = (r(i-1) * size + init_sum) / size
+        //
+        // n = iter_count, on last iteration with index (n-1) result is the following:
+        // r(n-1) = (r(n-2) * size + init_sum) / size
+        // 
+        // expanding formula:
+        // r(n-1) =
+        //  ((r(n-3) * size + init_sum) / size * size + init_sum) / size =
+        //  (r(n-3) * size + 2 * init_sum) / size =
+        //  (r(n-4) * size + 3 * init_sum) / size =
+        //  (r0 * size + (n-1) * init_sum) / size =
+        //  (init_sum / size * size + (n-1) * init_sum) / size =
+        //  n * init_sum / size
+        //
+        // r(n-1) = iter_count / size * kernel_idx * (size * (size + 1)) / 2
+        //
+        // use only last kernel for result checking, i.e. with kernel_idx = (kernel_count - 1)
+
+        const float check_value =
+            (iter_count / static_cast<float>(size)) * (kernel_count - 1) * (size * (size + 1)) / 2;
 
         for (size_t n = 0; n < count; n++) {
-            if (weight_host_buf[n] != check_value) {
-                std::cout << weight_host_buf[n] << " vs " << check_value << std::endl;
+            if (fabs(weight_host_buf[n] - check_value) >= std::numeric_limits<float>::epsilon()) {
                 std::cout << "FAILED\n" << std::endl;
+                std::cout << "expected: " << weight_host_buf[n] << ", got: " << check_value
+                          << std::endl;
                 return -1;
             }
         }

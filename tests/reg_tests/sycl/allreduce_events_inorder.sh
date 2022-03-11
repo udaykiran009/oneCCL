@@ -77,9 +77,7 @@ function test_run() {
     skip_iter_counts="0 10"
     cache_modes="0 1"
     iter_counts="20 1000"
-    # TODO: MLSL-1296
-    # proc_counts="2 4"
-    proc_counts="2"
+    proc_counts="2 4"
 
     common_env
 
