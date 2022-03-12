@@ -360,7 +360,8 @@ post_build()
 
     # check whether we have a dependency on itt framework and
     # link with the library if we have
-    if $(nm libccl.a | grep -q __itt.*); then
+    nm libccl.a | grep __itt.* >/dev/null 2>&1
+    if [[ $? == 0 ]]; then
         LDFLAGS="${LDFLAGS} ${ITT_DIR}/lib64/libittnotify.a"
     fi
 
