@@ -466,7 +466,7 @@ int main(int argc, char *argv[]) {
         //
         // n = iter_count, on last iteration with index (n-1) result is the following:
         // r(n-1) = (r(n-2) * size + init_sum) / size
-        // 
+        //
         // expanding formula:
         // r(n-1) =
         //  ((r(n-3) * size + init_sum) / size * size + init_sum) / size =
