@@ -204,7 +204,6 @@ set(SRC_INCLUDE_DIRS)
 set(SRC_LINK_DIRS)
 set(SRC_LINK_LIBS)
 
-# common settings of security options
 if (USE_SECURITY_FLAGS)
     set(SRC_C_FLAGS "${SRC_C_FLAGS} -Wformat -Wformat-security -D_FORTIFY_SOURCE=2 -fstack-protector")
     set(SRC_CXX_FLAGS "${SRC_CXX_FLAGS} -Wformat -Wformat-security -D_FORTIFY_SOURCE=2 -fstack-protector")
@@ -215,6 +214,10 @@ if (USE_SECURITY_FLAGS)
             set(SRC_CXX_FLAGS "${SRC_CXX_FLAGS} -fstack-protector-strong")
         endif()
     endif()
+endif()
+
+if (ENABLE_LINKER_RPATH)
+    set(SRC_SHARED_LINKER_FLAGS "${SRC_SHARED_LINKER_FLAGS} -Wl,-rpath='$ORIGIN'")
 endif()
 
 set(SRC_SHARED_LINKER_FLAGS "${SRC_SHARED_LINKER_FLAGS} -Wl,--version-script=${PROJECT_SOURCE_DIR}/ccl.map")

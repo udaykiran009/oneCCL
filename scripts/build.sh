@@ -139,7 +139,8 @@ set_default_values()
 # Logging. Always log. Echo if ENABLE_SILENT_INSTALLATION is "yes".
 log()
 {
-    if [ "${ENABLE_SILENT_INSTALLATION}" = "no" ]; then
+    if [ "${ENABLE_SILENT_INSTALLATION}" = "no" ]
+    then
         eval $* 2>&1 | tee -a ${LOG_FILE}
     else
         eval $* >> ${LOG_FILE} 2>&1
@@ -193,7 +194,8 @@ print_help()
 # echo the debug information
 echo_debug()
 {
-    if [ ${ENABLE_VERBOSE} = "yes" ]; then
+    if [ ${ENABLE_VERBOSE} = "yes" ]
+    then
         echo_log "DEBUG: $*"
     fi
 }
@@ -204,7 +206,8 @@ echo_log_separator()
 }
 
 CheckCommandExitCode() {
-    if [ $1 -ne 0 ]; then
+    if [ $1 -ne 0 ]
+    then
         echo_log "ERROR: ${2}" 1>&2
         exit $1
     fi
@@ -306,11 +309,12 @@ build()
 
     log mkdir -p ${WORKSPACE}/${BUILD_FOLDER} && cd ${WORKSPACE}/${BUILD_FOLDER} && echo ${PWD}
 
-    if [[ ${ENABLE_CONF} = "yes" ]]; then
+    if [[ ${ENABLE_CONF} = "yes" ]]
+    then
         log cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
         -DCMAKE_C_COMPILER="${C_COMPILER}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" \
         -DUSE_CODECOV_FLAGS="${CODECOV_FLAGS}" -DENABLE_OFI_HMEM="${OFI_HMEM}" \
-        -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" \
+        -DENABLE_LINKER_RPATH=0 -DLIBFABRIC_DIR="${LIBFABRIC_INSTALL_DIR}" \
         -DLIB_SO_VERSION="${LIBCCL_SO_VERSION}" -DLIB_MAJOR_VERSION="${LIBCCL_MAJOR_VERSION}" \
         "${CMAKE_ADDITIONAL_OPTIONS}"
     fi
@@ -326,7 +330,7 @@ post_build()
     mkdir -p ${TMP_DIR}/lib
     cd ${TMP_DIR}/lib
 
-    if [[ ${compiler} = "intel" ]];
+    if [[ ${compiler} = "intel" ]]
     then
         COMPILER_DIR=${ICC_BUNDLE_ROOT}
     else
@@ -361,7 +365,8 @@ post_build()
     # check whether we have a dependency on itt framework and
     # link with the library if we have
     nm libccl.a | grep __itt.* >/dev/null 2>&1
-    if [[ $? == 0 ]]; then
+    if [[ $? == 0 ]]
+    then
         LDFLAGS="${LDFLAGS} ${ITT_DIR}/lib64/libittnotify.a"
     fi
 
@@ -721,7 +726,8 @@ prepare_pkgconfig()
         mkdir -p "${PKGCONFIG_PATH}"
         cp ${WORKSPACE}/pkgconfig/template.pc ${PKGCONFIG_PATH}/ccl-${i}.pc
         sed -i "s/@BUILD_TYPE@/${i}/" ${PKGCONFIG_PATH}/ccl-${i}.pc
-        if [ "$i" ==  "cpu_gpu_dpcpp" ]; then
+        if [ "$i" ==  "cpu_gpu_dpcpp" ]
+        then
             sed -i "s/@OTHER_FLAGS@/-lsycl/" ${PKGCONFIG_PATH}/ccl-${i}.pc
         else
             sed -i "s/@OTHER_FLAGS@//" ${PKGCONFIG_PATH}/ccl-${i}.pc
@@ -762,7 +768,8 @@ make_package()
 #==============================================================================
 parse_arguments()
 {
-    if [ $# -eq 0 ]; then
+    if [ $# -eq 0 ]
+    then
         print_help
         exit 1
     fi
@@ -811,10 +818,12 @@ parse_arguments()
                 ENABLE_INSTALL="yes"
                 ;;
             "-job-count"| "--job-count")
-                if [[ $2 == "max" ]]; then
+                if [[ $2 == "max" ]]
+                then
                     MAKE_JOB_COUNT=$(nproc)
                     shift
-                elif [[ $2 == ?(-)+([0-9]) ]]; then
+                elif [[ $2 == ?(-)+([0-9]) ]]
+                then
                     MAKE_JOB_COUNT=$2
                     shift
                 fi
@@ -860,7 +869,8 @@ parse_arguments()
 #==============================================================================
 preparing_files()
 {
-    if [[ ${ENABLE_PREPARE_FILES} = "yes" ]]; then
+    if [[ ${ENABLE_PREPARE_FILES} = "yes" ]]
+    then
         echo_log_separator
         echo_log "#\t\t\tPreparing files..."
         echo_log_separator
@@ -909,7 +919,7 @@ run_build_gpu()
 run_post_build()
 {
     if [ "${ENABLE_POST_BUILD}" = "yes" ]
-        then
+    then
         echo_log_separator
         echo_log "#\t\t\tPost build..."
         echo_log_separator
