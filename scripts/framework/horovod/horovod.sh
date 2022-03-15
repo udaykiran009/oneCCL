@@ -69,7 +69,7 @@ set_run_env() {
     # export FI_LOG_LEVEL=debug
 
     # SYCL
-    export SYCL_PI_LEVEL_ZERO_BATCH_SIZE=1 # WA for NaN failure on A0/A1 stepping: issue TBD
+    export SYCL_PI_LEVEL_ZERO_BATCH_SIZE=1 # WA for NaN failure on A0/A1 stepping: CMPLRLLVM-35731
     export SYCL_DEVICE_FILTER=level_zero
     # export SYCL_PI_LEVEL_ZERO_TRACK_INDIRECT_ACCESS_MEMORY=1 # not needed since CCL commit 5141eaf70630b364c708cae9eb664511db51dc05
 
@@ -1151,8 +1151,8 @@ run_model_tf() {
     rm -rf ${MODEL_TF_SRC_DIR}/resnet50_chk/*
     rm -r ${RN50_MODEL_TF_DIR}/mlperf_resnet/__pycache__
 
-    # OverrideRevision=0 is a workaround for NaN failure TFDOQA-4198
-    mpiexec_env="OverrideRevision=0 GPU=1" mpiexec_args="${BOOTSTRAP_OPTIONS}" app="python ${RN50_MODEL_TF_DIR}/mlperf_resnet/imagenet_main.py" \
+    # ForceLocalMemoryAccessMode=3 is a workaround for NaN failure MLSL-1189: see NEO-6700
+    mpiexec_env="ForceLocalMemoryAccessMode=3 GPU=1" mpiexec_args="${BOOTSTRAP_OPTIONS}" app="python ${RN50_MODEL_TF_DIR}/mlperf_resnet/imagenet_main.py" \
         app_args="2 --max_train_steps=${ITER_COUNT} --train_epochs=10 --epochs_between_evals=10 \
           --inter_op_parallelism_threads 1 --intra_op_parallelism_threads 24 \
           --version 1 --resnet_size 50 --model_dir=${RN50_OUTPUT_DIR} \
