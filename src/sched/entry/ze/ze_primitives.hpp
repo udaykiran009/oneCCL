@@ -15,6 +15,10 @@ namespace ze {
 
 enum class device_id : uint32_t { unknown = 0x0, id1 = 0x200, id2 = 0xbd0 };
 
+enum class copy_engine_mode { none, main, link, auto_mode };
+
+extern std::map<copy_engine_mode, std::string> copy_engine_names;
+
 constexpr ze_context_desc_t default_context_desc = { .stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC,
                                                      .pNext = nullptr,
                                                      .flags = 0 };
@@ -128,6 +132,8 @@ void close_handle_fd(const ze_ipc_mem_handle_t& handle);
 ze_ipc_mem_handle_t get_handle_from_fd(int fd);
 
 device_family get_device_family(ze_device_handle_t device);
+
+bool is_implicit_scaling(ze_device_handle_t device);
 
 bool is_same_pci_addr(const zes_pci_address_t& addr1, const zes_pci_address_t& addr2);
 bool is_same_dev_uuid(const ze_device_uuid_t& uuid1, const ze_device_uuid_t& uuid2);

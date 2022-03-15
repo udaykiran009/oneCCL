@@ -4,9 +4,6 @@
 
 #ifdef CCL_ENABLE_SYCL
 #include "common/utils/sycl_utils.hpp"
-#include <CL/sycl.hpp>
-#include <CL/sycl/backend_types.hpp>
-
 #ifdef CCL_ENABLE_ZE
 #include "sched/entry/ze/ze_copy_entry.hpp"
 #endif // CCL_ENABLE_ZE

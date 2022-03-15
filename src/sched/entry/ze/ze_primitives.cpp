@@ -9,6 +9,13 @@ namespace ccl {
 
 namespace ze {
 
+std::map<copy_engine_mode, std::string> copy_engine_names = {
+    std::make_pair(copy_engine_mode::none, "none"),
+    std::make_pair(copy_engine_mode::main, "main"),
+    std::make_pair(copy_engine_mode::link, "link"),
+    std::make_pair(copy_engine_mode::auto_mode, "auto")
+};
+
 std::string get_build_log_string(ze_module_build_log_handle_t build_log) {
     size_t log_size{};
     ZE_CALL(zeModuleBuildLogGetString, (build_log, &log_size, nullptr));
@@ -254,6 +261,26 @@ device_family get_device_family(ze_device_handle_t device) {
         case static_cast<enum_t>(device_id::id2): return device_family::family2;
         default: return device_family::unknown;
     }
+}
+
+bool is_implicit_scaling(ze_device_handle_t device) {
+    ze_queue_properties_t queue_props;
+    get_queues_properties(device, &queue_props);
+    CCL_THROW_IF_NOT(!queue_props.empty(), "empty queue_props");
+    const auto& first_queue_props = queue_props[0];
+
+    ze_device_properties_t dev_props = ccl::ze::default_device_props;
+    ZE_CALL(zeDeviceGetProperties, (device, &dev_props));
+
+    uint32_t subdev_count = 0;
+    ZE_CALL(zeDeviceGetSubDevices, (device, &subdev_count, nullptr));
+
+    return ((queue_props.size() == 1) && (first_queue_props.numQueues == 1) &&
+            (first_queue_props.flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) &&
+            (first_queue_props.flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COPY) &&
+            !(dev_props.flags & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED) && (subdev_count > 1))
+               ? true
+               : false;
 }
 
 bool is_same_pci_addr(const zes_pci_address_t& addr1, const zes_pci_address_t& addr2) {

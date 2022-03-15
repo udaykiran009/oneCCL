@@ -42,7 +42,7 @@ public:
     bool is_gpu() const;
 
 #ifdef CCL_ENABLE_SYCL
-    cl::sycl::backend get_backend() const;
+    sycl::backend get_backend() const;
 #ifdef CCL_ENABLE_ZE
     ze_device_handle_t get_ze_device() const;
     ze_context_handle_t get_ze_context() const;
@@ -78,7 +78,7 @@ private:
     ccl::device_family device_family;
 
 #ifdef CCL_ENABLE_SYCL
-    cl::sycl::backend backend;
+    sycl::backend backend;
 
 #ifdef CCL_ENABLE_ZE
     ze_device_handle_t device{};

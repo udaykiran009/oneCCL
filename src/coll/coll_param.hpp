@@ -12,7 +12,7 @@ class ccl_comm;
 #include <CL/sycl.hpp>
 
 template <class native_type>
-using ccl_sycl_typed_buffer_t = cl::sycl::buffer<native_type, 1>;
+using ccl_sycl_typed_buffer_t = sycl::buffer<native_type, 1>;
 
 /* ordering should be aligned with ccl::datatype */
 using ccl_sycl_buffer_one_dim_types = std::tuple<ccl_sycl_typed_buffer_t<int8_t>,

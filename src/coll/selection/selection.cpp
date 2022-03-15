@@ -3,7 +3,6 @@
 #include "common/global/global.hpp"
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-#include <CL/sycl/backend_types.hpp>
 #include "common/utils/sycl_utils.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
@@ -221,7 +220,11 @@ bool ccl_is_device_side_algo(const ccl_selector_param& param) {
 }
 
 bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
-    RETURN_FALSE_IF(!ccl::global_data::env().enable_topo_algo, "topo algo is explicitly disabled");
+#ifdef CCL_ENABLE_SYCL
+    RETURN_FALSE_IF(!param.comm->get_env()->get_enable_topo_algo(), "topo algo is disabled");
+#else // CCL_ENABLE_SYCL
+    return false;
+#endif // CCL_ENABLE_SYCL
 
     auto supported_colls = { ccl_coll_allgatherv,    ccl_coll_allreduce, ccl_coll_alltoall,
                              ccl_coll_alltoallv,     ccl_coll_bcast,     ccl_coll_reduce,

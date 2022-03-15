@@ -185,19 +185,20 @@ uint32_t queue_factory::get_ordinal() const {
     return queue_ordinal;
 }
 
-bool queue_factory::can_use_queue_group(ze_device_handle_t device, queue_group_type type) {
-    auto user_engine = global_data::env().ze_copy_engine;
+bool queue_factory::can_use_queue_group(ze_device_handle_t device,
+                                        queue_group_type type,
+                                        copy_engine_mode mode) {
     switch (type) {
         case queue_group_type::compute: break;
 
         case queue_group_type::main:
-            if (user_engine != ccl_ze_copy_engine_auto && user_engine != ccl_ze_copy_engine_main) {
+            if (mode != copy_engine_mode::auto_mode && mode != copy_engine_mode::main) {
                 return false;
             }
             break;
 
         case queue_group_type::link:
-            if (user_engine != ccl_ze_copy_engine_auto && user_engine != ccl_ze_copy_engine_link) {
+            if (mode != copy_engine_mode::auto_mode && mode != copy_engine_mode::link) {
                 return false;
             }
             break;
@@ -205,7 +206,7 @@ bool queue_factory::can_use_queue_group(ze_device_handle_t device, queue_group_t
         default: CCL_THROW("unknown queue group type"); break;
     }
 
-    if (type != queue_group_type::compute && user_engine == ccl_ze_copy_engine_none) {
+    if (type != queue_group_type::compute && mode == ccl::ze::copy_engine_mode::none) {
         return false;
     }
 
@@ -269,18 +270,23 @@ list_manager::list_manager(const ccl_sched_base* sched, const ccl_stream* stream
     LOG_DEBUG("create list manager");
     CCL_THROW_IF_NOT(device, "no device");
     CCL_THROW_IF_NOT(context, "no context");
+    CCL_THROW_IF_NOT(sched->coll_param.comm, "no comm");
 
     comp_queue_factory =
         std::make_unique<queue_factory>(device, context, queue_group_type::compute);
     comp_list_factory = std::make_unique<list_factory>(device, context, false);
 
-    main_queue_available = queue_factory::can_use_queue_group(device, queue_group_type::main);
+    auto copy_engine_mode = sched->coll_param.comm->get_env()->get_ze_copy_engine();
+
+    main_queue_available =
+        queue_factory::can_use_queue_group(device, queue_group_type::main, copy_engine_mode);
     if (main_queue_available) {
         main_queue_factory =
             std::make_unique<queue_factory>(device, context, queue_group_type::main);
     }
 
-    link_queue_available = queue_factory::can_use_queue_group(device, queue_group_type::link);
+    link_queue_available =
+        queue_factory::can_use_queue_group(device, queue_group_type::link, copy_engine_mode);
     if (link_queue_available) {
         link_queue_factory =
             std::make_unique<queue_factory>(device, context, queue_group_type::link);

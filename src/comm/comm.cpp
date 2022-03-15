@@ -18,6 +18,57 @@
 #include "util/pm/pmi_resizable_rt/pmi_resizable/kvs/ikvs_wrapper.h"
 #include "kvs_impl.hpp"
 
+#ifdef CCL_ENABLE_SYCL
+#include "common/utils/sycl_utils.hpp"
+#endif // CCL_ENABLE_SYCL
+
+// ccl_comm_env
+
+ccl_comm_env::ccl_comm_env(std::shared_ptr<ccl::device> device) : device(device) {
+#ifdef CCL_ENABLE_SYCL
+    enable_topo_algo = ccl::global_data::env().enable_topo_algo;
+    ze_copy_engine = ccl::global_data::env().ze_copy_engine;
+
+    if (device &&
+        (device.get()->get_native().get_backend() == ccl::utils::get_level_zero_backend())) {
+        auto ze_device =
+            sycl::get_native<ccl::utils::get_level_zero_backend()>(device.get()->get_native());
+        CCL_THROW_IF_NOT(ze_device, "null ze device");
+
+        if (ccl::ze::is_implicit_scaling(ze_device)) {
+            LOG_DEBUG("detected device in implicit scaling mode");
+            enable_topo_algo = 0;
+        }
+
+        if ((ccl::ze::get_device_family(ze_device) == ccl::device_family::unknown) ||
+            (ccl::ze::get_device_family(ze_device) == ccl::device_family::family1)) {
+            ze_copy_engine = ccl::ze::copy_engine_mode::none;
+        }
+    }
+    else {
+        enable_topo_algo = 0;
+        ze_copy_engine = ccl::ze::copy_engine_mode::none;
+    }
+#endif // CCL_ENABLE_SYCL
+}
+
+std::string ccl_comm_env::to_string() const {
+    std::stringstream ss;
+    ss << "{";
+
+#ifdef CCL_ENABLE_SYCL
+    if (device) {
+        ss << " enable_topo_algo: " << enable_topo_algo;
+        ss << ", ze_copy_engine: " << ccl::ze::copy_engine_names[ze_copy_engine];
+        ss << " ";
+    }
+#endif // CCL_ENABLE_SYCL
+
+    ss << "}";
+
+    return ss.str();
+}
+
 // ccl_internal_comm
 
 ccl_internal_comm::ccl_internal_comm(int comm_id,
@@ -41,6 +92,7 @@ void ccl_internal_comm::reset(int rank, int size) {
 }
 
 // ccl_comm
+
 void ccl_comm::init(int comm_id,
                     std::shared_ptr<atl_base_comm> atl_comm,
                     bool share_resources,
@@ -73,6 +125,12 @@ void ccl_comm::init(int comm_id,
     }
     else {
         local2global_map = atl_comm->get_rank2rank_map();
+    }
+
+    env = std::make_shared<ccl_comm_env>(device_ptr);
+
+    if (comm_rank == 0) {
+        LOG_DEBUG(to_string_ext());
     }
 }
 
@@ -199,6 +257,7 @@ std::string ccl_comm::to_string_ext() const {
     ss << "   node_comm: " << (node_comm ? node_comm->to_string() : "{}") << "\n";
     ss << "   even_comm: " << (even_comm ? even_comm->to_string() : "{}") << "\n";
     ss << "   pair_comm: " << (pair_comm ? pair_comm->to_string() : "{}") << "\n";
+    ss << "   env: " << (env ? env->to_string() : "{}") << "\n";
     ss << "}";
 
     return ss.str();

@@ -14,8 +14,6 @@
 
 #ifdef CCL_ENABLE_SYCL
 #include "common/utils/sycl_utils.hpp"
-#include <CL/sycl.hpp>
-#include <CL/sycl/backend/level_zero.hpp>
 
 #ifdef CCL_ENABLE_ZE
 #include "sched/entry/ze/ze_cache.hpp"

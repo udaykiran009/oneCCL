@@ -40,13 +40,6 @@ std::map<ccl_staging_buffer, std::string> env_data::staging_buffer_names = {
     std::make_pair(ccl_staging_usm, "usm")
 };
 
-std::map<ccl_ze_copy_engine_mode, std::string> env_data::ze_copy_engine_names = {
-    std::make_pair(ccl_ze_copy_engine_none, "none"),
-    std::make_pair(ccl_ze_copy_engine_main, "main"),
-    std::make_pair(ccl_ze_copy_engine_link, "link"),
-    std::make_pair(ccl_ze_copy_engine_auto, "auto")
-};
-
 std::map<backend_mode, std::string> env_data::backend_names = {
     std::make_pair(backend_mode::native, "native"),
 #ifdef CCL_ENABLE_STUB_BACKEND
@@ -178,7 +171,7 @@ env_data::env_data()
           disable_ze_family_check(0),
           disable_ze_port_check(0),
           ze_serialize_mode(0),
-          ze_copy_engine(ccl_ze_copy_engine_link),
+          ze_copy_engine(ccl::ze::copy_engine_mode::link),
           ze_max_compute_queues(1),
           ze_max_copy_queues(CCL_ENV_SIZET_NOT_SPECIFIED),
           ze_enable_ccs_fallback_for_copy(1),
@@ -411,7 +404,7 @@ void env_data::parse() {
     env_2_type(CCL_ZE_DISABLE_FAMILY_CHECK, disable_ze_family_check);
     env_2_type(CCL_ZE_DISABLE_PORT_CHECK, disable_ze_port_check);
     env_2_type(CCL_ZE_SERIALIZE, ze_serialize_mode);
-    env_2_enum(CCL_ZE_COPY_ENGINE, ze_copy_engine_names, ze_copy_engine);
+    env_2_enum(CCL_ZE_COPY_ENGINE, ccl::ze::copy_engine_names, ze_copy_engine);
     env_2_type(CCL_ZE_MAX_COMPUTE_QUEUES, ze_max_compute_queues);
     CCL_THROW_IF_NOT(
         ze_max_compute_queues == CCL_ENV_SIZET_NOT_SPECIFIED || ze_max_compute_queues > 0,
@@ -420,7 +413,7 @@ void env_data::parse() {
         " ",
         ze_max_compute_queues);
     env_2_type(CCL_ZE_MAX_COPY_QUEUES, ze_max_copy_queues);
-    CCL_THROW_IF_NOT(ze_copy_engine == ccl_ze_copy_engine_none ||
+    CCL_THROW_IF_NOT(ze_copy_engine == ccl::ze::copy_engine_mode::none ||
                          ze_max_copy_queues == CCL_ENV_SIZET_NOT_SPECIFIED ||
                          ze_max_copy_queues > 0,
                      "incorrect ",
@@ -675,7 +668,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_ZE_DISABLE_FAMILY_CHECK, ": ", disable_ze_family_check);
     LOG_INFO(CCL_ZE_DISABLE_PORT_CHECK, ": ", disable_ze_port_check);
     LOG_INFO(CCL_ZE_SERIALIZE, ": ", ze_serialize_mode);
-    LOG_INFO(CCL_ZE_COPY_ENGINE, ": ", str_by_enum(ze_copy_engine_names, ze_copy_engine));
+    LOG_INFO(CCL_ZE_COPY_ENGINE, ": ", str_by_enum(ccl::ze::copy_engine_names, ze_copy_engine));
     LOG_INFO(CCL_ZE_MAX_COMPUTE_QUEUES,
              ": ",
              (ze_max_compute_queues != CCL_ENV_SIZET_NOT_SPECIFIED)

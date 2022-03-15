@@ -15,6 +15,9 @@
 #include "comp/bf16/bf16_utils.hpp"
 #include "comp/fp16/fp16_utils.hpp"
 #include "sched/cache/cache.hpp"
+#if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+#include "sched/entry/ze/ze_primitives.hpp"
+#endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 #include "topology/topo_manager.hpp"
 
 constexpr const char* CCL_ENV_STR_NOT_SPECIFIED = "<not specified>";
@@ -176,13 +179,6 @@ enum ccl_atl_send_proxy {
 
 enum ccl_staging_buffer { ccl_staging_regular, ccl_staging_usm };
 
-enum ccl_ze_copy_engine_mode {
-    ccl_ze_copy_engine_none,
-    ccl_ze_copy_engine_main,
-    ccl_ze_copy_engine_link,
-    ccl_ze_copy_engine_auto
-};
-
 enum class backend_mode {
     native,
 #ifdef CCL_ENABLE_STUB_BACKEND
@@ -331,7 +327,7 @@ public:
     int disable_ze_family_check;
     int disable_ze_port_check;
     int ze_serialize_mode;
-    ccl_ze_copy_engine_mode ze_copy_engine;
+    ccl::ze::copy_engine_mode ze_copy_engine;
     ssize_t ze_max_compute_queues;
     ssize_t ze_max_copy_queues;
     int ze_enable_ccs_fallback_for_copy;
@@ -441,7 +437,6 @@ public:
     static std::map<ccl_atl_transport, std::string> atl_transport_names;
     static std::map<ccl_atl_send_proxy, std::string> atl_send_proxy_names;
     static std::map<ccl_staging_buffer, std::string> staging_buffer_names;
-    static std::map<ccl_ze_copy_engine_mode, std::string> ze_copy_engine_names;
     static std::map<backend_mode, std::string> backend_names;
     static std::map<process_launcher_mode, std::string> process_launcher_names;
 

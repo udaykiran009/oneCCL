@@ -2,8 +2,6 @@
 #include "common/stream/stream.hpp"
 #include "common/utils/sycl_utils.hpp"
 
-#include <CL/sycl/backend/level_zero.hpp>
-
 namespace ccl {
 namespace utils {
 
@@ -45,7 +43,7 @@ std::string sycl_device_to_str(const sycl::device& dev) {
     }
 }
 
-sycl::event submit_barrier(cl::sycl::queue queue) {
+sycl::event submit_barrier(sycl::queue queue) {
 #if DPCPP_VERSION >= 140000
     return queue.ext_oneapi_submit_barrier();
 #elif DPCPP_VERSION < 140000
@@ -53,7 +51,7 @@ sycl::event submit_barrier(cl::sycl::queue queue) {
 #endif // DPCPP_VERSION
 }
 
-sycl::event submit_barrier(cl::sycl::queue queue, sycl::event event) {
+sycl::event submit_barrier(sycl::queue queue, sycl::event event) {
 #if DPCPP_VERSION >= 140000
     return queue.ext_oneapi_submit_barrier({ event });
 #elif DPCPP_VERSION < 140000

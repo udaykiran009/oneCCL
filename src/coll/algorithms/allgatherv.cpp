@@ -358,7 +358,7 @@ ccl::status ccl_coll_build_topo_allgatherv(ccl_sched* main_sched,
     // because small scale algorithm show more perfomance for today
     // TODO: and also we need to replace this knob with more intelligent switching in the future
     const bool can_use_large_scale_algorithm = ccl::global_data::env().allgatherv_topo_large_scale;
-    //ccl::global_data::env().ze_copy_engine != ccl_ze_copy_engine_none && is_multi_card &&
+    //comm->get_env()->get_ze_copy_engine() != ccl::ze::copy_engine_mode::none && is_multi_card &&
     //ccl::global_data::env().ze_max_copy_queues /* here must be real queue count */ >= even_comm_size-1) or unspecified;
 
     auto send_to_peers = [&](ccl_comm* comm, ccl_buffer in_buf, size_t count, size_t peer_buf_idx) {

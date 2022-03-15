@@ -102,14 +102,26 @@ void get_device_queue_group_info(const ze_device_handle_t& device) {
         device_queue_group_nums.at(queue_group_idx).back() =
             queue_group_props[queue_group_idx].numQueues;
 
-        std::string queue_type = "other";
-        if (queue_group_props[queue_group_idx].flags &
-            ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
-            queue_type = "compute";
+        std::string queue_type;
+
+        if (!(queue_group_props[queue_group_idx].flags &
+              ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) &&
+            !(queue_group_props[queue_group_idx].flags &
+              ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COPY)) {
+            queue_type = "other";
         }
-        else if (queue_group_props[queue_group_idx].flags &
-                 ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COPY) {
-            queue_type = "copy";
+        else {
+            if (queue_group_props[queue_group_idx].flags &
+                ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) {
+                queue_type = "comp";
+            }
+            if (queue_group_props[queue_group_idx].flags &
+                ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COPY) {
+                if (!queue_type.empty()) {
+                    queue_type += "|";
+                }
+                queue_type += "copy";
+            }
         }
         device_queue_group_types.at(queue_group_idx).back() = queue_type;
     }

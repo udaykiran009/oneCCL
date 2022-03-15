@@ -7,7 +7,6 @@
 
 #ifdef CCL_ENABLE_SYCL
 #include "common/utils/sycl_utils.hpp"
-#include <CL/sycl/backend/level_zero.hpp>
 #endif // CCL_ENABLE_SYCL
 
 namespace ccl {
@@ -35,7 +34,7 @@ ccl_stream::ccl_stream(stream_type type,
     native_stream = stream;
 
 #ifdef CCL_ENABLE_SYCL
-    cl::sycl::property_list props{};
+    sycl::property_list props{};
     if (stream.is_in_order()) {
         props = { sycl::property::queue::in_order{} };
     }
@@ -84,7 +83,7 @@ std::string ccl_stream::to_string() const {
 #ifdef CCL_ENABLE_SYCL
     ss << "{ "
        << "type: " << ::to_string(type) << ", in_order: " << native_stream.is_in_order()
-       << ", device: " << native_stream.get_device().get_info<cl::sycl::info::device::name>()
+       << ", device: " << native_stream.get_device().get_info<sycl::info::device::name>()
        << ", device_family: " << ccl::to_string(device_family) << " }";
 #else // CCL_ENABLE_SYCL
     ss << reinterpret_cast<void*>(native_stream.get());
@@ -109,7 +108,7 @@ bool ccl_stream::is_gpu() const {
 }
 
 #ifdef CCL_ENABLE_SYCL
-cl::sycl::backend ccl_stream::get_backend() const {
+sycl::backend ccl_stream::get_backend() const {
     return backend;
 }
 #ifdef CCL_ENABLE_ZE

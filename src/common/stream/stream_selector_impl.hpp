@@ -26,7 +26,7 @@ std::unique_ptr<ccl_stream> stream_selector::create(stream_native_t& native_stre
             "core",
             "create_stream",
             std::string("unsupported SYCL queue's device type:\n") +
-                native_stream.get_device().template get_info<cl::sycl::info::device::name>() +
+                native_stream.get_device().template get_info<sycl::info::device::name>() +
                 std::string("supported types: host, cpu, gpu"));
     }
 #endif // CCL_ENABLE_SYCL

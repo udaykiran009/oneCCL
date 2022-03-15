@@ -69,7 +69,9 @@ public:
     bool is_copy() const;
     uint32_t get_ordinal() const;
 
-    static bool can_use_queue_group(ze_device_handle_t device, queue_group_type type);
+    static bool can_use_queue_group(ze_device_handle_t device,
+                                    queue_group_type type,
+                                    copy_engine_mode mode);
 
 private:
     const ze_device_handle_t device;
