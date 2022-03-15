@@ -57,8 +57,6 @@ default structure and identifies the file types stored in each sub-directory:
                 |   |-- include
                 |   `-- sycl
                 |-- include
-                |   |-- cpu_gpu_dpcpp
-                |   `-- cpu
                 |-- lib
                 |   |-- cpu_gpu_dpcpp
                 |   `-- cpu

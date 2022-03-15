@@ -382,13 +382,11 @@ post_build()
 
     mkdir -p ${WORKSPACE}/build/_install/lib/cpu_gpu_dpcpp
     mkdir -p ${WORKSPACE}/build/_install/lib/cpu
-    mkdir -p ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
-    mkdir -p ${WORKSPACE}/build/_install/include/cpu
-    mv ${WORKSPACE}/build/_install/include/oneapi ${WORKSPACE}/build/_install/include/cpu
+    mkdir -p ${WORKSPACE}/build/_install/include
+    mv ${WORKSPACE}/build/_install/include/oneapi ${WORKSPACE}/build/_install/include
     mv ${TMP_DIR}/lib/lib* ${WORKSPACE}/build/_install/lib/cpu
     mv ${WORKSPACE}/build/_install/lib/prov ${WORKSPACE}/build/_install/lib/cpu
     mv ${WORKSPACE}/build_gpu/_install/lib/* ${WORKSPACE}/build/_install/lib/cpu_gpu_dpcpp
-    mv ${WORKSPACE}/build_gpu/_install/include/oneapi ${WORKSPACE}/build/_install/include/cpu_gpu_dpcpp
     cp -r ${WORKSPACE}/examples ${WORKSPACE}/build/_install
     prepare_pkgconfig
 }

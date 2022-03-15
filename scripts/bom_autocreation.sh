@@ -17,10 +17,10 @@ if [ "$1" = "win" ]; then
     :
 else
     # Linux
-    BOM_COMPONENT="<deliverydir>/l_include/cpu_gpu_dpcpp/"
+    BOM_COMPONENT="<deliverydir>/l_include/"
     DEST_BOM_FILE=${INTEL_DIR}/l_include_auto.txt
-    SRC_PATH="<installroot>/include/cpu_gpu_dpcpp/"
-    INSTALL_PATH="<installdir><l_ccl_install_path><l_ccl_platform>/include/cpu_gpu_dpcpp/"
+    SRC_PATH="<installroot>/include/"
+    INSTALL_PATH="<installdir><l_ccl_install_path><l_ccl_platform>/include/"
     CONTENT=`find ${DOC_DIR} -type f | sort -u`""
 fi
 

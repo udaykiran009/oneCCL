@@ -91,5 +91,5 @@ setenv             CCL_CONFIGURATION                    "$ccl_conf"
 
 prepend-path       LD_LIBRARY_PATH                      "$topdir/lib/$ccl_conf"
 prepend-path       LIBRARY_PATH                         "$topdir/lib/$ccl_conf"
-prepend-path       CPATH                                "$topdir/include/$ccl_conf"
+prepend-path       CPATH                                "$topdir/include"
 
