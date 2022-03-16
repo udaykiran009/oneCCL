@@ -250,7 +250,7 @@ file(GLOB spv_kernels "${PROJECT_SOURCE_DIR}/src/kernels/kernels.spv")
 endif()
 
 set(CCL_MAJOR_VERSION     "2021")
-set(CCL_MINOR_VERSION     "6")
+set(CCL_MINOR_VERSION     "7")
 set(CCL_UPDATE_VERSION    "0")
 set(CCL_PRODUCT_STATUS    "Gold")
 string(TIMESTAMP CCL_PRODUCT_BUILD_DATE "%Y-%m-%dT %H:%M:%SZ")

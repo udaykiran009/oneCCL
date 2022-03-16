@@ -4,7 +4,7 @@ if (NOT OUTPUT_DIR)
     set(OUTPUT_DIR "${CMAKE_CURRENT_LIST_DIR}")
 endif()
 
-set(PROJECT_VERSION "2021.6.0")
+set(PROJECT_VERSION "2021.7.0")
 
 configure_file("${ONECCL_ROOT}/cmake/templates/oneCCLConfig.cmake.in"
                "${OUTPUT_DIR}/oneCCLConfig.cmake"
