@@ -216,8 +216,8 @@ if (USE_SECURITY_FLAGS)
     endif()
 endif()
 
-if (ENABLE_LINKER_RPATH)
-    set(SRC_SHARED_LINKER_FLAGS "${SRC_SHARED_LINKER_FLAGS} -Wl,-rpath='$ORIGIN'")
+if (ENABLE_LINKER_RUNPATH)
+    set(SRC_SHARED_LINKER_FLAGS "${SRC_SHARED_LINKER_FLAGS} -Wl,--enable-new-dtags -Wl,-rpath='$ORIGIN'")
 endif()
 
 set(SRC_SHARED_LINKER_FLAGS "${SRC_SHARED_LINKER_FLAGS} -Wl,--version-script=${PROJECT_SOURCE_DIR}/ccl.map")
