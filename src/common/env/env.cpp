@@ -516,7 +516,11 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_QUEUE_DUMP, ": ", queue_dump);
     LOG_INFO(CCL_SCHED_DUMP, ": ", sched_dump);
     LOG_INFO(CCL_SCHED_PROFILE, ": ", sched_profile);
-    LOG_INFO(CCL_ENTRY_MAX_UPDATE_TIME_SEC, ": ", entry_max_update_time_sec);
+    LOG_INFO(CCL_ENTRY_MAX_UPDATE_TIME_SEC,
+             ": ",
+             (entry_max_update_time_sec != CCL_ENV_SIZET_NOT_SPECIFIED)
+                 ? std::to_string(entry_max_update_time_sec)
+                 : CCL_ENV_STR_NOT_SPECIFIED);
 
     LOG_INFO(CCL_FRAMEWORK, ": ", str_by_enum(ccl_framework_type_names, fw_type));
 
