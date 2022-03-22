@@ -76,7 +76,7 @@ function test_run() {
     allreduce_modes="single multi"
     skip_iter_counts="0 10"
     cache_modes="0 1"
-    iter_counts="20 1000"
+    iter_counts="200"
     proc_counts="2 4"
 
     common_env
