@@ -599,9 +599,9 @@ CCL_ITT_LEVEL
 
 **Description**
 
-Set this environment variable to specify ``Intel(R) Instrumentation and Tracing Technology`` (ITT) profiling level.
+Set this environment variable to specify Intel\ |reg|\  Instrumentation and Tracing Technology (ITT) profiling level.
 Once the environment variable is enabled (value > 0), it is possible to collect and display profiling
-data for |product_short| using tools such as ``Intel(R) VTune(TM) Amplifier``.
+data for |product_short| using tools such as Intel\ |reg|\  VTune\ |tm|\  Profiler.
 
 
 Fusion

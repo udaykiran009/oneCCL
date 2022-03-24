@@ -74,7 +74,7 @@ You can customize CLI-based installation (for example, specify directory, compil
 
 .. _enable_sycl:
 
-*  To enable ``SYCL`` devices communication support, specify ``SYCL`` compiler (only DPC++ is supported):
+*  To enable ``SYCL`` devices communication support, specify ``SYCL`` compiler (only Intel\ |reg|\  oneAPI DPC++/C++ Compiler is supported):
 
   ::
 
