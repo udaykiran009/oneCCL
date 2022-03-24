@@ -46,8 +46,6 @@ protected:
     void init_entries();
     void finalize_entries();
 
-    virtual std::string name_ext() const;
-
     ze_event_handle_t create_event();
     void reset_events();
     void destroy_events();

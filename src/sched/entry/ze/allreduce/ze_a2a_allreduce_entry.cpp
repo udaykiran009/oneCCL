@@ -162,8 +162,7 @@ void ze_a2a_allreduce_entry::update() {
 
 std::string ze_a2a_allreduce_entry::name_ext() const {
     std::stringstream out;
-    out << name() << " ";
-    out << "size: " << cnt;
+    out << name() << ":" << cnt * dtype.size();
     return out.str();
 }
 

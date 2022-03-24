@@ -578,7 +578,7 @@ void list_manager::print_dump() const {
             ss << " entries:";
             for (const auto& list_entries_pair : map->at(queue_index).second) {
                 auto entry = list_entries_pair.first;
-                ss << " " << entry->name();
+                ss << " " << entry->name_ext();
             }
             ss << "\n";
         }
@@ -586,7 +586,7 @@ void list_manager::print_dump() const {
     }
 
     if (sched->use_single_list && !access_list.empty()) {
-        ss << "execution order: {\n";
+        ss << "submission order: {\n";
         for (auto& queue_list_pair : access_list) {
             auto& queue = queue_list_pair.first;
             auto& list = queue_list_pair.second;

@@ -44,7 +44,10 @@ void ze_copy_entry::init_ze_hook() {
 
 std::string ze_copy_entry::name_ext() const {
     std::stringstream out;
-    out << name() << " ";
-    out << "size: " << count;
+    out << name();
+    if (attr.direction != copy_direction::undefined) {
+        out << ":" << to_string(attr.direction);
+    }
+    out << ":" << count * dtype.size();
     return out.str();
 }

@@ -209,10 +209,6 @@ ze_command_list_handle_t ze_base_entry::get_copy_list(copy_direction direction,
     return sched->get_memory().list_manager->get_copy_list(this, wait_events, direction, index);
 }
 
-std::string ze_base_entry::name_ext() const {
-    return "[empty]";
-}
-
 ze_event_handle_t ze_base_entry::create_event(ze_event_pool_handle_t event_pool,
                                               ze_event_desc_t event_desc) {
     ze_event_handle_t event;

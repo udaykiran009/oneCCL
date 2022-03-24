@@ -544,8 +544,7 @@ void ze_ring_allreduce_entry::reset_fields() {
 
 std::string ze_ring_allreduce_entry::name_ext() const {
     std::stringstream out;
-    out << name() << " ";
-    out << "size: " << cnt;
+    out << name() << ":" << cnt * dtype.size();
     return out.str();
 }
 

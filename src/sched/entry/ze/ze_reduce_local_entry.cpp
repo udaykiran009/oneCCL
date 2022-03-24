@@ -62,7 +62,6 @@ void ze_reduce_local_entry::finalize_ze_hook() {
 
 std::string ze_reduce_local_entry::name_ext() const {
     std::stringstream out;
-    out << name() << " ";
-    out << "in size: " << in_cnt;
+    out << name() << ":" << in_cnt * dtype.size();
     return out.str();
 }

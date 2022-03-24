@@ -122,8 +122,7 @@ void ze_a2a_allgatherv_entry::update() {
 
 std::string ze_a2a_allgatherv_entry::name_ext() const {
     std::stringstream out;
-    out << name() << " ";
-    out << "send size: " << send_count;
+    out << name() << ":" << send_count * dtype.size();
     return out.str();
 }
 

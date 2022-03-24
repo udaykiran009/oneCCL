@@ -62,8 +62,7 @@ void ze_a2a_gatherv_entry::init_ze_hook() {
 
 std::string ze_a2a_gatherv_entry::name_ext() const {
     std::stringstream out;
-    out << name() << " ";
-    out << "send size: " << send_bytes;
+    out << name() << ":" << send_bytes;
     return out.str();
 }
 

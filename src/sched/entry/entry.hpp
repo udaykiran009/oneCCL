@@ -57,6 +57,7 @@ public:
     void set_exec_mode(ccl_sched_entry_exec_mode mode);
 
     virtual const char* name() const = 0;
+    virtual std::string name_ext() const;
 
     static const char* status_to_str(ccl_sched_entry_status status);
 

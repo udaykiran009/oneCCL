@@ -212,7 +212,7 @@ void ze_a2a_reduce_scatter_entry::update() {
 
 std::string ze_a2a_reduce_scatter_entry::name_ext() const {
     std::stringstream out;
-    out << name() << " ";
-    out << "size: " << std::accumulate(recv_counts.begin(), recv_counts.end(), 0);
+    out << name() << ":"
+        << std::accumulate(recv_counts.begin(), recv_counts.end(), 0) * dtype.size();
     return out.str();
 }

@@ -181,6 +181,10 @@ void sched_entry::set_exec_mode(ccl_sched_entry_exec_mode mode) {
     exec_mode = mode;
 }
 
+std::string sched_entry::name_ext() const {
+    return std::string(name());
+}
+
 void sched_entry::dump_detail(std::stringstream& str) const {}
 
 void sched_entry::update_status(atl_status_t atl_status) {
