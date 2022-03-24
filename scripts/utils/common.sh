@@ -362,3 +362,10 @@ proc_map_iterator() {
     done
     return ${rc}
 }
+
+function set_compute_runtime_env()
+{
+    COMPUTE_RUNTIME_DIR="/p/pdsd/scratch/Software/compute_runtime"
+    COMPUTE_RUNTIME_VERSION="latest"
+    source ${COMPUTE_RUNTIME_DIR}/vars.sh ${COMPUTE_RUNTIME_VERSION}
+}

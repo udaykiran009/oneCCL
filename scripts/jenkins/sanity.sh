@@ -367,6 +367,7 @@ function set_environment()
         BUILD_COMPILER_TYPE="dpcpp"
     fi
 
+    set_compute_runtime_env
     if [[ "${BUILD_COMPILER_TYPE}" = "gnu" ]]
     then
         set_gnu_compiler
