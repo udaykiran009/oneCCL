@@ -8,20 +8,16 @@ CheckCommandExitCode() {
 }
 
 ARTEFACT_DIR="${ARTEFACT_ROOT_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
-PVC_WORKSPACE_DIR="/home/sys_ctlab/workspace/workspace/"
-PVC_ARTEFACT_DIR="${PVC_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
 
-ATS_WORKSPACE_DIR="/home/sys_ctlab/jenkins/workspace/workspace/"
-ATS_ARTEFACT_DIR="${ATS_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
+JFCST_XE="jfcst-xe.jf.intel.com /home/sys_ctlab/jenkins/workspace/workspace/"
+JFCST_DEV="jfcst-dev.jf.intel.com /home2/sys_ctlab/jenkins_an/workspace/"
+AURORA_PVC="a21-surrogate4.hpe.jf.intel.com /home/sys_ctlab/workspace/workspace/"
 
 echo "DEBUG: ARTEFACT_DIR          = ${ARTEFACT_DIR}"
 echo "DEBUG: ENABLE_PRE_DROP_STAGE = ${ENABLE_PRE_DROP_STAGE}"
 echo "DEBUG: ENABLE_NIGHTLY_DROP   = ${ENABLE_NIGHTLY_DROP}"
 echo "DEBUG: CCL_PACKAGE_PHASE     = ${CCL_PACKAGE_PHASE}"
 echo "DEBUG: ARTEFACT_DIR          = ${ARTEFACT_DIR}"
-echo "DEBUG: PVC_ARTEFACT_DIR      = ${PVC_ARTEFACT_DIR}"
-echo "DEBUG: ATS_ARTEFACT_DIR      = ${ATS_ARTEFACT_DIR}"
-
 
 #debug
 export CCL_PACKAGE_PREFIX=l_ccl_debug_
@@ -69,15 +65,24 @@ fi
 
 if [[ ${TEST_CONFIGURATIONS} == *"mpich_pvc"* ]]
 then
-    source ~/.aurora_pvc
-    scp ${ARTEFACT_DIR}/l_ccl_release*.tgz ${AURORA_PVC}:${PVC_ARTEFACT_DIR}
-    CheckCommandExitCode $? "copying release packages failed"
-    scp ${ARTEFACT_DIR}/l_ccl_debug*.tgz ${AURORA_PVC}:${PVC_ARTEFACT_DIR}
-    CheckCommandExitCode $? "copying debug packages failed"
+    host=$(echo ${AURORA_PVC} | awk '{print $1}')
+    workspace=$(echo ${AURORA_PVC} | awk '{print $2}')
+    artefact_dir="${workspace}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
+    for build_type in "release" "debug"
+    do
+        scp ${ARTEFACT_DIR}/l_ccl_${build_type}*.tgz ${host}:${artefact_dir}
+        CheckCommandExitCode $? "ERROR: copying ${build_type} packages to ${host} failed"
+    done
 else
-    source ~/.jfcst-xe
-    scp ${ARTEFACT_DIR}/l_ccl_release*.tgz ${JFCST_ATS}:${ATS_ARTEFACT_DIR}
-    CheckCommandExitCode $? "copying release packages failed"
-    scp ${ARTEFACT_DIR}/l_ccl_debug*.tgz ${JFCST_ATS}:${ATS_ARTEFACT_DIR}
-    CheckCommandExitCode $? "copying debug packages failed"
+    for build_type in "release" "debug"
+    do
+        for cluster in "${JFCST_XE}" "${JFCST_DEV}"
+        do
+            host=$(echo ${cluster} | awk '{print $1}')
+            workspace=$(echo ${cluster} | awk '{print $2}')
+            artefact_dir="${workspace}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
+            scp ${ARTEFACT_DIR}/l_ccl_${build_type}*.tgz ${host}:${artefact_dir}
+            CheckCommandExitCode $? "ERROR: copying ${build_type} packages to ${host} failed"
+        done
+    done
 fi

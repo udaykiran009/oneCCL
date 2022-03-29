@@ -74,10 +74,12 @@ function echo_log_separator()
 
 function is_gpu_node()
 {
+    is_gpu_node="no"
     if [[ ${node_label} == "ccl_test_gen9" ]] || [[ ${node_label} == "ccl_test_ats" ]] || [[ ${node_label} == "ccl_test_pvc" ]]
     then
-        export IS_GPU_NODE="yes"
+        is_gpu_node="yes"
     fi
+    export IS_GPU_NODE="${is_gpu_node}"
 }
 
 function set_tests_option()
@@ -161,9 +163,15 @@ function set_impi_environment()
 
     if [[ -z "${I_MPI_HYDRA_HOST_FILE}" ]]
     then
-        if [ -f ${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts ]
+        if [[ -f ${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts ]]
         then
             export I_MPI_HYDRA_HOST_FILE=${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts
+        elif [[ "${node_label}" == "ccl_test_ats" ]] || [[ "${node_label}" == "ccl_test_cpu" && "${site}" == "an" ]]
+        then
+            hostfile="${CURRENT_WORK_DIR}/hostfile_${SLURM_JOBID}"
+            srun hostname > ${hostfile}
+            export I_MPI_HYDRA_HOST_FILE="${hostfile}"
+            export HYDRA_HOST_FILE="${hostfile}"
         else
             echo "WARNING: hostfile (${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts) isn't available"
             echo "WARNING: I_MPI_HYDRA_HOST_FILE isn't set"

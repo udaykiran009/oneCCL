@@ -5,9 +5,7 @@ exec | tee ./main_ouput.txt
 
 BASENAME=`basename $0 .sh`
 
-ARTEFACT_DIR="/p/pdsd/scratch/jenkins/artefacts"
-CCL_ONEAPI_DIR="/p/pdsd/scratch/Uploads/CCL_oneAPI/"
-VALGRIND_DIR="/nfs/inn/proj/mpi/pdsd/opt/tools/valgrind/last"
+VALGRIND_DIR="/p/pdsd/opt/tools/valgrind/last"
 SCRIPT_DIR=$(cd $(dirname "$BASH_SOURCE") && pwd -P)
 EXAMPLE_WORK_DIR=${SCRIPT_DIR}/../../examples/build
 
