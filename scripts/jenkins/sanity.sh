@@ -228,6 +228,8 @@ function set_runtime_env() {
 function set_regular_tests_environment()
 {
     export I_MPI_JOB_TIMEOUT=360
+    # WA for NUCs on AN site
+    export CCL_TOPO_ALGO=0
 }
 
 function set_functional_tests_env()
