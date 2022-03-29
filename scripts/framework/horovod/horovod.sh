@@ -77,10 +77,10 @@ set_run_env() {
     export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${CONDA_PREFIX}/lib"
 }
 
-CONDA_LINK="https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux-x86_64.sh"
+CONDA_LINK="https://repo.anaconda.com/miniconda/Miniconda3-py39_4.11.0-Linux-x86_64.sh"
 CONDA_INSTALL_DIR=""
 
-CONDA_PACKAGES="python=3.7"
+CONDA_PACKAGES="python=3.9"
 CONDA_FILENAME="conda.sh"
 
 CCL_BASE_LINK="github.com/intel-innersource/libraries.performance.communication.oneccl"
@@ -90,16 +90,17 @@ MODEL_TF_SRC_BRANCH="yang/resnet50-training-tmp"
 MODEL_TF_SRC_COMMIT="20a8b0075cd75a5534007df5ba8cfc112a5a41c3"
 
 MODEL_PT_FILE="bench_pt.py"
-MODEL_PT_BASE_LINK="https://gitlab.devtools.intel.com/aemani/dlutils/-/raw/master"
+MODEL_PT_TOKEN="token=GHSAT0AAAAAABORQUKBMBDPQUJWIRRNYZOQYSKX2IQ"
+MODEL_PT_BASE_LINK="https://raw.githubusercontent.com/intel-sandbox/dlutils/master"
 
 if [ -z "$TF_LINK" ]
 then
-    TF_LINK="http://mlpc.intel.com/downloads/weekly/ww48/PVC-suse/tensorflow-2.7.0-cp37-cp37m-linux_x86_64.whl"
+    TF_LINK="http://mlpc.intel.com/downloads/gpu-new/validation/ITEX/weekly/PVC/ww08/suse/for-hvd/tensorflow-2.8.0-cp39-cp39-linux_x86_64.whl"
 fi
 
 if [ -z "$ITEX_LINK" ]
 then
-    ITEX_LINK="http://mlpc.intel.com/downloads/weekly/ww48/PVC-suse/intel_extension_for_tensorflow-0.2.2-cp37-cp37m-linux_x86_64.whl"
+    ITEX_LINK="http://mlpc.intel.com/downloads/gpu-new/validation/ITEX/weekly/PVC/ww08/ubuntu/intel_extension_for_tensorflow-0.3.0-cp39-cp39-linux_x86_64.whl"
 fi
 
 TF_NAME=`basename $TF_LINK`
@@ -107,12 +108,12 @@ ITEX_NAME=`basename $ITEX_LINK`
 
 if [ -z "$PT_LINK" ]
 then
-    PT_LINK="http://mlpc.intel.com/downloads/gpu/weekly_IPEX/ATSP/ww49_nomkl/torch-1.7.0a0+0ecf0b5-cp37-cp37m-linux_x86_64.whl"
+    PT_LINK="http://mlpc.intel.com/downloads/gpu-new/validation/IPEX/weekly/PVC/ww11/py39/torch-1.10.0a0+gitf335324-cp39-cp39-linux_x86_64.whl"
 fi
 
 if [ -z "$IPEX_LINK" ]
 then
-    IPEX_LINK="http://mlpc.intel.com/downloads/gpu/weekly_IPEX/ATSP/ww49_nomkl/ipex-0.2.2+6820e92-cp37-cp37m-linux_x86_64.whl"
+    IPEX_LINK="http://mlpc.intel.com/downloads/gpu-new/validation/IPEX/weekly/PVC/ww11/py39/intel_extension_for_pytorch-1.10.100+769c22be-cp39-cp39-linux_x86_64.whl"
 fi
 
 PT_NAME=`basename $PT_LINK`
@@ -164,8 +165,8 @@ DEFAULT_DOWNLOAD_MODEL_TF="0"
 DEFAULT_RUN_MODEL_TF="0"
 DEFAULT_DOWNLOAD_MODEL_PT="0"
 DEFAULT_RUN_MODEL_PT="0"
-DEFAULT_BATCH_SIZE="128"
-DEFAULT_ITER_COUNT="200"
+DEFAULT_BATCH_SIZE="16"
+DEFAULT_ITER_COUNT="40"
 
 DEFAULT_PROC_MAPS="2:2"
 DEFAULT_PATH_TO_TOKEN_FILE_1S=""
@@ -793,8 +794,8 @@ tf_test() {
 
 pt_test() {
     echo_log "===================================== Basic PT test ==========================================="
-    echo_log "python -c \"import torch; import ipex; print(torch.__version__)\""
-    python -c "import torch; import ipex; print(torch.__version__)"
+    echo_log "python -c \"import torch; import intel_extension_for_pytorch; print(torch.__version__)\""
+    python -c "import torch; import intel_extension_for_pytorch; print(torch.__version__)"
     CheckCommandExitCode $? "Basic PT test failed"
     echo_log "===================================== ************* ==========================================="
 }
@@ -929,8 +930,8 @@ install_fw() {
         echo_log "\n=== install pybind11 ===\n"
         pip install pybind11
 
-        echo_log "\n=== install torchvision==0.8.1 ===\n"
-        pip install torchvision==0.8.1 --no-deps
+        echo_log "\n=== install torchvision==0.8.2 ===\n"
+        pip install torchvision==0.8.2 --no-deps
 
         echo_log "\n=== install pillow ===\n"
         pip install --no-cache-dir -I pillow
@@ -1009,14 +1010,14 @@ download_hvd() {
 
     cd ${HVD_SRC_DIR}
 
+    mkdir benchmark
     if [[ ${PREPARE_PT} == "1" ]]
     then
-        wget -P benchmark -e use_proxy=no \
-            https://gitlab.devtools.intel.com/aemani/dlutils/-/raw/master/hvd_allreduce_pt.py
+        wget -O benchmark/hvd_allreduce_pt.py \
+            https://raw.githubusercontent.com/intel-sandbox/dlutils/master/hvd_allreduce_pt.py?token=GHSAT0AAAAAABORQUKA55P64PJMGP3TFKLWYRZ3AJA
     fi
     if [[ ${PREPARE_TF} == "1" ]]
     then
-        mkdir benchmark
         # using private token as the repo is private
         https_proxy="" curl --header "PRIVATE-TOKEN: Ayxmiwc_C6TGd4H1Cso8" \
             "https://gitlab.devtools.intel.com/api/v4/projects/101266/repository/files/tests%2Fhvd_bench%2Fhvd_allreduce_tf.py/raw?ref=master" \
@@ -1128,7 +1129,7 @@ download_model_pt() {
     fi
 
     cd ${SCRIPT_WORK_DIR}
-    https_proxy="" curl -kLO ${MODEL_PT_BASE_LINK}/${MODEL_PT_FILE}
+    wget -O bench_pt.py ${MODEL_PT_BASE_LINK}/${MODEL_PT_FILE}?${MODEL_PT_TOKEN}
 }
 
 run_model_tf() {
@@ -1185,7 +1186,7 @@ run_model_pt() {
     rn50_log_file_pt="pt_rn50_"$current_date".txt"
 
     mpiexec_args="${BOOTSTRAP_OPTIONS}" app="python ${MODEL_PT_FILE}" \
-        app_args="--iter=${ITER_COUNT} --warm=2 --bs ${BATCH_SIZE} --arch resnet50 --sycl --horovod --print-iteration-time" \
+        app_args="--iter=${ITER_COUNT} --warm=20 --bs ${BATCH_SIZE} --arch resnet50 --sycl --horovod" \
         logging="2>&1 | tee ${rn50_log_file_pt}" \
         proc_map_iterator
     CheckCommandExitCode $? "IPEX Model test failed"
