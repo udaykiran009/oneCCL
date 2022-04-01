@@ -17,18 +17,17 @@ int main(int argc, char* argv[]) {
     int size;
     int rank;
 
-    sycl::queue q;
-    if (!q.get_device().is_gpu()) {
-        cout << "test expects GPU device, please use SYCL_DEVICE_FILTER accordingly\n";
-        return -1;
-    }
-
     ccl::init();
 
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     atexit(mpi_finalize);
+
+    sycl::queue q;
+    if (!create_sycl_queue("gpu", rank, q)) {
+        return -1;
+    }
 
     if (size < 3) {
         cout << "test expects >= 3 ranks\n";

@@ -251,7 +251,10 @@ int main(int argc, char *argv[]) {
 
     sycl::property_list props{ sycl::property::queue::in_order{},
                                sycl::property::queue::enable_profiling{} };
-    queue q{ props };
+
+    sycl::queue q;
+    if (!create_sycl_queue("gpu", rank, q, props))
+        return -1;
 
     buf_allocator<float> allocator(q);
 

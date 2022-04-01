@@ -5,12 +5,6 @@ using namespace std;
 int main(int argc, char const *argv[]) {
     const size_t count = 10 * 1024;
 
-    sycl::queue q;
-    if (!q.get_device().is_gpu()) {
-        cout << "test expects GPU device, please use SYCL_DEVICE_FILTER accordingly";
-        return -1;
-    }
-
     ccl::init();
 
     int status = MPI_Init(nullptr, nullptr);
@@ -25,6 +19,11 @@ int main(int argc, char const *argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     atexit(mpi_finalize);
+
+    sycl::queue q;
+    if (!create_sycl_queue("gpu", rank, q)) {
+        return -1;
+    }
 
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;

@@ -33,14 +33,6 @@ int main(int argc, char* argv[]) {
     int size = 0;
     int rank = 0;
 
-    sycl::property_list props{ sycl::property::queue::in_order{} };
-    queue q{ props };
-
-    if (!q.get_device().is_gpu()) {
-        cout << "test expects GPU device, please use SYCL_DEVICE_FILTER accordingly";
-        return -1;
-    }
-
     ccl::init();
 
     MPI_Init(NULL, NULL);
@@ -48,6 +40,12 @@ int main(int argc, char* argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     atexit(mpi_finalize);
+
+    sycl::property_list props{ sycl::property::queue::in_order{} };
+    queue q;
+    if (!create_sycl_queue("gpu", rank, q, props)) {
+        return -1;
+    }
 
     /* create kvs */
     ccl::shared_ptr_class<ccl::kvs> kvs;

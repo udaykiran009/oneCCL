@@ -18,6 +18,9 @@ int main(int argc, char *argv[]) {
     atexit(mpi_finalize);
 
     queue q;
+    if (!create_sycl_queue("gpu", rank, q)) {
+        return -1;
+    }
 
     buf_allocator<int> allocator(q);
 

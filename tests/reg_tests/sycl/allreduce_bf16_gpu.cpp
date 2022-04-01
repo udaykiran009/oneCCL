@@ -8,6 +8,7 @@
 #include "base.hpp"
 #include "bf16.hpp"
 #include "oneapi/ccl.hpp"
+#include "sycl_base.hpp"
 #include "utils.hpp"
 
 #define COUNT (1048576 / 256)
@@ -29,14 +30,17 @@ int main() {
 
     ccl::init();
 
-    sycl::queue q;
-
     int size, rank;
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     atexit(mpi_finalize);
+
+    sycl::queue q;
+    if (!create_sycl_queue("gpu", rank, q)) {
+        return -1;
+    }
 
     ccl::shared_ptr_class<ccl::kvs> kvs;
     ccl::kvs::address_type main_addr;
