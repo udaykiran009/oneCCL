@@ -247,7 +247,9 @@ list(APPEND SRC_INCLUDE_DIRS
      ${LEVEL_ZERO_INCLUDE_DIR}
      ${LIBFABRIC_INCLUDE_DIR}
      ${HWLOC_INCLUDE_DIR}
-     ${ITT_INCLUDE_DIR}
+     ${ITT_INCLUDE_DIR})
+
+list(APPEND SRC_SYSTEM_INCLUDE_DIRS
      ${DRM_INCLUDE_DIR})
 
 list(APPEND SRC_LINK_LIBS
@@ -273,6 +275,7 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${SRC_SHARED_LINKER_
 add_library(ccl-objects OBJECT ${CCL_SRC})
 set_target_properties(ccl-objects PROPERTIES POSITION_INDEPENDENT_CODE 1)
 target_include_directories(ccl-objects PRIVATE ${SRC_INCLUDE_DIRS})
+target_include_directories(ccl-objects SYSTEM PRIVATE ${SRC_SYSTEM_INCLUDE_DIRS})
 
 if (COMPUTE_BACKEND_TARGET_NAME)
     target_include_directories(ccl-objects PUBLIC ${INTERFACE_INCLUDE_DIRECTORIES})
