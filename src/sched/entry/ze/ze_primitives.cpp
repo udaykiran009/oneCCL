@@ -3,6 +3,7 @@
 
 #include "common/global/global.hpp"
 #include "common/log/log.hpp"
+#include "common/utils/utils.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
 
 namespace ccl {
@@ -241,13 +242,25 @@ bool get_device_global_id(ze_device_handle_t device, ssize_t* id) {
     CCL_THROW_IF_NOT(device, "no device");
     CCL_THROW_IF_NOT(id, "no id");
     bool success{};
-    const auto& devices = global_data::get().ze_data->device_handles;
-    auto found = std::find(devices.begin(), devices.end(), device);
+    const auto& devices = global_data::get().ze_data->devices;
+    auto found =
+        std::find_if(devices.begin(), devices.end(), [&device](const device_info& info) -> bool {
+            return info.device == device;
+        });
     if (found != devices.end()) {
         *id = std::distance(devices.begin(), found);
         success = true;
     }
     return success;
+}
+
+uint32_t get_parent_device_id(ze_device_handle_t device) {
+    ssize_t dev_id = ccl::utils::invalid_device_id;
+    ccl::ze::get_device_global_id(device, &dev_id);
+    CCL_THROW_IF_NOT(dev_id != ccl::utils::invalid_device_id, "unexpected dev_id");
+    LOG_DEBUG("device_id: ", dev_id);
+
+    return ccl::global_data::get().ze_data->devices[dev_id].parent_idx;
 }
 
 device_family get_device_family(ze_device_handle_t device) {

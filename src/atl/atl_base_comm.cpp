@@ -134,7 +134,7 @@ void atl_base_comm::update_executor() {
         if (rank < coord.local_count)
             LOG_INFO(
                 "start workers for local process [", coord.local_idx, ":", coord.local_count, "]");
-        executor->start_workers(coord.local_idx, coord.local_count);
+        executor->start_workers();
     }
 }
 

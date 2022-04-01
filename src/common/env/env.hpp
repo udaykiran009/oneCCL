@@ -16,6 +16,7 @@
 #include "comp/fp16/fp16_utils.hpp"
 #include "sched/cache/cache.hpp"
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
+#include "common/global/ze/ze_fd_manager.hpp"
 #include "sched/entry/ze/ze_primitives.hpp"
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
 #include "topology/topo_manager.hpp"
@@ -158,6 +159,7 @@ constexpr const char* CCL_ZE_LIBRARY_PATH = "CCL_ZE_LIBRARY_PATH";
 constexpr const char* CCL_ZE_ENABLE = "CCL_ZE_ENABLE";
 constexpr const char* CCL_ZE_FINI_WA = "CCL_ZE_FINI_WA";
 constexpr const char* CCL_ZE_MULTI_WORKERS = "CCL_ZE_MULTI_WORKERS";
+constexpr const char* CCL_ZE_IPC_EXCHANGE = "CCL_ZE_IPC_EXCHANGE";
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ITT
@@ -338,6 +340,7 @@ public:
     int ze_enable;
     int ze_fini_wa;
     int ze_multi_workers;
+    ccl::ze::ipc_exchange_mode ze_ipc_exchange;
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ITT

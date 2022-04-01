@@ -410,7 +410,7 @@ void mem_handle_cache::get(ze_context_handle_t context,
         if (fd_is_valid(fd)) {
             // move key_value to the beginning of the list
             cache_list.splice(cache_list.begin(), cache_list, key_value->second);
-            close_handle_fd(info.handle);
+            close_handle_fd(info.ipc_handle);
             *out_value = value;
             found = true;
         }
@@ -423,7 +423,7 @@ void mem_handle_cache::get(ze_context_handle_t context,
     }
 
     if (!found) {
-        push(device, std::move(key), info.handle, out_value);
+        push(device, std::move(key), info.ipc_handle, out_value);
     }
 }
 

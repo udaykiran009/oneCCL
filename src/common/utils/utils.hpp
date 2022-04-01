@@ -131,6 +131,12 @@
 /* other */
 namespace ccl {
 namespace utils {
+static constexpr int invalid_context_id = -1;
+static constexpr int invalid_device_id = -1;
+static constexpr int invalid_err_code = -1;
+static constexpr int invalid_fd = -1;
+static constexpr int invalid_mem_handle = -1;
+static constexpr int invalid_pid = -1;
 
 size_t get_ptr_diff(const void* ptr1, const void* ptr2);
 size_t pof2(size_t number);

@@ -4,14 +4,9 @@
 #include "sched/entry/ze/ze_primitives.hpp"
 #include "sched/ze/ze_handle_manager.hpp"
 
-#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <netdb.h>
 #include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
 
 static void cast_pool_to_mem_handle(ze_ipc_mem_handle_t* mem,
                                     const ze_ipc_event_pool_handle_t* pool) {
@@ -34,73 +29,28 @@ ze_handle_exchange_entry::ze_handle_exchange_entry(ccl_sched* sched,
     CCL_THROW_IF_NOT(sched, "no sched");
     CCL_THROW_IF_NOT(!in_buffers.empty(), "in_buffers should be non empty");
 
-    if (comm_size == 1) {
-        this->skip_rank = rank;
-    }
-
-    poll_fds.reserve(max_pfds);
-
-    handles.resize(comm_size);
-    for (auto& buffers : handles) {
-        buffers.resize(in_buffers.size());
-    }
-    LOG_DEBUG("handles size: ", handles.size(), ", in_buffers size: ", in_buffers.size());
-
-    for (size_t buf_idx = 0; buf_idx < in_buffers.size(); buf_idx++) {
-        auto mem_ptr = in_buffers[buf_idx].first;
-        CCL_THROW_IF_NOT(mem_ptr, "memory pointer is nullptr");
-        auto mem_type = in_buffers[buf_idx].second;
-        mem_info_t mem_info{};
-
-        ze_ipc_mem_handle_t handle{};
-        if (rank != this->skip_rank) {
-            if (mem_type == ccl::ze::ipc_mem_type::memory) {
-                // zeMemGetIpcHandle requires the provided pointer to be the base of an allocation.
-                // We handle this the following way: for an input buffer retrieve its base pointer
-                // and the offset from this base ptr. The base ptr is used for zeMemGetIpcHandle
-                // and the offset is sent to the other rank. On that rank the base ptr is retrieved
-                // and offsetted to get the actual input buffer ptr.
-                mem_info = get_mem_info(mem_ptr);
-                sched->get_memory().handle_manager.get_handle(mem_info.first, &handle);
-            }
-            else if (mem_type == ccl::ze::ipc_mem_type::pool) {
-                ze_ipc_event_pool_handle_t pool_handle;
-                sched->get_memory().handle_manager.get_handle(
-                    static_cast<ze_event_pool_handle_t>(mem_ptr), &pool_handle);
-                // since ze_ipc_event_pool_handle_t and ze_ipc_mem_handle_t are similar,
-                // we cast ze_ipc_event_pool_handle_t to ze_ipc_mem_handle_t, but
-                // maybe this is not the most correct way
-                cast_pool_to_mem_handle(&handle, &pool_handle);
-            }
-            else {
-                CCL_THROW("unknown memory type");
-            }
+    if (ccl::global_data::env().ze_ipc_exchange == ccl::ze::ipc_exchange_mode::sockets) {
+        if (comm_size == 1) {
+            this->skip_rank = rank;
         }
-
-        handles[rank][buf_idx] = { handle, mem_info.second, mem_type };
-        LOG_DEBUG("set IPC handle: { rank: ",
-                  rank,
-                  ", buf_idx: ",
-                  buf_idx,
-                  ", mem_type: ",
-                  to_string(mem_type),
-                  " }");
+        poll_fds.reserve(max_pfds);
+        std::string unique_tag =
+            std::to_string(comm->get_comm_id()) + "-" + std::to_string(sched->sched_id) + "-" +
+            std::to_string(sched->get_op_id()) + "-" + std::to_string(getuid()) + "-" +
+            comm->get_topo_manager().get_uuid(0);
+        right_peer_socket_name =
+            "/tmp/ccl-handle-" + std::to_string((rank + 1) % comm_size) + "-" + unique_tag;
+        left_peer_socket_name = "/tmp/ccl-handle-" + std::to_string(rank) + "-" + unique_tag;
     }
-
-    std::string unique_tag = std::to_string(comm->get_comm_id()) + "-" +
-                             std::to_string(sched->sched_id) + "-" +
-                             std::to_string(sched->get_op_id()) + "-" + std::to_string(getuid()) +
-                             "-" + comm->get_topo_manager().get_uuid(0);
-    right_peer_socket_name =
-        "/tmp/ccl-handle-" + std::to_string((rank + 1) % comm_size) + "-" + unique_tag;
-    left_peer_socket_name = "/tmp/ccl-handle-" + std::to_string(rank) + "-" + unique_tag;
-
+    create_local_ipc_handles(in_buffers);
     LOG_DEBUG("init completed");
 }
 
 ze_handle_exchange_entry::~ze_handle_exchange_entry() {
-    close_sockets();
-    unlink_sockets();
+    if (ccl::global_data::env().ze_ipc_exchange == ccl::ze::ipc_exchange_mode::sockets) {
+        close_sockets();
+        unlink_sockets();
+    }
 }
 
 void ze_handle_exchange_entry::start() {
@@ -113,7 +63,171 @@ void ze_handle_exchange_entry::start() {
     }
 }
 
-void ze_handle_exchange_entry::update() {
+void ze_handle_exchange_entry::create_local_ipc_handles(const std::vector<mem_desc_t>& bufs) {
+    if (comm_size == 1) {
+        this->skip_rank = rank;
+    }
+
+    handles.resize(comm_size);
+    for (auto& buffers : handles) {
+        buffers.resize(in_buffers.size());
+    }
+    LOG_DEBUG("handles size: ", handles.size(), ", in_buffers size: ", in_buffers.size());
+
+    for (size_t buf_idx = 0; buf_idx < in_buffers.size(); buf_idx++) {
+        int mem_handle = ccl::utils::invalid_mem_handle;
+        auto mem_ptr = in_buffers[buf_idx].first;
+        CCL_THROW_IF_NOT(mem_ptr, "memory pointer is nullptr");
+        auto mem_type = in_buffers[buf_idx].second;
+        mem_info_t mem_info{};
+
+        ze_ipc_mem_handle_t ipc_handle{};
+        if (rank != this->skip_rank) {
+            if (mem_type == ccl::ze::ipc_mem_type::memory) {
+                // zeMemGetIpcHandle requires the provided pointer to be the base of an allocation.
+                // We handle this the following way: for an input buffer retrieve its base pointer
+                // and the offset from this base ptr. The base ptr is used for zeMemGetIpcHandle
+                // and the offset is sent to the other rank. On that rank the base ptr is retrieved
+                // and offsetted to get the actual input buffer ptr.
+                mem_info = get_mem_info(mem_ptr);
+                sched->get_memory().handle_manager.get_handle(mem_info.first, &ipc_handle);
+
+                if (ccl::global_data::env().ze_ipc_exchange == ccl::ze::ipc_exchange_mode::drmfd) {
+                    device_fds = ccl::global_data::get().ze_data->fd_manager->get_device_fds();
+                    mem_handle = ipc_to_mem_handle(
+                        ipc_handle,
+                        ccl::ze::get_parent_device_id(sched->coll_param.stream->get_ze_device()));
+                }
+            }
+            else if (mem_type == ccl::ze::ipc_mem_type::pool) {
+                ze_ipc_event_pool_handle_t pool_handle;
+                sched->get_memory().handle_manager.get_handle(
+                    static_cast<ze_event_pool_handle_t>(mem_ptr), &pool_handle);
+                // since ze_ipc_event_pool_handle_t and ze_ipc_mem_handle_t are similar,
+                // we cast ze_ipc_event_pool_handle_t to ze_ipc_mem_handle_t, but
+                // maybe this is not the most correct way
+                cast_pool_to_mem_handle(&ipc_handle, &pool_handle);
+            }
+            else {
+                CCL_THROW("unknown memory type");
+            }
+        }
+
+        handles[rank][buf_idx] = { ipc_handle, mem_info.second, mem_type, mem_handle };
+        LOG_DEBUG("set IPC handle: { rank: ",
+                  rank,
+                  ", buf_idx: ",
+                  buf_idx,
+                  ", mem_type: ",
+                  to_string(mem_type),
+                  ", mem_handle: ",
+                  mem_handle,
+                  " }");
+    }
+}
+
+int ze_handle_exchange_entry::ipc_to_mem_handle(const ze_ipc_mem_handle_t& ipc_handle,
+                                                const int parent_dev_id) {
+    int dmabuf_fd;
+    // convert dma_buf fd to GEM handle
+    memcpy(&dmabuf_fd, &ipc_handle, sizeof(dmabuf_fd));
+
+    int mem_handle = ccl::ze::fd_manager::fd_to_mem_handle(device_fds[parent_dev_id], dmabuf_fd);
+    CCL_THROW_IF_NOT(mem_handle != ccl::utils::invalid_mem_handle,
+                     "fd_to_mem_handle: ivalid mem_handle: ",
+                     mem_handle);
+    LOG_DEBUG("device_fd: ", device_fds[parent_dev_id], ", mem_handle: ", mem_handle);
+    return mem_handle;
+}
+
+ze_ipc_mem_handle_t ze_handle_exchange_entry::mem_to_ipc_handle(const int& mem_handle,
+                                                                const int parent_dev_id) {
+    int fd = ccl::ze::fd_manager::mem_handle_to_fd(device_fds[parent_dev_id], mem_handle);
+    CCL_THROW_IF_NOT(fd != ccl::utils::invalid_fd, "mem_handle_to_fd: invalid fd: ", fd);
+    LOG_DEBUG("device_fd: ", device_fds[parent_dev_id], ", mem_handle: ", mem_handle, ", fd: ", fd);
+    return ccl::ze::get_handle_from_fd(fd);
+}
+
+void ze_handle_exchange_entry::fill_payload(payload_t& payload,
+                                            const std::vector<mem_desc_t>& bufs,
+                                            size_t buf_idx) {
+    payload.mem_handle = handles[rank][buf_idx].mem_handle;
+    payload.mem_type = handles[rank][buf_idx].mem_type;
+    payload.mem_offset = handles[rank][buf_idx].mem_offset;
+    payload.remote_pid = getpid();
+    const void* ptr = bufs[buf_idx].first;
+
+    ze_context_handle_t remote_context{};
+    ze_device_handle_t remote_device{};
+    ze_memory_allocation_properties_t mem_alloc_props;
+    if (!ccl::ze::get_buffer_context_and_device(
+            ptr, &remote_context, &remote_device, &mem_alloc_props)) {
+        CCL_THROW("unable to get context from ptr\n");
+    }
+    ssize_t remote_context_id{ ccl::utils::invalid_context_id };
+    if (!ccl::ze::get_context_global_id(remote_context, &remote_context_id)) {
+        CCL_THROW("unable to get global id for context\n");
+    }
+    ssize_t remote_device_id{ ccl::utils::invalid_device_id };
+    if (!ccl::ze::get_device_global_id(remote_device, &remote_device_id)) {
+        CCL_THROW("unable to get global id for device\n");
+    }
+
+    payload.remote_mem_alloc_id = mem_alloc_props.id;
+    payload.remote_context_id = remote_context_id;
+    payload.remote_device_id = remote_device_id;
+}
+
+void ze_handle_exchange_entry::fill_remote_handle(const payload_t& payload,
+                                                  ze_ipc_mem_handle_t ipc_handle,
+                                                  size_t idx,
+                                                  size_t buf_idx) {
+    handles[idx][buf_idx] = {
+        ipc_handle, payload.mem_offset, payload.mem_type, payload.mem_handle
+    };
+    handles[idx][buf_idx].remote_mem_alloc_id = payload.remote_mem_alloc_id;
+    handles[idx][buf_idx].remote_context_id = payload.remote_context_id;
+    handles[idx][buf_idx].remote_pid = payload.remote_pid;
+    handles[idx][buf_idx].remote_device_id = payload.remote_device_id;
+    LOG_DEBUG("get IPC handle: { peer: ",
+              idx,
+              ", buf_idx: ",
+              buf_idx,
+              ", mem_type: ",
+              to_string(payload.mem_type),
+              " }");
+}
+
+int ze_handle_exchange_entry::drmfd_mode_exchange(const std::vector<mem_desc_t>& bufs) {
+    for (size_t buf_idx = 0; buf_idx < bufs.size(); buf_idx++) {
+        std::vector<payload_t> payloads(comm_size);
+        payload_t payload{};
+        fill_payload(payload, bufs, buf_idx);
+
+        if (!(ccl::utils::allgather(
+                comm->get_atl_comm(), &payload, payloads.data(), sizeof(payload_t)))) {
+            CCL_THROW("allgather exchange is failed");
+        }
+
+        for (size_t idx = 0; idx < payloads.size(); idx++) {
+            if (comm->rank() == (int)idx) {
+                continue;
+            }
+            auto parent_dev_id =
+                ccl::global_data::get().ze_data->devices[payloads[idx].remote_device_id].parent_idx;
+            fill_remote_handle(payloads[idx],
+                               mem_to_ipc_handle(payloads[idx].mem_handle, parent_dev_id),
+                               idx,
+                               buf_idx);
+        }
+    }
+
+    LOG_DEBUG("handles size: ", handles.size(), ", in_buffers size: ", bufs.size());
+    sched->get_memory().handle_manager.set(handles);
+    return 0;
+}
+
+int ze_handle_exchange_entry::sockets_mode_exchange(const std::vector<mem_desc_t>& bufs) {
     if (!is_created) {
         // server
         left_peer_connect_socket =
@@ -129,7 +243,7 @@ void ze_handle_exchange_entry::update() {
     if (!is_connected) {
         if (connect_call(
                 right_peer_socket, &right_peer_addr, right_peer_addr_len, right_peer_socket_name)) {
-            return;
+            return ccl::utils::invalid_err_code;
         }
         is_connected = true;
     }
@@ -140,7 +254,7 @@ void ze_handle_exchange_entry::update() {
                         &left_peer_addr_len,
                         left_peer_socket_name,
                         left_peer_socket)) {
-            return;
+            return ccl::utils::invalid_err_code;
         }
 
         struct pollfd poll_fd {};
@@ -160,32 +274,11 @@ void ze_handle_exchange_entry::update() {
 
             if ((peer_idx == 0) && !skip_first_send && (rank != this->skip_rank)) {
                 // send own handle to right peer
-                int send_fd = ccl::ze::get_fd_from_handle(handles[rank][buf_idx].handle);
+                int send_fd = ccl::ze::get_fd_from_handle(handles[rank][buf_idx].ipc_handle);
                 payload_t payload{};
-                payload.mem_offset = handles[rank][buf_idx].mem_offset;
-                payload.remote_pid = getpid();
-                const void* ptr = in_buffers[buf_idx].first;
-
-                ze_context_handle_t remote_context{};
-                ze_device_handle_t remote_device{};
-                ze_memory_allocation_properties_t mem_alloc_props;
-                if (!ccl::ze::get_buffer_context_and_device(
-                        ptr, &remote_context, &remote_device, &mem_alloc_props)) {
-                    CCL_THROW("unable to get context from ptr\n");
-                }
-                ssize_t remote_context_id{ -1 };
-                if (!ccl::ze::get_context_global_id(remote_context, &remote_context_id)) {
-                    CCL_THROW("unable to get global id for context\n");
-                }
-                ssize_t remote_device_id{ -1 };
-                if (!ccl::ze::get_device_global_id(remote_device, &remote_device_id)) {
-                    CCL_THROW("unable to get global id for device\n");
-                }
-
-                payload.remote_mem_alloc_id = mem_alloc_props.id;
-                payload.remote_context_id = remote_context_id;
-                payload.remote_device_id = remote_device_id;
-                sendmsg_call(right_peer_socket, send_fd, payload);
+                fill_payload(payload, in_buffers, buf_idx);
+                ccl::utils::sendmsg_call(
+                    right_peer_socket, send_fd, &payload, sizeof(payload_t), rank);
                 skip_first_send = true;
             }
 
@@ -195,7 +288,7 @@ void ze_handle_exchange_entry::update() {
             int poll_ret = poll(&poll_fds[0], poll_fds.size(), timeout_ms);
 
             if (poll_ret == poll_expire_err_code) {
-                return;
+                return ccl::utils::invalid_err_code;
             }
             else if (poll_ret == POLL_ERR) {
                 CCL_THROW("poll: error: ", strerror(errno), ", ret: ", poll_ret);
@@ -204,34 +297,24 @@ void ze_handle_exchange_entry::update() {
             CCL_THROW_IF_NOT(poll_ret > 0, "unexpected poll ret: ", poll_ret);
 
             if (poll_fds[0].revents & POLLIN) {
-                int recv_fd = -1;
+                int recv_fd = ccl::utils::invalid_fd;
 
                 // recv data from left peer
                 payload_t payload{};
-                recvmsg_call(left_peer_socket, recv_fd, payload);
+                ccl::utils::recvmsg_call(
+                    left_peer_socket, &recv_fd, &payload, sizeof(payload_t), rank);
 
                 ze_ipc_mem_handle_t tmp_handle = ccl::ze::get_handle_from_fd(recv_fd);
 
                 // we don't know anything about the memory type on the other side,
                 // so we take it from our list. This assumes that the lists of types (exactly types)
                 // on the sending and receiving side are the same in both value and quantity
-                auto mem_type = in_buffers[buf_idx].second;
-                handles[peer][buf_idx] = { tmp_handle, payload.mem_offset, mem_type };
-                handles[peer][buf_idx].remote_mem_alloc_id = payload.remote_mem_alloc_id;
-                handles[peer][buf_idx].remote_context_id = payload.remote_context_id;
-                handles[peer][buf_idx].remote_pid = payload.remote_pid;
-                handles[peer][buf_idx].remote_device_id = payload.remote_device_id;
-                LOG_DEBUG("get IPC handle: { peer: ",
-                          peer,
-                          ", buf_idx: ",
-                          buf_idx,
-                          ", mem_type: ",
-                          to_string(mem_type),
-                          " }");
+                fill_remote_handle(payload, tmp_handle, peer, buf_idx);
 
                 if (peer_idx < (comm_size - 2)) {
                     // proxy data to right peer
-                    sendmsg_call(right_peer_socket, recv_fd, payload);
+                    ccl::utils::sendmsg_call(
+                        right_peer_socket, recv_fd, &payload, sizeof(payload), rank);
                 }
                 start_peer_idx++;
             }
@@ -245,7 +328,7 @@ void ze_handle_exchange_entry::update() {
                 LOG_TRACE("poll: nothing to receive, buf_idx: ", buf_idx, ", peer_idx ", peer_idx);
                 // nothing to receive
                 // continue with the same buf_idx/peer_idx in the next update() call
-                return;
+                return ccl::utils::invalid_err_code;
             }
         }
         start_peer_idx = 0;
@@ -264,9 +347,25 @@ void ze_handle_exchange_entry::update() {
         // of waiting till destruction of the entry.
         close_sockets();
     }
+    return 0;
+}
+
+void ze_handle_exchange_entry::update() {
+    if (ccl::global_data::env().ze_ipc_exchange == ccl::ze::ipc_exchange_mode::sockets) {
+        if (sockets_mode_exchange(in_buffers)) {
+            return;
+        }
+    }
+    else if (ccl::global_data::env().ze_ipc_exchange == ccl::ze::ipc_exchange_mode::drmfd) {
+        if (drmfd_mode_exchange(in_buffers)) {
+            return;
+        }
+    }
+    else {
+        CCL_THROW("unexpected ipc_exchange_mode");
+    }
 
     status = ccl_sched_entry_status_complete;
-
     LOG_DEBUG("completed: ", name());
 }
 
@@ -381,161 +480,6 @@ int ze_handle_exchange_entry::connect_call(int sock,
               socket_name);
 
     return 0;
-}
-
-int ze_handle_exchange_entry::check_msg_retval(std::string operation_name,
-                                               ssize_t bytes,
-                                               struct iovec iov,
-                                               struct msghdr msg,
-                                               size_t union_size,
-                                               int sock,
-                                               int fd) {
-    LOG_DEBUG(operation_name,
-              ": ",
-              bytes,
-              ", expected_bytes:",
-              iov.iov_len,
-              ", expected size of cntr_buf: ",
-              union_size,
-              " -> gotten cntr_buf: ",
-              msg.msg_controllen,
-              ", socket: ",
-              sock,
-              ", fd: ",
-              fd);
-    int ret = -1;
-    if (bytes == static_cast<ssize_t>(iov.iov_len)) {
-        ret = 0;
-    }
-    else if (bytes < 0) {
-        ret = -errno;
-    }
-    else {
-        ret = -EIO;
-    }
-    return ret;
-}
-
-void ze_handle_exchange_entry::sendmsg_fd(int sock, int fd, const payload_t& payload) {
-    CCL_THROW_IF_NOT(fd >= 0, "unexpected fd value");
-
-    struct iovec iov {};
-    iov.iov_base = const_cast<payload_t*>(&payload);
-    iov.iov_len = sizeof(payload);
-
-    union {
-        struct cmsghdr align;
-        char cntr_buf[CMSG_SPACE(sizeof(int))]{};
-    } u;
-
-    struct msghdr msg {};
-    msg.msg_control = u.cntr_buf;
-    msg.msg_controllen = sizeof(u.cntr_buf);
-    msg.msg_iov = &iov;
-    msg.msg_iovlen = 1;
-
-    auto cmsg = CMSG_FIRSTHDR(&msg);
-    cmsg->cmsg_len = CMSG_LEN(sizeof(fd));
-    cmsg->cmsg_level = SOL_SOCKET;
-    cmsg->cmsg_type = SCM_RIGHTS;
-    *reinterpret_cast<int*>(CMSG_DATA(cmsg)) = fd;
-
-    ssize_t send_bytes = sendmsg(sock, &msg, 0);
-    CCL_THROW_IF_NOT(
-        !check_msg_retval("sendmsg", send_bytes, iov, msg, sizeof(u.cntr_buf), sock, fd),
-        ", from: ",
-        comm->rank(),
-        ", errno: ",
-        strerror(errno));
-}
-
-void ze_handle_exchange_entry::recvmsg_fd(int sock, int& fd, payload_t& payload) {
-    payload_t buf{};
-    struct iovec iov {};
-    iov.iov_base = &buf;
-    iov.iov_len = sizeof(buf);
-
-    union {
-        struct cmsghdr align;
-        char cntr_buf[CMSG_SPACE(sizeof(int))]{};
-    } u;
-
-    struct msghdr msg {};
-    msg.msg_control = u.cntr_buf;
-    msg.msg_controllen = sizeof(u.cntr_buf);
-    msg.msg_iov = &iov;
-    msg.msg_iovlen = 1;
-
-    ssize_t recv_bytes = recvmsg(sock, &msg, 0);
-    CCL_THROW_IF_NOT(
-        !check_msg_retval("recvmsg", recv_bytes, iov, msg, sizeof(u.cntr_buf), sock, fd),
-        ", from: ",
-        comm->rank(),
-        ", errno: ",
-        strerror(errno));
-
-    if (msg.msg_flags & (MSG_CTRUNC | MSG_TRUNC)) {
-        std::string flag_str = "";
-        if (msg.msg_flags & MSG_CTRUNC) {
-            flag_str += " MSG_CTRUNC";
-        }
-        if (msg.msg_flags & MSG_TRUNC) {
-            flag_str += " MSG_TRUNC";
-        }
-
-        /** MSG_CTRUNC message can be in case of:
-         * - remote peer send invalid fd, so msg_controllen == 0
-         * - limit of fds reached in the current process, so msg_controllen == 0
-         * - the remote peer control message > msg_control buffer size
-         */
-        CCL_THROW("control or usual message is truncated:",
-                  flag_str,
-                  " control message size: ",
-                  msg.msg_controllen,
-                  ", ",
-                  to_string(ccl::utils::get_fd_info()));
-    }
-
-    for (auto cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-        if (cmsg->cmsg_len == CMSG_LEN(sizeof(int)) && cmsg->cmsg_level == SOL_SOCKET &&
-            cmsg->cmsg_type == SCM_RIGHTS) {
-            memcpy(&fd, CMSG_DATA(cmsg), sizeof(int));
-            break;
-        }
-    }
-
-    // we assume that the message has a strict format and size, if not this means that something
-    // is wrong.
-    if (msg.msg_iovlen != 1 || msg.msg_iov[0].iov_len != sizeof(payload_t)) {
-        CCL_THROW("received data in unexpected format");
-    }
-
-    memcpy(&payload, msg.msg_iov[0].iov_base, sizeof(payload_t));
-}
-
-void ze_handle_exchange_entry::sendmsg_call(int sock, int fd, const payload_t& payload) {
-    sendmsg_fd(sock, fd, payload);
-    LOG_DEBUG("send: rank[",
-              comm->rank(),
-              "], send fd: ",
-              fd,
-              ", sock: ",
-              sock,
-              ", mem_offset: ",
-              payload.mem_offset);
-}
-
-void ze_handle_exchange_entry::recvmsg_call(int sock, int& fd, payload_t& payload) {
-    recvmsg_fd(sock, fd, payload);
-
-    LOG_DEBUG("recv: rank[",
-              rank,
-              "], got fd: ",
-              fd,
-              ", sock: ",
-              sock,
-              ", mem_offset: ",
-              payload.mem_offset);
 }
 
 ze_handle_exchange_entry::mem_info_t ze_handle_exchange_entry::get_mem_info(const void* ptr) {

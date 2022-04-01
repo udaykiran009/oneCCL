@@ -375,7 +375,7 @@ domains_t topo_manager::parse_topo_env() {
     domain_pairs.push_back(get_domain_pair(domain_raw_strs[topo_manager::plane_domain_idx],
                                            std::string(topo_manager::plane_domain_name)));
 
-    const auto local_proc_count = ccl::global_data::get().executor->get_local_proc_count();
+    const auto local_proc_count = ccl::global_data::get().get_local_proc_count();
 
     std::vector<int> all_local_procs(local_proc_count);
     std::iota(all_local_procs.begin(), all_local_procs.end(), 0);
@@ -516,40 +516,6 @@ bool topo_manager::check_colors() const {
     }
 
     return expected_colors;
-}
-
-void topo_manager::allgather(const void* send_buf, void* recv_buf, int bytes) {
-    std::vector<int> recv_bytes(comm->get_size(), bytes);
-    allgatherv(send_buf, recv_buf, recv_bytes);
-}
-
-void topo_manager::allgatherv(const void* send_buf,
-                              void* recv_buf,
-                              const std::vector<int>& recv_bytes) {
-    atl_req_t req{};
-
-    int comm_rank = comm->get_rank();
-    int comm_size = comm->get_size();
-
-    CCL_THROW_IF_NOT((int)recv_bytes.size() == comm->get_size(),
-                     "unexpected recv_bytes size ",
-                     recv_bytes.size(),
-                     ", comm_size ",
-                     comm_size);
-
-    std::vector<int> offsets(comm_size, 0);
-    for (int i = 1; i < comm_size; i++) {
-        offsets[i] = offsets[i - 1] + recv_bytes[i - 1];
-    }
-
-    comm->allgatherv(0 /* ep_idx */,
-                     send_buf,
-                     recv_bytes[comm_rank],
-                     recv_buf,
-                     recv_bytes.data(),
-                     offsets.data(),
-                     req);
-    comm->wait(0 /* ep_idx */, req);
 }
 
 void topo_manager::fill_env_colors(const rank_info_vec_t& info_vec) {
@@ -875,7 +841,7 @@ fabric_ports_t topo_manager::get_fabric_ports() {
     int my_port_count = (int)my_ports.size();
     std::vector<int> all_port_counts(comm_size);
 
-    allgather(&my_port_count, all_port_counts.data(), sizeof(my_port_count));
+    utils::allgather(comm, &my_port_count, all_port_counts.data(), sizeof(my_port_count));
 
     size_t total_port_count = std::accumulate(all_port_counts.begin(), all_port_counts.end(), 0);
 
@@ -901,7 +867,7 @@ fabric_ports_t topo_manager::get_fabric_ports() {
 
     std::vector<topo_ze_port_info> all_ports(total_port_count);
 
-    allgatherv(my_ports.data(), all_ports.data(), recv_bytes);
+    utils::allgatherv(comm, my_ports.data(), all_ports.data(), recv_bytes);
 
     // print all ports before filtering
     if (comm_rank == 0) {
@@ -1135,7 +1101,7 @@ void topo_manager::build_host_info() {
     gethostname(my_hostname, max_hostname_len - 1);
     LOG_DEBUG("rank: ", comm_rank, ", size: ", comm_size, ", host: ", my_hostname);
 
-    allgather(my_hostname, all_hostnames_raw.data(), max_hostname_len);
+    utils::allgather(comm, my_hostname, all_hostnames_raw.data(), max_hostname_len);
 
     std::vector<std::string> all_hostnames(comm_size);
     std::set<std::string> unique_hostnames;
@@ -1208,11 +1174,11 @@ void topo_manager::base_init(std::shared_ptr<atl_base_comm> atl_comm,
     topo_rank_info rank_info{};
     rank_info.rank = comm_rank;
     rank_info.host_idx = host_idx;
-    rank_info.local_proc_idx = ccl::global_data::get().executor->get_local_proc_idx();
+    rank_info.local_proc_idx = ccl::global_data::get().get_local_proc_idx();
     std::string rank_uuid = topo_manager::generate_uuid();
     std::copy(rank_uuid.begin(), rank_uuid.end(), rank_info.uuid);
 
-    allgather(&rank_info, rank_info_vec.data(), sizeof(rank_info));
+    utils::allgather(comm, &rank_info, rank_info_vec.data(), sizeof(rank_info));
 
     for (size_t idx = 0; idx < rank_info_vec.size(); idx++) {
         uuids[idx] = std::string(rank_info_vec[idx].uuid);
@@ -1315,7 +1281,7 @@ void topo_manager::ze_base_init(std::shared_ptr<ccl::device> device,
     ze_rank_info.subdev_id = dev_props.subdeviceId;
     ze_rank_info.dev_prop_flags = dev_props.flags;
 
-    allgather(&ze_rank_info, ze_rank_info_vec.data(), sizeof(ze_rank_info));
+    utils::allgather(comm, &ze_rank_info, ze_rank_info_vec.data(), sizeof(ze_rank_info));
 
     // build fabric port info
     fabric_ports = get_fabric_ports();

@@ -22,15 +22,17 @@ std::string to_string(ipc_mem_type mem_type) {
 }
 
 ipc_handle_desc::ipc_handle_desc() {
-    memset(&handle, 0, sizeof(handle));
+    memset(&ipc_handle, 0, sizeof(ipc_handle));
 }
 
-ipc_handle_desc::ipc_handle_desc(const ze_ipc_mem_handle_t& handle,
+ipc_handle_desc::ipc_handle_desc(const ze_ipc_mem_handle_t& ipc_handle,
                                  size_t mem_offset,
-                                 ipc_mem_type mem_type)
-        : handle(handle),
+                                 ipc_mem_type mem_type,
+                                 int mem_handle)
+        : ipc_handle(ipc_handle),
           mem_offset(mem_offset),
-          mem_type(mem_type) {}
+          mem_type(mem_type),
+          mem_handle(mem_handle) {}
 
 ipc_handle_manager::~ipc_handle_manager() {
     clear();
@@ -57,24 +59,24 @@ void ipc_handle_manager::clear() {
     for (int rank = 0; rank < static_cast<int>(handles.size()); rank++) {
         for (size_t buf_idx = 0; buf_idx < handles[rank].size(); buf_idx++) {
             const auto& handle_info = handles[rank][buf_idx];
-            ze_ipc_mem_handle_t handle = handle_info.handle;
+            ze_ipc_mem_handle_t ipc_handle = handle_info.ipc_handle;
             auto mem_ptr = handle_info.mem_ptr;
             auto mem_type = handle_info.mem_type;
             size_t mem_offset = handle_info.mem_offset;
 
-            LOG_DEBUG("close handle: { base_ptr: ",
+            LOG_DEBUG("close ipc_handle: { base_ptr: ",
                       mem_ptr,
                       ", offset: ",
                       mem_offset,
                       ", fd: ",
-                      get_fd_from_handle(handle),
+                      get_fd_from_handle(ipc_handle),
                       ", rank: ",
                       rank,
                       ", buf_idx: ",
                       buf_idx,
                       " }");
 
-            // when closing the handle we need to take care of pointers that points to the
+            // when closing the ipc_handle we need to take care of pointers that points to the
             // same level zero allocation. They're simply offsetted from some base pointer
             // although represented by different FDs. If we close this base pointer,
             // all the derived pointers are closed(unmapped) as well. To handle this case
@@ -84,7 +86,7 @@ void ipc_handle_manager::clear() {
             if (mem_ptr) {
                 ze_result_t res{};
                 if (handle_info.is_cached) {
-                    // skip close, assume that handle will be closed in the cache
+                    // skip close, assume that ipc_handle will be closed in the cache
                     res = ZE_RESULT_SUCCESS;
                 }
                 else if (mem_type == ipc_mem_type::memory) {
@@ -106,7 +108,7 @@ void ipc_handle_manager::clear() {
                 }
 
                 if (res != ZE_RESULT_SUCCESS) {
-                    LOG_TRACE("unable to close memory handle: ",
+                    LOG_TRACE("unable to close memory ipc_handle: ",
                               "level-zero res: ",
                               to_string(res),
                               ", rank: ",
@@ -120,7 +122,7 @@ void ipc_handle_manager::clear() {
 
             if (!handle_info.is_cached) {
                 // ensure that fd is closed
-                close_handle_fd(handle);
+                close_handle_fd(ipc_handle);
             }
         }
     }
@@ -169,9 +171,9 @@ void* ipc_handle_manager::get_ptr(int rank, size_t buf_idx, const ccl_comm* map_
     }
     CCL_THROW_IF_NOT(buf_idx < handles[rank].size(), "buf_idx is not valid value: ", buf_idx);
 
-    // Must be a non-const ref so it can be updated when handle is opened
+    // Must be a non-const ref so it can be updated when ipc_handle is opened
     ipc_handle_desc& handle_info = handles[rank][buf_idx];
-    auto& handle = handle_info.handle;
+    auto& ipc_handle = handle_info.ipc_handle;
     auto& mem_ptr = handle_info.mem_ptr;
     auto mem_type = handle_info.mem_type;
 
@@ -183,7 +185,7 @@ void* ipc_handle_manager::get_ptr(int rank, size_t buf_idx, const ccl_comm* map_
         }
         else if (mem_type == ipc_mem_type::pool) {
             ze_ipc_event_pool_handle_t pool_handle;
-            cast_mem_to_pool_handle(&pool_handle, &handle);
+            cast_mem_to_pool_handle(&pool_handle, &ipc_handle);
             open_handle(pool_handle, (ze_event_pool_handle_t*)&mem_ptr);
         }
         else {
@@ -194,14 +196,14 @@ void* ipc_handle_manager::get_ptr(int rank, size_t buf_idx, const ccl_comm* map_
     LOG_DEBUG("get handle: { mem_ptr: ",
               mem_ptr,
               ", fd: ",
-              get_fd_from_handle(handle),
+              get_fd_from_handle(ipc_handle),
               ", rank: ",
               rank,
               ", buf_idx: ",
               buf_idx,
               " }");
 
-    // add offset that we received along with the handle
+    // add offset that we received along with the ipc_handle
     if (mem_type == ipc_mem_type::pool) {
         CCL_THROW_IF_NOT(handle_info.mem_offset == 0, "offsets should be 0 for event pool");
     }
@@ -219,34 +221,35 @@ void ipc_handle_manager::get(int rank,
     buf = (ze_event_pool_handle_t)get_ptr(rank, buf_idx, map_comm);
 }
 
-void ipc_handle_manager::get_handle(const void* ptr, ze_ipc_mem_handle_t* handle) {
+void ipc_handle_manager::get_handle(const void* ptr, ze_ipc_mem_handle_t* ipc_handle) {
     CCL_THROW_IF_NOT(ptr, "no mem pointer");
-    ZE_CALL(zeMemGetIpcHandle, (context, ptr, handle));
+    ZE_CALL(zeMemGetIpcHandle, (context, ptr, ipc_handle));
 }
 
 void ipc_handle_manager::get_handle(ze_event_pool_handle_t pool,
-                                    ze_ipc_event_pool_handle_t* handle) {
+                                    ze_ipc_event_pool_handle_t* ipc_handle) {
     CCL_THROW_IF_NOT(pool, "no pool");
-    ZE_CALL(zeEventPoolGetIpcHandle, (pool, handle));
+    ZE_CALL(zeEventPoolGetIpcHandle, (pool, ipc_handle));
 }
 
 void ipc_handle_manager::open_handle(ipc_handle_desc& info, void** ptr) {
     if (global_data::env().enable_ze_cache && global_data::env().enable_ze_cache_ipc_handles) {
         mem_handle_cache::value_t value{};
         global_data::get().ze_data->cache->get(context, device, info, &value);
-        CCL_THROW_IF_NOT(value != nullptr, "unable to open handle");
+        CCL_THROW_IF_NOT(value != nullptr, "unable to open ipc_handle");
         *ptr = const_cast<void*>(value->get_ptr());
         cached_handles.push_back(value);
         info.is_cached = true;
     }
     else {
-        ZE_CALL(zeMemOpenIpcHandle, (context, device, info.handle, 0 /* cache allocation */, ptr));
+        ZE_CALL(zeMemOpenIpcHandle,
+                (context, device, info.ipc_handle, 0 /* cache allocation */, ptr));
     }
 }
 
-void ipc_handle_manager::open_handle(const ze_ipc_event_pool_handle_t& handle,
+void ipc_handle_manager::open_handle(const ze_ipc_event_pool_handle_t& ipc_handle,
                                      ze_event_pool_handle_t* pool) {
-    ZE_CALL(zeEventPoolOpenIpcHandle, (context, handle, pool));
+    ZE_CALL(zeEventPoolOpenIpcHandle, (context, ipc_handle, pool));
 }
 
 void ipc_handle_manager::get_address_range(const void* ptr, void** base_ptr, size_t* size) {
@@ -271,7 +274,7 @@ void ipc_handle_manager::check_rank(int rank, const ccl_comm* check_comm) {
         ", comm.size: ",
         check_comm->size());
     CCL_THROW_IF_NOT(
-        rank != check_comm->rank(), "do not expect to open handle for own rank: ", rank);
+        rank != check_comm->rank(), "do not expect to open ipc_handle for own rank: ", rank);
 }
 
 } // namespace ze

@@ -132,7 +132,7 @@ bool is_gpu_stream(const ccl_selector_param& param) {
 }
 
 bool is_single_node(const ccl_selector_param& param) {
-    size_t local_proc_count = ccl::global_data::get().executor->get_local_proc_count();
+    size_t local_proc_count = ccl::global_data::get().get_local_proc_count();
     return static_cast<size_t>(param.comm->size()) <= local_proc_count;
 }
 
@@ -232,7 +232,7 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
     RETURN_FALSE_IF(!checkers::is_coll_supported(supported_colls, param.ctype),
                     "coll is not supported");
 
-    size_t local_proc_count = ccl::global_data::get().executor->get_local_proc_count();
+    size_t local_proc_count = ccl::global_data::get().get_local_proc_count();
     int comm_size = param.comm->size();
 
     LOG_DEBUG("coll ",

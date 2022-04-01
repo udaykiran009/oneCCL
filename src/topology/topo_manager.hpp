@@ -1,6 +1,5 @@
 #pragma once
 
-#include "atl/atl_base_comm.hpp"
 #include "common/utils/utils.hpp"
 #include "oneapi/ccl/config.h"
 
@@ -11,8 +10,9 @@
 #include <string>
 
 #if defined(CCL_ENABLE_SYCL) && defined(CCL_ENABLE_ZE)
-#include "common/global/ze_data.hpp"
+#include "common/global/ze/ze_data.hpp"
 #endif // CCL_ENABLE_SYCL && CCL_ENABLE_ZE
+#include "common/utils/exchange_utils.hpp"
 
 namespace ccl {
 
@@ -142,9 +142,6 @@ public:
 
 private:
     bool check_colors() const;
-
-    void allgather(const void* send_buf, void* recv_buf, int bytes);
-    void allgatherv(const void* send_buf, void* recv_buf, const std::vector<int>& recv_bytes);
 
     void fill_env_colors(const rank_info_vec_t& local_info_vec);
     void fill_fixed_colors(const rank_info_vec_t& info_vec);

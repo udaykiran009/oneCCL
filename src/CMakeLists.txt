@@ -25,7 +25,8 @@ if (CCL_ENABLE_SYCL AND CCL_ENABLE_ZE)
         sched/entry/ze/ze_primitives.cpp
         sched/entry/ze/ze_reduce_local_entry.cpp
 
-        common/global/ze_data.cpp
+        common/global/ze/ze_data.cpp
+        common/global/ze/ze_fd_manager.cpp
         common/utils/sycl_utils.cpp
         common/api_wrapper/ze_api_wrapper.cpp
 
@@ -111,8 +112,9 @@ set(CCL_SRC
     common/log/log.cpp
     common/request/request.cpp
     common/stream/stream.cpp
-    common/utils/memcpy.cpp
+    common/utils/exchange_utils.cpp
     common/utils/fd_info.cpp
+    common/utils/memcpy.cpp
     common/utils/spinlock.cpp
     common/utils/utils.cpp
     common/utils/version.cpp
@@ -245,7 +247,8 @@ list(APPEND SRC_INCLUDE_DIRS
      ${LEVEL_ZERO_INCLUDE_DIR}
      ${LIBFABRIC_INCLUDE_DIR}
      ${HWLOC_INCLUDE_DIR}
-     ${ITT_INCLUDE_DIR})
+     ${ITT_INCLUDE_DIR}
+     ${DRM_INCLUDE_DIR})
 
 list(APPEND SRC_LINK_LIBS
      dl

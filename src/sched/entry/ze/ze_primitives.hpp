@@ -126,6 +126,7 @@ bool get_buffer_context_and_device(const void* buf,
                                    ze_memory_allocation_properties_t* props = nullptr);
 bool get_context_global_id(ze_context_handle_t context, ssize_t* id);
 bool get_device_global_id(ze_device_handle_t device, ssize_t* id);
+uint32_t get_parent_device_id(ze_device_handle_t device);
 
 int get_fd_from_handle(const ze_ipc_mem_handle_t& handle);
 void close_handle_fd(const ze_ipc_mem_handle_t& handle);

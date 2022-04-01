@@ -54,7 +54,6 @@ public:
     bool test(const ccl_request* req);
 
     void start_workers();
-    void start_workers(int local_proc_idx, int local_proc_count);
     bool are_workers_started() {
         return workers_started;
     };
@@ -70,13 +69,6 @@ public:
     void unlock_workers();
     bool is_locked = false;
 
-    int get_local_proc_idx() const {
-        return local_proc_idx;
-    }
-    int get_local_proc_count() const {
-        return local_proc_count;
-    }
-
     static size_t calculate_atl_ep_count(size_t worker_count);
     static atl_attr_t generate_atl_attr(const ccl::env_data& env);
 
@@ -86,15 +78,11 @@ private:
 
     std::unique_ptr<ccl_sched_queue> create_sched_queue(size_t idx, size_t ep_per_worker);
     void do_work();
-    void set_local_coord(int proc_idx, int proc_count);
-    void getenv_local_coord(const char* local_idx_env_name, const char* local_count_env_name);
 
     std::vector<std::unique_ptr<ccl_worker>> workers;
     // TODO: Rework to support listener
     //  std::unique_ptr<ccl_listener> listener;
 
-    int local_proc_idx;
-    int local_proc_count;
     bool workers_started = false;
 };
 

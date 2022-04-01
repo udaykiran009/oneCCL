@@ -182,6 +182,11 @@ env_data::env_data()
           ze_enable(1),
           ze_fini_wa(0),
           ze_multi_workers(0),
+#ifdef CCL_ENABLE_DRM
+          ze_ipc_exchange(ccl::ze::ipc_exchange_mode::drmfd),
+#else // CCL_ENABLE_DRM
+          ze_ipc_exchange(ccl::ze::ipc_exchange_mode::sockets),
+#endif // CCL_ENABLE_DRM
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ITT
@@ -433,6 +438,7 @@ void env_data::parse() {
     env_2_type(CCL_ZE_ENABLE, ze_enable);
     env_2_type(CCL_ZE_FINI_WA, ze_fini_wa);
     env_2_type(CCL_ZE_MULTI_WORKERS, ze_multi_workers);
+    env_2_enum(CCL_ZE_IPC_EXCHANGE, ze::ipc_exchange_names, ze_ipc_exchange);
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ITT
@@ -486,8 +492,8 @@ void env_data::print(int rank) {
         LOG_INFO(global_data.hwloc_wrapper->to_string());
     }
 
-    auto local_proc_idx = global_data.executor->get_local_proc_idx();
-    auto local_proc_count = global_data.executor->get_local_proc_count();
+    auto local_proc_idx = global_data.get_local_proc_idx();
+    auto local_proc_count = global_data.get_local_proc_count();
 
     if (rank < local_proc_count) {
         for (size_t w_idx = 0; w_idx < worker_count; w_idx++) {
@@ -693,6 +699,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_ZE_ENABLE, ": ", ze_enable);
     LOG_INFO(CCL_ZE_FINI_WA, ": ", ze_fini_wa);
     LOG_INFO(CCL_ZE_MULTI_WORKERS, ": ", ze_multi_workers);
+    LOG_INFO(CCL_ZE_IPC_EXCHANGE, ": ", str_by_enum(ze::ipc_exchange_names, ze_ipc_exchange));
 #endif // CCL_ENABLE_SYCL
 
 #ifdef CCL_ENABLE_ITT

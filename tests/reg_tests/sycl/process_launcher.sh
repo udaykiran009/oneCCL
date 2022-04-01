@@ -56,7 +56,8 @@ do
         cmd+=" CCL_WORKER_AFFINITY=1,2,3,4"
         if [ "$proc_launcher" == "none" ];
         then
-            cmd+=" I_MPI_GTOOL=\"env CCL_LOCAL_RANK=0:0;env CCL_LOCAL_RANK=1:1\" CCL_LOCAL_SIZE=2"
+            cmd+=" I_MPI_GTOOL=\"env CCL_LOCAL_RANK=0:0;env CCL_LOCAL_RANK=1:1;env CCL_LOCAL_RANK=0:2;env CCL_LOCAL_RANK=1:3\""
+            cmd+=" CCL_LOCAL_SIZE=2"
         fi
         cmd+=" CCL_PROCESS_LAUNCHER=${proc_launcher}"
         cmd+=" mpiexec -n ${proc_count} -ppn 2 ${SCRIPT_DIR}/${binary}"

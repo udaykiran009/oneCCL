@@ -75,6 +75,7 @@ ccl::status global_data::reset() {
 ccl::status global_data::init() {
     env_object.parse();
 
+    set_local_coord();
     api_wrappers_init();
 
     env_object.set_internal_env();
@@ -125,6 +126,44 @@ void global_data::reset_resize_independent_objects() {
     parallelizer.reset();
     algorithm_selector.reset();
     hwloc_wrapper.reset();
+}
+
+void global_data::getenv_local_coord(const char* local_proc_idx_env_name,
+                                     const char* local_proc_count_env_name) {
+    char* local_idx_env = getenv(local_proc_idx_env_name);
+    char* local_count_env = getenv(local_proc_count_env_name);
+    CCL_THROW_IF_NOT(local_idx_env && local_count_env, "local_idx and local_count must be set");
+
+    local_proc_idx = std::atoi(local_idx_env);
+    local_proc_count = std::atoi(local_count_env);
+    CCL_THROW_IF_NOT(
+        local_proc_idx != CCL_ENV_INT_NOT_SPECIFIED, "unexpected local_proc_idx ", local_proc_idx);
+    CCL_THROW_IF_NOT(local_proc_count != CCL_ENV_INT_NOT_SPECIFIED,
+                     "unexpected local_proc_count ",
+                     local_proc_count);
+}
+
+void global_data::set_local_coord() {
+    auto& env = ccl::global_data::env();
+
+    if (env.process_launcher == process_launcher_mode::hydra) {
+        getenv_local_coord("MPI_LOCALRANKID", "MPI_LOCALNRANKS");
+    }
+    else if (env.process_launcher == process_launcher_mode::torch) {
+        getenv_local_coord("LOCAL_RANK", "LOCAL_WORLD_SIZE");
+    }
+    else if (env.process_launcher == process_launcher_mode::none) {
+        getenv_local_coord("CCL_LOCAL_RANK", "CCL_LOCAL_SIZE");
+    }
+    else {
+        CCL_THROW("unexpected process launcher");
+    }
+    LOG_INFO("process launcher: ",
+             ccl::env_data::process_launcher_names[env.process_launcher],
+             ", local_proc_idx: ",
+             local_proc_idx,
+             ", local_proc_count: ",
+             local_proc_count);
 }
 
 } // namespace ccl
