@@ -59,19 +59,6 @@ queue_factory::queue_factory(ze_device_handle_t device,
     ze_queue_properties_t queue_props;
     get_queues_properties(device, &queue_props);
 
-    if (!global_data::env().disable_ze_family_check) {
-        if (queue_props.size() == 1 && queue_props.front().numQueues == 1 &&
-            (get_device_family(device) == ccl::device_family::unknown)) {
-            ze_device_properties_t dev_props = ccl::ze::default_device_props;
-            ZE_CALL(zeDeviceGetProperties, (device, &dev_props));
-            bool is_integrated = dev_props.flags & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED;
-
-            CCL_THROW_IF_NOT(is_integrated,
-                             "unexpected device properties flags: ",
-                             flags_to_string<ze_device_property_flag_t>(dev_props.flags));
-        }
-    }
-
     queue_ordinal = get_queue_group_ordinal(queue_props, type);
     LOG_DEBUG(get_type_str(),
               " queue factory: use ",

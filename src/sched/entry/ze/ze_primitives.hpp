@@ -170,6 +170,7 @@ template <typename T>
 std::string flags_to_string(uint32_t flags) {
     constexpr size_t bits = 8;
     std::vector<std::string> output;
+
     for (size_t i = 0; i < sizeof(flags) * bits; ++i) {
         const size_t mask = 1UL << i;
         const auto flag = flags & mask;
@@ -177,6 +178,11 @@ std::string flags_to_string(uint32_t flags) {
             output.emplace_back(to_string(static_cast<T>(flag)));
         }
     }
+
+    if (output.empty()) {
+        output.emplace_back("<empty>");
+    }
+
     return join_strings(output, " | ");
 }
 

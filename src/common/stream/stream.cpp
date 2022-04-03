@@ -55,6 +55,32 @@ ccl_stream::ccl_stream(stream_type type,
         device = sycl::get_native<ccl::utils::get_level_zero_backend()>(stream.get_device());
         context = sycl::get_native<ccl::utils::get_level_zero_backend()>(stream.get_context());
         device_family = ccl::ze::get_device_family(device);
+
+        ccl::ze::ze_queue_properties_t queue_props;
+        ccl::ze::get_queues_properties(device, &queue_props);
+
+        if (!ccl::global_data::env().disable_ze_family_check) {
+            if (queue_props.size() == 1 && queue_props.front().numQueues == 1 &&
+                (device_family == ccl::device_family::unknown)) {
+                ze_device_properties_t dev_props = ccl::ze::default_device_props;
+                ZE_CALL(zeDeviceGetProperties, (device, &dev_props));
+                bool is_integrated = dev_props.flags & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED;
+
+                if (!is_integrated) {
+                    LOG_WARN("usage of discrete device with unexpected properties"
+                             " (id: ",
+                             dev_props.deviceId,
+                             ", name: ",
+                             (strlen(dev_props.name) ? dev_props.name : "<empty>"),
+                             ", flags: ",
+                             ccl::ze::flags_to_string<ze_device_property_flag_t>(dev_props.flags),
+                             ")"
+                             ", set ",
+                             CCL_ZE_DISABLE_FAMILY_CHECK,
+                             "=1 to hide this message");
+                }
+            }
+        }
     }
 #endif // CCL_ENABLE_ZE
 }

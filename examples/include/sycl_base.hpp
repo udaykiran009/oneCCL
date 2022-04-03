@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <CL/sycl.hpp>
+#include "CL/sycl/property_list.hpp"
 #include <iostream>
 #include <map>
 #include <mpi.h>
@@ -10,10 +11,8 @@
 #include <string>
 #include <numeric>
 
-#include "CL/sycl/property_list.hpp"
 #include "base.hpp"
 #include "base_utils.hpp"
-
 #include "oneapi/ccl.hpp"
 
 using namespace std;
@@ -213,7 +212,7 @@ inline std::vector<sycl::queue> create_sycl_queues(const std::string& device_typ
     try {
         if (device_type.compare("gpu") == 0) {
             if (!has_gpu()) {
-                throw std::runtime_error("GPU is requested but not available.");
+                throw std::runtime_error("GPU is requested but not available");
             }
 
             /* GPU type has special handling to cover multi-tile case */
@@ -253,10 +252,47 @@ inline std::vector<sycl::queue> create_sycl_queues(const std::string& device_typ
         throw std::runtime_error("No devices of requested type available");
     }
 
-    std::vector<sycl::device> rank_devices;
+    int global_rank = 0, local_rank = 0;
+    int global_size = 0, local_size = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &global_size);
 
-    for (size_t idx = 0; idx < ranks.size(); idx++) {
-        rank_devices.push_back(devices[ranks[idx] % devices.size()]);
+    MPI_Comm local_comm;
+    MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &local_comm);
+    MPI_Comm_rank(local_comm, &local_rank);
+    MPI_Comm_size(local_comm, &local_size);
+    MPI_Comm_free(&local_comm);
+
+    std::stringstream error_msg;
+
+    if (local_rank > global_rank) {
+        error_msg << "Local rank should be less or equal to global rank (local_rank: " << local_rank
+                  << ", global_rank: " << global_rank << ")";
+        throw std::runtime_error(error_msg.str());
+    }
+
+    if (local_size > global_size) {
+        error_msg << "Local size should be less or equal to global size (local_size: " << local_size
+                  << ", global_size: " << global_size << ")";
+        throw std::runtime_error(error_msg.str());
+    }
+
+    if (ranks.size() != 1) {
+        error_msg << "Unexpected number of device ranks: " << ranks.size();
+        throw std::runtime_error(error_msg.str());
+    }
+
+    if (ranks[0] != global_rank) {
+        error_msg << "Unexpected device rank: " << ranks[0] << ", expected: " << global_rank;
+        throw std::runtime_error(error_msg.str());
+    }
+
+    // use local rank for device selection
+    std::vector<int> local_ranks(1, local_rank);
+
+    std::vector<sycl::device> rank_devices;
+    for (size_t idx = 0; idx < local_ranks.size(); idx++) {
+        rank_devices.push_back(devices[local_ranks[idx] % devices.size()]);
     }
 
     if (rank_devices.empty()) {
@@ -269,7 +305,7 @@ inline std::vector<sycl::queue> create_sycl_queues(const std::string& device_typ
         ctx = sycl::context(rank_devices);
     }
     catch (sycl::exception&) {
-        size_t preferred_idx = (ranks.back() / ranks.size()) % devices.size();
+        size_t preferred_idx = (local_ranks.back() / local_ranks.size()) % devices.size();
         cout << "Can not create context from all rank devices of type: " << device_type
              << ", create context from single device, idx " << preferred_idx << "\n";
         ctx = sycl::context(devices[preferred_idx]);
@@ -305,29 +341,11 @@ inline std::vector<sycl::queue> create_sycl_queues(const std::string& device_typ
     return queues;
 }
 
-inline bool create_sycl_queue(int argc, char* argv[], int rank, queue& q) {
-    if (argc >= 2) {
-        try {
-            std::vector<int> ranks = { rank };
-            q = create_sycl_queues(argv[1], ranks)[0];
-            return true;
-        }
-        catch (std::exception& e) {
-            cerr << e.what() << "\n";
-            return false;
-        }
-    }
-    else {
-        cerr << "Please provide device type: cpu | gpu | host | default\n";
-        return false;
-    }
-}
-
 inline bool create_sycl_queue(const std::string& type,
                               int rank,
                               queue& q,
                               const property_list& queue_props = {}) {
-    if (type == "gpu" || type == "cpu" || type == "host") {
+    if (type == "gpu" || type == "cpu" || type == "host" || type == "default") {
         try {
             std::vector<int> ranks = { rank };
             q = create_sycl_queues(type.c_str(), ranks, false, queue_props)[0];
@@ -339,8 +357,13 @@ inline bool create_sycl_queue(const std::string& type,
         }
     }
     else {
+        cerr << "Unknown device type: " << type << ", please provide: cpu | gpu | host | default\n";
         return false;
     }
+}
+
+inline bool create_sycl_queue(int argc, char* argv[], int rank, queue& q) {
+    return create_sycl_queue(((argc >= 2) ? argv[1] : "unknown"), rank, q, {});
 }
 
 inline bool handle_exception(queue& q) {

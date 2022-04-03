@@ -77,7 +77,7 @@ void load_library(lib_info_t& info) {
     for (size_t i = 0; i < fn_names.size(); ++i) {
         ops[i] = dlsym(info.handle, fn_names[i].c_str());
         CCL_THROW_IF_NOT(ops[i], "dlsym is failed on: ", fn_names[i], ", error: ", dlerror());
-        LOG_DEBUG("dlsym loaded of ", fn_names.size(), " - ", i + 1, ": ", fn_names[i]);
+        LOG_TRACE("dlsym loaded of ", fn_names.size(), " - ", i + 1, ": ", fn_names[i]);
     }
 }
 
