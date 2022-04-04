@@ -17,8 +17,6 @@ hmem_modes="0 1"
 single_list_modes="0 1"
 algos="topo rabenseifner"
 proc_counts="2 4"
-libfabrics="default dmabuf_peer_mem"
-provs="verbs"
 
 bench_options="-l allreduce,reduce -w 1 -i 4 -j off -c all -b sycl -t 131072 $(get_default_bench_dtype)"
 
@@ -60,7 +58,18 @@ check_dmabuf_peer_mem() {
     done
 }
 
-check_dmabuf_peer_mem
+affinity=""
+
+if [[ ${PLATFORM_HW_GPU} == "ats" ]]
+then
+    libfabrics="default dmabuf_peer_mem"
+    provs="verbs"
+    check_dmabuf_peer_mem
+else
+    libfabrics="default"
+    provs="cxi"
+    affinity="ZE_AFFINITY_MASK=0,1"
+fi
 
 for worker_count in ${worker_counts}
 do
@@ -87,6 +96,7 @@ do
                                 cmd+=" CCL_ZE_SINGLE_LIST=${single_list_mode}"
                                 cmd+=" CCL_ALLREDUCE=${algo}"
                                 cmd+=" FI_PROVIDER=${prov}"
+				cmd+=" ${affinity}"
 
                                 if [[ ${libfabric} == "dmabuf_peer_mem" ]]
                                 then

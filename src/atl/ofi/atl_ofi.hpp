@@ -190,7 +190,7 @@ private:
         ~mr_cache();
 
         void clear();
-        void get(fid_domain* domain, void* buf, size_t bytes, fid_mr** mr);
+        void get(atl_ep_t& ep, atl_ofi_prov_t* prov, void* buf, size_t bytes, fid_mr** mr);
         void push(fid_mr* mr);
 
     private:
@@ -211,7 +211,7 @@ private:
         void clear();
 
         void init(size_t instance_count, int ctx_enable_hmem);
-        void get(size_t idx, fid_domain* domain, void* buf, size_t bytes, fid_mr** mr);
+        void get(atl_ep_t& ep, atl_ofi_prov_t* prov, void* buf, size_t bytes, fid_mr** mr);
         void push(size_t idx, fid_mr* mr);
 
     private:

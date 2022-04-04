@@ -113,13 +113,14 @@ atl_status_t atl_ofi::init(int* argc,
     attr->out.max_tag = 0xFFFFFFFFFFFFFFFF;
 
 #ifdef CCL_ENABLE_OFI_HMEM
-    if (prov_env && strstr(prov_env, "verbs") && attr->in.enable_hmem) {
+    if (prov_env && (strstr(prov_env, "verbs") || strstr(prov_env, "cxi")) &&
+        attr->in.enable_hmem) {
         struct fi_info* hmem_hints = fi_dupinfo(base_hints);
         atl_attr_t hmem_attr = *attr;
 
         hmem_hints->caps |= FI_HMEM;
-        hmem_hints->domain_attr->mr_mode =
-            (FI_MR_ALLOCATED | FI_MR_PROV_KEY | FI_MR_VIRT_ADDR | FI_MR_LOCAL | FI_MR_HMEM);
+        hmem_hints->domain_attr->mr_mode = (FI_MR_ALLOCATED | FI_MR_PROV_KEY | FI_MR_VIRT_ADDR |
+                                            FI_MR_LOCAL | FI_MR_HMEM | FI_MR_ENDPOINT);
 
         /* TODO: enable shm with HMEM */
         hmem_attr.in.enable_shm = 0;
@@ -334,7 +335,7 @@ atl_status_t atl_ofi::send(atl_ep_t& ep,
 
     ofi_req = ((atl_ofi_req_t*)req.internal);
 
-    cache.get(ep.idx, prov->domain, const_cast<void*>(buf), len, &ofi_req->mr);
+    cache.get(ep, prov, const_cast<void*>(buf), len, &ofi_req->mr);
     void* desc = (ofi_req->mr) ? fi_mr_desc(ofi_req->mr) : nullptr;
 
     struct iovec iov;
@@ -375,7 +376,7 @@ atl_status_t atl_ofi::recv(atl_ep_t& ep,
 
     ofi_req = ((atl_ofi_req_t*)req.internal);
 
-    cache.get(ep.idx, prov->domain, const_cast<void*>(buf), len, &ofi_req->mr);
+    cache.get(ep, prov, const_cast<void*>(buf), len, &ofi_req->mr);
     void* desc = (ofi_req->mr) ? fi_mr_desc(ofi_req->mr) : nullptr;
 
     struct iovec iov;
@@ -1040,12 +1041,16 @@ atl_ofi::fi_cache::~fi_cache() {
     clear();
 }
 
-void atl_ofi::fi_cache::get(size_t idx, fid_domain* domain, void* buf, size_t bytes, fid_mr** mr) {
+void atl_ofi::fi_cache::get(atl_ep_t& ep,
+                            atl_ofi_prov_t* prov,
+                            void* buf,
+                            size_t bytes,
+                            fid_mr** mr) {
     CCL_THROW_IF_NOT(mr);
     *mr = nullptr;
 #ifdef CCL_ENABLE_OFI_HMEM
     if (enable_hmem) {
-        memory_regions.at(idx % memory_regions.size()).get(domain, buf, bytes, mr);
+        memory_regions.at(ep.idx % memory_regions.size()).get(ep, prov, buf, bytes, mr);
     }
 #endif // CCL_ENABLE_OFI_HMEM
 }
@@ -1072,12 +1077,16 @@ void atl_ofi::mr_cache::clear() {
     cache.clear();
 }
 
-void atl_ofi::mr_cache::get(fid_domain* domain, void* buf, size_t bytes, fid_mr** mr) {
-    CCL_THROW_IF_NOT(domain);
+void atl_ofi::mr_cache::get(atl_ep_t& ep,
+                            atl_ofi_prov_t* prov,
+                            void* buf,
+                            size_t bytes,
+                            fid_mr** mr) {
+    CCL_THROW_IF_NOT(prov->domain);
     CCL_THROW_IF_NOT(mr);
 
     if (ccl::global_data::env().enable_atl_cache) {
-        key_t key(domain, buf, bytes);
+        key_t key(prov->domain, buf, bytes);
         auto key_value = cache.find(key);
         if (key_value != cache.end()) {
             *mr = key_value->second;
@@ -1134,7 +1143,7 @@ void atl_ofi::mr_cache::get(fid_domain* domain, void* buf, size_t bytes, fid_mr*
 #endif // CCL_ENABLE_OFI_HMEM
 
     int ofi_ret;
-    ATL_OFI_CALL(fi_mr_regattr(domain, &mr_attr, 0, mr),
+    ATL_OFI_CALL(fi_mr_regattr(prov->domain, &mr_attr, 0, mr),
                  ofi_ret,
                  CCL_THROW("failed to register mr, ret: ",
                            ofi_ret,
@@ -1145,8 +1154,13 @@ void atl_ofi::mr_cache::get(fid_domain* domain, void* buf, size_t bytes, fid_mr*
                            ", iface: ",
                            mr_attr.iface));
 
+    if (prov->info->domain_attr->mr_mode & FI_MR_ENDPOINT) {
+        fi_mr_bind(*mr, (fid_t)&ep, 0);
+        fi_mr_enable(*mr);
+    }
+
     if (ccl::global_data::env().enable_atl_cache) {
-        key_t key(domain, buf, bytes);
+        key_t key(prov->domain, buf, bytes);
         LOG_DEBUG("inserted to mr cache: buf: ", buf, ", bytes: ", bytes);
         cache.insert({ std::move(key), *mr });
     }
