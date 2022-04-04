@@ -338,8 +338,9 @@ run()
         #MLSL-1461
         if [ "${DASHBOARD_PLATFORM_HW_DISCRETE_GPU}" == "dg1" ]
         then
-            ccl_base_env+=" OverrideDefaultFP64Settings=1 IGC_EnableDPEmulation=1 CCL_ZE_DISABLE_FAMILY_CHECK=1"
+            ccl_base_env+=" CCL_ZE_DISABLE_FAMILY_CHECK=1"
         fi
+        ccl_base_env+=" OverrideDefaultFP64Settings=1 IGC_EnableDPEmulation=1"
 
         ccl_base_env+=" ZE_ENABLE_VALIDATION_LAYER=1 ZE_ENABLE_PARAMETER_VALIDATION=1"
         common_dir_list="benchmark common"
