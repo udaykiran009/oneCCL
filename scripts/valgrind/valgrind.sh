@@ -5,7 +5,12 @@ exec | tee ./main_ouput.txt
 
 BASENAME=`basename $0 .sh`
 
-VALGRIND_DIR="/p/pdsd/opt/tools/valgrind/last"
+if [[ ${node_label} == "ccl_test_cpu" && ${site} == "an" ]]
+then
+    VALGRIND_DIR="/home2/sys_ctlab/prog/valgrind/last"
+else
+    VALGRIND_DIR="/p/pdsd/opt/tools/valgrind/last"
+fi
 SCRIPT_DIR=$(cd $(dirname "$BASH_SOURCE") && pwd -P)
 EXAMPLE_WORK_DIR=${SCRIPT_DIR}/../../examples/build
 
