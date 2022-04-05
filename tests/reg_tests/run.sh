@@ -51,6 +51,8 @@ is_exclude_test() {
     rc=0
     while read -r res
     do
+        is_exclude_platform=0
+        is_exclude_transport=0
         EXCLUDE_RULES=$(echo $res | sed "s/^${TEST_NAME}\s//g")
         for item in ${EXCLUDE_RULES}
         do

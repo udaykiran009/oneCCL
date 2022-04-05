@@ -4,6 +4,7 @@
 
 Comment structure **test:\<conf>**
 
+* justbuild|scan
 * func
 * pr|example
 * horovod|pytorch|torch_ccl
