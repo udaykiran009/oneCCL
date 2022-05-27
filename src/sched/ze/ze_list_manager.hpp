@@ -59,7 +59,7 @@ using queue_info_t = typename std::shared_ptr<queue_info>;
 
 class queue_factory {
 public:
-    queue_factory(ze_device_handle_t device, ze_context_handle_t context, queue_group_type type);
+    queue_factory(ze_device_handle_t device, ze_context_handle_t context, queue_group_type type, const ccl_stream* stream);
     queue_factory& operator=(const queue_factory&) = delete;
     queue_factory& operator=(queue_factory&&) = delete;
     ~queue_factory();
@@ -78,6 +78,7 @@ private:
     const ze_context_handle_t context;
     const bool is_copy_queue;
     const queue_group_type type;
+    const ccl_stream* stream;
 
     static constexpr ssize_t worker_idx = 0;
 

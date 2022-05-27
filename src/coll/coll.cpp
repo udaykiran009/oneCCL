@@ -50,7 +50,7 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
 #endif // CCL_ENABLE_ITT
 
 #ifdef CCL_ENABLE_SYCL
-    if (ccl::global_data::env().enable_op_sync)
+    if (ccl::global_data::env().enable_op_sync || ccl::global_data::env().enable_external_queue)
         attr.synchronous = 1;
 #endif // CCL_ENABLE_SYCL
 

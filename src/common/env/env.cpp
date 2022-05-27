@@ -109,6 +109,7 @@ env_data::env_data()
           enable_strict_order(0),
           staging_buffer(ccl_staging_regular),
           enable_op_sync(0),
+          enable_external_queue(0),
 
           chunk_count(1),
           min_chunk_size(65536),
@@ -315,6 +316,7 @@ void env_data::parse() {
     }
     env_2_enum(CCL_STAGING_BUFFER, staging_buffer_names, staging_buffer);
     env_2_type(CCL_OP_SYNC, enable_op_sync);
+    env_2_type(CCL_USE_EXTERNAL_QUEUE, enable_external_queue);
 
     env_2_type(CCL_CHUNK_COUNT, chunk_count);
     CCL_THROW_IF_NOT(chunk_count >= 1, "incorrect ", CCL_CHUNK_COUNT, " ", chunk_count);
@@ -591,6 +593,7 @@ void env_data::print(int rank) {
     LOG_INFO(CCL_STRICT_ORDER, ": ", enable_strict_order);
     LOG_INFO(CCL_STAGING_BUFFER, ": ", str_by_enum(staging_buffer_names, staging_buffer));
     LOG_INFO(CCL_OP_SYNC, ": ", enable_op_sync);
+    LOG_INFO(CCL_USE_EXTERNAL_QUEUE, ": ", enable_external_queue);
 
     LOG_INFO(CCL_CHUNK_COUNT, ": ", chunk_count);
     LOG_INFO(CCL_MIN_CHUNK_SIZE, ": ", min_chunk_size);

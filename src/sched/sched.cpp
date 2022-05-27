@@ -495,8 +495,15 @@ void ccl_sched::set_output_event(ccl_request* request) {
     LOG_DEBUG("convert L0 event: ", ev, "into a SYCL event and submit a barrier");
 
     auto sync_event = ccl::utils::make_event(context, ev);
-    request->set_sync_event(sync_event);
-    request->set_native_event(ccl::utils::submit_barrier(q, sync_event));
+    if (ccl::global_data::env().enable_external_queue) {
+       // when using external in-order queue, no need to submit barrier with sync event
+       LOG_DEBUG("use external passed queue, no need to submit barrier with sync event");
+       request->set_sync_event(sync_event);
+       request->set_native_event(sync_event);
+    } else {
+       request->set_sync_event(sync_event);
+       request->set_native_event(ccl::utils::submit_barrier(q, sync_event));
+    }
     CCL_THROW_IF_NOT(!(request->get_native_event().is_host()), "something is wrong");
 
 #else // CCL_ENABLE_SYCL_INTEROP_EVENT
