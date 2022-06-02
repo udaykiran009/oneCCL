@@ -102,7 +102,7 @@ queue_info_t queue_factory::get(uint32_t index) {
     CCL_THROW_IF_NOT(queue_index < queues.size(), "wrong queue index");
     auto& queue = queues.at(queue_index);
 
-    if (ccl::global_data::env().enable_external_queue) {
+    if (!is_copy_queue && ccl::global_data::env().enable_external_queue) {
        if (!queue || !queue->is_valid()) {
          queue = std::make_shared<queue_info>();
          // sycl::queue
