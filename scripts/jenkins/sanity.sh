@@ -22,8 +22,8 @@ fi
 ARTEFACT_ROOT_DIR="/p/pdsd/scratch/jenkins/artefacts"
 ARTEFACT_DIR="${ARTEFACT_ROOT_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}/"
 CCL_ONEAPI_DIR="/p/pdsd/scratch/Uploads/CCL_oneAPI/"
-ONEAPI_DIR="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/oneAPI/"
-SOFTWARE_DIR="/nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Software/"
+ONEAPI_DIR=${CCL_ONEAPI_DIR}
+SOFTWARE_DIR="/p/pdsd/scratch/Software/"
 HOSTNAME=`hostname -s`
 US_PROXY="http://proxy-us.intel.com:912"
 

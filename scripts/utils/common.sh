@@ -114,7 +114,7 @@ function set_intel_compiler()
 {
     if [[ -z "${INTEL_BUNDLE_ROOT}" ]]
     then
-        INTEL_BUNDLE_ROOT="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/"
+        INTEL_BUNDLE_ROOT="/p/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/"
     fi
     source ${INTEL_BUNDLE_ROOT}/linux/bin/compilervars.sh intel64
     C_COMPILER="${INTEL_BUNDLE_ROOT}/linux/bin/intel64/icc"
