@@ -81,7 +81,7 @@ else
             host=$(echo ${cluster} | awk '{print $1}')
             workspace=$(echo ${cluster} | awk '{print $2}')
             artefact_dir="${workspace}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
-            scp ${ARTEFACT_DIR}/l_ccl_${build_type}*.tgz ${host}:${artefact_dir}
+            scp -i ~/.ssh/id_rsa.jf ${ARTEFACT_DIR}/l_ccl_${build_type}*.tgz ${host}:${artefact_dir}
             CheckCommandExitCode $? "ERROR: copying ${build_type} packages to ${host} failed"
         done
     done
