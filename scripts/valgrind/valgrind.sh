@@ -70,11 +70,17 @@ check_environment()
     check_and_set_impi_path
     if [[ -z ${CCL_ROOT} ]]
     then
-        echo "Error: CCL_ROOT wasn't found"
-        exit 1
+        if [[ ${node_label} == "ccl_test_cpu" && ${site} == "an" ]]; then
+            CCL_ROOT=$(find ${JFCST_DEV_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID} -name "l_ccl_${build_type}*" -type d)
+        else
+            CCL_ROOT=$(find ${ARTEFACT_DIR} -name "l_ccl_${build_type}*" -type d)
+        fi
+        echo "CCL_ROOT='${CCL_ROOT}'"; export CCL_ROOT
     fi
 
     export PATH="${VALGRIND_DIR}/bin:${PATH}"
+    export VALGRIND_LIB="${VALGRIND_DIR}/libexec/valgrind/"
+    echo "VALGRIND_LIB='${VALGRIND_LIB}'"
     which valgrind
     valgrind --version
     vg_major_version=`valgrind --version | awk -F"[-.]" '{print $2}'`
