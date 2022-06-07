@@ -54,6 +54,7 @@ ccl_stream::ccl_stream(stream_type type,
     if (backend == ccl::utils::get_level_zero_backend() && ccl::global_data::get().ze_data) {
         device = sycl::get_native<ccl::utils::get_level_zero_backend()>(stream.get_device());
         context = sycl::get_native<ccl::utils::get_level_zero_backend()>(stream.get_context());
+        cmd_queue = sycl::get_native<ccl::utils::get_level_zero_backend()>(stream);
         device_family = ccl::ze::get_device_family(device);
 
         ccl::ze::ze_queue_properties_t queue_props;
@@ -149,6 +150,12 @@ ze_context_handle_t ccl_stream::get_ze_context() const {
     CCL_THROW_IF_NOT(backend == ccl::utils::get_level_zero_backend());
     CCL_THROW_IF_NOT(context, "no context");
     return context;
+}
+
+ze_command_queue_handle_t ccl_stream::get_ze_command_queue() const {
+    CCL_THROW_IF_NOT(backend == ccl::utils::get_level_zero_backend());
+    CCL_THROW_IF_NOT(cmd_queue, "no command queue");
+    return cmd_queue;
 }
 #endif // CCL_ENABLE_ZE
 #endif // CCL_ENBALE_SYCL

@@ -52,12 +52,12 @@ bool queue_info::is_copy() const {
 queue_factory::queue_factory(ze_device_handle_t device,
                              ze_context_handle_t context,
                              queue_group_type type,
-                             const ccl_stream* stream)
+                             ze_command_queue_handle_t cmd_queue)
         : device(device),
           context(context),
           is_copy_queue(type == queue_group_type::main || type == queue_group_type::link),
           type(type),
-          stream(stream) {
+          cmd_queue(cmd_queue) {
     ze_queue_properties_t queue_props;
     get_queues_properties(device, &queue_props);
 
@@ -102,14 +102,10 @@ queue_info_t queue_factory::get(uint32_t index) {
     CCL_THROW_IF_NOT(queue_index < queues.size(), "wrong queue index");
     auto& queue = queues.at(queue_index);
 
-    if (!is_copy_queue && ccl::global_data::env().enable_external_queue) {
+    if (!is_copy_queue && ccl::global_data::env().enable_external_queue && cmd_queue) {
        if (!queue || !queue->is_valid()) {
          queue = std::make_shared<queue_info>();
-         // sycl::queue
-         auto external_sycl_stream = stream->get_native_stream();
-         LOG_DEBUG("convert sycl queue into a L0 queue");
-         auto external_command_queue = sycl::get_native<sycl::backend::ext_oneapi_level_zero>(external_sycl_stream);
-         queue->queue = external_command_queue;
+         queue->queue = cmd_queue;
          queue->desc = default_cmd_queue_desc;
          // todo: no API to support getting queue desc by command queue
          //queue->desc.ordinal = external_command_queue->desc.ordinal;
@@ -144,8 +140,10 @@ void queue_factory::destroy(queue_info_t& queue) {
     if (!queue || !queue->is_valid()) {
         return;
     }
-
-    global_data::get().ze_data->cache->push(worker_idx, context, device, queue->desc, queue->queue);
+    // No need to cache external cmd queue
+    if (queue->queue != cmd_queue) {
+       global_data::get().ze_data->cache->push(worker_idx, context, device, queue->desc, queue->queue);
+    }
     queue.reset();
 }
 
@@ -179,12 +177,10 @@ uint32_t queue_factory::get_queue_index(uint32_t requested_index) const {
 }
 
 void queue_factory::clear() {
-  if (!ccl::global_data::env().enable_external_queue) {
     for (auto& queue : queues) {
         destroy(queue);
     }
     queues.clear();
-  }
 }
 
 bool queue_factory::is_copy() const {
@@ -276,14 +272,15 @@ bool list_factory::is_copy() const {
 list_manager::list_manager(const ccl_sched_base* sched, const ccl_stream* stream)
         : sched(sched),
           device(stream->get_ze_device()),
-          context(stream->get_ze_context()) {
+          context(stream->get_ze_context()),
+          cmd_queue(stream->get_ze_command_queue()){
     LOG_DEBUG("create list manager");
     CCL_THROW_IF_NOT(device, "no device");
     CCL_THROW_IF_NOT(context, "no context");
     CCL_THROW_IF_NOT(sched->coll_param.comm, "no comm");
 
     comp_queue_factory =
-        std::make_unique<queue_factory>(device, context, queue_group_type::compute, stream);
+        std::make_unique<queue_factory>(device, context, queue_group_type::compute, cmd_queue);
     comp_list_factory = std::make_unique<list_factory>(device, context, false);
 
     auto copy_engine_mode = sched->coll_param.comm->get_env()->get_ze_copy_engine();
@@ -292,14 +289,14 @@ list_manager::list_manager(const ccl_sched_base* sched, const ccl_stream* stream
         queue_factory::can_use_queue_group(device, queue_group_type::main, copy_engine_mode);
     if (main_queue_available) {
         main_queue_factory =
-            std::make_unique<queue_factory>(device, context, queue_group_type::main, stream);
+            std::make_unique<queue_factory>(device, context, queue_group_type::main, cmd_queue);
     }
 
     link_queue_available =
         queue_factory::can_use_queue_group(device, queue_group_type::link, copy_engine_mode);
     if (link_queue_available) {
         link_queue_factory =
-            std::make_unique<queue_factory>(device, context, queue_group_type::link, stream);
+            std::make_unique<queue_factory>(device, context, queue_group_type::link, nullptr);
     }
 
     use_copy_queue = main_queue_available || link_queue_available;
