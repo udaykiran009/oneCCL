@@ -102,36 +102,31 @@ queue_info_t queue_factory::get(uint32_t index) {
     CCL_THROW_IF_NOT(queue_index < queues.size(), "wrong queue index");
     auto& queue = queues.at(queue_index);
 
-    if (!is_copy_queue && ccl::global_data::env().enable_external_queue && cmd_queue) {
-       if (!queue || !queue->is_valid()) {
-         queue = std::make_shared<queue_info>();
-         queue->queue = cmd_queue;
-         queue->desc = default_cmd_queue_desc;
-         // todo: no API to support getting queue desc by command queue
-         //queue->desc.ordinal = external_command_queue->desc.ordinal;
-         //queue->desc.index = external_command_queue->desc.index;
-         queue->is_copy_queue = is_copy_queue;
-         queue->type = type;
-         LOG_DEBUG("use external queue");
-       }
-       return queue;
-    }
     if (!queue || !queue->is_valid()) {
         queue = std::make_shared<queue_info>();
         queue->desc = default_cmd_queue_desc;
-        queue->desc.ordinal = queue_ordinal;
-        queue->desc.index = queue_index;
         queue->is_copy_queue = is_copy_queue;
         queue->type = type;
-        global_data::get().ze_data->cache->get(
+        if (!is_copy_queue && ccl::global_data::env().enable_external_queue && cmd_queue) {
+            // todo: no API to support getting queue desc by command queue
+            // queue->desc.ordinal = external_command_queue->desc.ordinal;
+            // queue->desc.index = external_command_queue->desc.index;
+            queue->queue = cmd_queue;
+            LOG_DEBUG("use external command queue for ", get_type_str(), " kernels");
+        } else {
+            queue->desc.ordinal = queue_ordinal;
+            queue->desc.index = queue_index;
+            global_data::get().ze_data->cache->get(
             worker_idx, context, device, queue->desc, &queue->queue);
-        LOG_DEBUG("created new ",
-                  get_type_str(),
-                  " queue: { ordinal: ",
-                  queue_ordinal,
-                  ", index: ",
-                  queue_index,
-                  " }");
+            LOG_DEBUG("created new ",
+                      get_type_str(),
+                      " queue: { ordinal: ",
+                      queue_ordinal,
+                      ", index: ",
+                      queue_index,
+                      " }");
+        }
+
     }
     return queue;
 }
