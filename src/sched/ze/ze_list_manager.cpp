@@ -284,7 +284,7 @@ list_manager::list_manager(const ccl_sched_base* sched, const ccl_stream* stream
         queue_factory::can_use_queue_group(device, queue_group_type::main, copy_engine_mode);
     if (main_queue_available) {
         main_queue_factory =
-            std::make_unique<queue_factory>(device, context, queue_group_type::main, cmd_queue);
+            std::make_unique<queue_factory>(device, context, queue_group_type::main, nullptr);
     }
 
     link_queue_available =

@@ -59,7 +59,13 @@ void print_times(size_t rank,
     // sum of additional time introduced by allreduce calls
     std::vector<size_t> allreduce_times;
 
+    // number of iterations to warm up which we don't print
+    size_t warm_up_iters = std::min(iter_count, std::max(iter_count / 10, 5ul)) - 1;
     for (size_t i = 0; i < iter_count; ++i) {
+        if (i < warm_up_iters) {
+            continue;
+        }
+
         std::stringstream ss;
         ss << "Rank: " << rank << ", Iteration: " << i << std::endl;
         for (size_t j = 0; j < kernel_count; ++j) {
