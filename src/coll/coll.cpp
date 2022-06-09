@@ -55,8 +55,10 @@ static ccl_request* ccl_coll_create(ccl_coll_param& param, const ccl_coll_attr& 
 
     if (ccl::global_data::env().enable_external_queue) {
         LOG_DEBUG("use external queue in CCL for compute kernel.");
-        //Todo: need to submit kernel before this API return. Now, just use wait execution as WA.
-        attr.synchronous = 1;
+        if(param.stream->get_native_stream().is_in_order()) {
+            //Todo: need to submit kernel before this API return. Now, just use wait execution as WA.
+            attr.synchronous = 1;
+        }
     }
 #endif // CCL_ENABLE_SYCL
 

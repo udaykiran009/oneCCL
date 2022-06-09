@@ -495,9 +495,9 @@ void ccl_sched::set_output_event(ccl_request* request) {
     LOG_DEBUG("convert L0 event: ", ev, "into a SYCL event and submit a barrier");
 
     auto sync_event = ccl::utils::make_event(context, ev);
-    if (ccl::global_data::env().enable_external_queue) {
-       // Todo: when using external queue, need to submit barrier after CCL kernel submission
-       LOG_DEBUG("Current external passed queue means CCL kernel wait execution, so no need to submit barrier");
+    if (ccl::global_data::env().enable_external_queue && q.is_in_order()) {
+       // Todo: when using external in-order queue, need to submit barrier after CCL kernel submission
+       LOG_DEBUG("Current external passed in-order queue means CCL kernel wait execution, so no need to submit barrier");
        request->set_sync_event(sync_event);
        request->set_native_event(sync_event);
     } else {
