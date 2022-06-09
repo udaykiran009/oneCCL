@@ -22,8 +22,8 @@ then
 else
     export FI_VERBS_DEVICE_NAME=mlx
 fi
-export I_MPI_PIN_PROCESSOR_LIST=1
-export CCL_WORKER_AFFINITY=2-9
+export I_MPI_PIN_PROCESSOR_LIST=1,2
+export CCL_WORKER_AFFINITY=3-18
 
 for worker_count in ${worker_counts}
 do

@@ -27,7 +27,7 @@ do
     ret_val=$?
     if [ $ret_val -ne 0 ]
     then
-        echo "Fail"
+        echo "Fail: ${lock_level}"
         exit -1
     fi
     check_log ${TEST_LOG}

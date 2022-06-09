@@ -15,6 +15,7 @@ rc=$?
 if [[ ${rc} -ne 0 ]]
 then
     echo "Fail"
+    echo "DEBUG: alltoallv_empty_count.sh fails for mpiexec"
     exit 1
 fi
 

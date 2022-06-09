@@ -25,6 +25,7 @@ mpiexec -n 2 ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1
 rc=$?
 if [[ ${rc} -ne 0 ]] ; then
     echo "Fail"
+    echo "DEBUG: Fake Path failure for mpiexec is good news"
     exit 1
 fi
 check_run ${TEST_LOG}

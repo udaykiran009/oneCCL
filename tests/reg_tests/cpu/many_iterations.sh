@@ -19,8 +19,9 @@ do
     do
         cmd="CCL_ATL_TRANSPORT=${transport}"
         cmd+=" CCL_WORKER_COUNT=2"
-        cmd+=" CCL_WORKER_AFFINITY=5-12"
+        cmd+=" CCL_WORKER_AFFINITY=5-20"
         cmd+=" I_MPI_PIN_PROCESSOR_LIST=1,2,3,4"
+        cmd+=" CCL_LOG_LEVEL=debug"
         cmd+=" mpiexec -l -n $((${ppn}*2)) -ppn ${ppn}"
         cmd+=" ${SCRIPT_DIR}/${BINFILE} > ${TEST_LOG} 2>&1"
         run_cmd "${cmd}"

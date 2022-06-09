@@ -23,7 +23,7 @@ do
         rc=$?
         if [ ${rc} -ne 0 ]
         then
-            echo "Fail"
+            echo "Fail: '${transport}'"
             exit 1
         fi
         check_log ${TEST_LOG}

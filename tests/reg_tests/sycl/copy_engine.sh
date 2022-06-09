@@ -24,7 +24,7 @@ do
 
         if [ ${rc} -ne 0 ]
         then
-            echo "Fail"
+            echo "Fail.  Single_list_mode: ${single_list_mode}"
             exit 1
         fi
 
