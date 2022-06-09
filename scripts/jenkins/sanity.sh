@@ -362,7 +362,7 @@ function set_environment()
     elif [[ "${node_label}" == "ccl_test_pvc" ]]
     then
         set_pvc_environment
-    elif [[ "${node_label}" == "ccl_test_cpu" ]] && [[ "${site}" == "an" ]]
+    elif [[ "${node_label}" == "ccl_test_cpu" || "${node_label}" == "ccl-cpu-reg-test" ]] && [[ "${site}" == "an" ]]
     then
         set_cpu_environment
     elif [[ "${node_label}" == "ccl_test_gen9" ]] && [[ "${site}" == "an" ]]
