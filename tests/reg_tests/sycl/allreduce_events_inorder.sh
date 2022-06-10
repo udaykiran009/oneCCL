@@ -86,8 +86,8 @@ function test_run() {
     cache_modes="0 1"
     iter_counts="200"
     proc_counts="2 4"
+    env_funcs="common_env common_env_with_external_queue_enabled"
 
-    common_env
 
     rm -rf ${TEST_LOG}
 
@@ -105,7 +105,11 @@ function test_run() {
                     do
                         for proc_count in $proc_counts
                         do
-                            single_test_run $algo $allreduce_mode $skip_iter_count $cache_mode $iter_count $proc_count
+                            for env_func in $env_funcs
+                            do
+                                $env_func
+                                single_test_run $algo $allreduce_mode $skip_iter_count $cache_mode $iter_count $proc_count
+                            done
                         done
                     done
                 done
@@ -117,48 +121,6 @@ function test_run() {
 
     rm -f ${BINFILE} ${TEST_LOG}
     echo "Pass"
-}
-
-function test_run_with_external_queue_enabled() {
-    #algos="topo ring"
-    # TODO: MLSL-1358
-    algos="topo"
-    allreduce_modes="single multi"
-    skip_iter_counts="0 10"
-    cache_modes="0 1"
-    iter_counts="200"
-    proc_counts="2 4"
-
-    common_env_with_external_queue_enabled
-
-    rm -rf ${TEST_LOG}
-
-    echo "Running in test mode with external queue enabled " >> ${TEST_LOG}
-
-    for algo in $algos
-    do
-        for allreduce_mode in $allreduce_modes
-        do
-            for skip_iter_count in $skip_iter_counts
-            do
-                for cache_mode in $cache_modes
-                do
-                    for iter_count in $iter_counts
-                    do
-                        for proc_count in $proc_counts
-                        do
-                            single_test_run $algo $allreduce_mode $skip_iter_count $cache_mode $iter_count $proc_count
-                        done
-                    done
-                done
-            done
-        done
-    done
-
-    check_log ${TEST_LOG}
-
-    rm -f ${BINFILE} ${TEST_LOG}
-    echo "Pass with external queue enabled"
 }
 
 function run_cmd_no_log() {
@@ -169,46 +131,29 @@ function run_cmd_no_log() {
 
 function perf_run() {
     echo "Running in perf mode"
-    common_env
+    env_funcs="common_env common_env_with_external_queue_enabled"
 
     # strip perf arg from the list and use it for the binary
     args=$(echo $@ | sed 's/perf//g')
 
-    run_cmd_no_log "mpiexec -n 2 -ppn 2 ${SCRIPT_DIR}/${BINFILE} $args"
-    rc=$?
-    if [[ ${rc} -ne 0 ]]
-    then
-        echo "Fail"
-        exit 1
-    fi
-
+    for env_func in $env_funcs
+    do
+        $env_func
+        run_cmd_no_log "mpiexec -n 2 -ppn 2 ${SCRIPT_DIR}/${BINFILE} $args"
+        rc=$?
+        if [[ ${rc} -ne 0 ]]
+        then
+            echo "Fail"
+            exit 1
+        fi
+    done
     echo "Pass"
-}
-
-function perf_run_with_external_queue_enabled() {
-    echo "Running in perf mode with external queue enabled "
-    common_env_with_external_queue_enabled
-
-    # strip perf arg from the list and use it for the binary
-    args=$(echo $@ | sed 's/perf//g')
-
-    run_cmd_no_log "mpiexec -n 2 -ppn 2 ${SCRIPT_DIR}/${BINFILE} $args"
-    rc=$?
-    if [[ ${rc} -ne 0 ]]
-    then
-        echo "Fail with external queue enabled"
-        exit 1
-    fi
-
-    echo "Pass with external queue enabled"
 }
 
 if [[ $mode == "test" ]]
 then
-    test_run_with_external_queue_enabled
     test_run
 else
-    perf_run_with_external_queue_enabled
     perf_run $@
 fi
 
