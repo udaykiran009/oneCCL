@@ -468,6 +468,9 @@ run()
                                 ccl_extra_env="CCL_WORKER_WAIT=0 ${ccl_runtime_env}"
                                 run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} ${coll_list}
 
+                                ccl_extra_env="CCL_KERNEL_GROUP_SIZE=0 ${ccl_runtime_env}"
+                                run_benchmark "${ccl_extra_env}" ${dir_name} ${transport} ${example} ${backend} ${runtime} ${n} ${ppn} ${coll_list}
+
                                 if [ "$runtime" != "opencl" ];
                                 then
                                     # TODO: fix issue with OCL host usm, ticket to be filled

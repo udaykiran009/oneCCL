@@ -86,7 +86,8 @@ void get_suggested_group_size(ze_kernel_handle_t kernel,
         return;
     }
 
-    ZE_CALL(zeKernelSuggestGroupSize,
+    if(ccl::global_data::env().kernel_group_size == 0) {
+        ZE_CALL(zeKernelSuggestGroupSize,
             (kernel,
              elem_count,
              1,
@@ -94,6 +95,10 @@ void get_suggested_group_size(ze_kernel_handle_t kernel,
              &group_size->groupSizeX,
              &group_size->groupSizeY,
              &group_size->groupSizeZ));
+    }
+    else {
+        group_size->groupSizeX = ccl::global_data::env().kernel_group_size;
+    }
 
     CCL_THROW_IF_NOT(group_size->groupSizeX >= 1,
                      "wrong group size calculation: size: ",
@@ -110,6 +115,13 @@ void get_suggested_group_count(const ze_group_size_t& group_size,
     group_count->groupCountZ = 1;
 
     auto rem = elem_count % group_size.groupSizeX;
+
+    //check whether any remaining elements are left and
+    //add an additional group to account for that
+    if(ccl::global_data::env().kernel_group_size != 0 && rem != 0) {
+        group_count->groupCountX = group_count->groupCountX + 1;
+        rem = 0;
+    }
     CCL_THROW_IF_NOT(group_count->groupCountX >= 1 && rem == 0,
                      "wrong group calculation: size: ",
                      to_string(group_size),

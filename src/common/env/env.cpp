@@ -151,7 +151,7 @@ env_data::env_data()
 #ifdef CCL_ENABLE_SYCL
           kernel_path(),
           kernel_debug(0),
-          kernel_group_size(CCL_ENV_SIZET_NOT_SPECIFIED),
+          kernel_group_size(32),
           kernel_group_count(CCL_ENV_SIZET_NOT_SPECIFIED),
           enable_kernel_sync(1),
           kernel_1s_lead(0),
@@ -651,10 +651,7 @@ void env_data::print(int rank) {
     LOG_INFO(
         CCL_KERNEL_PATH, ": ", (!kernel_path.empty()) ? kernel_path : CCL_ENV_STR_NOT_SPECIFIED);
     LOG_INFO(CCL_KERNEL_DEBUG, ": ", kernel_debug);
-    LOG_INFO(CCL_KERNEL_GROUP_SIZE,
-             ": ",
-             (kernel_group_size != CCL_ENV_SIZET_NOT_SPECIFIED) ? std::to_string(kernel_group_size)
-                                                                : CCL_ENV_STR_NOT_SPECIFIED);
+    LOG_INFO(CCL_KERNEL_GROUP_SIZE, ": ", kernel_group_size);
     LOG_INFO(CCL_KERNEL_GROUP_COUNT,
              ": ",
              (kernel_group_count != CCL_ENV_SIZET_NOT_SPECIFIED)
