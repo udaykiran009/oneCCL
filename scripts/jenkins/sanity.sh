@@ -22,8 +22,8 @@ fi
 ARTEFACT_ROOT_DIR="/p/pdsd/scratch/jenkins/artefacts"
 ARTEFACT_DIR="${ARTEFACT_ROOT_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}/"
 CCL_ONEAPI_DIR="/p/pdsd/scratch/Uploads/CCL_oneAPI/"
-ONEAPI_DIR="/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/oneAPI/"
-SOFTWARE_DIR="/nfs/inn/disks/nn-ssg_tcar_mpi_2Tb_unix/Software/"
+ONEAPI_DIR=${CCL_ONEAPI_DIR}
+SOFTWARE_DIR="/p/pdsd/scratch/Software/"
 HOSTNAME=`hostname -s`
 US_PROXY="http://proxy-us.intel.com:912"
 
@@ -228,6 +228,8 @@ function set_runtime_env() {
 function set_regular_tests_environment()
 {
     export I_MPI_JOB_TIMEOUT=360
+    # WA for NUCs on AN site
+    export CCL_TOPO_ALGO=0
 }
 
 function set_functional_tests_env()
@@ -292,6 +294,8 @@ function set_unordered_coll_test_scope()
 
 function set_ats_environment()
 {
+    module load cmake
+
     ATS_WORKSPACE_DIR="/home/sys_ctlab/jenkins/workspace/workspace/"
     ATS_ARTEFACT_DIR="${ATS_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
     CCL_ONEAPI_DIR="/home/sys_ctlab/oneapi"
@@ -310,8 +314,8 @@ function set_pvc_environment()
 {
     # Unload default system's oneapi package
     module unload oneapi
-
     module load cmake
+
     PVC_WORKSPACE_DIR="/home/sys_ctlab/workspace/workspace/"
     PVC_ARTEFACT_DIR="${PVC_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
 
@@ -325,30 +329,45 @@ function set_pvc_environment()
         export DASHBOARD_GPU_DEVICE_PRESENT="yes"
     fi
 
-    # Get slurm job nodelist
-    scontrol show hostnames > "${PVC_ARTEFACT_DIR}/nodelist"
-    export I_MPI_HYDRA_HOST_FILE="${PVC_ARTEFACT_DIR}/nodelist"
-    export HYDRA_HOST_FILE="${PVC_ARTEFACT_DIR}/nodelist"
     export HYDRA_LAUNCHER="ssh"
 
     # Compute runtime
     set_pvc_agama_env
 }
 
+function set_cpu_environment()
+{
+    WORKSPACE_DIR="/home2/sys_ctlab/jenkins_an/workspace/"
+    ARTEFACT_DIR="${WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
+    CCL_ONEAPI_DIR="/home2/sys_ctlab/oneapi/"
+
+    if [[ -z ${CCL_ROOT} ]]
+    then
+        source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu
+    fi
+
+    export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
+}
+
 function set_environment()
 {
-    if [ -z "${build_type}" ]
+    if [[ -z "${build_type}" ]]
     then
         export build_type="release"
     fi
 
-    if [[ "${node_label}" = "ccl_test_ats" ]]
+    if [[ "${node_label}" == "ccl_test_ats" ]]
     then
         set_ats_environment
-    fi
-    if [[ "${node_label}" = "ccl_test_pvc" ]]
+    elif [[ "${node_label}" == "ccl_test_pvc" ]]
     then
         set_pvc_environment
+    elif [[ "${node_label}" == "ccl_test_cpu" ]] && [[ "${site}" == "an" ]]
+    then
+        set_cpu_environment
+    elif [[ "${node_label}" == "ccl_test_gen9" ]] && [[ "${site}" == "an" ]]
+    then
+        set_compute_runtime_env
     fi
 
     if [[ ${IS_GPU_NODE} = "yes" ]]
@@ -437,48 +456,6 @@ function set_reg_tests_environment()
     then
         export PLATFORM="pvc"
     fi
-}
-
-function set_impi_environment()
-{
-    if [[ ${ENABLE_MPICH_OFI_TESTS} = "yes" ]]
-    then
-        return
-    fi
-
-    if [ -z "${I_MPI_HYDRA_HOST_FILE}" ]
-    then
-        if [ -f ${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts ]
-        then
-            export I_MPI_HYDRA_HOST_FILE=${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts
-        else
-            echo "WARNING: hostfile (${CURRENT_WORK_DIR}/tests/cfgs/clusters/${HOSTNAME}/mpi.hosts) isn't available"
-            echo "WARNING: I_MPI_HYDRA_HOST_FILE isn't set"
-        fi
-    fi
-    if [ -z "${IMPI_PATH}" ]
-    then
-        echo "WARNING: IMPI_PATH isn't set"
-        if [[ -d "${ARTEFACT_ROOT_DIR}/impi-ch4-weekly/last/oneapi_impi/" ]]
-        then
-            weekly_mpiexec_version=$(${ARTEFACT_ROOT_DIR}/impi-ch4-weekly/last/oneapi_impi/bin/mpiexec --version)
-            weekly_build_date=$(echo ${weekly_mpiexec_version#*Build} | awk '{print $1;}')
-
-            lkg_mpiexec_version=$(${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/bin/mpiexec --version)
-            lkg_build_date=$(echo ${lkg_mpiexec_version#*Build} | awk '{print $1;}')
-
-            if [ "$weekly_build_date" = "$lkg_build_date" ]; then
-                export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
-            elif expr "$weekly_build_date" "<" "$lkg_build_date" >/dev/null; then
-                export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
-            else
-                export IMPI_PATH="${ARTEFACT_ROOT_DIR}/impi-ch4-weekly/last/oneapi_impi"
-            fi
-        else
-            export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
-        fi
-    fi
-    source ${IMPI_PATH}/env/vars.sh
 }
 
 function set_ccl_environment()

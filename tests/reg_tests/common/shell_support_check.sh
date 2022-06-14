@@ -9,8 +9,8 @@ if [[ ${PLATFORM_HW_GPU} = "ats" ]] || [[ ${PLATFORM_HW_GPU} = "pvc" ]]
 then
     SUPPORTED_SHELLS="bash dash ksh mksh zsh"
 else
-    TOOLS_DIR="/nfs/inn/proj/mpi/pdsd/opt/tools"
-    SUPPORTED_SHELLS="bash ${TOOLS_DIR}/dash/bin/dash ${TOOLS_DIR}/ksh/bin/ksh ${TOOLS_DIR}/mksh/bin/mksh"
+    TOOLS_DIR="/home2/sys_ctlab/prog"
+    SUPPORTED_SHELLS="bash ${TOOLS_DIR}/dash/latest/bin/dash ${TOOLS_DIR}/ksh/latest/bin/ksh ${TOOLS_DIR}/mksh/latest/bin/mksh"
 
     if [[ $(lsb_release -d 2>/dev/null) = *"Ubuntu"* ]]; then
         ub_majver=$(lsb_release -sr | grep -Eo '^[0-9]+')
@@ -20,7 +20,7 @@ else
             SUPPORTED_SHELLS="${SUPPORTED_SHELLS} ${TOOLS_DIR}/zsh/bin/zsh"
         fi
     else
-        SUPPORTED_SHELLS="${SUPPORTED_SHELLS} ${TOOLS_DIR}/zsh/bin/zsh"
+        SUPPORTED_SHELLS="${SUPPORTED_SHELLS} ${TOOLS_DIR}/zsh/latest/bin/zsh"
     fi
 fi
 

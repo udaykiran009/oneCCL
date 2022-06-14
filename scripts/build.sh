@@ -236,7 +236,7 @@ check_icc_path()
 {
     if [ -z "${ICC_BUNDLE_ROOT}" ]
     then
-        ICC_BUNDLE_ROOT=/nfs/inn/proj/mpi/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/
+        ICC_BUNDLE_ROOT="/p/pdsd/opt/EM64T-LIN/parallel_studio/parallel_studio_xe_2020.0.088/compilers_and_libraries_2020/linux/"
         echo "WARNING: ICC_BUNDLE_ROOT is not defined, will be used default: ${ICC_BUNDLE_ROOT}"
     fi
     source ${ICC_BUNDLE_ROOT}/bin/compilervars.sh intel64
