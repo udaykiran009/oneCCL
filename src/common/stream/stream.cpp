@@ -154,7 +154,8 @@ ze_context_handle_t ccl_stream::get_ze_context() const {
 
 ze_command_queue_handle_t ccl_stream::get_ze_command_queue() const {
     CCL_THROW_IF_NOT(backend == ccl::utils::get_level_zero_backend());
-    CCL_THROW_IF_NOT(cmd_queue, "no command queue");
+    // Cmd queue may be nullptr as cmd queue will be created only after sycl queue is called to submit kernel.
+    LOG_DEBUG("command queue from external sycl queue is ", cmd_queue);
     return cmd_queue;
 }
 #endif // CCL_ENABLE_ZE
