@@ -100,6 +100,8 @@ TRACE_LINK="https://intel.sharepoint.com/sites/Facebook-CSPcollaboration/Shared%
 DEFAULT_SCRIPT_WORK_DIR="${SCRIPT_DIR}/work_dir_${current_date}"
 DEFAULT_FULL_SCOPE="0"
 
+DEFAULT_PREPARE="0"
+
 DEFAULT_DOWNLOAD_OFI="0"
 DEFAULT_INSTALL_OFI="0"
 
@@ -119,7 +121,7 @@ DEFAULT_INSTALL_PT="0"
 DEFAULT_DOWNLOAD_TORCH_UCC="0"
 DEFAULT_INSTALL_TORCH_UCC="0"
 
-DEFAULT_TRACE_PATH="/nfs/inn/proj/mpi/users/mshiryae/shared/trace"
+DEFAULT_TRACE_PATH="/home/sys_ctlab/Pytorch/pytorch-trace"
 DEFAULT_RUN_TESTS="0"
 
 DEFAULT_PATH_TO_TOKEN_FILE_1S=""
@@ -187,6 +189,8 @@ print_help() {
     echo_log "      https proxy"
     echo_log "  -cluster <name>"
     echo_log "      Name of cluster to adjust configuration, possible values: ccl, fabric"
+    echo_log "  -prepare <bool_flag>"
+    echo_log "      Prepare workspace for testing"
     echo_log ""
     echo_log "Usage examples:"
     echo_log "  ${BASENAME}.sh -full 1"
@@ -196,6 +200,8 @@ print_help() {
 parse_arguments() {
     SCRIPT_WORK_DIR=${DEFAULT_SCRIPT_WORK_DIR}
     FULL_SCOPE=${DEFAULT_FULL_SCOPE}
+
+    PREPARE=${DEFAULT_PREPARE}
 
     DOWNLOAD_OFI=${DEFAULT_DOWNLOAD_OFI}
     INSTALL_OFI=${DEFAULT_INSTALL_OFI}
@@ -315,6 +321,10 @@ parse_arguments() {
                 CLUSTER="${2}"
                 shift
                 ;;
+            "-prepare")
+                PREPARE="${2}"
+                shift
+                ;;
             *)
                 echo "$(basename $0): ERROR: unknown option ($1)"
                 print_help
@@ -374,6 +384,35 @@ parse_arguments() {
             rm -rf ${SCRIPT_WORK_DIR}
             mkdir -p ${SCRIPT_WORK_DIR}
         fi
+    fi
+
+    if [[ ${PREPARE} == "1" ]]
+    then
+        DOWNLOAD_OFI="1"
+        INSTALL_OFI="1"
+
+        DOWNLOAD_CCL="1"
+        INSTALL_CCL="1"
+
+        DOWNLOAD_UCC="1"
+        INSTALL_UCC="1"
+
+        DOWNLOAD_CONDA="1"
+        CREATE_CONDA="1"
+
+        INSTALL_PT="1"
+
+        DOWNLOAD_TORCH_UCC="1"
+        INSTALL_TORCH_UCC="1"
+
+        if [[ -d ${PARAM_SRC_DIR} ]]
+        then
+            rm -rf ${PARAM_SRC_DIR}
+        fi
+        cmd="git clone --branch ${PARAM_BRANCH} --single-branch ${PARAM_LINK} ${PARAM_SRC_DIR}"
+        echo_log "exec cmd: $cmd"
+        eval ${cmd}
+        check_exit_code $? "Download PARAM failed"
     fi
 
     if [[ ${RUN_TESTS} = "1" ]] && [[ ! -d ${TRACE_PATH} ]]
@@ -719,7 +758,7 @@ install_pt() {
         return
     fi
 
-    https_proxy=${PROXY} conda install -y pytorch torchvision torchaudio cpuonly -c pytorch
+    https_proxy=${PROXY} conda install -y pytorch==1.10.2 torchvision==0.11.3 torchaudio==0.10.2 cpuonly -c pytorch
     check_exit_code $? "PT install failed"
 }
 
@@ -823,14 +862,6 @@ run_tests() {
     echo "================ ****************** ================" | tee -a ${TESTS_LOG_FILE}
 
     echo "================ 4. PARAM test ================" | tee -a ${TESTS_LOG_FILE}
-    if [[ -d ${PARAM_SRC_DIR} ]]
-    then
-        rm -rf ${PARAM_SRC_DIR}
-    fi
-    cmd="git clone --branch ${PARAM_BRANCH} --single-branch ${PARAM_LINK} ${PARAM_SRC_DIR}"
-    echo_log "exec cmd: $cmd"
-    eval ${cmd}
-    check_exit_code $? "Download PARAM failed"
 
     cd ${PARAM_SRC_DIR}/train/comms/pt
     echo "I_MPI_HYDRA_HOST_FILE ${I_MPI_HYDRA_HOST_FILE}"

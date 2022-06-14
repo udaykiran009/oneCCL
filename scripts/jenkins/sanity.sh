@@ -635,9 +635,16 @@ function run_pytorch_tests()
         return
     fi
 
+    PYTORCH_WORK_DIR=${CURRENT_WORK_DIR}/scripts/framework/pytorch/work_dir_pytorch
     pushd ${CURRENT_WORK_DIR}/scripts/framework/pytorch/
-    ./pytorch.sh -full 1 -proxy ${US_PROXY} -remove_conda 1\
-                 -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
+    if [[ ${FW_DOWNLOAD_COMPONENTS} = "yes" ]]
+    then
+        ./pytorch.sh -prepare 1 -proxy ${US_PROXY} -work_dir ${PYTORCH_WORK_DIR}\
+                     -token "${CURRENT_WORK_DIR}/gitpass.sh" -username ${USERNAME_1S}
+    else
+        ./pytorch.sh -run_tests 1 -work_dir ${PYTORCH_WORK_DIR}\
+                     -remove_conda 1
+    fi
     log_status_fail=${PIPESTATUS[0]}
     popd
     if [ "$log_status_fail" -eq 0 ]
