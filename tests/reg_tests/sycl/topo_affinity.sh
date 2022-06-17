@@ -101,7 +101,7 @@ run_case() {
     done
 }
 
-if [[ ${PLATFORM_HW_GPU} = "ats" || ${PLATFORM_HW_GPU} = "gen" ]]
+if [[ ${PLATFORM_HW_GPU} = "ats" || ${PLATFORM_HW_GPU} = "gen" || ${PLATFORM_HW_GPU} = "pvc" ]]
 then
     # [ATS/GEN]: case 1: 1 node, 2 ranks
     run_case 2 2 "0 0" "0 1" "\"card:{0,1};plane:{0},{1}\""
@@ -125,7 +125,7 @@ then
         run_case 8 4 "0 0 1 1 1000 1000 1001 1001" "0 1 0 1 1000 1001 1000 1001" \
                      "\"card:{0,1},{2,3};plane:{0,2},{1,3}"\"
     fi
-elif [[ ${PLATFORM_HW_GPU} = "pvc" ]]
+elif [[ ${PLATFORM_HW_GPU} = "pvc_aurora" ]]
 then
     # [PVC] case 1: 1 node, 6 ranks, 0-th tiles only
     affinity_env="ZE_AFFINITY_MASK=0.0,1.0,2.0,3.0,4.0,5.0"

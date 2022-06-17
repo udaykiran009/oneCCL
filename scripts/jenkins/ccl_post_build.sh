@@ -11,6 +11,7 @@ ARTEFACT_DIR="${ARTEFACT_ROOT_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
 
 JFCST_XE="jfcst-xe.jf.intel.com /home/sys_ctlab/jenkins/workspace/workspace/"
 JFCST_DEV="jfcst-dev.jf.intel.com /home2/sys_ctlab/jenkins_an/workspace/"
+JFSDP_PVC="jfsdp-pvc.jf.intel.com /home/sys_ctlab/jenkins/workspace/workspace/"
 AURORA_PVC="a21-surrogate4.hpe.jf.intel.com /home/sys_ctlab/workspace/workspace/"
 
 echo "DEBUG: ARTEFACT_DIR          = ${ARTEFACT_DIR}"
@@ -67,16 +68,14 @@ if [[ ${TEST_CONFIGURATIONS} == *"mpich_pvc"* ]]
 then
     host=$(echo ${AURORA_PVC} | awk '{print $1}')
     workspace=$(echo ${AURORA_PVC} | awk '{print $2}')
-    artefact_dir="${workspace}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
-    for build_type in "release" "debug"
-    do
-        scp ${ARTEFACT_DIR}/l_ccl_${build_type}*.tgz ${host}:${artefact_dir}
-        CheckCommandExitCode $? "ERROR: copying ${build_type} packages to ${host} failed"
-    done
+    artefact_dir="${workspace}/${BUILDER_NAME}"
+    ssh ${host} "mkdir -p ${artefact_dir}"
+    rsync -ar --ignore-existing ${ARTEFACT_DIR} ${host}:${artefact_dir}
+    CheckCommandExitCode $? "ERROR: copying ${build_type} packages to ${host} failed"
 else
     for build_type in "release" "debug"
     do
-        for cluster in "${JFCST_XE}" "${JFCST_DEV}"
+        for cluster in "${JFCST_XE}" "${JFCST_DEV}" "${JFSDP_PVC}"
         do
             host=$(echo ${cluster} | awk '{print $1}')
             workspace=$(echo ${cluster} | awk '{print $2}')

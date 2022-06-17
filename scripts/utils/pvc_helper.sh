@@ -49,6 +49,12 @@ function check_anr() {
 
 function set_pvc_mpich_ofi_env()
 {
+    #TODO: Implement when working to get MPICH tests running on jfsdp-pvc cluster
+    echo "TODO: Implement set_pvc_mpich_ofi_env"
+}
+
+function set_aurora_mpich_ofi_env()
+{
     module unload mpich/icc-cxi
     module use /home/tdoodi/drop44-release/install_12_6/modulefiles
     module load mpich/icc-cxi/44.2

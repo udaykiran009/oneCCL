@@ -227,7 +227,7 @@ set_run_env() {
     fi
 
     # MPICH
-    set_pvc_mpich_ofi_env
+    set_aurora_mpich_ofi_env
 
     # compute-runtime
     set_pvc_agama_env ${AGAMA}

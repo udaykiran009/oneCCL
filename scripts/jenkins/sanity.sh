@@ -55,10 +55,10 @@ function set_default_values()
     ENABLE_REG_TESTS="no"
     ENABLE_MPICH_OFI_TESTS="no"
 
-    if [[ ${node_label} = "ccl_test_ats" ]]
+    if [[ ${node_label} = "ccl_test_ats" ]] || [[ ${node_label} = "ccl_test_pvc" ]]
     then
         PROC_MAPS="2:2/4:4"
-    elif [[ ${node_label} = "ccl_test_pvc" ]]
+    elif [[ ${node_label} = "ccl_test_aurora" ]]
     then
         PROC_MAPS="2:1,2"
     else
@@ -180,9 +180,9 @@ function set_mpich_ofi_env() {
     if [[ ${node_label} = "ccl_test_ats" ]]
     then
         set_ats_mpich_ofi_env
-    elif [[ ${node_label} = "ccl_test_pvc" ]]
+    elif [[ ${node_label} = "ccl_test_aurora" ]]
     then
-        set_pvc_mpich_ofi_env
+        set_aurora_mpich_ofi_env
     fi
 }
 
@@ -200,6 +200,9 @@ function set_provider_env() {
     then
         export FI_PROVIDER=tcp
     elif [[ "${node_label}" = "ccl_test_pvc" ]]
+    then
+        export FI_PROVIDER=tcp
+    elif [[ "${node_label}" = "ccl_test_aurora" ]]
     then
         export FI_PROVIDER=cxi
     fi
@@ -252,7 +255,7 @@ function set_functional_tests_env()
     if [[ "${node_label}" = "ccl_test_ats" ]]
     then
         func_exec_env+=" CCL_MNIC_NAME=eno,eth,hfi,mlx,^unknown"
-    elif [[ "${node_label}" = "ccl_test_pvc" ]]
+    elif [[ "${node_label}" = "ccl_test_aurora" ]]
     then
         func_exec_env+=" CCL_MNIC_NAME=cxi,eno,eth,hfi,mlx,^unknown"
     else
@@ -312,6 +315,22 @@ function set_ats_environment()
 
 function set_pvc_environment()
 {
+    PVC_WORKSPACE_DIR="/home/sys_ctlab/jenkins/workspace/workspace/"
+    PVC_ARTEFACT_DIR="${PVC_WORKSPACE_DIR}/${BUILDER_NAME}/${MLSL_BUILD_ID}"
+    CCL_ONEAPI_DIR="/home/sys_ctlab/oneapi"
+    export BUILD_COMPILER_TYPE="dpcpp"
+    export IMPI_PATH="${CCL_ONEAPI_DIR}/mpi_oneapi/last/mpi/latest/"
+
+    if [ -z ${CCL_ROOT} ]
+    then
+        source ${PVC_ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+        export DASHBOARD_GPU_DEVICE_PRESENT="yes"
+    fi
+    export DASHBOARD_PLATFORM_HW_DISCRETE_GPU="pvc"
+}
+
+function set_aurora_environment()
+{
     # Unload default system's oneapi package
     module unload oneapi
     module load cmake
@@ -359,6 +378,9 @@ function set_environment()
     if [[ "${node_label}" == "ccl_test_ats" ]]
     then
         set_ats_environment
+    elif [[ "${node_label}" == "ccl_test_aurora" ]]
+    then
+        set_aurora_environment
     elif [[ "${node_label}" == "ccl_test_pvc" ]]
     then
         set_pvc_environment
@@ -427,7 +449,7 @@ function set_environment()
     export CCL_PROCESS_CLEANUP="yes"
     set_external_env
 
-    if [[ ${node_label} = "ccl_test_pvc" ]]
+    if [[ ${node_label} = "ccl_test_aurora" ]]
     then
         check_cxi
         check_anr
@@ -452,7 +474,7 @@ function set_reg_tests_environment()
     elif [[ "${node_label}" = "ccl_test_ats" ]]
     then
         export PLATFORM="ats"
-    elif [[ "${node_label}" = "ccl_test_pvc" ]]
+    elif [[ "${node_label}" = "ccl_test_aurora" ]] || [[ "${node_label}" = "ccl_test_pvc" ]]
     then
         export PLATFORM="pvc"
     fi
@@ -464,7 +486,12 @@ function set_ccl_environment()
     then
         if [[ ${IS_GPU_NODE} = "yes" ]]
         then
-            source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+            if [[ ${node_label} == "ccl_test_pvc" ]]
+            then
+                source ${PVC_ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+            else
+                source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu_gpu_dpcpp
+            fi
             export DASHBOARD_GPU_DEVICE_PRESENT="yes"
         else
             source ${ARTEFACT_DIR}/l_ccl_${build_type}*/env/vars.sh --ccl-configuration=cpu

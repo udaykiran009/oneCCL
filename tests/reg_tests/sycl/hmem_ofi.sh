@@ -61,7 +61,7 @@ check_dmabuf_peer_mem() {
 
 affinity=""
 
-if [[ ${PLATFORM_HW_GPU} == "ats" ]]
+if [[ ${PLATFORM_HW_GPU} == "ats" || ${PLATFORM_HW_GPU} == "pvc" ]]
 then
     libfabrics="default dmabuf_peer_mem"
     provs="verbs"

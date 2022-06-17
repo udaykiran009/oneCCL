@@ -75,7 +75,7 @@ function echo_log_separator()
 function is_gpu_node()
 {
     is_gpu_node="no"
-    if [[ ${node_label} == "ccl_test_gen9" ]] || [[ ${node_label} == "ccl_test_ats" ]] || [[ ${node_label} == "ccl_test_pvc" ]]
+    if [[ ${node_label} == "ccl_test_gen9" ]] || [[ ${node_label} == "ccl_test_ats" ]] || [[ ${node_label} == "ccl_test_aurora" ]] || [[ ${node_label} == "ccl_test_pvc" ]]
     then
         is_gpu_node="yes"
     fi
@@ -138,7 +138,7 @@ function set_dpcpp_compiler()
     then
         SYCL_BUNDLE_ROOT="${CCL_ONEAPI_DIR}/compiler/last/"
     fi
-    if [[ ${node_label} = "ccl_test_pvc" ]]
+    if [[ ${node_label} = "ccl_test_aurora" ]]
     then
         if [[ ! -d ${SYCL_BUNDLE_ROOT}/modulefiles ]]
         then
