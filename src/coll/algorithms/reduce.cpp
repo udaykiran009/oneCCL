@@ -484,6 +484,8 @@ ccl::status ccl_coll_build_topo_reduce(ccl_sched* sched,
 
     CCL_THROW_IF_NOT(comm_size % 2 == 0, "unexpected comm_size ", comm_size);
     CCL_THROW_IF_NOT(node_comm_size % 2 == 0, "unexpected node_comm_size ", node_comm_size);
+    CCL_THROW_IF_NOT(count >= size_t(comm_size), "unexpected count:", count,
+                     " < comm_size:", comm_size);
 
     if (is_single_card) {
         LOG_DEBUG("topo/scale_up/intra: use ze_onesided_reduce");
