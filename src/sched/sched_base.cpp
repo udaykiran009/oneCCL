@@ -95,6 +95,7 @@ void ccl_sched_base::update_coll_param_and_attr(const ccl_coll_param& param,
     if (ccl::global_data::env().priority_mode == ccl_priority_direct) {
         coll_attr.priority = attr.priority;
     }
+    coll_param.stream = param.stream;
 }
 
 size_t ccl_sched_base::get_priority() const {

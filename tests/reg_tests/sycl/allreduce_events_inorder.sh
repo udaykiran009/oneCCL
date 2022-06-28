@@ -22,6 +22,14 @@ function common_env() {
     export CCL_SYCL_OUTPUT_EVENT=1
     export CCL_ZE_CLOSE_IPC_WA=1
     export EnableDirectSubmission=1
+    export CCL_USE_EXTERNAL_QUEUE=0
+}
+
+function common_env_with_external_queue_enabled() {
+    export CCL_SYCL_OUTPUT_EVENT=1
+    export CCL_ZE_CLOSE_IPC_WA=1
+    export EnableDirectSubmission=1
+    export CCL_USE_EXTERNAL_QUEUE=1
 }
 
 function run_cmd() {
@@ -78,8 +86,8 @@ function test_run() {
     cache_modes="0 1"
     iter_counts="200"
     proc_counts="2 4"
+    env_funcs="common_env common_env_with_external_queue_enabled"
 
-    common_env
 
     rm -rf ${TEST_LOG}
 
@@ -97,7 +105,11 @@ function test_run() {
                     do
                         for proc_count in $proc_counts
                         do
-                            single_test_run $algo $allreduce_mode $skip_iter_count $cache_mode $iter_count $proc_count
+                            for env_func in $env_funcs
+                            do
+                                $env_func
+                                single_test_run $algo $allreduce_mode $skip_iter_count $cache_mode $iter_count $proc_count
+                            done
                         done
                     done
                 done
@@ -119,19 +131,22 @@ function run_cmd_no_log() {
 
 function perf_run() {
     echo "Running in perf mode"
-    common_env
+    env_funcs="common_env common_env_with_external_queue_enabled"
 
     # strip perf arg from the list and use it for the binary
     args=$(echo $@ | sed 's/perf//g')
 
-    run_cmd_no_log "mpiexec -n 2 -ppn 2 ${SCRIPT_DIR}/${BINFILE} $args"
-    rc=$?
-    if [[ ${rc} -ne 0 ]]
-    then
-        echo "Fail"
-        exit 1
-    fi
-
+    for env_func in $env_funcs
+    do
+        $env_func
+        run_cmd_no_log "mpiexec -n 2 -ppn 2 ${SCRIPT_DIR}/${BINFILE} $args"
+        rc=$?
+        if [[ ${rc} -ne 0 ]]
+        then
+            echo "Fail"
+            exit 1
+        fi
+    done
     echo "Pass"
 }
 
