@@ -47,7 +47,7 @@ done
 
 if [ ${SILENT_MODE} -eq 0 ]
 then
-    echo "oneCCL 2021.7.0 for Linux* OS will be installed"
+    echo "oneCCL 2021.8.0 for Linux* OS will be installed"
     echo "Type 'y' to continue or 'q' to exit and then press Enter"
     CONFIRMED=0
     while [ $CONFIRMED = 0 ]
@@ -79,7 +79,7 @@ fi
 
 if [ ${SILENT_MODE} -eq 0 ]
 then
-    echo "oneCCL 2021.7.0 for Linux* OS will be installed into ${INSTALL_PATH}"
+    echo "oneCCL 2021.8.0 for Linux* OS will be installed into ${INSTALL_PATH}"
 fi
 
 if [ -d ${INSTALL_PATH} ]
