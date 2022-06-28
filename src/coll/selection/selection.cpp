@@ -332,6 +332,9 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
                         (local_proc_count % 2 != 0),
                     "odd proc count per node is not supported");
 
+    RETURN_FALSE_IF((param.ctype == ccl_coll_reduce) && (param.count < size_t(param.comm->size())),
+                    "reduce with count < comm_size not supported");
+
     return true;
 }
 
