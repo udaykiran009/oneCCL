@@ -153,6 +153,9 @@ void ze_onesided_reduce_entry::init_ze_hook() {
 }
 
 void ze_onesided_reduce_entry::finalize_ze_hook() {
+    if (comm->size() == 1) {
+        return;
+    }
     if (empty_kernel_event) {
         ccl::global_data::get().ze_data->cache->push(
             worker_idx, module, empty_kernel_name, empty_kernel);
