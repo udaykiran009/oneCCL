@@ -30,6 +30,7 @@ dmabuf_peer_mem_env+=" FI_VERBS_INLINE_SIZE=0"
 dmabuf_peer_mem_env+=" MLX5_SCATTER_TO_CQE=0"
 dmabuf_peer_mem_env+=" LD_LIBRARY_PATH=${ofi_lib_path}:${LD_LIBRARY_PATH}"
 dmabuf_peer_mem_env+=" FI_PROVIDER_PATH=${ofi_lib_path}/libfabric"
+dmabuf_peer_mem_env+=" EnableImplicitScaling=0"
 
 check_dmabuf_peer_mem() {
     if [ -z "$(lsmod | grep dmabuf_peer_mem)" ]
