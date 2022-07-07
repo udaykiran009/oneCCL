@@ -692,7 +692,7 @@ function run_torch_ccl_tests()
 
 function set_modulefile_environment()
 {
-    MODULES_DIR="/p/pdsd/scratch/Software/modules/latest"
+    MODULES_DIR="/home/sys_ctlab/Software/modules/latest"
     source ${MODULES_DIR}/init/profile.sh
     export CCL_CONFIGURATION=cpu
     if [ -z "$build_type" ]
@@ -714,12 +714,13 @@ function set_modulefile_environment()
 
 function unset_modulefile_environment()
 {
-    module unload ccl
+    module unload ${ARTEFACT_DIR}/l_ccl_${build_type}*/modulefiles/ccl
 
     log_status_fail=${PIPESTATUS[0]}
     if [ "$log_status_fail" -eq 0 ]
     then
         echo "module file unload ... OK"
+        exit 0
     else
         echo "module file unload ... NOK"
         exit 1
@@ -737,16 +738,15 @@ function run_modulefile_tests()
 
     ${CURRENT_WORK_DIR}/examples/run.sh --mode cpu --scope ${regular_scope}
     log_status_fail=${PIPESTATUS[0]}
-
-    unset_modulefile_environment
     if [ "$log_status_fail" -eq 0 ]
     then
         echo "module file testing ... OK"
-        exit 0
     else
         echo "module file testing ... NOK"
         exit 1
     fi
+
+    unset_modulefile_environment
 }
 
 function run_functional_tests()
