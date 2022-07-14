@@ -47,14 +47,14 @@ check_dmabuf_peer_mem() {
         server_device=$(echo $device_pair | cut -d_ -f1)
         client_device=$(echo $device_pair | cut -d_ -f2)
         cmd="${env} ${ofi_bench_path} ${ofi_bench_options} -d ${server_device} >> ${TEST_LOG} 2>&1 &"
-        cmd+=" ${env} ${ofi_bench_path} ${ofi_bench_options} -d ${client_device} localhost >> ${TEST_LOG} 2>&1"
+        cmd+=" sleep 1 && ${env} ${ofi_bench_path} ${ofi_bench_options} -d ${client_device} localhost >> ${TEST_LOG} 2>&1"
 
         run_cmd "${cmd}"
         check_log ${TEST_LOG} "4194304"
         rm ${TEST_LOG}
 
         # to avoid "connection refused" issue
-        sleep 4
+        sleep 15
     done
 }
 
