@@ -24,6 +24,20 @@ do
         do
             for transport in ${transports}
             do
+                if [ ${transport} == "ofi" ];
+                then
+                    if [ ${comm_size_mode} == "direct" ] || [ ${parallel_comm_mode} == "1" ]; then
+                        echo "WARN: multi_comms.sh: Need to verify that the MLSL-1193 fix works for following parameters:"
+                        echo "  comm_size_mode: ${comm_size_mode}  rank_order_mode: ${rank_order_mode}  parallel_comm_mode: ${parallel_comm_mode}  transport: ${transport}"
+                        continue
+                    fi
+                fi
+                if [[ $transport == "mpi" && $algo == "topo" && $rank_order_mode == "reorder" && $comm_size_mode == "direct" ]]
+                then
+                    #TODO: MLSL-1514
+                    echo "WARN: transport=$transport, algo=$algo, rank_order_mode=$rank_order_mode, comm_size_mode=$comm_size_mode SKIPPED. Needs to be tested"
+                    continue
+                fi
                 for algo in ${algos}
                 do
                     a2a_algo=${algo}
