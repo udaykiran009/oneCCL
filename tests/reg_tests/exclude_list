@@ -13,6 +13,7 @@ allgatherv_vector platform=gen transport=*
 allreduce_events platform=gen transport=*
 allreduce_events_inorder platform=gen transport=*
 allreduce_bidir_algo platform=ats transport=*
+implicit_scaling platform=pvc transport=*
 # TODO: after fixing IMPI-3210 make mpi transport valid for ats
 hmem_mpi platform=ats transport=impi
 hmem_ofi platform=gen transport=*
