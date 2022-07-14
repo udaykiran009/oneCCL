@@ -32,6 +32,12 @@ do
                         continue
                     fi
                 fi
+                if [[ $transport == "mpi" && $algo == "topo" && $rank_order_mode == "reorder" && $comm_size_mode == "direct" ]]
+                then
+                    #TODO: MLSL-1514
+                    echo "WARN: transport=$transport, algo=$algo, rank_order_mode=$rank_order_mode, comm_size_mode=$comm_size_mode SKIPPED. Needs to be tested"
+                    continue
+                fi
                 for algo in ${algos}
                 do
                     a2a_algo=${algo}
