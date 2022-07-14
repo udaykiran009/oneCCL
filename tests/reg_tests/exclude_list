@@ -18,6 +18,7 @@ hmem_mpi platform=ats transport=impi
 hmem_ofi platform=gen transport=*
 # verbs prov doesn't tested with mpich
 hmem_ofi platform=* transport=mpich
+allreduce_events_inorder platform=pvc transport=*
 # no gtool support in MPICH
 process_launcher platform=* transport=mpich
 scaleout platform=ats transport=*
