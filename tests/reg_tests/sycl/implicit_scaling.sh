@@ -27,11 +27,6 @@ do
             do
                 for algo in ${algos}
                 do
-                    if [[ "${root_device_mode}" == "0" ]] && [[ "${implicit_scaling_mode}" == "1" ]]
-                    then
-                        continue
-                    fi
-
                     cmd="CCL_ATL_TRANSPORT=${transport}"
                     cmd+=" CCL_LOG_LEVEL=info"
                     cmd+=" CCL_ALLREDUCE=${algo}"
