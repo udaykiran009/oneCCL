@@ -192,7 +192,10 @@ void get_device_memory_info(const ze_device_handle_t& device) {
 }
 
 void get_device_info(const ze_device_handle_t& device) {
-    ze_device_properties_t device_prop;
+    ze_device_properties_t device_prop = {
+        .stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES,
+        .pNext = nullptr,
+    };
     zeCall(zeDeviceGetProperties(device, &device_prop));
     device_names.push_back(device_prop.name);
     device_slices.push_back(device_prop.numSlices);
