@@ -12,7 +12,7 @@ make_common_actions ${SCRIPT_DIR} ${TEST_LOG}
 
 proc_counts="1 2 4 8"
 transports="ofi mpi"
-provs="$(get_default_and_ext_native_provs)"
+provs="tcp psm3"
 
 for proc_count in ${proc_counts}
 do
