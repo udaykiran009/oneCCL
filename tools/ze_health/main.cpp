@@ -82,7 +82,10 @@ std::string human_bytes(size_t bytes) {
 }
 
 void print_device_uuid(ze_device_handle_t device) {
-    ze_device_properties_t device_props{};
+    ze_device_properties_t device_props = {
+        .stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES,
+        .pNext = nullptr,
+    };
     ZE_CALL(zeDeviceGetProperties, (device, &device_props));
     std::cout << "Device UUID: ";
     for (auto id : device_props.uuid.id) {
