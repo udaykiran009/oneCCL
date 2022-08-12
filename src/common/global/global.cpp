@@ -132,6 +132,14 @@ void global_data::getenv_local_coord(const char* local_proc_idx_env_name,
                                      const char* local_proc_count_env_name) {
     char* local_idx_env = getenv(local_proc_idx_env_name);
     char* local_count_env = getenv(local_proc_count_env_name);
+
+    if(ccl::global_data::env().process_launcher == process_launcher_mode::none) {
+        if( ! (local_idx_env && local_count_env) ) {
+            LOG_WARN("local_idx and local_count must be set. May try again later.\n");
+            return;
+        }
+    }
+
     CCL_THROW_IF_NOT(local_idx_env && local_count_env, "local_idx and local_count must be set");
 
     local_proc_idx = std::atoi(local_idx_env);

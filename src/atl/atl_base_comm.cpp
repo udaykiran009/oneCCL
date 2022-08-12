@@ -134,6 +134,19 @@ void atl_base_comm::update_executor() {
         if (rank < coord.local_count)
             LOG_INFO(
                 "start workers for local process [", coord.local_idx, ":", coord.local_count, "]");
+        if(ccl::global_data::env().process_launcher == process_launcher_mode::none) {
+             char* local_idx_env = getenv("CCL_LOCAL_RANK");
+             if(local_idx_env == nullptr) {
+                 setenv("CCL_LOCAL_RANK", std::to_string(coord.local_idx).c_str(), 0);
+             }
+             char* local_count_env = getenv("CCL_LOCAL_SIZE");
+             if(local_count_env == nullptr) {
+                 setenv("CCL_LOCAL_SIZE", std::to_string(coord.local_count).c_str(), 0);
+             }
+             if(local_idx_env == nullptr || local_count_env == nullptr) {
+                 ccl::global_data::get().set_local_coord();
+             }
+        }
         executor->start_workers();
     }
 }

@@ -81,6 +81,8 @@ public:
         return local_proc_count;
     }
 
+    void set_local_coord();
+
 private:
     global_data();
 
@@ -91,8 +93,6 @@ private:
     int local_proc_count;
     void getenv_local_coord(const char* local_proc_idx_env_name,
                             const char* local_proc_count_env_name);
-    void set_local_coord();
-
     env_data env_object;
     os_information os_info;
 };

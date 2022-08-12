@@ -77,7 +77,7 @@ atl_status_t atl_mpi_comm::init_transport(bool is_new,
             }
 
             if (!transport->is_inited()) {
-                CCL_THROW_IF_NOT(
+		CCL_THROW_IF_NOT(
                     transport->init(nullptr, nullptr, &attr, nullptr, pmi) == ATL_STATUS_SUCCESS,
                     "failed to initialize ATL");
             }
