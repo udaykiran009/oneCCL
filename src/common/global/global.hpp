@@ -46,6 +46,8 @@ public:
     global_data& operator=(global_data&&) = delete;
 
     ~global_data();
+	int local_proc_idx;
+	int local_proc_count;
 
     ccl::status init();
     ccl::status reset();
@@ -89,8 +91,8 @@ private:
     void init_resize_independent_objects();
     void reset_resize_independent_objects();
 
-    int local_proc_idx;
-    int local_proc_count;
+    //int local_proc_idx;
+    //int local_proc_count;
     void getenv_local_coord(const char* local_proc_idx_env_name,
                             const char* local_proc_count_env_name);
     env_data env_object;

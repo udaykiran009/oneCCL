@@ -134,19 +134,24 @@ void atl_base_comm::update_executor() {
         if (rank < coord.local_count)
             LOG_INFO(
                 "start workers for local process [", coord.local_idx, ":", coord.local_count, "]");
-        if(ccl::global_data::env().process_launcher == process_launcher_mode::none) {
+        //if(ccl::global_data::env().process_launcher == process_launcher_mode::none) {
+		
              char* local_idx_env = getenv("CCL_LOCAL_RANK");
              if(local_idx_env == nullptr) {
-                 setenv("CCL_LOCAL_RANK", std::to_string(coord.local_idx).c_str(), 0);
+                 //setenv("CCL_LOCAL_RANK", std::to_string(coord.local_idx).c_str(), 0);
              }
              char* local_count_env = getenv("CCL_LOCAL_SIZE");
              if(local_count_env == nullptr) {
-                 setenv("CCL_LOCAL_SIZE", std::to_string(coord.local_count).c_str(), 0);
+                 //setenv("CCL_LOCAL_SIZE", std::to_string(coord.local_count).c_str(), 0);
              }
              if(local_idx_env == nullptr || local_count_env == nullptr) {
-                 ccl::global_data::get().set_local_coord();
+                std::cout << "Entering the atl_base_comm::update_executor  if condn ds_ds" << std::endl; 
+		//ccl::global_data::get().set_local_coord();
+		ccl::global_data::get().local_proc_idx = coord.local_idx;
+		ccl::global_data::get().local_proc_count = coord.local_count;
              }
-        }
+		std::cout << "coord.local_count : " << coord.local_count << "----------" << "coord.local_idx : " << coord.local_idx << std::endl;
+        //}
         executor->start_workers();
     }
 }

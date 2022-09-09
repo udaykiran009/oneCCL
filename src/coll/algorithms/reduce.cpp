@@ -47,6 +47,7 @@ ccl::status ccl_coll_build_direct_reduce(ccl_sched* sched,
                                          int root,
                                          ccl_comm* comm) {
     LOG_DEBUG("build direct reduce");
+	std::cout << "-----------------ds_ds build direct reduce-----------------" << std::endl;
 
     entry_factory::create<reduce_entry>(
         sched, send_buf, recv_buf, count, dtype, reduction, root, comm);
@@ -62,6 +63,7 @@ ccl::status ccl_coll_build_rabenseifner_reduce(ccl_sched* sched,
                                                int root,
                                                ccl_comm* comm) {
     LOG_DEBUG("build Rabenseifner's reduce");
+	std::cout << "-----------------ds_ds build rebansei reduce-----------------" << std::endl;
 
     ccl::status status = ccl::status::success;
 
@@ -343,6 +345,7 @@ ccl::status ccl_coll_build_binomial_reduce(ccl_sched* sched,
                                            int root,
                                            ccl_comm* comm) {
     LOG_DEBUG("build binomial reduce");
+	std::cout << "-----------------ds_ds build bino reduce-----------------" << std::endl;
 
     ccl::status status = ccl::status::success;
 
@@ -446,6 +449,7 @@ ccl::status ccl_coll_build_topo_reduce(ccl_sched* sched,
                                        int root,
                                        ccl_comm* comm) {
     LOG_DEBUG("build gpu reduce");
+	std::cout << "-----------------ds_ds build gpu reduce-----------------" << std::endl;
 
     ccl_comm* pair_comm = comm->get_pair_comm().get();
     ccl_comm* even_comm = comm->get_even_comm().get();

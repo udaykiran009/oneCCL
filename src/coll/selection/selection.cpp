@@ -315,6 +315,8 @@ bool ccl_can_use_topo_algo(const ccl_selector_param& param) {
 
 #endif // CCL_ENABLE_SYCL
 
+	std::cout << "-------------- ds_ds : " << comm_size << " : comm_size ---------------- :"<< local_proc_count << " : local_proc_count ----------------" << std::endl;
+
     RETURN_FALSE_IF((((param.ctype == ccl_coll_allreduce) || (param.ctype == ccl_coll_bcast) ||
                       (param.ctype == ccl_coll_reduce)) &&
                      ((comm_size < 2) || (local_proc_count == 1))),
