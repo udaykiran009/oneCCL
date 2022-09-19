@@ -145,12 +145,10 @@ void atl_base_comm::update_executor() {
                  //setenv("CCL_LOCAL_SIZE", std::to_string(coord.local_count).c_str(), 0);
              }
              if(local_idx_env == nullptr || local_count_env == nullptr) {
-                std::cout << "Entering the atl_base_comm::update_executor  if condn ds_ds" << std::endl; 
 		//ccl::global_data::get().set_local_coord();
 		ccl::global_data::get().local_proc_idx = coord.local_idx;
 		ccl::global_data::get().local_proc_count = coord.local_count;
              }
-		std::cout << "coord.local_count : " << coord.local_count << "----------" << "coord.local_idx : " << coord.local_idx << std::endl;
         //}
         executor->start_workers();
     }

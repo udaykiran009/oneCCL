@@ -67,7 +67,6 @@ void ccl_executor::start_workers() {
     auto worker_count = env.worker_count;
     auto ep_count = calculate_atl_ep_count(worker_count);
 	
-	std::cout << "global_data.get_local_proc_idx : " << global_data.get_local_proc_idx() << "------------  global_data.get_local_proc_count() : " << global_data.get_local_proc_count()<< std::endl;
     CCL_THROW_IF_NOT(env.env_2_worker_affinity(global_data.get_local_proc_idx(),
                                                global_data.get_local_proc_count()));
     CCL_THROW_IF_NOT(env.env_2_worker_mem_affinity(global_data.get_local_proc_count()));

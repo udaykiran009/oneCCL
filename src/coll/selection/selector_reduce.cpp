@@ -34,13 +34,11 @@ bool ccl_algorithm_selector_helper<ccl_coll_reduce_algo>::can_use(
     const ccl_selection_table_t<ccl_coll_reduce_algo>& table) {
     bool can_use = true;
 	
-	std::cout << "-------------- ds_ds starting can_use reduce ----------------"<< std::endl;
 
     ccl_coll_algo algo_param;
     algo_param.reduce = algo;
     can_use = ccl_can_use_datatype(algo_param, param);
 	
-	std::cout << algo << " : ds_ds algo ----------" << ccl::global_data::env().atl_transport << " : ds_ds algo ----------" <<  std::endl;
 
     if (algo == ccl_coll_reduce_rabenseifner && (int)param.count < param.comm->pof2()){
 		
@@ -52,11 +50,9 @@ bool ccl_algorithm_selector_helper<ccl_coll_reduce_algo>::can_use(
 			 can_use = false;
 			 }
     else if (algo == ccl_coll_reduce_topo && !ccl_can_use_topo_algo(param)){
-		std::cout << "-------------- ds_ds cannot use topo ----------------"<< std::endl;
 		can_use = false;
 	}
 	
-	std::cout << "-------------- ds_ds exiting can_use reduce ----------------"<< std::endl;
 
     return can_use;
 }

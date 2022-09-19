@@ -181,7 +181,6 @@ atl_ofi_comm::atl_ofi_comm(atl_ofi_comm* parent, int color) {
     parent_size = parent->parent_size;
     parent_rank = parent->parent_rank;
     pmi = parent->pmi;
-	std::cout << "ds_ds parent_size : " << parent_size << "------------ parent_rank : " << parent_rank << std::endl;
 
     coord.hostname_hash = transport->get_proc_coord().hostname_hash;
     coord.local_idx = 0;
@@ -232,7 +231,6 @@ atl_ofi_comm::atl_ofi_comm(atl_ofi_comm* parent, int color) {
         }
     }
     coord.global_count = size;
-	std::cout << "ds_ds coord.global_count : " << coord.global_count << "------------ coord.global_idx : " << coord.global_idx << std::endl; 
 	//coord.local_count = coord.global_count;
 	//coord.local_idx = coord.global_idx;
 
